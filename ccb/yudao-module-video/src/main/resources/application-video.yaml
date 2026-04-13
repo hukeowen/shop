@@ -1,0 +1,22 @@
+# AI视频模块配置
+video:
+  # 火山引擎配置
+  volcano-engine:
+    app-id: ${VOLCANO_APP_ID:your-app-id}
+    access-token: ${VOLCANO_ACCESS_TOKEN:your-access-token}
+    cluster: volcano_tts
+    voice-type: zh_female_qingxin
+    tts-api-url: https://openspeech.bytedance.com/api/v1/tts
+    access-key-id: ${VOLCANO_AK:your-access-key-id}
+    access-key-secret: ${VOLCANO_SK:your-access-key-secret}
+    video-api-url: https://open.volcengineapi.com/api/v1/smart_creation/video/create
+  # 抖音开放平台配置
+  douyin:
+    client-key: ${DOUYIN_CLIENT_KEY:your-client-key}
+    client-secret: ${DOUYIN_CLIENT_SECRET:your-client-secret}
+
+# 商户配置
+merchant:
+  qrcode:
+    page: pages/shop/index
+    upload-path: /tmp/qrcode/
