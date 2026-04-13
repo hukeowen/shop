@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS `product_brand` (
     `description` VARCHAR(256) NOT NULL DEFAULT '' COMMENT '品牌描述',
     `status`      INT          NOT NULL DEFAULT 0 COMMENT '状态（0=开启 1=关闭）',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`     VARCHAR(64)  DEFAULT '' COMMENT '创建者',
     `create_time` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`     VARCHAR(64)  DEFAULT '' COMMENT '更新者',
@@ -43,6 +44,7 @@ CREATE TABLE IF NOT EXISTS `product_category` (
     `sort`        INT          NOT NULL DEFAULT 0 COMMENT '分类排序',
     `status`      INT          NOT NULL DEFAULT 0 COMMENT '开启状态（0=开启 1=关闭）',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`     VARCHAR(64)  DEFAULT '' COMMENT '创建者',
     `create_time` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`     VARCHAR(64)  DEFAULT '' COMMENT '更新者',
@@ -80,6 +82,7 @@ CREATE TABLE IF NOT EXISTS `product_comment` (
     `reply_content`       VARCHAR(512)          COMMENT '商家回复内容',
     `reply_time`          DATETIME              COMMENT '商家回复时间',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`             VARCHAR(64)  DEFAULT '' COMMENT '创建者',
     `create_time`         DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`             VARCHAR(64)  DEFAULT '' COMMENT '更新者',
@@ -98,6 +101,7 @@ CREATE TABLE IF NOT EXISTS `product_favorite` (
     `user_id`     BIGINT  NOT NULL DEFAULT 0 COMMENT '用户编号',
     `spu_id`      BIGINT  NOT NULL DEFAULT 0 COMMENT '商品SPU编号',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`     VARCHAR(64)  DEFAULT '' COMMENT '创建者',
     `create_time` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`     VARCHAR(64)  DEFAULT '' COMMENT '更新者',
@@ -117,6 +121,7 @@ CREATE TABLE IF NOT EXISTS `product_browse_history` (
     `user_id`      BIGINT  NOT NULL DEFAULT 0 COMMENT '用户编号',
     `user_deleted` BIT(1)  NOT NULL DEFAULT 0 COMMENT '用户是否删除',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`      VARCHAR(64)  DEFAULT '' COMMENT '创建者',
     `create_time`  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`      VARCHAR(64)  DEFAULT '' COMMENT '更新者',
@@ -135,6 +140,7 @@ CREATE TABLE IF NOT EXISTS `product_property` (
     `name`        VARCHAR(64)  NOT NULL DEFAULT '' COMMENT '名称',
     `remark`      VARCHAR(256) DEFAULT '' COMMENT '备注',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`     VARCHAR(64)  DEFAULT '' COMMENT '创建者',
     `create_time` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`     VARCHAR(64)  DEFAULT '' COMMENT '更新者',
@@ -154,6 +160,7 @@ CREATE TABLE IF NOT EXISTS `product_property_value` (
     `name`        VARCHAR(64)  NOT NULL DEFAULT '' COMMENT '名称',
     `remark`      VARCHAR(256) DEFAULT '' COMMENT '备注',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`     VARCHAR(64)  DEFAULT '' COMMENT '创建者',
     `create_time` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`     VARCHAR(64)  DEFAULT '' COMMENT '更新者',
@@ -183,6 +190,7 @@ CREATE TABLE IF NOT EXISTS `product_sku` (
     `second_brokerage_price`  INT          NOT NULL DEFAULT 0 COMMENT '二级分销佣金（分）',
     `sales_count`             INT          NOT NULL DEFAULT 0 COMMENT '商品销量',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`                 VARCHAR(64)  DEFAULT '' COMMENT '创建者',
     `create_time`             DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`                 VARCHAR(64)  DEFAULT '' COMMENT '更新者',
@@ -221,6 +229,7 @@ CREATE TABLE IF NOT EXISTS `product_spu` (
     `virtual_sales_count`  INT           NOT NULL DEFAULT 0 COMMENT '虚拟销量',
     `browse_count`         INT           NOT NULL DEFAULT 0 COMMENT '浏览量',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`              VARCHAR(64)   DEFAULT '' COMMENT '创建者',
     `create_time`          DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`              VARCHAR(64)   DEFAULT '' COMMENT '更新者',
@@ -245,6 +254,7 @@ CREATE TABLE IF NOT EXISTS `promotion_article_category` (
     `status`      INT          NOT NULL DEFAULT 0 COMMENT '状态（0=开启 1=关闭）',
     `sort`        INT          NOT NULL DEFAULT 0 COMMENT '排序',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`     VARCHAR(64)  DEFAULT '' COMMENT '创建者',
     `create_time` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`     VARCHAR(64)  DEFAULT '' COMMENT '更新者',
@@ -273,6 +283,7 @@ CREATE TABLE IF NOT EXISTS `promotion_article` (
     `recommend_banner` BIT(1)        NOT NULL DEFAULT 0 COMMENT '是否轮播图（小程序）',
     `content`          TEXT                   COMMENT '文章内容',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`          VARCHAR(64)   DEFAULT '' COMMENT '创建者',
     `create_time`      DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`          VARCHAR(64)   DEFAULT '' COMMENT '更新者',
@@ -297,6 +308,7 @@ CREATE TABLE IF NOT EXISTS `promotion_banner` (
     `memo`         VARCHAR(256) DEFAULT '' COMMENT '备注',
     `browse_count` INT          NOT NULL DEFAULT 0 COMMENT '点击次数',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`      VARCHAR(64)  DEFAULT '' COMMENT '创建者',
     `create_time`  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`      VARCHAR(64)  DEFAULT '' COMMENT '更新者',
@@ -328,6 +340,7 @@ CREATE TABLE IF NOT EXISTS `promotion_bargain_activity` (
     `random_min_price`    INT          NOT NULL DEFAULT 0 COMMENT '每次砍价最小金额（分）',
     `random_max_price`    INT          NOT NULL DEFAULT 0 COMMENT '每次砍价最大金额（分）',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`             VARCHAR(64)  DEFAULT '' COMMENT '创建者',
     `create_time`         DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`             VARCHAR(64)  DEFAULT '' COMMENT '更新者',
@@ -348,6 +361,7 @@ CREATE TABLE IF NOT EXISTS `promotion_bargain_help` (
     `user_id`      BIGINT  NOT NULL DEFAULT 0 COMMENT '用户编号',
     `reduce_price` INT     NOT NULL DEFAULT 0 COMMENT '减少价格（分）',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`      VARCHAR(64)  DEFAULT '' COMMENT '创建者',
     `create_time`  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`      VARCHAR(64)  DEFAULT '' COMMENT '更新者',
@@ -373,6 +387,7 @@ CREATE TABLE IF NOT EXISTS `promotion_bargain_record` (
     `end_time`            DATETIME NOT NULL COMMENT '结束时间',
     `order_id`            BIGINT            COMMENT '订单编号',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`             VARCHAR(64)  DEFAULT '' COMMENT '创建者',
     `create_time`         DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`             VARCHAR(64)  DEFAULT '' COMMENT '更新者',
@@ -399,6 +414,7 @@ CREATE TABLE IF NOT EXISTS `promotion_combination_activity` (
     `status`              INT          NOT NULL DEFAULT 0 COMMENT '活动状态',
     `limit_duration`      INT          NOT NULL DEFAULT 0 COMMENT '限制时长（小时）',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`             VARCHAR(64)  DEFAULT '' COMMENT '创建者',
     `create_time`         DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`             VARCHAR(64)  DEFAULT '' COMMENT '更新者',
@@ -422,6 +438,7 @@ CREATE TABLE IF NOT EXISTS `promotion_combination_product` (
     `activity_start_time`   DATETIME          COMMENT '活动开始时间（冗余）',
     `activity_end_time`     DATETIME          COMMENT '活动结束时间（冗余）',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`               VARCHAR(64)  DEFAULT '' COMMENT '创建者',
     `create_time`           DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`               VARCHAR(64)  DEFAULT '' COMMENT '更新者',
@@ -457,6 +474,7 @@ CREATE TABLE IF NOT EXISTS `promotion_combination_record` (
     `start_time`        DATETIME               COMMENT '开始时间',
     `end_time`          DATETIME               COMMENT '结束时间',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`           VARCHAR(64)   DEFAULT '' COMMENT '创建者',
     `create_time`       DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`           VARCHAR(64)   DEFAULT '' COMMENT '更新者',
@@ -489,6 +507,7 @@ CREATE TABLE IF NOT EXISTS `promotion_coupon` (
     `use_order_id`          BIGINT            COMMENT '使用订单号',
     `use_time`              DATETIME          COMMENT '使用时间',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`               VARCHAR(64)  DEFAULT '' COMMENT '创建者',
     `create_time`           DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`               VARCHAR(64)  DEFAULT '' COMMENT '更新者',
@@ -525,6 +544,7 @@ CREATE TABLE IF NOT EXISTS `promotion_coupon_template` (
     `take_count`            INT           NOT NULL DEFAULT 0 COMMENT '领取优惠券数量',
     `use_count`             INT           NOT NULL DEFAULT 0 COMMENT '使用优惠券次数',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`               VARCHAR(64)   DEFAULT '' COMMENT '创建者',
     `create_time`           DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`               VARCHAR(64)   DEFAULT '' COMMENT '更新者',
@@ -546,6 +566,7 @@ CREATE TABLE IF NOT EXISTS `promotion_discount_activity` (
     `end_time`    DATETIME     NOT NULL COMMENT '结束时间',
     `remark`      VARCHAR(256) DEFAULT '' COMMENT '备注',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`     VARCHAR(64)  DEFAULT '' COMMENT '创建者',
     `create_time` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`     VARCHAR(64)  DEFAULT '' COMMENT '更新者',
@@ -572,6 +593,7 @@ CREATE TABLE IF NOT EXISTS `promotion_discount_product` (
     `activity_start_time`  DATETIME               COMMENT '活动开始时间（冗余）',
     `activity_end_time`    DATETIME               COMMENT '活动结束时间（冗余）',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`              VARCHAR(64)   DEFAULT '' COMMENT '创建者',
     `create_time`          DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`              VARCHAR(64)   DEFAULT '' COMMENT '更新者',
@@ -593,6 +615,7 @@ CREATE TABLE IF NOT EXISTS `promotion_diy_page` (
     `preview_pic_urls` JSON                   COMMENT '预览图（JSON）',
     `property`         TEXT                   COMMENT '页面属性（JSON格式）',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`          VARCHAR(64)   DEFAULT '' COMMENT '创建者',
     `create_time`      DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`          VARCHAR(64)   DEFAULT '' COMMENT '更新者',
@@ -615,6 +638,7 @@ CREATE TABLE IF NOT EXISTS `promotion_diy_template` (
     `preview_pic_urls` JSON                   COMMENT '预览图（JSON）',
     `property`         TEXT                   COMMENT 'uni-app底部导航属性（JSON格式）',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`          VARCHAR(64)   DEFAULT '' COMMENT '创建者',
     `create_time`      DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`          VARCHAR(64)   DEFAULT '' COMMENT '更新者',
@@ -639,6 +663,7 @@ CREATE TABLE IF NOT EXISTS `promotion_kefu_conversation` (
     `admin_deleted`              BIT(1)        NOT NULL DEFAULT 0 COMMENT '管理员是否可见（true=不可见）',
     `admin_unread_message_count` INT           NOT NULL DEFAULT 0 COMMENT '管理员未读消息数',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`                    VARCHAR(64)   DEFAULT '' COMMENT '创建者',
     `create_time`                DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`                    VARCHAR(64)   DEFAULT '' COMMENT '更新者',
@@ -663,6 +688,7 @@ CREATE TABLE IF NOT EXISTS `promotion_kefu_message` (
     `content`        VARCHAR(2048)          COMMENT '消息内容',
     `read_status`    BIT(1)        NOT NULL DEFAULT 0 COMMENT '是否已读',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`        VARCHAR(64)   DEFAULT '' COMMENT '创建者',
     `create_time`    DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`        VARCHAR(64)   DEFAULT '' COMMENT '更新者',
@@ -685,6 +711,7 @@ CREATE TABLE IF NOT EXISTS `promotion_point_activity` (
     `stock`       INT          NOT NULL DEFAULT 0 COMMENT '活动库存',
     `total_stock` INT          NOT NULL DEFAULT 0 COMMENT '活动总库存',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`     VARCHAR(64)  DEFAULT '' COMMENT '创建者',
     `create_time` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`     VARCHAR(64)  DEFAULT '' COMMENT '更新者',
@@ -709,6 +736,7 @@ CREATE TABLE IF NOT EXISTS `promotion_point_product` (
     `stock`           INT     NOT NULL DEFAULT 0 COMMENT '积分商城商品库存',
     `activity_status` INT     NOT NULL DEFAULT 0 COMMENT '积分商城商品状态',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`         VARCHAR(64)  DEFAULT '' COMMENT '创建者',
     `create_time`     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`         VARCHAR(64)  DEFAULT '' COMMENT '更新者',
@@ -734,6 +762,7 @@ CREATE TABLE IF NOT EXISTS `promotion_reward_activity` (
     `product_scope_values`  JSON                  COMMENT '商品SPU编号数组（JSON）',
     `rules`                 JSON                  COMMENT '优惠规则数组（JSON）',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`               VARCHAR(64)  DEFAULT '' COMMENT '创建者',
     `create_time`           DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`               VARCHAR(64)  DEFAULT '' COMMENT '更新者',
@@ -762,6 +791,7 @@ CREATE TABLE IF NOT EXISTS `promotion_seckill_activity` (
     `stock`               INT          NOT NULL DEFAULT 0 COMMENT '秒杀库存',
     `total_stock`         INT          NOT NULL DEFAULT 0 COMMENT '秒杀总库存',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`             VARCHAR(64)  DEFAULT '' COMMENT '创建者',
     `create_time`         DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`             VARCHAR(64)  DEFAULT '' COMMENT '更新者',
@@ -783,6 +813,7 @@ CREATE TABLE IF NOT EXISTS `promotion_seckill_config` (
     `slider_pic_urls`  JSON                  COMMENT '秒杀轮播图（JSON）',
     `status`           INT          NOT NULL DEFAULT 0 COMMENT '状态',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`          VARCHAR(64)  DEFAULT '' COMMENT '创建者',
     `create_time`      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`          VARCHAR(64)  DEFAULT '' COMMENT '更新者',
@@ -808,6 +839,7 @@ CREATE TABLE IF NOT EXISTS `promotion_seckill_product` (
     `activity_start_time`  DATETIME          COMMENT '活动开始时间',
     `activity_end_time`    DATETIME          COMMENT '活动结束时间',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`              VARCHAR(64)  DEFAULT '' COMMENT '创建者',
     `create_time`          DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`              VARCHAR(64)  DEFAULT '' COMMENT '更新者',
@@ -840,6 +872,7 @@ CREATE TABLE IF NOT EXISTS `product_statistics` (
     `after_sale_refund_price`  INT     NOT NULL DEFAULT 0 COMMENT '退款金额（分）',
     `browse_convert_percent`   INT     NOT NULL DEFAULT 0 COMMENT '访客支付转化率（百分比）',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`                  VARCHAR(64)  DEFAULT '' COMMENT '创建者',
     `create_time`              DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`                  VARCHAR(64)  DEFAULT '' COMMENT '更新者',
@@ -868,6 +901,7 @@ CREATE TABLE IF NOT EXISTS `trade_statistics` (
     `recharge_refund_count`       INT      NOT NULL DEFAULT 0 COMMENT '充值退款订单数',
     `recharge_refund_price`       INT      NOT NULL DEFAULT 0 COMMENT '充值退款金额（分）',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`                     VARCHAR(64)  DEFAULT '' COMMENT '创建者',
     `create_time`                 DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`                     VARCHAR(64)  DEFAULT '' COMMENT '更新者',
@@ -916,6 +950,7 @@ CREATE TABLE IF NOT EXISTS `trade_after_sale` (
     `receive_time`    DATETIME               COMMENT '收货时间',
     `receive_reason`  VARCHAR(256)           COMMENT '收货备注',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`         VARCHAR(64)   DEFAULT '' COMMENT '创建者',
     `create_time`     DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`         VARCHAR(64)   DEFAULT '' COMMENT '更新者',
@@ -939,6 +974,7 @@ CREATE TABLE IF NOT EXISTS `trade_after_sale_log` (
     `operate_type`   INT           NOT NULL DEFAULT 0 COMMENT '操作类型',
     `content`        VARCHAR(512)           COMMENT '操作明细',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`        VARCHAR(64)   DEFAULT '' COMMENT '创建者',
     `create_time`    DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`        VARCHAR(64)   DEFAULT '' COMMENT '更新者',
@@ -967,6 +1003,7 @@ CREATE TABLE IF NOT EXISTS `trade_brokerage_record` (
     `source_user_level` INT          NOT NULL DEFAULT 0 COMMENT '来源用户等级',
     `source_user_id`    BIGINT                 COMMENT '来源用户编号',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`           VARCHAR(64)  DEFAULT '' COMMENT '创建者',
     `create_time`       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`           VARCHAR(64)  DEFAULT '' COMMENT '更新者',
@@ -989,6 +1026,7 @@ CREATE TABLE IF NOT EXISTS `trade_brokerage_user` (
     `brokerage_price`   INT      NOT NULL DEFAULT 0 COMMENT '可用佣金（分）',
     `frozen_price`      INT      NOT NULL DEFAULT 0 COMMENT '冻结佣金（分）',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`           VARCHAR(64)  DEFAULT '' COMMENT '创建者',
     `create_time`       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`           VARCHAR(64)  DEFAULT '' COMMENT '更新者',
@@ -1023,6 +1061,7 @@ CREATE TABLE IF NOT EXISTS `trade_brokerage_withdraw` (
     `transfer_time`         DATETIME               COMMENT '转账成功时间',
     `transfer_error_msg`    VARCHAR(256)           COMMENT '转账错误提示',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`               VARCHAR(64)  DEFAULT '' COMMENT '创建者',
     `create_time`           DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`               VARCHAR(64)  DEFAULT '' COMMENT '更新者',
@@ -1044,6 +1083,7 @@ CREATE TABLE IF NOT EXISTS `trade_cart` (
     `count`       INT     NOT NULL DEFAULT 0 COMMENT '商品购买数量',
     `selected`    BIT(1)  NOT NULL DEFAULT 1 COMMENT '是否选中',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`     VARCHAR(64)  DEFAULT '' COMMENT '创建者',
     `create_time` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`     VARCHAR(64)  DEFAULT '' COMMENT '更新者',
@@ -1075,6 +1115,7 @@ CREATE TABLE IF NOT EXISTS `trade_config` (
     `brokerage_frozen_days`           INT      NOT NULL DEFAULT 0 COMMENT '佣金冻结时间（天）',
     `brokerage_withdraw_types`        JSON              COMMENT '提现方式（JSON）',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`                         VARCHAR(64)  DEFAULT '' COMMENT '创建者',
     `create_time`                     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`                         VARCHAR(64)  DEFAULT '' COMMENT '更新者',
@@ -1096,6 +1137,7 @@ CREATE TABLE IF NOT EXISTS `trade_delivery_express` (
     `sort`        INT          NOT NULL DEFAULT 0 COMMENT '排序',
     `status`      INT          NOT NULL DEFAULT 0 COMMENT '状态',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`     VARCHAR(64)  DEFAULT '' COMMENT '创建者',
     `create_time` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`     VARCHAR(64)  DEFAULT '' COMMENT '更新者',
@@ -1115,6 +1157,7 @@ CREATE TABLE IF NOT EXISTS `trade_delivery_express_template` (
     `charge_mode` INT         NOT NULL DEFAULT 0 COMMENT '配送计费方式',
     `sort`        INT         NOT NULL DEFAULT 0 COMMENT '排序',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`     VARCHAR(64) DEFAULT '' COMMENT '创建者',
     `create_time` DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`     VARCHAR(64) DEFAULT '' COMMENT '更新者',
@@ -1138,6 +1181,7 @@ CREATE TABLE IF NOT EXISTS `trade_delivery_express_template_charge` (
     `extra_count` DOUBLE  NOT NULL DEFAULT 0 COMMENT '续件数量',
     `extra_price` INT     NOT NULL DEFAULT 0 COMMENT '额外价（分）',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`     VARCHAR(64)  DEFAULT '' COMMENT '创建者',
     `create_time` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`     VARCHAR(64)  DEFAULT '' COMMENT '更新者',
@@ -1158,6 +1202,7 @@ CREATE TABLE IF NOT EXISTS `trade_delivery_express_template_free` (
     `free_price`  INT     NOT NULL DEFAULT 0 COMMENT '包邮金额（分）',
     `free_count`  INT     NOT NULL DEFAULT 0 COMMENT '包邮件数',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`     VARCHAR(64)  DEFAULT '' COMMENT '创建者',
     `create_time` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`     VARCHAR(64)  DEFAULT '' COMMENT '更新者',
@@ -1186,6 +1231,7 @@ CREATE TABLE IF NOT EXISTS `trade_delivery_pick_up_store` (
     `verify_user_ids`  JSON                  COMMENT '核销员工用户编号数组（JSON）',
     `status`           INT          NOT NULL DEFAULT 0 COMMENT '门店状态',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`          VARCHAR(64)  DEFAULT '' COMMENT '创建者',
     `create_time`      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`          VARCHAR(64)  DEFAULT '' COMMENT '更新者',
@@ -1254,6 +1300,7 @@ CREATE TABLE IF NOT EXISTS `trade_order` (
     `combination_record_id`     BIGINT                 COMMENT '拼团记录编号',
     `point_activity_id`         BIGINT                 COMMENT '积分商城活动编号',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`                   VARCHAR(64)   DEFAULT '' COMMENT '创建者',
     `create_time`               DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`                   VARCHAR(64)   DEFAULT '' COMMENT '更新者',
@@ -1292,6 +1339,7 @@ CREATE TABLE IF NOT EXISTS `trade_order_item` (
     `after_sale_id`    BIGINT                 COMMENT '售后单编号',
     `after_sale_status` INT          NOT NULL DEFAULT 0 COMMENT '售后状态',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`          VARCHAR(64)   DEFAULT '' COMMENT '创建者',
     `create_time`      DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`          VARCHAR(64)   DEFAULT '' COMMENT '更新者',
@@ -1315,6 +1363,7 @@ CREATE TABLE IF NOT EXISTS `trade_order_log` (
     `operate_type`   INT          NOT NULL DEFAULT 0 COMMENT '操作类型',
     `content`        VARCHAR(512)          COMMENT '订单日志信息',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`        VARCHAR(64)  DEFAULT '' COMMENT '创建者',
     `create_time`    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`        VARCHAR(64)  DEFAULT '' COMMENT '更新者',

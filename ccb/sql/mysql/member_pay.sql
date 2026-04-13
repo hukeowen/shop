@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS `member_address` (
     `detail_address` VARCHAR(256) NOT NULL DEFAULT '' COMMENT '收件详细地址',
     `default_status` BIT(1)       NOT NULL DEFAULT 0 COMMENT '是否默认',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`        VARCHAR(64)  DEFAULT '' COMMENT '创建者',
     `create_time`    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`        VARCHAR(64)  DEFAULT '' COMMENT '更新者',
@@ -33,6 +34,7 @@ CREATE TABLE IF NOT EXISTS `member_config` (
     `point_trade_deduct_max_price`  INT    NOT NULL DEFAULT 0 COMMENT '积分抵扣最大值',
     `point_trade_give_point`        INT    NOT NULL DEFAULT 0 COMMENT '1 元赠送多少积分',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`     VARCHAR(64) DEFAULT '' COMMENT '创建者',
     `create_time` DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`     VARCHAR(64) DEFAULT '' COMMENT '更新者',
@@ -50,6 +52,7 @@ CREATE TABLE IF NOT EXISTS `member_group` (
     `remark` VARCHAR(256) NOT NULL DEFAULT '' COMMENT '备注',
     `status` INT          NOT NULL DEFAULT 0 COMMENT '状态',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`     VARCHAR(64) DEFAULT '' COMMENT '创建者',
     `create_time` DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`     VARCHAR(64) DEFAULT '' COMMENT '更新者',
@@ -71,6 +74,7 @@ CREATE TABLE IF NOT EXISTS `member_experience_record` (
     `experience`       INT          NOT NULL DEFAULT 0 COMMENT '经验变动值',
     `total_experience` INT          NOT NULL DEFAULT 0 COMMENT '变更后的总经验',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`     VARCHAR(64) DEFAULT '' COMMENT '创建者',
     `create_time` DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`     VARCHAR(64) DEFAULT '' COMMENT '更新者',
@@ -92,6 +96,7 @@ CREATE TABLE IF NOT EXISTS `member_level` (
     `background_url`   VARCHAR(512) NOT NULL DEFAULT '' COMMENT '等级背景图 URL',
     `status`           INT          NOT NULL DEFAULT 0 COMMENT '状态',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`     VARCHAR(64) DEFAULT '' COMMENT '创建者',
     `create_time` DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`     VARCHAR(64) DEFAULT '' COMMENT '更新者',
@@ -114,6 +119,7 @@ CREATE TABLE IF NOT EXISTS `member_level_record` (
     `remark`           VARCHAR(256) NOT NULL DEFAULT '' COMMENT '备注',
     `description`      VARCHAR(256) NOT NULL DEFAULT '' COMMENT '描述',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`     VARCHAR(64) DEFAULT '' COMMENT '创建者',
     `create_time` DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`     VARCHAR(64) DEFAULT '' COMMENT '更新者',
@@ -135,6 +141,7 @@ CREATE TABLE IF NOT EXISTS `member_point_record` (
     `point`       INT          NOT NULL DEFAULT 0 COMMENT '变动积分（正增负减）',
     `total_point` INT          NOT NULL DEFAULT 0 COMMENT '变动后的总积分',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`     VARCHAR(64) DEFAULT '' COMMENT '创建者',
     `create_time` DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`     VARCHAR(64) DEFAULT '' COMMENT '更新者',
@@ -153,6 +160,7 @@ CREATE TABLE IF NOT EXISTS `member_sign_in_config` (
     `experience` INT    NOT NULL DEFAULT 0 COMMENT '奖励经验',
     `status`     INT    NOT NULL DEFAULT 0 COMMENT '状态',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`     VARCHAR(64) DEFAULT '' COMMENT '创建者',
     `create_time` DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`     VARCHAR(64) DEFAULT '' COMMENT '更新者',
@@ -171,6 +179,7 @@ CREATE TABLE IF NOT EXISTS `member_sign_in_record` (
     `point`      INT    NOT NULL DEFAULT 0 COMMENT '签到获得积分',
     `experience` INT    NOT NULL DEFAULT 0 COMMENT '签到获得经验',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`     VARCHAR(64) DEFAULT '' COMMENT '创建者',
     `create_time` DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`     VARCHAR(64) DEFAULT '' COMMENT '更新者',
@@ -186,6 +195,7 @@ CREATE TABLE IF NOT EXISTS `member_tag` (
     `id`   BIGINT      NOT NULL AUTO_INCREMENT COMMENT '编号',
     `name` VARCHAR(64) NOT NULL DEFAULT '' COMMENT '标签名称',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`     VARCHAR(64) DEFAULT '' COMMENT '创建者',
     `create_time` DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`     VARCHAR(64) DEFAULT '' COMMENT '更新者',
@@ -219,13 +229,12 @@ CREATE TABLE IF NOT EXISTS `member_user` (
     `experience`        INT          NOT NULL DEFAULT 0 COMMENT '会员经验',
     `group_id`          BIGINT                DEFAULT NULL COMMENT '用户分组编号',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`     VARCHAR(64) DEFAULT '' COMMENT '创建者',
     `create_time` DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`     VARCHAR(64) DEFAULT '' COMMENT '更新者',
     `update_time` DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     `deleted`     BIT(1)      NOT NULL DEFAULT 0 COMMENT '是否删除',
-    -- TenantBaseDO
-    `tenant_id`   BIGINT      NOT NULL DEFAULT 0 COMMENT '租户编号',
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_mobile` (`mobile`, `tenant_id`, `deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='会员用户';
@@ -247,6 +256,7 @@ CREATE TABLE IF NOT EXISTS `pay_app` (
     `refund_notify_url`    VARCHAR(512) NOT NULL DEFAULT '' COMMENT '退款结果回调地址',
     `transfer_notify_url`  VARCHAR(512) NOT NULL DEFAULT '' COMMENT '转账结果回调地址',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`     VARCHAR(64) DEFAULT '' COMMENT '创建者',
     `create_time` DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`     VARCHAR(64) DEFAULT '' COMMENT '更新者',
@@ -267,13 +277,12 @@ CREATE TABLE IF NOT EXISTS `pay_channel` (
     `app_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '应用编号',
     `config`   JSON                  DEFAULT NULL COMMENT '支付渠道配置（JSON）',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`     VARCHAR(64) DEFAULT '' COMMENT '创建者',
     `create_time` DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`     VARCHAR(64) DEFAULT '' COMMENT '更新者',
     `update_time` DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     `deleted`     BIT(1)      NOT NULL DEFAULT 0 COMMENT '是否删除',
-    -- TenantBaseDO
-    `tenant_id`   BIGINT      NOT NULL DEFAULT 0 COMMENT '租户编号',
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='支付渠道';
 
@@ -294,6 +303,7 @@ CREATE TABLE IF NOT EXISTS `pay_demo_order` (
     `refund_price`     INT         NOT NULL DEFAULT 0 COMMENT '退款金额（分）',
     `refund_time`      DATETIME             DEFAULT NULL COMMENT '退款完成时间',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`     VARCHAR(64) DEFAULT '' COMMENT '创建者',
     `create_time` DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`     VARCHAR(64) DEFAULT '' COMMENT '更新者',
@@ -318,6 +328,7 @@ CREATE TABLE IF NOT EXISTS `pay_demo_withdraw` (
     `transfer_time`        DATETIME             DEFAULT NULL COMMENT '转账成功时间',
     `transfer_error_msg`   VARCHAR(256)         DEFAULT NULL COMMENT '转账错误提示',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`     VARCHAR(64) DEFAULT '' COMMENT '创建者',
     `create_time` DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`     VARCHAR(64) DEFAULT '' COMMENT '更新者',
@@ -336,6 +347,7 @@ CREATE TABLE IF NOT EXISTS `pay_notify_log` (
     `response`     TEXT            DEFAULT NULL COMMENT 'HTTP 响应结果',
     `status`       INT    NOT NULL DEFAULT 0 COMMENT '支付通知状态',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`     VARCHAR(64) DEFAULT '' COMMENT '创建者',
     `create_time` DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`     VARCHAR(64) DEFAULT '' COMMENT '更新者',
@@ -362,13 +374,12 @@ CREATE TABLE IF NOT EXISTS `pay_notify_task` (
     `max_notify_times`     INT          NOT NULL DEFAULT 0 COMMENT '最大可通知次数',
     `notify_url`           VARCHAR(512) NOT NULL DEFAULT '' COMMENT '通知地址',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`     VARCHAR(64) DEFAULT '' COMMENT '创建者',
     `create_time` DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`     VARCHAR(64) DEFAULT '' COMMENT '更新者',
     `update_time` DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     `deleted`     BIT(1)      NOT NULL DEFAULT 0 COMMENT '是否删除',
-    -- TenantBaseDO
-    `tenant_id`   BIGINT      NOT NULL DEFAULT 0 COMMENT '租户编号',
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='支付通知任务';
 
@@ -399,6 +410,7 @@ CREATE TABLE IF NOT EXISTS `pay_order` (
     `channel_user_id`    VARCHAR(64)           DEFAULT NULL COMMENT '渠道用户编号',
     `channel_order_no`   VARCHAR(64)           DEFAULT NULL COMMENT '渠道订单号',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`     VARCHAR(64) DEFAULT '' COMMENT '创建者',
     `create_time` DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`     VARCHAR(64) DEFAULT '' COMMENT '更新者',
@@ -423,6 +435,7 @@ CREATE TABLE IF NOT EXISTS `pay_order_extension` (
     `channel_error_msg`    VARCHAR(256)          DEFAULT NULL COMMENT '渠道错误信息',
     `channel_notify_data`  TEXT                  DEFAULT NULL COMMENT '渠道通知内容',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`     VARCHAR(64) DEFAULT '' COMMENT '创建者',
     `create_time` DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`     VARCHAR(64) DEFAULT '' COMMENT '更新者',
@@ -460,6 +473,7 @@ CREATE TABLE IF NOT EXISTS `pay_refund` (
     `channel_error_msg`   VARCHAR(256)          DEFAULT NULL COMMENT '渠道错误提示',
     `channel_notify_data` TEXT                  DEFAULT NULL COMMENT '渠道通知内容',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`     VARCHAR(64) DEFAULT '' COMMENT '创建者',
     `create_time` DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`     VARCHAR(64) DEFAULT '' COMMENT '更新者',
@@ -495,6 +509,7 @@ CREATE TABLE IF NOT EXISTS `pay_transfer` (
     `channel_notify_data`  TEXT                  DEFAULT NULL COMMENT '渠道通知内容',
     `channel_package_info` TEXT                  DEFAULT NULL COMMENT '渠道 package 信息（微信转账专用）',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`     VARCHAR(64) DEFAULT '' COMMENT '创建者',
     `create_time` DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`     VARCHAR(64) DEFAULT '' COMMENT '更新者',
@@ -515,6 +530,7 @@ CREATE TABLE IF NOT EXISTS `pay_wallet` (
     `total_expense`  INT    NOT NULL DEFAULT 0 COMMENT '累计支出（分）',
     `total_recharge` INT    NOT NULL DEFAULT 0 COMMENT '累计充值（分）',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`     VARCHAR(64) DEFAULT '' COMMENT '创建者',
     `create_time` DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`     VARCHAR(64) DEFAULT '' COMMENT '更新者',
@@ -544,6 +560,7 @@ CREATE TABLE IF NOT EXISTS `pay_wallet_recharge` (
     `refund_time`         DATETIME             DEFAULT NULL COMMENT '退款时间',
     `refund_status`       INT                  DEFAULT NULL COMMENT '退款状态',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`     VARCHAR(64) DEFAULT '' COMMENT '创建者',
     `create_time` DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`     VARCHAR(64) DEFAULT '' COMMENT '更新者',
@@ -562,6 +579,7 @@ CREATE TABLE IF NOT EXISTS `pay_wallet_recharge_package` (
     `bonus_price` INT         NOT NULL DEFAULT 0 COMMENT '赠送金额（分）',
     `status`      INT         NOT NULL DEFAULT 0 COMMENT '状态',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`     VARCHAR(64) DEFAULT '' COMMENT '创建者',
     `create_time` DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`     VARCHAR(64) DEFAULT '' COMMENT '更新者',
@@ -583,6 +601,7 @@ CREATE TABLE IF NOT EXISTS `pay_wallet_transaction` (
     `price`     INT         NOT NULL DEFAULT 0 COMMENT '交易金额（分，正增负减）',
     `balance`   INT         NOT NULL DEFAULT 0 COMMENT '交易后余额（分）',
     -- 基础字段
+    `tenant_id`   BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     `creator`     VARCHAR(64) DEFAULT '' COMMENT '创建者',
     `create_time` DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater`     VARCHAR(64) DEFAULT '' COMMENT '更新者',
