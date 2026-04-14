@@ -9,9 +9,9 @@ import cn.iocoder.yudao.module.merchant.dal.dataobject.MerchantDO;
 import cn.iocoder.yudao.module.merchant.dal.dataobject.TenantSubscriptionDO;
 import cn.iocoder.yudao.module.merchant.dal.mysql.AiVideoTaskMapper;
 import cn.iocoder.yudao.module.merchant.dal.mysql.TenantSubscriptionMapper;
-import cn.iocoder.yudao.module.video.controller.admin.vo.VideoTaskCreateReqVO;
-import cn.iocoder.yudao.module.video.service.VideoTaskService;
+import cn.iocoder.yudao.module.merchant.event.AiVideoTaskCreatedEvent;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
@@ -23,6 +23,9 @@ import static cn.iocoder.yudao.module.merchant.enums.MerchantErrorCodeConstants.
 
 /**
  * AI 成片任务 Service 实现
+ *
+ * <p>通过 {@link AiVideoTaskCreatedEvent} 事件与 video 模块解耦，
+ * 避免 merchant ↔ video 循环依赖。</p>
  */
 @Service
 @Validated
@@ -47,7 +50,7 @@ public class AiVideoTaskServiceImpl implements AiVideoTaskService {
     @Resource
     private MerchantService merchantService;
     @Resource
-    private VideoTaskService videoTaskService;
+    private ApplicationEventPublisher eventPublisher;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -75,12 +78,10 @@ public class AiVideoTaskServiceImpl implements AiVideoTaskService {
         aiVideoTaskMapper.insert(task);
         log.info("[createTask] 创建AI成片任务 id={}, tenantId={}", task.getId(), tenantId);
 
-        // 委托视频模块异步触发文案生成
-        VideoTaskCreateReqVO videoReqVO = new VideoTaskCreateReqVO();
-        videoReqVO.setTitle(reqVO.getUserDescription());
-        videoReqVO.setDescription(reqVO.getUserDescription());
-        videoReqVO.setImageUrls(reqVO.getImageUrls());
-        videoTaskService.createVideoTask(videoReqVO, merchant.getId(), userId);
+        // 发布事件，由 video 模块监听并异步触发文案生成（解耦循环依赖）
+        eventPublisher.publishEvent(new AiVideoTaskCreatedEvent(
+                this, task.getId(), reqVO.getImageUrls(), reqVO.getUserDescription(),
+                merchant.getId(), userId));
 
         return task.getId();
     }
@@ -136,7 +137,7 @@ public class AiVideoTaskServiceImpl implements AiVideoTaskService {
             update.setVideoUrl(videoUrl);
             update.setCoverUrl(coverUrl);
 
-            // 原子扣减配额，quota_deducted 字段作幂等标志
+            // 原子扣减配额，幂等保护
             if (!Boolean.TRUE.equals(task.getQuotaDeducted())) {
                 TenantSubscriptionDO subscription = tenantSubscriptionMapper.selectByTenantId(task.getTenantId());
                 if (subscription != null) {
