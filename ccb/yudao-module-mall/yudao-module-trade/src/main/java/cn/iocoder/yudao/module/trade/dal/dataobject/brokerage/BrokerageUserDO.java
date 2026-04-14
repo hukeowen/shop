@@ -1,7 +1,6 @@
 package cn.iocoder.yudao.module.trade.dal.dataobject.brokerage;
 
-import cn.iocoder.yudao.framework.mybatis.core.dataobject.BaseDO;
-import com.baomidou.mybatisplus.annotation.KeySequence;
+import cn.iocoder.yudao.framework.tenant.core.db.TenantBaseDO;import com.baomidou.mybatisplus.annotation.KeySequence;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.*;
@@ -21,7 +20,7 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class BrokerageUserDO extends BaseDO {
+public class BrokerageUserDO extends TenantBaseDO {
 
     /**
      * 用户编号
@@ -59,4 +58,9 @@ public class BrokerageUserDO extends BaseDO {
      * 冻结佣金
      */
     private Integer frozenPrice;
+
+    /**
+     * 推广大使专属分享码（6位字母数字）
+     */
+    private String shareCode;
 }

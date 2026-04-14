@@ -1,0 +1,68 @@
+package cn.iocoder.yudao.module.merchant.dal.dataobject;
+
+import cn.iocoder.yudao.framework.mybatis.core.dataobject.BaseDO;
+import com.baomidou.mybatisplus.annotation.KeySequence;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
+import lombok.*;
+
+import java.math.BigDecimal;
+
+/**
+ * 店铺详情 DO
+ *
+ * 平台级表（不继承 TenantBaseDO），支持跨租户查询（用户小程序附近/分类页需要）。
+ * tenant_id 作为普通字段标识归属商户。
+ */
+@TableName("shop_info")
+@KeySequence("shop_info_seq")
+@Data
+@EqualsAndHashCode(callSuper = true)
+@ToString(callSuper = true)
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class ShopInfoDO extends BaseDO {
+
+    @TableId
+    private Long id;
+
+    /** 所属租户ID（一租户一店铺，唯一） */
+    private Long tenantId;
+    /** 店铺名称 */
+    private String shopName;
+    /** 经营类目ID */
+    private Long categoryId;
+    /** 店铺封面图 */
+    private String coverUrl;
+    /** 店铺简介 */
+    private String description;
+    /** 店铺公告 */
+    private String notice;
+
+    // ========== 位置 ==========
+    /** 经度 */
+    private BigDecimal longitude;
+    /** 纬度 */
+    private BigDecimal latitude;
+    /** 详细地址 */
+    private String address;
+
+    // ========== 运营信息 ==========
+    /** 营业时间（如 09:00-22:00） */
+    private String businessHours;
+    /** 客服电话 */
+    private String mobile;
+    /** 店铺状态：1正常 2暂停营业 3违规关闭 */
+    private Integer status;
+
+    // ========== 排名缓存（每日定时更新） ==========
+    /** 近30天销量 */
+    private Integer sales30d;
+    /** 平均评分 */
+    private BigDecimal avgRating;
+
+    /** 商户余额（分），来源：订单完成后的收入，扣除佣金后结算 */
+    private Integer balance;
+
+}

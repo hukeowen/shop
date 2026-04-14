@@ -1,7 +1,6 @@
 package cn.iocoder.yudao.module.promotion.dal.dataobject.diy;
 
-import cn.iocoder.yudao.framework.mybatis.core.dataobject.BaseDO;
-import cn.iocoder.yudao.framework.mybatis.core.type.StringListTypeHandler;
+import cn.iocoder.yudao.framework.tenant.core.db.TenantBaseDO;import cn.iocoder.yudao.framework.mybatis.core.type.StringListTypeHandler;
 import com.baomidou.mybatisplus.annotation.KeySequence;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
@@ -23,7 +22,7 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class DiyPageDO extends BaseDO {
+public class DiyPageDO extends TenantBaseDO {
 
     /**
      * 装修页面编号

@@ -1,7 +1,6 @@
 package cn.iocoder.yudao.module.promotion.dal.dataobject.bargain;
 
-import cn.iocoder.yudao.framework.mybatis.core.dataobject.BaseDO;
-import com.baomidou.mybatisplus.annotation.KeySequence;
+import cn.iocoder.yudao.framework.tenant.core.db.TenantBaseDO;import com.baomidou.mybatisplus.annotation.KeySequence;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.*;
@@ -19,7 +18,7 @@ import lombok.*;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class BargainHelpDO extends BaseDO {
+public class BargainHelpDO extends TenantBaseDO {
 
     /**
      * 编号

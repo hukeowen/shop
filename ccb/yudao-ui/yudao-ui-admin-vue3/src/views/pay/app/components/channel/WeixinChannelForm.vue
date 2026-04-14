@@ -35,7 +35,8 @@
           </a>
         </el-form-item>
         <el-form-item label="商户号" label-width="180px" prop="config.mchId">
-          <el-input v-model="formData.config.mchId" :style="{ width: '100%' }" />
+          <el-input v-model="formData.config.mchId" :style="{ width: '100%' }"
+            :placeholder="formData.config.serviceProviderMode ? '请输入服务商商户号' : '请输入商户号'" />
         </el-form-item>
 
         <el-form-item label-width="180px">
@@ -43,6 +44,19 @@
             前往微信商户平台查看商户号
           </a>
         </el-form-item>
+        <el-form-item label="服务商模式" label-width="180px">
+          <el-switch v-model="formData.config.serviceProviderMode" />
+        </el-form-item>
+        <div v-if="formData.config.serviceProviderMode">
+          <el-form-item label="子商户号" label-width="180px" prop="config.subMchId">
+            <el-input v-model="formData.config.subMchId" clearable
+              placeholder="请输入特约商户的子商户号（sub_mchid）" />
+          </el-form-item>
+          <el-form-item label="子商户 APPID" label-width="180px">
+            <el-input v-model="formData.config.subAppId" clearable
+              placeholder="可选，子商户的小程序 APPID" />
+          </el-form-item>
+        </div>
         <el-form-item label="渠道状态" label-width="180px" prop="status">
           <el-radio-group v-model="formData.status">
             <el-radio
@@ -226,7 +240,10 @@ const formData = ref<any>({
     certSerialNo: '',
     apiV3Key: '',
     publicKeyContent: '',
-    publicKeyId: ''
+    publicKeyId: '',
+    serviceProviderMode: false,
+    subMchId: '',
+    subAppId: ''
   }
 })
 const formRules = {
@@ -312,7 +329,10 @@ const resetForm = (appId, code) => {
       certSerialNo: '',
       apiV3Key: '',
       publicKeyContent: '',
-      publicKeyId: ''
+      publicKeyId: '',
+      serviceProviderMode: false,
+      subMchId: '',
+      subAppId: ''
     }
   }
   formRef.value?.resetFields()

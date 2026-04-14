@@ -1,7 +1,6 @@
 package cn.iocoder.yudao.module.trade.dal.dataobject.order;
 
-import cn.iocoder.yudao.framework.mybatis.core.dataobject.BaseDO;
-import cn.iocoder.yudao.module.trade.dal.dataobject.aftersale.AfterSaleDO;
+import cn.iocoder.yudao.framework.tenant.core.db.TenantBaseDO;import cn.iocoder.yudao.module.trade.dal.dataobject.aftersale.AfterSaleDO;
 import cn.iocoder.yudao.module.trade.dal.dataobject.cart.CartDO;
 import cn.iocoder.yudao.module.trade.enums.order.TradeOrderItemAfterSaleStatusEnum;
 import com.baomidou.mybatisplus.annotation.KeySequence;
@@ -21,7 +20,7 @@ import java.util.List;
 @TableName(value = "trade_order_item", autoResultMap = true)
 @KeySequence("trade_order_item_seq") // 用于 Oracle、PostgreSQL、Kingbase、DB2、H2 数据库的主键自增。如果是 MySQL 等数据库，可不写。
 @Data
-public class TradeOrderItemDO extends BaseDO {
+public class TradeOrderItemDO extends TenantBaseDO {
 
     // ========== 订单项基本信息 ==========
     /**

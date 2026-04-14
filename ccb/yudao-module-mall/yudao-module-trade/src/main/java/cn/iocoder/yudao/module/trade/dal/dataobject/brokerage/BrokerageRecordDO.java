@@ -1,7 +1,6 @@
 package cn.iocoder.yudao.module.trade.dal.dataobject.brokerage;
 
-import cn.iocoder.yudao.framework.mybatis.core.dataobject.BaseDO;
-import cn.iocoder.yudao.module.trade.enums.brokerage.BrokerageRecordBizTypeEnum;
+import cn.iocoder.yudao.framework.tenant.core.db.TenantBaseDO;import cn.iocoder.yudao.module.trade.enums.brokerage.BrokerageRecordBizTypeEnum;
 import cn.iocoder.yudao.module.trade.enums.brokerage.BrokerageRecordStatusEnum;
 import com.baomidou.mybatisplus.annotation.KeySequence;
 import com.baomidou.mybatisplus.annotation.TableId;
@@ -23,7 +22,7 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class BrokerageRecordDO extends BaseDO {
+public class BrokerageRecordDO extends TenantBaseDO {
 
     /**
      * 编号

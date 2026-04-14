@@ -1,8 +1,7 @@
 package cn.iocoder.yudao.module.promotion.dal.dataobject.kefu;
 
 import cn.iocoder.yudao.framework.common.enums.UserTypeEnum;
-import cn.iocoder.yudao.framework.mybatis.core.dataobject.BaseDO;
-import cn.iocoder.yudao.module.promotion.enums.kefu.KeFuMessageContentTypeEnum;
+import cn.iocoder.yudao.framework.tenant.core.db.TenantBaseDO;import cn.iocoder.yudao.module.promotion.enums.kefu.KeFuMessageContentTypeEnum;
 import com.baomidou.mybatisplus.annotation.KeySequence;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
@@ -21,7 +20,7 @@ import lombok.*;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class KeFuMessageDO extends BaseDO {
+public class KeFuMessageDO extends TenantBaseDO {
 
     /**
      * 编号

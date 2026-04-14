@@ -1,7 +1,6 @@
 package cn.iocoder.yudao.module.promotion.dal.dataobject.bargain;
 
-import cn.iocoder.yudao.framework.mybatis.core.dataobject.BaseDO;
-import cn.iocoder.yudao.module.promotion.enums.bargain.BargainRecordStatusEnum;
+import cn.iocoder.yudao.framework.tenant.core.db.TenantBaseDO;import cn.iocoder.yudao.module.promotion.enums.bargain.BargainRecordStatusEnum;
 import com.baomidou.mybatisplus.annotation.KeySequence;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
@@ -22,7 +21,7 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class BargainRecordDO extends BaseDO {
+public class BargainRecordDO extends TenantBaseDO {
 
     /**
      * 编号

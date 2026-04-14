@@ -1,8 +1,7 @@
 package cn.iocoder.yudao.module.trade.dal.dataobject.order;
 
 import cn.iocoder.yudao.framework.common.enums.UserTypeEnum;
-import cn.iocoder.yudao.framework.mybatis.core.dataobject.BaseDO;
-import cn.iocoder.yudao.module.trade.enums.order.TradeOrderOperateTypeEnum;
+import cn.iocoder.yudao.framework.tenant.core.db.TenantBaseDO;import cn.iocoder.yudao.module.trade.enums.order.TradeOrderOperateTypeEnum;
 import com.baomidou.mybatisplus.annotation.KeySequence;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
@@ -21,7 +20,7 @@ import lombok.*;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class TradeOrderLogDO extends BaseDO {
+public class TradeOrderLogDO extends TenantBaseDO {
 
     /**
      * 用户类型 - 系统

@@ -1,7 +1,6 @@
 package cn.iocoder.yudao.module.member.dal.dataobject.point;
 
-import cn.iocoder.yudao.framework.mybatis.core.dataobject.BaseDO;
-import cn.iocoder.yudao.module.member.enums.point.MemberPointBizTypeEnum;
+import cn.iocoder.yudao.framework.tenant.core.db.TenantBaseDO;import cn.iocoder.yudao.module.member.enums.point.MemberPointBizTypeEnum;
 import com.baomidou.mybatisplus.annotation.KeySequence;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
@@ -20,7 +19,7 @@ import lombok.*;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class MemberPointRecordDO extends BaseDO {
+public class MemberPointRecordDO extends TenantBaseDO {
 
     /**
      * 自增主键

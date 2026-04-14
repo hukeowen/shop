@@ -1,8 +1,7 @@
 package cn.iocoder.yudao.module.promotion.dal.dataobject.point;
 
 import cn.iocoder.yudao.framework.common.enums.CommonStatusEnum;
-import cn.iocoder.yudao.framework.mybatis.core.dataobject.BaseDO;
-import com.baomidou.mybatisplus.annotation.KeySequence;
+import cn.iocoder.yudao.framework.tenant.core.db.TenantBaseDO;import com.baomidou.mybatisplus.annotation.KeySequence;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
@@ -19,7 +18,7 @@ import lombok.ToString;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
-public class PointActivityDO extends BaseDO {
+public class PointActivityDO extends TenantBaseDO {
 
     /**
      * 积分商城活动编号

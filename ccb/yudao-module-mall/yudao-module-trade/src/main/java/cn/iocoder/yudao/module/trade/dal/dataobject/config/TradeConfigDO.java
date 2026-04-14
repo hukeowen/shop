@@ -1,7 +1,6 @@
 package cn.iocoder.yudao.module.trade.dal.dataobject.config;
 
-import cn.iocoder.yudao.framework.mybatis.core.dataobject.BaseDO;
-import cn.iocoder.yudao.framework.mybatis.core.type.IntegerListTypeHandler;
+import cn.iocoder.yudao.framework.tenant.core.db.TenantBaseDO;import cn.iocoder.yudao.framework.mybatis.core.type.IntegerListTypeHandler;
 import cn.iocoder.yudao.module.trade.enums.brokerage.BrokerageBindModeEnum;
 import cn.iocoder.yudao.module.trade.enums.brokerage.BrokerageEnabledConditionEnum;
 import cn.iocoder.yudao.module.trade.enums.brokerage.BrokerageWithdrawTypeEnum;
@@ -27,7 +26,7 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class TradeConfigDO extends BaseDO {
+public class TradeConfigDO extends TenantBaseDO {
 
     /**
      * 自增主键

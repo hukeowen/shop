@@ -1,8 +1,7 @@
 package cn.iocoder.yudao.module.promotion.dal.dataobject.coupon;
 
 import cn.iocoder.yudao.framework.common.enums.CommonStatusEnum;
-import cn.iocoder.yudao.framework.mybatis.core.dataobject.BaseDO;
-import cn.iocoder.yudao.framework.mybatis.core.type.LongListTypeHandler;
+import cn.iocoder.yudao.framework.tenant.core.db.TenantBaseDO;import cn.iocoder.yudao.framework.mybatis.core.type.LongListTypeHandler;
 import cn.iocoder.yudao.module.promotion.enums.common.PromotionDiscountTypeEnum;
 import cn.iocoder.yudao.module.promotion.enums.common.PromotionProductScopeEnum;
 import cn.iocoder.yudao.module.promotion.enums.coupon.CouponTakeTypeEnum;
@@ -28,7 +27,7 @@ import java.util.List;
 @KeySequence("promotion_coupon_template_seq") // 用于 Oracle、PostgreSQL、Kingbase、DB2、H2 数据库的主键自增。如果是 MySQL 等数据库，可不写。
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class CouponTemplateDO extends BaseDO {
+public class CouponTemplateDO extends TenantBaseDO {
 
     /**
      * 领取数量 - 不限制

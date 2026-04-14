@@ -1,7 +1,6 @@
 package cn.iocoder.yudao.module.member.dal.dataobject.level;
 
-import cn.iocoder.yudao.framework.mybatis.core.dataobject.BaseDO;
-import cn.iocoder.yudao.module.member.dal.dataobject.user.MemberUserDO;
+import cn.iocoder.yudao.framework.tenant.core.db.TenantBaseDO;import cn.iocoder.yudao.module.member.dal.dataobject.user.MemberUserDO;
 import cn.iocoder.yudao.module.member.enums.MemberExperienceBizTypeEnum;
 import com.baomidou.mybatisplus.annotation.KeySequence;
 import com.baomidou.mybatisplus.annotation.TableId;
@@ -21,7 +20,7 @@ import lombok.*;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class MemberExperienceRecordDO extends BaseDO {
+public class MemberExperienceRecordDO extends TenantBaseDO {
 
     /**
      * 编号

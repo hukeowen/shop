@@ -1,7 +1,6 @@
 package cn.iocoder.yudao.module.product.dal.dataobject.favorite;
 
-import cn.iocoder.yudao.framework.mybatis.core.dataobject.BaseDO;
-import cn.iocoder.yudao.module.product.dal.dataobject.spu.ProductSpuDO;
+import cn.iocoder.yudao.framework.tenant.core.db.TenantBaseDO;import cn.iocoder.yudao.module.product.dal.dataobject.spu.ProductSpuDO;
 import com.baomidou.mybatisplus.annotation.KeySequence;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
@@ -20,7 +19,7 @@ import lombok.*;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ProductFavoriteDO extends BaseDO {
+public class ProductFavoriteDO extends TenantBaseDO {
 
     /**
      * 编号，主键自增

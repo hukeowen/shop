@@ -1,8 +1,7 @@
 package cn.iocoder.yudao.module.promotion.dal.dataobject.discount;
 
 import cn.iocoder.yudao.framework.common.enums.CommonStatusEnum;
-import cn.iocoder.yudao.framework.mybatis.core.dataobject.BaseDO;
-import com.baomidou.mybatisplus.annotation.KeySequence;
+import cn.iocoder.yudao.framework.tenant.core.db.TenantBaseDO;import com.baomidou.mybatisplus.annotation.KeySequence;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
@@ -22,7 +21,7 @@ import java.time.LocalDateTime;
 @KeySequence("promotion_discount_activity_seq") // 用于 Oracle、PostgreSQL、Kingbase、DB2、H2 数据库的主键自增。如果是 MySQL 等数据库，可不写。
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class DiscountActivityDO extends BaseDO {
+public class DiscountActivityDO extends TenantBaseDO {
 
     /**
      * 活动编号，主键自增

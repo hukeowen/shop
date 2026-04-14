@@ -1,7 +1,6 @@
 package cn.iocoder.yudao.module.product.dal.dataobject.comment;
 
-import cn.iocoder.yudao.framework.mybatis.core.dataobject.BaseDO;
-import cn.iocoder.yudao.module.product.dal.dataobject.sku.ProductSkuDO;
+import cn.iocoder.yudao.framework.tenant.core.db.TenantBaseDO;import cn.iocoder.yudao.module.product.dal.dataobject.sku.ProductSkuDO;
 import cn.iocoder.yudao.module.product.dal.dataobject.spu.ProductSpuDO;
 import com.baomidou.mybatisplus.annotation.KeySequence;
 import com.baomidou.mybatisplus.annotation.TableField;
@@ -26,7 +25,7 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ProductCommentDO extends BaseDO {
+public class ProductCommentDO extends TenantBaseDO {
 
     /**
      * 默认匿名昵称

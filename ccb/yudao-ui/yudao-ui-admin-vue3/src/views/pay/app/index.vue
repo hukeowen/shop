@@ -263,7 +263,8 @@ const wxChannels = [
   PayChannelEnum.WX_APP,
   PayChannelEnum.WX_NATIVE,
   PayChannelEnum.WX_WAP,
-  PayChannelEnum.WX_BAR
+  PayChannelEnum.WX_BAR,
+  PayChannelEnum.WX_SP_LITE
 ]
 
 /** 查询列表 */

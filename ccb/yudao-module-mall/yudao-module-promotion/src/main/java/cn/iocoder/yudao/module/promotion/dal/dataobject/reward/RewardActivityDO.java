@@ -1,8 +1,7 @@
 package cn.iocoder.yudao.module.promotion.dal.dataobject.reward;
 
 import cn.iocoder.yudao.framework.common.enums.CommonStatusEnum;
-import cn.iocoder.yudao.framework.mybatis.core.dataobject.BaseDO;
-import cn.iocoder.yudao.framework.mybatis.core.type.LongListTypeHandler;
+import cn.iocoder.yudao.framework.tenant.core.db.TenantBaseDO;import cn.iocoder.yudao.framework.mybatis.core.type.LongListTypeHandler;
 import cn.iocoder.yudao.module.promotion.enums.common.PromotionConditionTypeEnum;
 import cn.iocoder.yudao.module.promotion.enums.common.PromotionProductScopeEnum;
 import com.baomidou.mybatisplus.annotation.KeySequence;
@@ -27,7 +26,7 @@ import java.util.Map;
 @KeySequence("promotion_reward_activity_seq") // 用于 Oracle、PostgreSQL、Kingbase、DB2、H2 数据库的主键自增。如果是 MySQL 等数据库，可不写。
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class RewardActivityDO extends BaseDO {
+public class RewardActivityDO extends TenantBaseDO {
 
     /**
      * 活动编号，主键自增
