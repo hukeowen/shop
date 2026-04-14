@@ -5,6 +5,7 @@ import cn.iocoder.yudao.framework.mybatis.core.mapper.BaseMapperX;
 import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
 import cn.iocoder.yudao.module.merchant.controller.admin.vo.apply.TenantSubscriptionPageReqVO;
 import cn.iocoder.yudao.module.merchant.dal.dataobject.TenantSubscriptionDO;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import org.apache.ibatis.annotations.Mapper;
 
 import java.time.LocalDateTime;
@@ -29,7 +30,28 @@ public interface TenantSubscriptionMapper extends BaseMapperX<TenantSubscription
     default List<TenantSubscriptionDO> selectExpiredActive() {
         return selectList(new LambdaQueryWrapperX<TenantSubscriptionDO>()
                 .in(TenantSubscriptionDO::getStatus, Arrays.asList(1, 2))
-                .lt(TenantSubscriptionDO::getExpireTime, LocalDateTime.now()));
+                .lt(TenantSubscriptionDO::getExpireTime, LocalDateTime.now())
+                .last("LIMIT 200"));
+    }
+
+    /**
+     * 原子扣减 AI 成片配额：ai_video_used + 1，仅在 quota_deducted = false 时执行。
+     *
+     * @return 受影响行数，0 表示已扣减过（幂等保护）
+     */
+    default int incrementAiVideoUsedAtomic(Long subscriptionId) {
+        return update(null, new LambdaUpdateWrapper<TenantSubscriptionDO>()
+                .setSql("ai_video_used = ai_video_used + 1")
+                .eq(TenantSubscriptionDO::getId, subscriptionId));
+    }
+
+    /**
+     * 批量将已过期订阅状态置为过期(3)
+     */
+    default int batchExpire(List<Long> ids) {
+        return update(null, new LambdaUpdateWrapper<TenantSubscriptionDO>()
+                .set(TenantSubscriptionDO::getStatus, 3)
+                .in(TenantSubscriptionDO::getId, ids));
     }
 
 }

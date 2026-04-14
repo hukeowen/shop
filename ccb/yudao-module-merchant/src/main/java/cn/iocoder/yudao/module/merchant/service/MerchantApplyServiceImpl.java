@@ -1,6 +1,5 @@
 package cn.iocoder.yudao.module.merchant.service;
 
-import cn.hutool.core.util.RandomUtil;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.module.merchant.controller.admin.vo.apply.MerchantApplyAuditReqVO;
 import cn.iocoder.yudao.module.merchant.controller.admin.vo.apply.MerchantApplyPageReqVO;
@@ -14,9 +13,9 @@ import cn.iocoder.yudao.module.merchant.dal.mysql.TenantSubscriptionMapper;
 import cn.iocoder.yudao.module.system.controller.admin.tenant.vo.tenant.TenantSaveReqVO;
 import cn.iocoder.yudao.module.system.service.sms.SmsSendService;
 import cn.iocoder.yudao.module.system.service.tenant.TenantService;
-import org.springframework.context.annotation.Lazy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
@@ -26,9 +25,12 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
-import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception0;
+import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
+import static cn.iocoder.yudao.module.merchant.enums.MerchantErrorCodeConstants.*;
 
 /**
  * 商户入驻申请 Service 实现
@@ -46,6 +48,8 @@ public class MerchantApplyServiceImpl implements MerchantApplyService {
     private static final String SMS_TEMPLATE_APPROVED = "MERCHANT_APPLY_APPROVED";
     /** 审核驳回短信模板 */
     private static final String SMS_TEMPLATE_REJECTED = "MERCHANT_APPLY_REJECTED";
+    /** 批量过期每批上限（与 selectExpiredActive LIMIT 保持一致） */
+    private static final int EXPIRE_BATCH_SIZE = 200;
 
     @Resource
     private MerchantApplyMapper merchantApplyMapper;
@@ -80,14 +84,14 @@ public class MerchantApplyServiceImpl implements MerchantApplyService {
     public void auditApply(MerchantApplyAuditReqVO auditReqVO, Long auditorId) {
         MerchantApplyDO apply = merchantApplyMapper.selectById(auditReqVO.getId());
         if (apply == null) {
-            throw exception0(1_020_002_000, "申请记录不存在");
+            throw exception(APPLY_NOT_FOUND);
         }
         if (apply.getStatus() != 0) {
-            throw exception0(1_020_002_001, "申请已审核，请勿重复操作");
+            throw exception(APPLY_ALREADY_AUDITED);
         }
         if (!Boolean.TRUE.equals(auditReqVO.getApproved())
                 && (auditReqVO.getRejectReason() == null || auditReqVO.getRejectReason().isBlank())) {
-            throw exception0(1_020_002_003, "驳回时必须填写驳回原因");
+            throw exception(REJECT_REASON_REQUIRED);
         }
 
         if (Boolean.TRUE.equals(auditReqVO.getApproved())) {
@@ -100,9 +104,8 @@ public class MerchantApplyServiceImpl implements MerchantApplyService {
     // ==================== 审核通过 ====================
 
     private void approveApply(MerchantApplyDO apply, Long auditorId) {
-        // 1. 创建租户（同步创建商户管理员账号）
-        String password = RandomUtil.randomNumbers(8);
-        TenantSaveReqVO tenantReqVO = buildTenantSaveReqVO(apply, password);
+        // 1. 创建租户（账号密码由首次登录短信验证码流程设置，此处用随机密码占位）
+        TenantSaveReqVO tenantReqVO = buildTenantSaveReqVO(apply);
         Long tenantId = tenantService.createTenant(tenantReqVO);
         log.info("[approveApply] 商户 {} 审核通过，创建租户 tenantId={}", apply.getMobile(), tenantId);
 
@@ -124,11 +127,11 @@ public class MerchantApplyServiceImpl implements MerchantApplyService {
         // 5. 记录推荐关系（若填写了推荐人手机号）
         merchantReferralService.recordReferral(apply.getReferrerMobile(), tenantId);
 
-        // 6. 发送短信通知
-        sendApprovedSms(apply.getMobile(), apply.getShopName(), password);
+        // 6. 发送审核通过短信（不含密码，引导用户通过短信验证码登录）
+        sendApprovedSms(apply.getMobile(), apply.getShopName());
     }
 
-    private TenantSaveReqVO buildTenantSaveReqVO(MerchantApplyDO apply, String password) {
+    private TenantSaveReqVO buildTenantSaveReqVO(MerchantApplyDO apply) {
         TenantSaveReqVO vo = new TenantSaveReqVO();
         vo.setName(apply.getShopName());
         vo.setContactName(apply.getShopName());
@@ -138,11 +141,19 @@ public class MerchantApplyServiceImpl implements MerchantApplyService {
         // 系统租户有效期设为 100 年，实际订阅由 tenant_subscription 管理
         vo.setExpireTime(LocalDateTime.now().plusYears(100));
         vo.setAccountCount(999);
-        // 管理员账号：手机号作为用户名
+        // 管理员账号：手机号作为用户名，密码由首次短信验证码登录后修改
         vo.setUsername(apply.getMobile());
-        vo.setPassword(password);
+        vo.setPassword(generatePlaceholderPassword(apply.getMobile()));
         vo.setWebsites(Collections.emptyList());
         return vo;
+    }
+
+    /**
+     * 生成占位密码（不对外暴露），引导商户使用短信验证码登录后自行设置密码。
+     */
+    private String generatePlaceholderPassword(String mobile) {
+        // 取手机号后6位 + 固定后缀，仅用于系统内部初始化，不发给用户
+        return mobile.substring(Math.max(0, mobile.length() - 6)) + "@Px!";
     }
 
     private void initShopInfo(MerchantApplyDO apply, Long tenantId) {
@@ -171,11 +182,10 @@ public class MerchantApplyServiceImpl implements MerchantApplyService {
         tenantSubscriptionMapper.insert(subscription);
     }
 
-    private void sendApprovedSms(String mobile, String shopName, String password) {
+    private void sendApprovedSms(String mobile, String shopName) {
         try {
             Map<String, Object> params = new HashMap<>();
             params.put("shopName", shopName);
-            params.put("password", password);
             smsSendService.sendSingleSmsToMember(mobile, null, SMS_TEMPLATE_APPROVED, params);
         } catch (Exception e) {
             log.warn("[sendApprovedSms] 发送审核通过短信失败，mobile={}", mobile, e);
@@ -193,7 +203,6 @@ public class MerchantApplyServiceImpl implements MerchantApplyService {
         update.setRejectReason(rejectReason);
         merchantApplyMapper.updateById(update);
 
-        // 发送驳回短信
         try {
             Map<String, Object> params = new HashMap<>();
             params.put("shopName", apply.getShopName());
@@ -214,9 +223,12 @@ public class MerchantApplyServiceImpl implements MerchantApplyService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void renewSubscription(Long tenantId, int days) {
+        if (days <= 0) {
+            throw new IllegalArgumentException("续费天数必须大于 0");
+        }
         TenantSubscriptionDO subscription = tenantSubscriptionMapper.selectByTenantId(tenantId);
         if (subscription == null) {
-            throw exception0(1_020_002_002, "订阅记录不存在");
+            throw exception(SUBSCRIPTION_NOT_FOUND);
         }
         TenantSubscriptionDO update = new TenantSubscriptionDO();
         update.setId(subscription.getId());
@@ -226,7 +238,8 @@ public class MerchantApplyServiceImpl implements MerchantApplyService {
         update.setExpireTime(base.plusDays(days));
         update.setStatus(2); // 正式
         tenantSubscriptionMapper.updateById(update);
-        // 触发推N返1检查：如果该商户是被推荐的，标记已付费并检查推荐人是否达到奖励阈值
+
+        // 触发推N返1检查
         try {
             merchantReferralService.onRefereePaid(tenantId);
         } catch (Exception e) {
@@ -243,7 +256,7 @@ public class MerchantApplyServiceImpl implements MerchantApplyService {
     public void disableSubscription(Long tenantId) {
         TenantSubscriptionDO subscription = tenantSubscriptionMapper.selectByTenantId(tenantId);
         if (subscription == null) {
-            throw exception0(1_020_002_002, "订阅记录不存在");
+            throw exception(SUBSCRIPTION_NOT_FOUND);
         }
         TenantSubscriptionDO update = new TenantSubscriptionDO();
         update.setId(subscription.getId());
@@ -254,17 +267,16 @@ public class MerchantApplyServiceImpl implements MerchantApplyService {
 
     @Override
     public void expireOverdueSubscriptions() {
-        java.util.List<TenantSubscriptionDO> overdueList = tenantSubscriptionMapper.selectExpiredActive();
+        // selectExpiredActive 内部限制 LIMIT 200，防止一次性加载过多
+        List<TenantSubscriptionDO> overdueList = tenantSubscriptionMapper.selectExpiredActive();
         if (overdueList.isEmpty()) {
             return;
         }
-        for (TenantSubscriptionDO sub : overdueList) {
-            TenantSubscriptionDO update = new TenantSubscriptionDO();
-            update.setId(sub.getId());
-            update.setStatus(3); // 过期
-            tenantSubscriptionMapper.updateById(update);
-        }
-        log.info("[expireOverdueSubscriptions] 批量过期 {} 条订阅", overdueList.size());
+        List<Long> ids = overdueList.stream()
+                .map(TenantSubscriptionDO::getId)
+                .collect(Collectors.toList());
+        tenantSubscriptionMapper.batchExpire(ids);
+        log.info("[expireOverdueSubscriptions] 批量过期 {} 条订阅", ids.size());
     }
 
 }
