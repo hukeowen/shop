@@ -90,7 +90,7 @@ public class MerchantApplyServiceImpl implements MerchantApplyService {
             throw exception(APPLY_ALREADY_AUDITED);
         }
         if (!Boolean.TRUE.equals(auditReqVO.getApproved())
-                && (auditReqVO.getRejectReason() == null || auditReqVO.getRejectReason().isBlank())) {
+                && (auditReqVO.getRejectReason() == null || auditReqVO.getRejectReason().trim().isEmpty())) {
             throw exception(REJECT_REASON_REQUIRED);
         }
 
