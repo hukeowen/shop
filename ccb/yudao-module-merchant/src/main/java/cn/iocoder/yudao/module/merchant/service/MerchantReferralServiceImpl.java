@@ -2,6 +2,7 @@ package cn.iocoder.yudao.module.merchant.service;
 
 import cn.iocoder.yudao.module.merchant.controller.admin.vo.referral.MerchantReferralConfigRespVO;
 import cn.iocoder.yudao.module.merchant.controller.admin.vo.referral.MerchantReferralRespVO;
+import cn.iocoder.yudao.module.merchant.dal.dataobject.MerchantApplyDO;
 import cn.iocoder.yudao.module.merchant.dal.dataobject.MerchantReferralDO;
 import cn.iocoder.yudao.module.merchant.dal.dataobject.ShopInfoDO;
 import cn.iocoder.yudao.module.merchant.dal.dataobject.TenantSubscriptionDO;

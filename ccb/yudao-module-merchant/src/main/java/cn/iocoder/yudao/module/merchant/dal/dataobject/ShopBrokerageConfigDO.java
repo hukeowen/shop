@@ -1,6 +1,7 @@
 package cn.iocoder.yudao.module.merchant.dal.dataobject;
 
 import cn.iocoder.yudao.framework.tenant.core.db.TenantBaseDO;
+import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -19,6 +20,9 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ShopBrokerageConfigDO extends TenantBaseDO {
+
+    @TableId
+    private Long id;
 
     /** 是否开启返佣 */
     private Boolean brokerageEnabled;
