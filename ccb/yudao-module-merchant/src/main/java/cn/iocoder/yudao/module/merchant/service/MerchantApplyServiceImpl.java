@@ -22,6 +22,7 @@ import org.springframework.validation.annotation.Validated;
 
 import javax.annotation.Resource;
 import java.math.BigDecimal;
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.HashMap;
@@ -50,6 +51,14 @@ public class MerchantApplyServiceImpl implements MerchantApplyService {
     private static final String SMS_TEMPLATE_REJECTED = "MERCHANT_APPLY_REJECTED";
     /** 批量过期每批上限（与 selectExpiredActive LIMIT 保持一致） */
     private static final int EXPIRE_BATCH_SIZE = 200;
+    /** 占位密码长度（SecureRandom 生成，永不外发） */
+    private static final int PLACEHOLDER_PASSWORD_LENGTH = 32;
+    /** 占位密码字符集（base64 url-safe，不含易混淆字符；包含数字+大小写+@!#%& 以满足后台密码复杂度校验） */
+    private static final char[] PLACEHOLDER_CHARS =
+            "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789@!#%&".toCharArray();
+
+    /** 线程安全的 SecureRandom，用于生成占位密码 */
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     @Resource
     private MerchantApplyMapper merchantApplyMapper;
@@ -143,17 +152,30 @@ public class MerchantApplyServiceImpl implements MerchantApplyService {
         vo.setAccountCount(999);
         // 管理员账号：手机号作为用户名，密码由首次短信验证码登录后修改
         vo.setUsername(apply.getMobile());
-        vo.setPassword(generatePlaceholderPassword(apply.getMobile()));
+        vo.setPassword(generatePlaceholderPassword());
         vo.setWebsites(Collections.emptyList());
         return vo;
     }
 
     /**
-     * 生成占位密码（不对外暴露），引导商户使用短信验证码登录后自行设置密码。
+     * 生成占位密码（SecureRandom 高熵，永不外发）。
+     *
+     * <p>商户应使用短信验证码首次登录，登录后强制修改密码；该占位密码仅用于通过
+     * system-user 创建时的密码复杂度校验。</p>
+     *
+     * <p>实现要点：
+     * <ul>
+     *     <li>使用 {@link SecureRandom}（非 {@code Random}、非 {@code ThreadLocalRandom}）</li>
+     *     <li>{@value #PLACEHOLDER_PASSWORD_LENGTH} 位长，字符集包含大小写字母、数字、符号，覆盖常见密码策略</li>
+     *     <li>与商户个人信息（手机号/姓名）无关，泄露一条无法推断其他账号</li>
+     * </ul>
      */
-    private String generatePlaceholderPassword(String mobile) {
-        // 取手机号后6位 + 固定后缀，仅用于系统内部初始化，不发给用户
-        return mobile.substring(Math.max(0, mobile.length() - 6)) + "@Px!";
+    private String generatePlaceholderPassword() {
+        StringBuilder sb = new StringBuilder(PLACEHOLDER_PASSWORD_LENGTH);
+        for (int i = 0; i < PLACEHOLDER_PASSWORD_LENGTH; i++) {
+            sb.append(PLACEHOLDER_CHARS[SECURE_RANDOM.nextInt(PLACEHOLDER_CHARS.length)]);
+        }
+        return sb.toString();
     }
 
     private void initShopInfo(MerchantApplyDO apply, Long tenantId) {
@@ -224,7 +246,7 @@ public class MerchantApplyServiceImpl implements MerchantApplyService {
     @Transactional(rollbackFor = Exception.class)
     public void renewSubscription(Long tenantId, int days) {
         if (days <= 0) {
-            throw new IllegalArgumentException("续费天数必须大于 0");
+            throw exception(RENEW_DAYS_INVALID);
         }
         TenantSubscriptionDO subscription = tenantSubscriptionMapper.selectByTenantId(tenantId);
         if (subscription == null) {
@@ -267,16 +289,35 @@ public class MerchantApplyServiceImpl implements MerchantApplyService {
 
     @Override
     public void expireOverdueSubscriptions() {
-        // selectExpiredActive 内部限制 LIMIT 200，防止一次性加载过多
-        List<TenantSubscriptionDO> overdueList = tenantSubscriptionMapper.selectExpiredActive();
-        if (overdueList.isEmpty()) {
-            return;
+        // 每次扫描最多 EXPIRE_BATCH_SIZE 条（由 selectExpiredActive 的 LIMIT 控制），
+        // 若积压超过一批则循环处理，避免剩余行滞留到下个调度周期才过期。
+        // 额外加 maxIterations 上限防御：最极端情况下单次调度最多处理 EXPIRE_BATCH_SIZE * 50 = 10,000 条。
+        int totalProcessed = 0;
+        int iterations = 0;
+        int maxIterations = 50;
+        while (iterations++ < maxIterations) {
+            List<TenantSubscriptionDO> overdueList = tenantSubscriptionMapper.selectExpiredActive();
+            if (overdueList.isEmpty()) {
+                break;
+            }
+            List<Long> ids = overdueList.stream()
+                    .map(TenantSubscriptionDO::getId)
+                    .collect(Collectors.toList());
+            tenantSubscriptionMapper.batchExpire(ids);
+            totalProcessed += ids.size();
+            // 未达到批次上限说明剩余无过期记录，无需继续
+            if (ids.size() < EXPIRE_BATCH_SIZE) {
+                break;
+            }
         }
-        List<Long> ids = overdueList.stream()
-                .map(TenantSubscriptionDO::getId)
-                .collect(Collectors.toList());
-        tenantSubscriptionMapper.batchExpire(ids);
-        log.info("[expireOverdueSubscriptions] 批量过期 {} 条订阅", ids.size());
+        if (totalProcessed > 0) {
+            log.info("[expireOverdueSubscriptions] 本轮共批量过期 {} 条订阅（迭代 {} 次）",
+                    totalProcessed, iterations);
+        }
+        if (iterations >= maxIterations) {
+            log.warn("[expireOverdueSubscriptions] 达到最大迭代次数 {}，可能存在大量积压，请检查调度频率",
+                    maxIterations);
+        }
     }
 
 }

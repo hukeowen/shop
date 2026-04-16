@@ -15,6 +15,11 @@ import java.util.List;
 @Mapper
 public interface TenantSubscriptionMapper extends BaseMapperX<TenantSubscriptionDO> {
 
+    /**
+     * 过期扫描批大小。常量化避免后续误参数化 {@code .last(...)} 导致 SQL 注入。
+     */
+    String EXPIRE_SCAN_LIMIT = "LIMIT 200";
+
     default TenantSubscriptionDO selectByTenantId(Long tenantId) {
         return selectOne(TenantSubscriptionDO::getTenantId, tenantId);
     }
@@ -31,18 +36,26 @@ public interface TenantSubscriptionMapper extends BaseMapperX<TenantSubscription
         return selectList(new LambdaQueryWrapperX<TenantSubscriptionDO>()
                 .in(TenantSubscriptionDO::getStatus, Arrays.asList(1, 2))
                 .lt(TenantSubscriptionDO::getExpireTime, LocalDateTime.now())
-                .last("LIMIT 200"));
+                .last(EXPIRE_SCAN_LIMIT));
     }
 
     /**
-     * 原子扣减 AI 成片配额：ai_video_used + 1，仅在 quota_deducted = false 时执行。
+     * 原子扣减 AI 成片配额：
+     * {@code UPDATE ... SET ai_video_used = ai_video_used + 1
+     *        WHERE id = ? AND tenant_id = ? AND ai_video_used < ai_video_quota}
      *
-     * @return 受影响行数，0 表示已扣减过（幂等保护）
+     * <p>使用 {@code tenant_id} 谓词防止跨租户写入（TenantSubscriptionDO 为平台级表，
+     * 未启用 MP 自动租户过滤）；使用 {@code ai_video_used < ai_video_quota} 保证超卖
+     * 在并发场景下依然失败（返回 0）。</p>
+     *
+     * @return 受影响行数：1 表示扣减成功；0 表示配额已耗尽或 tenant 不匹配
      */
-    default int incrementAiVideoUsedAtomic(Long subscriptionId) {
+    default int incrementAiVideoUsedAtomic(Long subscriptionId, Long tenantId) {
         return update(null, new LambdaUpdateWrapper<TenantSubscriptionDO>()
                 .setSql("ai_video_used = ai_video_used + 1")
-                .eq(TenantSubscriptionDO::getId, subscriptionId));
+                .eq(TenantSubscriptionDO::getId, subscriptionId)
+                .eq(TenantSubscriptionDO::getTenantId, tenantId)
+                .apply("ai_video_used < ai_video_quota"));
     }
 
     /**

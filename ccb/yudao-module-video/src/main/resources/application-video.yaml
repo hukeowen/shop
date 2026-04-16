@@ -17,6 +17,10 @@ video:
 
 # 商户配置
 merchant:
+  # 内部服务回调鉴权 Token（merchant /complete-callback 等内部接口使用）
+  # 要求：最少 16 位，线上必须通过环境变量注入，避免明文落库/日志。
+  # 启动期校验：若未配置或少于 16 位，AppMerchantAiVideoController.initInternalToken() 会抛异常阻止启动。
+  internal-token: ${MERCHANT_INTERNAL_TOKEN:please-override-in-production-at-least-16-chars}
   qrcode:
     page: pages/shop/index
     upload-path: /tmp/qrcode/

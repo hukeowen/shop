@@ -2,6 +2,7 @@ package cn.iocoder.yudao.module.merchant.dal.dataobject;
 
 import cn.iocoder.yudao.framework.tenant.core.db.TenantBaseDO;
 import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
 import lombok.AllArgsConstructor;
@@ -21,7 +22,7 @@ import java.util.List;
 @AllArgsConstructor
 public class AiVideoTaskDO extends TenantBaseDO {
 
-    /** 主键 */
+    @TableId
     private Long id;
 
     /** 操作的商户管理员用户ID */

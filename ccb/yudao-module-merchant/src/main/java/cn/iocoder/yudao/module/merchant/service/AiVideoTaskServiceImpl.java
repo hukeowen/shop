@@ -9,6 +9,7 @@ import cn.iocoder.yudao.module.merchant.dal.dataobject.MerchantDO;
 import cn.iocoder.yudao.module.merchant.dal.dataobject.TenantSubscriptionDO;
 import cn.iocoder.yudao.module.merchant.dal.mysql.AiVideoTaskMapper;
 import cn.iocoder.yudao.module.merchant.dal.mysql.TenantSubscriptionMapper;
+import cn.iocoder.yudao.module.merchant.event.AiVideoCopywritingConfirmedEvent;
 import cn.iocoder.yudao.module.merchant.event.AiVideoTaskCreatedEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -24,8 +25,12 @@ import static cn.iocoder.yudao.module.merchant.enums.MerchantErrorCodeConstants.
 /**
  * AI 成片任务 Service 实现
  *
- * <p>通过 {@link AiVideoTaskCreatedEvent} 事件与 video 模块解耦，
- * 避免 merchant ↔ video 循环依赖。</p>
+ * <p>通过 {@link AiVideoTaskCreatedEvent} / {@link AiVideoCopywritingConfirmedEvent}
+ * 事件与 video 模块解耦，避免 merchant ↔ video 循环依赖。</p>
+ *
+ * <p><b>事务与事件时序</b>：事件在事务内发布，但监听器使用
+ * {@code @TransactionalEventListener(AFTER_COMMIT)}，保证仅在本方事务成功提交后才触发下游，
+ * 回滚场景不会产生幽灵任务。</p>
  */
 @Service
 @Validated
@@ -55,7 +60,7 @@ public class AiVideoTaskServiceImpl implements AiVideoTaskService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Long createTask(AppAiVideoCreateReqVO reqVO, Long tenantId, Long userId) {
-        // 检查配额
+        // 检查配额（快速失败；真正的原子扣减在 onTaskComplete 执行，由 SQL 谓词保证不超卖）
         TenantSubscriptionDO subscription = tenantSubscriptionMapper.selectByTenantId(tenantId);
         if (subscription == null || subscription.getAiVideoQuota() <= subscription.getAiVideoUsed()) {
             throw exception(AI_VIDEO_QUOTA_EXHAUSTED);
@@ -78,7 +83,8 @@ public class AiVideoTaskServiceImpl implements AiVideoTaskService {
         aiVideoTaskMapper.insert(task);
         log.info("[createTask] 创建AI成片任务 id={}, tenantId={}", task.getId(), tenantId);
 
-        // 发布事件，由 video 模块监听并异步触发文案生成（解耦循环依赖）
+        // 发布事件，由 video 模块通过 @TransactionalEventListener(AFTER_COMMIT) 监听
+        // Spring 保证在本方事务提交之后才触发监听器，回滚时不触发
         eventPublisher.publishEvent(new AiVideoTaskCreatedEvent(
                 this, task.getId(), reqVO.getImageUrls(), reqVO.getUserDescription(),
                 merchant.getId(), userId));
@@ -99,6 +105,7 @@ public class AiVideoTaskServiceImpl implements AiVideoTaskService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void confirmCopywriting(AppAiVideoConfirmReqVO reqVO, Long userId) {
         AiVideoTaskDO task = aiVideoTaskMapper.selectById(reqVO.getTaskId());
         if (task == null) {
@@ -107,17 +114,26 @@ public class AiVideoTaskServiceImpl implements AiVideoTaskService {
         if (!userId.equals(task.getUserId())) {
             throw exception(AI_VIDEO_NO_PERMISSION);
         }
-        if (task.getStatus() != STATUS_WAIT_CONFIRM) {
+
+        // 先写入确认数据（文案/BGM），再通过乐观并发推进状态
+        AiVideoTaskDO payload = new AiVideoTaskDO();
+        payload.setId(task.getId());
+        payload.setFinalCopywriting(reqVO.getFinalCopywriting());
+        payload.setBgmId(reqVO.getBgmId());
+        aiVideoTaskMapper.updateById(payload);
+
+        // 乐观并发：仅在 status=WAIT_CONFIRM 时推进到 GENERATING，防止并发双击造成重复触发
+        int updated = aiVideoTaskMapper.updateStatusIfMatch(
+                task.getId(), userId, STATUS_WAIT_CONFIRM, STATUS_GENERATING);
+        if (updated == 0) {
             throw exception(AI_VIDEO_STATUS_INVALID);
         }
 
-        AiVideoTaskDO update = new AiVideoTaskDO();
-        update.setId(task.getId());
-        update.setFinalCopywriting(reqVO.getFinalCopywriting());
-        update.setBgmId(reqVO.getBgmId());
-        update.setStatus(STATUS_GENERATING);
-        aiVideoTaskMapper.updateById(update);
-        log.info("[confirmCopywriting] 触发视频合成 taskId={}", task.getId());
+        // 发布确认事件，video 模块监听后启动视频合成（事务提交后才触发）
+        eventPublisher.publishEvent(new AiVideoCopywritingConfirmedEvent(
+                this, task.getId(), reqVO.getFinalCopywriting(), reqVO.getBgmId(), userId));
+
+        log.info("[confirmCopywriting] 文案已确认，待 video 模块合成 taskId={}", task.getId());
     }
 
     @Override
@@ -125,8 +141,9 @@ public class AiVideoTaskServiceImpl implements AiVideoTaskService {
     public void onTaskComplete(Long taskId, Boolean success, String videoUrl, String coverUrl, String failReason) {
         AiVideoTaskDO task = aiVideoTaskMapper.selectById(taskId);
         if (task == null) {
+            // 抛异常而非静默返回，让上游 video 模块能够记录/重试/告警
             log.warn("[onTaskComplete] 任务不存在 taskId={}", taskId);
-            return;
+            throw exception(AI_VIDEO_TASK_NOT_FOUND);
         }
 
         AiVideoTaskDO update = new AiVideoTaskDO();
@@ -136,26 +153,39 @@ public class AiVideoTaskServiceImpl implements AiVideoTaskService {
             update.setStatus(STATUS_COMPLETED);
             update.setVideoUrl(videoUrl);
             update.setCoverUrl(coverUrl);
+            aiVideoTaskMapper.updateById(update);
 
-            // 原子扣减配额，幂等保护
-            if (!Boolean.TRUE.equals(task.getQuotaDeducted())) {
-                TenantSubscriptionDO subscription = tenantSubscriptionMapper.selectByTenantId(task.getTenantId());
-                if (subscription != null) {
-                    int affected = tenantSubscriptionMapper.incrementAiVideoUsedAtomic(subscription.getId());
-                    if (affected > 0) {
-                        log.info("[onTaskComplete] 扣减配额成功 taskId={}, tenantId={}", taskId, task.getTenantId());
-                    } else {
-                        log.warn("[onTaskComplete] 配额扣减冲突，忽略 taskId={}", taskId);
-                    }
-                }
-                update.setQuotaDeducted(true);
+            // 幂等原子扣减配额：
+            //  1) 先 CAS 置 ai_video_task.quota_deducted=true（仅 false→true），只有首次成功才会继续
+            //  2) 再 UPDATE tenant_subscription 带 tenant_id 和 used<quota 谓词，保证跨租户隔离且不超卖
+            int cas = aiVideoTaskMapper.markQuotaDeductedAtomic(taskId);
+            if (cas != 1) {
+                log.info("[onTaskComplete] 配额已扣减过（幂等），taskId={}", taskId);
+                return;
+            }
+            TenantSubscriptionDO subscription = tenantSubscriptionMapper.selectByTenantId(task.getTenantId());
+            if (subscription == null) {
+                // 极端情况下订阅已被删除，仅记录日志，不回滚（任务记录已标记完成）
+                log.warn("[onTaskComplete] 订阅记录不存在，跳过配额扣减 taskId={}, tenantId={}",
+                        taskId, task.getTenantId());
+                return;
+            }
+            int affected = tenantSubscriptionMapper.incrementAiVideoUsedAtomic(
+                    subscription.getId(), task.getTenantId());
+            if (affected == 1) {
+                log.info("[onTaskComplete] 扣减配额成功 taskId={}, tenantId={}", taskId, task.getTenantId());
+            } else {
+                // 配额已耗尽或 tenant 不匹配 —— 由于 createTask 已校验配额，这里通常意味着超卖竞态，
+                // 人工核对后可通过运维工具修正（不回滚任务完成状态）
+                log.warn("[onTaskComplete] 扣减配额失败（配额耗尽或 tenant 不匹配），taskId={}, tenantId={}",
+                        taskId, task.getTenantId());
             }
         } else {
             update.setStatus(STATUS_FAILED);
             update.setFailReason(failReason);
+            aiVideoTaskMapper.updateById(update);
         }
 
-        aiVideoTaskMapper.updateById(update);
         log.info("[onTaskComplete] 任务回调处理完成 taskId={}, success={}", taskId, success);
     }
 
