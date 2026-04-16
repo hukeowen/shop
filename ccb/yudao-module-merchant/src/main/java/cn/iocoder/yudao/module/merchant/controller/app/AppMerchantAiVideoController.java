@@ -4,6 +4,7 @@ import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.common.pojo.PageParam;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.security.core.util.SecurityFrameworkUtils;
+import cn.iocoder.yudao.framework.tenant.core.aop.TenantIgnore;
 import cn.iocoder.yudao.framework.tenant.core.context.TenantContextHolder;
 import cn.iocoder.yudao.module.merchant.controller.app.vo.AppAiVideoConfirmReqVO;
 import cn.iocoder.yudao.module.merchant.controller.app.vo.AppAiVideoCreateReqVO;
@@ -18,9 +19,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import javax.annotation.security.PermitAll;
 import javax.validation.Valid;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
 import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
@@ -43,8 +47,29 @@ public class AppMerchantAiVideoController {
     @Value("${merchant.internal-token:}")
     private String internalToken;
 
+    /** 已预计算的 token 字节数组，避免每次请求重新编码 */
+    private byte[] internalTokenBytes;
+
     @Resource
     private AiVideoTaskService aiVideoTaskService;
+
+    /**
+     * 启动时校验 internal-token 是否已配置，未配置则 fail-fast 以免部署到生产后回调静默失败。
+     */
+    @PostConstruct
+    public void initInternalToken() {
+        if (internalToken == null || internalToken.trim().isEmpty()) {
+            throw new IllegalStateException(
+                    "merchant.internal-token is not configured. "
+                    + "Set `merchant.internal-token` in application*.yaml (see application-video.yaml sample) "
+                    + "before starting the service; /merchant/mini/ai-video/complete-callback depends on it.");
+        }
+        if (internalToken.length() < 16) {
+            throw new IllegalStateException(
+                    "merchant.internal-token is too short (min 16 chars required for HMAC-grade secrecy).");
+        }
+        this.internalTokenBytes = internalToken.getBytes(StandardCharsets.UTF_8);
+    }
 
     // ==================== #27 上传图片+输入描述+确认文案 ====================
 
@@ -76,11 +101,15 @@ public class AppMerchantAiVideoController {
 
     /**
      * 仅供内部服务调用，必须携带 X-Internal-Token Header 进行鉴权。
-     * 配置项：merchant.internal-token（不配置则拒绝所有请求）
+     * 配置项：merchant.internal-token（启动期强制非空，见 {@link #initInternalToken()}）
+     *
+     * <p>使用 @TenantIgnore 跳过租户过滤：tenantId 从 DB 中的任务记录解析，
+     * 不依赖请求头，避免攻击者通过伪造 tenant-id 影响行为。</p>
      */
     @PostMapping("/complete-callback")
     @Operation(summary = "视频生成完成回调（内部调用，需携带 X-Internal-Token）")
     @PermitAll
+    @TenantIgnore
     public CommonResult<Boolean> onTaskComplete(
             @RequestHeader("X-Internal-Token") String token,
             @RequestParam("taskId") Long taskId,
@@ -119,8 +148,17 @@ public class AppMerchantAiVideoController {
 
     // ==================== 私有方法 ====================
 
+    /**
+     * 使用 {@link MessageDigest#isEqual(byte[], byte[])} 进行常量时间比较，
+     * 避免 String.equals 的短路比较导致的时序旁路攻击。
+     */
     private void validateInternalToken(String token) {
-        if (internalToken == null || internalToken.isEmpty() || !internalToken.equals(token)) {
+        if (token == null) {
+            log.warn("[validateInternalToken] 缺少 X-Internal-Token");
+            throw exception(INTERNAL_TOKEN_INVALID);
+        }
+        byte[] candidate = token.getBytes(StandardCharsets.UTF_8);
+        if (!MessageDigest.isEqual(internalTokenBytes, candidate)) {
             log.warn("[validateInternalToken] 内部接口鉴权失败");
             throw exception(INTERNAL_TOKEN_INVALID);
         }

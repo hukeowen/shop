@@ -135,10 +135,8 @@ public class MerchantReferralServiceImpl implements MerchantReferralService {
             return;
         }
 
-        // 检查是否已经触发过返利（幂等）
-        boolean alreadyRewarded = merchantReferralMapper.selectListByReferrerTenantId(referrerTenantId)
-                .stream().anyMatch(r -> Boolean.TRUE.equals(r.getRewarded()));
-        if (alreadyRewarded) {
+        // 检查是否已经触发过返利（幂等）—— 用 COUNT+LIMIT 形态，避免加载整个列表到内存
+        if (merchantReferralMapper.existsRewardedByReferrerTenantId(referrerTenantId)) {
             log.info("[onRefereePaid] 推荐人 tenantId={} 已触发过返利，跳过", referrerTenantId);
             return;
         }
@@ -146,10 +144,10 @@ public class MerchantReferralServiceImpl implements MerchantReferralService {
         // 触发返利：续费 rewardDays 天
         grantReward(referrerTenantId);
 
-        // 将该推荐人所有记录标记为已奖励
-        markAllRewarded(referrerTenantId);
-        log.info("[onRefereePaid] 推荐人 tenantId={} 达到 {} 个有效推荐，奖励 {} 天订阅",
-                referrerTenantId, pushN, rewardDays);
+        // 原子批量标记已奖励：单条 UPDATE 替代 N 次 updateById，消除读-改竞态
+        int marked = merchantReferralMapper.markAllRewardedByReferrerTenantId(referrerTenantId);
+        log.info("[onRefereePaid] 推荐人 tenantId={} 达到 {} 个有效推荐，奖励 {} 天订阅（标记 {} 条）",
+                referrerTenantId, pushN, rewardDays, marked);
     }
 
     // ==================== 私有方法 ====================
@@ -172,19 +170,6 @@ public class MerchantReferralServiceImpl implements MerchantReferralService {
         update.setExpireTime(base.plusDays(rewardDays));
         update.setStatus(2); // 正式
         tenantSubscriptionMapper.updateById(update);
-    }
-
-    private void markAllRewarded(Long referrerTenantId) {
-        List<MerchantReferralDO> records = merchantReferralMapper.selectListByReferrerTenantId(referrerTenantId);
-        for (MerchantReferralDO r : records) {
-            if (!Boolean.TRUE.equals(r.getRewarded())) {
-                MerchantReferralDO upd = new MerchantReferralDO();
-                upd.setId(r.getId());
-                upd.setRewarded(true);
-                upd.setRewardTime(LocalDateTime.now());
-                merchantReferralMapper.updateById(upd);
-            }
-        }
     }
 
     private MerchantReferralRespVO convert(MerchantReferralDO referral) {

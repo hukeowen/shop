@@ -114,7 +114,10 @@ public class MerchantDashboardServiceImpl implements MerchantDashboardService {
     }
 
     private Long countTotalMembers() {
-        return memberUserMapper.selectCount(new LambdaQueryWrapper<>());
+        // 显式指定泛型，便于 MP 解析目标表；MemberUserDO 继承自 TenantBaseDO，
+        // 会自动附加 tenant_id 过滤，返回当前租户下的会员数
+        return memberUserMapper.selectCount(
+                new LambdaQueryWrapper<cn.iocoder.yudao.module.member.dal.dataobject.user.MemberUserDO>());
     }
 
 }

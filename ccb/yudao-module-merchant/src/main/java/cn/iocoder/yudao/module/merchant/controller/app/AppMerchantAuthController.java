@@ -24,8 +24,10 @@ import javax.annotation.security.PermitAll;
 import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
 
-import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception0;
+import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
 import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
+import static cn.iocoder.yudao.module.merchant.enums.MerchantErrorCodeConstants.AUTH_TENANT_ID_REQUIRED;
+import static cn.iocoder.yudao.module.merchant.enums.MerchantErrorCodeConstants.AUTH_TENANT_NOT_FOUND;
 
 /**
  * 商户小程序认证 Controller
@@ -57,7 +59,7 @@ public class AppMerchantAuthController {
             @RequestParam("mobile") @NotEmpty String mobile) {
         MerchantApplyDO apply = merchantApplyMapper.selectByMobile(mobile);
         if (apply == null || apply.getTenantId() == null) {
-            throw exception0(1_020_004_000, "手机号未关联任何商户，请先完成入驻申请");
+            throw exception(AUTH_TENANT_NOT_FOUND);
         }
         return success(apply.getTenantId());
     }
@@ -128,7 +130,7 @@ public class AppMerchantAuthController {
     private Long requireTenantId() {
         Long tenantId = TenantContextHolder.getTenantId();
         if (tenantId == null) {
-            throw exception0(1_020_004_001, "请先调用 /resolve-tenant 获取 tenantId 并在 Header 中携带 tenant-id");
+            throw exception(AUTH_TENANT_ID_REQUIRED);
         }
         return tenantId;
     }
