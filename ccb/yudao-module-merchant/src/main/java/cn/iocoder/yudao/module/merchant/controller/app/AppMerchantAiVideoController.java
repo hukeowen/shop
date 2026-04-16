@@ -8,11 +8,8 @@ import cn.iocoder.yudao.framework.tenant.core.context.TenantContextHolder;
 import cn.iocoder.yudao.module.merchant.controller.app.vo.AppAiVideoConfirmReqVO;
 import cn.iocoder.yudao.module.merchant.controller.app.vo.AppAiVideoCreateReqVO;
 import cn.iocoder.yudao.module.merchant.dal.dataobject.AiVideoTaskDO;
-import cn.iocoder.yudao.module.merchant.dal.dataobject.MerchantDO;
 import cn.iocoder.yudao.module.merchant.dal.dataobject.TenantSubscriptionDO;
 import cn.iocoder.yudao.module.merchant.service.AiVideoTaskService;
-import cn.iocoder.yudao.module.merchant.service.MerchantService;
-import cn.iocoder.yudao.module.video.service.DouyinService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -33,7 +30,7 @@ import static cn.iocoder.yudao.module.merchant.enums.MerchantErrorCodeConstants.
  * 商户小程序 - AI成片（#27 #28）
  *
  * <p>业务逻辑委托给 {@link AiVideoTaskService}；
- * 抖音发布委托给 DouyinService。</p>
+ * 抖音授权与发布已迁移至 video 模块的 AppMerchantDouyinController。</p>
  */
 @Tag(name = "商户小程序 - AI成片")
 @RestController
@@ -48,10 +45,6 @@ public class AppMerchantAiVideoController {
 
     @Resource
     private AiVideoTaskService aiVideoTaskService;
-    @Resource
-    private MerchantService merchantService;
-    @Resource
-    private DouyinService douyinService;
 
     // ==================== #27 上传图片+输入描述+确认文案 ====================
 
@@ -76,33 +69,6 @@ public class AppMerchantAiVideoController {
     public CommonResult<Boolean> confirmCopywriting(@Valid @RequestBody AppAiVideoConfirmReqVO reqVO) {
         Long userId = SecurityFrameworkUtils.getLoginUserId();
         aiVideoTaskService.confirmCopywriting(reqVO, userId);
-        return success(true);
-    }
-
-    // ==================== 抖音授权与发布 ====================
-
-    @GetMapping("/douyin/auth-url")
-    @Operation(summary = "获取抖音 OAuth 授权URL")
-    @Parameter(name = "redirectUri", description = "授权回调地址", required = true)
-    public CommonResult<String> getDouyinAuthUrl(@RequestParam("redirectUri") String redirectUri) {
-        MerchantDO merchant = getMerchantOrThrow();
-        return success(douyinService.getOAuthUrl(merchant.getId(), redirectUri));
-    }
-
-    @PostMapping("/douyin/publish")
-    @Operation(summary = "发布视频到抖音")
-    @Parameter(name = "taskId", description = "AI成片任务ID", required = true)
-    public CommonResult<Boolean> publishToDouyin(@RequestParam("taskId") Long taskId) {
-        Long userId = SecurityFrameworkUtils.getLoginUserId();
-        AiVideoTaskDO task = aiVideoTaskService.getTask(taskId, userId);
-        if (task.getVideoUrl() == null || task.getVideoUrl().isEmpty()) {
-            throw exception(AI_VIDEO_URL_MISSING);
-        }
-
-        MerchantDO merchant = getMerchantOrThrow();
-        String douyinVideoId = douyinService.uploadVideo(merchant.getId(), task.getVideoUrl());
-        String itemId = douyinService.publishVideo(merchant.getId(), douyinVideoId, task.getUserDescription());
-        log.info("[publishToDouyin] 发布成功 taskId={}, douyinItemId={}", taskId, itemId);
         return success(true);
     }
 
@@ -152,15 +118,6 @@ public class AppMerchantAiVideoController {
     }
 
     // ==================== 私有方法 ====================
-
-    private MerchantDO getMerchantOrThrow() {
-        Long userId = SecurityFrameworkUtils.getLoginUserId();
-        MerchantDO merchant = merchantService.getMerchantByUserId(userId);
-        if (merchant == null) {
-            throw exception(AI_VIDEO_MERCHANT_NOT_FOUND);
-        }
-        return merchant;
-    }
 
     private void validateInternalToken(String token) {
         if (internalToken == null || internalToken.isEmpty() || !internalToken.equals(token)) {

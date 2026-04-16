@@ -74,11 +74,12 @@ public class MerchantDashboardServiceImpl implements MerchantDashboardService {
 
     private Long sumTodayOrderAmount(LocalDateTime start, LocalDateTime end) {
         // 使用 selectMaps 取 SUM
-        var wrappers = new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<cn.iocoder.yudao.module.trade.dal.dataobject.order.TradeOrderDO>();
+        com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<cn.iocoder.yudao.module.trade.dal.dataobject.order.TradeOrderDO> wrappers =
+                new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<>();
         wrappers.select("IFNULL(SUM(pay_price), 0) as total");
         wrappers.between("create_time", start, end);
         wrappers.gt("status", 0);
-        var maps = tradeOrderMapper.selectMaps(wrappers);
+        java.util.List<java.util.Map<String, Object>> maps = tradeOrderMapper.selectMaps(wrappers);
         if (maps != null && !maps.isEmpty() && maps.get(0).get("total") != null) {
             return Long.parseLong(maps.get(0).get("total").toString());
         }

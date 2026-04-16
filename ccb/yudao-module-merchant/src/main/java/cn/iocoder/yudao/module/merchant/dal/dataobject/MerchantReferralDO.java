@@ -20,6 +20,9 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class MerchantReferralDO extends BaseDO {
 
+    /** 主键 */
+    private Long id;
+
     /** 推荐人手机号（对应某商户的联系手机） */
     private String referrerMobile;
 

@@ -20,6 +20,9 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class MerchantWithdrawApplyDO extends BaseDO {
 
+    /** 主键 */
+    private Long id;
+
     /** 申请商户的租户ID */
     private Long tenantId;
 

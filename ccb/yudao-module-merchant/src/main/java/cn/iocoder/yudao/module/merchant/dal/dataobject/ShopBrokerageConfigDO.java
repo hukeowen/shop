@@ -20,6 +20,9 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 public class ShopBrokerageConfigDO extends TenantBaseDO {
 
+    /** 主键 */
+    private Long id;
+
     /** 是否开启返佣 */
     private Boolean brokerageEnabled;
 

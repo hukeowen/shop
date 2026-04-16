@@ -21,6 +21,9 @@ import java.util.List;
 @AllArgsConstructor
 public class AiVideoTaskDO extends TenantBaseDO {
 
+    /** 主键 */
+    private Long id;
+
     /** 操作的商户管理员用户ID */
     private Long userId;
 
