@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mvn -pl yudao-module-merchant,yudao-module-video -am compile -q -DskipTests)"
+    ]
+  }
+}
