@@ -67,17 +67,16 @@ public class MerchantWithdrawServiceImpl implements MerchantWithdrawService {
         } else {
             update.setStatus(2); // 驳回
             update.setRejectReason(auditReqVO.getRejectReason());
-            // 退还冻结余额
-            ShopInfoDO shopInfo = shopInfoMapper.selectByTenantId(apply.getTenantId());
-            if (shopInfo != null) {
-                ShopInfoDO balanceUpdate = new ShopInfoDO();
-                balanceUpdate.setId(shopInfo.getId());
-                balanceUpdate.setBalance(shopInfo.getBalance() + apply.getAmount());
-                shopInfoMapper.updateById(balanceUpdate);
-                log.info("[auditWithdraw] 驳回提现，退还余额 {} 分给 tenantId={}", apply.getAmount(), apply.getTenantId());
+            // 退还冻结余额（原子加；createWithdraw 时已扣过）
+            int restored = shopInfoMapper.incrementBalanceAtomic(apply.getTenantId(), apply.getAmount());
+            if (restored != 1) {
+                // 店铺被删/迁租户的极端情况，不阻塞驳回，但要醒目告警以便人工处理
+                log.error("[auditWithdraw] 驳回退款失败：tenantId={}, amount={}, restored={}",
+                        apply.getTenantId(), apply.getAmount(), restored);
+                throw exception0(1_020_003_005, "驳回退款失败：店铺余额账户异常，请人工核对");
             }
-            log.info("[auditWithdraw] 商户 tenantId={} 提现申请 id={} 已驳回，原因={}",
-                    apply.getTenantId(), apply.getId(), auditReqVO.getRejectReason());
+            log.info("[auditWithdraw] 驳回提现，已退还余额 {} 分给 tenantId={}",
+                    apply.getAmount(), apply.getTenantId());
         }
         merchantWithdrawApplyMapper.updateById(update);
     }
@@ -85,24 +84,26 @@ public class MerchantWithdrawServiceImpl implements MerchantWithdrawService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void createWithdraw(MerchantWithdrawApplyDO apply) {
-        // 余额校验
+        if (apply.getAmount() == null || apply.getAmount() <= 0) {
+            throw exception0(1_020_003_006, "提现金额必须大于 0");
+        }
+
         ShopInfoDO shopInfo = shopInfoMapper.selectByTenantId(apply.getTenantId());
         if (shopInfo == null) {
             throw exception0(1_020_003_003, "店铺信息不存在");
         }
-        if (shopInfo.getBalance() == null || shopInfo.getBalance() < apply.getAmount()) {
-            throw exception0(1_020_003_004, "余额不足，当前余额：" + (shopInfo.getBalance() != null ? shopInfo.getBalance() : 0) + "分");
+
+        // 原子扣减余额：UPDATE ... WHERE balance >= amount，并发提现下不会出现负余额
+        int affected = shopInfoMapper.decrementBalanceAtomic(apply.getTenantId(), apply.getAmount());
+        if (affected != 1) {
+            int currentBalance = shopInfo.getBalance() != null ? shopInfo.getBalance() : 0;
+            throw exception0(1_020_003_004, "余额不足，当前余额：" + currentBalance + " 分");
         }
-        // 冻结余额（扣减）
-        ShopInfoDO update = new ShopInfoDO();
-        update.setId(shopInfo.getId());
-        update.setBalance(shopInfo.getBalance() - apply.getAmount());
-        shopInfoMapper.updateById(update);
 
         apply.setStatus(0); // 待审核
         merchantWithdrawApplyMapper.insert(apply);
-        log.info("[createWithdraw] 商户 tenantId={} 提交提现申请 amount={}分，余额从{}扣至{}",
-                apply.getTenantId(), apply.getAmount(), shopInfo.getBalance(), shopInfo.getBalance() - apply.getAmount());
+        log.info("[createWithdraw] 商户 tenantId={} 提交提现申请 amount={}分（原子扣减成功）",
+                apply.getTenantId(), apply.getAmount());
     }
 
 }

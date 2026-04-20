@@ -1,9 +1,19 @@
 # 铺星开发进度
 
-> 最后更新：2026-04-14（全部40项任务完成 ✅ + 代码审查修复完成）
+> 最后更新：2026-04-20（AI 成片产线生产级改造完成）
 > 规则：每完成一个任务立即更新此文档，状态用 ✅ 完成 / 🔄 进行中 / ⬜ 待开始
 >
-> ## 代码审查修复记录
+> ## 2026-04-20 生产级改造（AI 成片主链路）
+> - **文案生成接入真实 LLM**：新增 `CopywritingService`，走火山方舟豆包 `doubao-1-5-pro-32k`（OpenAI 兼容 `/chat/completions`），支持 JSON 响应、Markdown 去壳、多种降级解析
+> - **视频生成切火山 Seedance**：`VideoGenerateServiceImpl` 重写，调用方舟 `doubao-seedance-1-0-pro-250528` 图生视频（异步任务 + 5s × 120 轮询，最长 10 分钟），支持 `--rs/--dur/--rt` 控制 1080P / 10s / 9:16
+> - **TTS 不再落本地盘**：通过 `infra.FileApi` 直接上传 OSS，旁路失败不阻塞主流程
+> - **视频持久化**：Seedance 临时 URL 24h 过期，完成后下载转存到自有 OSS（200MB 大小上限）
+> - **流程重构为 3 段式**（status 1→2→3→4/5）：创建 → LLM 生成文案 → 用户确认 → Seedance 合成 → 完成；两阶段都走 `@TransactionalEventListener(AFTER_COMMIT) + @Async`
+> - **新增回调方法**：`AiVideoTaskService.onCopywritingGenerated/onCopywritingFailed`，LLM 失败必回写状态避免前端卡死
+> - **租户上下文修复**：@Async 切线程后所有租户表读写包 `TenantUtils.executeIgnore`
+> - **余额原子扣减**：`ShopInfoMapper.decrementBalanceAtomic/incrementBalanceAtomic` 用 `UPDATE ... WHERE balance >= ?` 谓词，杜绝并发负余额；`MerchantWithdrawServiceImpl` 全流程切换
+>
+> ## 2026-04-14 首版代码审查修复记录
 > - SQL注入修复：AppUserShopController 改为参数化 @Select 查询
 > - PII泄露修复：/status 接口只返回 {status, rejectReason, shopName}
 > - BrokerageUserDO 添加 shareCode 字段
@@ -62,8 +72,8 @@
 | 24 | 用户提现审核（确认已支付/拒绝） | ✅ | AppMerchantWithdrawController：user/approve、user/reject |
 | 25 | 商户向平台申请提现 | ✅ | AppMerchantWithdrawController：merchant/create |
 | 26 | 店铺设置（基本信息/配送/二维码下载） | ✅ | AppMerchantShopController：GET/PUT /info、PUT /status |
-| 27 | AI成片——上传图片+输入描述+确认文案 | ✅ | AppMerchantAiVideoController：create/confirm |
-| 28 | AI成片——历史记录+视频下载+配额购买 | ✅ | AppMerchantAiVideoController：page/quota/buy-quota |
+| 27 | AI成片——上传图片+输入描述+确认文案 | ✅ | 生产级：merchant create → 豆包 LLM 生成文案 → 等待确认 → Seedance 合成，3 段式 @Async + @TransactionalEventListener |
+| 28 | AI成片——历史记录+视频下载+配额购买 | 🔄 | 历史/配额已通；buy-quota 待支付系统对接（`AI_VIDEO_PAY_NOT_READY`） |
 
 ---
 

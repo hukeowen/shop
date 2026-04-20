@@ -33,6 +33,24 @@ public interface AiVideoTaskService {
     void confirmCopywriting(AppAiVideoConfirmReqVO reqVO, Long userId);
 
     /**
+     * LLM 文案生成完成回调（由 video 模块监听器在 Ark LLM 返回后调用）。
+     *
+     * <p>写入 {@code ai_copywriting} 字段，状态从 {@code 1=文案生成中} 推进到 {@code 2=等待用户确认}。
+     * 用乐观并发（仅 status=1 时才推进），避免重复回调覆盖已确认的文案。</p>
+     *
+     * @param taskId      任务 ID
+     * @param copywriting LLM 生成的逐句文案（非空）
+     */
+    void onCopywritingGenerated(Long taskId, java.util.List<String> copywriting);
+
+    /**
+     * LLM 文案生成失败回调。
+     *
+     * <p>状态置为 {@code 5=失败}，记录失败原因；不扣配额。</p>
+     */
+    void onCopywritingFailed(Long taskId, String failReason);
+
+    /**
      * 视频生成完成回调（原子扣减配额，幂等处理）
      *
      * @param taskId    任务 ID

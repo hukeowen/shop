@@ -1,56 +1,96 @@
 package cn.iocoder.yudao.module.video.service;
 
 import cn.hutool.core.util.IdUtil;
+import cn.hutool.core.util.StrUtil;
 import cn.iocoder.yudao.framework.common.util.json.JsonUtils;
+import cn.iocoder.yudao.module.infra.api.file.FileApi;
 import cn.iocoder.yudao.module.video.config.VolcanoEngineProperties;
+import com.fasterxml.jackson.databind.JsonNode;
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.*;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
+import okhttp3.ResponseBody;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.io.IOException;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
- * AI 视频生成 Service 实现类
- * 集成火山引擎一键成片 API + TTS API
+ * AI 视频生成实现
+ *
+ * <p>流程：</p>
+ * <ol>
+ *     <li>{@link #textToSpeech(String)} — 调用火山豆包 TTS → base64 解码 → 通过 {@link FileApi} 上传 OSS → 返回 URL；</li>
+ *     <li>{@link #generateVideoFromImages(List, List)} — 调用火山方舟 Seedance 图生视频异步接口，
+ *         根据 task_id 轮询直到 {@code status=succeeded}，返回模型侧托管的视频 URL；</li>
+ *     <li>{@link #persistToOss(String)} — 下载 Seedance 临时 URL 的视频流，通过 {@link FileApi} 落到自有 OSS。</li>
+ * </ol>
  */
 @Service
 @Slf4j
 public class VideoGenerateServiceImpl implements VideoGenerateService {
 
-    @Resource
-    private VolcanoEngineProperties volcanoProperties;
+    /** 视频持久化文件大小上限（字节），超过则拒绝，避免恶意/异常消耗带宽与 OSS 空间 */
+    private static final long MAX_VIDEO_BYTES = 200L * 1024 * 1024; // 200MB
+    /** 下载超时（Seedance 视频最长约 60MB，5 分钟足够） */
+    private static final int DOWNLOAD_READ_TIMEOUT_SECONDS = 300;
 
-    private final OkHttpClient httpClient = new OkHttpClient.Builder()
-            .connectTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
-            .readTimeout(120, java.util.concurrent.TimeUnit.SECONDS)
-            .writeTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
+    @Resource
+    private VolcanoEngineProperties properties;
+
+    @Resource
+    private FileApi fileApi;
+
+    private final OkHttpClient llmHttpClient = new OkHttpClient.Builder()
+            .connectTimeout(15, TimeUnit.SECONDS)
+            .readTimeout(60, TimeUnit.SECONDS)
+            .writeTimeout(30, TimeUnit.SECONDS)
             .build();
+
+    private final OkHttpClient downloadHttpClient = new OkHttpClient.Builder()
+            .connectTimeout(15, TimeUnit.SECONDS)
+            .readTimeout(DOWNLOAD_READ_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            .writeTimeout(30, TimeUnit.SECONDS)
+            .build();
+
+    // ==================== TTS ====================
 
     @Override
     public String textToSpeech(String text) {
+        if (StrUtil.isBlank(text)) {
+            throw new IllegalArgumentException("TTS 文本不能为空");
+        }
+        if (StrUtil.isBlank(properties.getAppId()) || StrUtil.isBlank(properties.getAccessToken())) {
+            throw new IllegalStateException("TTS 未配置：video.volcano-engine.app-id / access-token");
+        }
         log.info("[textToSpeech] 开始TTS转换，文本长度: {}", text.length());
 
         Map<String, Object> body = new HashMap<>();
-        // app 信息
         Map<String, String> app = new HashMap<>();
-        app.put("appid", volcanoProperties.getAppId());
-        app.put("token", volcanoProperties.getAccessToken());
-        app.put("cluster", volcanoProperties.getCluster());
+        app.put("appid", properties.getAppId());
+        app.put("token", properties.getAccessToken());
+        app.put("cluster", properties.getCluster());
         body.put("app", app);
-        // 用户信息
+
         Map<String, String> user = new HashMap<>();
         user.put("uid", "merchant_tts");
         body.put("user", user);
-        // 音频参数
+
         Map<String, Object> audio = new HashMap<>();
-        audio.put("voice_type", volcanoProperties.getVoiceType());
+        audio.put("voice_type", properties.getVoiceType());
         audio.put("encoding", "mp3");
         audio.put("speed_ratio", 1.0);
         body.put("audio", audio);
-        // 请求参数
+
         Map<String, String> request = new HashMap<>();
         request.put("reqid", IdUtil.fastSimpleUUID());
         request.put("text", text);
@@ -58,161 +98,227 @@ public class VideoGenerateServiceImpl implements VideoGenerateService {
         body.put("request", request);
 
         Request httpRequest = new Request.Builder()
-                .url(volcanoProperties.getTtsApiUrl())
-                .post(RequestBody.create(JsonUtils.toJsonString(body), MediaType.parse("application/json")))
-                .addHeader("Authorization", "Bearer;" + volcanoProperties.getAccessToken())
+                .url(properties.getTtsApiUrl())
+                .post(RequestBody.create(
+                        JsonUtils.toJsonString(body), MediaType.parse("application/json")))
+                .addHeader("Authorization", "Bearer;" + properties.getAccessToken())
                 .build();
 
-        try (Response response = httpClient.newCall(httpRequest).execute()) {
-            if (!response.isSuccessful()) {
-                throw new RuntimeException("TTS API调用失败: " + response.code());
-            }
+        try (Response response = llmHttpClient.newCall(httpRequest).execute()) {
             String responseBody = response.body() != null ? response.body().string() : "";
-            log.info("[textToSpeech] TTS API响应成功");
-            // 解析响应，提取 base64 音频数据
-            Map<String, Object> result = JsonUtils.parseObject(responseBody, Map.class);
-            if (result != null && result.containsKey("data")) {
-                String audioBase64 = (String) result.get("data");
-                // 解码 base64 音频数据，保存为临时文件并返回可访问的URL
-                byte[] audioBytes = Base64.getDecoder().decode(audioBase64);
-                String fileName = "tts_" + System.currentTimeMillis() + ".mp3";
-                java.io.File dir = new java.io.File("/tmp/audio/");
-                if (!dir.exists()) { dir.mkdirs(); }
-                java.io.File audioFile = new java.io.File(dir, fileName);
-                try (java.io.FileOutputStream fos = new java.io.FileOutputStream(audioFile)) {
-                    fos.write(audioBytes);
-                }
-                return "/audio/" + fileName;
+            if (!response.isSuccessful()) {
+                log.error("[textToSpeech] TTS 调用失败 status={}, body={}", response.code(), responseBody);
+                throw new RuntimeException("TTS API 调用失败: HTTP " + response.code());
             }
-            throw new RuntimeException("TTS API返回数据异常: " + responseBody);
+            JsonNode root = JsonUtils.parseTree(responseBody);
+            String base64Audio = root.path("data").asText("");
+            if (base64Audio.isEmpty()) {
+                log.error("[textToSpeech] TTS 响应中 data 为空: {}", responseBody);
+                throw new RuntimeException("TTS 响应异常：无 data 字段");
+            }
+            byte[] audioBytes = Base64.getDecoder().decode(base64Audio);
+            // 上传到自有 OSS，返回可公网访问 URL
+            String fileName = "tts_" + System.currentTimeMillis() + "_" + IdUtil.fastSimpleUUID() + ".mp3";
+            String ossUrl = fileApi.createFile(audioBytes, fileName, "ai-video/audio/", "audio/mpeg");
+            log.info("[textToSpeech] TTS 完成，音频已上传 OSS：{}", ossUrl);
+            return ossUrl;
         } catch (IOException e) {
-            log.error("[textToSpeech] TTS API调用异常", e);
-            throw new RuntimeException("TTS API调用异常", e);
+            log.error("[textToSpeech] TTS IO 异常", e);
+            throw new RuntimeException("TTS API 调用 IO 异常", e);
         }
     }
 
+    // ==================== Seedance 图生视频 ====================
+
     @Override
-    public String generateVideo(List<String> imageUrls, String audioUrl, String bgmUrl) {
-        log.info("[generateVideo] 调用火山引擎一键成片，图片数量: {}", imageUrls.size());
+    public String generateVideoFromImages(List<String> imageUrls, List<String> lines) {
+        if (imageUrls == null || imageUrls.isEmpty()) {
+            throw new IllegalArgumentException("图片列表不能为空");
+        }
+        if (StrUtil.isBlank(properties.getArkApiKey())) {
+            throw new IllegalStateException("video.volcano-engine.ark-api-key 未配置（环境变量 ARK_API_KEY）");
+        }
 
-        // 构建一键成片请求
-        // 火山引擎智能创作 API: https://www.volcengine.com/docs/6392/1399418
+        String prompt = buildSeedancePrompt(lines);
+        String taskId = createSeedanceTask(imageUrls.get(0), prompt);
+        log.info("[generateVideoFromImages] Seedance 任务已创建 taskId={}", taskId);
+        return pollSeedanceVideoUrl(taskId);
+    }
+
+    /**
+     * 调用火山方舟内容生成接口创建异步任务。
+     *
+     * <p>Seedance 当前采用 OpenAI 风格的 messages 协议：
+     * <pre>
+     * {
+     *   "model": "doubao-seedance-1-0-pro-250528",
+     *   "content": [
+     *     {"type": "text", "text": "商品介绍..."},
+     *     {"type": "image_url", "image_url": {"url": "https://..."}}
+     *   ]
+     * }
+     * </pre>
+     * 返回 {@code {"id": "cgt-xxx"}}，即任务 id。
+     */
+    private String createSeedanceTask(String firstImageUrl, String prompt) {
+        List<Map<String, Object>> content = new ArrayList<>();
+        Map<String, Object> textPart = new HashMap<>();
+        textPart.put("type", "text");
+        // 通过 --rs/--dur/--rt 控制分辨率/时长/比例；Seedance 支持 5s/10s，1080P
+        textPart.put("text", prompt + "  --rs 1080p --dur 10 --rt 9:16");
+        content.add(textPart);
+
+        Map<String, Object> imagePart = new HashMap<>();
+        imagePart.put("type", "image_url");
+        Map<String, String> imageUrlObj = new HashMap<>();
+        imageUrlObj.put("url", firstImageUrl);
+        imagePart.put("image_url", imageUrlObj);
+        content.add(imagePart);
+
         Map<String, Object> body = new HashMap<>();
-        body.put("reqId", IdUtil.fastSimpleUUID());
+        body.put("model", properties.getSeedanceModel());
+        body.put("content", content);
 
-        // 视频编辑参数
-        Map<String, Object> editParam = new HashMap<>();
-
-        // 素材列表 - 每张图片作为一个片段
-        List<Map<String, Object>> mediaList = imageUrls.stream().map(url -> {
-            Map<String, Object> media = new HashMap<>();
-            media.put("mediaUrl", url);
-            media.put("mediaType", "image");
-            media.put("duration", 3000); // 每张图片展示3秒
-            return media;
-        }).collect(Collectors.toList());
-        editParam.put("mediaList", mediaList);
-
-        // 音频轨道
-        List<Map<String, Object>> audioList = new ArrayList<>();
-        if (audioUrl != null) {
-            Map<String, Object> ttsAudio = new HashMap<>();
-            ttsAudio.put("mediaUrl", audioUrl);
-            ttsAudio.put("mediaType", "audio");
-            ttsAudio.put("volume", 1.0);
-            audioList.add(ttsAudio);
-        }
-        if (bgmUrl != null) {
-            Map<String, Object> bgm = new HashMap<>();
-            bgm.put("mediaUrl", bgmUrl);
-            bgm.put("mediaType", "audio");
-            bgm.put("volume", 0.3); // 背景音乐音量低一些
-            audioList.add(bgm);
-        }
-        if (!audioList.isEmpty()) {
-            editParam.put("audioList", audioList);
-        }
-
-        // 视频参数
-        Map<String, Object> videoParam = new HashMap<>();
-        videoParam.put("width", 1080);
-        videoParam.put("height", 1920); // 竖屏 9:16
-        videoParam.put("fps", 30);
-        editParam.put("videoParam", videoParam);
-
-        body.put("editParam", editParam);
-
-        Request httpRequest = new Request.Builder()
-                .url(volcanoProperties.getVideoApiUrl())
-                .post(RequestBody.create(JsonUtils.toJsonString(body), MediaType.parse("application/json")))
-                .addHeader("Authorization", volcanoProperties.getAccessKeyId() + ":" + volcanoProperties.getAccessKeySecret())
+        Request request = new Request.Builder()
+                .url(properties.getArkGenerationUrl())
+                .post(RequestBody.create(
+                        JsonUtils.toJsonString(body), MediaType.parse("application/json")))
+                .addHeader("Authorization", "Bearer " + properties.getArkApiKey())
+                .addHeader("Content-Type", "application/json")
                 .build();
 
-        try (Response response = httpClient.newCall(httpRequest).execute()) {
-            if (!response.isSuccessful()) {
-                throw new RuntimeException("一键成片API调用失败: " + response.code());
-            }
+        try (Response response = llmHttpClient.newCall(request).execute()) {
             String responseBody = response.body() != null ? response.body().string() : "";
-            log.info("[generateVideo] 一键成片API响应成功");
-            // 解析响应获取视频URL
-            Map<String, Object> result = JsonUtils.parseObject(responseBody, Map.class);
-            if (result != null && result.containsKey("data")) {
-                Map<String, Object> data = (Map<String, Object>) result.get("data");
-                if (data.containsKey("videoUrl")) {
-                    return (String) data.get("videoUrl");
-                }
-                // 异步任务模式：返回任务ID，需要轮询获取结果
-                if (data.containsKey("taskId")) {
-                    return pollVideoResult((String) data.get("taskId"));
-                }
+            if (!response.isSuccessful()) {
+                log.error("[createSeedanceTask] 创建失败 status={}, body={}", response.code(), responseBody);
+                throw new RuntimeException("Seedance 任务创建失败: HTTP " + response.code());
             }
-            throw new RuntimeException("一键成片API返回异常: " + responseBody);
+            JsonNode root = JsonUtils.parseTree(responseBody);
+            String taskId = root.path("id").asText("");
+            if (taskId.isEmpty()) {
+                throw new RuntimeException("Seedance 未返回 task id：" + responseBody);
+            }
+            return taskId;
         } catch (IOException e) {
-            log.error("[generateVideo] 一键成片API调用异常", e);
-            throw new RuntimeException("一键成片API调用异常", e);
+            throw new RuntimeException("Seedance 任务创建 IO 异常", e);
         }
     }
 
     /**
-     * 轮询视频生成结果
+     * 轮询 Seedance 任务直到完成或失败。
+     *
+     * <p>GET {@code /api/v3/contents/generations/tasks/{id}} 响应：
+     * <pre>
+     * {
+     *   "id": "cgt-xxx",
+     *   "status": "queued|running|succeeded|failed|cancelled",
+     *   "content": {"video_url": "https://..."},
+     *   "error": {"code":"...","message":"..."}
+     * }
+     * </pre>
      */
-    private String pollVideoResult(String taskId) {
-        log.info("[pollVideoResult] 开始轮询视频生成结果, taskId: {}", taskId);
-        int maxRetries = 60; // 最多等待5分钟
-        for (int i = 0; i < maxRetries; i++) {
+    private String pollSeedanceVideoUrl(String taskId) {
+        String url = properties.getArkGenerationUrl() + "/" + taskId;
+        int maxAttempts = properties.getSeedanceMaxPollAttempts();
+        long interval = properties.getSeedancePollIntervalMillis();
+        for (int attempt = 0; attempt < maxAttempts; attempt++) {
             try {
-                Thread.sleep(5000); // 每5秒查询一次
+                Thread.sleep(interval);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                throw new RuntimeException("轮询被中断", e);
+                throw new RuntimeException("Seedance 轮询被中断", e);
             }
 
             Request request = new Request.Builder()
-                    .url(volcanoProperties.getVideoApiUrl() + "/query?taskId=" + taskId)
+                    .url(url)
                     .get()
-                    .addHeader("Authorization", volcanoProperties.getAccessKeyId() + ":" + volcanoProperties.getAccessKeySecret())
+                    .addHeader("Authorization", "Bearer " + properties.getArkApiKey())
                     .build();
 
-            try (Response response = httpClient.newCall(request).execute()) {
-                if (!response.isSuccessful()) continue;
+            try (Response response = llmHttpClient.newCall(request).execute()) {
+                if (!response.isSuccessful()) {
+                    log.warn("[pollSeedanceVideoUrl] 轮询异常 status={}, attempt={}",
+                            response.code(), attempt);
+                    continue;
+                }
                 String responseBody = response.body() != null ? response.body().string() : "";
-                Map<String, Object> result = JsonUtils.parseObject(responseBody, Map.class);
-                if (result != null && result.containsKey("data")) {
-                    Map<String, Object> data = (Map<String, Object>) result.get("data");
-                    String status = (String) data.get("status");
-                    if ("done".equals(status) && data.containsKey("videoUrl")) {
-                        log.info("[pollVideoResult] 视频生成完成: {}", data.get("videoUrl"));
-                        return (String) data.get("videoUrl");
-                    }
-                    if ("failed".equals(status)) {
-                        throw new RuntimeException("视频生成失败: " + data.get("message"));
-                    }
+                JsonNode root = JsonUtils.parseTree(responseBody);
+                String status = root.path("status").asText("");
+                switch (status) {
+                    case "succeeded":
+                        String videoUrl = root.path("content").path("video_url").asText("");
+                        if (videoUrl.isEmpty()) {
+                            throw new RuntimeException("Seedance 成功但未返回 video_url：" + responseBody);
+                        }
+                        log.info("[pollSeedanceVideoUrl] Seedance 完成 taskId={}, url={}", taskId, videoUrl);
+                        return videoUrl;
+                    case "failed":
+                    case "cancelled":
+                        String msg = root.path("error").path("message").asText("unknown");
+                        throw new RuntimeException("Seedance 生成失败：" + status + " / " + msg);
+                    default:
+                        // queued / running — 继续轮询
+                        if (attempt % 6 == 0) {
+                            log.info("[pollSeedanceVideoUrl] 等待中 taskId={}, status={}, attempt={}/{}",
+                                    taskId, status, attempt, maxAttempts);
+                        }
                 }
             } catch (IOException e) {
-                log.warn("[pollVideoResult] 查询失败，重试中", e);
+                log.warn("[pollSeedanceVideoUrl] 轮询 IO 异常，继续重试 attempt={}", attempt, e);
             }
         }
-        throw new RuntimeException("视频生成超时");
+        throw new RuntimeException("Seedance 轮询超时（" + (maxAttempts * interval / 1000) + "s），taskId=" + taskId);
+    }
+
+    private String buildSeedancePrompt(List<String> lines) {
+        if (lines == null || lines.isEmpty()) {
+            return "商品短视频广告，突出卖点，竖屏构图，镜头缓慢推拉";
+        }
+        // 取前几句关键信息作为提示词，避免 prompt 过长
+        StringBuilder sb = new StringBuilder();
+        sb.append("根据以下文案生成一段抖音风格短视频广告，竖屏构图，镜头缓慢推拉、有节奏感：\n");
+        int take = Math.min(lines.size(), 6);
+        for (int i = 0; i < take; i++) {
+            sb.append(lines.get(i));
+            if (i < take - 1) sb.append("；");
+        }
+        return sb.toString();
+    }
+
+    // ==================== 持久化 ====================
+
+    @Override
+    public String persistToOss(String remoteVideoUrl) {
+        if (StrUtil.isBlank(remoteVideoUrl)) {
+            throw new IllegalArgumentException("视频 URL 为空，无法落盘");
+        }
+        Request request = new Request.Builder().url(remoteVideoUrl).get().build();
+        try (Response response = downloadHttpClient.newCall(request).execute()) {
+            if (!response.isSuccessful()) {
+                throw new RuntimeException("下载视频失败：HTTP " + response.code());
+            }
+            ResponseBody body = response.body();
+            if (body == null) {
+                throw new RuntimeException("下载视频失败：body 为空");
+            }
+            long contentLength = body.contentLength();
+            if (contentLength > MAX_VIDEO_BYTES) {
+                throw new RuntimeException("视频大小超限：" + contentLength + " > " + MAX_VIDEO_BYTES);
+            }
+            byte[] videoBytes = body.bytes();
+            if (videoBytes.length == 0) {
+                throw new RuntimeException("下载视频为空");
+            }
+            if (videoBytes.length > MAX_VIDEO_BYTES) {
+                throw new RuntimeException("视频大小超限：" + videoBytes.length);
+            }
+            String fileName = "video_" + System.currentTimeMillis() + "_" + IdUtil.fastSimpleUUID() + ".mp4";
+            String ossUrl = fileApi.createFile(videoBytes, fileName, "ai-video/video/", "video/mp4");
+            log.info("[persistToOss] 视频已落到 OSS：{} ({} bytes)", ossUrl, videoBytes.length);
+            return ossUrl;
+        } catch (IOException e) {
+            throw new RuntimeException("下载视频 IO 异常", e);
+        }
     }
 
 }

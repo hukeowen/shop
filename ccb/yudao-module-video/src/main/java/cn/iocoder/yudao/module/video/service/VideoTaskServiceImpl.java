@@ -14,11 +14,17 @@ import org.springframework.validation.annotation.Validated;
 
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception0;
 
 /**
  * AI视频任务 Service 实现类
+ *
+ * <p><b>定位</b>：admin 后台直接发起的视频任务（无 merchant 入口），保留以兼容历史接口。
+ * 商户小程序的主流程走 {@code AiVideoTaskService}（merchant 模块）+ {@link AiVideoTaskCreatedListener}。</p>
  */
 @Service
 @Validated
@@ -73,20 +79,27 @@ public class VideoTaskServiceImpl implements VideoTaskService {
             return;
         }
 
-        // 更新状态为生成中
         VideoTaskDO updateObj = new VideoTaskDO();
         updateObj.setId(taskId);
         updateObj.setStatus(VideoTaskStatusEnum.PROCESSING.getStatus());
         videoTaskMapper.updateById(updateObj);
 
         try {
-            // 1. 文字转语音
-            String audioUrl = videoGenerateService.textToSpeech(task.getDescription());
+            // 由 description 拆出逐句作为 Seedance prompt（按中文标点分句）
+            List<String> lines = splitToLines(task.getDescription());
 
-            // 2. 图片+音频合成视频
-            String videoUrl = videoGenerateService.generateVideo(task.getImageUrls(), audioUrl, task.getBgmUrl());
+            // 1. Seedance 图生视频（异步任务 + 内部轮询）
+            String remoteVideoUrl = videoGenerateService.generateVideoFromImages(task.getImageUrls(), lines);
+            // 2. 落到自有 OSS
+            String videoUrl = videoGenerateService.persistToOss(remoteVideoUrl);
+            // 3. （可选）TTS
+            String audioUrl = null;
+            try {
+                audioUrl = videoGenerateService.textToSpeech(task.getDescription());
+            } catch (Exception ttsEx) {
+                log.warn("[processVideoGeneration] TTS 失败（不阻塞主流程） taskId={}", taskId, ttsEx);
+            }
 
-            // 3. 更新任务状态
             updateObj = new VideoTaskDO();
             updateObj.setId(taskId);
             updateObj.setTtsAudioUrl(audioUrl);
@@ -100,7 +113,8 @@ public class VideoTaskServiceImpl implements VideoTaskService {
             updateObj = new VideoTaskDO();
             updateObj.setId(taskId);
             updateObj.setStatus(VideoTaskStatusEnum.FAILED.getStatus());
-            updateObj.setFailReason(e.getMessage());
+            updateObj.setFailReason(e.getMessage() != null && e.getMessage().length() > 200
+                    ? e.getMessage().substring(0, 200) : e.getMessage());
             videoTaskMapper.updateById(updateObj);
         }
     }
@@ -115,20 +129,15 @@ public class VideoTaskServiceImpl implements VideoTaskService {
             throw exception0(1_030_001_001, "视频尚未生成完成");
         }
 
-        // 更新发布状态
         VideoTaskDO updateObj = new VideoTaskDO();
         updateObj.setId(taskId);
         updateObj.setDouyinPublishStatus(DouyinPublishStatusEnum.PUBLISHING.getStatus());
         videoTaskMapper.updateById(updateObj);
 
         try {
-            // 1. 上传视频到抖音
             String videoId = douyinService.uploadVideo(task.getMerchantId(), task.getVideoUrl());
-
-            // 2. 发布视频
             String itemId = douyinService.publishVideo(task.getMerchantId(), videoId, task.getTitle());
 
-            // 3. 更新状态
             updateObj = new VideoTaskDO();
             updateObj.setId(taskId);
             updateObj.setDouyinPublishStatus(DouyinPublishStatusEnum.PUBLISHED.getStatus());
@@ -144,6 +153,16 @@ public class VideoTaskServiceImpl implements VideoTaskService {
             updateObj.setDouyinPublishStatus(DouyinPublishStatusEnum.FAILED.getStatus());
             videoTaskMapper.updateById(updateObj);
         }
+    }
+
+    private List<String> splitToLines(String description) {
+        if (description == null || description.isEmpty()) {
+            return java.util.Collections.emptyList();
+        }
+        return Arrays.stream(description.split("[，。！？,.!?\n]+"))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toList());
     }
 
 }

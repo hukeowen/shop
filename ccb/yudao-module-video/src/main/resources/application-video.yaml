@@ -1,19 +1,36 @@
-# AI视频模块配置
+# AI视频模块配置（生产级）
 video:
-  # 火山引擎配置
+  # 火山引擎（豆包）统一配置
   volcano-engine:
-    app-id: ${VOLCANO_APP_ID:your-app-id}
-    access-token: ${VOLCANO_ACCESS_TOKEN:your-access-token}
+    # ---------- 火山方舟 Ark：LLM（文案） + Seedance（图生视频） ----------
+    # API Key：https://console.volcengine.com/ark/region:ark+cn-beijing/apiKey
+    # 上线必须通过环境变量注入，勿明文落库/提交 Git
+    ark-api-key: ${ARK_API_KEY:}
+    ark-chat-url: https://ark.cn-beijing.volces.com/api/v3/chat/completions
+    ark-generation-url: https://ark.cn-beijing.volces.com/api/v3/contents/generations/tasks
+    # 豆包 LLM：可填模型名或推理接入点 ID（ep-xxxxx）
+    llm-model: ${DOUBAO_LLM_MODEL:doubao-1-5-pro-32k-250115}
+    # Seedance 图生视频（字节目前最强）
+    seedance-model: ${SEEDANCE_MODEL:doubao-seedance-1-0-pro-250528}
+    seedance-max-poll-attempts: 120        # 120 × 5s = 10 分钟
+    seedance-poll-interval-millis: 5000
+
+    # ---------- 豆包 TTS（配音） ----------
+    app-id: ${VOLCANO_APP_ID:}
+    access-token: ${VOLCANO_ACCESS_TOKEN:}
     cluster: volcano_tts
     voice-type: zh_female_qingxin
     tts-api-url: https://openspeech.bytedance.com/api/v1/tts
-    access-key-id: ${VOLCANO_AK:your-access-key-id}
-    access-key-secret: ${VOLCANO_SK:your-access-key-secret}
+
+    # ---------- 老智能创作接口（保留兼容，主链路已切 Seedance） ----------
+    access-key-id: ${VOLCANO_AK:}
+    access-key-secret: ${VOLCANO_SK:}
     video-api-url: https://open.volcengineapi.com/api/v1/smart_creation/video/create
+
   # 抖音开放平台配置
   douyin:
-    client-key: ${DOUYIN_CLIENT_KEY:your-client-key}
-    client-secret: ${DOUYIN_CLIENT_SECRET:your-client-secret}
+    client-key: ${DOUYIN_CLIENT_KEY:}
+    client-secret: ${DOUYIN_CLIENT_SECRET:}
 
 # 商户配置
 merchant:
