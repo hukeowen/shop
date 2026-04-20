@@ -80,6 +80,19 @@
       "style": {
         "navigationBarTitleText": "配额购买"
       }
+    },
+    {
+      "path": "pages/product/list",
+      "style": {
+        "navigationBarTitleText": "商品管理",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/product/edit",
+      "style": {
+        "navigationBarTitleText": "上架商品"
+      }
     }
   ],
   "globalStyle": {

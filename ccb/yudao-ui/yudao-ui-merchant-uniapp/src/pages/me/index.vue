@@ -20,6 +20,10 @@
     </view>
 
     <view class="menu card">
+      <view class="menu-item" @click="goProducts">
+        <text>商品管理</text>
+        <text class="arrow">›</text>
+      </view>
       <view class="menu-item" @click="toast">
         <text>店铺二维码</text>
         <text class="arrow">›</text>
@@ -70,6 +74,10 @@ function toast() {
 
 function goQuota() {
   uni.navigateTo({ url: '/pages/ai-video/quota' });
+}
+
+function goProducts() {
+  uni.navigateTo({ url: '/pages/product/list' });
 }
 
 async function onLogout() {

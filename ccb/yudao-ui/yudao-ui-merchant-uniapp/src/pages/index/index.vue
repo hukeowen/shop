@@ -16,17 +16,17 @@
         <view class="icon ai">AI</view>
         <text>一键成片</text>
       </view>
+      <view class="quick-item" @click="jumpAddProduct">
+        <view class="icon product">＋</view>
+        <text>上架商品</text>
+      </view>
       <view class="quick-item" @click="jumpVerify">
         <view class="icon verify">扫</view>
         <text>扫码核销</text>
       </view>
-      <view class="quick-item" @click="jumpDeliver">
-        <view class="icon deliver">发</view>
-        <text>待发货</text>
-      </view>
       <view class="quick-item" @click="jumpOrders">
         <view class="icon order">单</view>
-        <text>订单列表</text>
+        <text>订单</text>
       </view>
     </view>
 
@@ -117,11 +117,11 @@ function jumpAi() {
 function jumpOrders() {
   uni.switchTab({ url: '/pages/order/list' });
 }
-function jumpDeliver() {
-  uni.switchTab({ url: '/pages/order/list' });
-}
 function jumpVerify() {
   uni.switchTab({ url: '/pages/order/list' });
+}
+function jumpAddProduct() {
+  uni.navigateTo({ url: '/pages/product/edit' });
 }
 
 onMounted(() => {
@@ -222,11 +222,11 @@ onPullDownRefresh(async () => {
     &.ai {
       background: linear-gradient(135deg, #ff6b35, #ff9b5e);
     }
+    &.product {
+      background: #10b981;
+    }
     &.verify {
       background: #3b82f6;
-    }
-    &.deliver {
-      background: #10b981;
     }
     &.order {
       background: #8b5cf6;
