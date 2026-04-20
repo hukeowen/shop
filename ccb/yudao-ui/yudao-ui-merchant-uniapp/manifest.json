@@ -1,0 +1,50 @@
+{
+  "name": "摊小二商户端",
+  "appid": "",
+  "description": "摊小二商户端 — AI 一键成片、订单核销、发货、报表",
+  "versionName": "0.1.0",
+  "versionCode": "1",
+  "transformPx": false,
+  "app-plus": {
+    "usingComponents": true,
+    "nvueCompiler": "uni-app",
+    "compilerVersion": 3,
+    "splashscreen": {
+      "alwaysShowBeforeRender": true,
+      "waiting": true,
+      "autoclose": true,
+      "delay": 0
+    }
+  },
+  "mp-weixin": {
+    "appid": "",
+    "setting": {
+      "urlCheck": false,
+      "minified": true,
+      "postcss": true
+    },
+    "usingComponents": true
+  },
+  "h5": {
+    "title": "摊小二商户端",
+    "template": "index.html",
+    "router": {
+      "mode": "hash",
+      "base": "/"
+    },
+    "devServer": {
+      "port": 5180,
+      "https": false,
+      "proxy": {
+        "/admin-api": {
+          "target": "http://localhost:48080",
+          "changeOrigin": true,
+          "secure": false
+        }
+      }
+    }
+  },
+  "vueVersion": "3",
+  "locale": "zh-Hans",
+  "fallbackLocale": "zh-Hans"
+}

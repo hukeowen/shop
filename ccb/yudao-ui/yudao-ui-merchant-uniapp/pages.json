@@ -1,0 +1,115 @@
+{
+  "easycom": {
+    "autoscan": true
+  },
+  "pages": [
+    {
+      "path": "pages/index/index",
+      "style": {
+        "navigationBarTitleText": "摊小二",
+        "navigationStyle": "custom",
+        "enablePullDownRefresh": true
+      }
+    },
+    {
+      "path": "pages/ai-video/index",
+      "style": {
+        "navigationBarTitleText": "AI 一键成片",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/order/list",
+      "style": {
+        "navigationBarTitleText": "订单管理",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/me/index",
+      "style": {
+        "navigationBarTitleText": "我的",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/login/index",
+      "style": {
+        "navigationBarTitleText": "登录",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/order/detail",
+      "style": {
+        "navigationBarTitleText": "订单详情"
+      }
+    },
+    {
+      "path": "pages/order/deliver",
+      "style": {
+        "navigationBarTitleText": "发货"
+      }
+    },
+    {
+      "path": "pages/ai-video/create",
+      "style": {
+        "navigationBarTitleText": "创建 AI 视频"
+      }
+    },
+    {
+      "path": "pages/ai-video/confirm",
+      "style": {
+        "navigationBarTitleText": "确认文案"
+      }
+    },
+    {
+      "path": "pages/ai-video/detail",
+      "style": {
+        "navigationBarTitleText": "视频详情"
+      }
+    },
+    {
+      "path": "pages/ai-video/history",
+      "style": {
+        "navigationBarTitleText": "历史记录"
+      }
+    },
+    {
+      "path": "pages/ai-video/quota",
+      "style": {
+        "navigationBarTitleText": "配额购买"
+      }
+    }
+  ],
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "摊小二",
+    "navigationBarBackgroundColor": "#FFFFFF",
+    "backgroundColor": "#F6F7F9"
+  },
+  "tabBar": {
+    "color": "#8A8F99",
+    "selectedColor": "#FF6B35",
+    "backgroundColor": "#FFFFFF",
+    "borderStyle": "white",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "首页"
+      },
+      {
+        "pagePath": "pages/ai-video/index",
+        "text": "成片"
+      },
+      {
+        "pagePath": "pages/order/list",
+        "text": "订单"
+      },
+      {
+        "pagePath": "pages/me/index",
+        "text": "我的"
+      }
+    ]
+  }
+}
