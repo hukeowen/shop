@@ -1,6 +1,9 @@
 <template>
   <view class="page">
     <view class="header safe-top">
+      <view class="back-btn" @click="goBack">
+        <text class="back-arrow">‹</text>
+      </view>
       <text class="title">商品管理</text>
       <view class="add-btn" @click="goAdd">
         <text class="plus">＋</text>
@@ -97,6 +100,14 @@ function goAdd() {
 function goEdit(id) {
   uni.navigateTo({ url: `/pages/product/edit?id=${id}` });
 }
+function goBack() {
+  const pages = getCurrentPages();
+  if (pages.length > 1) {
+    uni.navigateBack();
+  } else {
+    uni.switchTab({ url: '/pages/me/index' });
+  }
+}
 
 async function onToggleStatus(s) {
   const next = s.status === 0 ? 1 : 0;
@@ -141,11 +152,28 @@ onShow(() => {
 
 .header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 16rpx;
   padding: 24rpx 12rpx;
 
+  .back-btn {
+    width: 64rpx;
+    height: 64rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: -8rpx;
+  }
+
+  .back-arrow {
+    font-size: 56rpx;
+    line-height: 1;
+    color: $text-primary;
+    font-weight: 300;
+  }
+
   .title {
+    flex: 1;
     font-size: 40rpx;
     font-weight: 700;
     color: $text-primary;
