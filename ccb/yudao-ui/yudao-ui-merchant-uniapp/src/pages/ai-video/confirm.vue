@@ -2,49 +2,77 @@
   <view class="page">
     <view v-if="task && task.status === 1" class="state-card">
       <view class="spinner"></view>
-      <view class="state-text">AI 正在生成文案...</view>
-      <view class="state-sub">通常 3-10 秒</view>
+      <view class="state-text">AI 正在看图 + 拆幕...</view>
+      <view class="state-sub">每张图 1 幕 · 总长不超 30 秒</view>
     </view>
 
     <view v-else-if="task && task.status === 2" class="content">
-      <view class="card">
-        <view class="section-title">AI 生成的文案</view>
-        <view class="section-sub">每一句都可以改，或直接删除</view>
-
-        <view class="lines">
-          <view class="line" v-for="(l, i) in lines" :key="i">
-            <view class="line-no">{{ i + 1 }}</view>
-            <textarea
-              class="line-input"
-              v-model="lines[i]"
-              :auto-height="true"
-            />
-            <view class="line-del" @click="removeLine(i)">删</view>
-          </view>
-        </view>
-
-        <view class="line-add" @click="addLine">＋ 添加一句</view>
+      <view class="card title-card">
+        <view class="title-label">视频标题</view>
+        <view class="title-text">{{ task.title || '—' }}</view>
       </view>
 
       <view class="card">
-        <view class="section-title">背景音乐（选填）</view>
-        <view class="bgm-list">
-          <view
-            class="bgm"
-            v-for="b in bgmList"
-            :key="b.id"
-            :class="{ active: selectedBgm === b.id }"
-            @click="selectedBgm = b.id"
-          >
-            <text>{{ b.name }}</text>
-            <text class="bgm-mood">{{ b.mood }}</text>
+        <view class="section-title-row">
+          <view class="section-title">{{ scenes.length }} 幕脚本（每幕 {{ effDuration }} 秒，共 {{ scenes.length * effDuration }} 秒）</view>
+          <view class="regen-btn" @click="onRegen" :class="{ disabled: regenerating }">
+            {{ regenerating ? '生成中…' : '🔄 重新生成' }}
+          </view>
+        </view>
+        <view class="section-sub">每一幕都用对应的实拍图做起始帧，AI 会按图里真实产品写台词。台词和画面都能改</view>
+
+        <view class="scenes">
+          <view class="scene" v-for="(s, i) in scenes" :key="i">
+            <view class="scene-head">
+              <view class="scene-no">{{ i + 1 }}</view>
+              <view class="scene-meta">
+                <view class="scene-time">{{ i * effDuration }}s - {{ (i + 1) * effDuration }}s</view>
+                <view class="scene-imgtag">图 #{{ s.img_idx + 1 }}<text v-if="s.image_summary"> · {{ s.image_summary }}</text></view>
+              </view>
+            </view>
+
+            <view class="scene-bigimg" @click="onReplaceImage(i)">
+              <image
+                class="scene-img"
+                :src="task.imageUrls[s.img_idx]"
+                mode="aspectFill"
+              />
+              <view class="scene-bigimg-mask" v-if="replacingIdx === i">
+                <view class="spinner small"></view>
+                <text>上传中…</text>
+              </view>
+              <view v-else class="scene-bigimg-hint">
+                <text class="hint-icon">🔄</text>
+                <text>点击换图</text>
+              </view>
+            </view>
+
+            <view class="scene-field">
+              <view class="fld-label">🎙 台词</view>
+              <textarea
+                class="fld-input"
+                v-model="scenes[i].narration"
+                :auto-height="true"
+                :maxlength="40"
+              />
+            </view>
+
+            <view class="scene-field">
+              <view class="fld-label">🎬 画面</view>
+              <textarea
+                class="fld-input pale"
+                v-model="scenes[i].visual_prompt"
+                :auto-height="true"
+                :maxlength="120"
+              />
+            </view>
           </view>
         </view>
       </view>
 
       <view class="actions safe-bottom">
-        <button class="btn ghost" @click="useOriginal">用原版</button>
-        <button class="btn primary" @click="onConfirm">生成视频</button>
+        <button class="btn ghost" @click="back">返回</button>
+        <button class="btn primary" @click="onConfirm">开始生成视频</button>
       </view>
     </view>
 
@@ -52,61 +80,100 @@
       <view class="state-icon">!</view>
       <view class="state-text">生成失败</view>
       <view class="state-sub">{{ task.failReason || '请稍后重试' }}</view>
-      <button class="btn ghost" @click="back">返回</button>
+      <button class="btn ghost solo" @click="back">返回</button>
     </view>
   </view>
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { onLoad, onUnload } from '@dcloudio/uni-app';
-import { getTask, confirmTask } from '../../api/aiVideo.js';
+import { getTask, confirmTask, regenerateScript, replaceSceneImage } from '../../api/aiVideo.js';
+import { blobUrlToBase64 } from '../../api/oss.js';
 
 const task = ref(null);
 const taskId = ref(0);
-const lines = ref([]);
-const selectedBgm = ref(null);
-
-const bgmList = [
-  { id: 1, name: '欢快', mood: '适合美食 / 零食' },
-  { id: 2, name: '治愈', mood: '适合手作 / 花草' },
-  { id: 3, name: '活力', mood: '适合运动 / 街拍' },
-];
-
+const scenes = ref([]);
+const regenerating = ref(false);
+const replacingIdx = ref(-1);
+const effDuration = computed(() => task.value?.sceneDuration || Number(import.meta.env.VITE_VIDEO_DURATION || 10));
 let pollTimer = null;
 
 async function load() {
   task.value = await getTask(taskId.value);
-  if (task.value?.status === 2 && !lines.value.length) {
-    lines.value = [...(task.value.aiCopywriting || [])];
+  if (task.value?.status === 2 && !scenes.value.length) {
+    scenes.value = task.value.scenes.map((s) => ({
+      img_idx: s.img_idx,
+      image_summary: s.image_summary || '',
+      narration: s.narration,
+      visual_prompt: s.visual_prompt,
+    }));
   }
-  // status=1 继续轮询
   if (task.value?.status === 1) {
-    pollTimer = setTimeout(load, 2000);
+    pollTimer = setTimeout(load, 1500);
   }
 }
 
-function removeLine(i) {
-  lines.value.splice(i, 1);
+async function onRegen() {
+  if (regenerating.value) return;
+  regenerating.value = true;
+  uni.showLoading({ title: 'AI 重新构思…' });
+  try {
+    await regenerateScript(taskId.value);
+    scenes.value = [];  // 让 load() 重新同步
+    await load();
+    uni.hideLoading();
+    uni.showToast({ title: '已重新生成', icon: 'success' });
+  } catch (e) {
+    uni.hideLoading();
+    uni.showModal({ title: '重新生成失败', content: e.message, showCancel: false });
+  } finally {
+    regenerating.value = false;
+  }
 }
-function addLine() {
-  lines.value.push('');
+
+function onReplaceImage(i) {
+  if (replacingIdx.value !== -1) return;
+  uni.chooseImage({
+    count: 1,
+    sizeType: ['compressed'],
+    sourceType: ['camera', 'album'],
+    success: async (r) => {
+      const path = r.tempFilePaths?.[0];
+      if (!path) return;
+      replacingIdx.value = i;
+      try {
+        const base64 = await blobUrlToBase64(path);
+        const newUrl = await replaceSceneImage({
+          taskId: taskId.value,
+          sceneIndex: i,
+          base64,
+        });
+        // 同步视图：直接把 task.imageUrls 换掉就行（scene 的 img_idx 已指向该 slot）
+        if (task.value?.imageUrls) {
+          const slot = scenes.value[i].img_idx;
+          task.value.imageUrls[slot] = newUrl;
+        }
+        uni.showToast({ title: '已替换', icon: 'success' });
+      } catch (e) {
+        uni.showModal({ title: '换图失败', content: e.message || String(e), showCancel: false });
+      } finally {
+        replacingIdx.value = -1;
+      }
+    },
+  });
 }
 
 async function onConfirm() {
-  const finals = lines.value.map((l) => l.trim()).filter(Boolean);
-  if (!finals.length) {
-    uni.showToast({ title: '至少保留一句文案', icon: 'none' });
-    return;
+  uni.showLoading({ title: '启动生成' });
+  try {
+    await confirmTask({ taskId: taskId.value, scenes: scenes.value });
+    uni.hideLoading();
+    uni.redirectTo({ url: `/pages/ai-video/detail?id=${taskId.value}` });
+  } catch (e) {
+    uni.hideLoading();
+    uni.showModal({ title: '提交失败', content: e.message, showCancel: false });
   }
-  uni.showLoading({ title: '提交中' });
-  await confirmTask({ taskId: taskId.value, finalCopywriting: finals, bgmId: selectedBgm.value });
-  uni.hideLoading();
-  uni.redirectTo({ url: `/pages/ai-video/detail?id=${taskId.value}` });
-}
-
-function useOriginal() {
-  lines.value = [...(task.value.aiCopywriting || [])];
 }
 
 function back() {
@@ -117,7 +184,6 @@ onLoad((q) => {
   taskId.value = Number(q.id);
   load();
 });
-
 onUnload(() => {
   if (pollTimer) clearTimeout(pollTimer);
 });
@@ -137,6 +203,41 @@ onUnload(() => {
   padding: 32rpx;
   margin-bottom: 20rpx;
   box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.03);
+}
+
+.title-card {
+  background: linear-gradient(135deg, $brand-primary, $brand-primary-dark);
+  color: #fff;
+
+  .title-label {
+    font-size: 22rpx;
+    opacity: 0.8;
+  }
+
+  .title-text {
+    margin-top: 8rpx;
+    font-size: 36rpx;
+    font-weight: 700;
+  }
+}
+
+.section-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.regen-btn {
+  padding: 8rpx 20rpx;
+  background: $brand-primary-light;
+  color: $brand-primary-dark;
+  border-radius: $radius-pill;
+  font-size: 22rpx;
+  font-weight: 500;
+
+  &.disabled {
+    opacity: 0.5;
+  }
 }
 
 .section-title {
@@ -193,7 +294,7 @@ onUnload(() => {
     color: $text-secondary;
   }
 
-  .btn.ghost {
+  .btn.ghost.solo {
     margin-top: 40rpx;
     width: 60%;
     margin-left: auto;
@@ -212,84 +313,145 @@ onUnload(() => {
   }
 }
 
-.lines {
+.scenes {
   display: flex;
   flex-direction: column;
-  gap: 16rpx;
+  gap: 24rpx;
+}
 
-  .line {
-    display: flex;
-    align-items: flex-start;
-    gap: 12rpx;
-    padding: 16rpx;
-    background: #fafbfc;
-    border-radius: $radius-md;
+.scene-bigimg {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  margin: 16rpx 0 8rpx;
+  background-color: #eaecef;
+  border-radius: $radius-sm;
+  overflow: hidden;
+  cursor: pointer;
+
+  .scene-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    :deep(img) {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
   }
 
-  .line-no {
-    flex-shrink: 0;
-    width: 40rpx;
-    height: 40rpx;
-    line-height: 40rpx;
+  .scene-bigimg-hint {
+    position: absolute;
+    right: 16rpx;
+    bottom: 16rpx;
+    display: flex;
+    align-items: center;
+    gap: 6rpx;
+    padding: 8rpx 16rpx;
+    background: rgba(0, 0, 0, 0.55);
+    color: #fff;
+    font-size: 22rpx;
+    border-radius: $radius-pill;
+
+    .hint-icon {
+      font-size: 20rpx;
+    }
+  }
+
+  .scene-bigimg-mask {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12rpx;
+    background: rgba(0, 0, 0, 0.55);
+    color: #fff;
+    font-size: 24rpx;
+
+    .spinner.small {
+      width: 48rpx;
+      height: 48rpx;
+      border: 4rpx solid rgba(255, 255, 255, 0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0;
+    }
+  }
+}
+
+.scene {
+  padding: 24rpx;
+  background: #fafbfc;
+  border-radius: $radius-md;
+  border-left: 6rpx solid $brand-primary;
+
+  .scene-head {
+    display: flex;
+    align-items: center;
+    gap: 16rpx;
+    margin-bottom: 16rpx;
+  }
+
+  .scene-no {
+    width: 52rpx;
+    height: 52rpx;
+    line-height: 52rpx;
     text-align: center;
     background: $brand-primary;
     color: #fff;
-    font-size: 22rpx;
+    font-size: 26rpx;
+    font-weight: 600;
     border-radius: 50%;
   }
 
-  .line-input {
-    flex: 1;
-    min-height: 56rpx;
-    padding: 4rpx 0;
-    font-size: 28rpx;
-    color: $text-primary;
-    line-height: 1.5;
-    background: transparent;
-  }
+  .scene-meta {
+    display: flex;
+    flex-direction: column;
 
-  .line-del {
-    flex-shrink: 0;
-    font-size: 22rpx;
-    color: $text-secondary;
-    padding: 6rpx 12rpx;
-  }
-}
-
-.line-add {
-  margin-top: 20rpx;
-  text-align: center;
-  color: $brand-primary;
-  font-size: 26rpx;
-  padding: 20rpx;
-  border: 2rpx dashed $brand-primary;
-  border-radius: $radius-md;
-}
-
-.bgm-list {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 16rpx;
-
-  .bgm {
-    padding: 24rpx 16rpx;
-    background: #f6f7f9;
-    border-radius: $radius-md;
-    border: 2rpx solid transparent;
-    text-align: center;
-    font-size: 26rpx;
-    color: $text-primary;
-
-    .bgm-mood {
-      display: block;
-      margin-top: 6rpx;
-      font-size: 20rpx;
+    .scene-time {
+      font-size: 24rpx;
       color: $text-secondary;
+      font-weight: 500;
     }
 
-    &.active {
-      background: $brand-primary-light;
-      border-color: $brand-primary;
+    .scene-imgtag {
+      font-size: 20rpx;
+      color: $text-placeholder;
+      margin-top: 4rpx;
+    }
+  }
+}
+
+.scene-field {
+  margin-top: 12rpx;
+
+  .fld-label {
+    font-size: 22rpx;
+    color: $text-secondary;
+    margin-bottom: 6rpx;
+  }
+
+  .fld-input {
+    display: block;
+    width: 100%;
+    min-height: 56rpx;
+    padding: 12rpx 16rpx;
+    background: #fff;
+    border-radius: $radius-sm;
+    font-size: 26rpx;
+    color: $text-primary;
+    line-height: 1.5;
+    box-sizing: border-box;
+
+    &.pale {
+      color: $text-regular;
+      font-size: 24rpx;
     }
   }
 }

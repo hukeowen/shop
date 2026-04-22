@@ -93,6 +93,12 @@
       "style": {
         "navigationBarTitleText": "上架商品"
       }
+    },
+    {
+      "path": "pages/product/batch",
+      "style": {
+        "navigationBarTitleText": "AI 识别上架"
+      }
     }
   ],
   "globalStyle": {

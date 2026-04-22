@@ -95,7 +95,16 @@ function switchTab(v) {
 }
 
 function goAdd() {
-  uni.navigateTo({ url: '/pages/product/edit' });
+  uni.showActionSheet({
+    itemList: ['🤖 AI 上架（拍一张识别多件）', '✏️ 传统上架（手动填一件）'],
+    success: (r) => {
+      if (r.tapIndex === 0) {
+        uni.navigateTo({ url: '/pages/product/batch' });
+      } else if (r.tapIndex === 1) {
+        uni.navigateTo({ url: '/pages/product/edit' });
+      }
+    },
+  });
 }
 function goEdit(id) {
   uni.navigateTo({ url: `/pages/product/edit?id=${id}` });
