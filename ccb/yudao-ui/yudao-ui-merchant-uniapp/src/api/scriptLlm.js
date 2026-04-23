@@ -16,6 +16,9 @@ const DURATION = Number(import.meta.env.VITE_VIDEO_DURATION || 10);
 const DEFAULT_SCENES = Number(import.meta.env.VITE_VIDEO_SCENES || 3);
 const MAX_SCENES = 6;
 
+// 固定的收尾 CTA，必定出现在最后一幕的 narration
+const FIXED_CTA = '截图微信扫描二维码在线下单';
+
 function authHeaders() {
   if (!ARK_KEY) throw new Error('未配置 VITE_ARK_API_KEY');
   return {
@@ -111,9 +114,9 @@ visual_prompt 技术要求（每条必须满足，否则视频是死图）：
 `.trim();
 
   const structureHint =
-    SCENES <= 2 ? '① 画面/好奇心钩子（用照片里最有画面感的细节让人停刷）② 感官升华 + 扫码指引' :
-    SCENES === 3 ? '① 画面钩子（照片里最抓眼的氛围/细节/悬念）② 感官与场景展开（香气/温度/质感/使用情境）③ 情感共鸣收尾 + 扫右下角二维码' :
-    `① 画面钩子 ② 感官与质感展开 ${SCENES > 4 ? '③④ 场景延伸 + 情绪递进' : '③ 细节特写高光'} ④ 生活化场景共鸣 ⑤ 情绪收束 + 扫右下角二维码（共 ${SCENES} 幕，像一段完整故事）`;
+    SCENES <= 2 ? `① 画面/好奇心钩子（用照片里最有画面感的细节让人停刷）② 固定收尾「${FIXED_CTA}」` :
+    SCENES === 3 ? `① 画面钩子（照片里最抓眼的氛围/细节/悬念）② 感官与场景展开（香气/温度/质感/使用情境）③ 固定收尾「${FIXED_CTA}」` :
+    `① 画面钩子 ② 感官与质感展开 ${SCENES > 4 ? '③④ 场景延伸 + 情绪递进' : '③ 细节特写高光'} ④ 生活化场景共鸣 ⑤ 固定收尾「${FIXED_CTA}」（共 ${SCENES} 幕，像一段完整故事）`;
 
   const directorPrompt = [
     `你是自家商品的店主，同时是个会讲故事的人。现在只看照片——充分发挥想象，帮这件商品写一支有画面感的抖音短片。`,
@@ -127,7 +130,7 @@ visual_prompt 技术要求（每条必须满足，否则视频是死图）：
     '2. 【画面钩子】第 1 幕前 3 秒用照片里最有画面感的细节或悬念让人停刷——不要痛点喊话，不要反差促销，不要数字冲击',
     '3. 【打乱上传顺序】按 best_role 重新安排——不要按 idx 顺序，要按最强叙事冲击力排',
     '4. 【自然口语】像朋友聊天、分享好东西那样说，不要广告腔；多用感官词（香/烫/脆/绵/柔/清/润/暖）和场景词，不要念参数',
-    '5. 【扫码收尾】最后一幕自然带一句扫码引导（如"喜欢就扫右下角二维码""想尝一口的扫右下角""详情都在右下角二维码里"）；严禁出现"老板""赔本""大减价""限时""秒杀""库存不多""小黄车""购物车""点击链接"等促销/违规词',
+    `5. 【扫码收尾】最后一幕 narration 固定就是这 14 个字："${FIXED_CTA}"——其他幕不要提前出现扫码/二维码/下单引导，避免重复；严禁出现"老板""赔本""大减价""限时""秒杀""库存不多""小黄车""购物车""点击链接"等促销/违规词`,
     '6. 【每幕承接】narration 是一整段口播被切开，有承接/递进/转折，连起来是一个完整故事',
     '',
     `故事结构参考：${structureHint}`,
@@ -187,7 +190,7 @@ export async function generateHighlight(imageBase64s) {
 async function generateScriptTextOnly({ userDescription, SCENES, D, totalSec, n }) {
   const raw = await arkChat(TEXT_MODEL, [
     { role: 'system', content: `你是会讲故事的店主+短视频编剧。narration 自然口语，基于画面发挥想象（画面/氛围/感官/场景/情绪），有钩子→展开→共鸣→扫码收尾的弧线；visual_prompt 必须英文且有真实物体运动。禁止使用"老板/赔本/大减价/限时/秒杀/小黄车/购物车"等吆喝/违规词。只输出 JSON。` },
-    { role: 'user', content: `身份：你是这个商品的店主，正在用心分享一件自己喜欢的东西。\n商品背景：${userDescription}\n共 ${n} 张图，输出 ${SCENES} 幕脚本（每幕 ${D}s，共 ${totalSec}s）。\n第 1 幕要用画面感/好奇心钩子（不要痛点喊话、不要数字冲击），最后一幕自然带一句扫右下角二维码的引导；全程不要说"老板/赔本/大减价/限时/秒杀/小黄车/购物车/点击链接"。\n` + JSON.stringify({
+    { role: 'user', content: `身份：你是这个商品的店主，正在用心分享一件自己喜欢的东西。\n商品背景：${userDescription}\n共 ${n} 张图，输出 ${SCENES} 幕脚本（每幕 ${D}s，共 ${totalSec}s）。\n第 1 幕要用画面感/好奇心钩子（不要痛点喊话、不要数字冲击）；最后一幕 narration 固定就是这 14 个字："${FIXED_CTA}"，前面几幕不要提前出现扫码/二维码/下单引导；全程不要说"老板/赔本/大减价/限时/秒杀/小黄车/购物车/点击链接"。\n` + JSON.stringify({
       title: '视频标题（8-16字，画面感/情绪感，不要吆喝不要促销词）',
       scenes: Array.from({ length: SCENES }, (_, i) => ({
         img_idx: i % n,
@@ -228,8 +231,13 @@ function parseScript(raw, imageCount, sceneCount) {
     s.visual_prompt = String(s.visual_prompt || s.narration).trim();
     s.image_summary = String(s.image_summary || '').trim();
   });
+  const out = scenes.slice(0, sceneCount);
+  // 强制收尾：最后一幕 narration 固定为扫码引导文案，保证 TTS 和字幕都是这句
+  if (out.length) {
+    out[out.length - 1].narration = FIXED_CTA;
+  }
   return {
     title: String(obj.title || '').trim() || '新品推荐',
-    scenes: scenes.slice(0, sceneCount),
+    scenes: out,
   };
 }
