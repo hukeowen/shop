@@ -452,9 +452,9 @@ export default defineConfig(({ mode }) => {
       const sc = (s % 60).toFixed(2).padStart(5, '0');
       return `${h}:${String(m).padStart(2, '0')}:${sc}`;
     };
-    // 长文本自动折行（>14字换行）
+    // 长文本自动折行（>12字换行，避免单行溢出画面）
     const wrapText = (t) => {
-      if (t.length <= 16) return t;
+      if (t.length <= 13) return t;
       const mid = Math.ceil(t.length / 2);
       const breakAt = [
         t.indexOf('，', mid - 5),
@@ -476,7 +476,7 @@ ScaledBorderAndShadow: yes
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Hype,${fontName},72,&H00FFFFFF,&H000000FF,&H00000000,&H80000000,-1,0,0,0,100,108,2,0,1,5,4,2,40,40,130,1
+Style: Hype,${fontName},58,&H00FFFFFF,&H000000FF,&H00000000,&H80000000,-1,0,0,0,100,100,2,0,1,4,3,2,60,60,130,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
