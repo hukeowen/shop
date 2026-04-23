@@ -7,12 +7,19 @@
 --     在 MySQL 5.x 不支持，故用 INFORMATION_SCHEMA 判断）。
 --   - 反复执行不会报 "Duplicate column" 错误。
 --
+-- 变更要点：
+--   - member_user.mini_app_open_id 采用 UNIQUE 索引（uk_mini_app_open_id）：
+--     防并发 wxMiniLogin 重复注册同一 openid —— 并发两个请求同时 selectByOpenId 都拿到 null
+--     然后双双 insert 的竞态场景下，UNIQUE 约束确保只有一条记录入表，另一条靠
+--     INSERT IGNORE 吃掉 duplicate key error，最后统一回查拿到唯一会员记录。
+--
 -- 回滚 SQL（需要回滚时执行）：
 --   DROP TABLE IF EXISTS `merchant_invite_code`;
 --   ALTER TABLE `merchant_info`
 --     DROP COLUMN `open_id`,
 --     DROP COLUMN `union_id`,
 --     DROP COLUMN `invite_code_id`;
+--   ALTER TABLE `member_user` DROP INDEX `uk_mini_app_open_id`;
 --   ALTER TABLE `member_user` DROP COLUMN `mini_app_open_id`;
 --
 -- 执行顺序：在 v2_business_tables.sql 之后
@@ -77,7 +84,8 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
                     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'member_user' AND COLUMN_NAME = 'mini_app_open_id') THEN
         ALTER TABLE `member_user` ADD COLUMN `mini_app_open_id` VARCHAR(64) DEFAULT NULL COMMENT '摊小二商户统一小程序 OpenID' AFTER `id`;
-        ALTER TABLE `member_user` ADD INDEX `idx_mini_app_open_id` (`mini_app_open_id`);
+        -- UNIQUE 防并发 wxMiniLogin 重复注册同一 openid（竞态下靠 duplicate key 兜底）
+        ALTER TABLE `member_user` ADD UNIQUE INDEX `uk_mini_app_open_id` (`mini_app_open_id`);
     END IF;
 END$$
 DELIMITER ;

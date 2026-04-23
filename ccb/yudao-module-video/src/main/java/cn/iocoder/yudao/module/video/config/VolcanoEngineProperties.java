@@ -4,6 +4,11 @@ import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
+import java.util.LinkedHashSet;
+import java.util.Set;
+import java.util.stream.Stream;
+import java.util.stream.Collectors;
+
 /**
  * 火山引擎配置
  *
@@ -48,6 +53,19 @@ public class VolcanoEngineProperties {
      * <p>控制台创建推理接入点后填入 ep-xxxxx，或直接用如 {@code doubao-1-5-pro-32k-250115} 的模型名。</p>
      */
     private String llmModel = "doubao-1-5-pro-32k-250115";
+
+    /**
+     * Ark Chat 透传端点（BFF {@code /ark/chat}）允许的 model 白名单。
+     *
+     * <p>防止商户小程序侧任意传 model 串号到其他付费模型；任一未授权模型直接抛
+     * {@code ARK_CHAT_FAILED}。可在 YAML 里覆盖：
+     * {@code video.volcano-engine.ark-allowed-models: [doubao-1-5-pro-32k-250115, ...]}</p>
+     */
+    private Set<String> arkAllowedModels = Stream.of(
+            "doubao-1-5-pro-32k-250115",
+            "doubao-1-5-vision-pro-32k-250115",
+            "doubao-seedance-1-0-pro-250528"
+    ).collect(Collectors.toCollection(LinkedHashSet::new));
 
     /** Ark 内容生成（Seedance 图生视频）地址 */
     private String arkGenerationUrl = "https://ark.cn-beijing.volces.com/api/v3/contents/generations/tasks";

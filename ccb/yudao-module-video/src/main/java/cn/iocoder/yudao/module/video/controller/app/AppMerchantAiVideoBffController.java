@@ -8,9 +8,12 @@ import cn.iocoder.yudao.module.merchant.service.MerchantService;
 import cn.iocoder.yudao.module.video.client.ArkBffClient;
 import cn.iocoder.yudao.module.video.client.JimengBffClient;
 import cn.iocoder.yudao.module.video.client.TtsBffClient;
+import cn.iocoder.yudao.module.video.config.VolcanoEngineProperties;
 import cn.iocoder.yudao.module.video.controller.app.vo.bff.BffJimengQueryReqVO;
 import cn.iocoder.yudao.module.video.controller.app.vo.bff.BffJimengSubmitReqVO;
 import cn.iocoder.yudao.module.video.controller.app.vo.bff.BffTtsReqVO;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
@@ -63,6 +66,9 @@ public class AppMerchantAiVideoBffController {
     private static final Set<Integer> ALLOWED_FRAMES = Collections.unmodifiableSet(
             new HashSet<>(Arrays.asList(121, 241)));
 
+    /** 复用 Jackson 解析/序列化 Ark chat 透传 body（sanitize 用）。 */
+    private static final ObjectMapper ARK_BODY_MAPPER = new ObjectMapper();
+
     @Resource
     private ArkBffClient arkBffClient;
     @Resource
@@ -71,11 +77,19 @@ public class AppMerchantAiVideoBffController {
     private TtsBffClient ttsBffClient;
     @Resource
     private MerchantService merchantService;
+    @Resource
+    private VolcanoEngineProperties volcanoEngineProperties;
 
     /**
      * Ark Chat 代理。
      *
-     * <p>请求体必须是合法 JSON，由调用方自行构造符合 Ark 协议的 payload；后端不解析业务字段，仅透传。</p>
+     * <p>请求体必须是合法 JSON。服务端会做 sanitize：</p>
+     * <ul>
+     *     <li>{@code model} 必须在 {@link VolcanoEngineProperties#getArkAllowedModels()} 白名单内，
+     *         否则抛 {@code ARK_CHAT_FAILED}。</li>
+     *     <li>{@code temperature} 若出现，必须在 {@code [0, 1]}；越界抛 {@code ARK_CHAT_FAILED}。</li>
+     * </ul>
+     * <p>校验通过后，重新序列化 body 再透传到 Ark（即使原始 body 有未使用的字段也会透传）。</p>
      */
     @PostMapping("/ark/chat")
     @Operation(summary = "AI 对话（Ark Chat 代理）")
@@ -91,9 +105,31 @@ public class AppMerchantAiVideoBffController {
         byte[] raw = readBodyWithLimit(request, ARK_BODY_LIMIT);
         String bodyJson = new String(raw, StandardCharsets.UTF_8);
 
-        log.info("[bff/ark] merchantId={} bodyBytes={}", merchant.getId(), raw.length);
+        // 1. 解析 + 校验白名单 / temperature
+        Map<String, Object> bodyMap;
+        try {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> parsed = ARK_BODY_MAPPER.readValue(bodyJson, Map.class);
+            bodyMap = parsed;
+        } catch (JsonProcessingException e) {
+            throw exception(cn.iocoder.yudao.module.merchant.enums.MerchantErrorCodeConstants.ARK_CHAT_FAILED,
+                    "请求体不是合法 JSON");
+        }
+        validateArkBody(bodyMap);
 
-        String respText = arkBffClient.chat(bodyJson);
+        // 2. 重新序列化再透传（sanitize 路径）
+        String sanitizedJson;
+        try {
+            sanitizedJson = ARK_BODY_MAPPER.writeValueAsString(bodyMap);
+        } catch (JsonProcessingException e) {
+            throw exception(cn.iocoder.yudao.module.merchant.enums.MerchantErrorCodeConstants.ARK_CHAT_FAILED,
+                    "请求体序列化失败");
+        }
+
+        log.info("[bff/ark] merchantId={} bodyBytes={} model={}",
+                merchant.getId(), raw.length, bodyMap.get("model"));
+
+        String respText = arkBffClient.chat(sanitizedJson);
         // Ark 返回也是 JSON；尝试解析为对象以便 CommonResult 序列化
         Object parsed;
         try {
@@ -102,6 +138,37 @@ public class AppMerchantAiVideoBffController {
             parsed = respText;
         }
         return success(parsed);
+    }
+
+    /**
+     * 校验 Ark chat 请求体：model 白名单 + temperature 上下界。违反则抛 {@code ARK_CHAT_FAILED}。
+     */
+    private void validateArkBody(Map<String, Object> body) {
+        Object modelObj = body.get("model");
+        if (!(modelObj instanceof String) || ((String) modelObj).isEmpty()) {
+            throw exception(cn.iocoder.yudao.module.merchant.enums.MerchantErrorCodeConstants.ARK_CHAT_FAILED,
+                    "缺少 model");
+        }
+        String model = (String) modelObj;
+        Set<String> allowed = volcanoEngineProperties.getArkAllowedModels();
+        if (allowed == null || !allowed.contains(model)) {
+            throw exception(cn.iocoder.yudao.module.merchant.enums.MerchantErrorCodeConstants.ARK_CHAT_FAILED,
+                    "模型 " + model + " 未授权");
+        }
+        Object tempObj = body.get("temperature");
+        if (tempObj != null) {
+            double temperature;
+            if (tempObj instanceof Number) {
+                temperature = ((Number) tempObj).doubleValue();
+            } else {
+                throw exception(cn.iocoder.yudao.module.merchant.enums.MerchantErrorCodeConstants.ARK_CHAT_FAILED,
+                        "temperature 类型非法");
+            }
+            if (temperature < 0.0 || temperature > 1.0) {
+                throw exception(cn.iocoder.yudao.module.merchant.enums.MerchantErrorCodeConstants.ARK_CHAT_FAILED,
+                        "temperature 越界");
+            }
+        }
     }
 
     /**

@@ -2,6 +2,7 @@ package cn.iocoder.yudao.module.merchant.controller.app.vo.auth;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+import lombok.ToString;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -11,9 +12,11 @@ import java.util.List;
 public class AppLoginRespVO {
 
     @Schema(description = "AccessToken")
+    @ToString.Exclude
     private String token;
 
     @Schema(description = "RefreshToken")
+    @ToString.Exclude
     private String refreshToken;
 
     @Schema(description = "Token 过期时间")

@@ -25,7 +25,6 @@ import cn.iocoder.yudao.module.merchant.service.auth.ActiveRoleCache;
 import cn.iocoder.yudao.module.merchant.service.wechat.Jscode2SessionResult;
 import cn.iocoder.yudao.module.merchant.service.wechat.WeChatMiniAppService;
 import cn.iocoder.yudao.module.system.enums.oauth2.OAuth2ClientConstants;
-import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
@@ -114,6 +113,7 @@ public class AppUnifiedAuthController {
 
     @PostMapping("/bind-phone")
     @Operation(summary = "绑定手机号（需先登录）")
+    @TenantIgnore // member_user / merchant_info 都是全局表，JWT 已鉴权无需 tenant-id Header
     @Transactional(rollbackFor = Exception.class)
     public CommonResult<AppLoginRespVO> bindPhone(@Valid @RequestBody AppBindPhoneReqVO reqVO) {
         Long userId = SecurityFrameworkUtils.getLoginUserId();
@@ -152,6 +152,7 @@ public class AppUnifiedAuthController {
 
     @PostMapping("/apply-merchant")
     @Operation(summary = "开通商户（需登录 + 邀请码）")
+    @TenantIgnore // member_user / merchant_info 都是全局表，JWT 已鉴权无需 tenant-id Header
     @Transactional(rollbackFor = Exception.class)
     public CommonResult<AppLoginRespVO> applyMerchant(@Valid @RequestBody AppApplyMerchantReqVO reqVO) {
         Long userId = SecurityFrameworkUtils.getLoginUserId();
@@ -196,6 +197,7 @@ public class AppUnifiedAuthController {
 
     @PostMapping("/switch-role")
     @Operation(summary = "切换当前激活角色")
+    @TenantIgnore // member_user / merchant_info 都是全局表，JWT 已鉴权无需 tenant-id Header
     public CommonResult<AppLoginRespVO> switchRole(@Valid @RequestBody AppSwitchRoleReqVO reqVO) {
         Long userId = SecurityFrameworkUtils.getLoginUserId();
         MemberUserDO member = memberUserMapper.selectById(userId);
@@ -216,6 +218,7 @@ public class AppUnifiedAuthController {
 
     @GetMapping("/me")
     @Operation(summary = "获取当前登录态")
+    @TenantIgnore // member_user / merchant_info 都是全局表，JWT 已鉴权无需 tenant-id Header
     public CommonResult<AppLoginRespVO> me() {
         Long userId = SecurityFrameworkUtils.getLoginUserId();
         MemberUserDO member = memberUserMapper.selectById(userId);
@@ -237,19 +240,30 @@ public class AppUnifiedAuthController {
 
     // ==================== 内部工具 ====================
 
+    /**
+     * 幂等取/建会员。依赖 {@code member_user.mini_app_open_id} 上的 UNIQUE 索引，配合
+     * {@code INSERT IGNORE} 兜底并发竞态：两条请求同时拿到 null 双双进入 insert 分支时，
+     * 只有一条真正入表，另一条被 UNIQUE 约束静默忽略，最后统一重新查一次即可。
+     */
     private MemberUserDO findOrCreateMember(String openid) {
-        MemberUserDO existed = memberUserMapper.selectOne(
-                Wrappers.<MemberUserDO>lambdaQuery().eq(MemberUserDO::getMiniAppOpenId, openid));
+        // 快速路径：已注册直接返回
+        MemberUserDO existed = memberUserMapper.selectByMiniAppOpenId(openid);
         if (existed != null) {
             return existed;
         }
-        MemberUserDO fresh = new MemberUserDO();
-        fresh.setMiniAppOpenId(openid);
-        fresh.setStatus(0); // CommonStatusEnum.ENABLE
-        fresh.setRegisterTerminal(TerminalEnum.WECHAT_MINI_PROGRAM.getTerminal());
-        memberUserMapper.insert(fresh);
-        log.info("[findOrCreateMember] 新注册会员，userId={}", fresh.getId());
-        return fresh;
+        // 幂等插入：冲突时返回 0，不抛异常
+        int affected = memberUserMapper.insertIgnoreByMiniAppOpenId(
+                openid,
+                0, // CommonStatusEnum.ENABLE
+                TerminalEnum.WECHAT_MINI_PROGRAM.getTerminal());
+        // 回查：无论是本次插入成功还是被并发请求抢先插入，最终必有记录
+        MemberUserDO finalMember = memberUserMapper.selectByMiniAppOpenId(openid);
+        if (finalMember == null) {
+            // 理论不该发生：唯一的可能是 SQL 层 UNIQUE 索引未生效，属配置/迁移问题
+            throw exception(SESSION_KEY_EXPIRED);
+        }
+        log.info("[wxLogin] openid={} insertWon={}", openid, affected == 1);
+        return finalMember;
     }
 
     private OAuth2AccessTokenRespDTO issueToken(Long userId) {
