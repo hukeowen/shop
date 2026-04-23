@@ -521,18 +521,23 @@ Dialogue: 0,${fmtTime(0.15)},${fmtTime(endSec)},Hype,,0,0,0,,{\\fad(350,450)\\mo
         });
       }
 
+      // 注意：ffmpeg-static 里 `-shortest` 与 `-vf subtitles` 组合会使 aac 编码器收不到样本（Qavg: nan），音频流会被整条丢掉。
+      // 用 `-t ${duration}` 显式限长代替 `-shortest`，并补 `-apad` 避免音频短于视频时出现 EOF 抖动。
+      const durSec = Math.max(1, Number(duration) || 10);
       const audioOnlyArgs = [
         '-y', '-i', vidFile, '-i', audFile,
         '-map', '0:v:0', '-map', '1:a:0',
         '-c:v', 'copy', '-c:a', 'aac',
-        '-shortest', '-movflags', '+faststart',
+        '-af', 'apad',
+        '-t', String(durSec),
+        '-movflags', '+faststart',
         outFile,
       ];
 
       // 查字体 → 生成 ASS → 字幕烧录（需重编码）；失败则降级为纯音频合流
       const font = findChineseFont();
       if (font) {
-        fs.writeFileSync(assFile, buildAss(text, Number(duration), font.name), 'utf8');
+        fs.writeFileSync(assFile, buildAss(text, durSec, font.name), 'utf8');
         const fontDir = path.dirname(font.path).replace(/\\/g, '/').replace(/:/g, '\\:');
         const assPath = assFile.replace(/\\/g, '/').replace(/:/g, '\\:');
         const subtitleArgs = [
@@ -540,7 +545,10 @@ Dialogue: 0,${fmtTime(0.15)},${fmtTime(endSec)},Hype,,0,0,0,,{\\fad(350,450)\\mo
           '-map', '0:v:0', '-map', '1:a:0',
           '-vf', `subtitles=${assPath}:fontsdir=${fontDir}`,
           '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '22',
-          '-c:a', 'aac', '-shortest', '-movflags', '+faststart',
+          '-c:a', 'aac',
+          '-af', 'apad',
+          '-t', String(durSec),
+          '-movflags', '+faststart',
           outFile,
         ];
         console.log(`[mux] 字幕模式，字体: ${font.name}`);
