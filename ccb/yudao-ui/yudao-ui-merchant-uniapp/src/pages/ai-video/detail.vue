@@ -290,7 +290,8 @@ const publishLabel = computed(() => {
   if (!publishing.value) return '发布到抖音';
   switch (publishStage.value) {
     case 'merging': return '合并视频中…';
-    case 'uploading': return '上传中…';
+    case 'authorizing': return '等待授权…';
+    case 'uploading': return '上传到抖音中…';
     case 'publishing': return '发布中…';
     default: return '处理中…';
   }
@@ -305,7 +306,7 @@ async function onPublishDouyin() {
   const confirm = await new Promise((r) =>
     uni.showModal({
       title: '发布到抖音',
-      content: '将自动合并全部分镜，上传并发布。约 1-2 分钟，确认继续？',
+      content: '将自动合并全部分镜、完成抖音授权，并发布到你的抖音账号。约 1-2 分钟，确认继续？',
       success: (x) => r(x.confirm),
       fail: () => r(false),
     })
@@ -315,14 +316,16 @@ async function onPublishDouyin() {
   publishStage.value = 'merging';
   uni.showLoading({ title: publishLabel.value, mask: true });
   try {
-    const out = await publishToDouyin(taskId.value, (stage) => {
+    await publishToDouyin(taskId.value, (stage) => {
       publishStage.value = stage;
-      uni.showLoading({ title: publishLabel.value, mask: true });
+      // 授权阶段弹窗会抢焦点，这里先把 loading 关掉，授权成功后自动继续
+      if (stage === 'authorizing') uni.hideLoading();
+      else uni.showLoading({ title: publishLabel.value, mask: true });
     });
     uni.hideLoading();
     uni.showModal({
       title: '已发布',
-      content: `视频已合成并推送到抖音发布队列。\n\n合并后 URL：\n${out.mergedUrl}`,
+      content: '视频已成功推送到你的抖音账号，可在抖音 App「我-作品」里查看。',
       showCancel: false,
     });
   } catch (e) {

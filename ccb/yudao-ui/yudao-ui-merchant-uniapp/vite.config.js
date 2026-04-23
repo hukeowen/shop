@@ -785,6 +785,144 @@ Dialogue: 0,0:00:00.00,0:00:10.00,Tip,,0,0,0,,{\\pos(360,310)}${tip}${brandLine}
     }
   }
 
+  // ===================== 抖音开放平台 =====================
+  // 流程：
+  //   ① 前端点「发布到抖音」
+  //   ② 若本地无 access_token，弹窗打开 GET /douyin/auth-url 引导到抖音授权页
+  //   ③ 用户授权后抖音回跳到 GET /douyin/oauth-callback?code=xxx；sidecar 换 token
+  //      → 返回 HTML，postMessage 把 token 回传给 opener，再 window.close()
+  //   ④ 前端拿到 token 调 POST /douyin/publish {accessToken, openId, videoUrl, text}
+  //      sidecar 下载视频 → multipart 上传到抖音 → create_video → 返回 item_id
+  const DOUYIN_CLIENT_KEY = env.DOUYIN_CLIENT_KEY || '';
+  const DOUYIN_CLIENT_SECRET = env.DOUYIN_CLIENT_SECRET || '';
+  const DOUYIN_OAUTH_CONNECT = 'https://open.douyin.com/platform/oauth/connect/';
+  const DOUYIN_ACCESS_TOKEN = 'https://open.douyin.com/oauth/access_token/';
+  const DOUYIN_UPLOAD_VIDEO = 'https://open.douyin.com/api/douyin/v1/video/upload_video/';
+  const DOUYIN_CREATE_VIDEO = 'https://open.douyin.com/api/douyin/v1/video/create_video/';
+
+  function handleDouyinAuthUrl(req, res) {
+    try {
+      if (!DOUYIN_CLIENT_KEY) throw new Error('未配置 DOUYIN_CLIENT_KEY（.env.local）');
+      const full = new URL(req.url, 'http://x');
+      const redirectUri = full.searchParams.get('redirect_uri')
+        || `${req.headers['x-forwarded-proto'] || 'http'}://${req.headers.host}/douyin/oauth-callback`;
+      const state = crypto.randomBytes(8).toString('hex');
+      const u = new URL(DOUYIN_OAUTH_CONNECT);
+      u.searchParams.set('client_key', DOUYIN_CLIENT_KEY);
+      u.searchParams.set('response_type', 'code');
+      u.searchParams.set('scope', 'user_info,video.create,video.upload');
+      u.searchParams.set('redirect_uri', redirectUri);
+      u.searchParams.set('state', state);
+      sendJson(res, 200, { ok: true, url: u.toString(), state });
+    } catch (e) {
+      sendJson(res, 500, { ok: false, error: e.message });
+    }
+  }
+
+  async function handleDouyinOAuthCallback(req, res) {
+    try {
+      const full = new URL(req.url, 'http://x');
+      const code = full.searchParams.get('code');
+      const state = full.searchParams.get('state') || '';
+      const err = full.searchParams.get('errcode') || full.searchParams.get('error');
+      if (err) throw new Error(`douyin oauth error: ${err} ${full.searchParams.get('error_description') || ''}`);
+      if (!code) throw new Error('回调缺少 code');
+      if (!DOUYIN_CLIENT_KEY || !DOUYIN_CLIENT_SECRET) throw new Error('未配置 DOUYIN_CLIENT_KEY/SECRET');
+
+      // code → access_token
+      const body = new URLSearchParams({
+        client_key: DOUYIN_CLIENT_KEY,
+        client_secret: DOUYIN_CLIENT_SECRET,
+        code,
+        grant_type: 'authorization_code',
+      });
+      const r = await fetchRetry(DOUYIN_ACCESS_TOKEN, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: body.toString(),
+      });
+      const payload = await r.json().catch(() => ({}));
+      const d = payload?.data || {};
+      if (!r.ok || !d.access_token) throw new Error(`access_token 换取失败：${JSON.stringify(payload).slice(0, 300)}`);
+
+      const token = {
+        accessToken: d.access_token,
+        refreshToken: d.refresh_token || '',
+        openId: d.open_id || '',
+        expiresIn: d.expires_in || 0,
+        grantedAt: Date.now(),
+      };
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.end(`<!doctype html><html><head><meta charset="utf-8"><title>抖音授权成功</title></head>
+<body style="font-family:sans-serif;padding:48px;text-align:center;">
+<h3>✅ 抖音授权成功</h3>
+<p style="color:#888">窗口将自动关闭，回到刚才的页面继续发布…</p>
+<script>
+(function(){
+  var data = ${JSON.stringify({ type: 'douyin-oauth', ok: true, state, token })};
+  try { if (window.opener) { window.opener.postMessage(data, '*'); } } catch (e) {}
+  setTimeout(function(){ window.close(); }, 400);
+})();
+</script></body></html>`);
+    } catch (e) {
+      console.error('[douyin/oauth-callback]', e.message);
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.end(`<!doctype html><html><body style="font-family:sans-serif;padding:48px;text-align:center;">
+<h3>❌ 抖音授权失败</h3><p style="color:#c33">${String(e.message).replace(/</g, '&lt;')}</p>
+<script>
+try { if (window.opener) { window.opener.postMessage(${JSON.stringify({ type: 'douyin-oauth', ok: false })}, '*'); } } catch(e){}
+</script></body></html>`);
+    }
+  }
+
+  async function handleDouyinPublish(req, res) {
+    try {
+      const { accessToken, openId, videoUrl, text } = await readJsonBody(req);
+      if (!accessToken || !openId) throw new Error('未授权（缺少 accessToken/openId），请先完成抖音授权');
+      if (!videoUrl) throw new Error('videoUrl 为空');
+      if (!DOUYIN_CLIENT_KEY) throw new Error('未配置 DOUYIN_CLIENT_KEY');
+
+      // 1. 下载合并后的视频
+      console.log(`[douyin] 下载视频 ${videoUrl}`);
+      const vidResp = await fetchRetry(videoUrl);
+      if (!vidResp.ok) throw new Error(`视频下载失败 ${vidResp.status}`);
+      const vidBuf = Buffer.from(await vidResp.arrayBuffer());
+      console.log(`[douyin] 下载完成 ${(vidBuf.length / 1024 / 1024).toFixed(1)} MB`);
+
+      // 2. multipart/form-data 上传到抖音
+      const form = new FormData();
+      form.append('video', new Blob([vidBuf], { type: 'video/mp4' }), 'video.mp4');
+      const upResp = await fetchRetry(`${DOUYIN_UPLOAD_VIDEO}?open_id=${encodeURIComponent(openId)}`, {
+        method: 'POST',
+        headers: { 'access-token': accessToken },
+        body: form,
+      });
+      const upJson = await upResp.json().catch(() => ({}));
+      const videoId = upJson?.data?.video_id;
+      if (!upResp.ok || !videoId) throw new Error(`上传失败：${JSON.stringify(upJson).slice(0, 300)}`);
+      console.log(`[douyin] 上传成功 video_id=${videoId}`);
+
+      // 3. create_video 发布
+      const cvResp = await fetchRetry(`${DOUYIN_CREATE_VIDEO}?open_id=${encodeURIComponent(openId)}`, {
+        method: 'POST',
+        headers: {
+          'access-token': accessToken,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ video_id: videoId, text: (text || '').slice(0, 55) }),
+      });
+      const cvJson = await cvResp.json().catch(() => ({}));
+      const itemId = cvJson?.data?.item_id;
+      if (!cvResp.ok || !itemId) throw new Error(`发布失败：${JSON.stringify(cvJson).slice(0, 300)}`);
+      console.log(`[douyin] 发布成功 item_id=${itemId}`);
+
+      sendJson(res, 200, { ok: true, videoId, itemId });
+    } catch (e) {
+      console.error('[douyin/publish]', e.message);
+      sendJson(res, 500, { ok: false, error: e.message });
+    }
+  }
+
   // Sidecar 插件：OSS 上传 + TTS 代理 + 即梦AI 签名代理 + 视频帧代理 + 视频合流
   const sidecar = {
     name: 'tanxiaoer-sidecar',
@@ -792,6 +930,8 @@ Dialogue: 0,0:00:00.00,0:00:10.00,Tip,,0,0,0,,{\\pos(360,310)}${tip}${brandLine}
       server.middlewares.use(async (req, res, next) => {
         const url = (req.url || '').split('?')[0];
         if (req.method === 'GET' && url === '/vproxy') return handleVideoProxy(req, res);
+        if (req.method === 'GET' && url === '/douyin/auth-url') return handleDouyinAuthUrl(req, res);
+        if (req.method === 'GET' && url === '/douyin/oauth-callback') return handleDouyinOAuthCallback(req, res);
         if (req.method !== 'POST') return next();
         if (url === '/oss/upload') return handleOssUpload(req, res);
         if (url === '/tts/volc') return handleTtsVolc(req, res);
@@ -799,10 +939,11 @@ Dialogue: 0,0:00:00.00,0:00:10.00,Tip,,0,0,0,,{\\pos(360,310)}${tip}${brandLine}
         if (url === '/video/merge') return handleVideoMerge(req, res);
         if (url === '/video/mux') return handleVideoMux(req, res);
         if (url === '/video/endcard') return handleVideoEndcard(req, res);
+        if (url === '/douyin/publish') return handleDouyinPublish(req, res);
         if (url === '/jimeng') return handleJimeng(req, res);
         next();
       });
-      console.log('[sidecar] /oss/upload /tts/volc /tts/edge /vproxy /video/merge /video/mux /video/endcard /jimeng 已挂载');
+      console.log('[sidecar] /oss/upload /tts/volc /tts/edge /vproxy /video/* /douyin/* /jimeng 已挂载');
     },
   };
 
