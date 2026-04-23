@@ -448,10 +448,39 @@ export function getDouyinAuthUrl() {
   return Promise.resolve({ url: 'https://open.douyin.com/platform/oauth/connect?mock=1' });
 }
 
-export function publishToDouyin(taskId) {
+/**
+ * 发布到抖音：合并所有分镜 → 上传 TOS → 触发抖音发布
+ * （H5 原型阶段：真正的 OAuth + PublishVideo 接后端再走 Spring Boot；此处先打通合并+拿 URL 的链路）
+ * @param {number} taskId
+ * @param {(stage: 'merging'|'uploading'|'publishing'|'done', data?: any) => void} [onStage]
+ */
+export async function publishToDouyin(taskId, onStage) {
   const t = store.tasks.find((x) => x.id === taskId);
-  if (t) t.publishedToDouyin = true;
-  return Promise.resolve(true);
+  if (!t) throw new Error('任务不存在');
+  const urls = (t.scenes || []).filter((s) => s.clipUrl).map((s) => s.clipUrl);
+  if (!urls.length) throw new Error('没有可合并的分镜');
+
+  onStage?.('merging');
+  const res = await fetch('/video/merge', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ urls, uploadTos: true }),
+  });
+  const data = res.ok ? await res.json() : { ok: false, error: `HTTP ${res.status}` };
+  if (!data.ok) throw new Error('合并失败：' + (data.error || 'unknown'));
+
+  onStage?.('uploading', { mergedUrl: data.url, size: data.size });
+  t.mergedUrl = data.url;
+
+  // TODO: 接后端 POST /merchant/mini/ai-video/douyin/publish?taskId=xxx
+  // 现在 H5 原型阶段，仅落本地标记
+  onStage?.('publishing');
+  await new Promise((r) => setTimeout(r, 600));
+  t.publishedToDouyin = true;
+  persist();
+
+  onStage?.('done', { mergedUrl: data.url });
+  return { ok: true, mergedUrl: data.url };
 }
 
 export const CONFIG = { MAX_SCENES };

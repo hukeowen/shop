@@ -258,7 +258,7 @@ export default defineConfig(({ mode }) => {
   async function handleVideoMerge(req, res) {
     let workDir;
     try {
-      const { urls = [] } = await readJsonBody(req);
+      const { urls = [], uploadTos = false } = await readJsonBody(req);
       if (!Array.isArray(urls) || !urls.length) throw new Error('urls 为空');
       if (!ffmpegPath) throw new Error('ffmpeg-static 未提供二进制路径');
 
@@ -353,6 +353,32 @@ export default defineConfig(({ mode }) => {
 
       const mp4 = fs.readFileSync(outFile);
       console.log(`[merge] 完成，输出 ${(mp4.length / 1024 / 1024).toFixed(1)} MB`);
+      if (uploadTos) {
+        // 上传 TOS 拿公网 URL（给发布到抖音之类的在线场景用）
+        const key = `tanxiaoer/merged/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.mp4`;
+        const { datetime, contentLen, bodyHash, authorization } = tosSign({
+          method: 'PUT', keyPath: key, buf: mp4, contentType: 'video/mp4', acl: 'public-read',
+        });
+        const r = await fetchRetry(`${TOS_BASE}/${key}`, {
+          method: 'PUT',
+          headers: {
+            Authorization: authorization,
+            'X-Amz-Date': datetime,
+            'X-Amz-Content-Sha256': bodyHash,
+            'X-Amz-Acl': 'public-read',
+            'Content-Type': 'video/mp4',
+            'Content-Length': contentLen,
+          },
+          body: mp4,
+        });
+        if (!r.ok) {
+          const errTxt = await r.text();
+          throw new Error(`TOS put ${r.status}: ${errTxt.slice(0, 300)}`);
+        }
+        console.log(`[merge] 已上传 TOS → ${key}`);
+        sendJson(res, 200, { ok: true, url: `${TOS_BASE}/${key}`, size: mp4.length });
+        return;
+      }
       res.setHeader('Content-Type', 'video/mp4');
       res.setHeader('Content-Disposition', 'attachment; filename="merged.mp4"');
       res.setHeader('Content-Length', String(mp4.length));

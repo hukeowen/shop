@@ -114,9 +114,9 @@
           <view class="act-icon mg">⇩</view>
           <text>{{ merging ? '合并中…' : '合并下载 MP4' }}</text>
         </view>
-        <view class="act" @click="onCopyLinks">
-          <view class="act-icon cp">⎘</view>
-          <text>复制所有链接</text>
+        <view class="act" @click="onPublishDouyin" :class="{ disabled: publishing || task.publishedToDouyin }">
+          <view class="act-icon dy">♪</view>
+          <text>{{ publishLabel }}</text>
         </view>
       </view>
 
@@ -141,7 +141,7 @@
 <script setup>
 import { computed, nextTick, ref, watch } from 'vue';
 import { onLoad, onUnload } from '@dcloudio/uni-app';
-import { getTask } from '../../api/aiVideo.js';
+import { getTask, publishToDouyin } from '../../api/aiVideo.js';
 import { findVoice } from '../../api/voice.js';
 
 const task = ref(null);
@@ -150,6 +150,8 @@ const taskId = ref(0);
 const currentIdx = ref(0);
 const playing = ref(false);
 const merging = ref(false);
+const publishing = ref(false);
+const publishStage = ref('');  // 'merging' | 'uploading' | 'publishing' | 'done'
 const duration = computed(() => task.value?.sceneDuration || Number(import.meta.env.VITE_VIDEO_DURATION || 10));
 const scenes = Number(import.meta.env.VITE_VIDEO_SCENES || 3);
 
@@ -283,9 +285,53 @@ function onReplay() {
   playCurrent();
 }
 
-function onCopyLinks() {
-  const urls = task.value.scenes.map((s, i) => `[${i + 1}] ${s.clipUrl || '(失败)'}`).join('\n');
-  uni.setClipboardData({ data: urls, success: () => uni.showToast({ title: '已复制', icon: 'none' }) });
+const publishLabel = computed(() => {
+  if (task.value?.publishedToDouyin) return '已发布到抖音';
+  if (!publishing.value) return '发布到抖音';
+  switch (publishStage.value) {
+    case 'merging': return '合并视频中…';
+    case 'uploading': return '上传中…';
+    case 'publishing': return '发布中…';
+    default: return '处理中…';
+  }
+});
+
+async function onPublishDouyin() {
+  if (publishing.value || task.value?.publishedToDouyin) return;
+  if (!playableScenes.value.length) {
+    uni.showToast({ title: '没有可发布的分镜', icon: 'none' });
+    return;
+  }
+  const confirm = await new Promise((r) =>
+    uni.showModal({
+      title: '发布到抖音',
+      content: '将自动合并全部分镜，上传并发布。约 1-2 分钟，确认继续？',
+      success: (x) => r(x.confirm),
+      fail: () => r(false),
+    })
+  );
+  if (!confirm) return;
+  publishing.value = true;
+  publishStage.value = 'merging';
+  uni.showLoading({ title: publishLabel.value, mask: true });
+  try {
+    const out = await publishToDouyin(taskId.value, (stage) => {
+      publishStage.value = stage;
+      uni.showLoading({ title: publishLabel.value, mask: true });
+    });
+    uni.hideLoading();
+    uni.showModal({
+      title: '已发布',
+      content: `视频已合成并推送到抖音发布队列。\n\n合并后 URL：\n${out.mergedUrl}`,
+      showCancel: false,
+    });
+  } catch (e) {
+    uni.hideLoading();
+    uni.showModal({ title: '发布失败', content: e.message || String(e), showCancel: false });
+  } finally {
+    publishing.value = false;
+    publishStage.value = '';
+  }
 }
 
 async function onMergeDownload() {
@@ -736,14 +782,11 @@ onUnload(() => {
       &.rp {
         background: #10b981;
       }
-      &.cp {
-        background: #3b82f6;
-      }
-      &.dl {
-        background: #f59e0b;
-      }
       &.mg {
         background: #ff6b35;
+      }
+      &.dy {
+        background: linear-gradient(135deg, #fe2c55 0%, #25f4ee 100%);
       }
     }
 
