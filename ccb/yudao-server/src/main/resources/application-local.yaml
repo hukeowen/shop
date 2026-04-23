@@ -195,6 +195,17 @@ logging:
 
 debug: false
 
+--- #################### 摊小二商户统一小程序 ####################
+# 独立于 wx.miniapp（会员端），专门用于摊小二商户端的微信小程序登录 / 手机号解密
+wechat:
+  mini-app:
+    app-id: ${WECHAT_MINI_APP_ID:}
+    app-secret: ${WECHAT_MINI_APP_SECRET:}
+    # 可选覆盖：
+    # jscode2session-url: https://api.weixin.qq.com/sns/jscode2session
+    # session-key-ttl-seconds: 600
+    # http-timeout-seconds: 8
+
 --- #################### 微信公众号、小程序相关配置 ####################
 wx:
   mp: # 公众号配置（必填），参见 https://github.com/Wechat-Group/WxJava/blob/develop/spring-boot-starters/wx-java-mp-spring-boot-starter/README.md 文档

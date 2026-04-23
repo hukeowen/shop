@@ -129,4 +129,21 @@ public class MerchantDO extends TenantBaseDO {
      */
     private Long userId;
 
+    // ========== 摊小二统一小程序扩展字段（Phase 0.2） ==========
+
+    /**
+     * 摊小二商户小程序 OpenID
+     */
+    private String openId;
+
+    /**
+     * 微信开放平台 UnionID（同主体不同小程序/公众号共享）
+     */
+    private String unionId;
+
+    /**
+     * 注册时使用的邀请码 ID
+     */
+    private Long inviteCodeId;
+
 }

@@ -110,6 +110,43 @@ public class MerchantServiceImpl implements MerchantService {
     }
 
     @Override
+    public MerchantDO getMerchantByOpenId(String openId) {
+        if (openId == null || openId.isEmpty()) {
+            return null;
+        }
+        return merchantMapper.selectByOpenId(openId);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Long createMerchantFromMember(Long memberUserId, String openId, String unionId,
+                                         String phone, Long inviteCodeId) {
+        // 幂等：同一 openid 已建过商户直接返回
+        MerchantDO existed = merchantMapper.selectByOpenId(openId);
+        if (existed != null) {
+            return existed.getId();
+        }
+        // 同一 userId 也防重
+        existed = merchantMapper.selectByUserId(memberUserId);
+        if (existed != null) {
+            return existed.getId();
+        }
+        MerchantDO merchant = MerchantDO.builder()
+                .name("新店" + memberUserId) // 占位名，商户端后续可改
+                .contactPhone(phone)
+                .status(MerchantStatusEnum.APPROVED.getStatus()) // 邀请码已校验即视为开通
+                .userId(memberUserId)
+                .openId(openId)
+                .unionId(unionId)
+                .inviteCodeId(inviteCodeId)
+                .build();
+        merchantMapper.insert(merchant);
+        log.info("[createMerchantFromMember] 商户开通成功，userId={}, merchantId={}, inviteCodeId={}",
+                memberUserId, merchant.getId(), inviteCodeId);
+        return merchant.getId();
+    }
+
+    @Override
     public PageResult<MerchantDO> getMerchantPage(MerchantPageReqVO pageReqVO) {
         return merchantMapper.selectPage(pageReqVO);
     }

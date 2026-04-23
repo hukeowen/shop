@@ -42,4 +42,14 @@ public interface MerchantErrorCodeConstants {
     ErrorCode TTS_FAILED               = new ErrorCode(1_021_010_003, "语音合成失败：{}");
     ErrorCode BFF_BODY_TOO_LARGE       = new ErrorCode(1_021_010_004, "请求体过大");
 
+    // ========== 统一登录 / 角色 / 邀请码 1-021-011-xxx ==========
+    ErrorCode INVITE_CODE_NOT_FOUND    = new ErrorCode(1_021_011_001, "邀请码不存在");
+    ErrorCode INVITE_CODE_EXHAUSTED    = new ErrorCode(1_021_011_002, "邀请码已用完");
+    ErrorCode INVITE_CODE_DISABLED     = new ErrorCode(1_021_011_003, "邀请码已禁用");
+    ErrorCode WX_LOGIN_FAILED          = new ErrorCode(1_021_011_004, "微信登录失败，请稍后重试");
+    ErrorCode PHONE_DECRYPT_FAILED     = new ErrorCode(1_021_011_005, "手机号解密失败，请重新获取");
+    ErrorCode PHONE_REQUIRED           = new ErrorCode(1_021_011_006, "需要先授权手机号");
+    ErrorCode ROLE_NOT_GRANTED         = new ErrorCode(1_021_011_007, "当前用户没有该角色");
+    ErrorCode SESSION_KEY_EXPIRED      = new ErrorCode(1_021_011_008, "登录态已过期，请重新登录");
+
 }

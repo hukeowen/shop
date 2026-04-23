@@ -142,4 +142,14 @@ public class MemberUserDO extends TenantBaseDO {
      */
     private Long groupId;
 
+    // ========== 摊小二统一小程序扩展字段（Phase 0.2） ==========
+
+    /**
+     * 摊小二商户统一小程序 OpenID
+     *
+     * <p>与 {@code mobile} 并行的身份标识：微信端登录的会员主 ID 仍然是 {@link #id}，
+     * 但用它做幂等注册（同一 openid 不再重复建会员）。</p>
+     */
+    private String miniAppOpenId;
+
 }

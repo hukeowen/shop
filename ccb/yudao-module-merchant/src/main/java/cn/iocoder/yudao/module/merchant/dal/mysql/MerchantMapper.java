@@ -22,4 +22,8 @@ public interface MerchantMapper extends BaseMapperX<MerchantDO> {
         return selectOne(MerchantDO::getUserId, userId);
     }
 
+    default MerchantDO selectByOpenId(String openId) {
+        return selectOne(MerchantDO::getOpenId, openId);
+    }
+
 }
