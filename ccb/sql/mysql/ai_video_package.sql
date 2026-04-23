@@ -6,6 +6,11 @@
 -- 本迁移脚本追加一列 video_quota_remaining 到 merchant_info 表，
 -- 并新增两张业务表：ai_video_package（平台级套餐定义）
 -- 和 merchant_video_quota_log（商户配额流水账）。
+--
+-- 关键约束：merchant_video_quota_log.(biz_type, biz_id) UNIQUE
+-- → 防支付回调重复加配额；VIDEO_GEN 扣减用 UUID 天然唯一不受影响；
+--   MANUAL_ADJUST 的 biz_id 可能为 NULL，MySQL UNIQUE 对 NULL 视为不等，
+--   多条 NULL 允许共存，OK。
 -- =====================================================================
 
 -- 1. 套餐定义表（平台级，tenant_id 恒为 0，不按商户/租户隔离查询）
@@ -45,7 +50,7 @@ CREATE TABLE IF NOT EXISTS `merchant_video_quota_log` (
     `tenant_id` BIGINT NOT NULL DEFAULT 0,
     PRIMARY KEY (`id`),
     KEY `idx_merchant_time` (`merchant_id`, `create_time` DESC),
-    KEY `idx_biz` (`biz_type`, `biz_id`)
+    UNIQUE KEY `uk_biz` (`biz_type`, `biz_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='AI 视频配额流水';
 
 -- 3. 商户表补列：video_quota_remaining（INFORMATION_SCHEMA 守护，允许反复执行）

@@ -38,6 +38,7 @@ public class AiVideoPackageServiceImpl implements AiVideoPackageService {
         if (pkg.getSort() == null) {
             pkg.setSort(0);
         }
+        // 平台级表：tenant_id 靠 DDL default 0，不写 DO 字段
         packageMapper.insert(pkg);
         return pkg.getId();
     }

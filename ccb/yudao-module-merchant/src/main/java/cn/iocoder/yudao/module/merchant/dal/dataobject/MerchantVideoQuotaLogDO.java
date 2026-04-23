@@ -15,9 +15,14 @@ import lombok.ToString;
  *
  * <p>所有 {@code video_quota_remaining} 的 +/- 都必须写一条，作为对账与审计的唯一可信源。</p>
  *
- * <p>按 {@code merchant_id} 过滤，<em>不按</em> tenant 过滤——商户和管理后台是跨租户统一视角。
- * 因此继承 {@link BaseDO} 而非 TenantBaseDO，避免 MP 租户拦截器追加
- * {@code tenant_id = ?}。</p>
+ * <p>平台级表（非租户隔离）。按 {@code merchant_id} 过滤，<em>不按</em> tenant 过滤——
+ * 商户和管理后台是跨租户统一视角。继承 {@link BaseDO} 而非 TenantBaseDO，
+ * <em>不要</em>在 INSERT 时显式设置 tenantId——SQL 表
+ * {@code tenant_id NOT NULL DEFAULT 0} 靠 DDL 默认值兜底。</p>
+ *
+ * <p>幂等关键约束：SQL 表上 {@code (biz_type, biz_id)} UNIQUE。支付回调重试 / BFF 重放
+ * 会触发 {@link org.springframework.dao.DuplicateKeyException}，被 ServiceImpl 捕后返回 false，
+ * 调用方据此回滚上层事务，避免重复加/减配额。</p>
  */
 @TableName("merchant_video_quota_log")
 @Data

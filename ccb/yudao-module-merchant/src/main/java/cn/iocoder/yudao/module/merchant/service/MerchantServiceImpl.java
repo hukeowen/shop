@@ -301,6 +301,9 @@ public class MerchantServiceImpl implements MerchantService {
     /**
      * 使用 {@link Propagation#REQUIRES_NEW} 独立事务，防止与 HTTP 调用包裹在同一事务里长时间占用连接。
      * 先原子 +；affected=0 → 商户不存在；再 selectById 读取对齐后的 quota_after 写流水。
+     *
+     * <p>幂等保护：流水表 {@code uk_biz(biz_type, biz_id)} UNIQUE。insertLog 重复时 return false，
+     * 抛异常让 {@code @Transactional} 回滚本次 {@code UPDATE}——配额不会被重复增加（支付回调重试、BFF 重放场景）。</p>
      */
     @Override
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
@@ -324,7 +327,13 @@ public class MerchantServiceImpl implements MerchantService {
                 .bizId(bizId)
                 .remark(remark)
                 .build();
-        merchantVideoQuotaLogService.insertLog(logDO);
+        boolean inserted = merchantVideoQuotaLogService.insertLog(logDO);
+        if (!inserted) {
+            // 流水重复 → 抛异常让 @Transactional 回滚 UPDATE，避免配额被重复增加
+            log.warn("[increaseVideoQuota] 流水重复，回滚本次扣减 merchantId={} bizType={} bizId={}",
+                    merchantId, bizType, bizId);
+            throw exception(VIDEO_QUOTA_UPDATE_FAILED);
+        }
         log.info("[increaseVideoQuota] merchantId={} +{} after={} bizType={} bizId={}",
                 merchantId, delta, after, bizType, bizId);
         return after;
@@ -336,6 +345,9 @@ public class MerchantServiceImpl implements MerchantService {
      *
      * <p>REQUIRES_NEW 独立事务：调用方做远程 HTTP 时不会被锁住；失败的 BFF 调用方另行调
      * {@link #increaseVideoQuota} 补偿。</p>
+     *
+     * <p>幂等保护：同 {@link #increaseVideoQuota} —— 流水 UNIQUE 冲突时回滚 UPDATE。
+     * VIDEO_GEN 调用处使用随机 UUID 作为 bizId，天然唯一。</p>
      */
     @Override
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
@@ -360,7 +372,13 @@ public class MerchantServiceImpl implements MerchantService {
                 .bizId(bizId)
                 .remark(remark)
                 .build();
-        merchantVideoQuotaLogService.insertLog(logDO);
+        boolean inserted = merchantVideoQuotaLogService.insertLog(logDO);
+        if (!inserted) {
+            // 流水重复 → 抛异常让 @Transactional 回滚 UPDATE，避免配额被重复扣减
+            log.warn("[decreaseVideoQuota] 流水重复，回滚本次扣减 merchantId={} bizType={} bizId={}",
+                    merchantId, bizType, bizId);
+            throw exception(VIDEO_QUOTA_UPDATE_FAILED);
+        }
         log.info("[decreaseVideoQuota] merchantId={} -{} after={} bizType={} bizId={}",
                 merchantId, delta, after, bizType, bizId);
         return after;

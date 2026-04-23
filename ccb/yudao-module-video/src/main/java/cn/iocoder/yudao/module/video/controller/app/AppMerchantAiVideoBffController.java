@@ -6,6 +6,7 @@ import cn.iocoder.yudao.framework.security.core.util.SecurityFrameworkUtils;
 import cn.iocoder.yudao.module.merchant.dal.dataobject.MerchantDO;
 import cn.iocoder.yudao.module.merchant.enums.ai.VideoQuotaBizTypeEnum;
 import cn.iocoder.yudao.module.merchant.service.MerchantService;
+import cn.iocoder.yudao.module.merchant.service.MerchantVideoQuotaLogService;
 import cn.iocoder.yudao.module.video.client.ArkBffClient;
 import cn.iocoder.yudao.module.video.client.JimengBffClient;
 import cn.iocoder.yudao.module.video.client.TtsBffClient;
@@ -79,6 +80,8 @@ public class AppMerchantAiVideoBffController {
     private TtsBffClient ttsBffClient;
     @Resource
     private MerchantService merchantService;
+    @Resource
+    private MerchantVideoQuotaLogService merchantVideoQuotaLogService;
     @Resource
     private VolcanoEngineProperties volcanoEngineProperties;
 
@@ -226,6 +229,17 @@ public class AppMerchantAiVideoBffController {
 
         try {
             String respText = jimengBffClient.callAction("CVSync2AsyncSubmitTask", bodyJson);
+            // 成功：把即梦 task_id 回写到预扣流水 remark，完成审计链（非关键路径，失败不影响主流程）
+            try {
+                String taskId = extractJimengTaskId(respText);
+                if (taskId != null && !taskId.isEmpty()) {
+                    merchantVideoQuotaLogService.appendTaskIdToRemark(
+                            merchant.getId(), preDebitBizId, taskId);
+                }
+            } catch (Exception auditEx) {
+                log.warn("[bff/jimeng] 审计链回写 taskId 失败 merchantId={} preDebitBizId={}",
+                        merchant.getId(), preDebitBizId, auditEx);
+            }
             return success(parseOrRaw(respText));
         } catch (RuntimeException e) {
             // 3) 失败：回补 1 条
@@ -327,6 +341,31 @@ public class AppMerchantAiVideoBffController {
             return parsed == null ? text : parsed;
         } catch (Exception e) {
             return text;
+        }
+    }
+
+    /**
+     * 从即梦 CVSync2AsyncSubmitTask 响应里抽取 {@code data.task_id}。
+     * 响应形如 {@code {"code":10000,"data":{"task_id":"xxx"},...}}。找不到返回 null。
+     */
+    @SuppressWarnings("unchecked")
+    private static String extractJimengTaskId(String respText) {
+        if (respText == null || respText.isEmpty()) {
+            return null;
+        }
+        try {
+            Map<String, Object> root = JsonUtils.parseObject(respText, Map.class);
+            if (root == null) {
+                return null;
+            }
+            Object dataObj = root.get("data");
+            if (!(dataObj instanceof Map)) {
+                return null;
+            }
+            Object taskId = ((Map<String, Object>) dataObj).get("task_id");
+            return taskId == null ? null : taskId.toString();
+        } catch (Exception e) {
+            return null;
         }
     }
 

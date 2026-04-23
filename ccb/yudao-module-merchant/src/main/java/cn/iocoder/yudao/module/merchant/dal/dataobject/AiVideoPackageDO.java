@@ -13,8 +13,8 @@ import lombok.ToString;
 /**
  * AI 视频套餐 DO（Phase 0.3.1）。
  *
- * <p>平台级资源：{@code tenant_id} 恒为 0，查询不按租户过滤。
- * 继承 {@link BaseDO}（<em>不是</em> TenantBaseDO），避免 MP 租户拦截器追加
+ * <p>平台级表（非租户隔离）。继承 {@link BaseDO}，<em>不要</em>在 INSERT 时显式设置 tenantId——
+ * SQL 表 {@code tenant_id NOT NULL DEFAULT 0} 靠 DDL 默认值兜底，避免 MP 租户拦截器追加
  * {@code tenant_id = ?} 把不同租户的 admin 屏蔽掉。</p>
  */
 @TableName("ai_video_package")
