@@ -124,6 +124,19 @@ public class MerchantDO extends TenantBaseDO {
      * 抖音授权过期时间
      */
     private LocalDateTime douyinTokenExpireTime;
+
+    /**
+     * AI 视频剩余配额条数（Phase 0.3.1）。
+     *
+     * <p><b>强制用原子 SQL 扣减</b>：仅靠
+     * {@code UPDATE merchant_info SET video_quota_remaining = video_quota_remaining - ?
+     *       WHERE id = ? AND deleted = 0 AND video_quota_remaining >= ?}
+     * 判定余额，<em>不要</em>在 Service 里先 {@code selectById} 再 {@code updateById}——
+     * 并发下会超扣。见 {@code MerchantMapper#decrementVideoQuotaAtomic(Long, int)}
+     * 和 {@code MerchantServiceImpl#decreaseVideoQuota(...)}。</p>
+     */
+    private Integer videoQuotaRemaining;
+
     /**
      * 关联的用户编号
      */

@@ -4,6 +4,7 @@ import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.common.util.json.JsonUtils;
 import cn.iocoder.yudao.framework.security.core.util.SecurityFrameworkUtils;
 import cn.iocoder.yudao.module.merchant.dal.dataobject.MerchantDO;
+import cn.iocoder.yudao.module.merchant.enums.ai.VideoQuotaBizTypeEnum;
 import cn.iocoder.yudao.module.merchant.service.MerchantService;
 import cn.iocoder.yudao.module.video.client.ArkBffClient;
 import cn.iocoder.yudao.module.video.client.JimengBffClient;
@@ -37,6 +38,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
 import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
@@ -173,6 +175,21 @@ public class AppMerchantAiVideoBffController {
 
     /**
      * 即梦AI 提交图生视频任务。
+     *
+     * <p>Phase 0.3.2：引入预扣/回补模式。</p>
+     * <ol>
+     *     <li>前置帧数校验（失败不扣）</li>
+     *     <li>{@link MerchantService#decreaseVideoQuota} 原子扣 1——SQL 里有
+     *         {@code video_quota_remaining >= 1} 守护，并发安全；余额不足抛
+     *         {@code VIDEO_QUOTA_INSUFFICIENT}，前端据此引导跳套餐页。</li>
+     *     <li>远程调即梦。成功直接返；失败兜底
+     *         {@link MerchantService#increaseVideoQuota}（biz_type=VIDEO_REFUND）。</li>
+     * </ol>
+     *
+     * <p>扣减 / 回补方法都是 REQUIRES_NEW 独立事务，HTTP 远程不会被事务包裹。
+     * 如果回补本身失败（极端异常），我们吞异常只打日志，把原始错误抛给 GlobalExceptionHandler——
+     * 否则会覆盖更有意义的上游报错；这种罕见 case 可由 {@code merchant_video_quota_log}
+     * 对账补偿（后续 Phase 的定时任务再做）。</p>
      */
     @PostMapping("/jimeng/submit")
     @Operation(summary = "即梦AI 提交图生视频任务")
@@ -184,6 +201,16 @@ public class AppMerchantAiVideoBffController {
                     "frames 仅支持 121 或 241");
         }
 
+        // 1) 预扣 1 条（quota 不足→抛 VIDEO_QUOTA_INSUFFICIENT）
+        // bizId 暂用临时 UUID；真正的即梦 taskId 在下游返回后可由业务回执补登
+        String preDebitBizId = UUID.randomUUID().toString().replace("-", "").substring(0, 16);
+        merchantService.decreaseVideoQuota(
+                merchant.getId(), 1,
+                VideoQuotaBizTypeEnum.VIDEO_GEN.getCode(),
+                preDebitBizId,
+                "即梦图生视频扣减");
+
+        // 2) 远程调用（事务之外）
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("req_key", JIMENG_I2V_REQ_KEY);
         payload.put("image_urls", Collections.singletonList(req.getImageUrl()));
@@ -192,12 +219,31 @@ public class AppMerchantAiVideoBffController {
         payload.put("seed", req.getSeed() == null ? -1 : req.getSeed());
 
         String bodyJson = JsonUtils.toJsonString(payload);
-        log.info("[bff/jimeng] submit merchantId={} frames={} promptLen={}",
+        log.info("[bff/jimeng] submit merchantId={} frames={} promptLen={} preDebitBizId={}",
                 merchant.getId(), req.getFrames(),
-                req.getPrompt() == null ? 0 : req.getPrompt().length());
+                req.getPrompt() == null ? 0 : req.getPrompt().length(),
+                preDebitBizId);
 
-        String respText = jimengBffClient.callAction("CVSync2AsyncSubmitTask", bodyJson);
-        return success(parseOrRaw(respText));
+        try {
+            String respText = jimengBffClient.callAction("CVSync2AsyncSubmitTask", bodyJson);
+            return success(parseOrRaw(respText));
+        } catch (RuntimeException e) {
+            // 3) 失败：回补 1 条
+            try {
+                String msg = e.getMessage() == null ? "unknown" : e.getMessage();
+                // 截断备注，避免超过 remark 列长度（255）
+                String truncated = msg.length() > 80 ? msg.substring(0, 80) : msg;
+                merchantService.increaseVideoQuota(
+                        merchant.getId(), 1,
+                        VideoQuotaBizTypeEnum.VIDEO_REFUND.getCode(),
+                        preDebitBizId,
+                        "即梦调用失败自动回补: " + truncated);
+            } catch (Exception refundEx) {
+                log.error("[bff/jimeng] 扣减成功但回补失败 merchantId={} preDebitBizId={}",
+                        merchant.getId(), preDebitBizId, refundEx);
+            }
+            throw e;
+        }
     }
 
     /**

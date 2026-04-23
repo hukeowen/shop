@@ -6,12 +6,14 @@ import cn.iocoder.yudao.module.merchant.controller.admin.vo.MerchantAuditReqVO;
 import cn.iocoder.yudao.module.merchant.controller.admin.vo.MerchantCreateReqVO;
 import cn.iocoder.yudao.module.merchant.controller.admin.vo.MerchantPageReqVO;
 import cn.iocoder.yudao.module.merchant.dal.dataobject.MerchantDO;
+import cn.iocoder.yudao.module.merchant.dal.dataobject.MerchantVideoQuotaLogDO;
 import cn.iocoder.yudao.module.merchant.dal.mysql.MerchantMapper;
 import cn.iocoder.yudao.module.merchant.enums.MerchantStatusEnum;
 import cn.binarywang.wx.miniapp.api.WxMaService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
@@ -21,7 +23,10 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.time.LocalDateTime;
 
+import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception0;
+import static cn.iocoder.yudao.module.merchant.enums.MerchantErrorCodeConstants.VIDEO_QUOTA_INSUFFICIENT;
+import static cn.iocoder.yudao.module.merchant.enums.MerchantErrorCodeConstants.VIDEO_QUOTA_UPDATE_FAILED;
 
 /**
  * 商户 Service 实现类
@@ -33,6 +38,9 @@ public class MerchantServiceImpl implements MerchantService {
 
     @Resource
     private MerchantMapper merchantMapper;
+
+    @Resource
+    private MerchantVideoQuotaLogService merchantVideoQuotaLogService;
 
     @Autowired(required = false)
     private WxMaService wxMaService;
@@ -286,6 +294,76 @@ public class MerchantServiceImpl implements MerchantService {
         updateObj.setId(merchantId);
         updateObj.setStatus(MerchantStatusEnum.APPROVED.getStatus());
         merchantMapper.updateById(updateObj);
+    }
+
+    // ========== AI 视频配额（Phase 0.3.1） ==========
+
+    /**
+     * 使用 {@link Propagation#REQUIRES_NEW} 独立事务，防止与 HTTP 调用包裹在同一事务里长时间占用连接。
+     * 先原子 +；affected=0 → 商户不存在；再 selectById 读取对齐后的 quota_after 写流水。
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
+    public int increaseVideoQuota(Long merchantId, int delta, Integer bizType, String bizId, String remark) {
+        if (merchantId == null || delta <= 0) {
+            throw exception(VIDEO_QUOTA_UPDATE_FAILED);
+        }
+        int affected = merchantMapper.incrementVideoQuotaAtomic(merchantId, delta);
+        if (affected == 0) {
+            log.warn("[increaseVideoQuota] 商户不存在或已删除 merchantId={} delta={}", merchantId, delta);
+            throw exception0(1_020_001_001, "商户不存在");
+        }
+        MerchantDO merchant = merchantMapper.selectById(merchantId);
+        Integer after = merchant == null || merchant.getVideoQuotaRemaining() == null
+                ? delta : merchant.getVideoQuotaRemaining();
+        MerchantVideoQuotaLogDO logDO = MerchantVideoQuotaLogDO.builder()
+                .merchantId(merchantId)
+                .quotaChange(delta)
+                .quotaAfter(after)
+                .bizType(bizType)
+                .bizId(bizId)
+                .remark(remark)
+                .build();
+        merchantVideoQuotaLogService.insertLog(logDO);
+        log.info("[increaseVideoQuota] merchantId={} +{} after={} bizType={} bizId={}",
+                merchantId, delta, after, bizType, bizId);
+        return after;
+    }
+
+    /**
+     * 原子扣减：SQL 里带 {@code video_quota_remaining >= delta} 守护；
+     * affected=0 → 余额不足，抛 {@code VIDEO_QUOTA_INSUFFICIENT}（用户侧友好提示）。
+     *
+     * <p>REQUIRES_NEW 独立事务：调用方做远程 HTTP 时不会被锁住；失败的 BFF 调用方另行调
+     * {@link #increaseVideoQuota} 补偿。</p>
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
+    public int decreaseVideoQuota(Long merchantId, int delta, Integer bizType, String bizId, String remark) {
+        if (merchantId == null || delta <= 0) {
+            throw exception(VIDEO_QUOTA_UPDATE_FAILED);
+        }
+        int affected = merchantMapper.decrementVideoQuotaAtomic(merchantId, delta);
+        if (affected == 0) {
+            // 可能是商户不存在，但更常见是余额不足——统一抛 INSUFFICIENT 提示购买套餐
+            log.info("[decreaseVideoQuota] 余额不足或商户不存在 merchantId={} delta={}", merchantId, delta);
+            throw exception(VIDEO_QUOTA_INSUFFICIENT);
+        }
+        MerchantDO merchant = merchantMapper.selectById(merchantId);
+        Integer after = merchant == null || merchant.getVideoQuotaRemaining() == null
+                ? 0 : merchant.getVideoQuotaRemaining();
+        MerchantVideoQuotaLogDO logDO = MerchantVideoQuotaLogDO.builder()
+                .merchantId(merchantId)
+                .quotaChange(-delta)
+                .quotaAfter(after)
+                .bizType(bizType)
+                .bizId(bizId)
+                .remark(remark)
+                .build();
+        merchantVideoQuotaLogService.insertLog(logDO);
+        log.info("[decreaseVideoQuota] merchantId={} -{} after={} bizType={} bizId={}",
+                merchantId, delta, after, bizType, bizId);
+        return after;
     }
 
 }

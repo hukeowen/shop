@@ -77,4 +77,32 @@ public interface MerchantService {
      */
     void enableMerchant(Long merchantId);
 
+    // ========== AI 视频配额（Phase 0.3.1） ==========
+
+    /**
+     * 原子增加商户视频配额并写入一条流水。独立事务（REQUIRES_NEW），
+     * 便于跨远程调用的错误回补场景——不要和其他大事务耦合。
+     *
+     * @param merchantId 商户 ID，必须存在
+     * @param delta      正整数，配额增加条数
+     * @param bizType    业务类型，对应
+     *                   {@link cn.iocoder.yudao.module.merchant.enums.ai.VideoQuotaBizTypeEnum}
+     * @param bizId      业务外键（订单号 / 任务 ID / 操作员 ID）；可空
+     * @param remark     备注；可空
+     * @return 变动后余量
+     * @throws cn.iocoder.yudao.framework.common.exception.ServiceException 商户不存在 / 更新失败
+     */
+    int increaseVideoQuota(Long merchantId, int delta, Integer bizType, String bizId, String remark);
+
+    /**
+     * 原子扣减商户视频配额并写入一条流水。独立事务（REQUIRES_NEW）。
+     *
+     * <p>靠 SQL {@code WHERE video_quota_remaining >= ?} 保证原子性——
+     * 并发多个请求同时扣时，最多只有一个成功；其他抛
+     * {@link cn.iocoder.yudao.module.merchant.enums.MerchantErrorCodeConstants#VIDEO_QUOTA_INSUFFICIENT}。</p>
+     *
+     * @return 变动后余量
+     */
+    int decreaseVideoQuota(Long merchantId, int delta, Integer bizType, String bizId, String remark);
+
 }

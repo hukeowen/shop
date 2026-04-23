@@ -52,4 +52,10 @@ public interface MerchantErrorCodeConstants {
     ErrorCode ROLE_NOT_GRANTED         = new ErrorCode(1_021_011_007, "当前用户没有该角色");
     ErrorCode SESSION_KEY_EXPIRED      = new ErrorCode(1_021_011_008, "登录态已过期，请重新登录");
 
+    // ========== 视频配额 / 套餐 1-021-012-xxx ==========
+    ErrorCode PACKAGE_NOT_FOUND        = new ErrorCode(1_021_012_001, "套餐不存在");
+    ErrorCode PACKAGE_NOT_AVAILABLE    = new ErrorCode(1_021_012_002, "套餐已下架");
+    ErrorCode VIDEO_QUOTA_INSUFFICIENT = new ErrorCode(1_021_012_003, "视频配额不足，请先购买套餐");
+    ErrorCode VIDEO_QUOTA_UPDATE_FAILED = new ErrorCode(1_021_012_004, "视频配额更新失败，请稍后重试");
+
 }
