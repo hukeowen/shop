@@ -80,19 +80,43 @@ export async function queryClipTask(taskId) {
     const videoUrl = d.video_url || null;
     return { status: videoUrl ? 'succeeded' : 'failed', videoUrl, error: videoUrl ? null : '生成失败，video_url 为空' };
   }
+  // not_found 可能是刚提交、火山侧还没写入 —— 留给调用方用 sinceSubmitMs 判断是否容忍
   if (status === 'not_found' || status === 'expired') {
-    return { status: 'failed', videoUrl: null, error: `task ${status}` };
+    return { status: 'failed', videoUrl: null, error: `task ${status}`, transient: status === 'not_found' };
   }
   return { status: 'running', videoUrl: null, error: null };
 }
 
 export async function waitClip(taskId, { intervalMs = 5000, maxMs = 600000, onTick } = {}) {
   const started = Date.now();
+  let consecutiveErrors = 0;
+  const MAX_ERRORS = 6;              // 连续 6 次查询失败才真的放弃（约 30s 网络故障容忍）
+  const NOT_FOUND_GRACE_MS = 60_000; // 刚提交前 60s 内 not_found 视为还没落库
   while (Date.now() - started < maxMs) {
-    const r = await queryClipTask(taskId);
-    onTick?.(r);
-    if (r.status === 'succeeded' && r.videoUrl) return r.videoUrl;
-    if (r.status === 'failed') throw new Error(r.error || '即梦AI 任务失败');
+    try {
+      const r = await queryClipTask(taskId);
+      onTick?.(r);
+      if (r.status === 'succeeded' && r.videoUrl) return r.videoUrl;
+      if (r.status === 'failed') {
+        if (r.transient && Date.now() - started < NOT_FOUND_GRACE_MS) {
+          // 刚提交就 not_found，给服务端一点落库时间
+          consecutiveErrors = 0;
+        } else {
+          throw new Error(r.error || '即梦AI 任务失败');
+        }
+      } else {
+        consecutiveErrors = 0;
+      }
+    } catch (e) {
+      // waitClip 本身的瞬时错误（网络抖动 / sidecar 重启 / TLS reset）不应直接崩掉
+      // 只在连续 MAX_ERRORS 次查询都失败时才真的放弃，其间任务其实还在火山侧运行
+      if (/即梦AI 任务失败/.test(e.message)) throw e; // 服务端明确判失败，不容忍
+      consecutiveErrors++;
+      console.warn(`[jimeng] waitClip 查询失败 (${consecutiveErrors}/${MAX_ERRORS}): ${e.message}`);
+      if (consecutiveErrors >= MAX_ERRORS) {
+        throw new Error(`即梦AI 连续 ${MAX_ERRORS} 次查询失败：${e.message}`);
+      }
+    }
     await new Promise((res) => setTimeout(res, intervalMs));
   }
   throw new Error(`即梦AI 超时，task=${taskId}`);

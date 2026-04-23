@@ -633,9 +633,13 @@ Dialogue: 0,${fmtTime(0.15)},${fmtTime(endSec)},Hype,,0,0,0,,{\\fad(350,450)\\mo
     }
   }
 
-  // 店名字幕（端卡用，单行居中大字）
+  // 端卡字幕：QR 上方一行说明「微信扫描二维码在线下单」+ 店名居中偏下（有名字才写）
   function buildShopAss(shopName, fontName) {
-    const safe = String(shopName || '').replace(/\{/g, '').replace(/\}/g, '').slice(0, 24);
+    const safe = String(shopName || '').replace(/[{}\\]/g, '').slice(0, 24);
+    const tip = '微信扫描二维码在线下单';
+    const brandLine = safe
+      ? `\nDialogue: 0,0:00:00.00,0:00:10.00,Brand,,0,0,0,,{\\pos(360,1060)}${safe}`
+      : '';
     return `[Script Info]
 ScriptType: v4.00+
 WrapStyle: 2
@@ -645,11 +649,12 @@ ScaledBorderAndShadow: yes
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Tip,${fontName},44,&H00FFFFFF,&H000000FF,&H00000000,&H00000000,-1,0,0,0,100,100,2,0,1,2,1,5,0,0,0,1
 Style: Brand,${fontName},56,&H00FFFFFF,&H000000FF,&H00000000,&H00000000,-1,0,0,0,100,100,2,0,1,2,2,5,0,0,0,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
-Dialogue: 0,0:00:00.00,0:00:10.00,Brand,,0,0,0,,{\\pos(360,1060)}${safe}`;
+Dialogue: 0,0:00:00.00,0:00:10.00,Tip,,0,0,0,,{\\pos(360,310)}${tip}${brandLine}`;
   }
 
   // 端卡：用商品图做底 + 半透黑遮罩 + 正中大二维码 + 店名 + TTS → 上传 TOS
@@ -714,7 +719,8 @@ Dialogue: 0,0:00:00.00,0:00:10.00,Brand,,0,0,0,,{\\pos(360,1060)}${safe}`;
         `[vbg][qr]overlay=(W-w)/2:(H-h)/2-H*0.05[v_qr]`;
 
       let filterComplex;
-      if (font && shopName) {
+      if (font) {
+        // 即使没店名也要烧录「微信扫描二维码在线下单」这行指引
         fs.writeFileSync(assFile, buildShopAss(shopName, font.name), 'utf8');
         const fontDir = path.dirname(font.path).replace(/\\/g, '/').replace(/:/g, '\\:');
         const assPath = assFile.replace(/\\/g, '/').replace(/:/g, '\\:');
