@@ -537,9 +537,9 @@ Dialogue: 0,${fmtTime(0.15)},${fmtTime(endSec)},Hype,,0,0,0,,{\\fad(350,450)\\mo
       // 用 `-t ${duration}` 显式限长代替 `-shortest`，并补 `-apad` 避免音频短于视频时出现 EOF 抖动。
       const durSec = Math.max(1, Number(duration) || 10);
 
-      // QR 相对视频尺寸缩放（短边 18% 方形）+ 右下角 padding 4% W。
+      // QR 相对视频尺寸缩放（短边 26% 方形）+ 右下角 padding 4% W。
       // scale 滤镜不支持 main_w/main_h，必须用 scale2ref：把 QR 相对视频缩放；overlay 再放到右下角。
-      const qrScale2ref = `[2:v][0:v:0]scale2ref=w='min(main_w\\,main_h)*0.18':h=ow[qr][vref]`;
+      const qrScale2ref = `[2:v][0:v:0]scale2ref=w='min(main_w\\,main_h)*0.26':h=ow[qr][vref]`;
       const overlayPos = `x='W-w-W*0.04':y='H-h-H*0.04'`;
 
       // 无字幕路径：仅叠加二维码（需要重编码）
