@@ -523,11 +523,12 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 Dialogue: 0,${fmtTime(0.15)},${fmtTime(endSec)},Hype,,0,0,0,,{\\fad(350,450)\\move(360,1230,360,1130,0,550)}${safeText}`;
   }
 
-  // 视频+配音+字幕+二维码合流：下载视频 + TTS → 生成 QR → FFmpeg mux + ASS 字幕 + QR overlay → 上传 TOS
+  // 视频+配音+字幕合流：下载视频 + TTS → FFmpeg mux + ASS 字幕 → 上传 TOS
+  // （右下角二维码已移除——扫码引导统一放到端卡里，正片保持干净）
   async function handleVideoMux(req, res) {
     let workDir;
     try {
-      const { videoUrl, text, voice, duration = 10, qrUrl } = await readJsonBody(req);
+      const { videoUrl, text, voice, duration = 10 } = await readJsonBody(req);
       if (!videoUrl) throw new Error('videoUrl 为空');
       if (!text) throw new Error('text 为空');
       if (!ffmpegPath) throw new Error('ffmpeg-static 未提供二进制路径');
@@ -545,20 +546,9 @@ Dialogue: 0,${fmtTime(0.15)},${fmtTime(endSec)},Hype,,0,0,0,,{\\fad(350,450)\\mo
       const vidFile = path.join(workDir, 'input.mp4');
       const audFile = path.join(workDir, 'audio.mp3');
       const assFile = path.join(workDir, 'sub.ass');
-      const qrFile = path.join(workDir, 'qr.png');
       const outFile = path.join(workDir, 'output.mp4');
       fs.writeFileSync(vidFile, vidBuf);
       fs.writeFileSync(audFile, audioBuf);
-
-      // 二维码：传入 qrUrl 优先；否则生成随机占位 URL（TODO: 后面接真实小程序码）
-      const finalQrUrl = qrUrl || `https://tanxiaoer.example/qr/${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
-      // 白底 + 4 模块 quiet zone，300px 基准大小（后面按视频尺寸缩放到合适比例）
-      await QRCode.toFile(qrFile, finalQrUrl, {
-        errorCorrectionLevel: 'M',
-        margin: 2,
-        width: 300,
-        color: { dark: '#000000', light: '#FFFFFFFF' },
-      });
 
       function runFfmpeg(args) {
         return new Promise((resolve, reject) => {
@@ -577,52 +567,42 @@ Dialogue: 0,${fmtTime(0.15)},${fmtTime(endSec)},Hype,,0,0,0,,{\\fad(350,450)\\mo
       // 用 `-t ${duration}` 显式限长代替 `-shortest`，并补 `-apad` 避免音频短于视频时出现 EOF 抖动。
       const durSec = Math.max(1, Number(duration) || 10);
 
-      // QR 相对视频尺寸缩放（短边 26% 方形）+ 右下角 padding 4% W。
-      // scale 滤镜不支持 main_w/main_h，必须用 scale2ref：把 QR 相对视频缩放；overlay 再放到右下角。
-      const qrScale2ref = `[2:v][0:v:0]scale2ref=w='min(main_w\\,main_h)*0.26':h=ow[qr][vref]`;
-      const overlayPos = `x='W-w-W*0.04':y='H-h-H*0.04'`;
-
-      // 无字幕路径：仅叠加二维码（需要重编码）
+      // 无字幕路径：保留原视频流，只合入 TTS 音轨（无需重编码）
       const audioOnlyArgs = [
-        '-y', '-i', vidFile, '-i', audFile, '-i', qrFile,
-        '-filter_complex', `${qrScale2ref};[vref][qr]overlay=${overlayPos}[v]`,
-        '-map', '[v]', '-map', '1:a:0',
-        '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '22',
-        '-c:a', 'aac', '-af', 'apad',
+        '-y', '-i', vidFile, '-i', audFile,
+        '-map', '0:v:0', '-map', '1:a:0',
+        '-c:v', 'copy', '-c:a', 'aac', '-af', 'apad',
         '-t', String(durSec),
         '-movflags', '+faststart',
         outFile,
       ];
 
-      // 查字体 → 生成 ASS → 字幕+二维码 一起烧录；失败则降级为"只二维码"
+      // 查字体 → 生成 ASS → 字幕烧录（需重编码）；失败则降级为纯音轨合流
       const font = findChineseFont();
       if (font) {
         fs.writeFileSync(assFile, buildAss(text, durSec, font.name), 'utf8');
         const fontDir = path.dirname(font.path).replace(/\\/g, '/').replace(/:/g, '\\:');
         const assPath = assFile.replace(/\\/g, '/').replace(/:/g, '\\:');
         const subtitleArgs = [
-          '-y', '-i', vidFile, '-i', audFile, '-i', qrFile,
-          '-filter_complex',
-            `${qrScale2ref};` +
-            `[vref]subtitles=${assPath}:fontsdir=${fontDir}[vs];` +
-            `[vs][qr]overlay=${overlayPos}[v]`,
-          '-map', '[v]', '-map', '1:a:0',
+          '-y', '-i', vidFile, '-i', audFile,
+          '-map', '0:v:0', '-map', '1:a:0',
+          '-vf', `subtitles=${assPath}:fontsdir=${fontDir}`,
           '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '22',
           '-c:a', 'aac', '-af', 'apad',
           '-t', String(durSec),
           '-movflags', '+faststart',
           outFile,
         ];
-        console.log(`[mux] 字幕+二维码模式，字体: ${font.name}，qr=${finalQrUrl}`);
+        console.log(`[mux] 字幕模式，字体: ${font.name}`);
         try {
           await runFfmpeg(subtitleArgs);
         } catch (subErr) {
-          console.warn(`[mux] 字幕渲染失败，降级为仅二维码: ${subErr.message.slice(0, 200)}`);
+          console.warn(`[mux] 字幕渲染失败，降级为纯音轨合流: ${subErr.message.slice(0, 200)}`);
           if (fs.existsSync(outFile)) fs.unlinkSync(outFile);
           await runFfmpeg(audioOnlyArgs);
         }
       } else {
-        console.warn(`[mux] 未找到中文字体，降级为仅二维码，qr=${finalQrUrl}`);
+        console.warn('[mux] 未找到中文字体，降级为纯音轨合流');
         await runFfmpeg(audioOnlyArgs);
       }
 
