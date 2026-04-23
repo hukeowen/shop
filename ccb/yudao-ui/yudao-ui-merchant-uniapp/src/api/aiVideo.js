@@ -76,6 +76,11 @@ function resumeTask(t) {
   (async () => {
     const tasks = (t.scenes || []).map(async (scene) => {
       if (scene.clipUrl) return; // 已完成
+      // 端卡：不走即梦AI，直接重新调用 sidecar 即可
+      if (scene.isEndCard) {
+        const startImageUrl = t.imageUrls[scene.img_idx] || t.imageUrls[t.imageUrls.length - 1] || t.imageUrls[0];
+        return runClip(t, scene, startImageUrl).then(() => {});
+      }
       if (!scene.clipTaskId) {
         // 没开始就丢了：这种幕我们没有 task_id 可接管，只能标失败
         scene.error = 'video: 页面刷新前该分镜尚未提交到 Seedance';
@@ -172,11 +177,11 @@ function newTask(init) {
  * 步骤①②：上传 + LLM 拆幕（阻塞，通常 10-20 秒）
  * @returns taskId
  */
-export async function createTask({ imageBase64s, userDescription, voiceKey, ratio }) {
+export async function createTask({ imageBase64s, userDescription, voiceKey, ratio, shopName }) {
   const imgs = (imageBase64s || []).filter(Boolean);
   if (!imgs.length) throw new Error('请至少上传 1 张图片');
 
-  const task = newTask({ userDescription, voiceKey, ratio: ratio || '9:16' });
+  const task = newTask({ userDescription, voiceKey, ratio: ratio || '9:16', shopName: shopName || '' });
 
   try {
     // ① 上传到 OSS
@@ -196,20 +201,25 @@ export async function createTask({ imageBase64s, userDescription, voiceKey, rati
       sceneDuration: perSceneDuration,
     });
     task.title = title;
-    task.scenes = scenes.map((s, i) => ({
-      index: i,
-      img_idx: s.img_idx,
-      image_summary: s.image_summary || '',
-      narration: s.narration,
-      visual_prompt: s.visual_prompt,
-      duration: perSceneDuration,
-      status: 'pending',
-      clipTaskId: null,
-      clipUrl: null,
-      audioUrl: null,
-      audioSource: null,
-      error: null,
-    }));
+    task.scenes = scenes.map((s, i) => {
+      const isEndCard = i === scenes.length - 1;
+      return {
+        index: i,
+        img_idx: s.img_idx,
+        image_summary: s.image_summary || '',
+        narration: s.narration,
+        visual_prompt: s.visual_prompt,
+        // 最后一幕是端卡：3s 静止图 + 大二维码 + 店名，跳过即梦AI 生成
+        duration: isEndCard ? 3 : perSceneDuration,
+        isEndCard,
+        status: 'pending',
+        clipTaskId: null,
+        clipUrl: null,
+        audioUrl: null,
+        audioSource: null,
+        error: null,
+      };
+    });
     task.status = 2;
   } catch (e) {
     task.status = 5;
@@ -266,20 +276,24 @@ export async function regenerateScript(taskId) {
       sceneDuration: perSceneDuration,
     });
     t.title = title;
-    t.scenes = scenes.map((s, i) => ({
-      index: i,
-      img_idx: s.img_idx,
-      image_summary: s.image_summary || '',
-      narration: s.narration,
-      visual_prompt: s.visual_prompt,
-      duration: perSceneDuration,
-      status: 'pending',
-      clipTaskId: null,
-      clipUrl: null,
-      audioUrl: null,
-      audioSource: null,
-      error: null,
-    }));
+    t.scenes = scenes.map((s, i) => {
+      const isEndCard = i === scenes.length - 1;
+      return {
+        index: i,
+        img_idx: s.img_idx,
+        image_summary: s.image_summary || '',
+        narration: s.narration,
+        visual_prompt: s.visual_prompt,
+        duration: isEndCard ? 3 : perSceneDuration,
+        isEndCard,
+        status: 'pending',
+        clipTaskId: null,
+        clipUrl: null,
+        audioUrl: null,
+        audioSource: null,
+        error: null,
+      };
+    });
     t.status = 2;
   } catch (e) {
     t.status = 5;
@@ -341,8 +355,34 @@ export async function confirmTask({ taskId, scenes }) {
 /** 单段视频：用指定起始图 + prompt 跑即梦AI；视频就绪后立即合入 TTS 配音 */
 async function runClip(task, scene, startImageUrl) {
   try {
-    scene.status = 'video_creating';
     scene.startImageUrl = startImageUrl;
+
+    // 端卡不走即梦AI：静止商品图 + 正中大二维码 + 店名，直接 sidecar 合成
+    if (scene.isEndCard) {
+      scene.status = 'endcard_building';
+      const v = findVoice(task.voiceKey);
+      const endRes = await fetch('/video/endcard', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          imageUrl: startImageUrl,
+          shopName: task.shopName || '',
+          text: scene.narration,
+          voice: v.ark,
+          duration: scene.duration || 3,
+        }),
+      });
+      const endData = endRes.ok ? await endRes.json() : { ok: false, error: `HTTP ${endRes.status}` };
+      if (!endData.ok) throw new Error('endcard: ' + (endData.error || 'unknown'));
+      scene.clipUrl = endData.url;
+      task.progress.done += 1;
+      scene.status = 'ready';
+      if (scene.index === 0 && task.status === 3) task.status = 4;
+      persist();
+      return true;
+    }
+
+    scene.status = 'video_creating';
     scene.clipTaskId = await createClipTask({
       imageUrl: startImageUrl,
       prompt: scene.visual_prompt || scene.narration,

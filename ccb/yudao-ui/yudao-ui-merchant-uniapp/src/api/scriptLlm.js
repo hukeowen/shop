@@ -106,11 +106,12 @@ export async function generateScript({ imageCount, imageUrls, userDescription, s
   // ── Step 2 + 3：导演策划 + 写脚本 ─────────────────────────────────
   const motionRule = `
 visual_prompt 技术要求（每条必须满足，否则视频是死图）：
-· 【物体运动】必须有真实物理动作：rotating / pouring / sizzling on grill / smoke rising / liquid dripping / rippling / sparkling / falling 等
-· 【镜头运动】选一种：slow push-in / pull-back / orbiting low angle / rising tilt / handheld follow / extreme close-up reveal
-· 【光效】选一种：warm ember glow / dramatic backlight with smoke / golden rim lighting / tyndall beam through steam / macro bokeh
-· 【语言】必须英文
-· 示例（烧烤）：Marinated beef slowly rotating on charcoal grill, fat dripping and sizzling, camera pushing in low angle through rising smoke, warm amber backlight, extreme close-up of char marks forming in slow motion
+· 【物体运动】必须有真实物理动作：缓慢旋转 / 倾倒液体 / 热气升腾 / 汤汁滴落 / 水面泛起涟漪 / 粉末飘散 / 慢动作落下 / 食材受热变化 等
+· 【镜头运动】选一种：镜头缓缓推近 / 缓慢后拉 / 低机位环绕 / 自下而上抬升 / 手持跟拍 / 特写揭示
+· 【光效】选一种：暖色微光 / 背光加烟雾 / 金色逆光勾边 / 水蒸气中的丁达尔光束 / 微距浅景深
+· 【语言】中文，让用户能看懂并修改
+· 示例（烧烤）：腌制牛肉在炭火上缓慢旋转，油脂滴落发出滋滋声，镜头从低角度穿过升腾的烟雾缓缓推近，暖黄色逆光勾边，慢镜头特写牛肉表面焦痕逐渐形成
+· 示例（茶饮）：一杯琥珀色的茶在木桌上微微晃动，热气缓缓升腾并在背光里形成金色光束，镜头从桌面高度缓慢推近杯口，浅景深浓郁氛围
 `.trim();
 
   const structureHint =

@@ -619,6 +619,146 @@ Dialogue: 0,${fmtTime(0.15)},${fmtTime(endSec)},Hype,,0,0,0,,{\\fad(350,450)\\mo
     }
   }
 
+  // 店名字幕（端卡用，单行居中大字）
+  function buildShopAss(shopName, fontName) {
+    const safe = String(shopName || '').replace(/\{/g, '').replace(/\}/g, '').slice(0, 24);
+    return `[Script Info]
+ScriptType: v4.00+
+WrapStyle: 2
+PlayResX: 720
+PlayResY: 1280
+ScaledBorderAndShadow: yes
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Brand,${fontName},56,&H00FFFFFF,&H000000FF,&H00000000,&H00000000,-1,0,0,0,100,100,2,0,1,2,2,5,0,0,0,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:00.00,0:00:10.00,Brand,,0,0,0,,{\\pos(360,1060)}${safe}`;
+  }
+
+  // 端卡：用商品图做底 + 半透黑遮罩 + 正中大二维码 + 店名 + TTS → 上传 TOS
+  async function handleVideoEndcard(req, res) {
+    let workDir;
+    try {
+      const { imageUrl, shopName = '', text, voice, duration = 3, qrUrl } = await readJsonBody(req);
+      if (!imageUrl) throw new Error('imageUrl 为空');
+      if (!text) throw new Error('text 为空');
+      if (!ffmpegPath) throw new Error('ffmpeg-static 未提供二进制路径');
+
+      workDir = fs.mkdtempSync(path.join(os.tmpdir(), 'tanxiaoer-endcard-'));
+
+      const [audioBuf, imgResp] = await Promise.all([
+        getTtsBuffer(text, voice),
+        fetchRetry(imageUrl),
+      ]);
+      if (!imgResp.ok) throw new Error(`图片下载失败 ${imgResp.status}`);
+      const imgBuf = Buffer.from(await imgResp.arrayBuffer());
+
+      const imgFile = path.join(workDir, 'bg.jpg');
+      const audFile = path.join(workDir, 'audio.mp3');
+      const qrFile = path.join(workDir, 'qr.png');
+      const assFile = path.join(workDir, 'shop.ass');
+      const outFile = path.join(workDir, 'endcard.mp4');
+      fs.writeFileSync(imgFile, imgBuf);
+      fs.writeFileSync(audFile, audioBuf);
+
+      // 大二维码（白底 + 2 模块 quiet zone，800px 基准）
+      const finalQrUrl = qrUrl || `https://tanxiaoer.example/qr/${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
+      await QRCode.toFile(qrFile, finalQrUrl, {
+        errorCorrectionLevel: 'M',
+        margin: 2,
+        width: 800,
+        color: { dark: '#000000', light: '#FFFFFFFF' },
+      });
+
+      const durSec = Math.max(1, Number(duration) || 3);
+      const font = findChineseFont();
+
+      function runFfmpeg(args) {
+        return new Promise((resolve, reject) => {
+          const proc = spawn(ffmpegPath, args, { stdio: ['ignore', 'ignore', 'pipe'] });
+          let errOut = '';
+          proc.stderr.on('data', (c) => { errOut += c.toString(); });
+          proc.on('close', (code) => {
+            if (code === 0) resolve();
+            else reject(new Error(`ffmpeg exit ${code}: ${errOut.slice(-600)}`));
+          });
+          proc.on('error', reject);
+        });
+      }
+
+      // 背景：商品图填满 720x1280 竖屏，轻微模糊 + 45% 黑色遮罩
+      // 前景：QR 居中偏上（短边 50%），店名在 QR 下方
+      const bgChain =
+        `[0:v]scale=720:1280:force_original_aspect_ratio=increase,` +
+        `crop=720:1280,boxblur=10:1,` +
+        `drawbox=x=0:y=0:w=iw:h=ih:color=black@0.45:t=fill[bg]`;
+      const qrChain =
+        `[2:v][bg]scale2ref=w='min(main_w\\,main_h)*0.50':h=ow[qr][vbg];` +
+        `[vbg][qr]overlay=(W-w)/2:(H-h)/2-H*0.05[v_qr]`;
+
+      let filterComplex;
+      if (font && shopName) {
+        fs.writeFileSync(assFile, buildShopAss(shopName, font.name), 'utf8');
+        const fontDir = path.dirname(font.path).replace(/\\/g, '/').replace(/:/g, '\\:');
+        const assPath = assFile.replace(/\\/g, '/').replace(/:/g, '\\:');
+        filterComplex = `${bgChain};${qrChain};[v_qr]subtitles=${assPath}:fontsdir=${fontDir}[v]`;
+      } else {
+        filterComplex = `${bgChain};${qrChain};[v_qr]null[v]`;
+      }
+
+      const args = [
+        '-y',
+        '-loop', '1', '-i', imgFile,
+        '-i', audFile,
+        '-i', qrFile,
+        '-filter_complex', filterComplex,
+        '-map', '[v]', '-map', '1:a:0',
+        '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '22', '-pix_fmt', 'yuv420p',
+        '-c:a', 'aac', '-af', 'apad',
+        '-t', String(durSec),
+        '-r', '25',
+        '-movflags', '+faststart',
+        outFile,
+      ];
+      console.log(`[endcard] shop="${shopName}", qr=${finalQrUrl}, dur=${durSec}s`);
+      await runFfmpeg(args);
+
+      const outBuf = fs.readFileSync(outFile);
+      const key = `tanxiaoer/endcard/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.mp4`;
+      const { datetime, contentLen, bodyHash, authorization } = tosSign({
+        method: 'PUT', keyPath: key, buf: outBuf, contentType: 'video/mp4', acl: 'public-read',
+      });
+      const r = await fetchRetry(`${TOS_BASE}/${key}`, {
+        method: 'PUT',
+        headers: {
+          Authorization: authorization,
+          'X-Amz-Date': datetime,
+          'X-Amz-Content-Sha256': bodyHash,
+          'X-Amz-Acl': 'public-read',
+          'Content-Type': 'video/mp4',
+          'Content-Length': contentLen,
+        },
+        body: outBuf,
+      });
+      if (!r.ok) {
+        const errTxt = await r.text();
+        throw new Error(`TOS put ${r.status}: ${errTxt.slice(0, 300)}`);
+      }
+      console.log(`[endcard] 完成 ${(outBuf.length / 1024 / 1024).toFixed(1)} MB → ${key}`);
+      sendJson(res, 200, { ok: true, url: `${TOS_BASE}/${key}` });
+    } catch (e) {
+      console.error('[video/endcard]', e.message);
+      sendJson(res, 500, { ok: false, error: e.message });
+    } finally {
+      if (workDir) {
+        try { fs.rmSync(workDir, { recursive: true, force: true }); } catch {}
+      }
+    }
+  }
+
   // Sidecar 插件：OSS 上传 + TTS 代理 + 即梦AI 签名代理 + 视频帧代理 + 视频合流
   const sidecar = {
     name: 'tanxiaoer-sidecar',
@@ -632,10 +772,11 @@ Dialogue: 0,${fmtTime(0.15)},${fmtTime(endSec)},Hype,,0,0,0,,{\\fad(350,450)\\mo
         if (url === '/tts/edge') return handleTtsEdge(req, res);
         if (url === '/video/merge') return handleVideoMerge(req, res);
         if (url === '/video/mux') return handleVideoMux(req, res);
+        if (url === '/video/endcard') return handleVideoEndcard(req, res);
         if (url === '/jimeng') return handleJimeng(req, res);
         next();
       });
-      console.log('[sidecar] /oss/upload /tts/volc /tts/edge /vproxy /video/merge /video/mux /jimeng 已挂载');
+      console.log('[sidecar] /oss/upload /tts/volc /tts/edge /vproxy /video/merge /video/mux /video/endcard /jimeng 已挂载');
     },
   };
 

@@ -100,7 +100,9 @@ import { createTask } from '../../api/aiVideo.js';
 import { blobUrlToBase64 } from '../../api/oss.js';
 import { VOICES } from '../../api/voice.js';
 import { generateHighlight } from '../../api/scriptLlm.js';
+import { useUserStore } from '../../store/user.js';
 
+const userStore = useUserStore();
 const images = ref([]); // [{ preview: blobUrl, base64 }]
 const description = ref('');
 const voiceKey = ref('cancan');
@@ -180,6 +182,7 @@ async function onSubmit() {
       userDescription: description.value.trim(),
       voiceKey: voiceKey.value,
       ratio: ratio.value,
+      shopName: userStore.shop?.name || '',
     });
     uni.hideLoading();
     uni.redirectTo({ url: `/pages/ai-video/confirm?id=${taskId}` });
