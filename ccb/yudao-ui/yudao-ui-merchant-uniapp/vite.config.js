@@ -308,10 +308,24 @@ export default defineConfig(({ mode }) => {
         return `[${idx}:a]`;
       });
 
-      const concatStreams = localFiles.map((_, i) => `[${i}:v:0]${audioSources[i]}`).join('');
+      // concat filter 要求所有输入的 w/h/SAR/fps/pix_fmt 完全一致。
+      // 即梦AI 有时输出 704x1248 / SAR 1920:1919，端卡是 720x1280 / SAR 1:1，
+      // 直接 concat 会报「parameters do not match」。统一规范化到 720x1280 / SAR 1:1 / 25fps。
+      const CANON = { w: 720, h: 1280, fps: 25, sar: 1 };
+      const normalizeVideo = (i) =>
+        `[${i}:v:0]scale=${CANON.w}:${CANON.h}:force_original_aspect_ratio=decrease,` +
+        `pad=${CANON.w}:${CANON.h}:(ow-iw)/2:(oh-ih)/2:color=black,` +
+        `setsar=${CANON.sar},fps=${CANON.fps},format=yuv420p[v${i}]`;
+      const normalizeAudio = (src, i) => `${src}aresample=44100,asetpts=PTS-STARTPTS[a${i}]`;
+
+      const normChains = localFiles.map((_, i) => normalizeVideo(i));
+      const normAudioChains = hasAnyAudio
+        ? localFiles.map((_, i) => normalizeAudio(audioSources[i], i))
+        : [];
+      const concatInputs = localFiles.map((_, i) => hasAnyAudio ? `[v${i}][a${i}]` : `[v${i}]`).join('');
       const filterComplex = hasAnyAudio
-        ? `${concatStreams}concat=n=${localFiles.length}:v=1:a=1[v][a]`
-        : `${localFiles.map((_, i) => `[${i}:v:0]`).join('')}concat=n=${localFiles.length}:v=1:a=0[v]`;
+        ? `${[...normChains, ...normAudioChains].join(';')};${concatInputs}concat=n=${localFiles.length}:v=1:a=1[v][a]`
+        : `${normChains.join(';')};${concatInputs}concat=n=${localFiles.length}:v=1:a=0[v]`;
 
       const mergeArgs = [
         '-y',
