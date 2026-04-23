@@ -1,8 +1,25 @@
 <script>
+import { useUserStore } from './store/user.js';
+
 export default {
   onLaunch() {
+    // 从 localStorage 恢复登录态
+    const userStore = useUserStore();
+    userStore.hydrate();
     // eslint-disable-next-line no-console
-    console.log('[摊小二] App Launched');
+    console.log('[摊小二] App Launched, role=', userStore.activeRole, 'hasToken=', !!userStore.token);
+
+    // 首次启动：无 token → 跳登录；有 token 但没选身份 → 跳登录让他选
+    // TODO(Phase 0.3): activeRole === 'member' 时这里 redirect 到 /pages/user-home/index；
+    //                  目前先统一回 /pages/index/index（商户首页 / 匿名首页复用）。
+    if (!userStore.token) {
+      // 启动时如果当前已经不是登录页，则跳过去
+      try {
+        uni.reLaunch({ url: '/pages/login/index' });
+      } catch {
+        // 某些生命周期下 reLaunch 会抛，忽略
+      }
+    }
   },
   onShow() {},
   onHide() {},

@@ -29,8 +29,9 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
 
   // ── 火山 TOS S3 兼容（AWS Sig V4，与即梦AI 同一套 AK/SK）
-  const TOS_AK = env.VITE_JIMENG_AK;
-  const TOS_SK = env.VITE_JIMENG_SK;
+  // 优先无前缀版（Phase 0.2 要求），回退到旧的 VITE_ 前缀避免本地立刻炸
+  const TOS_AK = env.TOS_AK || env.JIMENG_AK || env.VITE_JIMENG_AK;
+  const TOS_SK = env.TOS_SK || env.JIMENG_SK || env.VITE_JIMENG_SK;
   const TOS_REGION = env.TOS_REGION || 'cn-beijing';
   const TOS_BUCKET = env.TOS_BUCKET || 'tanxiaoer';
   const TOS_HOST = `${TOS_BUCKET}.tos-s3-${TOS_REGION}.volces.com`;
@@ -156,9 +157,10 @@ export default defineConfig(({ mode }) => {
 
   // 火山 openspeech v3 单向流式（豆包语音合成大模型）—— 提取为可复用 buffer helper
   async function getTtsBuffer(text, voice) {
-    const apiKey = env.VITE_TTS_ACCESS_TOKEN;
-    const resourceId = env.VITE_TTS_RESOURCE_ID || 'volc.service_type.10029';
-    if (!apiKey) throw new Error('未配置 VITE_TTS_ACCESS_TOKEN');
+    // 优先无前缀版（Phase 0.2），回退旧 VITE_ 前缀避免本地立刻炸
+    const apiKey = env.TTS_ACCESS_TOKEN || env.VITE_TTS_ACCESS_TOKEN;
+    const resourceId = env.TTS_RESOURCE_ID || env.VITE_TTS_RESOURCE_ID || 'volc.service_type.10029';
+    if (!apiKey) throw new Error('未配置 TTS_ACCESS_TOKEN');
     const speaker = voice || env.VITE_TTS_VOICE || 'zh_male_beijingxiaoye_emo_v2_mars_bigtts';
     const r = await fetch('https://openspeech.bytedance.com/api/v3/tts/unidirectional', {
       method: 'POST',
@@ -416,9 +418,10 @@ export default defineConfig(({ mode }) => {
     }
   }
 
-  // ── 即梦AI 签名代理（签名在 Node.js 端，避免浏览器 Secure Context 限制）
-  const JIMENG_AK = env.VITE_JIMENG_AK;
-  const JIMENG_SK = env.VITE_JIMENG_SK;
+  // ── 即梦AI 签名代理（@deprecated Phase 0.2：浏览器端已迁 BFF；此路由仅保留回归）
+  // 优先读无前缀版本，兼容旧 .env.local
+  const JIMENG_AK = env.JIMENG_AK || env.VITE_JIMENG_AK;
+  const JIMENG_SK = env.JIMENG_SK || env.VITE_JIMENG_SK;
   const JIMENG_REGION = 'cn-north-1';
   const JIMENG_SERVICE = 'cv';
   const JIMENG_VERSION = '2022-08-31';
@@ -447,6 +450,11 @@ export default defineConfig(({ mode }) => {
     };
   }
 
+  /**
+   * @deprecated Phase 0.2 起，浏览器端的即梦AI 调用已迁到后端 BFF
+   *   （/app-api/merchant/mini/ai-video/bff/jimeng/{submit,query}）。
+   * 这里保留 sidecar handler 一段时间给老分支 / 离线回归用，下一次清理会移除。
+   */
   async function handleJimeng(req, res) {
     try {
       const qs = new URL(req.url, 'http://x').searchParams;
@@ -953,20 +961,19 @@ try { if (window.opener) { window.opener.postMessage(${JSON.stringify({ type: 'd
       host: true,
       port: 5180,
       proxy: {
-        // 火山方舟（豆包 LLM + Seedance 1.5 Pro，key 由浏览器直接带）
-        '/ark': {
-          target: 'https://ark.cn-beijing.volces.com',
-          changeOrigin: true,
-          rewrite: (p) => p.replace(/^\/ark/, ''),
-        },
-        // 即梦AI 视频生成
+        // 即梦AI 视频生成（兼容保留，已无前端代码直调）
         '/visual': {
           target: 'https://visual.volcengineapi.com',
           changeOrigin: true,
           rewrite: (p) => p.replace(/^\/visual/, ''),
         },
-        // 业务后端
+        // 业务后端：管理域
         '/admin-api': {
+          target: 'http://localhost:48080',
+          changeOrigin: true,
+        },
+        // 业务后端：商户/用户端 + AI BFF
+        '/app-api': {
           target: 'http://localhost:48080',
           changeOrigin: true,
         },

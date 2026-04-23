@@ -6,15 +6,11 @@
  */
 
 import { CATEGORIES } from './product.js';
+import { request } from './request.js';
 
-const ARK_KEY = import.meta.env.VITE_ARK_API_KEY;
 const VISION_MODEL =
   import.meta.env.VITE_ARK_VISION_MODEL || 'doubao-1-5-vision-pro-32k-250115';
-
-function authHeaders() {
-  if (!ARK_KEY) throw new Error('未配置 VITE_ARK_API_KEY');
-  return { 'Content-Type': 'application/json', Authorization: `Bearer ${ARK_KEY}` };
-}
+const BFF_CHAT = '/app-api/merchant/mini/ai-video/bff/ark/chat';
 
 const CAT_NAMES = CATEGORIES.map((c) => c.name).join(' / ');
 
@@ -56,10 +52,10 @@ export async function detectProducts(imageUrl) {
     ),
   ].join('\n');
 
-  const res = await fetch('/ark/api/v3/chat/completions', {
+  const body = await request({
+    url: BFF_CHAT,
     method: 'POST',
-    headers: authHeaders(),
-    body: JSON.stringify({
+    data: {
       model: VISION_MODEL,
       temperature: 0.2,
       messages: [
@@ -72,18 +68,10 @@ export async function detectProducts(imageUrl) {
           ],
         },
       ],
-    }),
+    },
   });
-
-  const text = await res.text();
-  let body;
-  try {
-    body = JSON.parse(text);
-  } catch {
-    throw new Error(`视觉模型非 JSON: ${text.slice(0, 200)}`);
-  }
-  if (!res.ok || body.error) {
-    throw new Error(body?.error?.message || `HTTP ${res.status}`);
+  if (!body || body.error) {
+    throw new Error(body?.error?.message || '视觉模型返回错误');
   }
   const raw = body?.choices?.[0]?.message?.content || '';
   return parse(raw);

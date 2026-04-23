@@ -1,20 +1,38 @@
 /**
  * 即梦AI 图生视频 3.0 720P（首帧）
- * 签名在 Vite sidecar（Node.js）完成，浏览器只发 JSON，避免 Secure Context 限制
+ *
+ * Phase 0.2 起：签名 + 调用通过后端 BFF 完成，浏览器不再持有 JIMENG_AK/SK。
+ *   · 提交：POST /app-api/merchant/mini/ai-video/bff/jimeng/submit { imageUrl, prompt, frames, seed }
+ *   · 查询：POST /app-api/merchant/mini/ai-video/bff/jimeng/query  { taskId }
+ * 后端原样回包（保留 code=10000 / data.{task_id,status,video_url} 形态）。
  */
 
-const REQ_KEY = 'jimeng_i2v_first_v30';
+import { request } from './request.js';
 
-async function jimengPost(action, body) {
-  const res = await fetch(`/jimeng?action=${action}`, {
+const BFF_SUBMIT = '/app-api/merchant/mini/ai-video/bff/jimeng/submit';
+const BFF_QUERY = '/app-api/merchant/mini/ai-video/bff/jimeng/query';
+
+async function jimengSubmit({ imageUrl, prompt, frames, seed = -1 }) {
+  const data = await request({
+    url: BFF_SUBMIT,
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
+    data: { imageUrl, prompt, frames, seed },
   });
-  const text = await res.text();
-  let data;
-  try { data = JSON.parse(text); } catch { throw new Error(`即梦AI 非 JSON：${text.slice(0, 200)}`); }
-  if (data.code !== 10000) throw new Error(data.message || `即梦AI code=${data.code}`);
+  if (data?.code !== 10000) {
+    throw new Error(data?.message || `即梦AI code=${data?.code}`);
+  }
+  return data;
+}
+
+async function jimengQuery({ taskId }) {
+  const data = await request({
+    url: BFF_QUERY,
+    method: 'POST',
+    data: { taskId },
+  });
+  if (data?.code !== 10000) {
+    throw new Error(data?.message || `即梦AI code=${data?.code}`);
+  }
   return data;
 }
 
@@ -28,12 +46,11 @@ export async function createClipTask({ imageUrl, prompt, duration }) {
     const currentPrompt = promptCandidates[pi];
     for (let attempt = 0; attempt < 6; attempt++) {
       try {
-        const data = await jimengPost('CVSync2AsyncSubmitTask', {
-          req_key: REQ_KEY,
-          image_urls: [imageUrl],
+        const data = await jimengSubmit({
+          imageUrl,
           prompt: currentPrompt,
-          seed: -1,
           frames,
+          seed: -1,
         });
         const taskId = data?.data?.task_id;
         if (!taskId) throw new Error('即梦AI 未返回 task_id: ' + JSON.stringify(data).slice(0, 200));
@@ -70,10 +87,7 @@ function sanitizePrompt(prompt) {
 }
 
 export async function queryClipTask(taskId) {
-  const data = await jimengPost('CVSync2AsyncGetResult', {
-    req_key: REQ_KEY,
-    task_id: taskId,
-  });
+  const data = await jimengQuery({ taskId });
   const d = data?.data || {};
   const status = d.status;
   if (status === 'done') {

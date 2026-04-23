@@ -7,33 +7,20 @@
  * 无水印：--watermark false
  */
 
-const ARK_KEY = import.meta.env.VITE_ARK_API_KEY;
+import { request } from './request.js';
+
 const MODEL = import.meta.env.VITE_ARK_VIDEO_MODEL || 'doubao-seedance-1-5-pro-251215';
 const RESOLUTION = import.meta.env.VITE_VIDEO_RESOLUTION || '1080p';
 const DEFAULT_DURATION = import.meta.env.VITE_VIDEO_DURATION || '10';
 const RATIO = import.meta.env.VITE_VIDEO_RATIO || '9:16';
 
-function authHeaders() {
-  if (!ARK_KEY) throw new Error('未配置 VITE_ARK_API_KEY');
-  return {
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${ARK_KEY}`,
-  };
-}
-
-async function arkFetch(path, options) {
-  const res = await fetch('/ark' + path, options);
-  const text = await res.text();
-  let body;
-  try {
-    body = JSON.parse(text);
-  } catch {
-    throw new Error(`方舟非 JSON 响应：${text.slice(0, 200)}`);
-  }
-  if (!res.ok || body.error) {
-    throw new Error(body?.error?.message || body?.message || `HTTP ${res.status}`);
-  }
-  return body;
+/**
+ * ⚠️ Seedance content/generations/tasks 路径后端 BFF 暂未打通（Phase 0.2 只代理了 /ark/chat）。
+ * 当前生产链路已切换到即梦AI（见 jimeng.js），这个文件仅作历史参考。
+ * 这里把 arkFetch 改成抛错兜底，如被调用则能清晰提示。
+ */
+async function arkFetch(path) {
+  throw new Error(`seedance ${path} 已下线：请使用 jimeng.js 的 createClipTask / waitClip`);
 }
 
 /**
@@ -56,7 +43,6 @@ export async function createClipTask({ imageUrl, prompt, ratio, duration }) {
     `--camerafixed false --watermark false`;
   const body = await arkFetch('/api/v3/contents/generations/tasks', {
     method: 'POST',
-    headers: authHeaders(),
     body: JSON.stringify({
       model: MODEL,
       content: [
@@ -73,7 +59,6 @@ export async function createClipTask({ imageUrl, prompt, ratio, duration }) {
 export async function queryClipTask(taskId) {
   const body = await arkFetch(`/api/v3/contents/generations/tasks/${taskId}`, {
     method: 'GET',
-    headers: authHeaders(),
   });
   return {
     status: body.status,

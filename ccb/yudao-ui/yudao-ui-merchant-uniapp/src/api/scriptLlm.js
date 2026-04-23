@@ -9,7 +9,8 @@
  *     - visual_prompt: 给 Seedance 的画面提示（带运镜/氛围）
  */
 
-const ARK_KEY = import.meta.env.VITE_ARK_API_KEY;
+import { request } from './request.js';
+
 const TEXT_MODEL = import.meta.env.VITE_ARK_LLM_MODEL || 'doubao-1-5-pro-32k-250115';
 const VISION_MODEL = import.meta.env.VITE_ARK_VISION_MODEL || 'doubao-1-5-vision-pro-32k-250115';
 const DURATION = Number(import.meta.env.VITE_VIDEO_DURATION || 10);
@@ -19,33 +20,16 @@ const MAX_SCENES = 6;
 // 固定的收尾 CTA，必定出现在最后一幕的 narration
 const FIXED_CTA = '截图微信扫描二维码在线下单';
 
-function authHeaders() {
-  if (!ARK_KEY) throw new Error('未配置 VITE_ARK_API_KEY');
-  return {
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${ARK_KEY}`,
-  };
-}
+const BFF_CHAT = '/app-api/merchant/mini/ai-video/bff/ark/chat';
 
 async function arkChat(model, messages) {
-  const res = await fetch('/ark/api/v3/chat/completions', {
+  const body = await request({
+    url: BFF_CHAT,
     method: 'POST',
-    headers: authHeaders(),
-    body: JSON.stringify({
-      model,
-      temperature: 0.85,
-      messages,
-    }),
+    data: { model, temperature: 0.85, messages },
   });
-  const text = await res.text();
-  let body;
-  try {
-    body = JSON.parse(text);
-  } catch {
-    throw new Error(`LLM 非 JSON: ${text.slice(0, 200)}`);
-  }
-  if (!res.ok || body.error) {
-    throw new Error(body?.error?.message || `HTTP ${res.status}`);
+  if (!body || body.error) {
+    throw new Error(body?.error?.message || 'LLM 返回错误');
   }
   return body?.choices?.[0]?.message?.content || '';
 }

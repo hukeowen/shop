@@ -1,14 +1,21 @@
 /**
- * 配音 · 三级降级：
- *   1. VITE_TTS_PROVIDER=ark    → 火山方舟 /api/v3/audio/speech（豆包-seed-tts）
- *   2. 失败/未配置 → Edge TTS （微软免费，侧车代理）
- *   3. 还失败 → 浏览器 Web Speech API
+ * 配音 · 浏览器端三级降级：
+ *   1. 后端 BFF     → POST /app-api/merchant/mini/ai-video/bff/tts（豆包-seed-tts）
+ *   2. 失败兜底     → Edge TTS （微软免费，sidecar 代理保留给 dev）
+ *   3. 还失败       → 浏览器 Web Speech API
+ *
+ * 注：sidecar 的 /video/mux / /video/endcard 仍用自己的火山 TTS，
+ *     那是服务端对服务端，不走 BFF（见 vite.config.js）。
  *
  * 音色映射：前端给"业务名"（灿灿/爽快思思/...），自动映射到两边的音色 ID。
  */
 
+import { request } from './request.js';
+
 const PROVIDER = import.meta.env.VITE_TTS_PROVIDER || 'volc';
 const DEFAULT_VOICE = import.meta.env.VITE_TTS_VOICE || 'zh_female_cancan_mars_bigtts';
+
+const BFF_TTS = '/app-api/merchant/mini/ai-video/bff/tts';
 
 export const VOICES = [
   {
@@ -67,19 +74,19 @@ export async function synthMp3(text, voiceKey) {
   const v = findVoice(voiceKey);
   const errors = [];
 
-  // 1. 火山 openspeech（豆包语音合成大模型）
+  // 1. 后端 BFF（豆包 TTS，JWT 鉴权由 request.js 注入）
   if (PROVIDER === 'volc') {
     try {
-      return await fetchMp3('/tts/volc', { text, voice: v.ark });
+      return await fetchMp3Bff(text, v.ark);
     } catch (e) {
-      errors.push('volc: ' + e.message);
-      console.warn('[voice] 火山 TTS 失败，降级 edge:', e.message);
+      errors.push('bff: ' + e.message);
+      console.warn('[voice] BFF TTS 失败，降级 edge:', e.message);
     }
   }
 
-  // 2. Edge TTS 兜底
+  // 2. Edge TTS 兜底（sidecar 本地代理，仅 dev 环境）
   try {
-    return await fetchMp3('/tts/edge', { text, voice: v.edge });
+    return await fetchMp3Sidecar('/tts/edge', { text, voice: v.edge });
   } catch (e) {
     errors.push('edge: ' + e.message);
   }
@@ -87,7 +94,24 @@ export async function synthMp3(text, voiceKey) {
   throw new Error('TTS 全部失败：' + errors.join(' | '));
 }
 
-async function fetchMp3(endpoint, body) {
+/** 后端 BFF：返回 arraybuffer，自带 JWT */
+async function fetchMp3Bff(text, voice) {
+  const buf = await request({
+    url: BFF_TTS,
+    method: 'POST',
+    data: { text, voice },
+    responseType: 'arraybuffer',
+  });
+  if (!buf || buf.byteLength < 100) throw new Error('BFF TTS 无音频数据');
+  const blob = new Blob([buf], { type: 'audio/mpeg' });
+  return {
+    url: URL.createObjectURL(blob),
+    source: 'bff',
+  };
+}
+
+/** 兼容 sidecar 路由（/tts/edge），仅 H5 dev 可达 */
+async function fetchMp3Sidecar(endpoint, body) {
   const res = await fetch(endpoint, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -107,7 +131,7 @@ async function fetchMp3(endpoint, body) {
   const blob = new Blob([buf], { type: 'audio/mpeg' });
   return {
     url: URL.createObjectURL(blob),
-    source: res.headers.get('X-Tts-Source') || 'unknown',
+    source: res.headers.get('X-Tts-Source') || 'edge',
   };
 }
 

@@ -1,11 +1,14 @@
 /**
- * 火山方舟 API（豆包 LLM + Seedance 图生视频）
- * 通过 Vite dev proxy /ark/* → https://ark.cn-beijing.volces.com
+ * 火山方舟 API 封装（豆包 LLM + Seedance 图生视频）
  *
- * ⚠️ ARK_API_KEY 在前端可见，仅 dev / 内部体验用。
+ * 所有请求经后端 BFF：POST /app-api/merchant/mini/ai-video/bff/ark/chat
+ * 浏览器端不再持有 ARK_API_KEY，JWT 由 request.js 统一注入。
+ *
+ * 模型名称 / 视频参数仍可通过非敏感的 VITE_* 覆盖。
  */
 
-const ARK_KEY = import.meta.env.VITE_ARK_API_KEY;
+import { request } from './request.js';
+
 const LLM_MODEL = import.meta.env.VITE_ARK_LLM_MODEL || 'doubao-1-5-pro-32k-250115';
 const VIDEO_MODEL = import.meta.env.VITE_ARK_VIDEO_MODEL || 'doubao-seedance-1-0-pro-250528';
 
@@ -13,30 +16,16 @@ const RESOLUTION = import.meta.env.VITE_VIDEO_RESOLUTION || '720p';
 const DURATION = import.meta.env.VITE_VIDEO_DURATION || '5';
 const RATIO = import.meta.env.VITE_VIDEO_RATIO || '9:16';
 
-function authHeaders() {
-  if (!ARK_KEY || ARK_KEY.startsWith('sk-xxxx')) {
-    throw new Error('未配置 VITE_ARK_API_KEY，请编辑 .env.local 后重启 dev server');
-  }
-  return {
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${ARK_KEY}`,
-  };
-}
+const BFF_CHAT = '/app-api/merchant/mini/ai-video/bff/ark/chat';
 
-async function arkFetch(path, options) {
-  const res = await fetch('/ark' + path, options);
-  const text = await res.text();
-  let body;
-  try {
-    body = JSON.parse(text);
-  } catch {
-    throw new Error(`方舟接口非 JSON 响应：${text.slice(0, 200)}`);
-  }
-  if (!res.ok || body.error) {
-    const msg = body?.error?.message || body?.message || `HTTP ${res.status}`;
+/** BFF 透传 Ark chat completion，body 即 Ark 原生 JSON */
+async function arkChat(body) {
+  const resp = await request({ url: BFF_CHAT, method: 'POST', data: body });
+  if (!resp || resp.error) {
+    const msg = resp?.error?.message || resp?.message || 'Ark 返回错误';
     throw new Error(msg);
   }
-  return body;
+  return resp;
 }
 
 /**
@@ -55,17 +44,13 @@ export async function generateCopywriting({ imageUrls, userDescription }) {
     '严格用以下 JSON 格式返回，不要任何解释、不要 ```：\n' +
     '{"lines": ["第一句", "第二句", "第三句", "第四句"]}';
 
-  const body = await arkFetch('/api/v3/chat/completions', {
-    method: 'POST',
-    headers: authHeaders(),
-    body: JSON.stringify({
-      model: LLM_MODEL,
-      temperature: 0.85,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt },
-      ],
-    }),
+  const body = await arkChat({
+    model: LLM_MODEL,
+    temperature: 0.85,
+    messages: [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt },
+    ],
   });
 
   const raw = body?.choices?.[0]?.message?.content || '';
@@ -92,59 +77,24 @@ function parseLines(raw) {
 
 /**
  * 创建 Seedance 图生视频任务
- * @returns string task_id
+ *
+ * ⚠️ 本函数走 Ark 原生 /contents/generations/tasks，需要走 BFF 新增端点；
+ * 当前 Phase 0.2 只接通了 /ark/chat，调用方（aiVideo.js）早已改用即梦AI /jimeng/submit。
+ * 保留导出仅为向后兼容：如果真的被调到会抛友好错误。
  */
 export async function createVideoTask({ copywriting, imageUrl }) {
-  if (!imageUrl?.startsWith('http')) {
-    throw new Error('图片必须是 http(s) 公网 URL（Seedance 不支持 base64 / blob）');
-  }
-  const text = `${copywriting.join('，')} --rs ${RESOLUTION} --dur ${DURATION} --rt ${RATIO}`;
-  const body = await arkFetch('/api/v3/contents/generations/tasks', {
-    method: 'POST',
-    headers: authHeaders(),
-    body: JSON.stringify({
-      model: VIDEO_MODEL,
-      content: [
-        { type: 'text', text },
-        { type: 'image_url', image_url: { url: imageUrl } },
-      ],
-    }),
-  });
-  if (!body.id) throw new Error('创建视频任务失败：' + JSON.stringify(body).slice(0, 200));
-  return body.id;
+  throw new Error('createVideoTask 已下线：请走 /app-api/merchant/mini/ai-video/bff/jimeng/submit');
 }
 
-/**
- * 查询 Seedance 任务状态
- * @returns { status: 'queued'|'running'|'succeeded'|'failed', videoUrl?, error? }
- */
+/** 同上：queryVideoTask 已下线 */
 export async function queryVideoTask(taskId) {
-  const body = await arkFetch(`/api/v3/contents/generations/tasks/${taskId}`, {
-    method: 'GET',
-    headers: authHeaders(),
-  });
-  return {
-    status: body.status,
-    videoUrl: body.content?.video_url || null,
-    error: body.error?.message || null,
-    raw: body,
-  };
+  throw new Error('queryVideoTask 已下线：请走 /app-api/merchant/mini/ai-video/bff/jimeng/query');
 }
 
-/**
- * 阻塞式轮询直到 succeeded / failed
- * @param onProgress 每次轮询回调（可用于更新进度条）
- */
-export async function waitForVideo(taskId, { onProgress, intervalMs = 5000, maxMs = 600000 } = {}) {
-  const started = Date.now();
-  let attempt = 0;
-  while (Date.now() - started < maxMs) {
-    attempt += 1;
-    const r = await queryVideoTask(taskId);
-    onProgress?.({ attempt, status: r.status, elapsedMs: Date.now() - started });
-    if (r.status === 'succeeded' && r.videoUrl) return r.videoUrl;
-    if (r.status === 'failed') throw new Error(r.error || 'Seedance 任务失败');
-    await new Promise((res) => setTimeout(res, intervalMs));
-  }
-  throw new Error(`视频生成超时（>${maxMs / 1000}s），任务 id=${taskId}`);
+/** 同上：waitForVideo 已下线 */
+export async function waitForVideo(taskId, opts) {
+  throw new Error('waitForVideo 已下线：请改用 jimeng.js 的 waitClip');
 }
+
+// 保留导出以防被意外解构（非敏感常量）
+export { LLM_MODEL, VIDEO_MODEL, RESOLUTION, DURATION, RATIO };
