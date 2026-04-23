@@ -254,15 +254,23 @@ cn.iocoder.yudao.module.{name}
 | # | 决策 | 锁定时间 |
 |---|---|---|
 | 1 | 单 appid / 单小程序 / 一套前端代码，按 role claim 分流 | 2026-04-23 |
-| 2 | 微信 `wx.getPhoneNumber` 快速验证绑手机（0.03 元/次）；无短信通道 | 2026-04-23 |
-| 3 | 商户邀请码 **per-operator**（`merchant_invite_code` 表带 `operator_user_id`） | 2026-04-23 |
+| 2 | 微信 `wx.getPhoneNumber` 快速验证绑手机（0.03 元/次）；**不用短信**（成本相当但省基建；将来扩 H5/APP 时再加 `SmsProvider`） | 2026-04-23 |
+| 3 | 商户邀请码 **per-operator**（`merchant_invite_code` 表带 `operator_user_id`），支持分 BD 提成 | 2026-04-23 |
 | 4 | AI 视频 **7 元 / 条**（15s），**生成前预扣**（失败自动回补） | 2026-04-23 |
 | 5 | 套餐由平台 PC 后台创建管理（`ai_video_package` 表） | 2026-04-23 |
-| 6 | 配送方式三选（自提 / 送货上门 / 物流），商户级配置 | 2026-04-23 |
-| 7 | 推 N 反 1 + 积分**按商户独立**（`MemberShopRelDO` 新表待建） | 2026-04-23 |
+| 6 | 配送方式三选（自提 / 送货上门 / 物流），**商户级默认 + 商品级可覆盖**；订单下拉选项来自商户 `deliveryTypes` 配置 | 2026-04-23 |
+| 7 | 推 N 反 1：**当前只做一级**（N=1）；用户扫码带 `ref=推荐人id` 首次进店成为推荐人一级下线；**不递归追溯多级上线** | 2026-04-23 |
 | 8 | 可提现余额 → 积分 **单向**转换，反向禁止 | 2026-04-23 |
-| 9 | 通联支付 `TL_PAY` 商户开关制（`PayChannelEnum` 枚举待加） | 2026-04-23 |
+| 9 | 通联支付 `TL_PAY` **商户开关制**：`MerchantDO.onlinePayEnabled`。**商户未开通时**用户下单自动走「到店付款 + 商户后台手动确认收款」流程，订单状态 `WAITING_OFFLINE` → 商户点击"已收款" → 进入履约 | 2026-04-23 |
 | 10 | FFmpeg 合片 dev 留 Vite sidecar，生产搬后端 Worker | 2026-04-23 |
+| 11 | 返佣 / 积分按**商户 × 用户**独立（`MemberShopRelDO` 新表：balance / points / firstVisitAt / referrerUserId，每商户独立一行） | 2026-04-23 |
+| 12 | **每个商品独立**配置返积分数（`ProductSpuDO.giveIntegral` 商户端每 SPU 编辑） | 2026-04-23 |
+| 13 | **每商户独立**配置积分抵现比例（`ShopBrokerageConfigDO.pointPerYuan`），用户结算时可「积分 + 在线支付」混合抵扣 | 2026-04-23 |
+| 14 | **两级提现链路**：① 用户端（C）发起 → 商户审核 + 打款 + 上传凭证；② 商户端（B）发起 → 平台审核 | 2026-04-23 |
+| 15 | AI 视频脚本：基于图片**想象式文案**（感官 + 场景 + 情绪），禁用"老板/赔本/大减价/限时/秒杀/小黄车/购物车/点击链接"等促销违规词 | 2026-04-23 |
+| 16 | AI 视频**最后一幕固定**为「截图微信扫描二维码在线下单」，其他幕不得提前出现扫码引导（`parseScript` 强制覆盖不信任 LLM） | 2026-04-23 |
+| 17 | AI 视频**端卡格式**：商品图模糊 + 45% 黑遮罩 + 正中 50% 短边大 QR + 店名 + "微信扫描二维码在线下单"说明文；720x1280 / 25fps / 3s | 2026-04-23 |
+| 18 | 商户小程序 AI 成片页有 **demo 教程视频入口**（录制一条示范 AI 片 + 展示给商户看怎么用，Phase 1.3 实现） | 2026-04-23 |
 
 ---
 
@@ -292,32 +300,86 @@ cn.iocoder.yudao.module.{name}
 
 | Phase | 内容 | 预估 |
 |---|---|---|
-| 1.1 | 商品管理（`/admin-api/product/spu/*`）+ 商户端编辑页接通；补 `giveIntegral` / `subCommissionType` 字段 | 3-4 天 |
-| 1.2 | 订单管理（接单 / 发货 / 自提核销）对 `/admin-api/trade/order/*` | 4-5 天 |
-| 1.3 | AI 成片任务落库 `AiVideoTaskDO`（前端 store → 真实 DB） | 2-3 天 |
-| 1.4 | 返佣 / 积分设置页（`ShopBrokerageConfigDO`） | 2 天 |
-| 1.5 | 会员列表（按消费倒序） | 1 天 |
-| 1.6 | 商户提现审核（`MerchantWithdrawApply` + 凭证上传） | 1-2 天 |
+| 1.1 | 商品管理（`/admin-api/product/spu/*`）+ 商户端编辑页接通；**每 SPU 独立编辑 `giveIntegral` + `subCommissionType`**（参与推 N 反 1 开关）+ 配送方式 override | 3-4 天 |
+| 1.2 | 订单管理对 `/admin-api/trade/order/*`：接单 / 发货 / 自提核销 / **"已收款"按钮（商户未开通在线支付时标记 OFFLINE_CONFIRMED）** | 4-5 天 |
+| 1.3 | AI 成片任务落库 `AiVideoTaskDO`（前端 store → 真实 DB）+ **商户首页 demo 教程视频入口**（录一条示范 AI 片 + 上传 OSS + 在首页入口播放）| 2-3 天 |
+| 1.4 | 返佣 / 积分设置页（`ShopBrokerageConfigDO`）：`returnAmount`（参与返佣的商品按订单金额固定返 / 比例返）+ `pointPerYuan`（积分抵现比例）+ 商户默认 `deliveryTypes` 配置 | 2 天 |
+| 1.5 | 会员列表（按消费倒序），数据来自 `MemberShopRelDO` 的累计消费视图 | 1 天 |
+| 1.6 | 商户提现审核页：  ① 用户提现审核（接收 `member_withdraw_apply` 列表 + 打款 + 上传凭证）  ② 商户自己对平台发起提现（`MerchantWithdrawApply`） | 2-3 天 |
+| 1.7 | 商户 **onlinePayEnabled 开关**页：开通需填通联 MCH 信息 + 平台审核通过后才生效 | 1-2 天 |
 
-### 4.4 Phase 2 — 用户端小程序
+### 4.4 Phase 2 — 用户端小程序（同 uni-app repo 内按角色分流）
 
-在 **同一 uni-app repo** 内新增 `pages/user-home/*` / `pages/shop-home/*` / `pages/cart/*` / `pages/checkout/*`。按 `userStore.activeRole === 'member'` 分流。
+在 `yudao-ui-merchant-uniapp` 内新增用户端页面。`App.vue` 启动路由据 `userStore.activeRole === 'member'` 决定首屏。
 
-**关键业务**：
-- 扫码进店 `?shopId=&ref=` → 调 `/app-api/member/bind-shop` → 落 `MemberShopRelDO`（新表）
-- 结算页积分 + 在线支付混合抵扣
-- 余额 → 积分 `/convert`（单向）
+#### 4.4.1 两种用户入口
 
-预估 3-4 周。
+| 入口 | 触发 | 首屏 | 后端行为 |
+|---|---|---|---|
+| **A. 平台主页** | 微信搜索 / 推荐 / 直接打开小程序 | `/pages/index/index` | 返最近去过店铺 + 发现列表 |
+| **B. 扫店铺二维码** | 扫描线下海报 / 名片等 `?shopId=xxx&ref=yyy` | `/pages/shop-home?shopId=xxx` | 首次进入 → 落 `MemberShopRelDO`；`ref` 存在且 `ref!=self` → 绑定为推荐人一级下线；后续仅更新 `lastVisitAt` |
+
+#### 4.4.2 关键页面清单
+
+| 页面 | 路径 | 功能 |
+|---|---|---|
+| 平台首页 | `pages/index/index.vue` | 最近去过（localStorage `shopId:timestamp`）+ 发现（分类 + 距离 + 近 1 月销量排序）|
+| 店铺主页 | `pages/shop-home/index.vue` | 店铺基本信息 / 商品列表 / 商户 demo 教程视频（可选）|
+| 商品详情 | `pages/product/detail.vue` | 价格 + **返积分数** + 参与返佣标识 + 配送方式选项（来自商户 `deliveryTypes`）|
+| 购物车 | `pages/cart/index.vue` | 跨商户聚合，结算时按 shopId 分单 |
+| 结算页 | `pages/checkout/index.vue` | 按商户分单；**商户 `onlinePayEnabled=true`** → 积分 + 通联支付混合；**未开通** → 提示"到店付款"按钮 |
+| 个人中心 | `pages/me/index.vue` | 我的订单 + 我的店铺关系列表 |
+| 店铺维度余额页 | `pages/me/shop-balance.vue` | 在某商户的 balance / points / 订单 / 提现记录 |
+| 余额转积分 | `pages/me/balance-to-points.vue` | 单向转换接口（禁止反向）|
+| 用户发起提现 | `pages/me/withdraw-apply.vue` | 填金额 + 收款信息 → `member_withdraw_apply` 入库 → 商户后台看到 |
+
+#### 4.4.3 支付分支（结算页关键逻辑）
+
+```
+下单 POST /app-api/trade/order/create
+  ↓
+商户 onlinePayEnabled?
+  ├─ true  → 按用户选择的 paymentMode:
+  │           · POINTS_ONLY    仅积分（要求积分抵扣覆盖全额）
+  │           · ONLINE_ONLY    全额通联 JSAPI
+  │           · POINTS_AND_PAY 积分扣一部分 + 通联 JSAPI 付尾款
+  │         订单 pay_status = PENDING → JSAPI 回调 → PAID → 履约
+  │
+  └─ false → 订单 pay_status = WAITING_OFFLINE
+             商户后台看到订单显示"待收款"红标
+             商户收到现金后点「已收款」→ pay_status = OFFLINE_CONFIRMED → 履约
+             ⚠️ OFFLINE_CONFIRMED 也要触发 OrderPaidEvent（走返佣 + 积分入账链路）
+```
+
+#### 4.4.4 一级返佣入账（N=1 简单实现）
+
+`OrderPaidEvent` 监听器：
+1. 查订单 buyer 在该商户的 `MemberShopRelDO.referrerUserId`
+2. `referrerUserId == null` → 跳过
+3. 遍历订单商品，若 `spu.subCommissionType == 参与` → 按 `ShopBrokerageConfig.returnAmount` 算返佣
+4. `increaseBalance(referrerUserId, merchantId, 金额, bizId=orderId)`
+5. **不递归**：referrer 的 referrer 不分账
+
+#### 4.4.5 积分入账
+
+同 `OrderPaidEvent` 监听器：
+1. 遍历订单商品，累加 `spu.giveIntegral`
+2. `increasePoints(buyerUserId, merchantId, 积分数, bizId=orderId)`
+
+预估总工期 3-4 周。
 
 ### 4.5 Phase 3 — 核心业务逻辑（跟 Phase 2 并行）
 
 | Phase | 内容 |
 |---|---|
-| 3.1 | `MemberShopRelDO`（user × merchant，balance / points / firstVisitAt / referrerUserId） |
-| 3.2 | `OrderPaidEvent` 监听：按 `ShopBrokerageConfig.returnAmount` 给 referrer 记账 |
-| 3.3 | 按商品 `giveIntegral` 给买家加点数 |
-| 3.4 | 通联支付 TL-Pay：`PayChannelEnum` 加枚举 + `PayClient` 实现 + 商户开关 |
+| 3.1 | `MemberShopRelDO`（user × merchant 独立一行：balance / points / firstVisitAt / referrerUserId）+ `/bind-shop` 接口 |
+| 3.2 | **一级返佣**（N=1）：`OrderPaidEvent` 监听 → 查 buyer 的 `referrerUserId`（无则跳过） → 遍历订单商品若 `subCommissionType=参与` → 按 `ShopBrokerageConfig.returnAmount` 给 referrer `balance` 记账；**不递归追溯** |
+| 3.3 | 积分发放：同事件监听 → 遍历商品累加 `giveIntegral` → 给买家 `points` 加分 |
+| 3.4 | 积分抵现：结算页支持混合支付（POINTS_ONLY / ONLINE_ONLY / POINTS_AND_PAY），按商户 `pointPerYuan` 换算 |
+| 3.5 | 余额 → 积分 单向转换 `/convert`；禁止反向 |
+| 3.6 | 通联支付 TL-Pay：`PayChannelEnum` 加 `TL_PAY` + `TlPayClient` 实现 + `MerchantDO.onlinePayEnabled` 开关 |
+| 3.7 | 商户未开通在线支付时的 `WAITING_OFFLINE` 订单流程：商户后台"已收款"按钮触发 `OFFLINE_CONFIRMED` 状态 + 同样触发 `OrderPaidEvent` 走返佣/积分入账 |
+| 3.8 | 用户提现：`member_withdraw_apply` 表（userId / merchantId / amount / voucherUrl / status）→ 商户后台审核 + 凭证上传 → 平台可见二级审核 |
 
 ### 4.6 Phase 4 — PC 后台补齐
 
@@ -694,10 +756,174 @@ cfa9478 fix(merchant+video): Phase 0 代码审查必修项
 
 - **仓库**：`github.com/hukeowen/shop`（`main` 分支）
 - **PR 模板**：commit 标题用 `feat(scope): zh-cn desc` 格式（见历史）
-- **需求基线 v1**：在上一次对话里确认（见 Git 历史），已冻结 10 条决策
+- **需求基线 v1**：已冻结 **18 条决策**（见 §3）+ 完整原始话语归档（见 §14）
 - **抖音开放平台文档**：https://developer.open-douyin.com/docs
 - **火山方舟**：https://www.volcengine.com/docs/82379
 - **即梦 AI**：https://www.volcengine.com/docs/85128
+
+---
+
+## 14. 完整产品需求（原始话语归档）
+
+保留产品构思期用户的原始表述，用于避免二次转译时语义漂移。接手方**先读这节**，再回头对照 §3 决策表 + §4 路线图。
+
+### 14.1 平台定位
+
+> 这个平台最终上架的是一个小程序。用户扫描一个带参数的小程序就到了商家平台，然后可以在商家里面下单。
+
+> 这个其实是一个平台，就是用户点击微信小程序的时候，其实是进入的**小程序主页**，只不过主页就是有个**最近去过的店铺**。然后就是按照**分类**或者什么显示平台上所有的店铺，可以按照**距离**，**最近一个月销量**什么的排序。
+
+### 14.2 会员自动绑定 & 一级分销
+
+> 只要扫描进入商家主页就是**自动成为商家会员**，用户可以正常下单。
+
+> 只要是这个用户推荐的好友**第一次进入**的这个商家，那么这个好友就是这个用户发展的**一级用户**，一级用户比如消费了制定返佣的商品，那么用户的可提现金额就返回这个商品的金额给他。
+
+> 目前只有一级（推 N 反 1 的 N = 1，不递归追溯）。
+
+### 14.3 支付与配送
+
+> 如果商家**开通了在线支付功能**，用户可以进行在线支付（只有通联支付），下单后，商家端就会自动接收订单进行处理。
+
+> **到店支付，商户手动确认**（商户未开通在线支付时）。
+
+> 有**自提、送货上门、在线物流**三种方式，商家在自己的商户小程序端设置。
+
+### 14.4 返佣 + 积分
+
+> 商户端还可以设置商品是否参加**推 N 反 1** 的功能，推 N 反 1 的设置是在商家小程序端设置。
+
+> 「返佣于积分设置」就是推 n 反 1 的设置；商品「参与返佣」= 参与推 N 反 1。
+
+> 可提现余额**每个用户在商家这里是不一样的，按商家区分**。
+
+> **每个商品客户单独设置反多少积分**，后面积分可以抵现消费。
+
+> **商户可以设置 1 个积分抵扣多少现金**（`pointPerYuan` 商户级配置）。用户支付的时候可以**积分 + 在线支付**。
+
+> 也可以把**提现余额转换成在线积分**进行消费。但是**积分不能转成提现余额**。
+
+### 14.5 两级提现链路
+
+> 用户提现原型还没有开发出来。功能是：**用户发起提现申请**，**商家这里能处理这个提现，上传提现到账的凭证**，方便总后台审核。
+
+→ 对应两张表：`member_withdraw_apply`（用户端发起，商户审核）+ `merchant_withdraw_apply`（商户端发起，平台审核）。
+
+### 14.6 商户入驻 & AI 视频付费模型
+
+> 我有一个**专属的商家注册码**，扫码就进入商家申请页面，只需要填**手机号 + 获取验证码**就可以自动成为商家（后改为 `wx.getPhoneNumber` 免验证码）。
+
+> 商家就可以发布视频（**每条视频需要支付 7 元，15s 的视频**，商家首页上有个 **demo 视频**可以播放，方便告诉商家怎么操作，也可以**买套餐**）。
+
+> 付费时机：**先给钱再生成**。
+
+> 付费 7 元是指的**生成一条视频**需要付费 7 元。
+
+> 视频配额这个商户可以购买，消费套餐次数，**套餐有后台创建管理**。
+
+### 14.7 登录与身份
+
+> 商户端如果是小程序端，可以直接**获取手机号**然后登录。一个手机号可能是商家或者商户。
+
+> 普通用户应该可以**自动获取手机号**吧。如果要给钱，就第一次绑定一下手机号，要用验证码校验。后面获取小程序的 **openid 是每次都一样的**，这样就不用给钱哇。
+
+> 如果检查到他**有商户和用户**，提醒他选择什么身份。
+
+> **单小程序**就行，商户端、用户端都是一套小程序。后来补充：**一套前端代码，代码里面有商户端、有用户端，按照角色区分。**
+
+### 14.8 AI 视频产品策略（具体数据见 §3 第 15-18 条 + §15 清单）
+
+> **别说什么大减价之类的，就是根据拍照的图片发挥你的想象**。
+
+> **不要有什么老板字样**。
+
+> **最后加一句「截图微信扫描二维码在线下单」**。
+
+> **最后 2 秒**单独展示二维码和商家的名字，大的二维码在**正中**的位置。
+
+> 最后一幕的二维码还要加几个字「微信扫描二维码在线下单」。
+
+> 二维码可以再大一点。字幕有点大了超出一点点 → 收窄。
+
+> 视频详情页面不需要复制所有链接，应该有一个**发布到抖音**的功能，他会自动合并视频，然后发布这套逻辑。**真正实现完整的抖音发布流程**。
+
+### 14.9 安全与生产级
+
+> 需要将所有 AI Key 从浏览器搬到后端 BFF，**别人抄袭太容易**。
+
+> **走长期路线，这次要一步到位，生产级别的**。
+
+---
+
+## 15. AI 视频模块现成能力清单
+
+Phase 0 之前已经实现并持续优化的 AI 视频能力，新机器接手**不需要重建，扩展即可**。所有代码都在当前 `main` 分支上。
+
+### 15.1 脚本生成（`src/api/scriptLlm.js` + BFF `/ark/chat`）
+
+- **三步走**：视觉分析（逐图打 role 标签）→ 导演策划（打乱上传顺序按叙事冲击力排）→ 写脚本
+- **身份设定**：会讲故事的店主 + 短视频编剧（不是老板吆喝）
+- **结构弧线**：画面/好奇心钩子 → 感官与场景展开 → 情绪共鸣 → 固定收尾
+- **硬约束**：
+  - 所有 narration 自然口语，基于照片发挥想象（画面/氛围/感官/场景/情绪）
+  - 禁词：老板/赔本/大减价/限时/秒杀/小黄车/购物车/点击链接/库存不多/手慢无
+  - 最后一幕 narration 固定为「截图微信扫描二维码在线下单」（`parseScript` 强制覆盖，**不信任 LLM**）
+  - `visual_prompt` 用中文（方便用户编辑剧本）
+- **容错**：
+  - 即梦 Text Risk → prompt 三级 sanitize 重试（原版 → 去敏感词 → 空 prompt）
+  - 并发限制 → 6 次指数退避
+  - 视觉分析 JSON 解析失败 → 默认顺序降级
+
+### 15.2 视频生成（`src/api/jimeng.js` → BFF `/jimeng/*`）
+
+- 即梦 AI 3.0 720P，首帧模式
+- `frames = 241` (10s) / `121` (5s)
+- `waitClip` 容错：
+  - 连续查询失败 < 6 次视为网络抖动
+  - `not_found` 在提交后 60s 内视为未落库
+  - 只有服务端明确"失败"才真失败
+
+### 15.3 TTS + 合片（sidecar `/video/mux` + `/video/endcard` + `/video/merge`）
+
+- **TTS**：openspeech v3 流式 MP3（豆包语音大模型）
+- **字幕合片（`/video/mux`）**：
+  - FFmpeg `-vf subtitles=xxx.ass:fontsdir=xxx` 烧录
+  - 字号 58pt / 双侧边距 60px / `wrapText` 阈值 13 字
+  - 关键 bug 已修：`-shortest` 与字幕滤镜组合会使 aac 无输出（`Qavg: nan`），改用 `-t ${duration} + -af apad`
+  - 字幕失败自动降级为纯音频合流
+- **端卡（`/video/endcard`）**：
+  - 商品图做底 + 轻微模糊 + 45% 黑遮罩
+  - 正中大 QR（短边 50%）+ 店名在下方 + 「微信扫描二维码在线下单」说明文在上方
+  - libass 烧录中文（PingFang SC）
+  - 输出固定 **720x1280 / 25fps / 3s**
+  - TTS 固定朗读 CTA
+- **合并（`/video/merge`）**：
+  - 规范化所有 clip 到 720x1280 / SAR 1:1 / 25fps / yuv420p 再 concat（解决即梦输出 `704x1248 SAR 1920:1919` 与端卡混合失败）
+  - 音轨 `aresample=44100 + asetpts` 重置时间戳
+  - 支持 `uploadTos: true` 开关直接上传 TOS 返 URL，不回 blob
+
+### 15.4 抖音发布（sidecar `/douyin/*` + 详情页「发布到抖音」按钮）
+
+- `/douyin/auth-url` 返 OAuth URL
+- `/douyin/oauth-callback` 弹窗接 `code` → 换 `access_token` → `postMessage` 回传父窗口
+- `/douyin/publish` 下载合并后 mp4 → multipart 上传 `upload_video` → `create_video` 发布
+- 前端 `publishToDouyin(taskId, onStage)` 封装五阶段：merging → authorizing → uploading → publishing → done
+
+### 15.5 关键设计决策（可追溯）
+
+- **所有 AI Key 已迁到后端 BFF**（Phase 0.1）：浏览器 bundle **零密钥**
+- **商户 JWT 保护 BFF**（Phase 0.2）：未登录返 401
+- **配额原子扣减**（Phase 0.3.1-2）：`UPDATE ... WHERE video_quota_remaining >= ?`；失败自动回补 + `taskId` 审计链
+- **支付幂等**（Phase 0.3.3）：`uk_biz(biz_type, biz_id)` UNIQUE + CAS 状态机 + `payOrderApi` 二次反查金额 + 状态
+
+### 15.6 尚未搬后端的部分（生产前必做）
+
+- **FFmpeg 合片仍在 Vite sidecar**（dev-only）—— 生产要搬后端 Worker（加 ffmpeg 二进制 + 线程池 + 对象存储 pipeline）
+- **OSS 上传也在 sidecar** —— 同上
+- **抖音 OAuth 回调地址是 `localhost:5180`** —— 上线前换对外可达 HTTPS 域名，并在抖音开放平台重新登记
+- **pay 模块 `orderNotifyUrl` 无签名** —— 业务侧靠 `payOrderApi.getOrder` 二次反查兜底；可考虑给 yudao-pay 上游提 PR 补签
+
+详见 §11 TODO 列表。
 
 ---
 
