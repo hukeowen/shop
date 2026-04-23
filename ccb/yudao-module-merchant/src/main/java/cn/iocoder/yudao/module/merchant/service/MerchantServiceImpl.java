@@ -307,7 +307,7 @@ public class MerchantServiceImpl implements MerchantService {
      */
     @Override
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
-    public int increaseVideoQuota(Long merchantId, int delta, Integer bizType, String bizId, String remark) {
+    public QuotaChangeResult increaseVideoQuota(Long merchantId, int delta, Integer bizType, String bizId, String remark) {
         if (merchantId == null || delta <= 0) {
             throw exception(VIDEO_QUOTA_UPDATE_FAILED);
         }
@@ -334,9 +334,10 @@ public class MerchantServiceImpl implements MerchantService {
                     merchantId, bizType, bizId);
             throw exception(VIDEO_QUOTA_UPDATE_FAILED);
         }
-        log.info("[increaseVideoQuota] merchantId={} +{} after={} bizType={} bizId={}",
-                merchantId, delta, after, bizType, bizId);
-        return after;
+        log.info("[increaseVideoQuota] merchantId={} +{} after={} bizType={} bizId={} logId={}",
+                merchantId, delta, after, bizType, bizId, logDO.getId());
+        // MyBatis Plus insert 成功后会把 PK 回填到 DO，直接取 logDO.getId()
+        return new QuotaChangeResult(after, logDO.getId());
     }
 
     /**
@@ -351,7 +352,7 @@ public class MerchantServiceImpl implements MerchantService {
      */
     @Override
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
-    public int decreaseVideoQuota(Long merchantId, int delta, Integer bizType, String bizId, String remark) {
+    public QuotaChangeResult decreaseVideoQuota(Long merchantId, int delta, Integer bizType, String bizId, String remark) {
         if (merchantId == null || delta <= 0) {
             throw exception(VIDEO_QUOTA_UPDATE_FAILED);
         }
@@ -379,9 +380,9 @@ public class MerchantServiceImpl implements MerchantService {
                     merchantId, bizType, bizId);
             throw exception(VIDEO_QUOTA_UPDATE_FAILED);
         }
-        log.info("[decreaseVideoQuota] merchantId={} -{} after={} bizType={} bizId={}",
-                merchantId, delta, after, bizType, bizId);
-        return after;
+        log.info("[decreaseVideoQuota] merchantId={} -{} after={} bizType={} bizId={} logId={}",
+                merchantId, delta, after, bizType, bizId, logDO.getId());
+        return new QuotaChangeResult(after, logDO.getId());
     }
 
 }

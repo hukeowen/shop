@@ -64,7 +64,12 @@ public interface MerchantErrorCodeConstants {
     ErrorCode PAY_APP_ID_NOT_CONFIGURED   = new ErrorCode(1_021_013_003, "套餐支付应用未配置，请联系管理员");
     ErrorCode PACKAGE_ORDER_OPENID_MISSING = new ErrorCode(1_021_013_004, "缺少微信 OpenID，无法发起小程序支付");
     ErrorCode PACKAGE_ORDER_PAY_ORDER_MISMATCH = new ErrorCode(1_021_013_005, "支付单与订单不匹配，拒绝处理");
-    ErrorCode PACKAGE_ORDER_PAY_NOT_SUCCESS    = new ErrorCode(1_021_013_006, "支付单状态非成功，拒绝处理");
+    /**
+     * 支付回调二次校验失败：反查 pay_order 后发现状态非 SUCCESS，或
+     * pay_order.price 与本地业务订单 price 不一致（防金额篡改 / 伪造回调）。
+     * 抛出后由 pay 模块的重试机制决定下一步——一般持续校验失败意味着请求不合法，重试到上限自动失败。
+     */
+    ErrorCode PACKAGE_ORDER_PAY_NOT_SUCCESS    = new ErrorCode(1_021_013_006, "支付单未成功或金额不匹配");
     ErrorCode PACKAGE_ORDER_CHANNEL_UNSUPPORTED = new ErrorCode(1_021_013_007, "暂不支持该支付渠道");
     ErrorCode PACKAGE_ORDER_PRICE_INVALID       = new ErrorCode(1_021_013_008, "套餐价格非法");
 

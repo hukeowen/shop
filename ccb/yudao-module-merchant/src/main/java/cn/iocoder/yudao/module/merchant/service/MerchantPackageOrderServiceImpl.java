@@ -1,6 +1,5 @@
 package cn.iocoder.yudao.module.merchant.service;
 
-import cn.hutool.core.util.ObjUtil;
 import cn.iocoder.yudao.framework.common.enums.UserTypeEnum;
 import cn.iocoder.yudao.module.member.dal.dataobject.user.MemberUserDO;
 import cn.iocoder.yudao.module.member.dal.mysql.user.MemberUserMapper;
@@ -12,8 +11,11 @@ import cn.iocoder.yudao.module.merchant.enums.ai.VideoQuotaBizTypeEnum;
 import cn.iocoder.yudao.module.merchant.framework.config.MerchantPackageProperties;
 import cn.iocoder.yudao.module.pay.api.order.PayOrderApi;
 import cn.iocoder.yudao.module.pay.api.order.dto.PayOrderCreateReqDTO;
+import cn.iocoder.yudao.module.pay.api.order.dto.PayOrderRespDTO;
 import cn.iocoder.yudao.module.pay.dal.dataobject.app.PayAppDO;
+import cn.iocoder.yudao.module.pay.enums.order.PayOrderStatusEnum;
 import cn.iocoder.yudao.module.pay.service.app.PayAppService;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,6 +30,7 @@ import static cn.iocoder.yudao.framework.common.util.date.LocalDateTimeUtils.add
 import static cn.iocoder.yudao.module.merchant.enums.MerchantErrorCodeConstants.PACKAGE_ORDER_CHANNEL_UNSUPPORTED;
 import static cn.iocoder.yudao.module.merchant.enums.MerchantErrorCodeConstants.PACKAGE_ORDER_NOT_FOUND;
 import static cn.iocoder.yudao.module.merchant.enums.MerchantErrorCodeConstants.PACKAGE_ORDER_OPENID_MISSING;
+import static cn.iocoder.yudao.module.merchant.enums.MerchantErrorCodeConstants.PACKAGE_ORDER_PAY_NOT_SUCCESS;
 import static cn.iocoder.yudao.module.merchant.enums.MerchantErrorCodeConstants.PACKAGE_ORDER_PRICE_INVALID;
 import static cn.iocoder.yudao.module.merchant.enums.MerchantErrorCodeConstants.PAY_APP_ID_NOT_CONFIGURED;
 
@@ -149,6 +152,27 @@ public class MerchantPackageOrderServiceImpl implements MerchantPackageOrderServ
         return packageOrderMapper.selectByPayOrderId(payOrderId);
     }
 
+    /**
+     * 支付回调业务落位入口。修复项（Phase 0.3.3 必修）：
+     *
+     * <ol>
+     *   <li><b>HIGH 1 —— 二次校验支付单真实状态</b>：
+     *       {@code /pay-callback} 是 {@code @PermitAll}，仅靠 merchantOrderId / payOrderId 对齐
+     *       无法抵挡伪造回调（构造 POST 就能加配额）。这里多调一次
+     *       {@link PayOrderApi#getOrder(Long)}，要求
+     *       {@link PayOrderStatusEnum#SUCCESS} 且 price 完全等于业务订单 price，
+     *       否则抛 {@link cn.iocoder.yudao.module.merchant.enums.MerchantErrorCodeConstants#PACKAGE_ORDER_PAY_NOT_SUCCESS}。</li>
+     *   <li><b>HIGH 2 —— 消除 TOCTOU，把 read-then-update 改 CAS</b>：
+     *       用 {@code UPDATE ... WHERE pay_status=WAITING} 原子翻状态，affected=0 直接短路幂等。
+     *       并发回调不会都进入 {@code increaseVideoQuota}。</li>
+     *   <li><b>MEDIUM 3 —— 调换顺序</b>：先 CAS 状态、再加配额。
+     *       CAS 在外层事务里（失败可回滚），加配额是 REQUIRES_NEW 独立事务。
+     *       下游 {@code increaseVideoQuota} 失败时外层事务回滚，pay 模块重试可以再进来；
+     *       不会出现"配额加了、状态没回、下次又加"的泄漏。</li>
+     *   <li><b>MEDIUM 4 —— 回写 quota_log_id</b>：从 {@link QuotaChangeResult} 取 logId 补写
+     *       {@code merchant_package_order.quota_log_id}，闭合审计链。</li>
+     * </ol>
+     */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void markPaid(Long orderId, LocalDateTime payTime) {
@@ -156,29 +180,54 @@ public class MerchantPackageOrderServiceImpl implements MerchantPackageOrderServ
         if (order == null) {
             throw exception(PACKAGE_ORDER_NOT_FOUND);
         }
-        // 幂等：已是已支付状态直接返回，不再动配额
-        if (ObjUtil.equals(order.getPayStatus(), MerchantPackageOrderDO.PAY_STATUS_PAID)) {
-            log.info("[markPaid] 订单 {} 已是已支付状态，忽略重复回调", orderId);
+
+        // 【HIGH 1】二次反查 pay_order 真实状态：防伪造回调
+        // 即使攻击者构造 merchantOrderId + payOrderId 对齐的 payload，也无法把一个未支付单变成
+        // PayOrderDO.status=SUCCESS；加金额校验兜底二次攻击面。
+        PayOrderRespDTO payOrder = order.getPayOrderId() == null
+                ? null : payOrderApi.getOrder(order.getPayOrderId());
+        if (payOrder == null
+                || !PayOrderStatusEnum.SUCCESS.getStatus().equals(payOrder.getStatus())
+                || !safeToIntPrice(order.getPrice()).equals(payOrder.getPrice())) {
+            log.warn("[markPaid] 二次校验失败 orderId={} payOrderId={} payOrderStatus={} expectedPrice={} actualPrice={}",
+                    orderId, order.getPayOrderId(),
+                    payOrder == null ? null : payOrder.getStatus(),
+                    order.getPrice(),
+                    payOrder == null ? null : payOrder.getPrice());
+            throw exception(PACKAGE_ORDER_PAY_NOT_SUCCESS);
+        }
+
+        // 【HIGH 2 + MEDIUM 3】CAS：先在外层事务里原子翻状态 WAITING→PAID，再动配额。
+        // 并发两次回调 → 只有一个 affected=1，另一个 affected=0 幂等短路。
+        int affected = packageOrderMapper.update(null,
+                new LambdaUpdateWrapper<MerchantPackageOrderDO>()
+                        .set(MerchantPackageOrderDO::getPayStatus, MerchantPackageOrderDO.PAY_STATUS_PAID)
+                        .set(MerchantPackageOrderDO::getPayTime, payTime != null ? payTime : LocalDateTime.now())
+                        .eq(MerchantPackageOrderDO::getId, orderId)
+                        .eq(MerchantPackageOrderDO::getPayStatus, MerchantPackageOrderDO.PAY_STATUS_WAITING));
+        if (affected == 0) {
+            log.info("[markPaid] 订单 {} CAS 失败（已被处理或非待支付），幂等短路", orderId);
             return;
         }
 
-        // 给配额：biz_id=payOrderId 做幂等键；失败抛异常回滚本事务的状态更新
-        int after = merchantService.increaseVideoQuota(
+        // 此时订单已原子进入 PAID，并发线程进不来；现在安全地加配额（REQUIRES_NEW 独立事务）。
+        // 失败 → 本方法抛异常 → 外层事务回滚 CAS 撤销 → pay 模块重试下次能再次进入。
+        QuotaChangeResult result = merchantService.increaseVideoQuota(
                 order.getMerchantId(),
                 order.getVideoCount(),
                 VideoQuotaBizTypeEnum.PACKAGE_PURCHASE.getCode(),
                 String.valueOf(order.getPayOrderId()),
                 "购买套餐: " + order.getPackageName());
 
-        // 更新订单状态（pay_status 保持 >= PAID 的幂等：只改 WAITING → PAID）
-        MerchantPackageOrderDO update = new MerchantPackageOrderDO();
-        update.setId(orderId);
-        update.setPayStatus(MerchantPackageOrderDO.PAY_STATUS_PAID);
-        update.setPayTime(payTime != null ? payTime : LocalDateTime.now());
-        packageOrderMapper.updateById(update);
+        // 【MEDIUM 4】回写 quota_log_id 闭合审计链。这条 UPDATE 若失败也会随外层事务回滚；
+        // quotaLog 是 REQUIRES_NEW 已提交，但下次重试进来配额流水有 uk_biz 幂等兜底不会重复加。
+        packageOrderMapper.update(null,
+                new LambdaUpdateWrapper<MerchantPackageOrderDO>()
+                        .set(MerchantPackageOrderDO::getQuotaLogId, result.getLogId())
+                        .eq(MerchantPackageOrderDO::getId, orderId));
 
-        log.info("[markPaid] 订单 {} 已标记为已支付，商户 {} 配额增至 {}",
-                orderId, order.getMerchantId(), after);
+        log.info("[markPaid] 订单 {} 已标记为已支付，商户 {} 配额增至 {}，quotaLogId={}",
+                orderId, order.getMerchantId(), result.getQuotaAfter(), result.getLogId());
     }
 
     /**

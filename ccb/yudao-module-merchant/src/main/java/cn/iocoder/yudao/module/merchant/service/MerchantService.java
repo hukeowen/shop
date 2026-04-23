@@ -89,10 +89,10 @@ public interface MerchantService {
      *                   {@link cn.iocoder.yudao.module.merchant.enums.ai.VideoQuotaBizTypeEnum}
      * @param bizId      业务外键（订单号 / 任务 ID / 操作员 ID）；可空
      * @param remark     备注；可空
-     * @return 变动后余量
+     * @return 配额变动结果：变动后余量 + 本次写入流水的 id（供 {@code markPaid} 回写审计字段）
      * @throws cn.iocoder.yudao.framework.common.exception.ServiceException 商户不存在 / 更新失败
      */
-    int increaseVideoQuota(Long merchantId, int delta, Integer bizType, String bizId, String remark);
+    QuotaChangeResult increaseVideoQuota(Long merchantId, int delta, Integer bizType, String bizId, String remark);
 
     /**
      * 原子扣减商户视频配额并写入一条流水。独立事务（REQUIRES_NEW）。
@@ -101,8 +101,8 @@ public interface MerchantService {
      * 并发多个请求同时扣时，最多只有一个成功；其他抛
      * {@link cn.iocoder.yudao.module.merchant.enums.MerchantErrorCodeConstants#VIDEO_QUOTA_INSUFFICIENT}。</p>
      *
-     * @return 变动后余量
+     * @return 配额变动结果：变动后余量 + 本次写入流水的 id
      */
-    int decreaseVideoQuota(Long merchantId, int delta, Integer bizType, String bizId, String remark);
+    QuotaChangeResult decreaseVideoQuota(Long merchantId, int delta, Integer bizType, String bizId, String remark);
 
 }

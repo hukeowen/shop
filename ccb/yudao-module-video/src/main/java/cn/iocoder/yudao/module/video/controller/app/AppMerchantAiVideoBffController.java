@@ -206,6 +206,8 @@ public class AppMerchantAiVideoBffController {
 
         // 1) 预扣 1 条（quota 不足→抛 VIDEO_QUOTA_INSUFFICIENT）
         // bizId 暂用临时 UUID；真正的即梦 taskId 在下游返回后可由业务回执补登
+        // Phase 0.3.3：decreaseVideoQuota 返回类型由 int 改成 QuotaChangeResult，这里只用余额,
+        // logId 由 {@code merchant_package_order.quota_log_id} / 对账任务消费，不在本路径需要。
         String preDebitBizId = UUID.randomUUID().toString().replace("-", "").substring(0, 16);
         merchantService.decreaseVideoQuota(
                 merchant.getId(), 1,
