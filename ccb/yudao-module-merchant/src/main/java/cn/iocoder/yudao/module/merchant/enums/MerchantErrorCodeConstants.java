@@ -58,4 +58,14 @@ public interface MerchantErrorCodeConstants {
     ErrorCode VIDEO_QUOTA_INSUFFICIENT = new ErrorCode(1_021_012_003, "视频配额不足，请先购买套餐");
     ErrorCode VIDEO_QUOTA_UPDATE_FAILED = new ErrorCode(1_021_012_004, "视频配额更新失败，请稍后重试");
 
+    // ========== 套餐订单 / 支付 1-021-013-xxx ==========
+    ErrorCode PACKAGE_ORDER_NOT_FOUND     = new ErrorCode(1_021_013_001, "套餐订单不存在");
+    ErrorCode PACKAGE_ORDER_ALREADY_PAID  = new ErrorCode(1_021_013_002, "套餐订单已支付，请勿重复操作");
+    ErrorCode PAY_APP_ID_NOT_CONFIGURED   = new ErrorCode(1_021_013_003, "套餐支付应用未配置，请联系管理员");
+    ErrorCode PACKAGE_ORDER_OPENID_MISSING = new ErrorCode(1_021_013_004, "缺少微信 OpenID，无法发起小程序支付");
+    ErrorCode PACKAGE_ORDER_PAY_ORDER_MISMATCH = new ErrorCode(1_021_013_005, "支付单与订单不匹配，拒绝处理");
+    ErrorCode PACKAGE_ORDER_PAY_NOT_SUCCESS    = new ErrorCode(1_021_013_006, "支付单状态非成功，拒绝处理");
+    ErrorCode PACKAGE_ORDER_CHANNEL_UNSUPPORTED = new ErrorCode(1_021_013_007, "暂不支持该支付渠道");
+    ErrorCode PACKAGE_ORDER_PRICE_INVALID       = new ErrorCode(1_021_013_008, "套餐价格非法");
+
 }

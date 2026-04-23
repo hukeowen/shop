@@ -246,6 +246,13 @@ yudao:
     order-notify-url: https://yutou.mynatapp.cc/admin-api/pay/notify/order # 支付渠道的【支付】回调地址
     refund-notify-url: https://yutou.mynatapp.cc/admin-api/pay/notify/refund # 支付渠道的【退款】回调地址
     transfer-notify-url: https://yutou.mynatapp.cc/admin-api/pay/notify/transfer # 支付渠道的【转账】回调地址
+  merchant:
+    package:
+      # Phase 0.3.3 套餐支付应用 —— 走 admin-api/pay/app 管理端创建的 PayApp 主键。
+      # 若暂时没创建可填 0，/purchase 接口会抛 PAY_APP_ID_NOT_CONFIGURED 快速失败。
+      pay-app-id: ${MERCHANT_PACKAGE_PAY_APP_ID:0}
+      # 可选：直接填 PayApp 的 appKey（优先于 pay-app-id）
+      pay-app-key: ${MERCHANT_PACKAGE_PAY_APP_KEY:}
   access-log: # 访问日志的配置项
     enable: false
   demo: false # 关闭演示模式

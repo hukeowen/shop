@@ -67,3 +67,42 @@ PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 -- DROP TABLE IF EXISTS `ai_video_package`;
 -- ALTER TABLE `merchant_info` DROP COLUMN `video_quota_remaining`;
 -- =====================================================================
+
+-- =====================================================================
+-- Phase 0.3.3 ─ 商户买套餐的业务订单（和 pay_order 解耦）
+-- =====================================================================
+-- 本表与 yudao-module-pay 的 pay_order 1:1 映射（通过 uk_pay_order 约束），
+-- 但两张表独立生命周期：pay_order 记录支付渠道 + 金额结算，
+-- merchant_package_order 记录商户业务语义（哪个商户买哪个套餐、支付到账后给多少配额）。
+--
+-- 幂等链路：
+--   - 支付渠道回调 → pay_order 更新 status=10 → pay 模块 POST notify_url
+--   - merchant 模块回调 controller → increaseVideoQuota(biz_type=1, biz_id=payOrderId)
+--   - merchant_video_quota_log 的 UNIQUE uk_biz(biz_type, biz_id) 保证配额不重复增加
+-- =====================================================================
+CREATE TABLE IF NOT EXISTS `merchant_package_order` (
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键',
+    `merchant_id` BIGINT NOT NULL COMMENT '商户 ID',
+    `package_id` BIGINT NOT NULL COMMENT '套餐 ID',
+    `package_name` VARCHAR(64) NOT NULL COMMENT '下单时套餐名称快照（防止套餐改名影响历史订单）',
+    `video_count` INT NOT NULL COMMENT '套餐包含视频条数快照（下单时锁定）',
+    `price` BIGINT NOT NULL COMMENT '下单实付金额（分）快照',
+    `pay_order_id` BIGINT DEFAULT NULL COMMENT 'pay_order 的主键（可为空：创建失败时）',
+    `pay_status` TINYINT NOT NULL DEFAULT 0 COMMENT '0=待支付 10=已支付 20=已关闭 30=已退款',
+    `pay_time` DATETIME DEFAULT NULL COMMENT '支付成功时间',
+    `quota_log_id` BIGINT DEFAULT NULL COMMENT '支付成功时写入 merchant_video_quota_log 的主键',
+    `creator` VARCHAR(64) DEFAULT '',
+    `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updater` VARCHAR(64) DEFAULT '',
+    `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `deleted` BIT(1) NOT NULL DEFAULT b'0',
+    `tenant_id` BIGINT NOT NULL DEFAULT 0,
+    PRIMARY KEY (`id`),
+    KEY `idx_merchant` (`merchant_id`, `create_time` DESC),
+    UNIQUE KEY `uk_pay_order` (`pay_order_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='AI 视频套餐订单';
+
+-- =====================================================================
+-- 回滚（生产环境慎用）：
+-- DROP TABLE IF EXISTS `merchant_package_order`;
+-- =====================================================================
