@@ -111,21 +111,24 @@ visual_prompt 技术要求（每条必须满足，否则视频是死图）：
 `.trim();
 
   const structureHint =
-    SCENES <= 2 ? '① 强钩子冲击 ② 高潮+行动号召' :
-    SCENES === 3 ? '① 开场钩子（停住手指）② 过程/细节/欲望（让人心动）③ 成品高潮+行动号召（让人下单）' :
-    `① 开场钩子 ② 变化过程 ${SCENES > 4 ? '③④ 多角度欲望激发' : '③ 细节高潮'} ④ 情感共鸣 ⑤ 行动号召（共 ${SCENES} 幕，每幕递进）`;
+    SCENES <= 2 ? '① 3 秒强钩子（抛痛点/反差/疑问停住手指）② 亮点证据+限时行动号召' :
+    SCENES === 3 ? '① 3 秒钩子（痛点/反差/疑问，让人停刷）② 真材实料的证据/过程/细节（让人心动）③ 成品高光+稀缺/限时+下单指令（让人立刻点购物车）' :
+    `① 钩子（抛痛点/反差）② 真材实料的证据/过程 ${SCENES > 4 ? '③④ 多角度细节+对比' : '③ 细节高潮'} ④ 情感共鸣/口碑背书 ⑤ 稀缺限时+下单指令（共 ${SCENES} 幕，层层递进）`;
 
   const directorPrompt = [
-    `你是拍过百亿播放量抖音广告的导演。商家亮点：${userDescription}`,
+    `你是拍过百亿播放量抖音爆款的商家本人——不是代言人，不是旁观导演。这是"你自己家"的商品，"你"在给粉丝种草。`,
+    `商品卖点（你自己说的话）：${userDescription}`,
     '',
     '我已经分析了每张图的特质：',
     JSON.stringify(imageAnalysis, null, 2),
     '',
-    `任务：规划一支 ${totalSec} 秒（${SCENES} 幕，每幕 ${D}s）的种草广告片，必须：`,
-    '1. 【打乱上传顺序】根据每张图的 best_role，重新安排哪张图放哪幕——不要按 idx 顺序！要按最强叙事冲击力排',
-    '2. 每幕的 narration 像一整段文案被切开，有承接/递进/转折，读出来是一个完整故事',
-    '3. 想象图里没有拍到的：烟雾/声音/香气/温度变化/食材到成品的转变过程',
-    '4. 台词要有感官冲击和欲望感，不要念参数',
+    `任务：以"商家第一人称（我/我家/老板我）"口吻，规划一支 ${totalSec} 秒（${SCENES} 幕，每幕 ${D}s）的抖音爆款种草视频，必须做到：`,
+    '1. 【第一人称】台词用"我/我家/咱家/老板我/我这款"——是店主自己拍自己发，不是第三方吹',
+    '2. 【爆款钩子】第 1 幕前 3 秒必须让人停刷：痛点提问 / 价格反差 / 业内黑幕 / 数字冲击 / 争议观点 其中一种（如"别再被 XX 骗了"/"这个价你们不信对吧"/"老板我赔本上架了"）',
+    '3. 【打乱上传顺序】按 best_role 重新安排——不要按 idx 顺序，要按最强叙事冲击力排',
+    '4. 【人话口语】像跟老粉直播连麦那样说，不要广告腔，不要念参数；每 1-2 句带感官词（香/烫/爆汁/脆/劲道/厚实）',
+    '5. 【收尾行动号召】最后一幕必须有稀缺/限时/低价话术 + 明确指令（"点左下角小黄车"/"直接拍"/"库存不多，手慢无"）',
+    '6. 【每幕承接】narration 是一整段口播被切开，有承接/递进/转折，连起来是一个完整故事',
     '',
     `故事结构参考：${structureHint}`,
     '',
@@ -134,17 +137,17 @@ visual_prompt 技术要求（每条必须满足，否则视频是死图）：
     `⚠️ img_idx 填你策划的那张图的编号（0-${n-1}），允许和幕序号不同。${n} 张图每张都要用到。`,
     '严格只输出 JSON，不要解释：',
     JSON.stringify({
-      title: '视频标题（8-16字，有钩子，适合抖音）',
+      title: '视频标题（8-16字，强钩子，像"老板疯了"/"别再花冤枉钱"/"XX 元真的能买到？"风格）',
       scenes: Array.from({ length: SCENES }, (_, i) => ({
         img_idx: `你策划的图编号（0-${n-1}，按最强叙事顺序，不是上传顺序）`,
-        narration: `第${i+1}句台词（${D >= 10 ? '16-36' : '8-18'}字，与上下句有承接，有感官画面感）`,
+        narration: `第${i+1}句台词（${D >= 10 ? '16-36' : '8-18'}字，第一人称口语，有承接和感官画面感）`,
         visual_prompt: '【英文】subject motion + camera movement + lighting + cinematic details',
       })),
     }, null, 2),
   ].join('\n');
 
   const raw = await arkChat(TEXT_MODEL, [
-    { role: 'system', content: '你是顶级抖音商业广告导演，只输出 JSON，不加说明文字。' },
+    { role: 'system', content: '你是抖音带货商家本人，拍过百亿播放量的爆款种草视频。所有台词必须是第一人称（我/我家/咱家/老板我），像店主自己开播说话，不是旁白解说。只输出 JSON，不加说明文字。' },
     { role: 'user', content: directorPrompt },
   ]);
 
@@ -168,12 +171,12 @@ export async function generateHighlight(imageBase64s) {
   const raw = await arkChat(VISION_MODEL, [
     {
       role: 'system',
-      content: '你是抖音带货文案专家。看图后用一句话（15-30字）写出最吸引人的核心卖点，要口语化、有欲望感、能让人停住刷屏的手指。只输出那句话，不要引号、不要解释、不要标点以外的任何字符。',
+      content: '你是抖音带货商家本人。看自家商品图后用"我/我家"第一人称写一句（15-30字）爆款钩子文案，要口语化、有痛点或反差、能让人停住刷屏的手指（示例风格："我家这款我赔本在卖""别再花冤枉钱了家人们""老板我真的疯了"）。只输出那一句话，不要引号、不要解释、不要标点以外的任何字符。',
     },
     {
       role: 'user',
       content: [
-        { type: 'text', text: '这是商品实拍图，帮我提炼一句话亮点文案：' },
+        { type: 'text', text: '这是我自家商品的实拍图，帮我写一句抖音爆款钩子：' },
         ...imageContent,
       ],
     },
@@ -183,12 +186,12 @@ export async function generateHighlight(imageBase64s) {
 
 async function generateScriptTextOnly({ userDescription, SCENES, D, totalSec, n }) {
   const raw = await arkChat(TEXT_MODEL, [
-    { role: 'system', content: `你是拍过百亿播放量抖音广告的导演级脚本策划。写完整的种草商业片脚本，台词有感官冲击，visual_prompt 必须英文且有真实物体运动，故事有钩子→欲望→高潮→行动号召弧线。只输出 JSON。` },
-    { role: 'user', content: `商家亮点：${userDescription}\n共 ${n} 张图，输出 ${SCENES} 幕脚本（每幕 ${D}s，共 ${totalSec}s）。\n` + JSON.stringify({
-      title: '视频标题',
+    { role: 'system', content: `你是抖音带货商家本人，拍过百亿播放量的爆款种草视频。所有 narration 必须第一人称（我/我家/咱家/老板我）口语，有 3 秒钩子→真材实料证据→稀缺限时下单指令的完整弧线；visual_prompt 必须英文且有真实物体运动。只输出 JSON。` },
+    { role: 'user', content: `身份：你就是这个商品的商家本人，在抖音给粉丝种草自家产品。\n我家的卖点：${userDescription}\n共 ${n} 张图，输出 ${SCENES} 幕脚本（每幕 ${D}s，共 ${totalSec}s）。\n第 1 幕必须是强钩子（痛点/反差/数字/争议），最后一幕必须有"点左下角小黄车/库存不多/赔本上架"这类下单指令。\n` + JSON.stringify({
+      title: '视频标题（强钩子，像"老板疯了""别再花冤枉钱"风格）',
       scenes: Array.from({ length: SCENES }, (_, i) => ({
         img_idx: i % n,
-        narration: `第${i+1}句台词（${D >= 10 ? '16-36' : '8-18'}字）`,
+        narration: `第${i+1}句台词（${D >= 10 ? '16-36' : '8-18'}字，第一人称口语）`,
         visual_prompt: '【英文】motion + camera + lighting',
       })),
     }, null, 2) },
