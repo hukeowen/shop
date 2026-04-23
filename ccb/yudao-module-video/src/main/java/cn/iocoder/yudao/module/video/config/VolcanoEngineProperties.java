@@ -64,6 +64,40 @@ public class VolcanoEngineProperties {
     /** Seedance 视频生成轮询间隔（毫秒） */
     private long seedancePollIntervalMillis = 5000L;
 
+    // ==================== 即梦AI 图生视频（当前商户端主路径） ====================
+
+    /**
+     * 即梦AI Access Key（火山引擎 IAM）
+     * 环境变量：JIMENG_AK
+     */
+    private String jimengAccessKey;
+
+    /**
+     * 即梦AI Secret Key（火山引擎 IAM）
+     * 环境变量：JIMENG_SK
+     */
+    private String jimengSecretKey;
+
+    /** 即梦AI 区域 */
+    private String jimengRegion = "cn-north-1";
+
+    /** 即梦AI 服务名 */
+    private String jimengService = "cv";
+
+    /** 即梦AI API 版本 */
+    private String jimengVersion = "2022-08-31";
+
+    /** 即梦AI 接入点 */
+    private String jimengEndpoint = "https://visual.volcengineapi.com";
+
+    // ==================== 豆包 openspeech v3 TTS（单向流式 MP3） ====================
+
+    /** 豆包 TTS v3 单向流式接入点 */
+    private String ttsV3ApiUrl = "https://openspeech.bytedance.com/api/v3/tts/unidirectional";
+
+    /** 豆包 TTS v3 资源 ID */
+    private String ttsV3ResourceId = "volc.service_type.10029";
+
     // ==================== 旧版（保留以兼容） ====================
 
     /** 火山引擎 AccessKey ID（旧智能创作 API 鉴权，已不再用于 AI 成片主链路） */

@@ -36,4 +36,10 @@ public interface MerchantErrorCodeConstants {
     // ========== 内部接口 1-021-009-xxx ==========
     ErrorCode INTERNAL_TOKEN_INVALID   = new ErrorCode(1_021_009_000, "内部接口鉴权失败");
 
+    // ========== AI 视频 BFF 1-021-010-xxx ==========
+    ErrorCode ARK_CHAT_FAILED          = new ErrorCode(1_021_010_001, "AI 对话失败：{}");
+    ErrorCode JIMENG_CALL_FAILED       = new ErrorCode(1_021_010_002, "视频生成服务调用失败：{}");
+    ErrorCode TTS_FAILED               = new ErrorCode(1_021_010_003, "语音合成失败：{}");
+    ErrorCode BFF_BODY_TOO_LARGE       = new ErrorCode(1_021_010_004, "请求体过大");
+
 }

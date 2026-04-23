@@ -22,6 +22,18 @@ video:
     voice-type: zh_female_qingxin
     tts-api-url: https://openspeech.bytedance.com/api/v1/tts
 
+    # ---------- 即梦AI 图生视频（目前商户端使用的主路径） ----------
+    jimeng-access-key: ${JIMENG_AK:}
+    jimeng-secret-key: ${JIMENG_SK:}
+    jimeng-region: cn-north-1
+    jimeng-service: cv
+    jimeng-version: 2022-08-31
+    jimeng-endpoint: https://visual.volcengineapi.com
+
+    # ---------- 豆包 openspeech v3（单向流式 MP3），商户端 TTS 走这个 ----------
+    tts-v3-api-url: https://openspeech.bytedance.com/api/v3/tts/unidirectional
+    tts-v3-resource-id: volc.service_type.10029
+
     # ---------- 老智能创作接口（保留兼容，主链路已切 Seedance） ----------
     access-key-id: ${VOLCANO_AK:}
     access-key-secret: ${VOLCANO_SK:}
