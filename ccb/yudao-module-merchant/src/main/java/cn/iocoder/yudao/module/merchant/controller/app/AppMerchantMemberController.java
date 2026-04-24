@@ -2,16 +2,15 @@ package cn.iocoder.yudao.module.merchant.controller.app;
 
 import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
+import cn.iocoder.yudao.framework.tenant.core.context.TenantContextHolder;
 import cn.iocoder.yudao.module.member.controller.admin.user.vo.MemberUserPageReqVO;
 import cn.iocoder.yudao.module.member.dal.dataobject.user.MemberUserDO;
 import cn.iocoder.yudao.module.member.service.user.MemberUserService;
 import cn.iocoder.yudao.module.merchant.controller.app.vo.AppMemberConsumptionRespVO;
 import cn.iocoder.yudao.module.trade.controller.admin.brokerage.vo.user.BrokerageUserPageReqVO;
-import cn.iocoder.yudao.module.trade.controller.admin.order.vo.TradeOrderPageReqVO;
 import cn.iocoder.yudao.module.trade.dal.dataobject.brokerage.BrokerageUserDO;
-import cn.iocoder.yudao.module.trade.dal.dataobject.order.TradeOrderDO;
+import cn.iocoder.yudao.module.trade.dal.mysql.order.TradeOrderMapper;
 import cn.iocoder.yudao.module.trade.service.brokerage.BrokerageUserService;
-import cn.iocoder.yudao.module.trade.service.order.TradeOrderQueryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -20,8 +19,6 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.validation.Valid;
-import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -42,7 +39,7 @@ public class AppMerchantMemberController {
     @Resource
     private BrokerageUserService brokerageUserService;
     @Resource
-    private TradeOrderQueryService tradeOrderQueryService;
+    private TradeOrderMapper tradeOrderMapper;
 
     // ==================== #20 会员列表 ====================
 
@@ -83,41 +80,25 @@ public class AppMerchantMemberController {
     public CommonResult<PageResult<AppMemberConsumptionRespVO>> getPageByConsumption(
             @RequestParam(defaultValue = "1") Integer pageNo,
             @RequestParam(defaultValue = "20") Integer pageSize) {
-        // 拉取所有已完成订单（tenant 隔离由 TenantBaseDO 自动处理）
-        TradeOrderPageReqVO req = new TradeOrderPageReqVO();
-        req.setStatus(30); // 已完成
-        req.setPageNo(1);
-        req.setPageSize(5000);
-        List<TradeOrderDO> allOrders = tradeOrderQueryService.getOrderPage(req).getList();
+        Long tenantId = TenantContextHolder.getTenantId();
+        long total = tradeOrderMapper.countDistinctBuyers(tenantId);
+        int offset = (pageNo - 1) * pageSize;
+        List<Map<String, Object>> rows = tradeOrderMapper.selectConsumptionRanking(tenantId, offset, pageSize);
 
-        // 按 userId 聚合
-        Map<Long, List<TradeOrderDO>> grouped = allOrders.stream()
-                .collect(Collectors.groupingBy(TradeOrderDO::getUserId));
-        List<long[]> sorted = grouped.entrySet().stream()
-                .map(e -> new long[]{
-                        e.getKey(),
-                        e.getValue().stream().mapToLong(o -> o.getPayPrice() != null ? o.getPayPrice() : 0).sum(),
-                        e.getValue().size()
-                })
-                .sorted(Comparator.comparingLong((long[] a) -> a[1]).reversed())
+        List<Long> userIds = rows.stream()
+                .map(r -> ((Number) r.get("user_id")).longValue())
                 .collect(Collectors.toList());
+        Map<Long, MemberUserDO> userMap = userIds.isEmpty()
+                ? java.util.Collections.emptyMap()
+                : memberUserService.getUserList(userIds).stream()
+                        .collect(Collectors.toMap(MemberUserDO::getId, u -> u, (a, b) -> a));
 
-        long total = sorted.size();
-        int from = (pageNo - 1) * pageSize;
-        int to = Math.min(from + pageSize, sorted.size());
-        List<long[]> page = from >= sorted.size() ? new ArrayList<>() : sorted.subList(from, to);
-
-        // 批量查会员信息
-        List<Long> userIds = page.stream().map(a -> a[0]).collect(Collectors.toList());
-        Map<Long, MemberUserDO> userMap = memberUserService.getUserList(userIds).stream()
-                .collect(Collectors.toMap(MemberUserDO::getId, u -> u, (a, b) -> a));
-
-        List<AppMemberConsumptionRespVO> voList = page.stream().map(a -> {
+        List<AppMemberConsumptionRespVO> voList = rows.stream().map(r -> {
             AppMemberConsumptionRespVO vo = new AppMemberConsumptionRespVO();
-            vo.setUserId(a[0]);
-            vo.setTotalSpent((int) a[1]);
-            vo.setOrderCount((int) a[2]);
-            MemberUserDO user = userMap.get(a[0]);
+            vo.setUserId(((Number) r.get("user_id")).longValue());
+            vo.setTotalSpent(((Number) r.get("total_spent")).intValue());
+            vo.setOrderCount(((Number) r.get("order_count")).intValue());
+            MemberUserDO user = userMap.get(vo.getUserId());
             if (user != null) {
                 vo.setNickname(user.getNickname());
                 vo.setMobile(user.getMobile());

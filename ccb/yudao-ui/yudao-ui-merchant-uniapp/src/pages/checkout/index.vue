@@ -31,8 +31,17 @@
       <view class="card section">
         <view class="section-title">支付方式</view>
         <view class="pay-options">
-          <view :class="['pay-option', payType === 1 ? 'active' : '']" @click="payType = 1">在线支付</view>
+          <view v-if="onlinePayEnabled" :class="['pay-option', payType === 1 ? 'active' : '']" @click="payType = 1">在线支付</view>
           <view :class="['pay-option', payType === 2 ? 'active' : '']" @click="payType = 2">到店付款</view>
+        </view>
+      </view>
+
+      <!-- 积分抵现 -->
+      <view class="card section" v-if="userPoints > 0 && pointPerYuan > 0">
+        <view class="section-title">积分抵现</view>
+        <view class="points-row">
+          <text class="points-desc">可用积分：{{ userPoints }} 分 = ¥{{ fen2yuan(Math.floor(userPoints / pointPerYuan) * 100) }} 抵扣</text>
+          <switch :checked="usePoints" @change="usePoints = $event.detail.value" color="#FF6B35" />
         </view>
       </view>
 
@@ -57,10 +66,19 @@ const items = ref([]);
 const loading = ref(false);
 const deliveryType = ref(2); // 默认自提，无需地址
 const payType = ref(1);
+const onlinePayEnabled = ref(false);
+const usePoints = ref(false);
+const userPoints = ref(0);
+const pointPerYuan = ref(0);
 
-const totalFen = computed(() =>
-  items.value.reduce((s, i) => s + (i.price || 0) * (i.count || 1), 0)
-);
+const totalFen = computed(() => {
+  const base = items.value.reduce((s, i) => s + (i.price || 0) * (i.count || 1), 0);
+  if (usePoints.value && pointPerYuan.value > 0 && userPoints.value > 0) {
+    const discount = Math.floor(userPoints.value / pointPerYuan.value) * 100;
+    return Math.max(0, base - discount);
+  }
+  return base;
+});
 
 onLoad((query) => {
   skuId.value = query.skuId ? Number(query.skuId) : null;
@@ -68,7 +86,34 @@ onLoad((query) => {
   tenantId.value = query.tenantId ? Number(query.tenantId) : null;
   fromCart.value = query.fromCart === '1';
   loadItems();
+  loadShopConfig();
 });
+
+async function loadShopConfig() {
+  if (!tenantId.value) return;
+  try {
+    const shopInfo = await request({
+      url: `/app-api/merchant/shop/public/info?tenantId=${tenantId.value}`,
+    });
+    onlinePayEnabled.value = shopInfo?.onlinePayEnabled === true;
+    if (!onlinePayEnabled.value) {
+      payType.value = 2;
+    }
+  } catch {}
+  try {
+    const config = await request({
+      url: `/app-api/merchant/shop/public/config?tenantId=${tenantId.value}`,
+    });
+    pointPerYuan.value = config?.pointPerYuan || 0;
+  } catch {}
+  try {
+    const rel = await request({
+      url: '/app-api/merchant/mini/member-rel/my',
+      tenantId: tenantId.value,
+    });
+    userPoints.value = rel?.points || 0;
+  } catch {}
+}
 
 async function loadItems() {
   loading.value = true;
@@ -105,7 +150,7 @@ async function submitOrder() {
     const orderData = {
       deliveryType: deliveryType.value,
       payType: payType.value,
-      pointStatus: false,
+      pointStatus: usePoints.value,
       couponId: null,
     };
     if (fromCart.value) {
@@ -197,6 +242,19 @@ async function submitOrder() {
     color: $brand-primary;
     background: rgba(255, 107, 53, 0.06);
     font-weight: 600;
+  }
+}
+
+.points-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  .points-desc {
+    font-size: 26rpx;
+    color: $text-secondary;
+    flex: 1;
+    margin-right: 16rpx;
   }
 }
 

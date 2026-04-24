@@ -4,8 +4,12 @@ import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.security.core.util.SecurityFrameworkUtils;
 import cn.iocoder.yudao.framework.tenant.core.context.TenantContextHolder;
+import cn.iocoder.yudao.framework.tenant.core.util.TenantUtils;
+import cn.iocoder.yudao.module.merchant.dal.dataobject.MemberWithdrawApplyDO;
 import cn.iocoder.yudao.module.merchant.dal.dataobject.MerchantWithdrawApplyDO;
 import cn.iocoder.yudao.module.merchant.dal.dataobject.ShopInfoDO;
+import cn.iocoder.yudao.module.merchant.dal.mysql.MemberShopRelMapper;
+import cn.iocoder.yudao.module.merchant.dal.mysql.MemberWithdrawApplyMapper;
 import cn.iocoder.yudao.module.merchant.dal.mysql.ShopInfoMapper;
 import cn.iocoder.yudao.module.merchant.controller.admin.vo.withdraw.MerchantWithdrawPageReqVO;
 import cn.iocoder.yudao.module.merchant.service.MerchantWithdrawService;
@@ -13,6 +17,7 @@ import cn.iocoder.yudao.module.trade.controller.admin.brokerage.vo.withdraw.Brok
 import cn.iocoder.yudao.module.trade.dal.dataobject.brokerage.BrokerageWithdrawDO;
 import cn.iocoder.yudao.module.trade.enums.brokerage.BrokerageWithdrawStatusEnum;
 import cn.iocoder.yudao.module.trade.service.brokerage.BrokerageWithdrawService;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -23,7 +28,9 @@ import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import java.util.List;
 
+import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception0;
 import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
 import static cn.iocoder.yudao.framework.common.util.servlet.ServletUtils.getClientIP;
 
@@ -44,6 +51,10 @@ public class AppMerchantWithdrawController {
     private MerchantWithdrawService merchantWithdrawService;
     @Resource
     private ShopInfoMapper shopInfoMapper;
+    @Resource
+    private MemberWithdrawApplyMapper memberWithdrawApplyMapper;
+    @Resource
+    private MemberShopRelMapper memberShopRelMapper;
 
     // ==================== #24 用户提现审核 ====================
 
@@ -87,6 +98,84 @@ public class AppMerchantWithdrawController {
         req.setPageNo(pageNo);
         req.setPageSize(pageSize);
         return success(merchantWithdrawService.getWithdrawPage(req));
+    }
+
+    // ==================== #26 商户审核用户余额提现 ====================
+
+    @GetMapping("/member/page")
+    @Operation(summary = "分页查询用户余额提现申请")
+    public CommonResult<PageResult<MemberWithdrawApplyDO>> getMemberWithdrawPage(
+            @RequestParam(defaultValue = "1") Integer pageNo,
+            @RequestParam(defaultValue = "10") Integer pageSize,
+            @RequestParam(required = false) Integer status) {
+        Long tenantId = TenantContextHolder.getTenantId();
+        List<MemberWithdrawApplyDO> all = TenantUtils.executeIgnore(() ->
+                memberWithdrawApplyMapper.selectList(
+                        new LambdaQueryWrapper<MemberWithdrawApplyDO>()
+                                .eq(MemberWithdrawApplyDO::getTenantId, tenantId)
+                                .eq(status != null, MemberWithdrawApplyDO::getStatus, status)
+                                .orderByDesc(MemberWithdrawApplyDO::getId)));
+        int total = all.size();
+        int fromIndex = (pageNo - 1) * pageSize;
+        int toIndex = Math.min(fromIndex + pageSize, total);
+        List<MemberWithdrawApplyDO> pageList = fromIndex >= total
+                ? java.util.Collections.emptyList()
+                : all.subList(fromIndex, toIndex);
+        return success(new PageResult<>(pageList, (long) total));
+    }
+
+    @PostMapping("/member/approve")
+    @Operation(summary = "通过用户余额提现申请（上传凭证）")
+    @Parameter(name = "id", description = "提现申请ID", required = true)
+    @Parameter(name = "voucherUrl", description = "转账凭证URL", required = true)
+    public CommonResult<Boolean> approveMemberWithdraw(@RequestParam("id") Long id,
+                                                       @RequestParam("voucherUrl") String voucherUrl) {
+        Long tenantId = TenantContextHolder.getTenantId();
+        MemberWithdrawApplyDO apply = TenantUtils.executeIgnore(() ->
+                memberWithdrawApplyMapper.selectById(id));
+        if (apply == null || !tenantId.equals(apply.getTenantId())) {
+            throw exception0(400, "申请记录不存在");
+        }
+        if (!Integer.valueOf(0).equals(apply.getStatus())) {
+            throw exception0(400, "该申请已处理");
+        }
+        MemberWithdrawApplyDO update = new MemberWithdrawApplyDO();
+        update.setId(id);
+        update.setStatus(1);
+        update.setVoucherUrl(voucherUrl);
+        TenantUtils.executeIgnore(() -> {
+            memberWithdrawApplyMapper.updateById(update);
+            return null;
+        });
+        return success(true);
+    }
+
+    @PostMapping("/member/reject")
+    @Operation(summary = "驳回用户余额提现申请（退还余额）")
+    @Parameter(name = "id", description = "提现申请ID", required = true)
+    @Parameter(name = "rejectReason", description = "驳回原因", required = true)
+    public CommonResult<Boolean> rejectMemberWithdraw(@RequestParam("id") Long id,
+                                                      @RequestParam("rejectReason") String rejectReason) {
+        Long tenantId = TenantContextHolder.getTenantId();
+        MemberWithdrawApplyDO apply = TenantUtils.executeIgnore(() ->
+                memberWithdrawApplyMapper.selectById(id));
+        if (apply == null || !tenantId.equals(apply.getTenantId())) {
+            throw exception0(400, "申请记录不存在");
+        }
+        if (!Integer.valueOf(0).equals(apply.getStatus())) {
+            throw exception0(400, "该申请已处理");
+        }
+        MemberWithdrawApplyDO update = new MemberWithdrawApplyDO();
+        update.setId(id);
+        update.setStatus(2);
+        update.setRejectReason(rejectReason);
+        TenantUtils.executeIgnore(() -> {
+            memberWithdrawApplyMapper.updateById(update);
+            return null;
+        });
+        // 退还余额
+        memberShopRelMapper.incrementBalance(apply.getUserId(), apply.getTenantId(), apply.getAmount());
+        return success(true);
     }
 
     @PostMapping("/merchant/create")

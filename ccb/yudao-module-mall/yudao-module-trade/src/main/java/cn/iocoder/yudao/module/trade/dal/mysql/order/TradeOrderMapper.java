@@ -10,6 +10,8 @@ import cn.iocoder.yudao.module.trade.dal.dataobject.order.TradeOrderDO;
 import cn.iocoder.yudao.module.trade.enums.order.TradeOrderTypeEnum;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -136,5 +138,19 @@ public interface TradeOrderMapper extends BaseMapperX<TradeOrderDO> {
                 .eq(TradeOrderDO::getCombinationActivityId, combinationActivityId)
         );
     }
+
+    @Select("SELECT user_id, SUM(pay_price) AS total_spent, COUNT(*) AS order_count " +
+            "FROM trade_order " +
+            "WHERE status = 30 AND deleted = 0 AND tenant_id = #{tenantId} " +
+            "GROUP BY user_id " +
+            "ORDER BY total_spent DESC " +
+            "LIMIT #{offset}, #{limit}")
+    List<Map<String, Object>> selectConsumptionRanking(
+            @Param("tenantId") Long tenantId,
+            @Param("offset") int offset,
+            @Param("limit") int limit);
+
+    @Select("SELECT COUNT(DISTINCT user_id) FROM trade_order WHERE status = 30 AND deleted = 0 AND tenant_id = #{tenantId}")
+    long countDistinctBuyers(@Param("tenantId") Long tenantId);
 
 }

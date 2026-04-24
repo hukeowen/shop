@@ -40,6 +40,10 @@
         <text>用户提现审核</text>
         <text class="arrow">›</text>
       </view>
+      <view class="menu-item" @click="goMemberWithdraw">
+        <text>用户余额提现审核</text>
+        <text class="arrow">›</text>
+      </view>
       <view class="menu-item" @click="goPayApply">
         <text>在线支付开通</text>
         <text class="arrow">›</text>
@@ -106,6 +110,10 @@ function goWithdrawApply() {
 
 function goUserWithdraw() {
   uni.navigateTo({ url: '/pages/withdraw/user-list' });
+}
+
+function goMemberWithdraw() {
+  uni.navigateTo({ url: '/pages/withdraw/member-list' });
 }
 
 function goPayApply() {

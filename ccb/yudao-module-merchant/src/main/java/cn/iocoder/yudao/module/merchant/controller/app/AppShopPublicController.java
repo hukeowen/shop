@@ -4,7 +4,10 @@ import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.common.pojo.PageParam;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.tenant.core.aop.TenantIgnore;
+import cn.iocoder.yudao.framework.tenant.core.util.TenantUtils;
+import cn.iocoder.yudao.module.merchant.dal.dataobject.ShopBrokerageConfigDO;
 import cn.iocoder.yudao.module.merchant.dal.dataobject.ShopInfoDO;
+import cn.iocoder.yudao.module.merchant.dal.mysql.ShopBrokerageConfigMapper;
 import cn.iocoder.yudao.module.merchant.dal.mysql.ShopInfoMapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import io.swagger.v3.oas.annotations.Operation;
@@ -18,6 +21,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
 import javax.annotation.security.PermitAll;
+import java.util.HashMap;
+import java.util.Map;
 
 import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
 
@@ -32,6 +37,8 @@ public class AppShopPublicController {
 
     @Resource
     private ShopInfoMapper shopInfoMapper;
+    @Resource
+    private ShopBrokerageConfigMapper shopBrokerageConfigMapper;
 
     @GetMapping("/list")
     @Operation(summary = "分页查询店铺列表（仅返回正常营业的店铺）")
@@ -65,6 +72,20 @@ public class AppShopPublicController {
                 ? shopInfoMapper.selectByTenantId(tenantId)
                 : shopInfoMapper.selectById(shopId);
         return success(shop);
+    }
+
+    @GetMapping("/config")
+    @Operation(summary = "获取店铺积分配置（pointPerYuan）")
+    @Parameter(name = "tenantId", description = "租户ID", required = true)
+    @PermitAll
+    @TenantIgnore
+    public CommonResult<Map<String, Object>> getShopConfig(
+            @RequestParam("tenantId") Long tenantId) {
+        ShopBrokerageConfigDO config = TenantUtils.execute(tenantId,
+                () -> shopBrokerageConfigMapper.selectCurrent());
+        Map<String, Object> result = new HashMap<>();
+        result.put("pointPerYuan", config != null ? config.getPointPerYuan() : 0);
+        return success(result);
     }
 
 }

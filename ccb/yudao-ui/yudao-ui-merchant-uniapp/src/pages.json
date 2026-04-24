@@ -119,6 +119,12 @@
       }
     },
     {
+      "path": "pages/withdraw/member-list",
+      "style": {
+        "navigationBarTitleText": "用户余额提现审核"
+      }
+    },
+    {
       "path": "pages/withdraw/merchant-apply",
       "style": {
         "navigationBarTitleText": "商户提现"
