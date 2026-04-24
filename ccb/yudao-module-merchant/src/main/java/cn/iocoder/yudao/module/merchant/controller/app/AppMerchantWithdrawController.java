@@ -7,6 +7,7 @@ import cn.iocoder.yudao.framework.tenant.core.context.TenantContextHolder;
 import cn.iocoder.yudao.module.merchant.dal.dataobject.MerchantWithdrawApplyDO;
 import cn.iocoder.yudao.module.merchant.dal.dataobject.ShopInfoDO;
 import cn.iocoder.yudao.module.merchant.dal.mysql.ShopInfoMapper;
+import cn.iocoder.yudao.module.merchant.controller.admin.vo.withdraw.MerchantWithdrawPageReqVO;
 import cn.iocoder.yudao.module.merchant.service.MerchantWithdrawService;
 import cn.iocoder.yudao.module.trade.controller.admin.brokerage.vo.withdraw.BrokerageWithdrawPageReqVO;
 import cn.iocoder.yudao.module.trade.dal.dataobject.brokerage.BrokerageWithdrawDO;
@@ -74,6 +75,19 @@ public class AppMerchantWithdrawController {
     }
 
     // ==================== #25 商户向平台申请提现 ====================
+
+    @GetMapping("/merchant/page")
+    @Operation(summary = "商户查询自己的提现申请列表")
+    public CommonResult<PageResult<MerchantWithdrawApplyDO>> getMerchantWithdrawPage(
+            @RequestParam(defaultValue = "1") Integer pageNo,
+            @RequestParam(defaultValue = "10") Integer pageSize) {
+        Long tenantId = TenantContextHolder.getTenantId();
+        MerchantWithdrawPageReqVO req = new MerchantWithdrawPageReqVO();
+        req.setTenantId(tenantId);
+        req.setPageNo(pageNo);
+        req.setPageSize(pageSize);
+        return success(merchantWithdrawService.getWithdrawPage(req));
+    }
 
     @PostMapping("/merchant/create")
     @Operation(summary = "商户向平台提交提现申请")

@@ -111,6 +111,18 @@
       "style": {
         "navigationBarTitleText": "会员消费排行"
       }
+    },
+    {
+      "path": "pages/withdraw/user-list",
+      "style": {
+        "navigationBarTitleText": "用户提现审核"
+      }
+    },
+    {
+      "path": "pages/withdraw/merchant-apply",
+      "style": {
+        "navigationBarTitleText": "商户提现"
+      }
     }
   ],
   "globalStyle": {

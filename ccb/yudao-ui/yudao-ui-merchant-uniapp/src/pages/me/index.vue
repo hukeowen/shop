@@ -32,8 +32,12 @@
         <text>返佣与积分设置</text>
         <text class="arrow">›</text>
       </view>
-      <view class="menu-item" @click="toast">
+      <view class="menu-item" @click="goWithdrawApply">
         <text>商户提现</text>
+        <text class="arrow">›</text>
+      </view>
+      <view class="menu-item" @click="goUserWithdraw">
+        <text>用户提现审核</text>
         <text class="arrow">›</text>
       </view>
       <view class="menu-item" @click="goQuota">
@@ -90,6 +94,14 @@ function goBrokerage() {
 
 function goMembers() {
   uni.navigateTo({ url: '/pages/member/list' });
+}
+
+function goWithdrawApply() {
+  uni.navigateTo({ url: '/pages/withdraw/merchant-apply' });
+}
+
+function goUserWithdraw() {
+  uni.navigateTo({ url: '/pages/withdraw/user-list' });
 }
 
 async function onLogout() {
