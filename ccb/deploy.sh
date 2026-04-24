@@ -29,7 +29,11 @@ fi
 # ── 非敏感默认值 ─────────────────────────────────────────────────────────────
 REPO_URL="${REPO_URL:-https://github.com/hukeowen/shop.git}"
 BRANCH="${BRANCH:-main}"
+# 代码在仓库的 ccb/ 子目录下（不是仓库根）
+REPO_SUBDIR="${REPO_SUBDIR:-ccb}"
 ROOT_DIR="${ROOT_DIR:-/opt/tanxiaer}"
+# 实际项目根（clone 目录 + 子目录），所有构建/SQL/资源路径都基于此
+PROJECT_DIR="${ROOT_DIR}/repo${REPO_SUBDIR:+/${REPO_SUBDIR}}"
 SERVER_NAME="${SERVER_NAME:-_}"
 DB_NAME="${DB_NAME:-ruoyi-vue-pro}"
 DB_USER="${DB_USER:-tanxiaer}"
@@ -424,7 +428,7 @@ SQL
     return
   fi
 
-  local SQL_DIR="${ROOT_DIR}/repo/sql/mysql"
+  local SQL_DIR="${PROJECT_DIR}/sql/mysql"
   local SQL_FILES=("ruoyi-vue-pro.sql" "mall.sql" "mp.sql" "member_pay.sql" "merchant.sql" "video.sql" "v2_business_tables.sql")
 
   for f in "${SQL_FILES[@]}"; do
@@ -452,7 +456,7 @@ SQL
 
 write_prod_config() {
   step "生成生产环境配置"
-  local RESOURCES="${ROOT_DIR}/repo/yudao-server/src/main/resources"
+  local RESOURCES="${PROJECT_DIR}/yudao-server/src/main/resources"
   mkdir -p "${RESOURCES}"
 
   local TOKEN_SECRET_FILE="${ROOT_DIR}/.token-secret"
@@ -507,16 +511,18 @@ build_backend() {
   source /etc/profile.d/java.sh
   export PATH="/opt/maven/bin:${PATH}"
 
-  cd "${ROOT_DIR}/repo"
+  cd "${PROJECT_DIR}"
+  # 完整日志落盘，控制台只保留尾部；build 失败时请查看 /tmp/maven-build.log
+  info "完整构建日志：/tmp/maven-build.log"
   /opt/maven/bin/mvn clean package -DskipTests -P prod \
-    --batch-mode -T 1C 2>&1 | tail -40
+    --batch-mode -T 1C 2>&1 | tee /tmp/maven-build.log | tail -80
 
   log "后端编译完成: $(ls yudao-server/target/yudao-server.jar)"
 }
 
 build_admin_frontend() {
   step "编译管理后台前端"
-  local UI_DIR="${ROOT_DIR}/repo/yudao-ui/yudao-ui-admin-vue3"
+  local UI_DIR="${PROJECT_DIR}/yudao-ui/yudao-ui-admin-vue3"
   cd "${UI_DIR}"
 
   cat > .env.production << 'ENVEOF'
@@ -540,9 +546,9 @@ deploy_website() {
   step "部署官网静态文件"
   local WEB_DIR="${ROOT_DIR}/website"
   mkdir -p "${WEB_DIR}"
-  cp "${ROOT_DIR}/repo/docs/website/index.html" "${WEB_DIR}/index.html"
-  [[ -d "${ROOT_DIR}/repo/docs/website/assets" ]] && \
-    cp -r "${ROOT_DIR}/repo/docs/website/assets" "${WEB_DIR}/"
+  cp "${PROJECT_DIR}/docs/website/index.html" "${WEB_DIR}/index.html"
+  [[ -d "${PROJECT_DIR}/docs/website/assets" ]] && \
+    cp -r "${PROJECT_DIR}/docs/website/assets" "${WEB_DIR}/"
   log "官网部署完成 → ${WEB_DIR}"
 }
 
@@ -632,7 +638,7 @@ NGINX_EOF
 
 deploy_backend_service() {
   step "部署后端服务（systemd）"
-  local JAR_SRC="${ROOT_DIR}/repo/yudao-server/target/yudao-server.jar"
+  local JAR_SRC="${PROJECT_DIR}/yudao-server/target/yudao-server.jar"
   local JAR_DEST="${ROOT_DIR}/app/yudao-server.jar"
   mkdir -p "${ROOT_DIR}/app" "${ROOT_DIR}/logs"
 
