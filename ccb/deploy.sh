@@ -36,7 +36,7 @@ DB_USER="${DB_USER:-tanxiaer}"
 REDIS_PORT="${REDIS_PORT:-6379}"
 SERVER_PORT="${SERVER_PORT:-48080}"
 SERVICE_USER="${SERVICE_USER:-tanxiaer}"
-MAVEN_VERSION="${MAVEN_VERSION:-3.9.9}"
+MAVEN_VERSION="${MAVEN_VERSION:-3.9.15}"
 NODE_VERSION="${NODE_VERSION:-16}"   # CentOS 7 glibc 限制，最多 Node 16
 
 # ── 必填密码校验 ─────────────────────────────────────────────────────────────
