@@ -123,6 +123,12 @@
       "style": {
         "navigationBarTitleText": "商户提现"
       }
+    },
+    {
+      "path": "pages/me/pay-apply",
+      "style": {
+        "navigationBarTitleText": "在线支付开通"
+      }
     }
   ],
   "globalStyle": {

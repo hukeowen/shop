@@ -110,4 +110,49 @@ public class AppMerchantShopController {
         return success(true);
     }
 
+    // ==================== 在线支付开通申请 ====================
+
+    @GetMapping("/pay-apply")
+    @Operation(summary = "获取在线支付申请状态")
+    public CommonResult<ShopInfoDO> getPayApply() {
+        Long tenantId = TenantContextHolder.getTenantId();
+        ShopInfoDO shop = shopInfoMapper.selectByTenantId(tenantId);
+        if (shop == null) {
+            throw exception0(1_020_005_000, "店铺信息不存在");
+        }
+        // 脱敏 tlMchKey
+        if (shop.getTlMchKey() != null && shop.getTlMchKey().length() > 8) {
+            String k = shop.getTlMchKey();
+            shop.setTlMchKey(k.substring(0, 4) + "****" + k.substring(k.length() - 4));
+        }
+        return success(shop);
+    }
+
+    @PostMapping("/pay-apply")
+    @Operation(summary = "提交在线支付开通申请")
+    public CommonResult<Boolean> submitPayApply(
+            @RequestParam("tlMchId") String tlMchId,
+            @RequestParam("tlMchKey") String tlMchKey) {
+        Long tenantId = TenantContextHolder.getTenantId();
+        ShopInfoDO existing = shopInfoMapper.selectByTenantId(tenantId);
+        if (existing == null) {
+            throw exception0(1_020_005_000, "店铺信息不存在");
+        }
+        Integer currentStatus = existing.getPayApplyStatus();
+        if (currentStatus != null && currentStatus == 1) {
+            throw exception0(1_020_005_001, "已提交申请，请等待审核");
+        }
+        if (currentStatus != null && currentStatus == 2) {
+            throw exception0(1_020_005_002, "在线支付已开通，无需重复申请");
+        }
+        ShopInfoDO update = new ShopInfoDO();
+        update.setId(existing.getId());
+        update.setTlMchId(tlMchId);
+        update.setTlMchKey(tlMchKey);
+        update.setPayApplyStatus(1); // 审核中
+        update.setPayApplyRejectReason(null);
+        shopInfoMapper.updateById(update);
+        return success(true);
+    }
+
 }

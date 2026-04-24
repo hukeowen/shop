@@ -40,6 +40,10 @@
         <text>用户提现审核</text>
         <text class="arrow">›</text>
       </view>
+      <view class="menu-item" @click="goPayApply">
+        <text>在线支付开通</text>
+        <text class="arrow">›</text>
+      </view>
       <view class="menu-item" @click="goQuota">
         <text>AI 视频配额</text>
         <text class="arrow">›</text>
@@ -102,6 +106,10 @@ function goWithdrawApply() {
 
 function goUserWithdraw() {
   uni.navigateTo({ url: '/pages/withdraw/user-list' });
+}
+
+function goPayApply() {
+  uni.navigateTo({ url: '/pages/me/pay-apply' });
 }
 
 async function onLogout() {

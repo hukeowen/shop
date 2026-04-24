@@ -65,4 +65,16 @@ public class ShopInfoDO extends BaseDO {
     /** 商户余额（分），来源：订单完成后的收入，扣除佣金后结算 */
     private Integer balance;
 
+    // ========== 在线支付开通 ==========
+    /** 在线支付是否已开通（平台审核通过后置 true） */
+    private Boolean onlinePayEnabled;
+    /** 在线支付申请状态：0未申请 1审核中 2已开通 3已驳回 */
+    private Integer payApplyStatus;
+    /** 通联支付商户号 */
+    private String tlMchId;
+    /** 通联支付密钥（脱敏存储，仅展示前4后4） */
+    private String tlMchKey;
+    /** 驳回原因 */
+    private String payApplyRejectReason;
+
 }
