@@ -82,15 +82,22 @@ mysql_safe() { mysql --defaults-extra-file="${MYSQL_DEFAULTS_FILE}" "$@"; }
 # ── 命令行参数 ────────────────────────────────────────────────────────────────
 SKIP_INSTALL=false
 SKIP_BUILD=false
+SKIP_BACKEND=false
+SKIP_FRONTEND=false
 for arg in "$@"; do
   case $arg in
-    --skip-install) SKIP_INSTALL=true ;;
-    --skip-build)   SKIP_BUILD=true ;;
+    --skip-install)  SKIP_INSTALL=true ;;
+    --skip-build)    SKIP_BUILD=true ;;
+    --skip-backend)  SKIP_BACKEND=true ;;
+    --skip-frontend) SKIP_FRONTEND=true ;;
     --help)
       cat << HELP
-用法: sudo bash deploy.sh [--skip-install] [--skip-build]
-  --skip-install  跳过系统软件安装（已装过时使用）
-  --skip-build    跳过编译打包（仅重新部署已有制品）
+用法: sudo bash deploy.sh [选项]
+
+  --skip-install   跳过系统软件安装（已装过时使用）
+  --skip-build     跳过前后端所有编译（仅重新部署已有制品）
+  --skip-backend   只跳过后端 Maven 构建（沿用已打好的 jar）
+  --skip-frontend  只跳过前端 pnpm 构建（沿用已打好的 dist）
 
 配置文件: ${ENV_FILE}
   首次使用请 cp .env.example .env 后填写密码
@@ -834,11 +841,19 @@ main() {
   setup_database
   write_prod_config
 
-  if [[ "${SKIP_BUILD}" == false ]]; then
-    build_backend
-    build_admin_frontend
+  if [[ "${SKIP_BUILD}" == true ]]; then
+    warn "跳过所有编译打包（--skip-build）"
   else
-    warn "跳过编译打包（--skip-build）"
+    if [[ "${SKIP_BACKEND}" == true ]]; then
+      warn "跳过后端 Maven 构建（--skip-backend）"
+    else
+      build_backend
+    fi
+    if [[ "${SKIP_FRONTEND}" == true ]]; then
+      warn "跳过前端 pnpm 构建（--skip-frontend）"
+    else
+      build_admin_frontend
+    fi
   fi
 
   deploy_website
