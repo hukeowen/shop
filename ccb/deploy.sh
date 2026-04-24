@@ -851,6 +851,19 @@ main() {
     fi
     if [[ "${SKIP_FRONTEND}" == true ]]; then
       warn "跳过前端 pnpm 构建（--skip-frontend）"
+      # 允许本地构建好的 dist 通过 scp 放在约定位置，脚本仍校验 & 保底
+      local UI_DIR="${PROJECT_DIR}/yudao-ui/yudao-ui-admin-vue3"
+      local DIST_DIR="${ROOT_DIR}/admin-dist"
+      if [[ -f "${UI_DIR}/dist/index.html" ]]; then
+        info "发现 ${UI_DIR}/dist，同步到 ${DIST_DIR}"
+        rm -rf "${DIST_DIR}" && cp -r "${UI_DIR}/dist" "${DIST_DIR}"
+      elif [[ -f "${DIST_DIR}/index.html" ]]; then
+        info "沿用已有 ${DIST_DIR}"
+      else
+        err "未找到前端产物：既不在 ${UI_DIR}/dist，也不在 ${DIST_DIR}"
+        err "解决方式：本地打包后 scp dist/ 到 ${DIST_DIR}/，再跑 --skip-frontend"
+        exit 1
+      fi
     else
       build_admin_frontend
     fi
