@@ -286,44 +286,69 @@ install_nginx() {
 
 install_mysql() {
   step "安装 MySQL 8"
-  if rpm -q mysql-community-server &>/dev/null; then
-    log "MySQL 已安装，跳过 root 密码初始化"
-    systemctl enable mysqld 2>/dev/null || true
-    systemctl start mysqld
+
+  if ! rpm -q mysql-community-server &>/dev/null; then
+    # CentOS 7 默认有 mariadb-libs，会冲突，先清理
+    yum remove -y mariadb-libs 2>/dev/null || true
+
+    # MySQL 官方仓库
+    rpm -Uvh https://dev.mysql.com/get/mysql80-community-release-el7-7.noarch.rpm 2>/dev/null || true
+    # MySQL GPG key 每隔一年轮换，导入全部已知版本避免 "Public key not installed"
+    for k in RPM-GPG-KEY-mysql-2022 RPM-GPG-KEY-mysql-2023 RPM-GPG-KEY-mysql; do
+      rpm --import "https://repo.mysql.com/${k}" 2>/dev/null || \
+        warn "GPG key ${k} 导入失败，继续"
+    done
+
+    if ! yum install -y mysql-community-server; then
+      warn "yum 安装失败，尝试跳过 GPG 校验重试"
+      yum install -y --nogpgcheck mysql-community-server
+    fi
+  else
+    log "MySQL 已安装，检查服务与密码"
+  fi
+
+  systemctl enable mysqld 2>/dev/null || true
+  systemctl start mysqld
+  # 给 mysqld 一点启动时间
+  sleep 3
+
+  # 幂等：如果 root 密码已是 .env 里的值，直接返回
+  if mysql -uroot -p"${MYSQL_ROOT_PASS}" -e "SELECT 1" &>/dev/null; then
+    log "MySQL root 密码已是预期值，跳过初始化"
     return
   fi
-  # CentOS 7 默认有 mariadb-libs，会冲突，先清理
-  yum remove -y mariadb-libs 2>/dev/null || true
 
-  # MySQL 官方仓库
-  rpm -Uvh https://dev.mysql.com/get/mysql80-community-release-el7-7.noarch.rpm 2>/dev/null || true
-  # MySQL GPG key 每隔一年轮换，导入全部已知版本避免 "Public key not installed"
-  for k in RPM-GPG-KEY-mysql-2022 RPM-GPG-KEY-mysql-2023 RPM-GPG-KEY-mysql; do
-    rpm --import "https://repo.mysql.com/${k}" 2>/dev/null || \
-      warn "GPG key ${k} 导入失败，继续"
-  done
-
-  # 再次失败时降级为 --nogpgcheck（包本身可靠，仓库源是 MySQL 官方）
-  if ! yum install -y mysql-community-server; then
-    warn "yum 安装失败，尝试跳过 GPG 校验重试"
-    yum install -y --nogpgcheck mysql-community-server
-  fi
-  systemctl enable mysqld
-  systemctl start mysqld
-
-  # MySQL 8 首次启动在 /var/log/mysqld.log 留临时密码
+  # 否则从 mysqld.log 取临时密码进行首次重置
   local TEMP_PASS
   TEMP_PASS=$(awk '/temporary password/ {print $NF}' /var/log/mysqld.log | tail -1)
   if [[ -z "${TEMP_PASS}" ]]; then
-    err "未能从 /var/log/mysqld.log 获取 MySQL 临时密码，请手动初始化"
+    err "MySQL 已启动但密码不匹配，且 /var/log/mysqld.log 里找不到临时密码。"
+    err "请手动处理：1) mysqladmin -uroot -p'旧密码' password '${MYSQL_ROOT_PASS}'"
+    err "           2) 或 systemctl stop mysqld && 用 --skip-grant-tables 重置"
     exit 1
   fi
 
-  mysql --connect-expired-password -uroot -p"${TEMP_PASS}" << SQL || true
+  info "使用临时密码重置 root"
+  # MySQL 8 默认密码策略 MEDIUM 要求大小写+数字+特殊字符≥8位；
+  # 先把策略降到 LOW（仅长度≥4）避免弱密码被拒，再设用户密码
+  if ! mysql --connect-expired-password -uroot -p"${TEMP_PASS}" << SQL
+SET GLOBAL validate_password.policy = LOW;
+SET GLOBAL validate_password.length = 4;
 ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '${MYSQL_ROOT_PASS}';
 FLUSH PRIVILEGES;
 SQL
-  log "MySQL 8 安装完成，root 密码已重置"
+  then
+    err "MySQL root 密码重置失败。"
+    err "请检查 /var/log/mysqld.log，或确认 .env 中 MYSQL_ROOT_PASS 至少 4 位且非空"
+    exit 1
+  fi
+
+  # 双保险：再校验新密码能用
+  if ! mysql -uroot -p"${MYSQL_ROOT_PASS}" -e "SELECT 1" &>/dev/null; then
+    err "MySQL root 密码已 ALTER 但验证失败，请人工排查"
+    exit 1
+  fi
+  log "MySQL 8 root 密码已重置为 .env 中的 MYSQL_ROOT_PASS"
 }
 
 install_redis() {
@@ -376,7 +401,7 @@ pull_code() {
     mkdir -p "${ROOT_DIR}/repo"
     git clone --branch "${BRANCH}" --depth=1 "${CLONE_URL}" "${ROOT_DIR}/repo"
   fi
-  log "代码已更新到 $(git -C ${ROOT_DIR}/repo rev-parse --short HEAD)"
+  log "代码已更新到 $(cd "${ROOT_DIR}/repo" && git rev-parse --short HEAD)"
 }
 
 setup_database() {
