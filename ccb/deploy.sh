@@ -526,8 +526,11 @@ YAML_EOF
 
 build_backend() {
   step "编译后端（Maven）"
+  ensure_swap
   source /etc/profile.d/java.sh
   export PATH="/opt/maven/bin:${PATH}"
+  # 限制 Maven 自身 JVM 堆，低内存机器上更稳
+  export MAVEN_OPTS="${MAVEN_OPTS:--Xms256m -Xmx1024m}"
 
   cd "${PROJECT_DIR}"
   # 完整日志落盘，控制台只保留尾部；build 失败时请查看 /tmp/maven-build.log
@@ -555,8 +558,34 @@ ensure_pnpm8() {
   info "使用 pnpm $(pnpm --version)"
 }
 
+ensure_swap() {
+  # 低内存 ECS 跑 pnpm/mvn 会被 OOM killer 砍，自动加 swap 兜底
+  local MEM_MB SWAP_MB
+  MEM_MB=$(free -m | awk '/^Mem:/ {print $2}')
+  SWAP_MB=$(free -m | awk '/^Swap:/ {print $2}')
+  # 内存+swap 至少 4G 才算安全
+  if (( MEM_MB + SWAP_MB >= 4000 )); then
+    info "内存 ${MEM_MB}MB + swap ${SWAP_MB}MB ≥ 4G，无需扩 swap"
+    return
+  fi
+  if [[ -f /swapfile ]]; then
+    info "已存在 /swapfile，跳过"
+    return
+  fi
+  local NEED_MB=$(( 4096 - MEM_MB ))
+  info "内存偏小（${MEM_MB}MB），创建 ${NEED_MB}MB swap 防 OOM"
+  fallocate -l "${NEED_MB}M" /swapfile 2>/dev/null || \
+    dd if=/dev/zero of=/swapfile bs=1M count="${NEED_MB}" status=none
+  chmod 600 /swapfile
+  mkswap /swapfile >/dev/null
+  swapon /swapfile
+  grep -q '/swapfile' /etc/fstab || echo '/swapfile none swap sw 0 0' >> /etc/fstab
+  log "swap 已启用：$(free -h | awk '/^Swap:/ {print $2}')"
+}
+
 build_admin_frontend() {
   step "编译管理后台前端"
+  ensure_swap
   ensure_pnpm8
   local UI_DIR="${PROJECT_DIR}/yudao-ui/yudao-ui-admin-vue3"
   cd "${UI_DIR}"
@@ -569,7 +598,10 @@ VITE_API_URL = /admin-api
 VITE_APP_CAPTCHA_ENABLE = false
 ENVEOF
 
-  pnpm install --registry=https://registry.npmmirror.com
+  # 限制 Node 堆内存 + 降并发，减少 OOM 概率
+  export NODE_OPTIONS="--max-old-space-size=1536"
+  pnpm install --registry=https://registry.npmmirror.com \
+               --network-concurrency=4 --child-concurrency=2
   pnpm build:prod
 
   local DIST_DIR="${ROOT_DIR}/admin-dist"
