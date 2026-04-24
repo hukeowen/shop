@@ -180,9 +180,9 @@ install_maven() {
   fi
   local MVN_URL="https://mirrors.aliyun.com/apache/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz"
   info "下载 Maven：${MVN_URL}"
-  # 显示进度条，避免看起来像卡死；增加超时和重试
-  wget --show-progress --progress=bar:force --timeout=60 --tries=3 \
-       -O /tmp/maven.tar.gz "${MVN_URL}"
+  # 用 curl（自带进度条，CentOS 7 的 wget 1.14 不支持 --show-progress）
+  curl -fL --connect-timeout 10 --retry 3 --retry-delay 2 \
+       -o /tmp/maven.tar.gz "${MVN_URL}"
   tar -xzf /tmp/maven.tar.gz -C /opt/
   ln -sfn "/opt/apache-maven-${MAVEN_VERSION}" /opt/maven
   cat > /etc/profile.d/maven.sh << 'EOF'
@@ -219,16 +219,45 @@ EOF
 
 install_node() {
   step "安装 Node.js ${NODE_VERSION} + pnpm"
+  # Node 16 已 EOL，nodesource 对 EOL 版本支持不稳，直接用官方二进制 tarball
+  local NODE_FULL="v16.20.2"
+  local NODE_ARCH="linux-x64"
+  local NODE_DIR="/opt/node-${NODE_FULL}-${NODE_ARCH}"
+
   local NV=""
-  NV="$(node --version 2>/dev/null || true)"
-  if [[ "${NV}" == v${NODE_VERSION}.* ]]; then
+  NV="$(/opt/nodejs/bin/node --version 2>/dev/null || node --version 2>/dev/null || true)"
+  if [[ "${NV}" == "${NODE_FULL}" ]]; then
     log "Node.js ${NV} 已安装，跳过"
   else
-    curl -fsSL "https://rpm.nodesource.com/setup_${NODE_VERSION}.x" | bash -
-    yum install -y nodejs
+    # 优先淘宝镜像，次选官方
+    local NODE_URL_MIRROR="https://cdn.npmmirror.com/binaries/node/${NODE_FULL}/node-${NODE_FULL}-${NODE_ARCH}.tar.xz"
+    local NODE_URL_OFFICIAL="https://nodejs.org/dist/${NODE_FULL}/node-${NODE_FULL}-${NODE_ARCH}.tar.xz"
+    info "下载 Node.js ${NODE_FULL}（淘宝镜像）"
+    if ! curl -fL --connect-timeout 10 --retry 3 --retry-delay 2 \
+              -o /tmp/node.tar.xz "${NODE_URL_MIRROR}"; then
+      warn "淘宝镜像失败，切换官方源"
+      curl -fL --connect-timeout 10 --retry 3 --retry-delay 2 \
+           -o /tmp/node.tar.xz "${NODE_URL_OFFICIAL}"
+    fi
+    # CentOS 7 需要 xz 解包
+    command -v xz &>/dev/null || yum install -y xz
+    tar -xf /tmp/node.tar.xz -C /opt/
+    ln -sfn "${NODE_DIR}" /opt/nodejs
+    ln -sfn /opt/nodejs/bin/node /usr/local/bin/node
+    ln -sfn /opt/nodejs/bin/npm  /usr/local/bin/npm
+    ln -sfn /opt/nodejs/bin/npx  /usr/local/bin/npx
+    cat > /etc/profile.d/nodejs.sh << 'EOF'
+export PATH=/opt/nodejs/bin:$PATH
+EOF
+    rm -f /tmp/node.tar.xz
   fi
+
+  # 当前 shell 立即生效
+  export PATH=/opt/nodejs/bin:${PATH}
+
   if ! command -v pnpm &>/dev/null; then
-    npm install -g pnpm --registry=https://registry.npmmirror.com
+    /opt/nodejs/bin/npm install -g pnpm --registry=https://registry.npmmirror.com
+    ln -sfn /opt/nodejs/bin/pnpm /usr/local/bin/pnpm 2>/dev/null || true
   fi
   log "Node $(node --version), pnpm $(pnpm --version)"
 }
