@@ -56,6 +56,13 @@
             去发货
           </button>
           <button
+            v-if="o.status === 10 && !o.payStatus"
+            class="btn primary"
+            @click.stop="onOfflineConfirm(o.id)"
+          >
+            已收款
+          </button>
+          <button
             v-if="o.status === 20"
             class="btn primary"
             @click.stop="quickVerify(o.verifyCode)"
@@ -98,7 +105,7 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
-import { getOrderPage, pickUpVerify } from '../../api/order.js';
+import { getOrderPage, offlineConfirm, pickUpVerify } from '../../api/order.js';
 import { fen2yuan, ORDER_STATUS } from '../../utils/format.js';
 
 const tabs = computed(() => [
@@ -178,6 +185,16 @@ function onScan() {
     },
   });
   // #endif
+}
+
+async function onOfflineConfirm(id) {
+  try {
+    await offlineConfirm(id);
+    uni.showToast({ title: '已确认收款', icon: 'success' });
+    load();
+  } catch (err) {
+    uni.showToast({ title: err?.message || '操作失败', icon: 'none' });
+  }
 }
 
 onShow(() => {

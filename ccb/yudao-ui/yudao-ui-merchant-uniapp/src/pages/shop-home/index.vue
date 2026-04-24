@@ -77,6 +77,17 @@ export default {
   },
   onLoad(query) {
     this.tenantId = query.tenantId ? Number(query.tenantId) : null;
+    if (this.tenantId) {
+      // 记录最近访问的店铺，供余额页使用
+      uni.setStorageSync('lastShopTenantId', this.tenantId);
+      // 进店打点（fire-and-forget）
+      const referrerUserId = query.referrerUserId ? Number(query.referrerUserId) : null;
+      request({
+        url: `/app-api/merchant/mini/member-rel/visit?tenantId=${this.tenantId}${referrerUserId ? `&referrerUserId=${referrerUserId}` : ''}`,
+        method: 'POST',
+        tenantId: this.tenantId,
+      }).catch(() => {});
+    }
     this.loadAll();
   },
   methods: {

@@ -175,6 +175,12 @@
         "navigationBarTitleText": "我的",
         "navigationStyle": "custom"
       }
+    },
+    {
+      "path": "pages/user-me/shop-balance",
+      "style": {
+        "navigationBarTitleText": "余额与积分"
+      }
     }
   ],
   "globalStyle": {

@@ -3,26 +3,32 @@ package cn.iocoder.yudao.module.merchant.controller.app;
 import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.security.core.util.SecurityFrameworkUtils;
+import cn.iocoder.yudao.framework.tenant.core.context.TenantContextHolder;
 import cn.iocoder.yudao.module.merchant.controller.app.vo.AppMerchantOrderRespVO;
+import cn.iocoder.yudao.module.merchant.event.OrderOfflineConfirmedEvent;
 import cn.iocoder.yudao.module.trade.controller.admin.order.vo.TradeOrderDeliveryReqVO;
 import cn.iocoder.yudao.module.trade.controller.admin.order.vo.TradeOrderPageReqVO;
 import cn.iocoder.yudao.module.trade.dal.dataobject.order.TradeOrderDO;
 import cn.iocoder.yudao.module.trade.dal.dataobject.order.TradeOrderItemDO;
+import cn.iocoder.yudao.module.trade.dal.mysql.order.TradeOrderMapper;
 import cn.iocoder.yudao.module.trade.service.order.TradeOrderQueryService;
 import cn.iocoder.yudao.module.trade.service.order.TradeOrderUpdateService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.validation.Valid;
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception0;
 import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
 
 /**
@@ -38,6 +44,10 @@ public class AppMerchantOrderController {
     private TradeOrderQueryService tradeOrderQueryService;
     @Resource
     private TradeOrderUpdateService tradeOrderUpdateService;
+    @Resource
+    private TradeOrderMapper tradeOrderMapper;
+    @Resource
+    private ApplicationEventPublisher eventPublisher;
 
     // ==================== #19 订单列表 + 发货 ====================
 
@@ -101,6 +111,37 @@ public class AppMerchantOrderController {
     @Parameter(name = "id", description = "订单编号", required = true)
     public CommonResult<Boolean> pickUpById(@RequestParam("id") Long id) {
         tradeOrderUpdateService.pickUpOrderByAdmin(SecurityFrameworkUtils.getLoginUserId(), id);
+        return success(true);
+    }
+
+    // ==================== #37 到店付款 - 商户确认收款 ====================
+
+    @PostMapping("/offline-confirm")
+    @Operation(summary = "确认到店付款收款")
+    @Parameter(name = "id", description = "订单编号", required = true)
+    public CommonResult<Boolean> offlineConfirm(@RequestParam("id") Long id) {
+        TradeOrderDO order = tradeOrderQueryService.getOrder(id);
+        if (order == null) {
+            throw exception0(400, "订单不存在");
+        }
+        if (!Integer.valueOf(10).equals(order.getStatus())) {
+            throw exception0(400, "订单状态不是待发货，无法确认收款");
+        }
+        if (Boolean.TRUE.equals(order.getPayStatus())) {
+            throw exception0(400, "订单已支付，请勿重复确认");
+        }
+        // 更新 payStatus=true、payTime=now
+        TradeOrderDO update = new TradeOrderDO();
+        update.setId(id);
+        update.setPayStatus(Boolean.TRUE);
+        update.setPayTime(LocalDateTime.now());
+        tradeOrderMapper.updateById(update);
+        // 发布到店收款确认事件
+        eventPublisher.publishEvent(new OrderOfflineConfirmedEvent(
+                this, id,
+                TenantContextHolder.getTenantId(),
+                order.getUserId(),
+                order.getPayPrice()));
         return success(true);
     }
 

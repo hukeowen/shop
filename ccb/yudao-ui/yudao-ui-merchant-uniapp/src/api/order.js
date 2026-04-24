@@ -81,3 +81,8 @@ export async function pickUpVerify(code) {
 export function pickUpById(id) {
   return request({ url: `${BASE}/pick-up-by-id?id=${id}`, method: 'PUT' });
 }
+
+/** 到店付款 - 商户确认收款 */
+export function offlineConfirm(id) {
+  return request({ url: `${BASE}/offline-confirm?id=${id}`, method: 'POST' });
+}
