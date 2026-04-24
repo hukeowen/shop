@@ -199,6 +199,18 @@
       "style": {
         "navigationBarTitleText": "店铺二维码"
       }
+    },
+    {
+      "path": "pages/me/help",
+      "style": {
+        "navigationBarTitleText": "帮助与反馈"
+      }
+    },
+    {
+      "path": "pages/me/about",
+      "style": {
+        "navigationBarTitleText": "关于摊小二"
+      }
     }
   ],
   "globalStyle": {

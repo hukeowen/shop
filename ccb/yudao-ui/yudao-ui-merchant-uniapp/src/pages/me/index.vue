@@ -59,11 +59,11 @@
     </view>
 
     <view class="menu card">
-      <view class="menu-item" @click="toast">
+      <view class="menu-item" @click="goHelp">
         <text>帮助与反馈</text>
         <text class="arrow">›</text>
       </view>
-      <view class="menu-item" @click="toast">
+      <view class="menu-item" @click="goAbout">
         <text>关于摊小二</text>
         <text class="arrow">›</text>
       </view>
@@ -94,6 +94,14 @@ function goShopEdit() {
 
 function goQrcode() {
   uni.navigateTo({ url: '/pages/me/qrcode' });
+}
+
+function goHelp() {
+  uni.navigateTo({ url: '/pages/me/help' });
+}
+
+function goAbout() {
+  uni.navigateTo({ url: '/pages/me/about' });
 }
 
 function goQuota() {
