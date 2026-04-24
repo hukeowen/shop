@@ -77,14 +77,14 @@ function getHeader(urlPath) {
  * @param {'text'|'json'|'arraybuffer'} [opt.responseType]  arraybuffer 用于 TTS MP3
  * @param {boolean} [opt.raw=false]  为 true 时不解 CommonResult，直接返回 res.data
  */
-export function request({ url, method = 'GET', data, header, responseType, raw = false }) {
+export function request({ url, method = 'GET', data, header, responseType, raw = false, tenantId }) {
   return new Promise((resolve, reject) => {
     const isArrayBuffer = responseType === 'arraybuffer';
     uni.request({
       url,
       method,
       data,
-      header: { ...getHeader(url), ...header },
+      header: { ...getHeader(url), ...(tenantId ? { 'tenant-id': tenantId } : {}), ...header },
       ...(isArrayBuffer ? { responseType: 'arraybuffer' } : {}),
       success: (res) => {
         // 401 → 登录失效
