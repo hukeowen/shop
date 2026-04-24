@@ -40,6 +40,10 @@
         <text>AI 视频配额</text>
         <text class="arrow">›</text>
       </view>
+      <view class="menu-item" @click="goMembers">
+        <text>会员消费排行</text>
+        <text class="arrow">›</text>
+      </view>
     </view>
 
     <view class="menu card">
@@ -82,6 +86,10 @@ function goProducts() {
 
 function goBrokerage() {
   uni.navigateTo({ url: '/pages/me/brokerage' });
+}
+
+function goMembers() {
+  uni.navigateTo({ url: '/pages/member/list' });
 }
 
 async function onLogout() {

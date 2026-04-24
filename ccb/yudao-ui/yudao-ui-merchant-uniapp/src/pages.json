@@ -105,6 +105,12 @@
       "style": {
         "navigationBarTitleText": "返佣与积分设置"
       }
+    },
+    {
+      "path": "pages/member/list",
+      "style": {
+        "navigationBarTitleText": "会员消费排行"
+      }
     }
   ],
   "globalStyle": {
