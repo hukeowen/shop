@@ -12,6 +12,9 @@
 # =============================================================================
 set -euo pipefail
 
+# ── 错误陷阱：哪一行死的、哪个命令、退出码，一目了然 ──────────────────────────
+trap 'rc=$?; echo -e "\033[0;31m[✗] 脚本在第 ${LINENO} 行异常退出（退出码=${rc}）\033[0m" >&2; echo -e "\033[0;31m    失败命令: ${BASH_COMMAND}\033[0m" >&2; exit $rc' ERR
+
 # ── 加载 .env（敏感配置外置） ─────────────────────────────────────────────────
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ENV_FILE="${ENV_FILE:-${SCRIPT_DIR}/.env}"
@@ -143,10 +146,17 @@ configure_selinux() {
 
 install_java() {
   step "安装 OpenJDK 8"
-  if java -version 2>&1 | grep -q "1\.8"; then
+  # pipefail 下 `cmd | grep -q` 可能因 SIGPIPE 报错；改成字符串匹配更稳
+  local JV=""
+  JV="$(java -version 2>&1 || true)"
+  if [[ "${JV}" == *"1.8"* ]]; then
     log "JDK 8 已安装，跳过"
   else
     yum install -y java-1.8.0-openjdk java-1.8.0-openjdk-devel
+  fi
+  if ! command -v java &>/dev/null; then
+    err "Java 安装失败，command -v java 找不到命令"
+    exit 1
   fi
   # 动态探测 JAVA_HOME（CentOS 包含版本号后缀，需 readlink）
   local JH
@@ -160,12 +170,19 @@ EOF
 
 install_maven() {
   step "安装 Maven ${MAVEN_VERSION}"
-  if /opt/maven/bin/mvn -version 2>/dev/null | grep -q "${MAVEN_VERSION}"; then
-    log "Maven ${MAVEN_VERSION} 已安装，跳过"
-    return
+  if [[ -x /opt/maven/bin/mvn ]]; then
+    local MV=""
+    MV="$(/opt/maven/bin/mvn -version 2>&1 || true)"
+    if [[ "${MV}" == *"${MAVEN_VERSION}"* ]]; then
+      log "Maven ${MAVEN_VERSION} 已安装，跳过"
+      return
+    fi
   fi
   local MVN_URL="https://mirrors.aliyun.com/apache/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz"
-  wget -q -O /tmp/maven.tar.gz "${MVN_URL}"
+  info "下载 Maven：${MVN_URL}"
+  # 显示进度条，避免看起来像卡死；增加超时和重试
+  wget --show-progress --progress=bar:force --timeout=60 --tries=3 \
+       -O /tmp/maven.tar.gz "${MVN_URL}"
   tar -xzf /tmp/maven.tar.gz -C /opt/
   ln -sfn "/opt/apache-maven-${MAVEN_VERSION}" /opt/maven
   cat > /etc/profile.d/maven.sh << 'EOF'
@@ -202,8 +219,10 @@ EOF
 
 install_node() {
   step "安装 Node.js ${NODE_VERSION} + pnpm"
-  if node --version 2>/dev/null | grep -q "v${NODE_VERSION}"; then
-    log "Node.js ${NODE_VERSION} 已安装，跳过"
+  local NV=""
+  NV="$(node --version 2>/dev/null || true)"
+  if [[ "${NV}" == v${NODE_VERSION}.* ]]; then
+    log "Node.js ${NV} 已安装，跳过"
   else
     curl -fsSL "https://rpm.nodesource.com/setup_${NODE_VERSION}.x" | bash -
     yum install -y nodejs
@@ -227,7 +246,7 @@ install_nginx() {
 
 install_mysql() {
   step "安装 MySQL 8"
-  if rpm -qa | grep -q mysql-community-server; then
+  if rpm -q mysql-community-server &>/dev/null; then
     log "MySQL 已安装，跳过 root 密码初始化"
     systemctl enable mysqld 2>/dev/null || true
     systemctl start mysqld
@@ -519,7 +538,7 @@ server {
 NGINX_EOF
 
   # 把 CentOS 默认的 default_server 监听删掉，避免端口冲突
-  if grep -q 'default_server' /etc/nginx/nginx.conf 2>/dev/null; then
+  if [[ -f /etc/nginx/nginx.conf ]] && grep -l 'default_server' /etc/nginx/nginx.conf &>/dev/null; then
     sed -i 's/default_server//g' /etc/nginx/nginx.conf
   fi
 
