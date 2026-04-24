@@ -270,8 +270,12 @@ EOF
   # 当前 shell 立即生效
   export PATH=/opt/nodejs/bin:${PATH}
 
-  if ! command -v pnpm &>/dev/null; then
-    /opt/nodejs/bin/npm install -g pnpm --registry=https://registry.npmmirror.com
+  # pnpm 9.x+ 要求 Node 18+，Node 16 下必须用 pnpm 8（最后兼容 Node 16 的大版本）
+  local PNPM_CUR=""
+  PNPM_CUR="$(/opt/nodejs/bin/pnpm --version 2>/dev/null || true)"
+  if [[ "${PNPM_CUR}" != 8.* ]]; then
+    warn "当前 pnpm=${PNPM_CUR:-未安装}，重新安装 pnpm@8"
+    /opt/nodejs/bin/npm install -g pnpm@8 --registry=https://registry.npmmirror.com
     ln -sfn /opt/nodejs/bin/pnpm /usr/local/bin/pnpm 2>/dev/null || true
   fi
   log "Node $(node --version), pnpm $(pnpm --version)"
@@ -528,7 +532,7 @@ build_backend() {
   cd "${PROJECT_DIR}"
   # 完整日志落盘，控制台只保留尾部；build 失败时请查看 /tmp/maven-build.log
   info "完整构建日志：/tmp/maven-build.log"
-  /opt/maven/bin/mvn clean package -DskipTests -P prod \
+  /opt/maven/bin/mvn clean package -DskipTests \
     --batch-mode -T 1C 2>&1 | tee /tmp/maven-build.log | tail -80
 
   log "后端编译完成: $(ls yudao-server/target/yudao-server.jar)"
