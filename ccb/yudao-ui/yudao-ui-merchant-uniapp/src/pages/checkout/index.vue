@@ -1,144 +1,135 @@
 <template>
   <view class="page">
-    <!-- Settlement preview -->
-    <view v-if="settlement" class="section card">
-      <view class="section-title">订单信息</view>
-      <view
-        v-for="(item, i) in settlementItems"
-        :key="i"
-        class="order-item"
-      >
-        <text class="item-name">{{ item.spuName || item.name || '商品' }}</text>
-        <text class="item-subtotal">¥{{ fen2yuan(item.price * item.count) }}</text>
-      </view>
-      <view class="divider" />
-      <view class="total-row">
-        <text class="total-label">合计</text>
-        <text class="total-price">¥{{ fen2yuan(totalFen) }}</text>
-      </view>
-    </view>
+    <view v-if="loading" class="empty-tip">加载中...</view>
 
-    <view v-else-if="loading" class="empty-tip">加载中...</view>
-
-    <!-- Payment method -->
-    <view v-if="settlement" class="section card">
-      <view class="section-title">支付方式</view>
-      <view class="pay-options">
-        <view
-          :class="['pay-option', payType === 1 ? 'pay-active' : '']"
-          @click="payType = 1"
-        >在线支付</view>
-        <view
-          :class="['pay-option', payType === 2 ? 'pay-active' : '']"
-          @click="payType = 2"
-        >到店付款</view>
+    <template v-else>
+      <!-- 配送方式 -->
+      <view class="card section">
+        <view class="section-title">配送方式</view>
+        <view class="pay-options">
+          <view :class="['pay-option', deliveryType === 2 ? 'active' : '']" @click="deliveryType = 2">到店自提</view>
+          <view :class="['pay-option', deliveryType === 1 ? 'active' : '']" @click="deliveryType = 1">快递发货</view>
+        </view>
       </view>
-    </view>
 
-    <!-- Submit -->
-    <view v-if="settlement" class="bottom-bar safe-bottom">
-      <view class="submit-btn" @click="submitOrder">提交订单</view>
-    </view>
+      <!-- 商品清单 -->
+      <view class="card section">
+        <view class="section-title">订单商品</view>
+        <view v-for="(item, i) in items" :key="i" class="order-item">
+          <text class="item-name">{{ item.spuName || item.name || '商品' }}</text>
+          <text class="item-count">x{{ item.count || 1 }}</text>
+          <text class="item-price">¥{{ fen2yuan((item.price || 0) * (item.count || 1)) }}</text>
+        </view>
+        <view class="divider" />
+        <view class="total-row">
+          <text class="total-label">合计</text>
+          <text class="total-price">¥{{ fen2yuan(totalFen) }}</text>
+        </view>
+      </view>
+
+      <!-- 支付方式 -->
+      <view class="card section">
+        <view class="section-title">支付方式</view>
+        <view class="pay-options">
+          <view :class="['pay-option', payType === 1 ? 'active' : '']" @click="payType = 1">在线支付</view>
+          <view :class="['pay-option', payType === 2 ? 'active' : '']" @click="payType = 2">到店付款</view>
+        </view>
+      </view>
+
+      <view class="bottom-bar safe-bottom">
+        <view class="submit-btn" @click="submitOrder">提交订单</view>
+      </view>
+    </template>
   </view>
 </template>
 
-<script>
+<script setup>
+import { ref, computed } from 'vue';
+import { onLoad } from '@dcloudio/uni-app';
 import { request } from '../../api/request.js';
 import { fen2yuan } from '../../utils/format.js';
 
-export default {
-  data() {
-    return {
-      skuId: null,
-      count: 1,
-      tenantId: null,
-      fromCart: false,
-      settlement: null,
-      loading: false,
-      payType: 1,
+const skuId = ref(null);
+const count = ref(1);
+const tenantId = ref(null);
+const fromCart = ref(false);
+const items = ref([]);
+const loading = ref(false);
+const deliveryType = ref(2); // 默认自提，无需地址
+const payType = ref(1);
+
+const totalFen = computed(() =>
+  items.value.reduce((s, i) => s + (i.price || 0) * (i.count || 1), 0)
+);
+
+onLoad((query) => {
+  skuId.value = query.skuId ? Number(query.skuId) : null;
+  count.value = query.count ? Number(query.count) : 1;
+  tenantId.value = query.tenantId ? Number(query.tenantId) : null;
+  fromCart.value = query.fromCart === '1';
+  loadItems();
+});
+
+async function loadItems() {
+  loading.value = true;
+  try {
+    if (fromCart.value) {
+      const res = await request({ url: '/app-api/trade/cart/list', tenantId: tenantId.value });
+      items.value = Array.isArray(res) ? res : (res?.list || []);
+    } else if (skuId.value) {
+      // 直接购买：不调 settlement 接口（需要 address），直接展示基本信息
+      const spu = await request({
+        url: `/app-api/product/spu/get-detail?id=${skuId.value}`,
+        tenantId: tenantId.value,
+      });
+      const sku = spu?.skus?.find(s => s.id === skuId.value) || spu?.skus?.[0] || {};
+      items.value = [{
+        spuName: spu?.name || '商品',
+        price: sku.price || 0,
+        count: count.value,
+      }];
+    }
+  } catch {
+    items.value = [];
+  } finally {
+    loading.value = false;
+  }
+}
+
+async function submitOrder() {
+  if (!items.value.length) {
+    uni.showToast({ title: '订单为空', icon: 'none' });
+    return;
+  }
+  try {
+    const orderData = {
+      deliveryType: deliveryType.value,
+      payType: payType.value,
+      pointStatus: false,
+      couponId: null,
     };
-  },
-  computed: {
-    settlementItems() {
-      if (!this.settlement) return [];
-      return this.settlement.items || this.settlement.orderItems || [];
-    },
-    totalFen() {
-      if (!this.settlement) return 0;
-      return this.settlement.totalPrice || this.settlement.price || 0;
-    },
-  },
-  onLoad(query) {
-    this.skuId = query.skuId ? Number(query.skuId) : null;
-    this.count = query.count ? Number(query.count) : 1;
-    this.tenantId = query.tenantId ? Number(query.tenantId) : null;
-    this.fromCart = query.fromCart === '1';
-    this.loadSettlement();
-  },
-  methods: {
-    fen2yuan,
-    async loadSettlement() {
-      this.loading = true;
-      try {
-        if (this.fromCart) {
-          // From cart: load cart items as settlement
-          const cartRes = await request({
-            url: '/app-api/trade/cart/list',
-            tenantId: this.tenantId,
-          });
-          const items = Array.isArray(cartRes) ? cartRes : (cartRes && cartRes.list) || [];
-          const total = items.reduce((s, i) => s + (i.price || 0) * (i.count || 1), 0);
-          this.settlement = { items, totalPrice: total };
-        } else if (this.skuId) {
-          // Direct buy: use settlement API
-          const res = await request({
-            url: `/app-api/trade/order/settlement?skuIds=${this.skuId}&counts=${this.count}&addressId=0&couponId=0&payType=${this.payType}`,
-            tenantId: this.tenantId,
-          });
-          this.settlement = res || { items: [], totalPrice: 0 };
-        }
-      } catch {
-        // Fallback: show minimal settlement
-        this.settlement = { items: [], totalPrice: 0 };
-      } finally {
-        this.loading = false;
-      }
-    },
-    async submitOrder() {
-      try {
-        const orderData = {
-          payType: this.payType,
-          addressId: 0,
-          couponId: 0,
-        };
-        if (this.fromCart) {
-          orderData.fromCart = true;
-        } else {
-          orderData.items = [{ skuId: this.skuId, count: this.count }];
-        }
-        await request({
-          url: '/app-api/trade/order/create',
-          method: 'POST',
-          data: orderData,
-          tenantId: this.tenantId,
-        });
-        uni.showToast({ title: '下单成功', icon: 'success' });
-        setTimeout(() => {
-          // Navigate back to shop home
-          uni.navigateBack({ delta: 3 });
-        }, 1200);
-      } catch {}
-    },
-  },
-};
+    if (fromCart.value) {
+      orderData.items = items.value.map(i => ({ cartId: i.id || i.cartId })).filter(i => i.cartId);
+    } else {
+      orderData.items = [{ skuId: skuId.value, count: count.value }];
+    }
+    await request({
+      url: '/app-api/trade/order/create',
+      method: 'POST',
+      data: orderData,
+      tenantId: tenantId.value,
+    });
+    uni.showToast({ title: '下单成功', icon: 'success' });
+    setTimeout(() => uni.navigateBack({ delta: 3 }), 1200);
+  } catch {}
+}
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
 @import '../../uni.scss';
 
 .page {
   min-height: 100vh;
-  background: #f6f7f9;
   padding: 24rpx;
   padding-bottom: 140rpx;
 }
@@ -150,11 +141,12 @@ export default {
   font-size: 28rpx;
 }
 
-.section {
-  padding: 28rpx 32rpx;
-  border-radius: $radius-lg;
+.card {
   background: $bg-card;
+  border-radius: $radius-lg;
+  padding: 28rpx 32rpx;
   margin-bottom: 24rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.03);
 }
 
 .section-title {
@@ -166,43 +158,24 @@ export default {
 
 .order-item {
   display: flex;
-  justify-content: space-between;
   align-items: center;
   padding: 12rpx 0;
+  gap: 12rpx;
+
+  .item-name { flex: 1; font-size: 28rpx; color: $text-primary; }
+  .item-count { font-size: 26rpx; color: $text-secondary; }
+  .item-price { font-size: 28rpx; color: $text-primary; min-width: 100rpx; text-align: right; }
 }
 
-.item-name {
-  font-size: 28rpx;
-  color: $text-primary;
-  flex: 1;
-}
-
-.item-subtotal {
-  font-size: 28rpx;
-  color: $text-secondary;
-}
-
-.divider {
-  height: 1rpx;
-  background: $border-color;
-  margin: 16rpx 0;
-}
+.divider { height: 1rpx; background: $border-color; margin: 16rpx 0; }
 
 .total-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-}
 
-.total-label {
-  font-size: 28rpx;
-  color: $text-secondary;
-}
-
-.total-price {
-  font-size: 36rpx;
-  font-weight: 700;
-  color: $brand-primary;
+  .total-label { font-size: 28rpx; color: $text-secondary; }
+  .total-price { font-size: 36rpx; font-weight: 700; color: $brand-primary; }
 }
 
 .pay-options {
@@ -218,13 +191,13 @@ export default {
   border: 2rpx solid $border-color;
   font-size: 28rpx;
   color: $text-secondary;
-}
 
-.pay-option.pay-active {
-  border-color: $brand-primary;
-  color: $brand-primary;
-  background: rgba(255, 107, 53, 0.06);
-  font-weight: 600;
+  &.active {
+    border-color: $brand-primary;
+    color: $brand-primary;
+    background: rgba(255, 107, 53, 0.06);
+    font-weight: 600;
+  }
 }
 
 .bottom-bar {

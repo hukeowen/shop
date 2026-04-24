@@ -1,5 +1,6 @@
 package cn.iocoder.yudao.module.merchant.controller.app;
 
+import cn.hutool.crypto.SecureUtil;
 import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.tenant.core.context.TenantContextHolder;
 import cn.iocoder.yudao.module.merchant.dal.dataobject.ShopBrokerageConfigDO;
@@ -8,6 +9,7 @@ import cn.iocoder.yudao.module.merchant.dal.mysql.ShopBrokerageConfigMapper;
 import cn.iocoder.yudao.module.merchant.dal.mysql.ShopInfoMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,6 +27,9 @@ import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
 @RequestMapping("/merchant/mini/shop")
 @Validated
 public class AppMerchantShopController {
+
+    @Value("${merchant.field-encrypt-key}")
+    private String fieldEncryptKey;
 
     @Resource
     private ShopInfoMapper shopInfoMapper;
@@ -120,12 +125,26 @@ public class AppMerchantShopController {
         if (shop == null) {
             throw exception0(1_020_005_000, "店铺信息不存在");
         }
-        // 脱敏 tlMchKey
-        if (shop.getTlMchKey() != null && shop.getTlMchKey().length() > 8) {
-            String k = shop.getTlMchKey();
-            shop.setTlMchKey(k.substring(0, 4) + "****" + k.substring(k.length() - 4));
+        // 返回脱敏副本，不修改 MyBatis 缓存中的原始对象
+        ShopInfoDO resp = new ShopInfoDO();
+        resp.setId(shop.getId());
+        resp.setTenantId(shop.getTenantId());
+        resp.setTlMchId(shop.getTlMchId());
+        resp.setPayApplyStatus(shop.getPayApplyStatus());
+        resp.setOnlinePayEnabled(shop.getOnlinePayEnabled());
+        resp.setPayApplyRejectReason(shop.getPayApplyRejectReason());
+        // 解密后再脱敏显示
+        if (shop.getTlMchKey() != null) {
+            try {
+                String plain = SecureUtil.aes(fieldEncryptKey.getBytes()).decryptStr(shop.getTlMchKey());
+                resp.setTlMchKey(plain.length() > 8
+                        ? plain.substring(0, 4) + "****" + plain.substring(plain.length() - 4)
+                        : "****");
+            } catch (Exception e) {
+                resp.setTlMchKey("****");
+            }
         }
-        return success(shop);
+        return success(resp);
     }
 
     @PostMapping("/pay-apply")
@@ -145,10 +164,12 @@ public class AppMerchantShopController {
         if (currentStatus != null && currentStatus == 2) {
             throw exception0(1_020_005_002, "在线支付已开通，无需重复申请");
         }
+        // 加密存储
+        String encryptedKey = SecureUtil.aes(fieldEncryptKey.getBytes()).encryptHex(tlMchKey);
         ShopInfoDO update = new ShopInfoDO();
         update.setId(existing.getId());
         update.setTlMchId(tlMchId);
-        update.setTlMchKey(tlMchKey);
+        update.setTlMchKey(encryptedKey);
         update.setPayApplyStatus(1); // 审核中
         update.setPayApplyRejectReason(null);
         shopInfoMapper.updateById(update);
