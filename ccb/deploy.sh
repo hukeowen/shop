@@ -419,36 +419,50 @@ GRANT ALL PRIVILEGES ON \`${DB_NAME}\`.* TO '${DB_USER}'@'localhost';
 FLUSH PRIVILEGES;
 SQL
 
-  # 幂等性判断：已存在核心表则跳过
+  # 幂等性判断：核心表已存在说明跑过 base SQL，只补跑 fix_*.sql
+  # fix 脚本都是幂等的（CREATE TABLE IF NOT EXISTS / INFORMATION_SCHEMA 存储过程），可反复执行
+  local SQL_DIR="${PROJECT_DIR}/sql/mysql"
+  local RUN_BASE=true
   local TABLE_COUNT
   TABLE_COUNT=$(mysql_safe -Nse "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='${DB_NAME}' AND table_name='system_users';" 2>/dev/null || echo 0)
   if [[ "${TABLE_COUNT}" -gt 0 ]]; then
-    warn "检测到已初始化（system_users 存在），跳过 SQL 导入"
-    log "数据库初始化完成（已有数据）"
-    return
+    warn "检测到核心表 system_users 已存在，跳过 base SQL，只跑 fix_*.sql"
+    RUN_BASE=false
   fi
 
-  local SQL_DIR="${PROJECT_DIR}/sql/mysql"
-  local SQL_FILES=("ruoyi-vue-pro.sql" "mall.sql" "mp.sql" "member_pay.sql" "merchant.sql" "video.sql" "v2_business_tables.sql")
+  if [[ "${RUN_BASE}" == true ]]; then
+    local SQL_FILES=("ruoyi-vue-pro.sql" "mall.sql" "mp.sql" "member_pay.sql" "merchant.sql" "video.sql" "v2_business_tables.sql")
+    for f in "${SQL_FILES[@]}"; do
+      if [[ -f "${SQL_DIR}/${f}" ]]; then
+        info "导入 ${f}..."
+        mysql_safe "${DB_NAME}" < "${SQL_DIR}/${f}"
+        log "${f} 导入完成"
+      else
+        warn "${f} 不存在，跳过"
+      fi
+    done
+  fi
 
-  for f in "${SQL_FILES[@]}"; do
-    if [[ -f "${SQL_DIR}/${f}" ]]; then
-      info "导入 ${f}..."
-      mysql_safe "${DB_NAME}" < "${SQL_DIR}/${f}"
-      log "${f} 导入完成"
-    else
-      warn "${f} 不存在，跳过"
-    fi
-  done
-
+  # 排除清单：这些 fix_*.sql 是破坏性脚本，绝不能自动跑
+  # fix_tenant_id.sql 会 DROP 50+ 张业务表，仅供人工定点执行
+  local FIX_EXCLUDE=("fix_tenant_id.sql")
   shopt -s nullglob
   local FIX_FILES=("${SQL_DIR}"/fix_*.sql)
   shopt -u nullglob
   IFS=$'\n' FIX_FILES=($(printf '%s\n' "${FIX_FILES[@]}" | sort)); unset IFS
   for f in "${FIX_FILES[@]}"; do
-    info "导入 $(basename "${f}")..."
+    local bn="$(basename "${f}")"
+    local skip=false
+    for ex in "${FIX_EXCLUDE[@]}"; do
+      [[ "${bn}" == "${ex}" ]] && skip=true && break
+    done
+    if [[ "${skip}" == true ]]; then
+      warn "跳过危险脚本：${bn}（需人工定点执行）"
+      continue
+    fi
+    info "导入 ${bn}..."
     mysql_safe "${DB_NAME}" < "${f}"
-    log "$(basename "${f}") 导入完成"
+    log "${bn} 导入完成"
   done
 
   log "数据库初始化完成"
