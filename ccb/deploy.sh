@@ -36,7 +36,7 @@ DB_USER="${DB_USER:-tanxiaer}"
 REDIS_PORT="${REDIS_PORT:-6379}"
 SERVER_PORT="${SERVER_PORT:-48080}"
 SERVICE_USER="${SERVICE_USER:-tanxiaer}"
-MAVEN_VERSION="${MAVEN_VERSION:-3.9.6}"
+MAVEN_VERSION="${MAVEN_VERSION:-3.9.9}"
 NODE_VERSION="${NODE_VERSION:-16}"   # CentOS 7 glibc 限制，最多 Node 16
 
 # ── 必填密码校验 ─────────────────────────────────────────────────────────────
@@ -178,11 +178,22 @@ install_maven() {
       return
     fi
   fi
-  local MVN_URL="https://mirrors.aliyun.com/apache/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz"
-  info "下载 Maven：${MVN_URL}"
-  # 用 curl（自带进度条，CentOS 7 的 wget 1.14 不支持 --show-progress）
-  curl -fL --connect-timeout 10 --retry 3 --retry-delay 2 \
-       -o /tmp/maven.tar.gz "${MVN_URL}"
+  # Apache 镜像只保留当前版本，旧版本要去 archive；做一组 fallback
+  local MVN_MIRROR="https://mirrors.aliyun.com/apache/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz"
+  local MVN_CDN="https://dlcdn.apache.org/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz"
+  local MVN_ARCHIVE="https://archive.apache.org/dist/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz"
+  local OK=false
+  for URL in "${MVN_MIRROR}" "${MVN_CDN}" "${MVN_ARCHIVE}"; do
+    info "下载 Maven：${URL}"
+    if curl -fL --connect-timeout 10 --retry 2 --retry-delay 2 \
+            -o /tmp/maven.tar.gz "${URL}"; then
+      OK=true; break
+    fi
+    warn "该源不可用，换下一个..."
+  done
+  if [[ "${OK}" != "true" ]]; then
+    err "所有 Maven 下载源都失败了，请检查网络"; exit 1
+  fi
   tar -xzf /tmp/maven.tar.gz -C /opt/
   ln -sfn "/opt/apache-maven-${MAVEN_VERSION}" /opt/maven
   cat > /etc/profile.d/maven.sh << 'EOF'
