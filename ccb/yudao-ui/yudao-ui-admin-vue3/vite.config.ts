@@ -63,16 +63,12 @@ export default ({command, mode}: ConfigEnv): UserConfig => {
             ]
         },
         build: {
-            minify: 'terser',
+            // 低内存机器（2G）用 esbuild 压缩，比 terser 快 20x、省 60%+ 内存
+            minify: 'esbuild',
             outDir: env.VITE_OUT_DIR || 'dist',
             sourcemap: env.VITE_SOURCEMAP === 'true' ? 'inline' : false,
-            // brotliSize: false,
-            terserOptions: {
-                compress: {
-                    drop_debugger: env.VITE_DROP_DEBUGGER === 'true',
-                    drop_console: env.VITE_DROP_CONSOLE === 'true'
-                }
-            },
+            // 单个 chunk 超过 2MB 才警告（echarts/bpmn 等大包默认会刷屏警告）
+            chunkSizeWarningLimit: 2000,
             rollupOptions: {
                 output: {
                     manualChunks: {
@@ -83,6 +79,13 @@ export default ({command, mode}: ConfigEnv): UserConfig => {
                 },
             },
         },
+        // 用 esbuild 配 drop，替代原 terserOptions.compress.drop_*
+        esbuild: (() => {
+            const drop: Array<'console' | 'debugger'> = []
+            if (env.VITE_DROP_DEBUGGER === 'true') drop.push('debugger')
+            if (env.VITE_DROP_CONSOLE === 'true') drop.push('console')
+            return { drop }
+        })(),
         optimizeDeps: {include, exclude}
     }
 }
