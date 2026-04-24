@@ -15,6 +15,7 @@
  *   5 = 失败
  */
 
+import { request } from './request.js';
 import { uploadImage, uploadImages } from './oss.js';
 import { generateScript } from './scriptLlm.js';
 import { createClipTask, waitClip } from './jimeng.js';
@@ -221,6 +222,8 @@ export async function createTask({ imageBase64s, userDescription, voiceKey, rati
       };
     });
     task.status = 2;
+    // 图片已上传 → 落库
+    registerTaskToDB(task);
   } catch (e) {
     task.status = 5;
     task.failReason = e.message;
@@ -342,11 +345,13 @@ export async function confirmTask({ taskId, scenes }) {
       const firstErr = t.scenes.find((s) => s.error)?.error;
       t.failReason = firstErr ? `全部分镜失败：${firstErr}` : '全部分镜失败，请重试';
       persist();
+      syncStatusToDB(t);
       return;
     }
     t.status = 4;
     store.quota.used += 1;
     persist();
+    syncStatusToDB(t);
   })();
 
   return true;
@@ -432,12 +437,102 @@ async function runClip(task, scene, startImageUrl) {
   }
 }
 
-export function getTaskPage() {
-  return Promise.resolve({ total: store.tasks.length, list: [...store.tasks] });
+const TASK_BASE = '/app-api/video/app/task';
+
+/** 注册任务到 DB（在图片上传完成后调用），返回 dbId */
+async function registerTaskToDB(task) {
+  try {
+    const dbId = await request({
+      url: `${TASK_BASE}/register`,
+      method: 'POST',
+      data: {
+        title: task.title || task.userDescription || '未命名视频',
+        description: task.userDescription || '',
+        imageUrls: task.imageUrls,
+      },
+    });
+    task.dbId = dbId;
+    persist();
+  } catch (e) {
+    console.warn('[aiVideo] registerTaskToDB 失败（不影响本地流程）:', e.message);
+  }
 }
 
-export function getQuota() {
-  return Promise.resolve({ ...store.quota });
+/** 同步任务最终状态到 DB */
+async function syncStatusToDB(task) {
+  if (!task.dbId) return;
+  try {
+    const firstScene = (task.scenes || []).find((s) => s.clipUrl);
+    await request({
+      url: `${TASK_BASE}/sync-status`,
+      method: 'PUT',
+      data: {
+        dbId: task.dbId,
+        clientStatus: task.status,
+        videoUrl: firstScene?.clipUrl || '',
+        failReason: task.failReason || '',
+      },
+    });
+  } catch (e) {
+    console.warn('[aiVideo] syncStatusToDB 失败:', e.message);
+  }
+}
+
+/** DB 任务记录 → 本地 task 格式 */
+function dbTaskToLocal(t) {
+  // DB status: 0=PENDING,1=PROCESSING,2=COMPLETED,3=FAILED
+  const statusMap = { 0: 3, 1: 3, 2: 4, 3: 5 };
+  const clientStatus = statusMap[t.status] ?? 3;
+  return {
+    id: `db_${t.id}`,
+    dbId: t.id,
+    status: clientStatus,
+    title: t.title || '',
+    userDescription: t.description || '',
+    imageUrls: t.imageUrls || [],
+    coverUrl: t.imageUrls?.[0] || null,
+    voiceKey: 'cancan',
+    ratio: '9:16',
+    scenes: t.videoUrl
+      ? [{ index: 0, clipUrl: t.videoUrl, narration: '', status: 'ready', isEndCard: false }]
+      : [],
+    progress: { total: 0, done: 0 },
+    publishedToDouyin: t.douyinPublishStatus === 2,
+    douyinItemId: t.douyinItemId || null,
+    failReason: t.failReason || null,
+    createdAt: t.createTime
+      ? (typeof t.createTime === 'string' ? t.createTime.replace('T', ' ').substring(0, 16) : String(t.createTime))
+      : '',
+  };
+}
+
+export async function getTaskPage() {
+  // 本地任务（in-progress, 非DB）
+  const localTasks = store.tasks.filter((t) => !t.dbId || t.status === 1 || t.status === 2 || t.status === 3);
+
+  try {
+    const resp = await request({ url: `${TASK_BASE}/my-page` });
+    const dbList = Array.isArray(resp) ? resp : (resp?.list || []);
+    const dbTasks = dbList.map(dbTaskToLocal);
+    // 合并：local优先（local任务的dbId可能与DB中条目重叠，用dbId去重）
+    const dbIds = new Set(store.tasks.filter((t) => t.dbId).map((t) => t.dbId));
+    const filteredDb = dbTasks.filter((t) => !dbIds.has(t.dbId));
+    const merged = [...store.tasks, ...filteredDb];
+    return { total: merged.length, list: merged };
+  } catch {
+    // 降级：只返回本地
+    return { total: store.tasks.length, list: [...store.tasks] };
+  }
+}
+
+export async function getQuota() {
+  try {
+    const data = await request({ url: '/app-api/merchant/mini/video-quota/me' });
+    const remaining = data?.remaining ?? 0;
+    return { total: remaining, used: 0, remaining };
+  } catch {
+    return { ...store.quota };
+  }
 }
 
 export function buyQuota() {

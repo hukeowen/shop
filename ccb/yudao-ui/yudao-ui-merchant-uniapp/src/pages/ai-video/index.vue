@@ -5,13 +5,10 @@
       <view class="hero-sub">3 张照片 + 一句话，1 分钟生成抖音爆款视频</view>
 
       <view class="quota-box" @click="goQuota">
-        <view class="quota-label">本月配额</view>
-        <view class="quota-bar">
-          <view class="quota-fill" :style="{ width: quotaPercent + '%' }"></view>
-        </view>
+        <view class="quota-label">剩余配额</view>
         <view class="quota-text">
-          <text>{{ quota.total - quota.used }}</text>
-          <text class="quota-total"> / {{ quota.total }} 次</text>
+          <text>{{ quota.remaining ?? quota.total }}</text>
+          <text class="quota-total"> 条可用 · 点击购买加量</text>
         </view>
       </view>
 
@@ -43,6 +40,22 @@
           <view class="step-title">AI 写文案 + 合成视频</view>
           <view class="step-desc">自动配音配乐，一键发布到抖音</view>
         </view>
+      </view>
+    </view>
+
+    <view class="card demo" v-if="DEMO_VIDEO_URL" @click="playDemo">
+      <view class="section-title">▶ 看一条示例成片</view>
+      <view class="demo-sub">实际效果演示 · 点击播放</view>
+      <video
+        v-if="demoPlaying"
+        :src="DEMO_VIDEO_URL"
+        autoplay
+        controls
+        class="demo-video"
+        object-fit="contain"
+      />
+      <view v-else class="demo-thumb">
+        <view class="play-icon">▶</view>
       </view>
     </view>
 
@@ -80,19 +93,21 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue';
+import { ref } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
 import { getQuota, getTaskPage } from '../../api/aiVideo.js';
 import { AI_VIDEO_STATUS } from '../../utils/format.js';
 
-const quota = ref({ total: 10, used: 0 });
-const recent = ref([]);
+// 配置一条真实示例视频 URL 后卡片才会显示（空字符串 = 隐藏）
+const DEMO_VIDEO_URL = '';
 
-const quotaPercent = computed(() => {
-  const used = quota.value.used;
-  const total = quota.value.total;
-  return total ? Math.min(100, (used / total) * 100) : 0;
-});
+const quota = ref({ remaining: 0, total: 0, used: 0 });
+const recent = ref([]);
+const demoPlaying = ref(false);
+
+function playDemo() {
+  demoPlaying.value = true;
+}
 
 function statusText(s) {
   return AI_VIDEO_STATUS[s]?.text || s;
@@ -171,21 +186,6 @@ onShow(() => {
     .quota-label {
       font-size: 24rpx;
       color: $text-secondary;
-    }
-
-    .quota-bar {
-      margin-top: 14rpx;
-      height: 12rpx;
-      background: rgba(255, 255, 255, 0.6);
-      border-radius: 6rpx;
-      overflow: hidden;
-    }
-
-    .quota-fill {
-      height: 100%;
-      background: $brand-primary;
-      border-radius: 6rpx;
-      transition: width 0.3s;
     }
 
     .quota-text {
@@ -358,6 +358,34 @@ onShow(() => {
       font-size: 22rpx;
       color: $text-placeholder;
     }
+  }
+}
+
+.demo {
+  .demo-sub {
+    font-size: 24rpx;
+    color: $text-secondary;
+    margin-bottom: 20rpx;
+  }
+
+  .demo-thumb {
+    height: 200rpx;
+    background: #1a1a1a;
+    border-radius: $radius-md;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    .play-icon {
+      color: #fff;
+      font-size: 60rpx;
+    }
+  }
+
+  .demo-video {
+    width: 100%;
+    height: 400rpx;
+    border-radius: $radius-md;
   }
 }
 

@@ -5,6 +5,8 @@ import cn.iocoder.yudao.module.video.controller.admin.vo.VideoTaskCreateReqVO;
 import cn.iocoder.yudao.module.video.controller.admin.vo.VideoTaskPageReqVO;
 import cn.iocoder.yudao.module.video.dal.dataobject.VideoTaskDO;
 
+import java.util.List;
+
 /**
  * AI视频任务 Service
  */
@@ -34,5 +36,20 @@ public interface VideoTaskService {
      * 发布视频到抖音
      */
     void publishToDouyin(Long taskId);
+
+    /**
+     * 注册客户端发起的任务（不触发异步生成，仅落库）
+     */
+    Long registerClientTask(String title, String description, List<String> imageUrls, Long merchantId, Long userId);
+
+    /**
+     * 同步客户端任务最终状态（status/videoUrl/failReason）
+     */
+    void syncClientTaskStatus(Long id, Integer dbStatus, String videoUrl, String failReason);
+
+    /**
+     * 查询用户的任务列表（最近50条）
+     */
+    List<VideoTaskDO> listByUserId(Long userId);
 
 }

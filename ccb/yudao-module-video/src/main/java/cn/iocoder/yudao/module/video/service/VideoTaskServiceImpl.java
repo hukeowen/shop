@@ -155,6 +155,41 @@ public class VideoTaskServiceImpl implements VideoTaskService {
         }
     }
 
+    @Override
+    public Long registerClientTask(String title, String description, List<String> imageUrls, Long merchantId, Long userId) {
+        VideoTaskDO task = VideoTaskDO.builder()
+                .merchantId(merchantId)
+                .userId(userId)
+                .title(title != null ? title : description)
+                .description(description)
+                .imageUrls(imageUrls)
+                .status(VideoTaskStatusEnum.PROCESSING.getStatus())
+                .douyinPublishStatus(DouyinPublishStatusEnum.UNPUBLISHED.getStatus())
+                .build();
+        videoTaskMapper.insert(task);
+        return task.getId();
+    }
+
+    @Override
+    public void syncClientTaskStatus(Long id, Integer dbStatus, String videoUrl, String failReason) {
+        VideoTaskDO updateObj = new VideoTaskDO();
+        updateObj.setId(id);
+        updateObj.setStatus(dbStatus);
+        if (videoUrl != null && !videoUrl.isEmpty()) {
+            updateObj.setVideoUrl(videoUrl);
+        }
+        if (failReason != null && !failReason.isEmpty()) {
+            String truncated = failReason.length() > 200 ? failReason.substring(0, 200) : failReason;
+            updateObj.setFailReason(truncated);
+        }
+        videoTaskMapper.updateById(updateObj);
+    }
+
+    @Override
+    public List<VideoTaskDO> listByUserId(Long userId) {
+        return videoTaskMapper.selectListByUserId(userId);
+    }
+
     private List<String> splitToLines(String description) {
         if (description == null || description.isEmpty()) {
             return java.util.Collections.emptyList();

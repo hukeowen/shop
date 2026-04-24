@@ -24,4 +24,11 @@ public interface VideoTaskMapper extends BaseMapperX<VideoTaskDO> {
         return selectList(VideoTaskDO::getMerchantId, merchantId);
     }
 
+    default List<VideoTaskDO> selectListByUserId(Long userId) {
+        return selectList(new LambdaQueryWrapperX<VideoTaskDO>()
+                .eq(VideoTaskDO::getUserId, userId)
+                .orderByDesc(VideoTaskDO::getId)
+                .last("LIMIT 50"));
+    }
+
 }
