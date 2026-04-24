@@ -1,15 +1,10 @@
-import { mockDelay } from './request.js';
+import { request } from './request.js';
+
+const BASE = '/app-api/merchant/mini/product';
 
 /**
- * 商户商品（极简版）
- * 主表单只 4 项：图、名、价、分类（默认小吃）
- * 高级设置：返利、推N返一、库存、简介（折叠默认收起）
- *
- * 后端对应 /admin-api/merchant/mini/product/simple-create | page | update | update-status | delete
- * 后端默认 categoryId=1（小吃）、单规格、自提、库存 9999
+ * 分类列表（本地常量 — 后续接入 product_category 接口时替换）
  */
-
-// 分类列表（mock — 真实接入查 product_category 表）
 export const CATEGORIES = [
   { id: 1, name: '小吃' },
   { id: 2, name: '饮品' },
@@ -23,118 +18,117 @@ export const CATEGORIES = [
 
 export const DEFAULT_CATEGORY_ID = 1;
 
-const store = {
-  nextId: 5005,
-  list: [
-    {
-      id: 5001,
-      name: '蜜薯（大）',
-      picUrl: 'https://images.unsplash.com/photo-1518977956812-cd3dbadaaf31?w=300',
-      price: 500, // 分
-      stock: 9999,
-      introduction: '现烤现卖，糖心流油',
-      categoryName: '小吃',
-      status: 0, // 0 上架 / 1 下架
-      brokerageEnabled: true,
-      pushBackEnabled: true,
-      salesCount: 42,
-      createdAt: '2026-04-15 10:20',
-    },
-    {
-      id: 5002,
-      name: '烤地瓜（小）',
-      picUrl: 'https://images.unsplash.com/photo-1623059508779-2542c6e83753?w=300',
-      price: 600,
-      stock: 9999,
-      introduction: '',
-      categoryName: '小吃',
-      status: 0,
-      brokerageEnabled: true,
-      pushBackEnabled: false,
-      salesCount: 35,
-      createdAt: '2026-04-12 09:00',
-    },
-    {
-      id: 5003,
-      name: '甜玉米',
-      picUrl: 'https://images.unsplash.com/photo-1601593768799-76d3a7d3d6e7?w=300',
-      price: 300,
-      stock: 9999,
-      introduction: '春季限定',
-      categoryName: '小吃',
-      status: 0,
-      brokerageEnabled: false,
-      pushBackEnabled: false,
-      salesCount: 28,
-      createdAt: '2026-04-08 14:30',
-    },
-    {
-      id: 5004,
-      name: '烤红薯（试吃装）',
-      picUrl: 'https://images.unsplash.com/photo-1518977956812-cd3dbadaaf31?w=300',
-      price: 100,
-      stock: 0,
-      introduction: '只剩 0 件，已售罄',
-      categoryName: '小吃',
-      status: 1,
-      brokerageEnabled: false,
-      pushBackEnabled: false,
-      salesCount: 120,
-      createdAt: '2026-03-28 18:00',
-    },
-  ],
-};
-
-export function getSpuPage({ status } = {}) {
-  let list = store.list;
-  if (status === 0 || status === 1) list = list.filter((s) => s.status === status);
-  return mockDelay({ total: list.length, list: [...list] });
+function catName(id) {
+  return (CATEGORIES.find((c) => c.id === id) || { name: '其他' }).name;
 }
 
-export function getSpu(id) {
-  return mockDelay(store.list.find((s) => s.id === id) || null);
+/** ProductSpuDO → UI 所需字段 */
+function normalizeSpu(s) {
+  if (!s) return null;
+  return {
+    id: s.id,
+    name: s.name,
+    picUrl: s.picUrl,
+    price: s.price,
+    stock: s.stock ?? 9999,
+    introduction: s.introduction || '',
+    categoryId: s.categoryId ?? DEFAULT_CATEGORY_ID,
+    categoryName: catName(s.categoryId),
+    status: s.status ?? 0,
+    brokerageEnabled: !!s.subCommissionType,
+    pushBackEnabled: false,
+    salesCount: s.salesCount ?? 0,
+    giveIntegral: s.giveIntegral ?? 0,
+    deliveryTypes: s.deliveryTypes ?? [2],
+  };
 }
 
+/** 分页查询商品列表，status: 0=上架 1=下架，不传=全部 */
+export async function getSpuPage({ status, pageNo = 1, pageSize = 20 } = {}) {
+  const params = { pageNo, pageSize };
+  if (status === 0 || status === 1) params.status = status;
+  const data = await request({ url: `${BASE}/page`, data: params });
+  return {
+    total: data.total,
+    list: (data.list || []).map(normalizeSpu),
+  };
+}
+
+/** 查询单个商品详情（用于编辑页回填） */
+export async function getSpu(id) {
+  const data = await request({ url: `${BASE}/get?id=${id}` });
+  return normalizeSpu(data);
+}
+
+/** 极简创建 */
 export function createSpu(form) {
-  const id = store.nextId++;
-  const cat = CATEGORIES.find((c) => c.id === (form.categoryId || DEFAULT_CATEGORY_ID));
-  store.list.unshift({
-    id,
-    name: form.name,
-    picUrl: form.picUrl,
-    price: form.price,
-    stock: form.stock || 9999,
-    introduction: form.introduction || '',
-    categoryId: cat.id,
-    categoryName: cat.name,
-    status: 0,
-    brokerageEnabled: !!form.brokerageEnabled,
-    pushBackEnabled: !!form.pushBackEnabled,
-    salesCount: 0,
-    createdAt: new Date().toLocaleString('zh-CN'),
+  return request({
+    url: `${BASE}/simple-create`,
+    method: 'POST',
+    data: {
+      name: form.name,
+      price: form.price,
+      picUrl: form.picUrl,
+      stock: form.stock || 9999,
+      categoryId: form.categoryId || DEFAULT_CATEGORY_ID,
+      introduction: form.introduction || '',
+      giveIntegral: form.giveIntegral ?? 0,
+      deliveryTypes: form.deliveryTypes ?? [2],
+    },
   });
-  return mockDelay(id);
 }
 
-export function updateSpu(form) {
-  const s = store.list.find((x) => x.id === form.id);
-  if (s) {
-    Object.assign(s, form);
-    if (form.categoryId) {
-      const cat = CATEGORIES.find((c) => c.id === form.categoryId);
-      if (cat) s.categoryName = cat.name;
-    }
-  }
-  return mockDelay(true);
+/** 更新商品（传完整 ProductSpuSaveReqVO 结构） */
+export async function updateSpu(form) {
+  // 先拿含 skus 的完整 RespVO，保留服务端 SKU ID / costPrice 等字段
+  const raw = await request({ url: `${BASE}/get?id=${form.id}` });
+  return request({
+    url: `${BASE}/update`,
+    method: 'PUT',
+    data: {
+      id: form.id,
+      name: form.name,
+      keyword: form.name,
+      introduction: form.introduction || form.name,
+      description: raw?.description || form.name,
+      categoryId: form.categoryId || DEFAULT_CATEGORY_ID,
+      brandId: raw?.brandId ?? null,
+      picUrl: form.picUrl,
+      sliderPicUrls: [form.picUrl],
+      sort: raw?.sort ?? 0,
+      specType: false,
+      deliveryTypes: form.deliveryTypes ?? raw?.deliveryTypes ?? [2],
+      deliveryTemplateId: raw?.deliveryTemplateId ?? null,
+      giveIntegral: form.giveIntegral ?? 0,
+      subCommissionType: !!form.brokerageEnabled,
+      virtualSalesCount: raw?.virtualSalesCount ?? 0,
+      salesCount: raw?.salesCount ?? 0,
+      browseCount: raw?.browseCount ?? 0,
+      skus: [
+        {
+          id: raw?.skus?.[0]?.id,           // 保留 SKU ID，避免服务端创建重复 SKU
+          name: form.name,
+          price: form.price,
+          marketPrice: form.price,
+          costPrice: raw?.skus?.[0]?.costPrice ?? 0,
+          picUrl: form.picUrl,
+          stock: form.stock != null ? form.stock : 9999,
+        },
+      ],
+    },
+  });
 }
 
+/** 上下架 */
 export function updateStatus({ id, status }) {
-  const s = store.list.find((x) => x.id === id);
-  if (s) s.status = status;
-  return mockDelay(true);
+  return request({
+    url: `${BASE}/update-status`,
+    method: 'PUT',
+    data: { id, status },
+  });
 }
 
+/** 删除商品 */
 export function deleteSpu(id) {
-  store.list = store.list.filter((x) => x.id !== id);
-  return mockDelay(true);
+  return request({ url: `${BASE}/delete?id=${id}`, method: 'DELETE' });
 }

@@ -5,9 +5,13 @@ import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.module.merchant.controller.app.vo.AppSimpleSpuCreateReqVO;
 import cn.iocoder.yudao.module.product.controller.admin.spu.vo.ProductSkuSaveReqVO;
 import cn.iocoder.yudao.module.product.controller.admin.spu.vo.ProductSpuPageReqVO;
+import cn.iocoder.yudao.module.product.controller.admin.spu.vo.ProductSpuRespVO;
 import cn.iocoder.yudao.module.product.controller.admin.spu.vo.ProductSpuSaveReqVO;
 import cn.iocoder.yudao.module.product.controller.admin.spu.vo.ProductSpuUpdateStatusReqVO;
+import cn.iocoder.yudao.module.product.convert.spu.ProductSpuConvert;
+import cn.iocoder.yudao.module.product.dal.dataobject.sku.ProductSkuDO;
 import cn.iocoder.yudao.module.product.dal.dataobject.spu.ProductSpuDO;
+import cn.iocoder.yudao.module.product.service.sku.ProductSkuService;
 import cn.iocoder.yudao.module.product.service.spu.ProductSpuService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -41,6 +45,9 @@ public class AppMerchantProductController {
     @Resource
     private ProductSpuService productSpuService;
 
+    @Resource
+    private ProductSkuService productSkuService;
+
     // ==================== #16 极简商品发布 ====================
 
     @PostMapping("/simple-create")
@@ -57,6 +64,18 @@ public class AppMerchantProductController {
     @Operation(summary = "分页查询商品列表")
     public CommonResult<PageResult<ProductSpuDO>> getSpuPage(@Valid ProductSpuPageReqVO pageReqVO) {
         return success(productSpuService.getSpuPage(pageReqVO));
+    }
+
+    @GetMapping("/get")
+    @Operation(summary = "查询商品详情（含 SKU）")
+    @Parameter(name = "id", description = "商品 ID", required = true)
+    public CommonResult<ProductSpuRespVO> getSpu(@RequestParam("id") Long id) {
+        ProductSpuDO spu = productSpuService.getSpu(id);
+        if (spu == null) {
+            return success(null);
+        }
+        List<ProductSkuDO> skus = productSkuService.getSkuListBySpuId(spu.getId());
+        return success(ProductSpuConvert.INSTANCE.convert(spu, skus));
     }
 
     @PutMapping("/update")
