@@ -560,26 +560,36 @@ ensure_pnpm8() {
 
 ensure_swap() {
   # 低内存 ECS 跑 pnpm/mvn 会被 OOM killer 砍，自动加 swap 兜底
-  local MEM_MB SWAP_MB
+  # 目标：mem+swap ≥ 6G（2G 机器 → 4G swap；4G 机器 → 2G swap；6G+ 跳过）
+  local MEM_MB SWAP_MB TARGET_MB=6144
   MEM_MB=$(free -m | awk '/^Mem:/ {print $2}')
   SWAP_MB=$(free -m | awk '/^Swap:/ {print $2}')
-  # 内存+swap 至少 4G 才算安全
-  if (( MEM_MB + SWAP_MB >= 4000 )); then
-    info "内存 ${MEM_MB}MB + swap ${SWAP_MB}MB ≥ 4G，无需扩 swap"
+  if (( MEM_MB + SWAP_MB >= TARGET_MB )); then
+    info "内存 ${MEM_MB}MB + swap ${SWAP_MB}MB ≥ 6G，无需扩 swap"
     return
   fi
   if [[ -f /swapfile ]]; then
-    info "已存在 /swapfile，跳过"
+    info "已存在 /swapfile（$(ls -lh /swapfile | awk '{print $5}')），跳过"
     return
   fi
-  local NEED_MB=$(( 4096 - MEM_MB ))
-  info "内存偏小（${MEM_MB}MB），创建 ${NEED_MB}MB swap 防 OOM"
+  local NEED_MB=$(( TARGET_MB - MEM_MB - SWAP_MB ))
+  info "内存 ${MEM_MB}MB + swap ${SWAP_MB}MB，创建 ${NEED_MB}MB swap 补足到 ${TARGET_MB}MB"
+  # 检查磁盘空间
+  local FREE_KB
+  FREE_KB=$(df -k / | awk 'NR==2 {print $4}')
+  if (( FREE_KB < NEED_MB * 1024 + 2 * 1024 * 1024 )); then
+    warn "根分区剩余空间不足 ${NEED_MB}MB + 2GB 余量，跳过 swap 创建"
+    return
+  fi
   fallocate -l "${NEED_MB}M" /swapfile 2>/dev/null || \
     dd if=/dev/zero of=/swapfile bs=1M count="${NEED_MB}" status=none
   chmod 600 /swapfile
   mkswap /swapfile >/dev/null
   swapon /swapfile
   grep -q '/swapfile' /etc/fstab || echo '/swapfile none swap sw 0 0' >> /etc/fstab
+  # 降低 swappiness，优先用 RAM
+  sysctl -w vm.swappiness=30 >/dev/null
+  grep -q 'vm.swappiness' /etc/sysctl.conf || echo 'vm.swappiness=30' >> /etc/sysctl.conf
   log "swap 已启用：$(free -h | awk '/^Swap:/ {print $2}')"
 }
 
@@ -640,15 +650,17 @@ server {
     charset utf-8;
     client_max_body_size 50m;
 
-    # 官网首页
-    location = / {
+    # 官网（静态单页 + 任何后续 assets/图片 自动生效）
+    location / {
         root ${ROOT_DIR}/website;
         index index.html;
+        try_files \$uri \$uri/ /index.html;
     }
-    location /assets/ {
+    location ~* \.(png|jpg|jpeg|gif|svg|webp|ico|css|js|woff2?)\$ {
         root ${ROOT_DIR}/website;
         expires 7d;
         add_header Cache-Control "public, immutable";
+        access_log off;
     }
 
     # 管理后台
