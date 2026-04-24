@@ -11,7 +11,7 @@
     <view class="shop card">
       <view class="shop-head">
         <text class="title">我的店铺</text>
-        <text class="edit" @click="toast">编辑</text>
+        <text class="edit" @click="goShopEdit">编辑</text>
       </view>
       <view class="shop-body">
         <view class="shop-name">{{ userStore.shop?.name || '-' }}</view>
@@ -24,7 +24,7 @@
         <text>商品管理</text>
         <text class="arrow">›</text>
       </view>
-      <view class="menu-item" @click="toast">
+      <view class="menu-item" @click="goQrcode">
         <text>店铺二维码</text>
         <text class="arrow">›</text>
       </view>
@@ -86,6 +86,14 @@ const avatarText = computed(() => {
 
 function toast() {
   uni.showToast({ title: '原型阶段，功能待开发', icon: 'none' });
+}
+
+function goShopEdit() {
+  uni.navigateTo({ url: '/pages/me/shop-edit' });
+}
+
+function goQrcode() {
+  uni.navigateTo({ url: '/pages/me/qrcode' });
 }
 
 function goQuota() {

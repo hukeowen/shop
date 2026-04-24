@@ -2,9 +2,12 @@ package cn.iocoder.yudao.module.merchant.controller.app;
 
 import cn.hutool.crypto.SecureUtil;
 import cn.iocoder.yudao.framework.common.pojo.CommonResult;
+import cn.iocoder.yudao.framework.security.core.util.SecurityFrameworkUtils;
 import cn.iocoder.yudao.framework.tenant.core.context.TenantContextHolder;
+import cn.iocoder.yudao.module.merchant.dal.dataobject.MerchantDO;
 import cn.iocoder.yudao.module.merchant.dal.dataobject.ShopBrokerageConfigDO;
 import cn.iocoder.yudao.module.merchant.dal.dataobject.ShopInfoDO;
+import cn.iocoder.yudao.module.merchant.dal.mysql.MerchantMapper;
 import cn.iocoder.yudao.module.merchant.dal.mysql.ShopBrokerageConfigMapper;
 import cn.iocoder.yudao.module.merchant.dal.mysql.ShopInfoMapper;
 import io.swagger.v3.oas.annotations.Operation;
@@ -35,6 +38,8 @@ public class AppMerchantShopController {
     private ShopInfoMapper shopInfoMapper;
     @Resource
     private ShopBrokerageConfigMapper shopBrokerageConfigMapper;
+    @Resource
+    private MerchantMapper merchantMapper;
 
     @GetMapping("/info")
     @Operation(summary = "获取店铺信息")
@@ -113,6 +118,19 @@ public class AppMerchantShopController {
         update.setStatus(status);
         shopInfoMapper.updateById(update);
         return success(true);
+    }
+
+    // ==================== 店铺二维码 ====================
+
+    @GetMapping("/qrcode")
+    @Operation(summary = "获取店铺专属二维码URL")
+    public CommonResult<java.util.Map<String, String>> getQrCode() {
+        Long userId = SecurityFrameworkUtils.getLoginUserId();
+        MerchantDO merchant = merchantMapper.selectByUserId(userId);
+        String url = merchant != null ? merchant.getMiniAppQrCodeUrl() : null;
+        java.util.Map<String, String> result = new java.util.HashMap<>();
+        result.put("qrCodeUrl", url);
+        return success(result);
     }
 
     // ==================== 在线支付开通申请 ====================

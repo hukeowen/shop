@@ -187,6 +187,18 @@
       "style": {
         "navigationBarTitleText": "余额与积分"
       }
+    },
+    {
+      "path": "pages/me/shop-edit",
+      "style": {
+        "navigationBarTitleText": "编辑店铺"
+      }
+    },
+    {
+      "path": "pages/me/qrcode",
+      "style": {
+        "navigationBarTitleText": "店铺二维码"
+      }
     }
   ],
   "globalStyle": {
