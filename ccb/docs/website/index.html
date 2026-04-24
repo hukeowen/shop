@@ -418,21 +418,24 @@
     }
     .kinetic-wrap {
       position: relative; display: inline-block;
-      min-width: 4.2em; text-align: center;
-      overflow: hidden; vertical-align: bottom;
+      min-width: 5.4em; text-align: center;
+      vertical-align: bottom;
       height: 1.15em;
     }
     .kinetic-word {
       position: absolute; left: 0; right: 0;
       display: inline-block;
-      transform: translateY(100%); opacity: 0;
-      transition: transform .6s var(--ease), opacity .6s;
+      white-space: nowrap;
+      opacity: 0;
+      transform: translateY(8px) scale(0.98);
+      transition: opacity .28s var(--ease), transform .32s var(--ease);
       background: linear-gradient(135deg, #FF6B35, #ff9564, #e8551f);
       -webkit-background-clip: text; -webkit-text-fill-color: transparent;
       background-clip: text;
+      will-change: opacity, transform;
     }
-    .kinetic-word.in { transform: translateY(0); opacity: 1; }
-    .kinetic-word.out { transform: translateY(-100%); opacity: 0; }
+    .kinetic-word.in { opacity: 1; transform: translateY(0) scale(1); }
+    .kinetic-word.out { opacity: 0; transform: translateY(-8px) scale(0.98); }
 
     .hero-sub {
       font-size: 18px; color: var(--t2); max-width: 500px;
@@ -1243,29 +1246,35 @@
   <div class="wrap">
     <div class="trust-head">
       <span class="trust-line"></span>
-      <span class="trust-lbl">由一线云平台 & AI 能力支撑</span>
+      <span class="trust-lbl">摊小二能为你带来什么</span>
       <span class="trust-line"></span>
     </div>
   </div>
   <div class="marquee-track">
-    <div class="tchip">🌋 火山引擎 TTS</div>
-    <div class="tchip">🎨 即梦 AI</div>
-    <div class="tchip">📱 抖音开放平台</div>
-    <div class="tchip">💳 微信支付</div>
-    <div class="tchip">🔵 支付宝</div>
-    <div class="tchip">☁️ 阿里云 OSS</div>
-    <div class="tchip">⚡ Redis</div>
-    <div class="tchip">🔐 MySQL 8</div>
-    <div class="tchip">🚀 Spring Boot</div>
-    <div class="tchip">🌋 火山引擎 TTS</div>
-    <div class="tchip">🎨 即梦 AI</div>
-    <div class="tchip">📱 抖音开放平台</div>
-    <div class="tchip">💳 微信支付</div>
-    <div class="tchip">🔵 支付宝</div>
-    <div class="tchip">☁️ 阿里云 OSS</div>
-    <div class="tchip">⚡ Redis</div>
-    <div class="tchip">🔐 MySQL 8</div>
-    <div class="tchip">🚀 Spring Boot</div>
+    <div class="tchip">⏱️ 10 分钟极速开店</div>
+    <div class="tchip">🎬 AI 30 秒生成带货视频</div>
+    <div class="tchip">📈 月营收平均提升 32%</div>
+    <div class="tchip">💸 获客成本直降 60%</div>
+    <div class="tchip">🤖 AI 自动写营销文案</div>
+    <div class="tchip">📱 一键发布抖音推广</div>
+    <div class="tchip">💰 推广返佣自动结算</div>
+    <div class="tchip">⭐ 积分锁住回头客</div>
+    <div class="tchip">🎯 附近顾客精准触达</div>
+    <div class="tchip">🛠️ 零技术零剪辑门槛</div>
+    <div class="tchip">📊 经营数据实时掌握</div>
+    <div class="tchip">🚀 抖音微信全域获客</div>
+    <div class="tchip">⏱️ 10 分钟极速开店</div>
+    <div class="tchip">🎬 AI 30 秒生成带货视频</div>
+    <div class="tchip">📈 月营收平均提升 32%</div>
+    <div class="tchip">💸 获客成本直降 60%</div>
+    <div class="tchip">🤖 AI 自动写营销文案</div>
+    <div class="tchip">📱 一键发布抖音推广</div>
+    <div class="tchip">💰 推广返佣自动结算</div>
+    <div class="tchip">⭐ 积分锁住回头客</div>
+    <div class="tchip">🎯 附近顾客精准触达</div>
+    <div class="tchip">🛠️ 零技术零剪辑门槛</div>
+    <div class="tchip">📊 经营数据实时掌握</div>
+    <div class="tchip">🚀 抖音微信全域获客</div>
   </div>
 </div>
 
@@ -1627,20 +1636,24 @@
   const words = ['小摊', '夜市档口', '咖啡车', '街边奶茶店', '社区小店', '个体商户'];
   const kWrap = document.getElementById('kinetic');
   let kIdx = 0;
+  const OUT_MS = 320;
   setInterval(() => {
     const cur = kWrap.querySelector('.kinetic-word.in');
-    const nextWord = words[(++kIdx) % words.length];
-    const next = document.createElement('span');
-    next.className = 'kinetic-word';
-    next.textContent = nextWord;
-    kWrap.appendChild(next);
-    requestAnimationFrame(() => {
-      cur?.classList.remove('in');
-      cur?.classList.add('out');
-      next.classList.add('in');
-    });
-    setTimeout(() => cur?.remove(), 700);
-  }, 2400);
+    if (cur) {
+      cur.classList.remove('in');
+      cur.classList.add('out');
+      const stale = cur;
+      setTimeout(() => stale.remove(), OUT_MS + 80);
+    }
+    setTimeout(() => {
+      const nextWord = words[(++kIdx) % words.length];
+      const next = document.createElement('span');
+      next.className = 'kinetic-word';
+      next.textContent = nextWord;
+      kWrap.appendChild(next);
+      requestAnimationFrame(() => requestAnimationFrame(() => next.classList.add('in')));
+    }, OUT_MS);
+  }, 2800);
 
   const hstatsEl = document.getElementById('hstats');
   const cnumObs = new IntersectionObserver(entries => {
