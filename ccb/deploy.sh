@@ -1,551 +1,630 @@
-#!/bin/bash
+#!/usr/bin/env bash
+# =============================================================================
+#  摊小二 一键部署脚本
+#  适用于 Ubuntu 20.04 / 22.04 全新服务器
+#  用法: sudo bash deploy.sh [--skip-install] [--skip-build] [--help]
 #
-# 多商户SaaS平台 - CentOS 一键部署脚本
-# 支持: CentOS 7/8/9, Rocky Linux 8/9, AlmaLinux 8/9
-#
-# 注意: 本项目为 jdk8 分支 (Spring Boot 2.7.x)，需要 JDK 8，不支持 JDK 17/21
-#
-# 运行时服务 (4个):
-#   1. MySQL 8.0       - 数据库
-#   2. Redis           - 缓存
-#   3. yudao-server    - 后端主服务 (Fat JAR，含商城/支付/商户/公众号等模块)
-#   4. Nginx           - 反向代理 + 管理后台静态文件
-#
-# 已包含模块: system / infra / member / pay / mp / 商城(product+promotion+trade+statistics) / merchant / video
-# 已排除模块: bpm(工作流) / report / crm / erp / iot / mes / ai
-#
-# 构建工具 (仅构建阶段使用，不作为运行时服务):
-#   - JDK 8 (OpenJDK)
-#   - Maven 3.9
-#   - Node.js 18 (构建管理后台前端)
-#
-# 使用方式:
-#   chmod +x deploy.sh
-#   sudo ./deploy.sh
-#
+#  首次使用：cp .env.example .env && vim .env 填写密码，再运行本脚本
+# =============================================================================
+set -euo pipefail
 
-set -e
+# ── 加载 .env（敏感配置外置） ─────────────────────────────────────────────────
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ENV_FILE="${ENV_FILE:-${SCRIPT_DIR}/.env}"
+if [[ -f "${ENV_FILE}" ]]; then
+  set -a; source "${ENV_FILE}"; set +a
+else
+  echo "[✗] 缺少配置文件：${ENV_FILE}" >&2
+  echo "    请执行：cp ${SCRIPT_DIR}/.env.example ${ENV_FILE} 后填写密码再运行" >&2
+  exit 1
+fi
 
-# ==================== 配置区 ====================
-# 数据库
-DB_NAME="ruoyi-vue-pro"
-DB_USER="ruoyi"
-DB_PASS="Ruoyi@2024!"
-DB_ROOT_PASS="Root@2024!"
+# ── 非敏感默认值 ─────────────────────────────────────────────────────────────
+REPO_URL="${REPO_URL:-https://github.com/hukeowen/shop.git}"
+BRANCH="${BRANCH:-main}"
+ROOT_DIR="${ROOT_DIR:-/opt/tanxiaer}"
+SERVER_NAME="${SERVER_NAME:-_}"
+DB_NAME="${DB_NAME:-ruoyi-vue-pro}"
+DB_USER="${DB_USER:-tanxiaer}"
+REDIS_PORT="${REDIS_PORT:-6379}"
+SERVER_PORT="${SERVER_PORT:-48080}"
+SERVICE_USER="${SERVICE_USER:-tanxiaer}"
+MAVEN_VERSION="${MAVEN_VERSION:-3.9.6}"
+NODE_VERSION="${NODE_VERSION:-18}"
 
-# Redis
-REDIS_PASS="Redis@2024!"
+# ── 必填密码校验（从 .env 读取，缺失即退出） ──────────────────────────────────
+: "${MYSQL_ROOT_PASS:?MYSQL_ROOT_PASS 未在 .env 中设置}"
+: "${DB_PASS:?DB_PASS 未在 .env 中设置}"
+: "${REDIS_PASS:?REDIS_PASS 未在 .env 中设置}"
+: "${MERCHANT_INTERNAL_TOKEN:?MERCHANT_INTERNAL_TOKEN 未在 .env 中设置（≥16 字符）}"
 
-# 项目
-PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
-APP_NAME="yudao-server"
-APP_PORT=48080
-DEPLOY_DIR="/opt/yudao"
-LOG_DIR="/var/log/yudao"
+# 可选第三方 API Key（未填写则服务端会在运行时报错，这里不强制）
+VOLCANO_APP_ID="${VOLCANO_APP_ID:-}"
+VOLCANO_ACCESS_TOKEN="${VOLCANO_ACCESS_TOKEN:-}"
+VOLCANO_AK="${VOLCANO_AK:-}"
+VOLCANO_SK="${VOLCANO_SK:-}"
+DOUYIN_CLIENT_KEY="${DOUYIN_CLIENT_KEY:-}"
+DOUYIN_CLIENT_SECRET="${DOUYIN_CLIENT_SECRET:-}"
 
-# 域名（部署后修改 nginx 配置即可）
-DOMAIN="localhost"
+# ── 颜色输出 ─────────────────────────────────────────────────────────────────
+RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'
+BLUE='\033[0;34m'; CYAN='\033[0;36m'; NC='\033[0m'
+log()  { echo -e "${GREEN}[✓]${NC} $*"; }
+info() { echo -e "${BLUE}[i]${NC} $*"; }
+warn() { echo -e "${YELLOW}[!]${NC} $*"; }
+err()  { echo -e "${RED}[✗]${NC} $*" >&2; }
+step() { echo -e "\n${CYAN}══════ $* ══════${NC}"; }
 
-# 火山引擎 & 抖音（部署后在配置文件中修改）
-VOLCANO_APP_ID=""
-VOLCANO_ACCESS_TOKEN=""
-VOLCANO_AK=""
-VOLCANO_SK=""
-DOUYIN_CLIENT_KEY=""
-DOUYIN_CLIENT_SECRET=""
-
-# ==================== 颜色输出 ====================
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-NC='\033[0m'
-
-info()  { echo -e "${GREEN}[INFO]${NC} $1"; }
-warn()  { echo -e "${YELLOW}[WARN]${NC} $1"; }
-error() { echo -e "${RED}[ERROR]${NC} $1"; exit 1; }
-
-# ==================== 前置检查 ====================
-check_root() {
-    if [ "$(id -u)" != "0" ]; then
-        error "请使用 root 用户或 sudo 执行此脚本"
-    fi
+# ── MySQL 凭据文件（避免 -p$PASS 在 ps 中暴露） ───────────────────────────────
+MYSQL_DEFAULTS_FILE=""
+init_mysql_defaults_file() {
+  MYSQL_DEFAULTS_FILE="$(mktemp)"
+  chmod 600 "${MYSQL_DEFAULTS_FILE}"
+  cat > "${MYSQL_DEFAULTS_FILE}" << EOF
+[client]
+user=root
+password=${MYSQL_ROOT_PASS}
+EOF
+  # 脚本退出时立即清理
+  trap 'rm -f "${MYSQL_DEFAULTS_FILE}"' EXIT
 }
+mysql_safe() { mysql --defaults-extra-file="${MYSQL_DEFAULTS_FILE}" "$@"; }
 
-check_os() {
-    if [ -f /etc/redhat-release ]; then
-        OS_VERSION=$(rpm -q --qf '%{VERSION}' centos-release 2>/dev/null || \
-                     rpm -q --qf '%{VERSION}' rocky-release 2>/dev/null || \
-                     rpm -q --qf '%{VERSION}' almalinux-release 2>/dev/null || echo "8")
-        OS_MAJOR=$(echo "$OS_VERSION" | cut -d. -f1)
-        info "检测到系统: $(cat /etc/redhat-release), 主版本: $OS_MAJOR"
-    else
-        error "此脚本仅支持 CentOS/Rocky/AlmaLinux 系统"
-    fi
-}
+# ── 命令行参数 ────────────────────────────────────────────────────────────────
+SKIP_INSTALL=false
+SKIP_BUILD=false
+for arg in "$@"; do
+  case $arg in
+    --skip-install) SKIP_INSTALL=true ;;
+    --skip-build)   SKIP_BUILD=true ;;
+    --help)
+      cat << HELP
+用法: sudo bash deploy.sh [--skip-install] [--skip-build]
+  --skip-install  跳过系统软件安装（已装过时使用）
+  --skip-build    跳过编译打包（仅重新部署已有制品）
 
-# ==================== 安装基础工具 ====================
+配置文件: ${ENV_FILE}
+  首次使用请 cp .env.example .env 后填写密码
+HELP
+      exit 0 ;;
+  esac
+done
+
+# ── 根权限检查 ────────────────────────────────────────────────────────────────
+if [[ $EUID -ne 0 ]]; then
+  err "请以 root 权限运行：sudo bash deploy.sh"
+  exit 1
+fi
+
+echo -e "${CYAN}"
+echo "  ████████╗ █████╗ ███╗   ██╗██╗  ██╗██╗ █████╗  ██████╗ ███████╗██████╗ "
+echo "     ██╔══╝██╔══██╗████╗  ██║╚██╗██╔╝██║██╔══██╗██╔═══██╗██╔════╝██╔══██╗"
+echo "     ██║   ███████║██╔██╗ ██║ ╚███╔╝ ██║███████║██║   ██║█████╗  ██████╔╝"
+echo "     ██║   ██╔══██║██║╚██╗██║ ██╔██╗ ██║██╔══██║██║   ██║██╔══╝  ██╔══██╗"
+echo "     ██║   ██║  ██║██║ ╚████║██╔╝ ██╗██║██║  ██║╚██████╔╝███████╗██║  ██║"
+echo "     ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝╚═╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝  ╚═╝"
+echo "                        摊小二 · 全栈一键部署脚本"
+echo -e "${NC}"
+info "目标目录: ${ROOT_DIR}"
+info "仓库地址: ${REPO_URL}"
+info "分支:     ${BRANCH}"
+info "配置来源: ${ENV_FILE}"
+echo ""
+
+# =============================================================================
 install_base() {
-    info "安装基础工具..."
-    yum install -y epel-release 2>/dev/null || dnf install -y epel-release 2>/dev/null
-    yum install -y wget curl vim git unzip tar net-tools lsof firewalld
-    systemctl start firewalld 2>/dev/null || true
-    systemctl enable firewalld 2>/dev/null || true
-    # 开放端口
-    firewall-cmd --permanent --add-port=80/tcp 2>/dev/null || true
-    firewall-cmd --permanent --add-port=443/tcp 2>/dev/null || true
-    firewall-cmd --permanent --add-port=${APP_PORT}/tcp 2>/dev/null || true
-    firewall-cmd --reload 2>/dev/null || true
-    info "基础工具安装完成"
+  step "安装基础依赖"
+  apt-get update -y
+  apt-get install -y \
+    curl wget git unzip zip openssl \
+    build-essential ca-certificates gnupg \
+    lsb-release software-properties-common \
+    net-tools ufw
+  log "基础依赖安装完成"
 }
 
-# ==================== 安装 JDK 8 ====================
-install_jdk() {
-    if java -version 2>&1 | grep -q '1.8'; then
-        info "JDK 8 已安装，跳过"
-        return
-    fi
-    info "安装 JDK 8..."
-    yum install -y java-1.8.0-openjdk java-1.8.0-openjdk-devel
-    # 设置 JAVA_HOME
-    JAVA_HOME=$(dirname $(dirname $(readlink -f $(which java))))
-    cat > /etc/profile.d/java.sh << EOF
-export JAVA_HOME=${JAVA_HOME}
-export PATH=\$JAVA_HOME/bin:\$PATH
+install_java() {
+  step "安装 OpenJDK 8"
+  if java -version 2>&1 | grep -q "1\.8\|version \"8"; then
+    log "JDK 8 已安装，跳过"
+    return
+  fi
+  apt-get install -y openjdk-8-jdk
+  cat > /etc/profile.d/java.sh << 'EOF'
+export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
+export PATH=$JAVA_HOME/bin:$PATH
 EOF
-    source /etc/profile.d/java.sh
-    info "JDK 8 安装完成: $(java -version 2>&1 | head -1)"
+  log "JDK 8 安装完成"
 }
 
-# ==================== 安装 Maven ====================
 install_maven() {
-    if mvn -version 2>&1 | grep -q 'Apache Maven'; then
-        info "Maven 已安装，跳过"
-        return
-    fi
-    info "安装 Maven 3.9..."
-    MVN_VERSION="3.9.9"
-    cd /tmp
-    wget -q "https://dlcdn.apache.org/maven/maven-3/${MVN_VERSION}/binaries/apache-maven-${MVN_VERSION}-bin.tar.gz"
-    tar -xzf "apache-maven-${MVN_VERSION}-bin.tar.gz" -C /opt/
-    ln -sf "/opt/apache-maven-${MVN_VERSION}/bin/mvn" /usr/local/bin/mvn
-    cat > /etc/profile.d/maven.sh << EOF
-export MAVEN_HOME=/opt/apache-maven-${MVN_VERSION}
-export PATH=\$MAVEN_HOME/bin:\$PATH
+  step "安装 Maven ${MAVEN_VERSION}"
+  if /opt/maven/bin/mvn -version 2>/dev/null | grep -q "${MAVEN_VERSION}"; then
+    log "Maven ${MAVEN_VERSION} 已安装，跳过"
+    return
+  fi
+  local MVN_URL="https://mirrors.aliyun.com/apache/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz"
+  wget -q -O /tmp/maven.tar.gz "${MVN_URL}"
+  tar -xzf /tmp/maven.tar.gz -C /opt/
+  ln -sfn "/opt/apache-maven-${MAVEN_VERSION}" /opt/maven
+  cat > /etc/profile.d/maven.sh << 'EOF'
+export M2_HOME=/opt/maven
+export PATH=$M2_HOME/bin:$PATH
 EOF
-    source /etc/profile.d/maven.sh
-    # 配置阿里云镜像加速
-    mkdir -p ~/.m2
-    cat > ~/.m2/settings.xml << 'SETTINGS'
+
+  mkdir -p /root/.m2
+  cat > /root/.m2/settings.xml << 'EOF'
+<?xml version="1.0" encoding="UTF-8"?>
 <settings>
   <mirrors>
     <mirror>
       <id>aliyun</id>
-      <mirrorOf>central</mirrorOf>
-      <name>Aliyun Maven Mirror</name>
+      <mirrorOf>*</mirrorOf>
+      <name>阿里云公共仓库</name>
       <url>https://maven.aliyun.com/repository/public</url>
     </mirror>
   </mirrors>
+  <profiles>
+    <profile>
+      <id>jdk-8</id>
+      <activation><jdk>1.8</jdk></activation>
+      <properties>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+      </properties>
+    </profile>
+  </profiles>
 </settings>
-SETTINGS
-    info "Maven 安装完成: $(mvn -version 2>&1 | head -1)"
+EOF
+  log "Maven ${MAVEN_VERSION} 安装完成"
 }
 
-# ==================== 安装 MySQL 8.0 ====================
-install_mysql() {
-    if systemctl is-active --quiet mysqld 2>/dev/null; then
-        info "MySQL 已运行，跳过安装"
-        return
-    fi
-    info "安装 MySQL 8.0..."
-
-    # 添加 MySQL 官方 Yum 源
-    if [ "$OS_MAJOR" -ge 8 ]; then
-        yum install -y mysql-server mysql
-        systemctl start mysqld
-        systemctl enable mysqld
-    else
-        rpm -Uvh https://dev.mysql.com/get/mysql80-community-release-el7-11.noarch.rpm 2>/dev/null || true
-        yum install -y mysql-community-server mysql-community-client --nogpgcheck
-        systemctl start mysqld
-        systemctl enable mysqld
-        # CentOS 7 需要获取临时密码
-        TEMP_PASS=$(grep 'temporary password' /var/log/mysqld.log 2>/dev/null | tail -1 | awk '{print $NF}')
-        if [ -n "$TEMP_PASS" ]; then
-            mysql --connect-expired-password -uroot -p"${TEMP_PASS}" -e "
-                ALTER USER 'root'@'localhost' IDENTIFIED BY '${DB_ROOT_PASS}';
-                FLUSH PRIVILEGES;
-            " 2>/dev/null || true
-        fi
-    fi
-
-    # CentOS 8+ 默认无密码，直接设置
-    mysql -uroot -e "
-        ALTER USER 'root'@'localhost' IDENTIFIED BY '${DB_ROOT_PASS}';
-        FLUSH PRIVILEGES;
-    " 2>/dev/null || true
-
-    # 创建数据库和用户
-    mysql -uroot -p"${DB_ROOT_PASS}" -e "
-        CREATE DATABASE IF NOT EXISTS \`${DB_NAME}\` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-        CREATE USER IF NOT EXISTS '${DB_USER}'@'localhost' IDENTIFIED BY '${DB_PASS}';
-        CREATE USER IF NOT EXISTS '${DB_USER}'@'%' IDENTIFIED BY '${DB_PASS}';
-        GRANT ALL PRIVILEGES ON \`${DB_NAME}\`.* TO '${DB_USER}'@'localhost';
-        GRANT ALL PRIVILEGES ON \`${DB_NAME}\`.* TO '${DB_USER}'@'%';
-        FLUSH PRIVILEGES;
-    "
-
-    info "MySQL 8.0 安装完成, 数据库: ${DB_NAME}, 用户: ${DB_USER}"
+install_node() {
+  step "安装 Node.js ${NODE_VERSION} + pnpm"
+  if node --version 2>/dev/null | grep -q "v${NODE_VERSION}"; then
+    log "Node.js ${NODE_VERSION} 已安装，跳过"
+  else
+    curl -fsSL "https://deb.nodesource.com/setup_${NODE_VERSION}.x" | bash -
+    apt-get install -y nodejs
+  fi
+  if ! command -v pnpm &>/dev/null; then
+    npm install -g pnpm --registry=https://registry.npmmirror.com
+  fi
+  log "Node $(node --version), pnpm $(pnpm --version)"
 }
 
-# ==================== 导入数据库 ====================
-import_database() {
-    info "导入数据库..."
-    # 主库
-    if [ -f "${PROJECT_DIR}/sql/mysql/ruoyi-vue-pro.sql" ]; then
-        mysql -u${DB_USER} -p"${DB_PASS}" ${DB_NAME} < "${PROJECT_DIR}/sql/mysql/ruoyi-vue-pro.sql"
-        info "主库 SQL 导入完成"
-    fi
-    # Quartz
-    if [ -f "${PROJECT_DIR}/sql/mysql/quartz.sql" ]; then
-        mysql -u${DB_USER} -p"${DB_PASS}" ${DB_NAME} < "${PROJECT_DIR}/sql/mysql/quartz.sql"
-        info "Quartz SQL 导入完成"
-    fi
-    # 商户表
-    if [ -f "${PROJECT_DIR}/sql/mysql/merchant.sql" ]; then
-        mysql -u${DB_USER} -p"${DB_PASS}" ${DB_NAME} < "${PROJECT_DIR}/sql/mysql/merchant.sql"
-        info "商户表 SQL 导入完成"
-    fi
-    # 视频表
-    if [ -f "${PROJECT_DIR}/sql/mysql/video.sql" ]; then
-        mysql -u${DB_USER} -p"${DB_PASS}" ${DB_NAME} < "${PROJECT_DIR}/sql/mysql/video.sql"
-        info "视频表 SQL 导入完成"
-    fi
-    info "数据库导入全部完成"
-}
-
-# ==================== 安装 Redis ====================
-install_redis() {
-    if systemctl is-active --quiet redis 2>/dev/null; then
-        info "Redis 已运行，跳过安装"
-        return
-    fi
-    info "安装 Redis..."
-    yum install -y redis
-    # 配置密码和绑定
-    sed -i "s/^# requirepass.*/requirepass ${REDIS_PASS}/" /etc/redis.conf 2>/dev/null || \
-    sed -i "s/^# requirepass.*/requirepass ${REDIS_PASS}/" /etc/redis/redis.conf 2>/dev/null || true
-    sed -i "s/^bind 127.0.0.1.*/bind 127.0.0.1/" /etc/redis.conf 2>/dev/null || true
-    systemctl start redis
-    systemctl enable redis
-    info "Redis 安装完成, 密码: ${REDIS_PASS}"
-}
-
-# ==================== 安装 Node.js 18 ====================
-install_nodejs() {
-    if node -v 2>&1 | grep -q 'v18\|v20'; then
-        info "Node.js 已安装，跳过"
-        return
-    fi
-    info "安装 Node.js 18..."
-    curl -fsSL https://rpm.nodesource.com/setup_18.x | bash -
-    yum install -y nodejs
-    # 配置 npm 镜像
-    npm config set registry https://registry.npmmirror.com
-    info "Node.js 安装完成: $(node -v)"
-}
-
-# ==================== 安装 Nginx ====================
 install_nginx() {
-    if systemctl is-active --quiet nginx 2>/dev/null; then
-        info "Nginx 已运行，跳过安装"
-        return
+  step "安装 Nginx"
+  if command -v nginx &>/dev/null; then
+    log "Nginx 已安装，跳过"
+    return
+  fi
+  apt-get install -y nginx
+  systemctl enable nginx
+  log "Nginx 安装完成"
+}
+
+install_mysql() {
+  step "安装 MySQL 8"
+  if command -v mysql &>/dev/null; then
+    log "MySQL 已安装，跳过 root 密码初始化"
+    return
+  fi
+  apt-get install -y mysql-server
+  systemctl enable mysql
+  systemctl start mysql
+  # Ubuntu 22.04 MySQL 8 默认 auth_socket，通过 unix socket 以 root 直连设置密码
+  mysql -u root << SQL
+ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '${MYSQL_ROOT_PASS}';
+FLUSH PRIVILEGES;
+SQL
+  log "MySQL 安装完成，root 密码已设置"
+}
+
+install_redis() {
+  step "安装 Redis"
+  if ! command -v redis-server &>/dev/null; then
+    apt-get install -y redis-server
+  fi
+  sed -i "s/^# *requirepass .*/requirepass ${REDIS_PASS}/" /etc/redis/redis.conf
+  if ! grep -q "^requirepass" /etc/redis/redis.conf; then
+    echo "requirepass ${REDIS_PASS}" >> /etc/redis/redis.conf
+  fi
+  sed -i "s/^port .*/port ${REDIS_PORT}/" /etc/redis/redis.conf
+  chmod 640 /etc/redis/redis.conf
+  systemctl enable redis-server
+  systemctl restart redis-server
+  log "Redis 配置完成（端口: ${REDIS_PORT}）"
+}
+
+create_service_user() {
+  step "创建服务运行用户: ${SERVICE_USER}"
+  if id -u "${SERVICE_USER}" &>/dev/null; then
+    log "用户 ${SERVICE_USER} 已存在"
+  else
+    useradd --system --no-create-home --shell /usr/sbin/nologin "${SERVICE_USER}"
+    log "已创建系统用户 ${SERVICE_USER}"
+  fi
+}
+
+pull_code() {
+  step "拉取代码"
+  if [[ -d "${ROOT_DIR}/repo/.git" ]]; then
+    info "仓库已存在，执行 git pull"
+    cd "${ROOT_DIR}/repo"
+    git fetch origin
+    git checkout "${BRANCH}"
+    git pull origin "${BRANCH}"
+  else
+    mkdir -p "${ROOT_DIR}/repo"
+    git clone --branch "${BRANCH}" --depth=1 "${REPO_URL}" "${ROOT_DIR}/repo"
+  fi
+  log "代码已更新到 $(git -C ${ROOT_DIR}/repo rev-parse --short HEAD)"
+}
+
+setup_database() {
+  step "初始化数据库"
+  init_mysql_defaults_file
+
+  mysql_safe << SQL
+CREATE DATABASE IF NOT EXISTS \`${DB_NAME}\` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER IF NOT EXISTS '${DB_USER}'@'localhost' IDENTIFIED BY '${DB_PASS}';
+GRANT ALL PRIVILEGES ON \`${DB_NAME}\`.* TO '${DB_USER}'@'localhost';
+FLUSH PRIVILEGES;
+SQL
+
+  # 幂等性判断：已存在核心表则跳过 SQL 导入（避免重跑时重复 seed）
+  local TABLE_COUNT
+  TABLE_COUNT=$(mysql_safe -Nse "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='${DB_NAME}' AND table_name='system_users';" 2>/dev/null || echo 0)
+  if [[ "${TABLE_COUNT}" -gt 0 ]]; then
+    warn "检测到已初始化（system_users 存在），跳过 SQL 导入"
+    log "数据库初始化完成（已有数据）"
+    return
+  fi
+
+  local SQL_DIR="${ROOT_DIR}/repo/sql/mysql"
+  local SQL_FILES=("ruoyi-vue-pro.sql" "mall.sql" "mp.sql" "member_pay.sql" "merchant.sql" "video.sql" "v2_business_tables.sql")
+
+  for f in "${SQL_FILES[@]}"; do
+    if [[ -f "${SQL_DIR}/${f}" ]]; then
+      info "导入 ${f}..."
+      mysql_safe "${DB_NAME}" < "${SQL_DIR}/${f}"
+      log "${f} 导入完成"
+    else
+      warn "${f} 不存在，跳过"
     fi
-    info "安装 Nginx..."
-    yum install -y nginx
-    systemctl start nginx
-    systemctl enable nginx
-    info "Nginx 安装完成"
+  done
+
+  # fix_*.sql 按文件名排序导入（避免 word splitting 问题）
+  shopt -s nullglob
+  local FIX_FILES=("${SQL_DIR}"/fix_*.sql)
+  shopt -u nullglob
+  IFS=$'\n' FIX_FILES=($(printf '%s\n' "${FIX_FILES[@]}" | sort)); unset IFS
+  for f in "${FIX_FILES[@]}"; do
+    info "导入 $(basename "${f}")..."
+    mysql_safe "${DB_NAME}" < "${f}"
+    log "$(basename "${f}") 导入完成"
+  done
+
+  log "数据库初始化完成"
 }
 
-# ==================== 编译后端 ====================
-build_backend() {
-    info "编译后端项目（首次编译需要较长时间下载依赖）..."
-    cd "${PROJECT_DIR}"
-    source /etc/profile.d/java.sh 2>/dev/null || true
-    source /etc/profile.d/maven.sh 2>/dev/null || true
+write_prod_config() {
+  step "生成生产环境配置"
+  local RESOURCES="${ROOT_DIR}/repo/yudao-server/src/main/resources"
+  mkdir -p "${RESOURCES}"
 
-    mvn clean package -DskipTests -pl yudao-server -am -T 2C
-    info "后端编译完成"
-}
+  # 动态生成 JWT token secret，存入 ROOT_DIR 以保证重跑时一致（避免踢掉已登录用户）
+  local TOKEN_SECRET_FILE="${ROOT_DIR}/.token-secret"
+  if [[ ! -s "${TOKEN_SECRET_FILE}" ]]; then
+    umask 077
+    openssl rand -base64 48 | tr -d '\n' > "${TOKEN_SECRET_FILE}"
+  fi
+  chmod 600 "${TOKEN_SECRET_FILE}"
+  local TOKEN_SECRET
+  TOKEN_SECRET="$(cat "${TOKEN_SECRET_FILE}")"
 
-# ==================== 部署后端 ====================
-deploy_backend() {
-    info "部署后端..."
-    mkdir -p ${DEPLOY_DIR} ${LOG_DIR}
-
-    # 复制 jar
-    cp "${PROJECT_DIR}/yudao-server/target/${APP_NAME}.jar" "${DEPLOY_DIR}/${APP_NAME}.jar"
-
-    # 生成生产环境配置
-    cat > "${DEPLOY_DIR}/application-prod.yaml" << EOF
-server:
-  port: ${APP_PORT}
-
+  umask 077
+  cat > "${RESOURCES}/application-prod.yaml" << YAML_EOF
 spring:
   datasource:
     dynamic:
       primary: master
+      strict: false
       datasource:
         master:
-          url: jdbc:mysql://127.0.0.1:3306/${DB_NAME}?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&nullCatalogMeansCurrent=true&rewriteBatchedStatements=true
+          url: jdbc:mysql://127.0.0.1:3306/${DB_NAME}?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&characterEncoding=UTF-8
+          driver-class-name: com.mysql.cj.jdbc.Driver
           username: ${DB_USER}
           password: ${DB_PASS}
-        slave:
-          url: jdbc:mysql://127.0.0.1:3306/${DB_NAME}?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&rewriteBatchedStatements=true&nullCatalogMeansCurrent=true
-          username: ${DB_USER}
-          password: ${DB_PASS}
-  redis:
-    host: 127.0.0.1
-    port: 6379
-    password: ${REDIS_PASS}
-    database: 0
+  data:
+    redis:
+      host: 127.0.0.1
+      port: ${REDIS_PORT}
+      password: ${REDIS_PASS}
+      database: 0
 
-# AI视频模块配置
-video:
-  volcano-engine:
-    app-id: ${VOLCANO_APP_ID}
-    access-token: ${VOLCANO_ACCESS_TOKEN}
-    access-key-id: ${VOLCANO_AK}
-    access-key-secret: ${VOLCANO_SK}
-  douyin:
-    client-key: ${DOUYIN_CLIENT_KEY}
-    client-secret: ${DOUYIN_CLIENT_SECRET}
+server:
+  port: ${SERVER_PORT}
 
-# 商户配置
-merchant:
-  qrcode:
-    page: pages/shop/index
-    upload-path: ${DEPLOY_DIR}/qrcode/
-
-# 日志
-logging:
-  file:
-    name: ${LOG_DIR}/${APP_NAME}.log
-  level:
-    cn.iocoder.yudao: info
-EOF
-
-    # 创建 systemd 服务
-    cat > /etc/systemd/system/yudao.service << EOF
-[Unit]
-Description=YuDao SaaS Platform
-After=network.target mysqld.service redis.service
-Wants=mysqld.service redis.service
-
-[Service]
-Type=simple
-User=root
-WorkingDirectory=${DEPLOY_DIR}
-ExecStart=/usr/bin/java -Xms512m -Xmx1024m -jar ${DEPLOY_DIR}/${APP_NAME}.jar --spring.profiles.active=prod --spring.config.additional-location=${DEPLOY_DIR}/application-prod.yaml
-ExecStop=/bin/kill -TERM \$MAINPID
-Restart=on-failure
-RestartSec=10
-StandardOutput=append:${LOG_DIR}/${APP_NAME}.log
-StandardError=append:${LOG_DIR}/${APP_NAME}-error.log
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-    systemctl daemon-reload
-    systemctl enable yudao
-    systemctl start yudao
-    info "后端部署完成，服务端口: ${APP_PORT}"
+yudao:
+  tenant:
+    enable: true
+  security:
+    token-secret: ${TOKEN_SECRET}
+  captcha:
+    enable: false
+  api-encrypt:
+    enable: false
+YAML_EOF
+  chmod 600 "${RESOURCES}/application-prod.yaml"
+  umask 022
+  log "application-prod.yaml 写入完成（mode 600）"
 }
 
-# ==================== 构建前端（管理后台） ====================
+build_backend() {
+  step "编译后端（Maven）"
+  export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
+  export PATH="${JAVA_HOME}/bin:/opt/maven/bin:${PATH}"
+
+  cd "${ROOT_DIR}/repo"
+  /opt/maven/bin/mvn clean package -DskipTests -P prod \
+    --batch-mode -T 1C 2>&1 | tail -40
+
+  log "后端编译完成: $(ls yudao-server/target/yudao-server.jar)"
+}
+
 build_admin_frontend() {
-    info "构建管理后台前端..."
-    ADMIN_DIR="${PROJECT_DIR}/yudao-ui/yudao-ui-admin-vue3"
-    if [ ! -d "$ADMIN_DIR" ] || [ ! -f "$ADMIN_DIR/package.json" ]; then
-        warn "管理后台前端目录不存在，跳过"
-        return
-    fi
-    cd "$ADMIN_DIR"
-    npm install
-    # 修改 API 地址为当前服务器
-    cat > .env.production << EOF
-VITE_BASE_URL=http://${DOMAIN}:${APP_PORT}
-VITE_API_URL=/admin-api
-EOF
-    npm run build
-    # 部署到 nginx
-    mkdir -p /usr/share/nginx/html/admin
-    cp -rf dist/* /usr/share/nginx/html/admin/
-    info "管理后台前端构建完成"
+  step "编译管理后台前端"
+  local UI_DIR="${ROOT_DIR}/repo/yudao-ui/yudao-ui-admin-vue3"
+  cd "${UI_DIR}"
+
+  cat > .env.production << 'ENVEOF'
+VITE_DEV = false
+VITE_APP_TITLE = 摊小二管理后台
+VITE_BASE_URL = /
+VITE_API_URL = /admin-api
+VITE_APP_CAPTCHA_ENABLE = false
+ENVEOF
+
+  pnpm install --registry=https://registry.npmmirror.com
+  pnpm build:prod
+
+  local DIST_DIR="${ROOT_DIR}/admin-dist"
+  rm -rf "${DIST_DIR}"
+  cp -r dist "${DIST_DIR}"
+  log "管理后台前端编译完成 → ${DIST_DIR}"
 }
 
-# ==================== 配置 Nginx ====================
-configure_nginx() {
-    info "配置 Nginx..."
+deploy_website() {
+  step "部署官网静态文件"
+  local WEB_DIR="${ROOT_DIR}/website"
+  mkdir -p "${WEB_DIR}"
+  cp "${ROOT_DIR}/repo/docs/website/index.html" "${WEB_DIR}/index.html"
+  [[ -d "${ROOT_DIR}/repo/docs/website/assets" ]] && \
+    cp -r "${ROOT_DIR}/repo/docs/website/assets" "${WEB_DIR}/"
+  log "官网部署完成 → ${WEB_DIR}"
+}
 
-    cat > /etc/nginx/conf.d/yudao.conf << EOF
-# 管理后台
+configure_nginx() {
+  step "配置 Nginx"
+  local NGINX_CONF="/etc/nginx/sites-available/tanxiaer"
+
+  cat > "${NGINX_CONF}" << NGINX_EOF
+upstream tanxiaer_backend {
+    server 127.0.0.1:${SERVER_PORT};
+    keepalive 32;
+}
+
 server {
     listen 80;
-    server_name ${DOMAIN};
+    server_name ${SERVER_NAME};
+    charset utf-8;
+    client_max_body_size 50m;
 
-    # 管理后台前端
-    location / {
-        root /usr/share/nginx/html/admin;
+    # 官网首页
+    location = / {
+        root ${ROOT_DIR}/website;
         index index.html;
-        try_files \$uri \$uri/ /index.html;
+    }
+    location /assets/ {
+        root ${ROOT_DIR}/website;
+        expires 7d;
+        add_header Cache-Control "public, immutable";
     }
 
-    # 后端 API - 管理后台
+    # 管理后台
+    location /admin/ {
+        alias ${ROOT_DIR}/admin-dist/;
+        index index.html;
+        try_files \$uri \$uri/ /admin/index.html;
+    }
+
+    # 后端 API
     location /admin-api/ {
-        proxy_pass http://127.0.0.1:${APP_PORT}/admin-api/;
+        proxy_pass http://tanxiaer_backend;
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto \$scheme;
-        proxy_read_timeout 600s;
+        proxy_connect_timeout 60s;
+        proxy_read_timeout 300s;
     }
 
-    # 后端 API - 小程序/App
     location /app-api/ {
-        proxy_pass http://127.0.0.1:${APP_PORT}/app-api/;
+        proxy_pass http://tanxiaer_backend;
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto \$scheme;
-        proxy_read_timeout 600s;
+        proxy_connect_timeout 60s;
+        proxy_read_timeout 300s;
     }
 
     # WebSocket
-    location /infra/ws {
-        proxy_pass http://127.0.0.1:${APP_PORT}/infra/ws;
+    location /ws {
+        proxy_pass http://tanxiaer_backend;
         proxy_http_version 1.1;
         proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection "upgrade";
         proxy_set_header Host \$host;
+        proxy_read_timeout 3600s;
     }
 
-    # 文件上传大小限制
-    client_max_body_size 100m;
-
-    # 抖音 OAuth 回调（H5页面）
-    location /video/douyin/oauth/callback {
-        proxy_pass http://127.0.0.1:${APP_PORT}/app-api/video/douyin/oauth/callback;
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-    }
-
-    # 小程序码静态文件
-    location /qrcode/ {
-        alias ${DEPLOY_DIR}/qrcode/;
-    }
-
-    # TTS 音频静态文件
-    location /audio/ {
-        alias /tmp/audio/;
-    }
+    access_log /var/log/nginx/tanxiaer_access.log;
+    error_log  /var/log/nginx/tanxiaer_error.log;
 }
-EOF
+NGINX_EOF
 
-    # 检查配置
-    nginx -t
-    systemctl reload nginx
-    info "Nginx 配置完成"
+  ln -sfn "${NGINX_CONF}" /etc/nginx/sites-enabled/tanxiaer
+  rm -f /etc/nginx/sites-enabled/default 2>/dev/null || true
+  nginx -t
+  systemctl reload nginx
+  log "Nginx 配置完成"
 }
 
-# ==================== 健康检查 ====================
-health_check() {
-    info "等待服务启动..."
-    MAX_WAIT=120
-    WAITED=0
-    while [ $WAITED -lt $MAX_WAIT ]; do
-        if curl -sf http://127.0.0.1:${APP_PORT}/admin-api/system/tenant/get-id-by-name?name=芋道源码 > /dev/null 2>&1; then
-            info "服务启动成功!"
-            return
-        fi
-        sleep 3
-        WAITED=$((WAITED + 3))
-        echo -n "."
-    done
-    echo ""
-    warn "服务可能还在启动中，请稍后检查: journalctl -u yudao -f"
+deploy_backend_service() {
+  step "部署后端服务（systemd）"
+  local JAR_SRC="${ROOT_DIR}/repo/yudao-server/target/yudao-server.jar"
+  local JAR_DEST="${ROOT_DIR}/app/yudao-server.jar"
+  mkdir -p "${ROOT_DIR}/app" "${ROOT_DIR}/logs"
+
+  systemctl stop tanxiaer 2>/dev/null || true
+  cp "${JAR_SRC}" "${JAR_DEST}"
+
+  # 目录所有权交给服务用户
+  chown -R "${SERVICE_USER}:${SERVICE_USER}" "${ROOT_DIR}/app" "${ROOT_DIR}/logs"
+
+  # systemd unit（环境变量单独存入 EnvironmentFile，便于控制权限）
+  local ENV_UNIT="${ROOT_DIR}/app/runtime.env"
+  umask 077
+  cat > "${ENV_UNIT}" << ENV_EOF
+MERCHANT_INTERNAL_TOKEN=${MERCHANT_INTERNAL_TOKEN}
+VOLCANO_APP_ID=${VOLCANO_APP_ID}
+VOLCANO_ACCESS_TOKEN=${VOLCANO_ACCESS_TOKEN}
+VOLCANO_AK=${VOLCANO_AK}
+VOLCANO_SK=${VOLCANO_SK}
+DOUYIN_CLIENT_KEY=${DOUYIN_CLIENT_KEY}
+DOUYIN_CLIENT_SECRET=${DOUYIN_CLIENT_SECRET}
+ENV_EOF
+  chown "${SERVICE_USER}:${SERVICE_USER}" "${ENV_UNIT}"
+  chmod 600 "${ENV_UNIT}"
+  umask 022
+
+  cat > /etc/systemd/system/tanxiaer.service << UNIT_EOF
+[Unit]
+Description=摊小二后端服务
+After=network.target mysql.service redis-server.service
+
+[Service]
+Type=simple
+User=${SERVICE_USER}
+Group=${SERVICE_USER}
+WorkingDirectory=${ROOT_DIR}/app
+EnvironmentFile=${ENV_UNIT}
+ExecStart=/usr/bin/java \\
+  -server \\
+  -Xms512m -Xmx1024m \\
+  -XX:+UseG1GC \\
+  -Dspring.profiles.active=prod \\
+  -Dfile.encoding=UTF-8 \\
+  -jar ${JAR_DEST}
+Restart=always
+RestartSec=10
+StandardOutput=append:${ROOT_DIR}/logs/stdout.log
+StandardError=append:${ROOT_DIR}/logs/stderr.log
+
+# 沙箱加固
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=${ROOT_DIR}/logs ${ROOT_DIR}/app
+
+[Install]
+WantedBy=multi-user.target
+UNIT_EOF
+
+  chmod 644 /etc/systemd/system/tanxiaer.service
+
+  systemctl daemon-reload
+  systemctl enable tanxiaer
+  systemctl start tanxiaer
+  log "服务已启动（运行用户: ${SERVICE_USER}），等待就绪（最多 90 秒）..."
+
+  local i=0
+  while [[ $i -lt 18 ]]; do
+    sleep 5
+    if curl -sf "http://localhost:${SERVER_PORT}/admin-api/system/auth/captcha" &>/dev/null; then
+      log "后端服务就绪 ✓"
+      return
+    fi
+    i=$((i+1))
+    echo -n "."
+  done
+  warn "启动超时，请检查: journalctl -u tanxiaer -n 80 --no-pager"
 }
 
-# ==================== 打印部署信息 ====================
-print_info() {
-    echo ""
-    echo "=============================================="
-    echo -e "${GREEN}  部署完成!${NC}"
-    echo "=============================================="
-    echo ""
-    echo "  管理后台:  http://${DOMAIN}"
-    echo "  API 地址:  http://${DOMAIN}:${APP_PORT}"
-    echo ""
-    echo "  默认管理员: admin / admin123"
-    echo ""
-    echo "  MySQL:"
-    echo "    数据库: ${DB_NAME}"
-    echo "    用户名: ${DB_USER}"
-    echo "    密码:   ${DB_PASS}"
-    echo "    Root:   ${DB_ROOT_PASS}"
-    echo ""
-    echo "  Redis:"
-    echo "    密码:   ${REDIS_PASS}"
-    echo ""
-    echo "=============================================="
-    echo "  小程序配置:"
-    echo "    在 HBuilderX 打开 yudao-ui/yudao-ui-mall-uniapp"
-    echo "    修改 .env 中 SHOPRO_BASE_URL 为你的服务器地址"
-    echo "    例: SHOPRO_BASE_URL=http://你的IP:${APP_PORT}"
-    echo ""
-    echo "  待配置项（在 ${DEPLOY_DIR}/application-prod.yaml 中修改）:"
-    echo "    - 火山引擎 AppID / AccessKey（AI视频生成）"
-    echo "    - 抖音开放平台 ClientKey / ClientSecret"
-    echo "    - 微信支付服务商 mchId / 证书"
-    echo "    - 微信小程序 AppID / Secret"
-    echo "=============================================="
-    echo ""
-    echo "  常用命令:"
-    echo "    查看日志:   tail -f ${LOG_DIR}/${APP_NAME}.log"
-    echo "    重启服务:   systemctl restart yudao"
-    echo "    停止服务:   systemctl stop yudao"
-    echo "    服务状态:   systemctl status yudao"
-    echo ""
+setup_firewall() {
+  step "配置防火墙"
+  # 必须先放行再 enable，否则 --force enable 会立即切断当前 SSH 会话
+  ufw allow 22/tcp
+  ufw allow 80/tcp
+  ufw allow 443/tcp
+  ufw --force enable
+  log "防火墙已启用（对外仅开放 22/80/443）"
 }
 
-# ==================== 主流程 ====================
+# =============================================================================
 main() {
-    echo ""
-    echo "=============================================="
-    echo "  多商户SaaS平台 - CentOS 一键部署"
-    echo "=============================================="
-    echo ""
+  mkdir -p "${ROOT_DIR}"
 
-    check_root
-    check_os
-
+  if [[ "${SKIP_INSTALL}" == false ]]; then
     install_base
-    install_jdk
+    install_java
     install_maven
-    install_mysql
-    import_database
-    install_redis
-    install_nodejs
+    install_node
     install_nginx
+    install_mysql
+    install_redis
+  else
+    warn "跳过系统软件安装（--skip-install）"
+  fi
 
+  create_service_user
+  pull_code
+  setup_database
+  write_prod_config
+
+  if [[ "${SKIP_BUILD}" == false ]]; then
     build_backend
-    deploy_backend
     build_admin_frontend
-    configure_nginx
+  else
+    warn "跳过编译打包（--skip-build）"
+  fi
 
-    health_check
-    print_info
+  deploy_website
+  configure_nginx
+  deploy_backend_service
+  setup_firewall
+
+  PUBLIC_IP=$(curl -s --max-time 5 ifconfig.me 2>/dev/null || echo "YOUR_SERVER_IP")
+  echo ""
+  echo -e "${GREEN}╔══════════════════════════════════════════════════════╗${NC}"
+  echo -e "${GREEN}║           🎉  摊小二部署完成！                      ║${NC}"
+  echo -e "${GREEN}╠══════════════════════════════════════════════════════╣${NC}"
+  echo -e "${GREEN}║  官网首页:   http://${PUBLIC_IP}/                   ${NC}"
+  echo -e "${GREEN}║  管理后台:   http://${PUBLIC_IP}/admin/             ${NC}"
+  echo -e "${GREEN}║  日志目录:   ${ROOT_DIR}/logs/                      ${NC}"
+  echo -e "${GREEN}║  服务管理:   systemctl {start|stop|restart} tanxiaer ${NC}"
+  echo -e "${GREEN}║  运行用户:   ${SERVICE_USER} (非 root)              ${NC}"
+  echo -e "${GREEN}╚══════════════════════════════════════════════════════╝${NC}"
+  echo ""
+  echo -e "${YELLOW}生产上线前请务必：${NC}"
+  echo "  1. 将 SERVER_NAME 改为你的真实域名"
+  echo "  2. 执行 certbot --nginx 配置 HTTPS"
+  echo "  3. 在 .env 中填入真实的火山引擎 / 抖音 API Key"
+  echo "  4. 确认 .env 已加入 .gitignore，不会被提交"
 }
 
 main "$@"
