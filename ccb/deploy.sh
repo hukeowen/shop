@@ -538,8 +538,26 @@ build_backend() {
   log "后端编译完成: $(ls yudao-server/target/yudao-server.jar)"
 }
 
+ensure_pnpm8() {
+  # --skip-install 模式下 install_node 不跑，这里兜底保证 pnpm 可用
+  export PATH="/opt/nodejs/bin:${PATH}"
+  if ! command -v node &>/dev/null; then
+    err "Node 未安装，请先不带 --skip-install 跑一次完整安装"
+    exit 1
+  fi
+  local PNPM_CUR=""
+  PNPM_CUR="$(pnpm --version 2>/dev/null || true)"
+  if [[ "${PNPM_CUR}" != 8.* ]]; then
+    info "pnpm 当前=${PNPM_CUR:-未安装}，安装 pnpm@8"
+    /opt/nodejs/bin/npm install -g pnpm@8 --registry=https://registry.npmmirror.com
+    ln -sfn /opt/nodejs/bin/pnpm /usr/local/bin/pnpm 2>/dev/null || true
+  fi
+  info "使用 pnpm $(pnpm --version)"
+}
+
 build_admin_frontend() {
   step "编译管理后台前端"
+  ensure_pnpm8
   local UI_DIR="${PROJECT_DIR}/yudao-ui/yudao-ui-admin-vue3"
   cd "${UI_DIR}"
 
