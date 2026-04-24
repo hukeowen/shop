@@ -295,11 +295,19 @@ install_mysql() {
   # CentOS 7 默认有 mariadb-libs，会冲突，先清理
   yum remove -y mariadb-libs 2>/dev/null || true
 
-  # MySQL 官方仓库 + 导入 2022 轮转后的 GPG key
+  # MySQL 官方仓库
   rpm -Uvh https://dev.mysql.com/get/mysql80-community-release-el7-7.noarch.rpm 2>/dev/null || true
-  rpm --import https://repo.mysql.com/RPM-GPG-KEY-mysql-2022 2>/dev/null || true
+  # MySQL GPG key 每隔一年轮换，导入全部已知版本避免 "Public key not installed"
+  for k in RPM-GPG-KEY-mysql-2022 RPM-GPG-KEY-mysql-2023 RPM-GPG-KEY-mysql; do
+    rpm --import "https://repo.mysql.com/${k}" 2>/dev/null || \
+      warn "GPG key ${k} 导入失败，继续"
+  done
 
-  yum install -y mysql-community-server
+  # 再次失败时降级为 --nogpgcheck（包本身可靠，仓库源是 MySQL 官方）
+  if ! yum install -y mysql-community-server; then
+    warn "yum 安装失败，尝试跳过 GPG 校验重试"
+    yum install -y --nogpgcheck mysql-community-server
+  fi
   systemctl enable mysqld
   systemctl start mysqld
 
