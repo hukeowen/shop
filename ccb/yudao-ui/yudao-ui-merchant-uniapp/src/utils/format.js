@@ -15,9 +15,11 @@ export const AI_VIDEO_STATUS = {
 
 /** 订单状态码 → 文案 */
 export const ORDER_STATUS = {
+  0:  { text: '待付款', color: '#9CA3AF' },
   10: { text: '待发货', color: '#F59E0B' },
   20: { text: '待核销', color: '#3B82F6' },
   30: { text: '已完成', color: '#10B981' },
+  40: { text: '已取消', color: '#EF4444' },
 };
 
 /** 快递公司列表 */

@@ -1,94 +1,83 @@
-import { mockDelay } from './request.js';
+import { request } from './request.js';
 
-const mockOrders = [
-  {
-    id: 'O20260420001',
-    status: 10, // 10 待发货 / 20 待核销 / 30 已完成
-    userNickname: '李阿姨',
-    userMobile: '138****2356',
-    totalPrice: 1800, // 分
-    itemCount: 3,
-    items: [
-      { spuName: '蜜薯（大）', skuName: '1 份', price: 500, count: 3 },
-      { spuName: '玉米', skuName: '甜糯', price: 300, count: 1 },
-    ],
-    remark: '多烤一会儿，要焦的',
-    createdAt: '2026-04-20 09:12',
-    deliveryType: 'express', // express / pickup
-    verifyCode: null,
-    address: '朝阳区三里屯 SOHO 1 号楼 502',
-  },
-  {
-    id: 'O20260420002',
-    status: 20,
-    userNickname: '张先生',
-    userMobile: '139****7712',
-    totalPrice: 1200,
-    itemCount: 2,
-    items: [{ spuName: '烤地瓜（小）', skuName: '1 份', price: 600, count: 2 }],
-    remark: '',
-    createdAt: '2026-04-20 10:35',
-    deliveryType: 'pickup',
-    verifyCode: '8392',
-    address: null,
-  },
-  {
-    id: 'O20260420003',
-    status: 10,
-    userNickname: '小雨',
-    userMobile: '136****9981',
-    totalPrice: 900,
-    itemCount: 1,
-    items: [{ spuName: '蜜薯（中）', skuName: '1 份', price: 900, count: 1 }],
-    remark: '',
-    createdAt: '2026-04-20 11:02',
-    deliveryType: 'express',
-    verifyCode: null,
-    address: '海淀区中关村大街 28 号',
-  },
-  {
-    id: 'O20260419008',
-    status: 30,
-    userNickname: '周阿姨',
-    userMobile: '137****4412',
-    totalPrice: 2400,
-    itemCount: 4,
-    items: [{ spuName: '烤地瓜（大）', skuName: '1 份', price: 600, count: 4 }],
-    remark: '',
-    createdAt: '2026-04-19 18:22',
-    deliveryType: 'pickup',
-    verifyCode: '1257',
-    address: null,
-  },
-];
+const BASE = '/app-api/merchant/mini/order';
 
-// 分页查询订单
-export function getOrderPage({ status }) {
-  const list = status ? mockOrders.filter((o) => o.status === status) : mockOrders;
-  return mockDelay({ total: list.length, list });
+/** TradeOrderDO → UI所需字段 */
+function normalizeOrder(o) {
+  if (!o) return null;
+  return {
+    id: o.id,
+    no: o.no,
+    status: o.status,
+    userNickname: o.receiverName || '',
+    userMobile: o.receiverMobile || '',
+    address: o.receiverDetailAddress || '',
+    totalPrice: o.payPrice ?? o.totalPrice ?? 0,
+    productCount: o.productCount ?? 0,
+    remark: o.userRemark || '',
+    deliveryType: o.deliveryType === 1 ? 'express' : 'pickup',
+    verifyCode: o.pickUpVerifyCode || '',
+    createdAt: o.createTime ? o.createTime.replace('T', ' ').substring(0, 16) : '',
+    payStatus: o.payStatus,
+    items: (o.items || []).map((it) => ({
+      spuName: it.spuName,
+      skuName: it.skuName || it.spuName,
+      price: it.price,
+      count: it.count,
+      picUrl: it.picUrl,
+    })),
+  };
 }
 
-// 订单详情
-export function getOrder(id) {
-  return mockDelay(mockOrders.find((o) => o.id === id) || null);
+/** 分页查询订单（status=0 表示全部） */
+export async function getOrderPage({ status = 0, pageNo = 1, pageSize = 50 } = {}) {
+  const params = { pageNo, pageSize };
+  if (status) params.status = status;
+  const data = await request({ url: `${BASE}/page`, data: params });
+  return {
+    total: data.total,
+    list: (data.list || []).map(normalizeOrder),
+  };
 }
 
-// 发货
-export function deliverOrder({ id, expressCompany, expressNo }) {
-  const o = mockOrders.find((x) => x.id === id);
-  if (o) {
-    o.status = 30;
-    o.expressCompany = expressCompany;
-    o.expressNo = expressNo;
+/** 获取订单详情 */
+export async function getOrder(id) {
+  const data = await request({ url: `${BASE}/get?id=${id}` });
+  return normalizeOrder(data);
+}
+
+/** 快递发货（logisticsId=0 跳过公司校验，直接存单号） */
+export function deliverOrder({ id, expressNo }) {
+  return request({
+    url: `${BASE}/delivery`,
+    method: 'POST',
+    data: { id: Number(id), logisticsId: 0, logisticsNo: expressNo || '' },
+  });
+}
+
+/** 通过核销码查询订单 */
+export async function getOrderByVerifyCode(code) {
+  const data = await request({ url: `${BASE}/get-by-verify-code?pickUpVerifyCode=${code}` });
+  return normalizeOrder(data);
+}
+
+/** 核销自提订单（按核销码） */
+export async function pickUpVerify(code) {
+  try {
+    const order = await getOrderByVerifyCode(code);
+    if (!order) return { ok: false, msg: '核销码无效' };
+    if (order.status === 30) return { ok: false, msg: '订单已核销' };
+    await request({
+      url: `${BASE}/pick-up-verify?pickUpVerifyCode=${code}`,
+      method: 'PUT',
+    });
+    return { ok: true, order };
+  } catch (err) {
+    return { ok: false, msg: err?.message || '核销失败' };
   }
-  return mockDelay(true);
 }
 
-// 核销（按核销码）
-export function pickUpVerify(code) {
-  const o = mockOrders.find((x) => x.verifyCode === code);
-  if (!o) return mockDelay({ ok: false, msg: '核销码无效' });
-  if (o.status === 30) return mockDelay({ ok: false, msg: '订单已核销' });
-  o.status = 30;
-  return mockDelay({ ok: true, order: o });
+/** 核销自提订单（按订单ID） */
+export function pickUpById(id) {
+  return request({ url: `${BASE}/pick-up-by-id?id=${id}`, method: 'PUT' });
 }
