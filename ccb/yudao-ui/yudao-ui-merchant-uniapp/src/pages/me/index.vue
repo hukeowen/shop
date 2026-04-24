@@ -28,7 +28,7 @@
         <text>店铺二维码</text>
         <text class="arrow">›</text>
       </view>
-      <view class="menu-item" @click="toast">
+      <view class="menu-item" @click="goBrokerage">
         <text>返佣与积分设置</text>
         <text class="arrow">›</text>
       </view>
@@ -78,6 +78,10 @@ function goQuota() {
 
 function goProducts() {
   uni.navigateTo({ url: '/pages/product/list' });
+}
+
+function goBrokerage() {
+  uni.navigateTo({ url: '/pages/me/brokerage' });
 }
 
 async function onLogout() {

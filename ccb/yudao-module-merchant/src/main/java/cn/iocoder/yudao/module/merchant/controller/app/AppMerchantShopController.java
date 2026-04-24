@@ -2,7 +2,9 @@ package cn.iocoder.yudao.module.merchant.controller.app;
 
 import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.tenant.core.context.TenantContextHolder;
+import cn.iocoder.yudao.module.merchant.dal.dataobject.ShopBrokerageConfigDO;
 import cn.iocoder.yudao.module.merchant.dal.dataobject.ShopInfoDO;
+import cn.iocoder.yudao.module.merchant.dal.mysql.ShopBrokerageConfigMapper;
 import cn.iocoder.yudao.module.merchant.dal.mysql.ShopInfoMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -26,6 +28,8 @@ public class AppMerchantShopController {
 
     @Resource
     private ShopInfoMapper shopInfoMapper;
+    @Resource
+    private ShopBrokerageConfigMapper shopBrokerageConfigMapper;
 
     @GetMapping("/info")
     @Operation(summary = "获取店铺信息")
@@ -55,6 +59,39 @@ public class AppMerchantShopController {
         update.setLatitude(updateDO.getLatitude());
         update.setAddress(updateDO.getAddress());
         shopInfoMapper.updateById(update);
+        return success(true);
+    }
+
+    @GetMapping("/brokerage-config")
+    @Operation(summary = "获取返佣与积分配置")
+    public CommonResult<ShopBrokerageConfigDO> getBrokerageConfig() {
+        ShopBrokerageConfigDO config = shopBrokerageConfigMapper.selectCurrent();
+        if (config == null) {
+            // 返回默认空配置（前端第一次进入时展示默认值）
+            config = new ShopBrokerageConfigDO();
+            config.setBrokerageEnabled(false);
+            config.setFirstBrokeragePercent(java.math.BigDecimal.ZERO);
+            config.setSecondBrokeragePercent(java.math.BigDecimal.ZERO);
+            config.setFreezeDays(7);
+            config.setPushReturnEnabled(false);
+            config.setPushN(5);
+            config.setReturnAmount(0);
+            config.setPointPerYuan(0);
+            config.setMinWithdrawAmount(10000);
+        }
+        return success(config);
+    }
+
+    @PutMapping("/brokerage-config")
+    @Operation(summary = "保存返佣与积分配置（upsert）")
+    public CommonResult<Boolean> saveBrokerageConfig(@RequestBody ShopBrokerageConfigDO reqDO) {
+        ShopBrokerageConfigDO existing = shopBrokerageConfigMapper.selectCurrent();
+        if (existing == null) {
+            shopBrokerageConfigMapper.insert(reqDO);
+        } else {
+            reqDO.setId(existing.getId());
+            shopBrokerageConfigMapper.updateById(reqDO);
+        }
         return success(true);
     }
 
