@@ -1,0 +1,41 @@
+import { request } from './request.js';
+
+const BASE = '/app-api/merchant/mini/video-quota';
+
+/** 查询当前商户剩余配额 */
+export function getMyQuota() {
+  return request({ url: `${BASE}/me` });
+}
+
+/** 查询在架套餐列表 */
+export function listPackages() {
+  return request({ url: `${BASE}/packages` });
+}
+
+/**
+ * 购买套餐 - 创建业务订单 + 支付单
+ * @param {number} packageId
+ * @param {string} channelCode  wx_lite
+ * @returns {{ packageOrderId, payOrderId, channelCode, price, packageName, videoCount }}
+ */
+export function purchasePackage(packageId, channelCode = 'wx_lite') {
+  return request({
+    url: `${BASE}/packages/${packageId}/purchase`,
+    method: 'POST',
+    data: { channelCode },
+  });
+}
+
+/**
+ * 提交 pay 模块支付 - 获取 JSAPI 参数
+ * @param {number} payOrderId
+ * @param {string} channelCode  wx_lite
+ * @returns {{ displayMode, displayContent }}  displayContent 是 JSAPI JSON 字符串
+ */
+export function submitPayOrder(payOrderId, channelCode = 'wx_lite') {
+  return request({
+    url: '/app-api/pay/order/submit',
+    method: 'POST',
+    data: { id: payOrderId, channelCode, returnUrl: '' },
+  });
+}

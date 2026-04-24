@@ -1,87 +1,152 @@
 <template>
   <view class="page">
+    <!-- 配额头 -->
     <view class="head">
-      <view class="label">本月剩余</view>
+      <view class="label">剩余视频配额</view>
       <view class="value">
-        <text class="big">{{ quota.total - quota.used }}</text>
-        <text class="small"> / {{ quota.total }} 次</text>
+        <text class="big">{{ remaining }}</text>
+        <text class="small"> 条</text>
       </view>
-      <view class="bar">
-        <view class="fill" :style="{ width: percent + '%' }"></view>
-      </view>
-      <view class="sub">已使用 {{ quota.used }} 次 · 每月 1 日重置</view>
+      <view class="sub">配额永久有效，不过期</view>
     </view>
 
+    <!-- 套餐列表 -->
     <view class="card">
       <view class="section-title">购买加量包</view>
-      <view class="packages">
+      <view v-if="loadingPackages" class="loading-row">
+        <text class="tip">加载中…</text>
+      </view>
+      <view v-else-if="packages.length === 0" class="loading-row">
+        <text class="tip">暂无在售套餐</text>
+      </view>
+      <view v-else class="packages">
         <view
-          v-for="p in packages"
-          :key="p.id"
+          v-for="pkg in packages"
+          :key="pkg.id"
           class="package"
-          :class="{ selected: selected === p.id, hot: p.hot }"
-          @click="selected = p.id"
+          :class="{ selected: selectedId === pkg.id }"
+          @click="selectedId = pkg.id"
         >
-          <view v-if="p.hot" class="hot-tag">热销</view>
-          <view class="pkg-count">{{ p.count }} 次</view>
-          <view class="pkg-price">¥{{ p.price }}</view>
-          <view class="pkg-unit">约 ¥{{ (p.price / p.count).toFixed(1) }} / 次</view>
+          <view class="pkg-count">{{ pkg.videoCount }} 条</view>
+          <view class="pkg-price">¥{{ (pkg.price / 100).toFixed(0) }}</view>
+          <view v-if="pkg.originalPrice" class="pkg-origin">
+            <text class="line-through">¥{{ (pkg.originalPrice / 100).toFixed(0) }}</text>
+          </view>
+          <view class="pkg-unit">¥{{ (pkg.price / pkg.videoCount / 100).toFixed(1) }}/条</view>
         </view>
       </view>
     </view>
 
+    <!-- 说明 -->
     <view class="card tips">
-      <view class="tip-title">说明</view>
+      <view class="tip-title">购买说明</view>
       <view class="tip-item">· 加量包永久有效，不过期</view>
-      <view class="tip-item">· 优先消耗月度赠送配额，再扣加量包</view>
-      <view class="tip-item">· 生成失败不扣次数</view>
+      <view class="tip-item">· 生成失败自动回补配额，不损耗</view>
+      <view class="tip-item">· 支付后立即到账，可查看流水记录</view>
     </view>
 
+    <!-- 支付按钮 -->
     <view class="actions safe-bottom">
-      <button class="btn primary" :disabled="!selectedPkg" @click="onBuy">
-        {{ selectedPkg ? `立即支付 ¥${selectedPkg.price}` : '请选择套餐' }}
+      <button
+        class="btn primary"
+        :disabled="!selectedPkg || paying"
+        @click="onBuy"
+      >
+        <text v-if="paying">支付处理中…</text>
+        <text v-else-if="selectedPkg">立即支付 ¥{{ (selectedPkg.price / 100).toFixed(0) }}</text>
+        <text v-else>请选择套餐</text>
       </button>
     </view>
   </view>
 </template>
 
 <script setup>
-import { computed, ref } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
-import { getQuota, buyQuota } from '../../api/aiVideo.js';
+import { getMyQuota, listPackages, purchasePackage, submitPayOrder } from '../../api/quotaApi.js';
 
-const quota = ref({ total: 10, used: 0 });
-const selected = ref(2);
+const remaining = ref(0);
+const packages = ref([]);
+const selectedId = ref(null);
+const loadingPackages = ref(false);
+const paying = ref(false);
 
-const packages = [
-  { id: 1, count: 10, price: 29 },
-  { id: 2, count: 50, price: 99, hot: true },
-  { id: 3, count: 200, price: 299 },
-];
+const selectedPkg = computed(() => packages.value.find((p) => p.id === selectedId.value) || null);
 
-const percent = computed(() => {
-  return quota.value.total ? (quota.value.used / quota.value.total) * 100 : 0;
-});
+async function loadQuota() {
+  try {
+    const data = await getMyQuota();
+    remaining.value = data?.remaining ?? 0;
+  } catch {
+    // toast 已在 request.js 弹出
+  }
+}
 
-const selectedPkg = computed(() => packages.find((p) => p.id === selected.value));
-
-async function load() {
-  quota.value = await getQuota();
+async function loadPackages() {
+  loadingPackages.value = true;
+  try {
+    const list = await listPackages();
+    packages.value = list || [];
+    // 默认选中第一个
+    if (packages.value.length > 0 && !selectedId.value) {
+      selectedId.value = packages.value[0].id;
+    }
+  } catch {
+    // ignore
+  } finally {
+    loadingPackages.value = false;
+  }
 }
 
 async function onBuy() {
-  if (!selectedPkg.value) return;
-  const r = await buyQuota(selectedPkg.value.count);
-  if (r.ok) {
-    uni.showToast({ title: '购买成功', icon: 'success' });
-    load();
-  } else {
-    uni.showToast({ title: r.msg, icon: 'none' });
+  if (!selectedPkg.value || paying.value) return;
+  paying.value = true;
+  try {
+    // Step 1: 创建业务订单 + 支付单
+    const order = await purchasePackage(selectedPkg.value.id, 'wx_lite');
+
+    // Step 2: 向 pay 模块提交，获取 JSAPI 参数
+    const payResult = await submitPayOrder(order.payOrderId, 'wx_lite');
+    if (!payResult || !payResult.displayContent) {
+      uni.showToast({ title: '获取支付参数失败', icon: 'none' });
+      return;
+    }
+
+    // Step 3: 解析 JSAPI 参数并调起微信支付
+    let jsapiParams;
+    try {
+      jsapiParams = typeof payResult.displayContent === 'string'
+        ? JSON.parse(payResult.displayContent)
+        : payResult.displayContent;
+    } catch {
+      uni.showToast({ title: '支付参数解析失败', icon: 'none' });
+      return;
+    }
+
+    await new Promise((resolve, reject) => {
+      uni.requestPayment({
+        provider: 'wxpay',
+        ...jsapiParams,
+        success: resolve,
+        fail: reject,
+      });
+    });
+
+    // Step 4: 支付成功 - 刷新配额
+    uni.showToast({ title: '支付成功，配额已到账', icon: 'success' });
+    await loadQuota();
+  } catch (err) {
+    // 用户主动取消不弹错误
+    if (err && (err.errMsg?.includes('cancel') || err.message?.includes('cancel'))) return;
+    uni.showToast({ title: err?.message || '支付失败，请稍后重试', icon: 'none' });
+  } finally {
+    paying.value = false;
   }
 }
 
 onShow(() => {
-  load();
+  loadQuota();
+  loadPackages();
 });
 </script>
 
@@ -110,8 +175,9 @@ onShow(() => {
   }
 
   .big {
-    font-size: 72rpx;
+    font-size: 80rpx;
     font-weight: 800;
+    line-height: 1;
   }
 
   .small {
@@ -120,24 +186,10 @@ onShow(() => {
     margin-left: 8rpx;
   }
 
-  .bar {
-    margin-top: 20rpx;
-    height: 12rpx;
-    background: rgba(255, 255, 255, 0.3);
-    border-radius: 6rpx;
-    overflow: hidden;
-  }
-
-  .fill {
-    height: 100%;
-    background: #fff;
-    border-radius: 6rpx;
-  }
-
   .sub {
     margin-top: 16rpx;
     font-size: 22rpx;
-    opacity: 0.8;
+    opacity: 0.75;
   }
 }
 
@@ -156,47 +208,54 @@ onShow(() => {
   margin-bottom: 24rpx;
 }
 
+.loading-row {
+  text-align: center;
+  padding: 24rpx 0;
+  .tip {
+    font-size: 26rpx;
+    color: $text-placeholder;
+  }
+}
+
 .packages {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr);
   gap: 16rpx;
 
   .package {
     position: relative;
-    padding: 32rpx 12rpx 24rpx;
+    padding: 28rpx 8rpx 24rpx;
     background: #f6f7f9;
     border: 3rpx solid transparent;
     border-radius: $radius-md;
     text-align: center;
+    transition: border-color 0.15s;
 
     &.selected {
       background: $brand-primary-light;
       border-color: $brand-primary;
     }
 
-    .hot-tag {
-      position: absolute;
-      top: -16rpx;
-      left: 50%;
-      transform: translateX(-50%);
-      background: $danger;
-      color: #fff;
-      font-size: 20rpx;
-      padding: 4rpx 16rpx;
-      border-radius: $radius-pill;
-    }
-
     .pkg-count {
-      font-size: 28rpx;
-      font-weight: 600;
+      font-size: 30rpx;
+      font-weight: 700;
       color: $text-primary;
     }
 
     .pkg-price {
-      margin-top: 12rpx;
+      margin-top: 10rpx;
       font-size: 40rpx;
-      font-weight: 700;
+      font-weight: 800;
       color: $brand-primary;
+    }
+
+    .pkg-origin {
+      margin-top: 4rpx;
+      .line-through {
+        font-size: 22rpx;
+        color: $text-placeholder;
+        text-decoration: line-through;
+      }
     }
 
     .pkg-unit {
@@ -251,6 +310,7 @@ onShow(() => {
   &[disabled] {
     background: $text-placeholder;
     color: #fff;
+    opacity: 0.7;
   }
 
   &::after {

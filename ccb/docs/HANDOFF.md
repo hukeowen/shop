@@ -713,8 +713,8 @@ cfa9478 fix(merchant+video): Phase 0 代码审查必修项
 ## 11. TODO 清单（接手后按优先级做）
 
 ### 🔴 阻断上线的
-- [ ] Phase 0.3.4 PC 平台套餐管理页 + `/pay/app` 配置指引
-- [ ] Phase 0.3.5 小程序商户端套餐购买页 + JSAPI 调起
+- [x] Phase 0.3.4 PC 平台套餐管理页 + `/pay/app` 配置指引（已完成，见 §16）
+- [x] Phase 0.3.5 小程序商户端套餐购买页 + JSAPI 调起（已完成）
 - [ ] Phase 1.x 商户端全模块对接真实后端（当前商品 / 订单 / 会员仍是 mock）
 - [ ] 微信小程序 appid 实际申请 + 类目审核
 - [ ] 通联支付 `TL_PAY` 接入
@@ -927,6 +927,67 @@ Phase 0 之前已经实现并持续优化的 AI 视频能力，新机器接手**
 
 ---
 
+---
+
+## 16. PayApp 配置指引（套餐支付启用前必做）
+
+套餐购买走 yudao-pay 模块，后端 `MerchantPackageOrderServiceImpl` 通过 `MERCHANT_PACKAGE_PAY_APP_ID` 这个环境变量找到对应的 PayApp，才能创建支付单。
+
+### 16.1 创建 PayApp
+
+1. 登录 admin PC 后台 → **支付管理 → 支付应用**（路径 `/pay/app`）
+2. 点击「新增」，填写：
+   - 应用名称：`摊小二商户套餐`（随意）
+   - 备注：留空即可
+3. 保存后记录生成的 **应用 ID**（数字，例如 `1`）
+
+### 16.2 配置支付渠道
+
+在该 PayApp 下点击「支付渠道」→ 新增：
+
+| 渠道 | 说明 |
+|---|---|
+| 微信 JSAPI | 商户小程序端调起，需填写 mchId / mchKey / appId（小程序 appid） |
+| 微信 Native | 可选，PC 扫码 |
+
+渠道参数填写参考 yudao 官方文档：`http://doc.iocoder.cn/pay/channel/`
+
+### 16.3 填写回调 URL
+
+在 PayApp 编辑页 → **通知地址** 填对外可达地址：
+
+```
+https://{你的域名}/admin-api/merchant/package-order/pay-callback
+```
+
+> **本地开发**：用 `ngrok http 48080` 获取临时 HTTPS 地址，或配 frp 内网穿透
+
+### 16.4 设置环境变量
+
+```bash
+export MERCHANT_PACKAGE_PAY_APP_ID=1   # 上面记录的 App ID
+```
+
+或在 `application-local.yaml` 中：
+
+```yaml
+merchant:
+  package-pay-app-id: 1
+```
+
+> 对应代码：`MerchantPackageOrderServiceImpl.PAY_APP_ID` 通过 `@Value("${merchant.package-pay-app-id}")` 注入
+
+### 16.5 验证支付链路
+
+```bash
+# 1. 小程序端发起购买，后端创建 pay_order → 返回 prepayId
+# 2. 前端调 wx.requestPayment(prepayId) 完成支付
+# 3. 微信回调 /pay-callback → 触发 markPaid() → merchant_info.video_quota_remaining +N
+# 4. 验证：SELECT video_quota_remaining FROM merchant_info WHERE id = ?;
+```
+
+---
+
 **附：完整切片 Agent 指令**
 
-当接手后需要 AI 协助继续开发时，可把本文档 + 具体 Phase 目标（如 "做 Phase 0.3.4 平台 PC 套餐管理页"）作为 context 给 AI。本项目采用 oh-my-claudecode 的 executor agent 模式批量做 Java / Vue 代码，做完立即代码审查 + 修必修项。每个 Phase commit 前都跑 `mvn -pl yudao-server -am compile -DskipTests` + 前端 `pnpm build:h5` 两个验证。
+当接手后需要 AI 协助继续开发时，可把本文档 + 具体 Phase 目标（如 "做 Phase 0.3.5 小程序套餐购买页"）作为 context 给 AI。本项目采用 oh-my-claudecode 的 executor agent 模式批量做 Java / Vue 代码，做完立即代码审查 + 修必修项。每个 Phase commit 前都跑 `mvn -pl yudao-server -am compile -DskipTests` + 前端 `pnpm build:h5` 两个验证。
