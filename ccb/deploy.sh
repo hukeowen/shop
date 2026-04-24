@@ -356,15 +356,25 @@ create_service_user() {
 
 pull_code() {
   step "拉取代码"
+  # 国内访问 GitHub 常被限速/阻断，允许通过 GITHUB_PROXY 走代理
+  # 例：GITHUB_PROXY=https://gh-proxy.com/ 或 https://ghfast.top/
+  local CLONE_URL="${REPO_URL}"
+  if [[ -n "${GITHUB_PROXY:-}" && "${REPO_URL}" == *github.com* ]]; then
+    CLONE_URL="${GITHUB_PROXY%/}/${REPO_URL}"
+    info "使用 GitHub 代理：${GITHUB_PROXY%/}/"
+  fi
+
   if [[ -d "${ROOT_DIR}/repo/.git" ]]; then
     info "仓库已存在，执行 git pull"
     cd "${ROOT_DIR}/repo"
-    git fetch origin
-    git checkout "${BRANCH}"
-    git pull origin "${BRANCH}"
+    # 如果之前用了不同的 URL（比如换了代理），更新 remote
+    git remote set-url origin "${CLONE_URL}" 2>/dev/null || true
+    git fetch origin --depth=1
+    git checkout "${BRANCH}" 2>/dev/null || git checkout -b "${BRANCH}" "origin/${BRANCH}"
+    git reset --hard "origin/${BRANCH}"
   else
     mkdir -p "${ROOT_DIR}/repo"
-    git clone --branch "${BRANCH}" --depth=1 "${REPO_URL}" "${ROOT_DIR}/repo"
+    git clone --branch "${BRANCH}" --depth=1 "${CLONE_URL}" "${ROOT_DIR}/repo"
   fi
   log "代码已更新到 $(git -C ${ROOT_DIR}/repo rev-parse --short HEAD)"
 }
