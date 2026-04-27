@@ -536,8 +536,8 @@ build_backend() {
   ensure_swap
   source /etc/profile.d/java.sh
   export PATH="/opt/maven/bin:${PATH}"
-  # 限制 Maven 自身 JVM 堆，低内存机器上更稳
-  export MAVEN_OPTS="${MAVEN_OPTS:--Xms256m -Xmx1024m}"
+  # Maven 自身 JVM 堆：4G 机器给 1.5G 留余量给 OS / mysql / redis
+  export MAVEN_OPTS="${MAVEN_OPTS:--Xms256m -Xmx1536m}"
 
   cd "${PROJECT_DIR}"
   # 完整日志落盘，控制台只保留尾部；build 失败时请查看 /tmp/maven-build.log
@@ -568,6 +568,7 @@ ensure_pnpm8() {
 ensure_swap() {
   # 低内存 ECS 跑 pnpm/mvn 会被 OOM killer 砍，自动加 swap 兜底
   # 目标：mem+swap ≥ 6G（2G 机器 → 4G swap；4G 机器 → 2G swap；6G+ 跳过）
+  # 4G + 2G swap 足以串行跑 Maven build (~1.5G) + Node build (~1.5G) + 后端服务 (~1.5G)
   local MEM_MB SWAP_MB TARGET_MB=6144
   MEM_MB=$(free -m | awk '/^Mem:/ {print $2}')
   SWAP_MB=$(free -m | awk '/^Swap:/ {print $2}')
@@ -627,6 +628,76 @@ ENVEOF
   log "管理后台前端编译完成 → ${DIST_DIR}"
 }
 
+build_merchant_h5() {
+  step "编译商户/用户端 H5（uni-app）"
+  ensure_swap
+  ensure_pnpm8
+  local UI_DIR="${PROJECT_DIR}/yudao-ui/yudao-ui-merchant-uniapp"
+  cd "${UI_DIR}"
+
+  # 把 H5 部署到 /m/ 子路径：
+  # 1) router.base = /m/ → 路由前缀对齐
+  # 2) publicPath = /m/  → 打包出来的 <script src="/m/assets/...">
+  # 备份并 patch；末尾再恢复。上次失败留下的 .bak 在重跑时会先被恢复回去。
+  local MF="src/manifest.json"
+  if [[ -f "${MF}.deploy.bak" ]]; then
+    info "检测到上次构建中断的 manifest 备份，先恢复"
+    cp -f "${MF}.deploy.bak" "${MF}"
+    rm -f "${MF}.deploy.bak"
+  fi
+  cp "${MF}" "${MF}.deploy.bak"
+
+  sed -i 's|"base": "/"|"base": "/m/"|' "${MF}"
+  # 在 "template": "index.html", 后插入 publicPath 行（如不存在）
+  if ! grep -q '"publicPath"' "${MF}"; then
+    sed -i '/"template": "index.html"/a\    "publicPath": "/m/",' "${MF}"
+  fi
+
+  # 生产 .env：只保留非敏感的 VITE_ 模型/视频/TTS 配置；敏感 KEY 全部走后端 BFF
+  cat > .env.production << 'ENVEOF'
+VITE_ARK_LLM_MODEL=doubao-1-5-pro-32k-250115
+VITE_ARK_VISION_MODEL=doubao-1-5-vision-pro-32k-250115
+VITE_ARK_VIDEO_MODEL=doubao-seedance-1-5-pro-251215
+VITE_VIDEO_RESOLUTION=1080p
+VITE_VIDEO_DURATION=10
+VITE_VIDEO_RATIO=9:16
+VITE_VIDEO_SCENES=3
+VITE_TTS_PROVIDER=volc
+VITE_TTS_VOICE=zh_male_beijingxiaoye_emo_v2_mars_bigtts
+ENVEOF
+
+  export NODE_OPTIONS="--max-old-space-size=1536"
+  pnpm install --registry=https://registry.npmmirror.com \
+               --network-concurrency=4 --child-concurrency=2
+  pnpm build:h5
+
+  # 恢复 manifest.json 原状，避免污染源码（git status 干净）
+  mv -f "${MF}.deploy.bak" "${MF}"
+
+  # uniapp 默认输出 dist/build/h5/，确认存在
+  if [[ ! -f dist/build/h5/index.html ]]; then
+    err "商户端 H5 构建产物缺失：${UI_DIR}/dist/build/h5/index.html"
+    exit 1
+  fi
+  log "商户端 H5 编译完成 → ${UI_DIR}/dist/build/h5"
+}
+
+deploy_merchant_h5() {
+  step "部署商户/用户端 H5（/m/）"
+  local SRC="${PROJECT_DIR}/yudao-ui/yudao-ui-merchant-uniapp/dist/build/h5"
+  local DST="${ROOT_DIR}/m"
+  if [[ ! -f "${SRC}/index.html" ]]; then
+    err "商户端 H5 产物不存在：${SRC}/index.html"
+    err "解决方式：去掉 --skip-frontend 重跑，或本地 pnpm build:h5 后 scp 到 ${SRC}/"
+    exit 1
+  fi
+  rm -rf "${DST}"
+  mkdir -p "${DST}"
+  cp -r "${SRC}/." "${DST}/"
+  chmod -R a+rX "${DST}"
+  log "商户/用户端 H5 部署完成 → ${DST}"
+}
+
 deploy_website() {
   step "部署官网静态文件"
   local WEB_DIR="${ROOT_DIR}/website"
@@ -643,7 +714,7 @@ configure_nginx() {
   local NGINX_CONF="/etc/nginx/conf.d/tanxiaer.conf"
 
   # 让 nginx 可以读取 /opt/tanxiaer 下的静态文件
-  chmod -R a+rX "${ROOT_DIR}/website" "${ROOT_DIR}/admin-dist" 2>/dev/null || true
+  chmod -R a+rX "${ROOT_DIR}/website" "${ROOT_DIR}/admin-dist" "${ROOT_DIR}/m" 2>/dev/null || true
 
   cat > "${NGINX_CONF}" << NGINX_EOF
 upstream tanxiaer_backend {
@@ -675,6 +746,19 @@ server {
         alias ${ROOT_DIR}/admin-dist/;
         index index.html;
         try_files \$uri \$uri/ /admin/index.html;
+    }
+
+    # 商户/用户端 H5（uni-app 输出，hash 路由）
+    location /m/ {
+        alias ${ROOT_DIR}/m/;
+        index index.html;
+        try_files \$uri \$uri/ /m/index.html;
+    }
+    location /m/assets/ {
+        alias ${ROOT_DIR}/m/assets/;
+        expires 30d;
+        add_header Cache-Control "public, immutable";
+        access_log off;
     }
 
     # 后端 API
@@ -766,7 +850,7 @@ WorkingDirectory=${ROOT_DIR}/app
 EnvironmentFile=${ENV_UNIT}
 ExecStart=${JAVA_BIN} \\
   -server \\
-  -Xms512m -Xmx1024m \\
+  -Xms512m -Xmx1536m \\
   -XX:+UseG1GC \\
   -Dspring.profiles.active=prod \\
   -Dfile.encoding=UTF-8 \\
@@ -851,7 +935,7 @@ main() {
     fi
     if [[ "${SKIP_FRONTEND}" == true ]]; then
       warn "跳过前端 pnpm 构建（--skip-frontend）"
-      # 允许本地构建好的 dist 通过 scp 放在约定位置，脚本仍校验 & 保底
+      # ── 管理后台 dist 兜底 ──
       local UI_DIR="${PROJECT_DIR}/yudao-ui/yudao-ui-admin-vue3"
       local DIST_DIR="${ROOT_DIR}/admin-dist"
       if [[ -f "${UI_DIR}/dist/index.html" ]]; then
@@ -860,16 +944,33 @@ main() {
       elif [[ -f "${DIST_DIR}/index.html" ]]; then
         info "沿用已有 ${DIST_DIR}"
       else
-        err "未找到前端产物：既不在 ${UI_DIR}/dist，也不在 ${DIST_DIR}"
+        err "未找到管理后台前端产物：既不在 ${UI_DIR}/dist，也不在 ${DIST_DIR}"
         err "解决方式：本地打包后 scp dist/ 到 ${DIST_DIR}/，再跑 --skip-frontend"
+        exit 1
+      fi
+      # ── 商户/用户端 H5 dist 兜底 ──
+      local M_SRC="${PROJECT_DIR}/yudao-ui/yudao-ui-merchant-uniapp/dist/build/h5"
+      local M_DST="${ROOT_DIR}/m"
+      if [[ -f "${M_SRC}/index.html" ]]; then
+        info "发现 ${M_SRC}，同步到 ${M_DST}"
+        rm -rf "${M_DST}" && mkdir -p "${M_DST}" && cp -r "${M_SRC}/." "${M_DST}/"
+      elif [[ -f "${M_DST}/index.html" ]]; then
+        info "沿用已有 ${M_DST}"
+      else
+        err "未找到商户端 H5 产物：既不在 ${M_SRC}，也不在 ${M_DST}"
+        err "解决方式：本地 pnpm build:h5 后 scp dist/build/h5/ 到 ${M_SRC}/，再跑 --skip-frontend"
         exit 1
       fi
     else
       build_admin_frontend
+      build_merchant_h5
     fi
   fi
 
   deploy_website
+  if [[ "${SKIP_FRONTEND}" != true ]]; then
+    deploy_merchant_h5
+  fi
   configure_nginx
   deploy_backend_service
   setup_firewall
@@ -879,9 +980,10 @@ main() {
   echo -e "${GREEN}╔════════════════════════════════════════════════════════╗${NC}"
   echo -e "${GREEN}║           🎉  摊小二部署完成！                        ║${NC}"
   echo -e "${GREEN}╠════════════════════════════════════════════════════════╣${NC}"
-  echo -e "${GREEN}║  官网首页:   http://${PUBLIC_IP}/"
-  echo -e "${GREEN}║  管理后台:   http://${PUBLIC_IP}/admin/"
-  echo -e "${GREEN}║  日志目录:   ${ROOT_DIR}/logs/"
+  echo -e "${GREEN}║  官网首页:    http://${PUBLIC_IP}/"
+  echo -e "${GREEN}║  商户/用户端: http://${PUBLIC_IP}/m/"
+  echo -e "${GREEN}║  管理后台:    http://${PUBLIC_IP}/admin/"
+  echo -e "${GREEN}║  日志目录:    ${ROOT_DIR}/logs/"
   echo -e "${GREEN}║  服务管理:   systemctl {start|stop|restart} tanxiaer"
   echo -e "${GREEN}║  运行用户:   ${SERVICE_USER} (非 root)"
   echo -e "${GREEN}╚════════════════════════════════════════════════════════╝${NC}"
