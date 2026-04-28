@@ -445,7 +445,21 @@ SQL
   fi
 
   if [[ "${RUN_BASE}" == true ]]; then
-    local SQL_FILES=("ruoyi-vue-pro.sql" "mall.sql" "mp.sql" "member_pay.sql" "merchant.sql" "video.sql" "v2_business_tables.sql" "marketing.sql")
+    # 注意：列表里的 .sql 都是无 fix_ 前缀的"基础 / 迁移"脚本；
+    # merchant_invite_code.sql / ai_video_package*.sql 必须放在依赖它们的 fix_ 脚本之前。
+    local SQL_FILES=(
+      "ruoyi-vue-pro.sql"
+      "mall.sql"
+      "mp.sql"
+      "member_pay.sql"
+      "merchant.sql"
+      "merchant_invite_code.sql"   # phase 0.2 迁移：建 merchant_invite_code 表 + 给 merchant_info 加 open_id/union_id/invite_code_id
+      "video.sql"
+      "ai_video_package.sql"        # AI 视频套餐表
+      "ai_video_package_menu.sql"   # AI 视频套餐菜单 seed
+      "v2_business_tables.sql"
+      "marketing.sql"
+    )
     for f in "${SQL_FILES[@]}"; do
       if [[ -f "${SQL_DIR}/${f}" ]]; then
         info "导入 ${f}..."
