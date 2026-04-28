@@ -2,13 +2,20 @@ package cn.iocoder.yudao.module.merchant.service;
 
 import cn.hutool.core.util.IdUtil;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
+import cn.iocoder.yudao.framework.tenant.core.util.TenantUtils;
 import cn.iocoder.yudao.module.merchant.controller.admin.vo.MerchantAuditReqVO;
 import cn.iocoder.yudao.module.merchant.controller.admin.vo.MerchantCreateReqVO;
 import cn.iocoder.yudao.module.merchant.controller.admin.vo.MerchantPageReqVO;
 import cn.iocoder.yudao.module.merchant.dal.dataobject.MerchantDO;
 import cn.iocoder.yudao.module.merchant.dal.dataobject.MerchantVideoQuotaLogDO;
+import cn.iocoder.yudao.module.merchant.dal.dataobject.ShopInfoDO;
+import cn.iocoder.yudao.module.merchant.dal.dataobject.TenantSubscriptionDO;
 import cn.iocoder.yudao.module.merchant.dal.mysql.MerchantMapper;
+import cn.iocoder.yudao.module.merchant.dal.mysql.ShopInfoMapper;
+import cn.iocoder.yudao.module.merchant.dal.mysql.TenantSubscriptionMapper;
 import cn.iocoder.yudao.module.merchant.enums.MerchantStatusEnum;
+import cn.iocoder.yudao.module.system.controller.admin.tenant.vo.tenant.TenantSaveReqVO;
+import cn.iocoder.yudao.module.system.service.tenant.TenantService;
 import cn.binarywang.wx.miniapp.api.WxMaService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,7 +28,10 @@ import javax.annotation.Resource;
 import org.springframework.beans.factory.annotation.Autowired;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.math.BigDecimal;
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
+import java.util.Collections;
 
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception0;
@@ -42,6 +52,13 @@ public class MerchantServiceImpl implements MerchantService {
     @Resource
     private MerchantVideoQuotaLogService merchantVideoQuotaLogService;
 
+    @Resource
+    private TenantService tenantService;
+    @Resource
+    private ShopInfoMapper shopInfoMapper;
+    @Resource
+    private TenantSubscriptionMapper tenantSubscriptionMapper;
+
     @Autowired(required = false)
     private WxMaService wxMaService;
 
@@ -50,6 +67,15 @@ public class MerchantServiceImpl implements MerchantService {
 
     @Value("${merchant.qrcode.upload-path:/tmp/qrcode/}")
     private String qrCodeUploadPath;
+
+    @Value("${yudao.tenant.default-package-id:111}")
+    private Long defaultPackageId;
+
+    private static final int TRIAL_DAYS = 30;
+    private static final int TRIAL_AI_VIDEO_QUOTA = 1;
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+    private static final char[] PLACEHOLDER_CHARS =
+            "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#%".toCharArray();
 
     @Override
     public Long createMerchant(MerchantCreateReqVO createReqVO, Long userId) {
@@ -134,24 +160,75 @@ public class MerchantServiceImpl implements MerchantService {
         if (existed != null) {
             return existed.getId();
         }
-        // 同一 userId 也防重
         existed = merchantMapper.selectByUserId(memberUserId);
         if (existed != null) {
             return existed.getId();
         }
+
+        String shopName = "新店" + memberUserId;
+
+        // ========== 完整开通流程（与 MerchantApplyServiceImpl.approveApply 对齐）==========
+        // 1. 创建系统租户（system_tenant）— 商户后续登录的 tenant-id 由此生成
+        TenantSaveReqVO tenantReqVO = new TenantSaveReqVO();
+        tenantReqVO.setName(shopName);
+        tenantReqVO.setContactName(shopName);
+        tenantReqVO.setContactMobile(phone);
+        tenantReqVO.setStatus(0);
+        tenantReqVO.setPackageId(defaultPackageId);
+        tenantReqVO.setExpireTime(LocalDateTime.now().plusYears(100));
+        tenantReqVO.setAccountCount(999);
+        tenantReqVO.setUsername(phone != null ? phone : ("u" + memberUserId));
+        tenantReqVO.setPassword(generatePlaceholderPassword());
+        tenantReqVO.setWebsites(Collections.emptyList());
+        Long tenantId = tenantService.createTenant(tenantReqVO);
+
+        // 2. 初始化 shop_info（商户分享码 / 综合排名 / 营业状态都依赖此表）
+        ShopInfoDO shopInfo = ShopInfoDO.builder()
+                .tenantId(tenantId)
+                .shopName(shopName)
+                .categoryId(1L)
+                .longitude(BigDecimal.ZERO)
+                .latitude(BigDecimal.ZERO)
+                .status(1) // 正常营业
+                .sales30d(0)
+                .avgRating(new BigDecimal("5.0"))
+                .balance(0)
+                .build();
+        shopInfoMapper.insert(shopInfo);
+
+        // 3. 初始化订阅（30 天试用 + 1 次 AI 视频配额）
+        TenantSubscriptionDO subscription = TenantSubscriptionDO.builder()
+                .tenantId(tenantId)
+                .status(1)
+                .expireTime(LocalDateTime.now().plusDays(TRIAL_DAYS))
+                .aiVideoQuota(TRIAL_AI_VIDEO_QUOTA)
+                .aiVideoUsed(0)
+                .build();
+        tenantSubscriptionMapper.insert(subscription);
+
+        // 4. 创建 merchant_info（继承 TenantBaseDO，靠 TenantContextHolder 由 MP 拦截器自动填 tenant_id）
         MerchantDO merchant = MerchantDO.builder()
-                .name("新店" + memberUserId) // 占位名，商户端后续可改
+                .name(shopName)
                 .contactPhone(phone)
-                .status(MerchantStatusEnum.APPROVED.getStatus()) // 邀请码已校验即视为开通
+                .status(MerchantStatusEnum.APPROVED.getStatus())
                 .userId(memberUserId)
                 .openId(openId)
                 .unionId(unionId)
                 .inviteCodeId(inviteCodeId)
                 .build();
-        merchantMapper.insert(merchant);
-        log.info("[createMerchantFromMember] 商户开通成功，userId={}, merchantId={}, inviteCodeId={}",
-                memberUserId, merchant.getId(), inviteCodeId);
+        TenantUtils.execute(tenantId, () -> merchantMapper.insert(merchant));
+
+        log.info("[createMerchantFromMember] 全套开通完成 userId={} merchantId={} tenantId={} shopInfoId={} subscriptionExpire=+{}d",
+                memberUserId, merchant.getId(), tenantId, shopInfo.getId(), TRIAL_DAYS);
         return merchant.getId();
+    }
+
+    private String generatePlaceholderPassword() {
+        StringBuilder sb = new StringBuilder(16);
+        for (int i = 0; i < 16; i++) {
+            sb.append(PLACEHOLDER_CHARS[SECURE_RANDOM.nextInt(PLACEHOLDER_CHARS.length)]);
+        }
+        return sb.toString();
     }
 
     @Override

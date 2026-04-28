@@ -85,7 +85,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import {
   getMyAccount,
   listPromoRecords,
@@ -220,9 +220,26 @@ function goPoolRounds() {
   uni.showToast({ title: '即将上线', icon: 'none' });
 }
 
+// 演示场景：甲方下单瞬间数字要"实时跳"，加 5s 轮询刷新余额 + 流水
+// 生产可保留（轻量 polling），如要换 SSE/WebSocket 后续再迭代
+let pollTimer = null;
 onMounted(async () => {
   await loadAccount();
   await loadRecords(true);
+  pollTimer = setInterval(async () => {
+    if (loading.value) return;
+    await loadAccount();
+    // 仅刷新当前 tab 的第一页，避免跨页跳动
+    pageNo.value = 1;
+    await loadRecords(true);
+  }, 5000);
+});
+
+onUnmounted(() => {
+  if (pollTimer) {
+    clearInterval(pollTimer);
+    pollTimer = null;
+  }
 });
 </script>
 
