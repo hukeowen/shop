@@ -253,7 +253,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
     children: [
       {
         path: 'manager/form/edit',
-        component: () => import('@/views/bpm/form/editor/index.vue'),
+        component: () => import('@/views/Error/404.vue'),
         name: 'BpmFormEditor',
         meta: {
           noCache: true,
@@ -265,7 +265,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
       },
       {
         path: 'manager/definition',
-        component: () => import('@/views/bpm/model/definition/index.vue'),
+        component: () => import('@/views/Error/404.vue'),
         name: 'BpmProcessDefinition',
         meta: {
           noCache: true,
@@ -277,7 +277,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
       },
       {
         path: 'process-instance/detail',
-        component: () => import('@/views/bpm/processInstance/detail/index.vue'),
+        component: () => import('@/views/Error/404.vue'),
         name: 'BpmProcessInstanceDetail',
         meta: {
           noCache: true,
@@ -294,7 +294,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
       },
       {
         path: 'process-instance/report',
-        component: () => import('@/views/bpm/processInstance/report/index.vue'),
+        component: () => import('@/views/Error/404.vue'),
         name: 'BpmProcessInstanceReport',
         meta: {
           noCache: true,
@@ -306,7 +306,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
       },
       {
         path: 'oa/leave/create',
-        component: () => import('@/views/bpm/oa/leave/create.vue'),
+        component: () => import('@/views/Error/404.vue'),
         name: 'OALeaveCreate',
         meta: {
           noCache: true,
@@ -318,7 +318,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
       },
       {
         path: 'oa/leave/detail',
-        component: () => import('@/views/bpm/oa/leave/detail.vue'),
+        component: () => import('@/views/Error/404.vue'),
         name: 'OALeaveDetail',
         meta: {
           noCache: true,
@@ -330,7 +330,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
       },
       {
         path: 'manager/model/create',
-        component: () => import('@/views/bpm/model/form/index.vue'),
+        component: () => import('@/views/Error/404.vue'),
         name: 'BpmModelCreate',
         meta: {
           noCache: true,
@@ -342,7 +342,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
       },
       {
         path: 'manager/model/:type/:id',
-        component: () => import('@/views/bpm/model/form/index.vue'),
+        component: () => import('@/views/Error/404.vue'),
         name: 'BpmModelUpdate',
         meta: {
           noCache: true,
@@ -519,7 +519,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
           hidden: true,
           activeMenu: '/crm/clue'
         },
-        component: () => import('@/views/crm/clue/detail/index.vue')
+        component: () => import('@/views/Error/404.vue')
       },
       {
         path: 'customer/detail/:id',
@@ -530,7 +530,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
           hidden: true,
           activeMenu: '/crm/customer'
         },
-        component: () => import('@/views/crm/customer/detail/index.vue')
+        component: () => import('@/views/Error/404.vue')
       },
       {
         path: 'business/detail/:id',
@@ -541,7 +541,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
           hidden: true,
           activeMenu: '/crm/business'
         },
-        component: () => import('@/views/crm/business/detail/index.vue')
+        component: () => import('@/views/Error/404.vue')
       },
       {
         path: 'contract/detail/:id',
@@ -552,7 +552,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
           hidden: true,
           activeMenu: '/crm/contract'
         },
-        component: () => import('@/views/crm/contract/detail/index.vue')
+        component: () => import('@/views/Error/404.vue')
       },
       {
         path: 'receivable-plan/detail/:id',
@@ -563,7 +563,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
           hidden: true,
           activeMenu: '/crm/receivable-plan'
         },
-        component: () => import('@/views/crm/receivable/plan/detail/index.vue')
+        component: () => import('@/views/Error/404.vue')
       },
       {
         path: 'receivable/detail/:id',
@@ -574,7 +574,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
           hidden: true,
           activeMenu: '/crm/receivable'
         },
-        component: () => import('@/views/crm/receivable/detail/index.vue')
+        component: () => import('@/views/Error/404.vue')
       },
       {
         path: 'contact/detail/:id',
@@ -585,7 +585,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
           hidden: true,
           activeMenu: '/crm/contact'
         },
-        component: () => import('@/views/crm/contact/detail/index.vue')
+        component: () => import('@/views/Error/404.vue')
       },
       {
         path: 'product/detail/:id',
@@ -596,7 +596,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
           hidden: true,
           activeMenu: '/crm/product'
         },
-        component: () => import('@/views/crm/product/detail/index.vue')
+        component: () => import('@/views/Error/404.vue')
       }
     ]
   },
@@ -720,7 +720,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
           hidden: true,
           activeMenu: '/iot/device/product'
         },
-        component: () => import('@/views/iot/product/product/detail/index.vue')
+        component: () => import('@/views/Error/404.vue')
       },
       {
         path: 'device/detail/:id',
@@ -731,7 +731,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
           hidden: true,
           activeMenu: '/iot/device/device'
         },
-        component: () => import('@/views/iot/device/device/detail/index.vue')
+        component: () => import('@/views/Error/404.vue')
       },
       {
         path: 'ota/operation/firmware/detail/:id',
@@ -742,7 +742,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
           hidden: true,
           activeMenu: '/iot/operation/ota/firmware'
         },
-        component: () => import('@/views/iot/ota/firmware/detail/index.vue')
+        component: () => import('@/views/Error/404.vue')
       }
     ]
   },
@@ -756,7 +756,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
     children: [
       {
         path: 'wm/warehouse/location',
-        component: () => import('@/views/mes/wm/warehouse/location/index.vue'),
+        component: () => import('@/views/Error/404.vue'),
         name: 'MesWmLocation',
         meta: {
           noCache: true,
@@ -769,7 +769,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
       },
       {
         path: 'wm/warehouse/area',
-        component: () => import('@/views/mes/wm/warehouse/area/index.vue'),
+        component: () => import('@/views/Error/404.vue'),
         name: 'MesWmArea',
         meta: {
           noCache: true,
@@ -782,7 +782,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
       },
       {
         path: 'pro/task/gantt-edit',
-        component: () => import('@/views/mes/pro/task/edit/index.vue'),
+        component: () => import('@/views/Error/404.vue'),
         name: 'MesProTaskGanttEdit',
         meta: {
           noCache: true,
