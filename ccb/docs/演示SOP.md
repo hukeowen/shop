@@ -53,6 +53,28 @@ mysql -uroot -p"${MYSQL_ROOT_PASS}" -D ruoyi-vue-pro -e \
 - H5 / PC 入口返 200
 - 10 条 menu / 1 条邀请码 / status=0 的 Job
 
+## 二·B、演示前 1 分钟开启 mock 支付渠道（必做）
+
+> 这一步 deploy.sh **不会自动做** — yudao 默认不预 seed pay_app / pay_channel
+> 实例，避免破坏既有支付配置。客户没真实微信支付的情况下，演示「用户下单 → 支付 → 营销引擎触发」必须开 mock 渠道。
+
+PC 后台（`http://<HOST>/admin/`，admin/admin123）：
+
+1. **创建支付应用**：左侧「支付管理 → 应用信息 → 新增」
+   - 应用标识 `demo`，名称 `演示`，状态 `开启`
+   - 回调地址全部填 `http://localhost:48080/admin-api/pay/notify/order/${channelId}`
+2. **添加 mock 支付渠道**：选刚创建的应用 → 点「渠道」→ 新增
+   - 渠道：`模拟支付（mock）`
+   - 状态 `开启`，费率 0
+   - 配置 JSON：`{}`（mock 不需要任何 KEY）
+3. **关联到交易**：左侧「交易中心 → 配置 → 交易设置」
+   - 选刚创建的支付应用为默认 `payAppId`
+   - 保存
+
+完成后客户在 H5 下单 → 选「模拟支付」→ 自动成功 → 触发 `MerchantPromoOrderHandler.afterPayOrder` → 营销引擎跑 5 步全跑通。
+
+> 演示完毕：进 pay_channel 把 mock 渠道 status 改成 0 关闭，避免被真实用户白嫖订单。
+
 ## 三、演示链路（按顺序走）
 
 > 所有 URL 把 `<HOST>` 替换为真实域名 / IP。
