@@ -1,0 +1,20 @@
+{
+  "name": "tanxiaoer-sidecar",
+  "version": "1.0.0",
+  "private": true,
+  "description": "摊小二独立 Node 服务：AI 视频后处理（端卡 + 二维码植入 + mux）/ OSS 上传 / TTS / 抖音发布。生产环境由 systemd 守护；H5 build 后 nginx 反代过来。",
+  "main": "index.js",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=16"
+  },
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "ffmpeg-static": "^5.2.0",
+    "qrcode": "^1.5.3",
+    "undici": "^5.28.4"
+  }
+}

@@ -58,6 +58,11 @@ JIMENG_AK="${JIMENG_AK:-}"
 JIMENG_SK="${JIMENG_SK:-}"
 DOUYIN_CLIENT_KEY="${DOUYIN_CLIENT_KEY:-}"
 DOUYIN_CLIENT_SECRET="${DOUYIN_CLIENT_SECRET:-}"
+# 火山 TOS（对象存储）— sidecar 视频上传用；缺时默认沿用 JIMENG_AK/SK（同一套火山账号 IAM 通用）
+TOS_AK="${TOS_AK:-}"
+TOS_SK="${TOS_SK:-}"
+TOS_BUCKET="${TOS_BUCKET:-tanxiaoer}"
+TOS_REGION="${TOS_REGION:-cn-beijing}"
 
 # ── 颜色输出 ─────────────────────────────────────────────────────────────────
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'
@@ -803,6 +808,45 @@ server {
         proxy_read_timeout 300s;
     }
 
+    # ── Sidecar Node 服务（AI 视频后处理 / TOS / TTS / 抖音发布） ──
+    # 这一组路径 dev 时由 vite plugin 接管；prod 反代到 systemd 守护的 sidecar
+    location /oss/ {
+        proxy_pass http://127.0.0.1:8081;
+        proxy_set_header Host \$host;
+        client_max_body_size 100m;
+        proxy_connect_timeout 30s;
+        proxy_read_timeout 600s;
+    }
+    location /tts/ {
+        proxy_pass http://127.0.0.1:8081;
+        proxy_set_header Host \$host;
+        proxy_buffering off;
+        proxy_read_timeout 120s;
+    }
+    location /video/ {
+        proxy_pass http://127.0.0.1:8081;
+        proxy_set_header Host \$host;
+        client_max_body_size 200m;
+        # ffmpeg 合成视频可能要几分钟
+        proxy_read_timeout 900s;
+        proxy_send_timeout 900s;
+    }
+    location /vproxy {
+        proxy_pass http://127.0.0.1:8081;
+        proxy_set_header Host \$host;
+        proxy_read_timeout 300s;
+    }
+    location /jimeng {
+        proxy_pass http://127.0.0.1:8081;
+        proxy_set_header Host \$host;
+    }
+    location /douyin/ {
+        proxy_pass http://127.0.0.1:8081;
+        proxy_set_header Host \$host;
+        client_max_body_size 200m;
+        proxy_read_timeout 600s;
+    }
+
     # WebSocket
     location /ws {
         proxy_pass http://tanxiaer_backend;
@@ -915,6 +959,103 @@ UNIT_EOF
   warn "启动超时，请检查: journalctl -u tanxiaer -n 80 --no-pager"
 }
 
+deploy_sidecar() {
+  step "部署 Sidecar Node 服务（AI 视频后处理 / OSS / TTS / 抖音）"
+  local SIDECAR_SRC="${PROJECT_DIR}/server/sidecar"
+  local SIDECAR_DEST="${ROOT_DIR}/sidecar"
+  if [[ ! -f "${SIDECAR_SRC}/index.js" ]]; then
+    warn "未找到 ${SIDECAR_SRC}/index.js，跳过 sidecar 部署"
+    return
+  fi
+  ensure_pnpm8
+
+  # 同步代码到 ${SIDECAR_DEST}
+  mkdir -p "${SIDECAR_DEST}"
+  cp -f "${SIDECAR_SRC}/package.json" "${SIDECAR_DEST}/"
+  cp -f "${SIDECAR_SRC}/index.js" "${SIDECAR_DEST}/"
+  cp -f "${SIDECAR_SRC}/README.md" "${SIDECAR_DEST}/" 2>/dev/null || true
+
+  # 写运行环境变量（mode 600 防泄露）
+  umask 077
+  cat > "${SIDECAR_DEST}/.env" << SIDECAR_ENV_EOF
+# 由 deploy.sh 自动生成；勿手工改，改 .env 后重跑 deploy.sh --skip-install --skip-build
+SIDECAR_PORT=8081
+TOS_AK=${JIMENG_AK}
+TOS_SK=${JIMENG_SK}
+TOS_BUCKET=${TOS_BUCKET:-tanxiaoer}
+TOS_REGION=${TOS_REGION:-cn-beijing}
+JIMENG_AK=${JIMENG_AK}
+JIMENG_SK=${JIMENG_SK}
+VOLCANO_ACCESS_TOKEN=${VOLCANO_ACCESS_TOKEN}
+VOLCANO_AK=${VOLCANO_AK}
+VOLCANO_SK=${VOLCANO_SK}
+DOUYIN_CLIENT_KEY=${DOUYIN_CLIENT_KEY}
+DOUYIN_CLIENT_SECRET=${DOUYIN_CLIENT_SECRET}
+SIDECAR_ENV_EOF
+  umask 022
+
+  # 装依赖（npm ci 比 pnpm 适合 production，少一层 pnpm-lock）
+  cd "${SIDECAR_DEST}"
+  export PATH="/opt/nodejs/bin:${PATH}"
+  info "sidecar npm install --omit=dev ..."
+  npm install --omit=dev --registry=https://registry.npmmirror.com --no-audit --fund=false 2>&1 | tail -8
+
+  # 装一份系统中文字体，sidecar 端卡 / 字幕烧录用得上
+  if ! ls /usr/share/fonts/wqy-zenhei/wqy-zenhei.ttc 2>/dev/null && \
+     ! ls /usr/share/fonts/truetype/wqy/wqy-zenhei.ttc 2>/dev/null; then
+    info "安装中文字体 wqy-zenhei（sidecar 视频字幕用）"
+    yum install -y wqy-zenhei-fonts 2>&1 | tail -3 || \
+      warn "wqy-zenhei-fonts 安装失败，端卡字幕可能无法烧录中文（视频仍可生成，仅是无字幕降级）"
+  fi
+
+  chown -R "${SERVICE_USER}:${SERVICE_USER}" "${SIDECAR_DEST}"
+  chmod 600 "${SIDECAR_DEST}/.env"
+
+  # systemd unit
+  local NODE_BIN
+  NODE_BIN=$(readlink -f "$(command -v node)")
+  cat > /etc/systemd/system/tanxiaer-sidecar.service << SIDECAR_UNIT_EOF
+[Unit]
+Description=摊小二 Sidecar (AI 视频 / OSS / TTS / 抖音 BFF)
+After=network.target
+
+[Service]
+Type=simple
+User=${SERVICE_USER}
+Group=${SERVICE_USER}
+WorkingDirectory=${SIDECAR_DEST}
+EnvironmentFile=${SIDECAR_DEST}/.env
+ExecStart=${NODE_BIN} ${SIDECAR_DEST}/index.js
+Restart=always
+RestartSec=5
+StandardOutput=append:${ROOT_DIR}/logs/sidecar.log
+StandardError=append:${ROOT_DIR}/logs/sidecar.err.log
+
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
+SIDECAR_UNIT_EOF
+
+  chmod 644 /etc/systemd/system/tanxiaer-sidecar.service
+  systemctl daemon-reload
+  systemctl enable tanxiaer-sidecar
+  systemctl restart tanxiaer-sidecar
+
+  # 心跳检查
+  local i=0
+  while [[ $i -lt 6 ]]; do
+    sleep 2
+    if curl -sf "http://127.0.0.1:8081/healthz" &>/dev/null; then
+      log "sidecar 服务就绪 ✓ (http://127.0.0.1:8081)"
+      return
+    fi
+    i=$((i+1))
+  done
+  warn "sidecar 启动超时，请检查: journalctl -u tanxiaer-sidecar -n 50 --no-pager"
+}
+
 setup_firewall() {
   step "配置防火墙（firewalld）"
   systemctl enable firewalld 2>/dev/null || true
@@ -997,6 +1138,7 @@ main() {
   fi
   configure_nginx
   deploy_backend_service
+  deploy_sidecar
   setup_firewall
 
   PUBLIC_IP=$(curl -s --max-time 5 https://ipinfo.io/ip 2>/dev/null || curl -s --max-time 5 ifconfig.me 2>/dev/null || echo "YOUR_SERVER_IP")
