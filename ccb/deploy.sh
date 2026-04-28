@@ -622,6 +622,8 @@ build_admin_frontend() {
   step "编译管理后台前端"
   ensure_swap
   ensure_pnpm8
+  # 临时停掉后端，把 1.5G+ 的 Java 堆让给 vite，避免 4G 机器 OOM
+  systemctl stop tanxiaer 2>/dev/null || true
   local UI_DIR="${PROJECT_DIR}/yudao-ui/yudao-ui-admin-vue3"
   cd "${UI_DIR}"
 
@@ -633,11 +635,12 @@ VITE_API_URL = /admin-api
 VITE_APP_CAPTCHA_ENABLE = false
 ENVEOF
 
-  # 限制 Node 堆内存 + 降并发，减少 OOM 概率
-  export NODE_OPTIONS="--max-old-space-size=1536"
+  # 4G 机器：swap 已扩到 6G。Node 堆 3G 足够；
+  # package.json 的 build:prod 写死 1536MB → 不调它，直接 node 起 vite。
   pnpm install --registry=https://registry.npmmirror.com \
                --network-concurrency=4 --child-concurrency=2
-  pnpm build:prod
+  info "vite build (Node heap=3072MB, mode=prod)..."
+  node --max_old_space_size=3072 ./node_modules/vite/bin/vite.js build --mode prod
 
   local DIST_DIR="${ROOT_DIR}/admin-dist"
   rm -rf "${DIST_DIR}"
@@ -683,7 +686,8 @@ VITE_TTS_PROVIDER=volc
 VITE_TTS_VOICE=zh_male_beijingxiaoye_emo_v2_mars_bigtts
 ENVEOF
 
-  export NODE_OPTIONS="--max-old-space-size=1536"
+  # 4G 机器 Node 堆给 2.5G（H5 比 admin 略小，留点给 esbuild）
+  export NODE_OPTIONS="--max-old-space-size=2560"
   pnpm install --registry=https://registry.npmmirror.com \
                --network-concurrency=4 --child-concurrency=2
   pnpm build:h5
