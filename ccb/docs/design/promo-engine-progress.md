@@ -14,7 +14,7 @@
 | W2 | 双积分账本 + 推荐链 + 队列三机制（直推/插队/自然推） | ✅ 完成 |
 | W3 | 团队极差递减 + 星级评定（终生制） | ✅ 完成 |
 | W4-1/2 | 积分池累积 + 立即结算（FULL/LOTTERY × ALL/STAR） | ✅ 完成 |
-| W4-3 | cron 自动结算 | ⏸️ 待做（N6） |
+| W4-3 | cron 自动结算 | ✅ 完成（并入 N6） |
 | W5 | 提现申请 + 商户审批 + 状态机（PENDING/APPROVED/REJECTED/PAID）| ✅ 完成 |
 | W6 | 订单 Handler 串通 + 权限种子 + 5.4 跑例集成测试 | ✅ 完成 |
 | FIX-1..5 | 第一轮 code-review 修复（原子余额、commission 订单级、queue 重放幂等、convert 幂等键、池/账户并发兜底） | ✅ 完成 |
@@ -169,7 +169,7 @@
 - ✅ promo-config 页底部已加"立即结算 / 池历史"运营区
 - ✅ `infra_job` 已 seed `promoPoolSettleJob`（默认 STOP，商户后台启用即跑）
 - ✅ `pnpm build:h5` 通过；`mvn -pl yudao-module-merchant -am compile` 通过
-- ✅ 所有 86 单测绿
+- ✅ 所有 96 单测绿
 - ⚠️ 商户租户的 `system_tenant_package.menu_ids` 需要手工把 6100-6106 加进去，否则租户管理员看不到新菜单（fix_marketing_seed.sql 已注释说明，部署后 UI 配置一次即可）
 - ⚠️ Quartz Job (id=6200) 默认 STOP；商户首次部署后到"基础设施 → 定时任务"启用，否则不会自动结算
 
@@ -177,7 +177,7 @@
 
 ## 八、留给下一轮的 prompt
 
-> 项目状态见 `docs/design/promo-engine-progress.md`。营销引擎已开发完成（86/86 测试绿，H5 build 通过，2 轮 code-review 修完），下一步是**部署联调**：
+> 项目状态见 `docs/design/promo-engine-progress.md`。营销引擎已开发完成（96/96 测试绿，H5 build 通过，3 轮 code-review 修完——FIX-1..5 / FIX-A..D / FIX-E），下一步是**部署联调**：
 >
 > 1. 跑 `bash deploy.sh` 把后端 + uniapp 都发到环境
 > 2. PC 后台「角色 / 租户套餐」勾上菜单 ID 6100-6106
