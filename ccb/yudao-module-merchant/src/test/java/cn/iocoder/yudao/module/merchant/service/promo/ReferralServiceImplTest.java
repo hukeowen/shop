@@ -1,7 +1,11 @@
 package cn.iocoder.yudao.module.merchant.service.promo;
 
+import cn.iocoder.yudao.framework.tenant.core.context.TenantContextHolder;
+import cn.iocoder.yudao.module.merchant.dal.dataobject.MemberShopRelDO;
 import cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopUserReferralDO;
 import cn.iocoder.yudao.module.merchant.dal.mysql.promo.ShopUserReferralMapper;
+import cn.iocoder.yudao.module.merchant.service.MemberShopRelService;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -14,6 +18,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 /**
@@ -28,14 +33,17 @@ import static org.mockito.Mockito.*;
 class ReferralServiceImplTest {
 
     private ShopUserReferralMapper mapper;
+    private MemberShopRelService memberShopRelService;
     private ReferralServiceImpl service;
     private final Map<Long, ShopUserReferralDO> store = new HashMap<>();
 
     @BeforeEach
     void setUp() {
         mapper = mock(ShopUserReferralMapper.class);
+        memberShopRelService = mock(MemberShopRelService.class);
         service = new ReferralServiceImpl();
         ReflectionTestUtils.setField(service, "referralMapper", mapper);
+        ReflectionTestUtils.setField(service, "memberShopRelService", memberShopRelService);
         store.clear();
 
         // 用 in-memory map 模拟 selectByUserId
@@ -45,6 +53,13 @@ class ReferralServiceImplTest {
             store.put(r.getUserId(), r);
             return 1;
         });
+        // 默认无 tenant 上下文 → ReferralServiceImpl 跳过 v6 严格校验，
+        // 让现有 5 个老用例（不显式 setTenantId）保持向后兼容
+    }
+
+    @AfterEach
+    void tearDown() {
+        TenantContextHolder.clear();
     }
 
     @Test
@@ -126,6 +141,69 @@ class ReferralServiceImplTest {
                 new ShopUserReferralDO(),
                 new ShopUserReferralDO()));
         assertEquals(3, service.countDirectChildren(1L));
+    }
+
+    // ========== v6 严格语义：仅"首次进店带 inviter"才绑（依赖 member_shop_rel） ==========
+
+    @Test
+    void bindParent_v6Strict_noRel_bindsAndCreatesRel() {
+        Long tenantId = 100L;
+        TenantContextHolder.setTenantId(tenantId);
+        when(memberShopRelService.getByUserAndTenant(eq(2L), eq(tenantId))).thenReturn(null);
+
+        boolean ok = service.bindParent(2L, 1L, 100L);
+
+        assertTrue(ok, "首次进店（rel 不存在）应绑定成功");
+        assertEquals(1L, service.getDirectParent(2L));
+        // 同时同步建 member_shop_rel
+        verify(memberShopRelService).getOrCreateWithReferrer(eq(2L), eq(tenantId), eq(1L));
+    }
+
+    @Test
+    void bindParent_v6Strict_existingNaturalRel_rejected() {
+        // 用户之前自然进过店：rel 已存在但 referrer_user_id 是 null
+        Long tenantId = 100L;
+        TenantContextHolder.setTenantId(tenantId);
+        MemberShopRelDO rel = MemberShopRelDO.builder()
+                .userId(2L).tenantId(tenantId).referrerUserId(null).build();
+        when(memberShopRelService.getByUserAndTenant(eq(2L), eq(tenantId))).thenReturn(rel);
+
+        boolean ok = service.bindParent(2L, 1L, 100L);
+
+        assertFalse(ok, "之前自然进过店的不能补绑上下级");
+        assertNull(store.get(2L), "shop_user_referral 不应被写入");
+        verify(memberShopRelService, never()).getOrCreateWithReferrer(any(), any(), any());
+    }
+
+    @Test
+    void bindParent_v6Strict_existingRelWithDifferentReferrer_rejected() {
+        Long tenantId = 100L;
+        TenantContextHolder.setTenantId(tenantId);
+        MemberShopRelDO rel = MemberShopRelDO.builder()
+                .userId(2L).tenantId(tenantId).referrerUserId(99L).build();   // 已绑给 99
+        when(memberShopRelService.getByUserAndTenant(eq(2L), eq(tenantId))).thenReturn(rel);
+
+        boolean ok = service.bindParent(2L, 1L, 100L);   // 拟换绑给 1 → 拒
+
+        assertFalse(ok);
+        assertNull(store.get(2L));
+    }
+
+    @Test
+    void bindParent_v6Strict_existingRelWithMatchingReferrer_synced() {
+        // 视为 visit 流程已先绑了 rel.referrer=1，bindParent 仅同步写 shop_user_referral
+        Long tenantId = 100L;
+        TenantContextHolder.setTenantId(tenantId);
+        MemberShopRelDO rel = MemberShopRelDO.builder()
+                .userId(2L).tenantId(tenantId).referrerUserId(1L).build();
+        when(memberShopRelService.getByUserAndTenant(eq(2L), eq(tenantId))).thenReturn(rel);
+
+        boolean ok = service.bindParent(2L, 1L, 100L);
+
+        assertTrue(ok, "rel.referrer 与 parent 一致应通过校验");
+        assertEquals(1L, store.get(2L).getParentUserId());
+        // 已存在 rel，不再次创建
+        verify(memberShopRelService, never()).getOrCreateWithReferrer(any(), any(), any());
     }
 
     @Test

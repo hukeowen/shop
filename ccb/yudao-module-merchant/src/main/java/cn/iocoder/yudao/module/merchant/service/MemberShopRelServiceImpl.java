@@ -27,11 +27,22 @@ public class MemberShopRelServiceImpl implements MemberShopRelService {
     @Override
     @TenantIgnore
     public MemberShopRelDO getOrCreate(Long userId, Long tenantId) {
+        return getOrCreateWithReferrer(userId, tenantId, null);
+    }
+
+    @Override
+    @TenantIgnore
+    public MemberShopRelDO getOrCreateWithReferrer(Long userId, Long tenantId, Long referrerUserId) {
         MemberShopRelDO rel = memberShopRelMapper.selectByUserIdAndTenantId(userId, tenantId);
         if (rel != null) {
+            // 已存在：v6 严格语义 — 不再覆盖 referrer_user_id，原值即"首次进店时的归属"
             return rel;
         }
         LocalDateTime now = LocalDateTime.now();
+        // 防自绑：用户不能把自己绑成自己的上级
+        Long safeReferrer = (referrerUserId != null
+                && referrerUserId > 0
+                && !referrerUserId.equals(userId)) ? referrerUserId : null;
         MemberShopRelDO newRel = MemberShopRelDO.builder()
                 .userId(userId)
                 .tenantId(tenantId)
@@ -39,9 +50,15 @@ public class MemberShopRelServiceImpl implements MemberShopRelService {
                 .points(0)
                 .firstVisitAt(now)
                 .lastVisitAt(now)
+                .referrerUserId(safeReferrer)
                 .build();
-        memberShopRelMapper.insert(newRel);
-        return newRel;
+        try {
+            memberShopRelMapper.insert(newRel);
+            return newRel;
+        } catch (org.springframework.dao.DuplicateKeyException e) {
+            // 并发：另一个事务先插入，回查返回（视为"已存在"，不再补 referrer）
+            return memberShopRelMapper.selectByUserIdAndTenantId(userId, tenantId);
+        }
     }
 
     @Override

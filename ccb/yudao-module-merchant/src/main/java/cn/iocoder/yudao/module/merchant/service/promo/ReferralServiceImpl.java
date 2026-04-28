@@ -1,7 +1,10 @@
 package cn.iocoder.yudao.module.merchant.service.promo;
 
+import cn.iocoder.yudao.framework.tenant.core.context.TenantContextHolder;
+import cn.iocoder.yudao.module.merchant.dal.dataobject.MemberShopRelDO;
 import cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopUserReferralDO;
 import cn.iocoder.yudao.module.merchant.dal.mysql.promo.ShopUserReferralMapper;
+import cn.iocoder.yudao.module.merchant.service.MemberShopRelService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -25,6 +28,8 @@ public class ReferralServiceImpl implements ReferralService {
 
     @Resource
     private ShopUserReferralMapper referralMapper;
+    @Resource
+    private MemberShopRelService memberShopRelService;
 
     @Override
     public boolean bindParent(Long userId, Long parentUserId, Long orderId) {
@@ -40,6 +45,22 @@ public class ReferralServiceImpl implements ReferralService {
         if (existing != null) {
             return false;
         }
+        // ===== v6 文档严格语义：仅"用户首次进入该商户店铺"才能建立上下级关系 =====
+        // 判定标准：member_shop_rel(userId, currentTenantId) 是否已存在
+        //   · 已存在 + referrerUserId 等于 parentUserId  → 视为 visit 流程已绑过，本次仅同步写 shop_user_referral
+        //   · 已存在 + referrerUserId 与 parentUserId 不同（含 NULL）→ 拒绝补绑（用户之前已自然进过店或绑了别人）
+        //   · 不存在 → 视为"首次"，绑成功并同步建 member_shop_rel(referrer=parentUserId)
+        Long currentTenantId = TenantContextHolder.getTenantId();
+        MemberShopRelDO existingRel = null;
+        if (currentTenantId != null && currentTenantId > 0) {
+            existingRel = memberShopRelService.getByUserAndTenant(userId, currentTenantId);
+            if (existingRel != null
+                    && !Objects.equals(existingRel.getReferrerUserId(), parentUserId)) {
+                log.info("[bindParent] v6 严格语义拒绝：user={} 在 tenant={} 已有 rel(referrer={}) 与拟绑 parent={} 不一致",
+                        userId, currentTenantId, existingRel.getReferrerUserId(), parentUserId);
+                return false;
+            }
+        }
         // 检查 parent 不能是 userId 的下级（防环）：若 parent 的祖先链中包含 userId，则拒绝
         if (parentUserId > 0 && hasAncestor(parentUserId, userId, 50)) {
             log.warn("[bindParent] user {} 拟绑上级 {} 会形成环，已拒绝", userId, parentUserId);
@@ -53,6 +74,11 @@ public class ReferralServiceImpl implements ReferralService {
                 .build();
         try {
             referralMapper.insert(record);
+            // 同步落 member_shop_rel — 若 visit 还没建过 rel，本次顺手建并写 referrer，
+            // 保证两表语义一致（之后 visit 调 getOrCreateWithReferrer 会发现已存在不再覆盖）
+            if (currentTenantId != null && currentTenantId > 0 && existingRel == null) {
+                memberShopRelService.getOrCreateWithReferrer(userId, currentTenantId, parentUserId);
+            }
             return true;
         } catch (org.springframework.dao.DuplicateKeyException e) {
             // 并发场景：另一个事务先插入，本次视为已绑定

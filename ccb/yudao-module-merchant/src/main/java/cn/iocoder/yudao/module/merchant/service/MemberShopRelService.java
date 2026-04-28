@@ -14,6 +14,24 @@ public interface MemberShopRelService {
     MemberShopRelDO getOrCreate(Long userId, Long tenantId);
 
     /**
+     * 获取或创建会员关系记录，**仅首次创建时**带上 referrerUserId（v6 推荐链严格语义）。
+     *
+     * <p>语义：</p>
+     * <ul>
+     *   <li>rel 已存在（用户之前进过店）→ 不动 referrer_user_id，仅返回现有记录</li>
+     *   <li>rel 不存在（首次进店）→ INSERT 时直接落 referrer_user_id（如非空）</li>
+     * </ul>
+     *
+     * <p>此方法是 v6 文档"用户首次进店带 inviter 才算上下级"规则的落地点。</p>
+     *
+     * @param userId          会员
+     * @param tenantId        商户租户
+     * @param referrerUserId  推荐人（可空；仅首次创建时生效）
+     * @return 关系记录
+     */
+    MemberShopRelDO getOrCreateWithReferrer(Long userId, Long tenantId, Long referrerUserId);
+
+    /**
      * 原子加减余额（delta 可为负，调用方自行校验不足情况）。
      */
     void addBalance(Long userId, Long tenantId, int delta);

@@ -8,6 +8,8 @@ import cn.iocoder.yudao.module.merchant.dal.dataobject.MemberShopRelDO;
 import cn.iocoder.yudao.module.merchant.dal.dataobject.MemberWithdrawApplyDO;
 import cn.iocoder.yudao.module.merchant.dal.mysql.MemberWithdrawApplyMapper;
 import cn.iocoder.yudao.module.merchant.service.MemberShopRelService;
+import cn.iocoder.yudao.module.merchant.service.promo.ReferralService;
+import cn.iocoder.yudao.module.merchant.service.promo.StarService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -34,6 +36,10 @@ public class AppMemberShopRelController {
     private MemberShopRelService memberShopRelService;
     @Resource
     private MemberWithdrawApplyMapper memberWithdrawApplyMapper;
+    @Resource
+    private ReferralService referralService;
+    @Resource
+    private StarService starService;
 
     /**
      * 获取当前登录用户在当前 tenant 的关系记录。
@@ -58,24 +64,44 @@ public class AppMemberShopRelController {
     }
 
     /**
-     * 记录进店：更新 lastVisitAt，首次写 firstVisitAt，可绑定推荐人。
+     * 记录进店：v6 严格语义 — 仅首次进店时绑定推荐人，已访问过的店铺即使再带 inviter 也不补绑。
+     *
+     * <p>判定依据：member_shop_rel(userId, tenantId) 是否已有记录。已存在 → 仅 update lastVisitAt；
+     * 不存在 → 同时建 rel(referrerUserId) + 同步写 promo 营销引擎用的 shop_user_referral 表。</p>
      */
     @PostMapping("/visit")
-    @Operation(summary = "记录进店（更新进店时间 + 绑定推荐人）")
+    @Operation(summary = "记录进店（v6 严格语义：仅首次访问带 inviter 才绑上下级）")
     @Parameter(name = "tenantId", description = "商户租户ID", required = true)
-    @Parameter(name = "referrerUserId", description = "推荐人用户ID（可选）")
+    @Parameter(name = "referrerUserId", description = "推荐人用户ID（可选；仅在用户首次进店时生效）")
     @TenantIgnore
     public CommonResult<Boolean> visit(@RequestParam("tenantId") @NotNull Long tenantId,
                                        @RequestParam(value = "referrerUserId", required = false) Long referrerUserId) {
         Long userId = SecurityFrameworkUtils.getLoginUserId();
-        // getOrCreate 负责写 firstVisitAt（仅首次）
-        memberShopRelService.getOrCreate(userId, tenantId);
-        // 绑定推荐人（幂等，已有上线不覆盖）
-        if (referrerUserId != null) {
-            memberShopRelService.bindReferrer(userId, tenantId, referrerUserId);
+        MemberShopRelDO existing = memberShopRelService.getByUserAndTenant(userId, tenantId);
+        if (existing == null) {
+            // ===== 首次进店 =====
+            memberShopRelService.getOrCreateWithReferrer(userId, tenantId, referrerUserId);
+            // 同步写营销引擎用的 shop_user_referral，使 v6 推 N 反 1 / 团队极差能识别上下级
+            if (referrerUserId != null && referrerUserId > 0 && !referrerUserId.equals(userId)) {
+                Long previousTenant = TenantContextHolder.getTenantId();
+                try {
+                    TenantContextHolder.setTenantId(tenantId);
+                    boolean newlyBound = referralService.bindParent(userId, referrerUserId, null);
+                    if (newlyBound) {
+                        starService.handleReferralBound(referrerUserId);
+                    }
+                } finally {
+                    if (previousTenant != null) {
+                        TenantContextHolder.setTenantId(previousTenant);
+                    } else {
+                        TenantContextHolder.clear();
+                    }
+                }
+            }
+        } else {
+            // ===== 已访问过：v6 不再补绑，仅更新最近进店时间 =====
+            memberShopRelService.updateLastVisitAt(userId, tenantId);
         }
-        // 更新最近进店时间
-        memberShopRelService.updateLastVisitAt(userId, tenantId);
         return success(true);
     }
 
