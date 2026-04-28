@@ -7,6 +7,7 @@ import cn.iocoder.yudao.module.merchant.controller.admin.vo.promo.ProductPromoCo
 import cn.iocoder.yudao.module.merchant.controller.admin.vo.promo.ProductPromoConfigSaveReqVO;
 import cn.iocoder.yudao.module.merchant.controller.admin.vo.promo.PromoConfigRespVO;
 import cn.iocoder.yudao.module.merchant.controller.admin.vo.promo.PromoConfigSaveReqVO;
+import cn.iocoder.yudao.module.merchant.controller.app.vo.AppQueuePositionRespVO;
 import cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ProductPromoConfigDO;
 import cn.iocoder.yudao.module.merchant.dal.dataobject.promo.PromoConfigDO;
 import cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopConsumePointRecordDO;
@@ -23,6 +24,7 @@ import cn.iocoder.yudao.module.merchant.service.promo.PoolSettlementService;
 import cn.iocoder.yudao.module.merchant.service.promo.ProductPromoConfigService;
 import cn.iocoder.yudao.module.merchant.service.promo.PromoConfigService;
 import cn.iocoder.yudao.module.merchant.service.promo.PromoPointService;
+import cn.iocoder.yudao.module.merchant.service.promo.PromoQueueService;
 import cn.iocoder.yudao.module.merchant.service.promo.ReferralService;
 import cn.iocoder.yudao.module.merchant.service.promo.StarService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -42,6 +44,7 @@ import javax.annotation.Resource;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
@@ -74,6 +77,8 @@ public class AppMerchantPromoController {
     private StarService starService;
     @Resource
     private PromoPointService promoPointService;
+    @Resource
+    private PromoQueueService promoQueueService;
     @Resource
     private ShopPromoRecordMapper promoRecordMapper;
     @Resource
@@ -205,6 +210,15 @@ public class AppMerchantPromoController {
         Long userId = SecurityFrameworkUtils.getLoginUserId();
         promoPointService.convertPromoToConsume(userId, promoAmount, idempotencyKey);
         return success(true);
+    }
+
+    // ==================== 我的队列状态 ====================
+
+    @GetMapping("/my-queues")
+    @Operation(summary = "当前用户在所有商品队列中的位置（仅 QUEUEING）")
+    public CommonResult<List<AppQueuePositionRespVO>> listMyQueues() {
+        Long userId = SecurityFrameworkUtils.getLoginUserId();
+        return success(promoQueueService.listMyQueueing(userId));
     }
 
 }

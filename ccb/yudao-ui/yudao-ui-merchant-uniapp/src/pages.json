@@ -213,6 +213,18 @@
       }
     },
     {
+      "path": "pages/user-me/invite",
+      "style": {
+        "navigationBarTitleText": "邀请好友"
+      }
+    },
+    {
+      "path": "pages/user-me/my-queue",
+      "style": {
+        "navigationBarTitleText": "我的队列"
+      }
+    },
+    {
       "path": "pages/me/shop-edit",
       "style": {
         "navigationBarTitleText": "编辑店铺"

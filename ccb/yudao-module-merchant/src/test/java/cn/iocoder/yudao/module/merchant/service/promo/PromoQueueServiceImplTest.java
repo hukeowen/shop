@@ -1,5 +1,6 @@
 package cn.iocoder.yudao.module.merchant.service.promo;
 
+import cn.iocoder.yudao.module.merchant.controller.app.vo.AppQueuePositionRespVO;
 import cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ProductPromoConfigDO;
 import cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopQueueEventDO;
 import cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopQueuePositionDO;
@@ -17,6 +18,7 @@ import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 /**
@@ -41,6 +43,8 @@ class PromoQueueServiceImplTest {
             .build();
 
     private PromoQueueServiceImpl service;
+    private ShopQueuePositionMapper queueMapper;
+    private ProductPromoConfigService productPromoConfigService;
 
     // 内存态
     private final Map<Long, ShopQueuePositionDO> queueByUserId = new HashMap<>();
@@ -55,10 +59,11 @@ class PromoQueueServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        ShopQueuePositionMapper queueMapper = mock(ShopQueuePositionMapper.class);
+        queueMapper = mock(ShopQueuePositionMapper.class);
         ShopQueueEventMapper eventMapper = mock(ShopQueueEventMapper.class);
         ReferralService referralService = mock(ReferralService.class);
         PromoPointService pointService = mock(PromoPointService.class);
+        productPromoConfigService = mock(ProductPromoConfigService.class);
 
         // selectByUserAndSpu
         when(queueMapper.selectByUserAndSpu(any(), any())).thenAnswer(inv ->
@@ -119,6 +124,7 @@ class PromoQueueServiceImplTest {
         ReflectionTestUtils.setField(service, "eventMapper", eventMapper);
         ReflectionTestUtils.setField(service, "referralService", referralService);
         ReflectionTestUtils.setField(service, "promoPointService", pointService);
+        ReflectionTestUtils.setField(service, "productPromoConfigService", productPromoConfigService);
     }
 
     @Test
@@ -282,6 +288,61 @@ class PromoQueueServiceImplTest {
         assertEquals(after1stRound, totalReward(1L), "重放不应重复返奖");
         assertEquals(after1stCount, queueByUserId.get(1L).getAccumulatedCount(),
                 "重放不应再推进 accumulated_count");
+    }
+
+    @Test
+    void listMyQueueing_empty_userReturnsEmpty() {
+        when(queueMapper.selectListByUserIdQueueing(eq(99L))).thenReturn(Collections.emptyList());
+        List<AppQueuePositionRespVO> result = service.listMyQueueing(99L);
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void listMyQueueing_multipleSpus_attachesMaxN_andSkipsExited() {
+        // 用户在 spu=100 是 B 层累计 1 次，在 spu=200 是 A 层累计 2 次
+        ShopQueuePositionDO p1 = ShopQueuePositionDO.builder()
+                .userId(7L).spuId(100L).layer("B").accumulatedCount(1).accumulatedAmount(3000L)
+                .joinedAt(LocalDateTime.of(2026, 1, 1, 10, 0)).status("QUEUEING").build();
+        ShopQueuePositionDO p2 = ShopQueuePositionDO.builder()
+                .userId(7L).spuId(200L).layer("A").accumulatedCount(2).accumulatedAmount(7000L)
+                .joinedAt(LocalDateTime.of(2026, 1, 5, 10, 0))
+                .promotedAt(LocalDateTime.of(2026, 1, 6, 10, 0)).status("QUEUEING").build();
+        // mapper 仅返 QUEUEING（EXITED 已被 SQL 过滤掉，无需在此构造）
+        when(queueMapper.selectListByUserIdQueueing(eq(7L))).thenReturn(Arrays.asList(p1, p2));
+
+        ProductPromoConfigDO c100 = ProductPromoConfigDO.builder().spuId(100L).tuijianN(3).build();
+        ProductPromoConfigDO c200 = ProductPromoConfigDO.builder().spuId(200L).tuijianN(4).build();
+        Map<Long, ProductPromoConfigDO> configMap = new HashMap<>();
+        configMap.put(100L, c100);
+        configMap.put(200L, c200);
+        when(productPromoConfigService.mapBySpuIds(any())).thenReturn(configMap);
+
+        List<AppQueuePositionRespVO> result = service.listMyQueueing(7L);
+        assertEquals(2, result.size());
+        AppQueuePositionRespVO r1 = result.get(0);
+        assertEquals(100L, r1.getSpuId());
+        assertEquals("B", r1.getLayer());
+        assertEquals(1, r1.getAccumulatedCount());
+        assertEquals(3, r1.getMaxN());
+        assertEquals(3000L, r1.getAccumulatedAmount());
+        AppQueuePositionRespVO r2 = result.get(1);
+        assertEquals(200L, r2.getSpuId());
+        assertEquals("A", r2.getLayer());
+        assertEquals(4, r2.getMaxN());
+        assertNotNull(r2.getPromotedAt());
+    }
+
+    @Test
+    void listMyQueueing_missingProductConfig_returnsNullMaxN() {
+        ShopQueuePositionDO p = ShopQueuePositionDO.builder()
+                .userId(8L).spuId(300L).layer("B").accumulatedCount(0).accumulatedAmount(0L)
+                .joinedAt(LocalDateTime.now()).status("QUEUEING").build();
+        when(queueMapper.selectListByUserIdQueueing(eq(8L))).thenReturn(Collections.singletonList(p));
+        when(productPromoConfigService.mapBySpuIds(any())).thenReturn(Collections.emptyMap());
+
+        List<AppQueuePositionRespVO> result = service.listMyQueueing(8L);
+        assertEquals(1, result.size());
+        assertNull(result.get(0).getMaxN(), "商品配置缺失时 maxN 为 null，前端兜底显示 ?");
     }
 
     @Test

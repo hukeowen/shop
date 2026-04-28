@@ -42,6 +42,14 @@
           <text class="op-icon">¥</text>
           <text>申请提现</text>
         </view>
+        <view class="op-btn" @click="goInvite">
+          <text class="op-icon">+</text>
+          <text>邀请好友</text>
+        </view>
+        <view class="op-btn" @click="goMyQueue">
+          <text class="op-icon">≡</text>
+          <text>我的队列</text>
+        </view>
         <view class="op-btn" @click="goPoolRounds">
           <text class="op-icon">★</text>
           <text>积分池历史</text>
@@ -200,6 +208,14 @@ function goWithdraw() {
   uni.navigateTo({ url: '/pages/user-me/withdraw' });
 }
 
+function goInvite() {
+  uni.navigateTo({ url: '/pages/user-me/invite' });
+}
+
+function goMyQueue() {
+  uni.navigateTo({ url: '/pages/user-me/my-queue' });
+}
+
 function goPoolRounds() {
   uni.showToast({ title: '即将上线', icon: 'none' });
 }
@@ -325,10 +341,12 @@ onMounted(async () => {
 
 .ops {
   display: flex;
+  flex-wrap: wrap;
   gap: 16rpx;
 
   .op-btn {
-    flex: 1;
+    flex: 1 1 calc(50% - 8rpx);
+    min-width: calc(50% - 8rpx);
     height: 96rpx;
     border-radius: $radius-md;
     background: #f6f7f9;

@@ -1,6 +1,9 @@
 package cn.iocoder.yudao.module.merchant.service.promo;
 
+import cn.iocoder.yudao.module.merchant.controller.app.vo.AppQueuePositionRespVO;
 import cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ProductPromoConfigDO;
+
+import java.util.List;
 
 /**
  * 商品队列服务（推 N 反 1 的核心算法，对应 v6 文档第五节）。
@@ -29,5 +32,12 @@ public interface PromoQueueService {
      */
     void handleOrderPaid(ProductPromoConfigDO config, Long buyerUserId, Long spuId,
                          long paidAmount, Long orderId);
+
+    /**
+     * 列出某用户当前所有 QUEUEING 状态的队列位置（"我的队列"页用）。
+     * 已 EXITED 的不返；按 A 层先 / 同层内按晋升时间 / 入队时间升序。
+     * 每行附上商品配置的 N（前端可显示进度 "已累计 2/3 次"）。
+     */
+    List<AppQueuePositionRespVO> listMyQueueing(Long userId);
 
 }

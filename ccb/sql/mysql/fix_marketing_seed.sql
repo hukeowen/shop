@@ -10,23 +10,30 @@
 -- ----------------------------
 DELETE FROM `system_menu` WHERE id BETWEEN 6100 AND 6199;
 
--- 6100：父菜单（目录，type=1）— 挂在 "商城中心" 之下；如目标 parent 不存在，先放在根
+-- 6100：父菜单目录（type=1）— PC 后台 yudao-ui-admin-vue3 左侧导航顶级
+-- 6107/6108/6109：实际可点击的菜单（type=2），挂 vue3-admin component path
+-- 6101..6106：纯权限按钮（type=3），用于精细化「查询 / 更新 / 审批」按钮控制
 INSERT INTO `system_menu`
   (`id`, `name`, `permission`, `type`, `sort`, `parent_id`, `path`, `icon`, `component`, `component_name`, `status`, `visible`, `keep_alive`, `always_show`, `creator`, `create_time`, `updater`, `update_time`, `deleted`)
 VALUES
-  (6100, '营销引擎',                    '',                                3, 100, 0,    'promo',         'ep:medal',           NULL, NULL, 0, b'1', b'1', b'1', 'admin', NOW(), 'admin', NOW(), b'0'),
+  (6100, '营销引擎',                    '',                                1, 100, 0,    'promo',         'ep:medal',           NULL, NULL, 0, b'1', b'1', b'1', 'admin', NOW(), 'admin', NOW(), b'0'),
 
--- 6101 / 6102：商户级营销配置 查询 / 更新
-  (6101, '商户营销配置 查询',            'merchant:promo-config:query',     3,  10, 6100, '',              '',                   '',   NULL, 0, b'1', b'1', b'1', 'admin', NOW(), 'admin', NOW(), b'0'),
-  (6102, '商户营销配置 更新',            'merchant:promo-config:update',    3,  20, 6100, '',              '',                   '',   NULL, 0, b'1', b'1', b'1', 'admin', NOW(), 'admin', NOW(), b'0'),
+-- 6107 / 6108 / 6109：可访问页面（vue3-admin views/merchant/promo/**）
+  (6107, '商户营销配置',                'merchant:promo-config:query',     2,   5, 6100, 'config',         'ep:setting',         'merchant/promo/config/index',         NULL, 0, b'1', b'1', b'1', 'admin', NOW(), 'admin', NOW(), b'0'),
+  (6108, '商品营销配置',                'merchant:product-promo-config:query', 2,  15, 6100, 'product-config', 'ep:goods',         'merchant/promo/productConfig/index',  NULL, 0, b'1', b'1', b'1', 'admin', NOW(), 'admin', NOW(), b'0'),
+  (6109, '推广积分提现',                'merchant:promo-withdraw:query',   2,  45, 6100, 'withdraw',       'ep:money',           'merchant/promo/withdraw/index',       NULL, 0, b'1', b'1', b'1', 'admin', NOW(), 'admin', NOW(), b'0'),
 
--- 6103 / 6104：商品级营销配置 查询 / 更新
-  (6103, '商品营销配置 查询',            'merchant:product-promo-config:query',  3,  30, 6100, '', '', '', NULL, 0, b'1', b'1', b'1', 'admin', NOW(), 'admin', NOW(), b'0'),
-  (6104, '商品营销配置 更新',            'merchant:product-promo-config:update', 3,  40, 6100, '', '', '', NULL, 0, b'1', b'1', b'1', 'admin', NOW(), 'admin', NOW(), b'0'),
+-- 6101 / 6102：商户级营销配置 查询 / 更新（按钮）
+  (6101, '商户营销配置 查询',            'merchant:promo-config:query',     3,  10, 6107, '',              '',                   '',   NULL, 0, b'1', b'1', b'1', 'admin', NOW(), 'admin', NOW(), b'0'),
+  (6102, '商户营销配置 更新',            'merchant:promo-config:update',    3,  20, 6107, '',              '',                   '',   NULL, 0, b'1', b'1', b'1', 'admin', NOW(), 'admin', NOW(), b'0'),
 
--- 6105 / 6106：推广积分提现 查询 / 审批
-  (6105, '推广积分提现 查询',            'merchant:promo-withdraw:query',        3,  50, 6100, '', '', '', NULL, 0, b'1', b'1', b'1', 'admin', NOW(), 'admin', NOW(), b'0'),
-  (6106, '推广积分提现 审批',            'merchant:promo-withdraw:approve',      3,  60, 6100, '', '', '', NULL, 0, b'1', b'1', b'1', 'admin', NOW(), 'admin', NOW(), b'0');
+-- 6103 / 6104：商品级营销配置 查询 / 更新（按钮）
+  (6103, '商品营销配置 查询',            'merchant:product-promo-config:query',  3,  30, 6108, '', '', '', NULL, 0, b'1', b'1', b'1', 'admin', NOW(), 'admin', NOW(), b'0'),
+  (6104, '商品营销配置 更新',            'merchant:product-promo-config:update', 3,  40, 6108, '', '', '', NULL, 0, b'1', b'1', b'1', 'admin', NOW(), 'admin', NOW(), b'0'),
+
+-- 6105 / 6106：推广积分提现 查询 / 审批（按钮）
+  (6105, '推广积分提现 查询',            'merchant:promo-withdraw:query',        3,  50, 6109, '', '', '', NULL, 0, b'1', b'1', b'1', 'admin', NOW(), 'admin', NOW(), b'0'),
+  (6106, '推广积分提现 审批',            'merchant:promo-withdraw:approve',      3,  60, 6109, '', '', '', NULL, 0, b'1', b'1', b'1', 'admin', NOW(), 'admin', NOW(), b'0');
 
 -- ----------------------------
 -- 授予 超级管理员（role_id = 1）以上 4 个权限
@@ -42,7 +49,10 @@ VALUES
   (1, 6103, 'admin', NOW(), 'admin', NOW(), b'0', 1),
   (1, 6104, 'admin', NOW(), 'admin', NOW(), b'0', 1),
   (1, 6105, 'admin', NOW(), 'admin', NOW(), b'0', 1),
-  (1, 6106, 'admin', NOW(), 'admin', NOW(), b'0', 1);
+  (1, 6106, 'admin', NOW(), 'admin', NOW(), b'0', 1),
+  (1, 6107, 'admin', NOW(), 'admin', NOW(), b'0', 1),
+  (1, 6108, 'admin', NOW(), 'admin', NOW(), b'0', 1),
+  (1, 6109, 'admin', NOW(), 'admin', NOW(), b'0', 1);
 
 -- ----------------------------
 -- Quartz 定时任务：积分池自动结算 Job
@@ -62,7 +72,8 @@ VALUES
 -- 备注：
 -- 1. 商户子租户的"管理员角色"通常 code 是 'tenant_admin'，每个租户的 role_id 不同；
 --    yudao 框架会在租户初始化时把"租户套餐 menu_ids"自动挂给该租户的 admin 角色，
---    所以只要把 menu_id (6100-6104) 加入相应的 system_tenant_package.menu_ids 字段即可。
+--    所以只要把 menu_id (6100, 6107, 6108, 6109 必选；6101..6106 按需) 加入
+--    相应的 system_tenant_package.menu_ids 字段即可。
 --    这里不直接写 SQL（避免改坏既有套餐），交由部署后通过 UI 分配。
 -- 2. 商户/用户 H5（uniapp）走 /app-api/merchant/mini/promo/**，无 @PreAuthorize，
 --    不依赖以上权限即可工作。

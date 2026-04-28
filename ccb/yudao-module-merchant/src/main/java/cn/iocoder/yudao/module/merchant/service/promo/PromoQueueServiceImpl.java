@@ -1,6 +1,7 @@
 package cn.iocoder.yudao.module.merchant.service.promo;
 
 import cn.iocoder.yudao.framework.common.util.json.JsonUtils;
+import cn.iocoder.yudao.module.merchant.controller.app.vo.AppQueuePositionRespVO;
 import cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ProductPromoConfigDO;
 import cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopQueueEventDO;
 import cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopQueuePositionDO;
@@ -14,7 +15,11 @@ import javax.annotation.Resource;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * 队列三机制实现。
@@ -40,6 +45,8 @@ public class PromoQueueServiceImpl implements PromoQueueService {
     private ReferralService referralService;
     @Resource
     private PromoPointService promoPointService;
+    @Resource
+    private ProductPromoConfigService productPromoConfigService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -183,6 +190,36 @@ public class PromoQueueServiceImpl implements PromoQueueService {
                     .amount(0L)
                     .build());
         }
+    }
+
+    @Override
+    public List<AppQueuePositionRespVO> listMyQueueing(Long userId) {
+        if (userId == null || userId <= 0) {
+            return Collections.emptyList();
+        }
+        List<ShopQueuePositionDO> positions = queueMapper.selectListByUserIdQueueing(userId);
+        if (positions.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<Long> spuIds = positions.stream()
+                .map(ShopQueuePositionDO::getSpuId)
+                .distinct()
+                .collect(Collectors.toList());
+        Map<Long, ProductPromoConfigDO> configBySpu = productPromoConfigService.mapBySpuIds(spuIds);
+        List<AppQueuePositionRespVO> result = new ArrayList<>(positions.size());
+        for (ShopQueuePositionDO p : positions) {
+            AppQueuePositionRespVO vo = new AppQueuePositionRespVO();
+            vo.setSpuId(p.getSpuId());
+            vo.setLayer(p.getLayer());
+            vo.setAccumulatedCount(p.getAccumulatedCount());
+            vo.setAccumulatedAmount(p.getAccumulatedAmount());
+            vo.setJoinedAt(p.getJoinedAt());
+            vo.setPromotedAt(p.getPromotedAt());
+            ProductPromoConfigDO config = configBySpu == null ? null : configBySpu.get(p.getSpuId());
+            vo.setMaxN(config == null ? null : config.getTuijianN());
+            result.add(vo);
+        }
+        return result;
     }
 
     /** 解析 "[25,25,25,25]" → [25,25,25,25]；长度对齐到 n（不足补 0，超出截断） */

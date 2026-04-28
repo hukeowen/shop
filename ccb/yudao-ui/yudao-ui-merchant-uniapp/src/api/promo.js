@@ -65,6 +65,11 @@ export function convertPromoToConsume(promoAmount, idempotencyKey) {
   });
 }
 
+/** 当前用户在所有商品队列中的位置（仅 QUEUEING）。 */
+export function listMyQueues() {
+  return request({ url: '/app-api/merchant/mini/promo/my-queues' });
+}
+
 // ==================== 推荐链 ====================
 
 /** 绑定上级（首次有效）。 */

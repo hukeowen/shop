@@ -32,12 +32,15 @@
 | N11 | `docs/merchant-promo-guide.md` 商户使用手册 | ✅ 完成 |
 | N12 | `scripts/smoke-test-promo.sh` 部署后烟雾测试 | ✅ 完成 |
 | FIX-E | `convertPromoToConsume` 等 4 个余额方法改用 `SELECT … FOR UPDATE` 锁行 + 本地算 newBalance，杜绝 balanceAfter 并发滞后 | ✅ 完成（已在 Git Bash 内 mvn 96/96 回归） |
+| N13 | 用户端「邀请好友」页：`pages/user-me/invite.vue`（链接 + 二维码 + 复制） | ✅ 完成 |
+| N14 | 用户端「我的队列」：后端 `GET /app-api/merchant/mini/promo/my-queues` + 前端 `pages/user-me/my-queue.vue` + 3 个新单测 | ✅ 完成 |
+| N15 | PC 后台（vue3-admin）补齐 v6 文档 A.4 字面要求：营销配置 / 商品营销配置 / 推广积分提现审批 三页 + 菜单 seed（6100 改目录、6107..6109 三条菜单） | ✅ 完成 |
 
 ---
 
 ## 二、测试覆盖
 
-最新一次完整跑：**96 / 96 全绿**（`mvn -pl yudao-module-merchant -am test`，FIX-E 后已在 Git Bash 内回归，仍 96/96）。
+最新一次完整跑：**99 / 99 全绿**（`mvn -pl yudao-module-merchant test`，N14 加 3 个 `listMyQueueing` 用例后回归通过）。
 
 | 测试类 | 测试数 | 关键场景 |
 |---|---|---|
@@ -46,7 +49,7 @@
 | `ReferralServiceImplTest` | 10 | 终生绑定 + 防自绑 + 防环 + 链路上溯 + maxDepth |
 | `PromoPointServiceImplTest` | 10 | 原子入账 / 扣减 / 幂等 / 余额不足 / convert 幂等键 |
 | `StarServiceImplTest` | 9 | 升星 / 终生制不降级 / 多级跨升 |
-| `PromoQueueServiceImplTest` | 7 | **v6 文档 5.4 节 10 步跑例** + 重放幂等 + 边界 |
+| `PromoQueueServiceImplTest` | 10 | **v6 文档 5.4 节 10 步跑例** + 重放幂等 + 边界 + listMyQueueing 3 例 |
 | `CommissionServiceImplTest` | 6 | 极差递减 / "5星之上 5星=0%" / 跳过低星 |
 | `PromoPoolServiceImplTest` | 6 | 入池累积 + 重放幂等 + ratio=0 / disabled 静默 |
 | `PoolSettlementServiceImplTest` | 9 | FULL/LOTTERY × ALL/STAR 4 模式 + 边界 |
@@ -82,7 +85,7 @@
   - `PromoConfigController` / `ProductPromoConfigController` — 管理后台 CRUD
   - `AdminWithdrawPromoController` — 提现审批（@PreAuthorize 守门）
 - `controller/app/`：
-  - `AppMerchantPromoController` — 配置 / 钱包 / 池 / 推荐链（uniapp 通用入口）
+  - `AppMerchantPromoController` — 配置 / 钱包 / 池 / 推荐链 / 我的队列（uniapp 通用入口）
   - `AppMerchantWithdrawPromoController` — 用户申请 / 我的列表
 
 ### 前端（`yudao-ui/yudao-ui-merchant-uniapp/src`）
@@ -96,8 +99,10 @@
   - `pages/me/withdraw-approve.vue`（N4）— 提现审批分 tab + 通过/驳回/标记打款
   - `pages/product/edit.vue`（W1）— 商品营销开关
 - 用户端：
-  - `pages/user-me/wallet.vue`（N2）— 双积分余额 + tab 切换流水 + 转换入口
+  - `pages/user-me/wallet.vue`（N2）— 双积分余额 + tab 切换流水 + 转换入口 + 邀请 / 我的队列入口
   - `pages/user-me/withdraw.vue`（N3）— 申请提现 + 我的申请列表
+  - `pages/user-me/invite.vue`（N13）— 邀请链接 + 二维码 + 复制
+  - `pages/user-me/my-queue.vue`（N14）— 我在每条商品队列的 A/B 层 / 累计 / 进度
 
 **部署**
 - `sql/mysql/marketing.sql` — 11 张表 DDL
@@ -124,6 +129,7 @@
 - `GET pool/info` — 当前池余额
 - `POST pool/settle?mode=FULL|LOTTERY` — 立即结算（写 round + 池清零 + 发奖）
 - `GET pool/rounds` — 历史轮次
+- `GET my-queues` — 当前用户在所有商品队列中的位置（仅 QUEUEING；含 A/B 层 / 累计次数 / 商品 N） _N14_
 
 ### `/app-api/merchant/mini/withdraw/`（JWT）
 - `POST apply?amount=` — 用户申请（即时扣减积分）
@@ -169,18 +175,19 @@
 - ✅ promo-config 页底部已加"立即结算 / 池历史"运营区
 - ✅ `infra_job` 已 seed `promoPoolSettleJob`（默认 STOP，商户后台启用即跑）
 - ✅ `pnpm build:h5` 通过；`mvn -pl yudao-module-merchant -am compile` 通过
-- ✅ 所有 96 单测绿
-- ⚠️ 商户租户的 `system_tenant_package.menu_ids` 需要手工把 6100-6106 加进去，否则租户管理员看不到新菜单（fix_marketing_seed.sql 已注释说明，部署后 UI 配置一次即可）
+- ✅ 所有 99 单测绿
+- ✅ vue3-admin 三页：`views/merchant/promo/{config,productConfig,withdraw}/index.vue` + `api/merchant/promo/index.ts`
+- ⚠️ 商户租户的 `system_tenant_package.menu_ids` 需要手工把 6100 / 6107 / 6108 / 6109 加进去（PC 后台菜单），按需再加 6101..6106（按钮级权限），否则租户管理员看不到新菜单（fix_marketing_seed.sql 已注释说明，部署后 UI 配置一次即可）
 - ⚠️ Quartz Job (id=6200) 默认 STOP；商户首次部署后到"基础设施 → 定时任务"启用，否则不会自动结算
 
 ---
 
 ## 八、留给下一轮的 prompt
 
-> 项目状态见 `docs/design/promo-engine-progress.md`。营销引擎已开发完成（96/96 测试绿，H5 build 通过，3 轮 code-review 修完——FIX-1..5 / FIX-A..D / FIX-E），下一步是**部署联调**：
+> 项目状态见 `docs/design/promo-engine-progress.md`。营销引擎已开发完成（99/99 测试绿，H5 build 通过，3 轮 code-review 修完——FIX-1..5 / FIX-A..D / FIX-E；N1..N15 全部 ✅，含 PC 后台 vue3-admin 三页），下一步是**部署联调**：
 >
 > 1. 跑 `bash deploy.sh` 把后端 + uniapp 都发到环境
-> 2. PC 后台「角色 / 租户套餐」勾上菜单 ID 6100-6106
+> 2. PC 后台「角色 / 租户套餐」勾上菜单 ID 6100 / 6107 / 6108 / 6109（菜单），按需 6101..6106（按钮）
 > 3. 「基础设施 → 定时任务」把 ID=6200 的 promoPoolSettleJob 启用
 > 4. 真实订单走一遍：A 分享 → B 落地 shop-home?referrerUserId=A → B 登录 → B 下单 →
 >    后端日志应见 referral bound + 引擎 5 步全跑 + A 拿直推奖
@@ -188,4 +195,4 @@
 
 ---
 
-_整理日期：2026-04-28（FIX-E 收尾 + Git Bash 内 mvn 96/96 回归通过）_
+_整理日期：2026-04-28（N13/N14/N15 收尾：用户端邀请页 + 我的队列页 + PC 后台三页 + mvn 99/99 回归）_

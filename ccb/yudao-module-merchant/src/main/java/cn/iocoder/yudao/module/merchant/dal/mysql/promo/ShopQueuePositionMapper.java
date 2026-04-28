@@ -47,4 +47,14 @@ public interface ShopQueuePositionMapper extends BaseMapperX<ShopQueuePositionDO
                 .orderByAsc(ShopQueuePositionDO::getJoinedAt));
     }
 
+    /** 列出某用户当前所有 QUEUEING 状态的位置（用户端"我的队列"页用） */
+    default List<ShopQueuePositionDO> selectListByUserIdQueueing(Long userId) {
+        return selectList(new LambdaQueryWrapperX<ShopQueuePositionDO>()
+                .eq(ShopQueuePositionDO::getUserId, userId)
+                .eq(ShopQueuePositionDO::getStatus, "QUEUEING")
+                .orderByAsc(ShopQueuePositionDO::getLayer)
+                .orderByAsc(ShopQueuePositionDO::getPromotedAt)
+                .orderByAsc(ShopQueuePositionDO::getJoinedAt));
+    }
+
 }
