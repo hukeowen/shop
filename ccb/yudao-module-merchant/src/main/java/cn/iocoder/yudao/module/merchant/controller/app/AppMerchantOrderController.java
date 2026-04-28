@@ -87,6 +87,29 @@ public class AppMerchantOrderController {
         return success(true);
     }
 
+    /**
+     * 商户主动确认送达（设计 8.4 节）：
+     * 适用于同城配送 / 自营配送场景，商户在确认商品已送达客户手中后调用，
+     * 立即把订单推进到"已收货"状态（COMPLETED 由 trade 模块在 receiveOrder 内决定）。
+     *
+     * 实现：以订单买家身份调 receiveOrderByMember —— 等价于"代用户确认收货"。
+     * 仅在 status = 20(DELIVERED 已发货) 时生效。
+     */
+    @PostMapping("/confirm-delivered")
+    @Operation(summary = "商户确认已送达（同城配送 / 自营配送场景）")
+    @Parameter(name = "id", description = "订单编号", required = true)
+    public CommonResult<Boolean> confirmDelivered(@RequestParam("id") Long id) {
+        TradeOrderDO order = tradeOrderQueryService.getOrder(id);
+        if (order == null) {
+            throw exception0(400, "订单不存在");
+        }
+        if (!Integer.valueOf(20).equals(order.getStatus())) {
+            throw exception0(400, "订单状态不是已发货，无法确认送达");
+        }
+        tradeOrderUpdateService.receiveOrderByMember(order.getUserId(), id);
+        return success(true);
+    }
+
     // ==================== #18 扫码核销（自提） ====================
 
     @GetMapping("/get-by-verify-code")

@@ -58,12 +58,22 @@
       >
         填写快递单号发货
       </button>
+      <!-- 自提订单：扫码核销 -->
       <button
-        v-if="order.status === 20"
+        v-if="order.status === 20 && order.deliveryType !== 'express'"
         class="btn primary"
         @click="onVerify"
       >
         确认核销（码：{{ order.verifyCode }}）
+      </button>
+      <!-- 快递订单：商户主动确认送达（设计 8.4） -->
+      <button
+        v-if="order.status === 20 && order.deliveryType === 'express'"
+        class="btn primary"
+        :disabled="confirming"
+        @click="onConfirmDelivered"
+      >
+        {{ confirming ? '提交中…' : '确认已送达' }}
       </button>
     </view>
   </view>
@@ -74,11 +84,12 @@
 <script setup>
 import { ref } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
-import { getOrder, pickUpVerify } from '../../api/order.js';
+import { getOrder, pickUpVerify, confirmDelivered } from '../../api/order.js';
 import { fen2yuan, ORDER_STATUS } from '../../utils/format.js';
 
 const order = ref(null);
 const orderId = ref('');
+const confirming = ref(false);
 
 function statusText(s) {
   return ORDER_STATUS[s]?.text || s;
@@ -104,6 +115,27 @@ async function onVerify() {
   } else {
     uni.showToast({ title: r.msg, icon: 'none' });
   }
+}
+
+function onConfirmDelivered() {
+  uni.showModal({
+    title: '确认已送达',
+    content: '确认商品已送达客户手中？此操作不可撤销。',
+    confirmText: '确认送达',
+    success: async (modal) => {
+      if (!modal.confirm) return;
+      confirming.value = true;
+      try {
+        await confirmDelivered(orderId.value);
+        uni.showToast({ title: '已确认送达', icon: 'success' });
+        await load();
+      } catch (e) {
+        uni.showToast({ title: '操作失败：' + (e?.message || e), icon: 'none' });
+      } finally {
+        confirming.value = false;
+      }
+    },
+  });
 }
 
 onLoad((q) => {

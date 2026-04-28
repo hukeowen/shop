@@ -42,6 +42,17 @@ public class AppMemberShopRelController {
     private StarService starService;
 
     /**
+     * 列出当前用户访问过的所有店铺（设计 9.2 节"店铺级收藏"语义，按 lastVisitAt 倒序）。
+     */
+    @GetMapping("/my-shops")
+    @Operation(summary = "我访问过的所有店铺（即店铺级收藏夹）")
+    @TenantIgnore
+    public CommonResult<java.util.List<MemberShopRelDO>> listMyShops() {
+        Long userId = SecurityFrameworkUtils.getLoginUserId();
+        return success(memberShopRelService.listByUserId(userId));
+    }
+
+    /**
      * 获取当前登录用户在当前 tenant 的关系记录。
      * 不存在时返回默认空对象（balance=0, points=0）。
      */

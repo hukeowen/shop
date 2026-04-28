@@ -1,10 +1,13 @@
 package cn.iocoder.yudao.module.merchant.dal.mysql;
 
 import cn.iocoder.yudao.framework.mybatis.core.mapper.BaseMapperX;
+import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
 import cn.iocoder.yudao.module.merchant.dal.dataobject.MemberShopRelDO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Update;
+
+import java.util.List;
 
 @Mapper
 public interface MemberShopRelMapper extends BaseMapperX<MemberShopRelDO> {
@@ -12,6 +15,17 @@ public interface MemberShopRelMapper extends BaseMapperX<MemberShopRelDO> {
     default MemberShopRelDO selectByUserIdAndTenantId(Long userId, Long tenantId) {
         return selectOne(MemberShopRelDO::getUserId, userId,
                 MemberShopRelDO::getTenantId, tenantId);
+    }
+
+    /**
+     * 列出当前用户访问过的所有店铺（按最近访问倒序）。
+     * 设计 9.2 节"自动收藏店铺"由 visit 流程自动写入此表，
+     * 因此本表事实上承担了"我的店铺收藏夹"职责。
+     */
+    default List<MemberShopRelDO> selectListByUserId(Long userId) {
+        return selectList(new LambdaQueryWrapperX<MemberShopRelDO>()
+                .eq(MemberShopRelDO::getUserId, userId)
+                .orderByDesc(MemberShopRelDO::getLastVisitAt));
     }
 
     /**

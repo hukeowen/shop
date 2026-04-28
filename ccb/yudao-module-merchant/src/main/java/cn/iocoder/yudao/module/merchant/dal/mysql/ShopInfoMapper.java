@@ -17,19 +17,38 @@ public interface ShopInfoMapper extends BaseMapperX<ShopInfoDO> {
         return selectOne(ShopInfoDO::getTenantId, tenantId);
     }
 
+    /**
+     * 按地理位置近距离 + 综合评分排序。
+     *
+     * 设计 6.7 节综合评分公式：
+     *   score = sales_30d * 0.5 + avg_rating * 10 * 0.3 + isNew * 50 * 0.2
+     *   isNew = (create_time > NOW() - 30 days) ? 1 : 0
+     * 主排序仍按距离（用户附近偏好），次排序用综合分突出优质 / 新店。
+     */
     @Select("SELECT * FROM shop_info WHERE status = 1 AND deleted = 0" +
             " AND latitude BETWEEN #{minLat} AND #{maxLat}" +
             " AND longitude BETWEEN #{minLng} AND #{maxLng}" +
-            " ORDER BY ABS(latitude - #{lat}) + ABS(longitude - #{lng}) ASC" +
+            " ORDER BY ABS(latitude - #{lat}) + ABS(longitude - #{lng}) ASC," +
+            " (COALESCE(sales_30d, 0) * 0.5" +
+            "  + COALESCE(avg_rating, 0) * 10 * 0.3" +
+            "  + (CASE WHEN create_time > DATE_SUB(NOW(), INTERVAL 30 DAY) THEN 50 ELSE 0 END) * 0.2) DESC" +
             " LIMIT #{limit}")
     List<ShopInfoDO> selectNearby(@Param("minLat") BigDecimal minLat, @Param("maxLat") BigDecimal maxLat,
                                    @Param("minLng") BigDecimal minLng, @Param("maxLng") BigDecimal maxLng,
                                    @Param("lat") BigDecimal lat, @Param("lng") BigDecimal lng,
                                    @Param("limit") int limit);
 
+    /**
+     * 按分类列出店铺，按设计 6.7 节综合评分公式排序：
+     *   score = sales_30d * 0.5 + avg_rating * 10 * 0.3 + isNew * 50 * 0.2
+     * isNew = 创建至今 ≤ 30 天则为 1。
+     */
     @Select("SELECT * FROM shop_info WHERE status = 1 AND deleted = 0" +
             " AND category_id = #{categoryId}" +
-            " ORDER BY sales_30d DESC LIMIT #{limit}")
+            " ORDER BY (COALESCE(sales_30d, 0) * 0.5" +
+            "  + COALESCE(avg_rating, 0) * 10 * 0.3" +
+            "  + (CASE WHEN create_time > DATE_SUB(NOW(), INTERVAL 30 DAY) THEN 50 ELSE 0 END) * 0.2) DESC" +
+            " LIMIT #{limit}")
     List<ShopInfoDO> selectByCategory(@Param("categoryId") Long categoryId, @Param("limit") int limit);
 
     /**

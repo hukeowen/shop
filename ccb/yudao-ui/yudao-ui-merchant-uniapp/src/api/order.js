@@ -86,3 +86,8 @@ export function pickUpById(id) {
 export function offlineConfirm(id) {
   return request({ url: `${BASE}/offline-confirm?id=${id}`, method: 'POST' });
 }
+
+/** 商户主动确认送达（同城配送 / 自营配送 → 等价于代用户确认收货） */
+export function confirmDelivered(id) {
+  return request({ url: `${BASE}/confirm-delivered?id=${id}`, method: 'POST' });
+}

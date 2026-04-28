@@ -225,6 +225,12 @@
       }
     },
     {
+      "path": "pages/nearby/index",
+      "style": {
+        "navigationBarTitleText": "附近店铺"
+      }
+    },
+    {
       "path": "pages/me/shop-edit",
       "style": {
         "navigationBarTitleText": "编辑店铺"

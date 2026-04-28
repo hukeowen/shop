@@ -52,6 +52,11 @@ public interface MemberShopRelService {
     MemberShopRelDO getByUserAndTenant(Long userId, Long tenantId);
 
     /**
+     * 列出某用户访问过的所有店铺（按最近访问倒序）。承担"我的店铺收藏夹"语义。
+     */
+    java.util.List<MemberShopRelDO> listByUserId(Long userId);
+
+    /**
      * 更新最近进店时间为当前时间。
      */
     void updateLastVisitAt(Long userId, Long tenantId);

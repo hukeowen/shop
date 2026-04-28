@@ -96,6 +96,15 @@ public class MemberShopRelServiceImpl implements MemberShopRelService {
 
     @Override
     @TenantIgnore
+    public java.util.List<MemberShopRelDO> listByUserId(Long userId) {
+        if (userId == null || userId <= 0) {
+            return java.util.Collections.emptyList();
+        }
+        return memberShopRelMapper.selectListByUserId(userId);
+    }
+
+    @Override
+    @TenantIgnore
     public void updateLastVisitAt(Long userId, Long tenantId) {
         memberShopRelMapper.updateLastVisitAt(userId, tenantId, LocalDateTime.now());
     }
