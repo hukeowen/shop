@@ -84,6 +84,28 @@ export const useUserStore = defineStore('user', {
     },
 
     /**
+     * H5 / 演示用 — 手机号 + 密码登录（不发短信）。
+     * 服务端首次输入即注册，已有则校验密码；返回字段与 wxMiniLogin 一致。
+     */
+    async passwordLogin(mobile, password) {
+      const resp = await request({
+        url: '/app-api/app/auth/password-login',
+        method: 'POST',
+        data: { mobile, password },
+      });
+      this.token = resp.token || '';
+      this.refreshToken = resp.refreshToken || '';
+      this.openid = resp.openid || '';
+      this.userId = resp.userId || 0;
+      this.merchantId = resp.merchantId || 0;
+      this.phone = resp.phone || mobile;
+      this.roles = Array.isArray(resp.roles) ? resp.roles : [];
+      this.activeRole = resp.activeRole || (this.roles[0] || '');
+      this.persist();
+      return resp;
+    },
+
+    /**
      * 微信小程序一键登录（先调 uni.login 拿 code，再换 token）
      * @returns {Promise<{token,roles,activeRole,phone,merchantId,userId,openid}>}
      */

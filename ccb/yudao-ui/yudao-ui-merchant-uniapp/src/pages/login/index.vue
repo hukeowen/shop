@@ -6,14 +6,41 @@
       <view class="slogan">一个人的摊，也能做出一家店</view>
     </view>
 
-    <!-- H5（非小程序）环境：仅提示 -->
-    <view v-if="isH5 && !hasToken" class="card h5-hint">
-      <view class="hint-title">请在微信小程序中打开</view>
-      <view class="hint-sub">
-        当前链路依赖微信小程序 <text class="mono">uni.login</text> 拿 code 再换 JWT，
-        H5 环境无法完成。<br />
-        真机调试：HBuilderX → 发行 → 微信小程序。
+    <!-- H5（非小程序）环境：手机号+密码登录（演示用，首次输入即注册） -->
+    <view v-if="isH5 && !hasToken" class="card">
+      <view class="sec-title">手机号登录</view>
+      <view class="sec-sub">首次登录即注册，无需短信验证</view>
+
+      <view class="field">
+        <text class="label">手机号</text>
+        <input
+          class="input"
+          type="number"
+          maxlength="11"
+          placeholder="请输入手机号"
+          v-model="loginMobile"
+        />
       </view>
+      <view class="field">
+        <text class="label">密码（≥ 6 位）</text>
+        <input
+          class="input"
+          type="password"
+          maxlength="64"
+          placeholder="设置一个密码"
+          v-model="loginPassword"
+        />
+      </view>
+
+      <button
+        class="submit"
+        :disabled="!canPasswordLogin || passwordLogining"
+        @click="onPasswordLogin"
+      >
+        {{ passwordLogining ? '登录中…' : '登录 / 注册' }}
+      </button>
+
+      <view class="hint">演示环境不发短信，输入手机号 + 密码即可登录</view>
     </view>
 
     <!-- 正在登录 -->
@@ -110,6 +137,14 @@ const applying = ref(false);
 const showApplyMerchant = ref(false);
 const inviteCode = ref('');
 
+// H5 手机号+密码登录（演示用）
+const loginMobile = ref('');
+const loginPassword = ref('');
+const passwordLogining = ref(false);
+const canPasswordLogin = computed(
+  () => /^1[3-9]\d{9}$/.test(loginMobile.value) && loginPassword.value.length >= 6
+);
+
 // #ifdef H5
 const isH5 = ref(true);
 // #endif
@@ -187,6 +222,24 @@ async function onChooseRole(role) {
 
 function goUserHome() {
   uni.reLaunch({ url: '/pages/index/index' });
+}
+
+async function onPasswordLogin() {
+  if (!canPasswordLogin.value) return;
+  passwordLogining.value = true;
+  try {
+    await userStore.passwordLogin(loginMobile.value.trim(), loginPassword.value);
+    uni.showToast({ title: '登录成功', icon: 'success' });
+    routeByRole();
+  } catch (e) {
+    const msg = String(e?.message || e);
+    uni.showToast({
+      title: /401|expired|密码|password/i.test(msg) ? '密码错误' : '登录失败：' + msg,
+      icon: 'none',
+    });
+  } finally {
+    passwordLogining.value = false;
+  }
 }
 
 function backToDefault() {

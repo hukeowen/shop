@@ -53,6 +53,9 @@ VOLCANO_APP_ID="${VOLCANO_APP_ID:-}"
 VOLCANO_ACCESS_TOKEN="${VOLCANO_ACCESS_TOKEN:-}"
 VOLCANO_AK="${VOLCANO_AK:-}"
 VOLCANO_SK="${VOLCANO_SK:-}"
+ARK_API_KEY="${ARK_API_KEY:-}"
+JIMENG_AK="${JIMENG_AK:-}"
+JIMENG_SK="${JIMENG_SK:-}"
 DOUYIN_CLIENT_KEY="${DOUYIN_CLIENT_KEY:-}"
 DOUYIN_CLIENT_SECRET="${DOUYIN_CLIENT_SECRET:-}"
 
@@ -822,8 +825,11 @@ deploy_backend_service() {
   umask 077
   cat > "${ENV_UNIT}" << ENV_EOF
 MERCHANT_INTERNAL_TOKEN=${MERCHANT_INTERNAL_TOKEN}
+ARK_API_KEY=${ARK_API_KEY}
 VOLCANO_APP_ID=${VOLCANO_APP_ID}
 VOLCANO_ACCESS_TOKEN=${VOLCANO_ACCESS_TOKEN}
+JIMENG_AK=${JIMENG_AK}
+JIMENG_SK=${JIMENG_SK}
 VOLCANO_AK=${VOLCANO_AK}
 VOLCANO_SK=${VOLCANO_SK}
 DOUYIN_CLIENT_KEY=${DOUYIN_CLIENT_KEY}
@@ -988,12 +994,30 @@ main() {
   echo -e "${GREEN}║  运行用户:   ${SERVICE_USER} (非 root)"
   echo -e "${GREEN}╚════════════════════════════════════════════════════════╝${NC}"
   echo ""
+  echo -e "${CYAN}═══════════════ 演示账号 / 入口 ═══════════════${NC}"
+  echo "  PC 后台:        http://${PUBLIC_IP}/admin/   admin / admin123"
+  echo "  H5 入口:        http://${PUBLIC_IP}/m/#/pages/login/index"
+  echo "  H5 登录方式:    手机号 + 任意 ≥6 位密码（首次输入即注册，不发短信）"
+  echo "  商户邀请码:     DEMO20260428（无限次，演示前请勿外泄）"
+  echo "  分享链接示例:   http://${PUBLIC_IP}/m/shop-home?inviter=<userId>"
+  echo "  营销手动结算:   POST /app-api/merchant/mini/promo/pool/settle?mode=FULL"
+  echo ""
+  echo -e "${CYAN}═══════════════ 演示链路速览 ═══════════════${NC}"
+  echo "  1. 手机号+密码登录 → 默认 member 身份"
+  echo "  2. 输入邀请码 DEMO20260428 → 一键开通商户身份（无审核）"
+  echo "  3. 商户后台 PC 网页：营销引擎 / 商品营销 / 提现审批 三页"
+  echo "  4. AI 极简发布商品 → 自动上架（无审核）"
+  echo "  5. 用 me/qrcode 拿商户分享码 → 用户扫码进 shop-home → 下单"
+  echo "  6. 双端订单页（商户 me/orders、用户 user-order/list）实时可见"
+  echo "  7. 推广积分流水可在 user-me/wallet 看到 / 我的队列页查看排队状态"
+  echo ""
   echo -e "${YELLOW}生产上线前请务必：${NC}"
   echo "  1. 阿里云 ECS 安全组放行 80/443 端口"
   echo "  2. 将 SERVER_NAME 改为你的真实域名"
   echo "  3. 执行 yum install -y certbot python2-certbot-nginx && certbot --nginx 配置 HTTPS"
-  echo "  4. 在 .env 中填入真实的火山引擎 / 抖音 API Key"
-  echo "  5. 确认 .env 已加入 .gitignore，不会被提交"
+  echo "  4. 在 .env 中填入真实 ARK_API_KEY / VOLCANO_* / DOUYIN_*（演示也要走 AI 视频时）"
+  echo "  5. 演示完毕：禁用邀请码 DEMO20260428（system_menu 后台 -> merchant_invite_code）"
+  echo "  6. 确认 .env 已加入 .gitignore，不会被提交"
 }
 
 main "$@"

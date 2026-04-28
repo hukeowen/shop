@@ -14,6 +14,7 @@ import cn.iocoder.yudao.module.member.dal.mysql.user.MemberUserMapper;
 import cn.iocoder.yudao.module.merchant.controller.app.vo.auth.AppApplyMerchantReqVO;
 import cn.iocoder.yudao.module.merchant.controller.app.vo.auth.AppBindPhoneReqVO;
 import cn.iocoder.yudao.module.merchant.controller.app.vo.auth.AppLoginRespVO;
+import cn.iocoder.yudao.module.merchant.controller.app.vo.auth.AppPasswordLoginReqVO;
 import cn.iocoder.yudao.module.merchant.controller.app.vo.auth.AppSwitchRoleReqVO;
 import cn.iocoder.yudao.module.merchant.controller.app.vo.auth.AppWxMiniLoginReqVO;
 import cn.iocoder.yudao.module.merchant.dal.dataobject.MerchantDO;
@@ -28,6 +29,7 @@ import cn.iocoder.yudao.module.system.enums.oauth2.OAuth2ClientConstants;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -86,6 +88,8 @@ public class AppUnifiedAuthController {
     private ActiveRoleCache activeRoleCache;
     @Resource
     private OAuth2TokenCommonApi oauth2TokenApi;
+    @Resource
+    private PasswordEncoder passwordEncoder;
 
     // ==================== 1. 微信登录 ====================
 
@@ -107,6 +111,58 @@ public class AppUnifiedAuthController {
 
         OAuth2AccessTokenRespDTO token = issueToken(member.getId());
         return success(buildLoginResp(token, member, merchant, roles, activeRole, session.getOpenid()));
+    }
+
+    // ==================== 1B. 演示用 — 手机号+密码登录（不发短信） ====================
+
+    @PostMapping("/password-login")
+    @Operation(summary = "手机号+密码登录（H5 / 演示用，首次输入即注册，不验真）")
+    @PermitAll
+    @TenantIgnore // member_user 是全局表，登录入口不需 tenant-id Header
+    @Transactional(rollbackFor = Exception.class)
+    public CommonResult<AppLoginRespVO> passwordLogin(@Valid @RequestBody AppPasswordLoginReqVO reqVO) {
+        String mobile = reqVO.getMobile();
+        String rawPassword = reqVO.getPassword();
+
+        MemberUserDO member = memberUserMapper.selectByMobile(mobile);
+        if (member == null) {
+            // 自动注册：给 fake openid 满足后续 apply-merchant 的 openid 非空校验
+            MemberUserDO newMember = new MemberUserDO();
+            newMember.setMobile(mobile);
+            newMember.setMiniAppOpenId("pwd:" + mobile);
+            newMember.setPassword(passwordEncoder.encode(rawPassword));
+            newMember.setStatus(0); // CommonStatusEnum.ENABLE
+            newMember.setRegisterTerminal(TerminalEnum.H5.getTerminal());
+            memberUserMapper.insert(newMember);
+            member = newMember;
+            log.info("[passwordLogin] 自动注册 mobile={} userId={}", mobile, newMember.getId());
+        } else if (StrUtil.isBlank(member.getPassword())) {
+            // 老账号未设密码 → 本次输入作为首次设置
+            MemberUserDO update = new MemberUserDO();
+            update.setId(member.getId());
+            update.setPassword(passwordEncoder.encode(rawPassword));
+            // 顺便补上 openid，否则 apply-merchant 流程会失败
+            if (StrUtil.isBlank(member.getMiniAppOpenId())) {
+                update.setMiniAppOpenId("pwd:" + mobile);
+                member.setMiniAppOpenId("pwd:" + mobile);
+            }
+            memberUserMapper.updateById(update);
+            member.setPassword(update.getPassword());
+            log.info("[passwordLogin] 老账号首次设置密码 mobile={} userId={}", mobile, member.getId());
+        } else if (!passwordEncoder.matches(rawPassword, member.getPassword())) {
+            // 密码不匹配 — 复用 SESSION_KEY_EXPIRED 错误码避免新加错误码
+            throw exception(SESSION_KEY_EXPIRED);
+        }
+
+        MerchantDO merchant = StrUtil.isNotBlank(member.getMiniAppOpenId())
+                ? merchantService.getMerchantByOpenId(member.getMiniAppOpenId())
+                : null;
+        List<String> roles = buildRoles(merchant);
+        String activeRole = decideActiveRole(member.getId(), roles);
+        activeRoleCache.set(member.getId(), activeRole);
+
+        OAuth2AccessTokenRespDTO token = issueToken(member.getId());
+        return success(buildLoginResp(token, member, merchant, roles, activeRole, member.getMiniAppOpenId()));
     }
 
     // ==================== 2. 绑定手机号 ====================

@@ -65,16 +65,56 @@ INSERT INTO `infra_job`
   (`id`, `name`, `status`, `handler_name`, `handler_param`, `cron_expression`,
    `retry_count`, `retry_interval`, `monitor_timeout`, `creator`, `create_time`, `updater`, `update_time`, `deleted`)
 VALUES
-  (6200, '积分池自动结算 Job', 2, 'promoPoolSettleJob', NULL, '0 0 * * * ?',
+  (6200, '积分池自动结算 Job', 0, 'promoPoolSettleJob', NULL, '0 0 * * * ?',
    0, 0, 0, 'admin', NOW(), 'admin', NOW(), b'0');
+-- 注：status=0 (NORMAL) 部署后即跑；演示更稳。如担心打扰可手动改 STOP。
+
+-- ----------------------------
+-- 自动把营销 10 个菜单 ID（6100..6109）注入"普通套餐"id=111 的 menu_ids JSON 数组中
+--   yudao 在租户初始化时按套餐挂菜单到该租户 admin 角色，
+--   不注入则商户子租户管理员看不到「营销引擎」三页
+--   这里走 JSON_ARRAY_APPEND，对已含某个 ID 的情况下用 NOT JSON_CONTAINS 做幂等
+-- ----------------------------
+UPDATE `system_tenant_package`
+SET `menu_ids` = (
+  SELECT JSON_ARRAY_APPEND(
+    JSON_ARRAY_APPEND(
+      JSON_ARRAY_APPEND(
+        JSON_ARRAY_APPEND(
+          JSON_ARRAY_APPEND(
+            JSON_ARRAY_APPEND(
+              JSON_ARRAY_APPEND(
+                JSON_ARRAY_APPEND(
+                  JSON_ARRAY_APPEND(
+                    JSON_ARRAY_APPEND(`menu_ids`, '$', 6100),
+                  '$', 6101),
+                '$', 6102),
+              '$', 6103),
+            '$', 6104),
+          '$', 6105),
+        '$', 6106),
+      '$', 6107),
+    '$', 6108),
+  '$', 6109)
+  FROM (SELECT `menu_ids` FROM `system_tenant_package` WHERE id = 111) AS t
+)
+WHERE id = 111
+  AND NOT JSON_CONTAINS(`menu_ids`, '6100', '$');
+
+-- ----------------------------
+-- 演示用预置邀请码：DEMO20260428（无限次、永久有效），用于客户演示「商户申请」流程
+--   归属 BD = admin 用户 (id=1)；正式上线后建议 disable 或改 usage_limit
+-- ----------------------------
+INSERT IGNORE INTO `merchant_invite_code`
+  (`code`, `operator_user_id`, `usage_limit`, `used_count`, `enabled`, `remark`, `creator`, `create_time`, `updater`, `update_time`, `deleted`, `tenant_id`)
+VALUES
+  ('DEMO20260428', 1, -1, 0, b'1', '演示用 - 无限次邀请码', 'admin', NOW(), 'admin', NOW(), b'0', 1);
 
 -- ----------------------------
 -- 备注：
 -- 1. 商户子租户的"管理员角色"通常 code 是 'tenant_admin'，每个租户的 role_id 不同；
---    yudao 框架会在租户初始化时把"租户套餐 menu_ids"自动挂给该租户的 admin 角色，
---    所以只要把 menu_id (6100, 6107, 6108, 6109 必选；6101..6106 按需) 加入
---    相应的 system_tenant_package.menu_ids 字段即可。
---    这里不直接写 SQL（避免改坏既有套餐），交由部署后通过 UI 分配。
+--    上面的 JSON_ARRAY_APPEND 已自动注入到 id=111 的"普通套餐"。
+--    若使用其他 package_id，请按需复制一份执行。
 -- 2. 商户/用户 H5（uniapp）走 /app-api/merchant/mini/promo/**，无 @PreAuthorize，
 --    不依赖以上权限即可工作。
 -- =============================================================================

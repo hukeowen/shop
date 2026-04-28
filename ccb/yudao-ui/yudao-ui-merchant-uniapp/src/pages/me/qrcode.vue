@@ -7,11 +7,15 @@
         <view class="qr-wrap">
           <image v-if="qrUrl" :src="qrUrl" class="qr-img" mode="aspectFit" />
           <view v-else class="qr-placeholder">
-            <text class="qr-placeholder-text">二维码尚未生成</text>
-            <text class="qr-hint">请联系平台管理员生成店铺专属二维码</text>
+            <text class="qr-placeholder-text">二维码生成失败</text>
+            <text class="qr-hint">请稍后重试</text>
           </view>
         </view>
         <view v-if="qrUrl" class="save-tip">长按图片可保存到相册</view>
+        <view v-if="shareUrl" class="share-url">
+          <text class="share-url-text">{{ shareUrl }}</text>
+          <button class="copy-btn" size="mini" @click="onCopyUrl">复制链接</button>
+        </view>
       </view>
 
       <view class="card hint-card">
@@ -27,20 +31,66 @@
 <script setup>
 import { ref } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
+import QRCode from 'qrcode';
 import { request } from '../../api/request.js';
+import { useUserStore } from '../../store/user.js';
 
+const userStore = useUserStore();
 const loading = ref(true);
 const qrUrl = ref('');
 const shopName = ref('');
+const shareUrl = ref('');
+
+const FALLBACK_ORIGIN = 'https://www.doupaidoudian.com';
+
+function buildShareUrl() {
+  const tenantId = userStore.tenantId || '';
+  const inviter = userStore.userId || '';
+  let origin = FALLBACK_ORIGIN;
+  try {
+    if (typeof location !== 'undefined' && location.origin) {
+      origin = location.origin;
+    }
+  } catch {
+    // 小程序无 location，用兜底
+  }
+  const params = [];
+  if (tenantId) params.push('tenantId=' + tenantId);
+  if (inviter) params.push('inviter=' + inviter);
+  return `${origin}/m/shop-home${params.length ? '?' + params.join('&') : ''}`;
+}
+
+async function generateLocalQr(text) {
+  try {
+    return await QRCode.toDataURL(text, { width: 480, margin: 1, errorCorrectionLevel: 'M' });
+  } catch {
+    return '';
+  }
+}
+
+function onCopyUrl() {
+  if (!shareUrl.value) return;
+  uni.setClipboardData({
+    data: shareUrl.value,
+    success: () => uni.showToast({ title: '已复制', icon: 'success' }),
+    fail: () => uni.showToast({ title: '复制失败', icon: 'none' }),
+  });
+}
 
 onLoad(async () => {
   try {
     const [shopRes, qrRes] = await Promise.all([
       request({ url: '/app-api/merchant/mini/shop/info' }),
-      request({ url: '/app-api/merchant/mini/shop/qrcode' }),
+      request({ url: '/app-api/merchant/mini/shop/qrcode' }).catch(() => null),
     ]);
     shopName.value = shopRes?.shopName || '';
-    qrUrl.value = qrRes?.qrCodeUrl || '';
+    if (qrRes?.qrCodeUrl) {
+      qrUrl.value = qrRes.qrCodeUrl;
+    } else {
+      // 后端未配置二维码 → 本地生成 /m/shop-home 链接二维码兜底
+      shareUrl.value = buildShareUrl();
+      qrUrl.value = await generateLocalQr(shareUrl.value);
+    }
   } catch {}
   loading.value = false;
 });
@@ -125,6 +175,36 @@ onLoad(async () => {
   margin-top: 24rpx;
   font-size: 24rpx;
   color: $text-placeholder;
+}
+
+.share-url {
+  margin-top: 24rpx;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+
+  .share-url-text {
+    flex: 1;
+    font-size: 22rpx;
+    color: $text-secondary;
+    word-break: break-all;
+    background: #f6f7f9;
+    padding: 12rpx 16rpx;
+    border-radius: $radius-md;
+  }
+
+  .copy-btn {
+    flex: 0 0 auto;
+    background: $brand-primary;
+    color: #fff;
+    font-size: 22rpx;
+    border-radius: $radius-md;
+
+    &::after {
+      border: none;
+    }
+  }
 }
 
 .hint-card {
