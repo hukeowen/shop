@@ -7,6 +7,8 @@ import cn.iocoder.yudao.framework.common.biz.system.oauth2.dto.OAuth2AccessToken
 import cn.iocoder.yudao.framework.common.enums.TerminalEnum;
 import cn.iocoder.yudao.framework.common.enums.UserTypeEnum;
 import cn.iocoder.yudao.framework.common.pojo.CommonResult;
+import cn.iocoder.yudao.framework.ratelimiter.core.annotation.RateLimiter;
+import cn.iocoder.yudao.framework.ratelimiter.core.keyresolver.impl.ClientIpRateLimiterKeyResolver;
 import cn.iocoder.yudao.framework.security.core.util.SecurityFrameworkUtils;
 import cn.iocoder.yudao.framework.tenant.core.aop.TenantIgnore;
 import cn.iocoder.yudao.module.member.dal.dataobject.user.MemberUserDO;
@@ -47,6 +49,7 @@ import java.util.List;
 
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
 import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
+import static cn.iocoder.yudao.module.merchant.enums.MerchantErrorCodeConstants.PASSWORD_INVALID;
 import static cn.iocoder.yudao.module.merchant.enums.MerchantErrorCodeConstants.PHONE_REQUIRED;
 import static cn.iocoder.yudao.module.merchant.enums.MerchantErrorCodeConstants.ROLE_NOT_GRANTED;
 import static cn.iocoder.yudao.module.merchant.enums.MerchantErrorCodeConstants.SESSION_KEY_EXPIRED;
@@ -120,6 +123,9 @@ public class AppUnifiedAuthController {
     @PermitAll
     @TenantIgnore // member_user 是全局表，登录入口不需 tenant-id Header
     @Transactional(rollbackFor = Exception.class)
+    // 防刷：每个 IP 60 秒内最多 6 次尝试，超出返 TOO_MANY_REQUESTS
+    @RateLimiter(time = 60, count = 6, keyResolver = ClientIpRateLimiterKeyResolver.class,
+                 message = "操作过于频繁，请稍后再试")
     public CommonResult<AppLoginRespVO> passwordLogin(@Valid @RequestBody AppPasswordLoginReqVO reqVO) {
         String mobile = reqVO.getMobile();
         String rawPassword = reqVO.getPassword();
@@ -150,8 +156,7 @@ public class AppUnifiedAuthController {
             member.setPassword(update.getPassword());
             log.info("[passwordLogin] 老账号首次设置密码 mobile={} userId={}", mobile, member.getId());
         } else if (!passwordEncoder.matches(rawPassword, member.getPassword())) {
-            // 密码不匹配 — 复用 SESSION_KEY_EXPIRED 错误码避免新加错误码
-            throw exception(SESSION_KEY_EXPIRED);
+            throw exception(PASSWORD_INVALID);
         }
 
         MerchantDO merchant = StrUtil.isNotBlank(member.getMiniAppOpenId())

@@ -61,6 +61,11 @@
             <groupId>cn.iocoder.boot</groupId>
             <artifactId>yudao-spring-boot-starter-redis</artifactId>
         </dependency>
+        <!-- @RateLimiter 防刷限流（password-login 等高频接口用） -->
+        <dependency>
+            <groupId>cn.iocoder.boot</groupId>
+            <artifactId>yudao-spring-boot-starter-protection</artifactId>
+        </dependency>
         <!-- 微信小程序码生成 -->
         <dependency>
             <groupId>com.github.binarywang</groupId>

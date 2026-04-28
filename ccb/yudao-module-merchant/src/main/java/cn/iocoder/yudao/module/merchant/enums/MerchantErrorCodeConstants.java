@@ -51,6 +51,7 @@ public interface MerchantErrorCodeConstants {
     ErrorCode PHONE_REQUIRED           = new ErrorCode(1_021_011_006, "需要先授权手机号");
     ErrorCode ROLE_NOT_GRANTED         = new ErrorCode(1_021_011_007, "当前用户没有该角色");
     ErrorCode SESSION_KEY_EXPIRED      = new ErrorCode(1_021_011_008, "登录态已过期，请重新登录");
+    ErrorCode PASSWORD_INVALID         = new ErrorCode(1_021_011_009, "手机号或密码错误");
 
     // ========== 视频配额 / 套餐 1-021-012-xxx ==========
     ErrorCode PACKAGE_NOT_FOUND        = new ErrorCode(1_021_012_001, "套餐不存在");

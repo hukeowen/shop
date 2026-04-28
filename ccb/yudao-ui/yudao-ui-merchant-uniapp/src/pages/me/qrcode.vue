@@ -43,8 +43,9 @@ const shareUrl = ref('');
 
 const FALLBACK_ORIGIN = 'https://www.doupaidoudian.com';
 
-function buildShareUrl() {
-  const tenantId = userStore.tenantId || '';
+// 关键：tenantId 必须从 ShopInfoDO 取（商户的真实 tenant），不是 userStore.tenantId（普通 member 是 0）；
+// 否则客户扫码进 shop-home 后 loadProducts 因 tenantId null 不加载，看不到商品。
+function buildShareUrl(tenantId) {
   const inviter = userStore.userId || '';
   let origin = FALLBACK_ORIGIN;
   try {
@@ -87,8 +88,10 @@ onLoad(async () => {
     if (qrRes?.qrCodeUrl) {
       qrUrl.value = qrRes.qrCodeUrl;
     } else {
-      // 后端未配置二维码 → 本地生成 /m/shop-home 链接二维码兜底
-      shareUrl.value = buildShareUrl();
+      // 后端未配置二维码 → 本地生成 /m/shop-home 链接兜底
+      // tenantId 取 shopInfo.tenantId（商户的真实租户），用 userStore.userId 作 inviter
+      const tenantId = shopRes?.tenantId;
+      shareUrl.value = buildShareUrl(tenantId);
       qrUrl.value = await generateLocalQr(shareUrl.value);
     }
   } catch {}

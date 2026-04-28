@@ -252,10 +252,15 @@ async function onPasswordLogin() {
     routeByRole();
   } catch (e) {
     const msg = String(e?.message || e);
-    uni.showToast({
-      title: /401|expired|密码|password/i.test(msg) ? '密码错误' : '登录失败：' + msg,
-      icon: 'none',
-    });
+    let title;
+    if (/手机号或密码错误/.test(msg) || /password.*invalid/i.test(msg)) {
+      title = '手机号或密码错误';
+    } else if (/操作过于频繁|TOO_MANY_REQUESTS/i.test(msg)) {
+      title = '操作过于频繁，请稍后再试';
+    } else {
+      title = '登录失败：' + msg;
+    }
+    uni.showToast({ title, icon: 'none' });
   } finally {
     passwordLogining.value = false;
   }
