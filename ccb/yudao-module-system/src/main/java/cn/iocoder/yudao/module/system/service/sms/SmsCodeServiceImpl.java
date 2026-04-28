@@ -43,9 +43,23 @@ public class SmsCodeServiceImpl implements SmsCodeService {
     public void sendSmsCode(SmsCodeSendReqDTO reqDTO) {
         SmsSceneEnum sceneEnum = SmsSceneEnum.getCodeByScene(reqDTO.getScene());
         Assert.notNull(sceneEnum, "验证码场景({}) 查找不到配置", reqDTO.getScene());
-        // 创建验证码
+        // 演示模式：不发真实短信，仅落库固定验证码（如 888888）
+        if (Boolean.TRUE.equals(smsCodeProperties.getDemoMode())) {
+            String demoCode = smsCodeProperties.getDemoCode();
+            if (demoCode == null || demoCode.isEmpty()) {
+                demoCode = "888888";
+            }
+            // 跳过频率检查 + 跳过真实渠道发送，只插一条 sms_code 供 validate 校验通过
+            SmsCodeDO last = smsCodeMapper.selectLastByMobile(reqDTO.getMobile(), null, null);
+            SmsCodeDO newSmsCode = SmsCodeDO.builder()
+                    .mobile(reqDTO.getMobile()).code(demoCode).scene(reqDTO.getScene())
+                    .todayIndex(last != null && isToday(last.getCreateTime()) ? last.getTodayIndex() + 1 : 1)
+                    .createIp(reqDTO.getCreateIp()).used(false).build();
+            smsCodeMapper.insert(newSmsCode);
+            return;
+        }
+        // 正式：创建验证码 + 调短信渠道
         String code = createSmsCode(reqDTO.getMobile(), reqDTO.getScene(), reqDTO.getCreateIp());
-        // 发送验证码
         smsSendService.sendSingleSms(reqDTO.getMobile(), null, null,
                 sceneEnum.getTemplateCode(), MapUtil.of("code", code));
     }
