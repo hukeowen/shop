@@ -20,8 +20,10 @@ import java.math.RoundingMode;
  * 双积分账本实现。
  *
  * 并发安全：
- *   - 余额变更走 Mapper 的 UPDATE col = col + ?（原子），不再读改写，杜绝丢更新
- *   - 扣减用 WHERE col + delta >= 0 兜底；UPDATE 影响 0 行 = 余额不足，抛业务异常
+ *   - 同事务内先 SELECT ... FOR UPDATE 锁行 + 拿 oldBalance，再 UPDATE col = col + ?（原子），
+ *     最后 newBalance = oldBalance + delta 本地计算 —— balanceAfter 严格等于"本次写后余额"，
+ *     不会被并发交叉污染
+ *   - 扣减时先在锁定快照上预校验余额；同时 UPDATE 仍带 col + delta >= 0 作为兜底
  *   - getOrCreateAccount 在并发首单下可能两个事务同插入 → 捕获 DuplicateKeyException 重读
  *
  * 幂等：
@@ -78,12 +80,14 @@ public class PromoPointServiceImpl implements PromoPointService {
             return false;
         }
         getOrCreateAccount(userId);  // 确保账户存在
+        ShopUserStarDO locked = userStarMapper.selectByUserIdForUpdate(userId);
+        long oldBalance = locked.getPromoPointBalance();
         int rows = userStarMapper.addPromoPointBalance(userId, amount);
         if (rows != 1) {
             throw new IllegalStateException("addPromoPoint 原子写失败 userId=" + userId
                     + " amount=" + amount + " rows=" + rows);
         }
-        long newBalance = userStarMapper.selectByUserId(userId).getPromoPointBalance();
+        long newBalance = oldBalance + amount;
         promoRecordMapper.insert(buildPromoRecord(userId, sourceType, sourceId, amount, newBalance, remark));
         return true;
     }
@@ -98,12 +102,18 @@ public class PromoPointServiceImpl implements PromoPointService {
             return false;
         }
         getOrCreateAccount(userId);
+        ShopUserStarDO locked = userStarMapper.selectByUserIdForUpdate(userId);
+        long oldBalance = locked.getPromoPointBalance();
+        if (oldBalance < amount) {
+            throw new IllegalStateException("推广积分余额不足 userId=" + userId
+                    + " need=" + amount + " have=" + oldBalance);
+        }
         int rows = userStarMapper.addPromoPointBalance(userId, -amount);
         if (rows == 0) {
-            // 余额不足；此处不查余额防止额外 IO，错误信息保持简洁
+            // 锁内已预校验，理论不会到这里；保留兜底以防 SQL 条件被绕过
             throw new IllegalStateException("推广积分余额不足 userId=" + userId + " need=" + amount);
         }
-        long newBalance = userStarMapper.selectByUserId(userId).getPromoPointBalance();
+        long newBalance = oldBalance - amount;
         promoRecordMapper.insert(buildPromoRecord(userId, sourceType, sourceId, -amount, newBalance, remark));
         return true;
     }
@@ -118,12 +128,14 @@ public class PromoPointServiceImpl implements PromoPointService {
             return false;
         }
         getOrCreateAccount(userId);
+        ShopUserStarDO locked = userStarMapper.selectByUserIdForUpdate(userId);
+        long oldBalance = locked.getConsumePointBalance();
         int rows = userStarMapper.addConsumePointBalance(userId, amount);
         if (rows != 1) {
             throw new IllegalStateException("addConsumePoint 原子写失败 userId=" + userId
                     + " amount=" + amount + " rows=" + rows);
         }
-        long newBalance = userStarMapper.selectByUserId(userId).getConsumePointBalance();
+        long newBalance = oldBalance + amount;
         consumeRecordMapper.insert(buildConsumeRecord(userId, sourceType, sourceId, amount, newBalance, remark));
         return true;
     }
@@ -138,11 +150,17 @@ public class PromoPointServiceImpl implements PromoPointService {
             return false;
         }
         getOrCreateAccount(userId);
+        ShopUserStarDO locked = userStarMapper.selectByUserIdForUpdate(userId);
+        long oldBalance = locked.getConsumePointBalance();
+        if (oldBalance < amount) {
+            throw new IllegalStateException("消费积分余额不足 userId=" + userId
+                    + " need=" + amount + " have=" + oldBalance);
+        }
         int rows = userStarMapper.addConsumePointBalance(userId, -amount);
         if (rows == 0) {
             throw new IllegalStateException("消费积分余额不足 userId=" + userId + " need=" + amount);
         }
-        long newBalance = userStarMapper.selectByUserId(userId).getConsumePointBalance();
+        long newBalance = oldBalance - amount;
         consumeRecordMapper.insert(buildConsumeRecord(userId, sourceType, sourceId, -amount, newBalance, remark));
         return true;
     }

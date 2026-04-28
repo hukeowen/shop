@@ -2,7 +2,7 @@
 
 > 配套文档：[marketing-system-v6.md](./marketing-system-v6.md)（已签字定稿的需求）
 >
-> 截止 2026-04-28，**5 + 4 + 4 个开发批次**已完成，进入暂停 / 验收阶段。
+> 截止 2026-04-28，**5 + 4 + 4 + 1 个开发批次**已完成；代码侧尾巴清完，剩余仅部署联调。
 
 ---
 
@@ -31,12 +31,13 @@
 | N10 | shop-home 兼容 `?inviter=` query alias | ✅ 完成 |
 | N11 | `docs/merchant-promo-guide.md` 商户使用手册 | ✅ 完成 |
 | N12 | `scripts/smoke-test-promo.sh` 部署后烟雾测试 | ✅ 完成 |
+| FIX-E | `convertPromoToConsume` 等 4 个余额方法改用 `SELECT … FOR UPDATE` 锁行 + 本地算 newBalance，杜绝 balanceAfter 并发滞后 | ✅ 完成（已在 Git Bash 内 mvn 96/96 回归） |
 
 ---
 
 ## 二、测试覆盖
 
-最新一次完整跑：**96 / 96 全绿**（`mvn -pl yudao-module-merchant -am test`）。
+最新一次完整跑：**96 / 96 全绿**（`mvn -pl yudao-module-merchant -am test`，FIX-E 后已在 Git Bash 内回归，仍 96/96）。
 
 | 测试类 | 测试数 | 关键场景 |
 |---|---|---|
@@ -153,7 +154,7 @@
 
 | ID | 内容 | 影响 |
 |---|---|---|
-| `convertPromoToConsume` 的 `balanceAfter` | 原子写后再 SELECT 余额，并发下值可能轻微滞后 | 仅审计精度，**不影响金额正确性** |
+| ~~`convertPromoToConsume` 的 `balanceAfter`~~ | ✅ FIX-E 已修：改为 `SELECT … FOR UPDATE` 锁旧余额 + 原子 UPDATE + 本地 `newBalance = old + delta`；audit 字段严格等于本次写后值 | — |
 | Job 启用 | `infra_job` 默认 status=2(STOP)；商户首次部署后需进后台 → 基础设施 → 定时任务，把"积分池自动结算 Job" 改成 NORMAL | 不启用则不会自动跑，但手动触发不受影响 |
 | 推荐链 query 参数命名 | shop-home 现支持 `referrerUserId`（兼容旧）；如分享卡片用 `inviter` 需在前端额外读一次 | 当前命名一致即可 |
 | 部署联调 | 跑一遍真实订单：A 推 B → B 下单 → 验证 A 拿直推奖 / B 进 B 层 / commission / pool deposit 全链路 | 仅人工验收 |
@@ -187,4 +188,4 @@
 
 ---
 
-_整理日期：2026-04-28_
+_整理日期：2026-04-28（FIX-E 收尾 + Git Bash 内 mvn 96/96 回归通过）_

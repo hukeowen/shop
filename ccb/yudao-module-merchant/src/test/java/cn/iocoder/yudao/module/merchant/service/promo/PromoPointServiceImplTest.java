@@ -57,8 +57,11 @@ class PromoPointServiceImplTest {
         promoBalance.set(100L);
         consumeBalance.set(0L);
 
-        // selectByUserId 永远返一个反映当前余额的 DO
+        // selectByUserId / selectByUserIdForUpdate 都返一个反映当前余额的 DO
         when(userStarMapper.selectByUserId(eq(1L))).thenAnswer(inv -> ShopUserStarDO.builder()
+                .userId(1L).promoPointBalance(promoBalance.get()).consumePointBalance(consumeBalance.get())
+                .currentStar(0).directCount(0).teamSalesCount(0).build());
+        when(userStarMapper.selectByUserIdForUpdate(eq(1L))).thenAnswer(inv -> ShopUserStarDO.builder()
                 .userId(1L).promoPointBalance(promoBalance.get()).consumePointBalance(consumeBalance.get())
                 .currentStar(0).directCount(0).teamSalesCount(0).build());
 

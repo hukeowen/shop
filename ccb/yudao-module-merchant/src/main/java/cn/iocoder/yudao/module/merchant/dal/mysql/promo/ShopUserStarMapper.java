@@ -5,6 +5,7 @@ import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
 import cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopUserStarDO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 
 import java.util.Collection;
@@ -17,6 +18,13 @@ public interface ShopUserStarMapper extends BaseMapperX<ShopUserStarDO> {
         return selectOne(new LambdaQueryWrapperX<ShopUserStarDO>()
                 .eq(ShopUserStarDO::getUserId, userId));
     }
+
+    /**
+     * 行锁读取：必须在 @Transactional 内调用，用于"读旧余额 + 原子写 + 计算新余额"流程，
+     * 让 balanceAfter 严格等于本次写后的余额（防并发交叉）。
+     */
+    @Select("SELECT * FROM shop_user_star WHERE user_id = #{userId} AND deleted = b'0' FOR UPDATE")
+    ShopUserStarDO selectByUserIdForUpdate(@Param("userId") Long userId);
 
     /** 列出某商户内所有"current_star >= ?"的用户（积分池可参与瓜分用户名单） */
     default List<ShopUserStarDO> selectListByCurrentStarGe(int starInclusive) {
