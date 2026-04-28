@@ -48,6 +48,16 @@ function clearTokenAndRedirectToLogin() {
     const cur = pages && pages.length ? pages[pages.length - 1] : null;
     const curRoute = cur?.route || cur?.$page?.fullPath || '';
     if (!/pages\/login\/index/.test(curRoute)) {
+      // 把当前路由（含 query）保存为 redirect，登录成功后会跳回
+      try {
+        const optionsStr = cur?.options
+          ? Object.entries(cur.options).map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join('&')
+          : '';
+        const fullRoute = '/' + (curRoute.replace(/^\/+/, '')) + (optionsStr ? '?' + optionsStr : '');
+        if (typeof localStorage !== 'undefined' && curRoute) {
+          localStorage.setItem('redirect:after-login', fullRoute);
+        }
+      } catch {}
       uni.reLaunch({ url: '/pages/login/index' });
     }
   } catch {

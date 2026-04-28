@@ -188,7 +188,26 @@ async function autoLogin() {
   }
 }
 
+function consumeRedirect() {
+  // 落地时 App.vue 暂存的"原意图 URL"，登录成功后优先回这里
+  try {
+    if (typeof localStorage === 'undefined') return '';
+    const target = localStorage.getItem('redirect:after-login');
+    if (target) {
+      localStorage.removeItem('redirect:after-login');
+      return target;
+    }
+  } catch {}
+  return '';
+}
+
 function routeByRole() {
+  // 登录成功后：如果落地时有原意图（如 /pages/shop-home/index?inviter=1），优先回
+  const redirect = consumeRedirect();
+  if (redirect) {
+    uni.reLaunch({ url: redirect });
+    return;
+  }
   const roles = userStore.roles || [];
   const active = userStore.activeRole;
   if (active === 'merchant' || (roles.length === 1 && roles[0] === 'merchant')) {
