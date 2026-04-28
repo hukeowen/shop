@@ -58,6 +58,79 @@
       </view>
     </view>
 
+    <!-- 营销配置（v6 双积分 / 推N反1 / 入池） — 仅编辑态可用 -->
+    <view v-if="isEdit" class="card promo">
+      <view class="promo-head">
+        <text class="promo-title">营销配置（v6）</text>
+        <text class="promo-sub">{{ promoLoaded ? '已配置' : '加载中…' }}</text>
+      </view>
+
+      <view class="field row">
+        <text class="label">消费积分倍率</text>
+        <input
+          class="input compact"
+          type="digit"
+          v-model="promo.consumePointRatio"
+          placeholder="每元返多少消费积分，0=关闭"
+        />
+      </view>
+
+      <view class="switch-row">
+        <view class="switch-body">
+          <view class="switch-title">参与推 N 反 1（v6）</view>
+          <view class="switch-desc">链上前 N 位推荐人按比例瓜分该商品的 1 笔订单返佣</view>
+        </view>
+        <switch
+          :checked="promo.tuijianEnabled"
+          color="#FF6B35"
+          @change="(e) => (promo.tuijianEnabled = e.detail.value)"
+        />
+      </view>
+      <template v-if="promo.tuijianEnabled">
+        <view class="field row">
+          <text class="label">N 值</text>
+          <input
+            class="input compact"
+            type="number"
+            v-model="promo.tuijianN"
+            @blur="syncTuijianN"
+          />
+        </view>
+        <view class="field">
+          <text class="label">N 个返佣比例 % （从近到远）</text>
+          <view class="ratios-row">
+            <input
+              v-for="(r, i) in promo.tuijianRatios"
+              :key="i"
+              class="input ratio"
+              type="digit"
+              :value="r"
+              @input="(e) => (promo.tuijianRatios[i] = e.detail.value)"
+            />
+          </view>
+          <text class="hint inline">合计建议 ≤ 100%；后端按 % 入库</text>
+        </view>
+      </template>
+
+      <view class="switch-row">
+        <view class="switch-body">
+          <view class="switch-title">参与星级积分池</view>
+          <view class="switch-desc">该商品的销售额按商户配置的入池比例 → 月度按星级瓜分</view>
+        </view>
+        <switch
+          :checked="promo.poolEnabled"
+          color="#FF6B35"
+          @change="(e) => (promo.poolEnabled = e.detail.value)"
+        />
+      </view>
+
+      <view class="promo-actions">
+        <button class="btn ghost-brand" :disabled="promoSaving" @click="onSavePromo">
+          {{ promoSaving ? '保存中…' : '保存营销配置' }}
+        </button>
+      </view>
+    </view>
+
     <!-- 高级设置（折叠） -->
     <view class="card advanced">
       <view class="advanced-head" @click="advancedOpen = !advancedOpen">
@@ -129,6 +202,7 @@ import {
   getSpu,
   updateSpu,
 } from '../../api/product.js';
+import { getProductPromoConfig, saveProductPromoConfig } from '../../api/promo.js';
 
 const categories = CATEGORIES;
 const isEdit = ref(false);
@@ -145,6 +219,67 @@ const form = reactive({
   brokerageEnabled: true,
   pushBackEnabled: false,
 });
+
+// v6 商品级营销配置（独立于 SPU 主表）
+const promoLoaded = ref(false);
+const promoSaving = ref(false);
+const promo = reactive({
+  consumePointRatio: '0',
+  tuijianEnabled: false,
+  tuijianN: '4',
+  tuijianRatios: ['25', '25', '25', '25'],
+  poolEnabled: false,
+});
+
+function syncTuijianN() {
+  const target = Math.max(0, Math.min(20, parseInt(promo.tuijianN) || 0));
+  promo.tuijianN = String(target);
+  while (promo.tuijianRatios.length < target) promo.tuijianRatios.push('0');
+  if (promo.tuijianRatios.length > target) promo.tuijianRatios.length = target;
+}
+
+async function loadPromo(spuId) {
+  try {
+    const data = await getProductPromoConfig(spuId);
+    if (!data) return;
+    promo.consumePointRatio = String(data.consumePointRatio ?? '0');
+    promo.tuijianEnabled = !!data.tuijianEnabled;
+    promo.tuijianN = String(data.tuijianN ?? 0);
+    try {
+      const ratios = JSON.parse(data.tuijianRatios || '[]');
+      promo.tuijianRatios = Array.isArray(ratios) ? ratios.map(String) : [];
+    } catch {
+      promo.tuijianRatios = [];
+    }
+    syncTuijianN();
+    promo.poolEnabled = !!data.poolEnabled;
+  } finally {
+    promoLoaded.value = true;
+  }
+}
+
+async function onSavePromo() {
+  syncTuijianN();
+  const n = parseInt(promo.tuijianN) || 0;
+  if (promo.tuijianEnabled && n <= 0) {
+    uni.showToast({ title: '推 N 反 1 启用时 N 必须 > 0', icon: 'none' });
+    return;
+  }
+  promoSaving.value = true;
+  try {
+    await saveProductPromoConfig({
+      spuId: editingId.value,
+      consumePointRatio: parseFloat(promo.consumePointRatio) || 0,
+      tuijianEnabled: !!promo.tuijianEnabled,
+      tuijianN: n,
+      tuijianRatios: JSON.stringify(promo.tuijianRatios.map((r) => Number(r) || 0)),
+      poolEnabled: !!promo.poolEnabled,
+    });
+    uni.showToast({ title: '营销配置已保存', icon: 'success' });
+  } finally {
+    promoSaving.value = false;
+  }
+}
 
 const categoryIdx = computed(() => {
   const i = categories.findIndex((c) => c.id === form.categoryId);
@@ -205,6 +340,7 @@ async function loadIfEdit(id) {
     advancedOpen.value = true;
   }
   uni.setNavigationBarTitle({ title: '编辑商品' });
+  loadPromo(id);
 }
 
 async function onSubmit() {
@@ -437,6 +573,90 @@ onLoad((q) => {
     font-size: 22rpx;
     color: $text-secondary;
     line-height: 1.5;
+  }
+}
+
+.promo {
+  padding: 28rpx 32rpx;
+
+  .promo-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 16rpx;
+    border-bottom: 1rpx solid $border-color;
+    margin-bottom: 16rpx;
+
+    .promo-title {
+      font-size: 28rpx;
+      font-weight: 600;
+      color: $text-primary;
+    }
+
+    .promo-sub {
+      font-size: 22rpx;
+      color: $text-secondary;
+    }
+  }
+
+  .row .label {
+    flex: 0 0 200rpx;
+  }
+
+  .input.compact {
+    height: 64rpx;
+    background: #f6f7f9;
+    border-radius: $radius-md;
+    padding: 0 20rpx;
+    font-size: 26rpx;
+  }
+
+  .ratios-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12rpx;
+    margin-top: 12rpx;
+
+    .ratio {
+      flex: 0 0 calc(25% - 12rpx);
+      height: 64rpx;
+      background: #f6f7f9;
+      border-radius: $radius-md;
+      padding: 0 16rpx;
+      font-size: 26rpx;
+      text-align: center;
+    }
+  }
+
+  .hint.inline {
+    display: block;
+    margin-top: 8rpx;
+    font-size: 22rpx;
+    color: $text-secondary;
+  }
+
+  .promo-actions {
+    margin-top: 16rpx;
+  }
+
+  .btn.ghost-brand {
+    width: 100%;
+    height: 80rpx;
+    line-height: 80rpx;
+    background: rgba(255, 107, 53, 0.08);
+    color: $brand-primary;
+    border: 2rpx solid rgba(255, 107, 53, 0.4);
+    font-size: 28rpx;
+    font-weight: 600;
+    border-radius: $radius-md;
+
+    &[disabled] {
+      opacity: 0.6;
+    }
+
+    &::after {
+      border: none;
+    }
   }
 }
 

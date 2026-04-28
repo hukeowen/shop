@@ -442,7 +442,7 @@ SQL
   fi
 
   if [[ "${RUN_BASE}" == true ]]; then
-    local SQL_FILES=("ruoyi-vue-pro.sql" "mall.sql" "mp.sql" "member_pay.sql" "merchant.sql" "video.sql" "v2_business_tables.sql")
+    local SQL_FILES=("ruoyi-vue-pro.sql" "mall.sql" "mp.sql" "member_pay.sql" "merchant.sql" "video.sql" "v2_business_tables.sql" "marketing.sql")
     for f in "${SQL_FILES[@]}"; do
       if [[ -f "${SQL_DIR}/${f}" ]]; then
         info "导入 ${f}..."

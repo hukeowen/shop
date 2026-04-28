@@ -28,6 +28,12 @@
         <text class="menu-arrow">›</text>
       </view>
       <view class="divider" />
+      <view class="menu-item" @click="goWallet">
+        <text class="menu-icon">★</text>
+        <text class="menu-label">我的钱包（双积分）</text>
+        <text class="menu-arrow">›</text>
+      </view>
+      <view class="divider" />
       <view v-if="userStore.isMerchant" class="menu-item" @click="switchToMerchant">
         <text class="menu-icon">🏪</text>
         <text class="menu-label">切换到商户端</text>
@@ -66,6 +72,9 @@ export default {
     goShopBalance() {
       const tenantId = uni.getStorageSync('lastShopTenantId') || this.userStore?.tenantId || '';
       uni.navigateTo({ url: `/pages/user-me/shop-balance?tenantId=${tenantId}` });
+    },
+    goWallet() {
+      uni.navigateTo({ url: '/pages/user-me/wallet' });
     },
     async switchToMerchant() {
       try {

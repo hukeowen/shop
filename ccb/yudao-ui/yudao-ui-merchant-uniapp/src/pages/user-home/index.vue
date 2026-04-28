@@ -44,6 +44,7 @@
 <script>
 import { useUserStore } from '../../store/user.js';
 import { request } from '../../api/request.js';
+import { flushPendingReferrer } from '../../utils/referral.js';
 
 export default {
   data() {
@@ -55,6 +56,10 @@ export default {
   },
   onLoad() {
     this.userStore = useUserStore();
+    // 用户登录后，尝试 flush 之前从分享落地页存下来的 inviter（首次有效；幂等）
+    if (this.userStore?.userId) {
+      flushPendingReferrer(this.userStore.userId);
+    }
     this.loadShops();
   },
   onPullDownRefresh() {

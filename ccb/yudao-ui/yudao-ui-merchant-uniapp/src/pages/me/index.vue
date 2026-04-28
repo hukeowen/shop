@@ -32,6 +32,14 @@
         <text>返佣与积分设置</text>
         <text class="arrow">›</text>
       </view>
+      <view class="menu-item" @click="goPromoConfig">
+        <text>营销配置（v6）</text>
+        <text class="arrow">›</text>
+      </view>
+      <view class="menu-item" @click="goWithdrawApprove">
+        <text>提现审批</text>
+        <text class="arrow">›</text>
+      </view>
       <view class="menu-item" @click="goWithdrawApply">
         <text>商户提现</text>
         <text class="arrow">›</text>
@@ -114,6 +122,14 @@ function goProducts() {
 
 function goBrokerage() {
   uni.navigateTo({ url: '/pages/me/brokerage' });
+}
+
+function goPromoConfig() {
+  uni.navigateTo({ url: '/pages/me/promo-config' });
+}
+
+function goWithdrawApprove() {
+  uni.navigateTo({ url: '/pages/me/withdraw-approve' });
 }
 
 function goMembers() {

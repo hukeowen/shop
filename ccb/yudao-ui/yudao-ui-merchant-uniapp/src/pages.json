@@ -107,6 +107,18 @@
       }
     },
     {
+      "path": "pages/me/promo-config",
+      "style": {
+        "navigationBarTitleText": "营销配置（v6）"
+      }
+    },
+    {
+      "path": "pages/me/withdraw-approve",
+      "style": {
+        "navigationBarTitleText": "提现审批"
+      }
+    },
+    {
       "path": "pages/member/list",
       "style": {
         "navigationBarTitleText": "会员消费排行"
@@ -186,6 +198,18 @@
       "path": "pages/user-me/shop-balance",
       "style": {
         "navigationBarTitleText": "余额与积分"
+      }
+    },
+    {
+      "path": "pages/user-me/wallet",
+      "style": {
+        "navigationBarTitleText": "我的钱包"
+      }
+    },
+    {
+      "path": "pages/user-me/withdraw",
+      "style": {
+        "navigationBarTitleText": "申请提现"
       }
     },
     {

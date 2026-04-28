@@ -64,6 +64,8 @@
 <script>
 import { request } from '../../api/request.js';
 import { fen2yuan } from '../../utils/format.js';
+import { savePendingReferrer, flushPendingReferrer } from '../../utils/referral.js';
+import { useUserStore } from '../../store/user.js';
 
 export default {
   data() {
@@ -77,17 +79,30 @@ export default {
   },
   onLoad(query) {
     this.tenantId = query.tenantId ? Number(query.tenantId) : null;
+    // 兼容 referrerUserId（旧）+ inviter（短链 / 分享卡常用）两个 alias
+    const referrerUserId = query.referrerUserId
+      ? Number(query.referrerUserId)
+      : (query.inviter ? Number(query.inviter) : null);
     if (this.tenantId) {
       // 记录最近访问的店铺，供余额页使用
       uni.setStorageSync('lastShopTenantId', this.tenantId);
       // 进店打点（fire-and-forget）
-      const referrerUserId = query.referrerUserId ? Number(query.referrerUserId) : null;
       request({
         url: `/app-api/merchant/mini/member-rel/visit?tenantId=${this.tenantId}${referrerUserId ? `&referrerUserId=${referrerUserId}` : ''}`,
         method: 'POST',
         tenantId: this.tenantId,
       }).catch(() => {});
     }
+    // v6 推荐链：先暂存 inviter；用户登录后会自动 flush 一次
+    if (referrerUserId) {
+      savePendingReferrer(referrerUserId);
+    }
+    try {
+      const us = useUserStore();
+      if (us?.userId) {
+        flushPendingReferrer(us.userId);
+      }
+    } catch {}
     this.loadAll();
   },
   methods: {
