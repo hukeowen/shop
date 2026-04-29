@@ -250,10 +250,14 @@ public class MerchantServiceImpl implements MerchantService {
      * <p>用 JdbcTemplate 直接执行 INSERT … SELECT，避开跨模块 import
      * pay 模块的 mapper 接口。两条 SQL 在同一个商户开通事务内，要么都成功要么都回滚。</p>
      *
-     * <p>失败时仅 log.warn 不抛异常 — 商户开通仍算成功，只是要演示前 PC 后台
-     * 切到该租户手工配一份 mock 渠道。</p>
+     * <p>幂等：再次调用时不重复插入（由 (tenant_id, app_key) 联合判断 NOT EXISTS）。</p>
+     *
+     * <p>失败抛 RuntimeException 让调用方事务回滚 — 之前是 log.warn 软失败，
+     * 演示当天用户下单时才会因 pay_app 缺失而崩，此处改为硬失败让商户开通流程
+     * 立即暴露问题，由 PC 运维及时处理。</p>
      */
-    private void copyPayResourcesToNewTenant(Long newTenantId) {
+    @Override
+    public void copyPayResourcesToNewTenant(Long newTenantId) {
         try {
             int appCopied = jdbcTemplate.update(
                 "INSERT INTO pay_app (app_key, name, status, remark, " +
@@ -262,8 +266,10 @@ public class MerchantServiceImpl implements MerchantService {
                 "SELECT app_key, name, status, remark, " +
                 "  order_notify_url, refund_notify_url, transfer_notify_url, " +
                 "  ?, creator, NOW(), updater, NOW(), deleted " +
-                "FROM pay_app WHERE tenant_id = 1 AND deleted = b'0'",
-                newTenantId
+                "FROM pay_app src WHERE src.tenant_id = 1 AND src.deleted = b'0' " +
+                "  AND NOT EXISTS (SELECT 1 FROM pay_app dst " +
+                "    WHERE dst.tenant_id = ? AND dst.app_key = src.app_key AND dst.deleted = b'0')",
+                newTenantId, newTenantId
             );
             int channelCopied = jdbcTemplate.update(
                 "INSERT INTO pay_channel (code, status, fee_rate, remark, app_id, config, " +
@@ -272,14 +278,17 @@ public class MerchantServiceImpl implements MerchantService {
                 "  (SELECT a2.id FROM pay_app a2 WHERE a2.app_key = a1.app_key AND a2.tenant_id = ? LIMIT 1), " +
                 "  c.config, ?, c.creator, NOW(), c.updater, NOW(), c.deleted " +
                 "FROM pay_channel c JOIN pay_app a1 ON c.app_id = a1.id " +
-                "WHERE c.tenant_id = 1 AND c.deleted = b'0'",
-                newTenantId, newTenantId
+                "WHERE c.tenant_id = 1 AND c.deleted = b'0' " +
+                "  AND NOT EXISTS (SELECT 1 FROM pay_channel dst " +
+                "    WHERE dst.tenant_id = ? AND dst.code = c.code AND dst.deleted = b'0')",
+                newTenantId, newTenantId, newTenantId
             );
             log.info("[copyPayResourcesToNewTenant] 复制完成 tenantId={} app={}行 channel={}行",
                     newTenantId, appCopied, channelCopied);
         } catch (Exception e) {
-            // 软失败：不影响商户开通主流程；演示前可手工去 PC 后台补
-            log.warn("[copyPayResourcesToNewTenant] 复制失败 tenantId={}，新商户租户支付不可用，需 PC 后台手工配", newTenantId, e);
+            log.error("[copyPayResourcesToNewTenant] 复制失败 tenantId={}", newTenantId, e);
+            throw new RuntimeException(
+                "新商户支付资源初始化失败 (tenantId=" + newTenantId + ")，请检查 admin 租户的 pay_app/pay_channel", e);
         }
     }
 

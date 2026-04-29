@@ -53,6 +53,15 @@ public interface MerchantService {
                                   String phone, Long inviteCodeId);
 
     /**
+     * 把 admin 租户（id=1）的 pay_app + pay_channel 复制到新租户。
+     *
+     * <p>商户租户不复制 pay 资源 → trade 模块下单按 payAppKey='mall' 找不到 →
+     * 用户在商户店铺无法支付。开通流程（邀请码秒开通 / PC 后台审核通过）
+     * 都必须调一次。失败抛 RuntimeException，由调用方决定是否回滚事务。</p>
+     */
+    void copyPayResourcesToNewTenant(Long newTenantId);
+
+    /**
      * 分页查询商户
      */
     PageResult<MerchantDO> getMerchantPage(MerchantPageReqVO pageReqVO);

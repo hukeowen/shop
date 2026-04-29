@@ -73,6 +73,9 @@ public class MerchantApplyServiceImpl implements MerchantApplyService {
     @Lazy
     @Resource
     private MerchantReferralService merchantReferralService;
+    @Lazy
+    @Resource
+    private MerchantService merchantService;
 
     /** 默认租户套餐 ID（需在配置文件中设置 merchant.default-package-id） */
     @Value("${merchant.default-package-id:1}")
@@ -123,6 +126,11 @@ public class MerchantApplyServiceImpl implements MerchantApplyService {
 
         // 3. 初始化订阅记录（30天试用 + 1次AI成片配额）
         initTenantSubscription(tenantId);
+
+        // 3.5 复制 admin 租户的 pay_app + pay_channel 到新租户
+        // 不做这步：trade 模块下单按 payAppKey='mall' 找不到 → 用户在商户店铺无法支付
+        // 与 createMerchantFromMember (邀请码秒开通路径) 的初始化流程对齐
+        merchantService.copyPayResourcesToNewTenant(tenantId);
 
         // 4. 更新申请记录
         MerchantApplyDO update = new MerchantApplyDO();
