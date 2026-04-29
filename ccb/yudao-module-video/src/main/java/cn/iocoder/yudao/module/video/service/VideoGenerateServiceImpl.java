@@ -140,8 +140,25 @@ public class VideoGenerateServiceImpl implements VideoGenerateService {
         }
 
         String prompt = buildSeedancePrompt(lines);
-        String taskId = createSeedanceTask(imageUrls.get(0), prompt);
+        String taskId = createSeedanceTask(imageUrls, prompt);
         log.info("[generateVideoFromImages] Seedance 任务已创建 taskId={}", taskId);
+        return pollSeedanceVideoUrl(taskId);
+    }
+
+    @Override
+    public String generateVideoFromImagesWithPrompt(List<String> imageUrls, String visualPrompt) {
+        if (imageUrls == null || imageUrls.isEmpty()) {
+            throw new IllegalArgumentException("图片列表不能为空");
+        }
+        if (StrUtil.isBlank(properties.getArkApiKey())) {
+            throw new IllegalStateException("video.volcano-engine.ark-api-key 未配置");
+        }
+        if (StrUtil.isBlank(visualPrompt)) {
+            throw new IllegalArgumentException("visualPrompt 不能为空");
+        }
+        String taskId = createSeedanceTask(imageUrls, visualPrompt);
+        log.info("[generateVideoFromImagesWithPrompt] Seedance 任务已创建 taskId={} prompt={}",
+                taskId, visualPrompt.length() > 100 ? visualPrompt.substring(0, 100) + "..." : visualPrompt);
         return pollSeedanceVideoUrl(taskId);
     }
 
@@ -160,7 +177,14 @@ public class VideoGenerateServiceImpl implements VideoGenerateService {
      * </pre>
      * 返回 {@code {"id": "cgt-xxx"}}，即任务 id。
      */
-    private String createSeedanceTask(String firstImageUrl, String prompt) {
+    /**
+     * 创建 Seedance 任务（支持首尾帧关键帧 — 改造点 ②）
+     *
+     * <p>imageUrls.size() >= 2 时第 2 张作为 last_image，Seedance 自动生成
+     * "从图1到图2的过渡视频"，比单图运动感强 10 倍 — 这是即梦 API 的核心
+     * 杀手锏，老板传 2 张图就能拍出"过程感"（切肉→穿串、空盘→上菜、远景→人挤人）。</p>
+     */
+    private String createSeedanceTask(List<String> imageUrls, String prompt) {
         List<Map<String, Object>> content = new ArrayList<>();
         Map<String, Object> textPart = new HashMap<>();
         textPart.put("type", "text");
@@ -168,12 +192,27 @@ public class VideoGenerateServiceImpl implements VideoGenerateService {
         textPart.put("text", prompt + "  --rs 1080p --dur 10 --rt 9:16");
         content.add(textPart);
 
-        Map<String, Object> imagePart = new HashMap<>();
-        imagePart.put("type", "image_url");
-        Map<String, String> imageUrlObj = new HashMap<>();
-        imageUrlObj.put("url", firstImageUrl);
-        imagePart.put("image_url", imageUrlObj);
-        content.add(imagePart);
+        // 首帧（必须）
+        Map<String, Object> firstImg = new HashMap<>();
+        firstImg.put("type", "image_url");
+        Map<String, String> firstUrl = new HashMap<>();
+        firstUrl.put("url", imageUrls.get(0));
+        firstImg.put("image_url", firstUrl);
+        firstImg.put("role", "first_frame");
+        content.add(firstImg);
+
+        // 尾帧（可选，2+ 图时启用，让 Seedance 生成过渡视频）
+        if (imageUrls.size() >= 2 && StrUtil.isNotBlank(imageUrls.get(1))) {
+            Map<String, Object> lastImg = new HashMap<>();
+            lastImg.put("type", "image_url");
+            Map<String, String> lastUrl = new HashMap<>();
+            lastUrl.put("url", imageUrls.get(1));
+            lastImg.put("image_url", lastUrl);
+            lastImg.put("role", "last_frame");
+            content.add(lastImg);
+            log.info("[createSeedanceTask] 启用首尾帧过渡：first={} last={}",
+                    imageUrls.get(0), imageUrls.get(1));
+        }
 
         Map<String, Object> body = new HashMap<>();
         body.put("model", properties.getSeedanceModel());

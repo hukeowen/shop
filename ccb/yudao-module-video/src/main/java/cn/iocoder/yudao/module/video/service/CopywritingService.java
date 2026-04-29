@@ -1,21 +1,34 @@
 package cn.iocoder.yudao.module.video.service;
 
+import cn.iocoder.yudao.module.video.service.dto.AiVideoScriptDTO;
+
 import java.util.List;
 
 /**
  * 短视频文案 Service
  *
- * <p>调用火山方舟（Ark）豆包 LLM，根据商户输入生成抖音/微信风格的逐句文案。</p>
+ * <p>调用火山方舟（Ark）豆包 LLM，根据商户输入生成抖音/微信风格的逐句文案
+ * + Seedance 视觉镜头 prompt（含运镜+风格英文 token）+ BGM 风格 key。</p>
  */
 public interface CopywritingService {
 
     /**
-     * 生成逐句文案。
+     * 生成逐句文案（旧接口保留，内部调 generateRichScript 然后取 lines）
      *
-     * @param shopName        店铺名（用于结尾引导"扫码进店"等话术）
-     * @param userDescription 商户的口语化描述（如"我是卖烤地瓜的，香甜软糯，5块钱一个"）
-     * @return 逐句文案列表（每句 ≤ 15 字，共 8-15 句，总字数 150-250），调用失败将抛运行时异常
+     * @param shopName        店铺名
+     * @param userDescription 商户的口语化描述
+     * @return 逐句文案列表（每句 ≤ 15 字，共 6-10 句）
      */
     List<String> generateCopywriting(String shopName, String userDescription);
 
+    /**
+     * 生成富脚本（推荐，新流程）—— LLM 一次输出三件事：
+     *   ① 口播文案 lines（TTS 念）
+     *   ② 视觉镜头 prompt（Seedance 用，含运镜+风格英文 token）
+     *   ③ BGM 风格 key（sidecar 据此选音乐混音）
+     *
+     * <p>这是"爆款视频质量"的核心改造点 —— 把"老板写不出的运镜词汇"
+     * 由 LLM 自动补齐，生成的视频从"PPT 拼接"升级为"专业短片"。</p>
+     */
+    AiVideoScriptDTO generateRichScript(String shopName, String userDescription);
 }

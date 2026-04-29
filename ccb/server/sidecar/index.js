@@ -607,11 +607,29 @@ app.post('/video/merge', async (req, res) => {
   }
 });
 
-// ── /video/mux ─ 主视频 + TTS 音轨 + 字幕烧录 → 上传 TOS ───────────
+// ── BGM 风格库（改造点 ⑤）─────────────────────────────────────────
+// LLM 输出 bgmStyle key → 这里随机选一首 sidecar/bgm/<style>_N.mp3
+// 候选 key: street_food_yelling / cozy_explore / asmr_macro
+//          elegant_tea / trendy_pop / emotional_story
+// 文件由运维去 Pixabay/FreePD 等 CC0 曲库下载，每风格 2-3 首避免雷同
+const BGM_DIR = path.join(__dirname, 'bgm');
+function pickBgm(bgmStyle) {
+  const style = (bgmStyle || 'cozy_explore').replace(/[^a-z_]/gi, '');
+  if (!fs.existsSync(BGM_DIR)) return null;
+  let cand = [];
+  try { cand = fs.readdirSync(BGM_DIR).filter((f) => f.startsWith(style + '_') && f.endsWith('.mp3')); } catch {}
+  if (!cand.length) {
+    try { cand = fs.readdirSync(BGM_DIR).filter((f) => f.endsWith('.mp3')); } catch {}
+  }
+  if (!cand.length) return null;
+  return path.join(BGM_DIR, cand[Math.floor(Math.random() * cand.length)]);
+}
+
+// ── /video/mux ─ 主视频 + TTS 主声 + BGM 背景 + 字幕烧录 → 上传 TOS ─
 app.post('/video/mux', async (req, res) => {
   let workDir;
   try {
-    const { videoUrl, text, voice, duration = 10 } = req.body || {};
+    const { videoUrl, text, voice, duration = 10, bgmStyle = 'cozy_explore' } = req.body || {};
     if (!videoUrl) throw new Error('videoUrl 为空');
     if (!text) throw new Error('text 为空');
 
@@ -632,11 +650,26 @@ app.post('/video/mux', async (req, res) => {
     fs.writeFileSync(audFile, audioBuf);
 
     const durSec = Math.max(1, Number(duration) || 10);
+    const bgmFile = pickBgm(bgmStyle);
+    if (bgmFile) {
+      console.log(`[mux] 使用 BGM ${path.basename(bgmFile)} (style=${bgmStyle})`);
+    } else {
+      console.log(`[mux] 无 BGM (sidecar/bgm/ 空或缺 ${bgmStyle}_*.mp3) — 仅 TTS`);
+    }
+
+    // 音频混音：TTS 主声 (1.0) + BGM 背景 (0.18 = -15dB)
+    const audioFilter = bgmFile
+      ? '[1:a]volume=1.0[a1];[2:a]volume=0.18[a2];[a1][a2]amix=inputs=2:duration=longest:dropout_transition=2[a]'
+      : '[1:a]volume=1.0[a]';
+    const inputArgs = bgmFile
+      ? ['-i', vidFile, '-i', audFile, '-stream_loop', '-1', '-i', bgmFile]
+      : ['-i', vidFile, '-i', audFile];
 
     const audioOnlyArgs = [
-      '-y', '-i', vidFile, '-i', audFile,
-      '-map', '0:v:0', '-map', '1:a:0',
-      '-c:v', 'copy', '-c:a', 'aac', '-af', 'apad',
+      '-y', ...inputArgs,
+      '-filter_complex', audioFilter,
+      '-map', '0:v:0', '-map', '[a]',
+      '-c:v', 'copy', '-c:a', 'aac',
       '-t', String(durSec),
       '-movflags', '+faststart',
       outFile,
@@ -648,11 +681,12 @@ app.post('/video/mux', async (req, res) => {
       const fontDir = path.dirname(font.path).replace(/\\/g, '/').replace(/:/g, '\\:');
       const assPath = assFile.replace(/\\/g, '/').replace(/:/g, '\\:');
       const subtitleArgs = [
-        '-y', '-i', vidFile, '-i', audFile,
-        '-map', '0:v:0', '-map', '1:a:0',
-        '-vf', `subtitles=${assPath}:fontsdir=${fontDir}`,
+        '-y', ...inputArgs,
+        '-filter_complex',
+          `[0:v]subtitles=${assPath}:fontsdir=${fontDir}[v];${audioFilter}`,
+        '-map', '[v]', '-map', '[a]',
         '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '22',
-        '-c:a', 'aac', '-af', 'apad',
+        '-c:a', 'aac',
         '-t', String(durSec),
         '-movflags', '+faststart',
         outFile,
@@ -660,12 +694,12 @@ app.post('/video/mux', async (req, res) => {
       try {
         await runFfmpeg(subtitleArgs);
       } catch (subErr) {
-        console.warn(`[mux] 字幕渲染失败，降级纯音轨合流: ${subErr.message.slice(0, 200)}`);
+        console.warn(`[mux] 字幕渲染失败，降级 TTS+BGM: ${subErr.message.slice(0, 200)}`);
         if (fs.existsSync(outFile)) fs.unlinkSync(outFile);
         await runFfmpeg(audioOnlyArgs);
       }
     } else {
-      console.warn('[mux] 未找到中文字体，降级为纯音轨合流');
+      console.warn('[mux] 未找到中文字体，降级为 TTS+BGM');
       await runFfmpeg(audioOnlyArgs);
     }
 

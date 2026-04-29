@@ -30,6 +30,19 @@ public interface VideoGenerateService {
     String generateVideoFromImages(List<String> imageUrls, List<String> lines);
 
     /**
+     * 升级版图生视频：直接传 LLM 生成的英文运镜+风格 prompt（不再用拼接中文文案兜底）
+     *
+     * <p>Seedance 对英文运镜词（push-in / pan / dolly / macro shot）+ 风格词
+     * （cinematic / food photography / asmr）的理解远好于纯中文文案。
+     * 这是"爆款视频质量"的核心改造点 —— 让 LLM 自动补齐运镜词汇，老板不用懂。</p>
+     *
+     * @param imageUrls    至少 1 张参考图，2 张时第 2 张作 last_image 实现首尾帧过渡
+     * @param visualPrompt 已就绪的英文 Seedance prompt（含运镜+风格）
+     * @return 生成视频 URL
+     */
+    String generateVideoFromImagesWithPrompt(List<String> imageUrls, String visualPrompt);
+
+    /**
      * 下载远端视频并落盘到自有 OSS。
      *
      * @param remoteVideoUrl Seedance 返回的临时 URL
