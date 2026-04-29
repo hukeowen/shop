@@ -182,6 +182,54 @@ server:
 yudao:
   tenant:
     enable: true
+    # /app-api/** 是商户/用户 H5 入口，JWT 里已带 tenant_id，前端不传 tenant-id header
+    # 必须在 ignore-urls 里豁免，否则 TenantContextWebFilter 会拦截报"租户标识未传递"
+    ignore-urls:
+      - /admin-api/system/tenant/get-id-by-name      # 租户名→ID 查询本身不能要租户
+      - /admin-api/system/captcha/**                  # 验证码
+      - /admin-api/infra/file/**                      # 文件上传
+      - /admin-api/system/sms/callback/**             # 短信回调
+      - /admin-api/pay/notify/**                      # 支付回调
+      - /admin-api/merchant/pay/tl-notify             # 通联回调
+      - /admin-api/mp/open/**                         # 公众号回调
+      - /app-api/**                                   # 商户/用户 H5 整个 app-api 都按 JWT 解析
+    ignore-tables:
+      - system_tenant
+      - system_tenant_package
+      - system_dict_data
+      - system_dict_type
+      - system_error_code
+      - system_menu
+      - system_role
+      - system_role_menu
+      - system_users
+      - system_user_role
+      - system_dept
+      - system_user_post
+      - system_post
+      - system_login_log
+      - system_oauth2_client
+      - system_oauth2_approve
+      - system_oauth2_access_token
+      - system_oauth2_refresh_token
+      - system_sms_channel
+      - system_sms_template
+      - system_sms_code
+      - system_mail_account
+      - system_mail_template
+      - system_notify_template
+      - infra_codegen_column
+      - infra_codegen_table
+      - infra_test_demo
+      - infra_config
+      - infra_data_source_config
+      - infra_job
+      - infra_job_log
+      - infra_file_config
+      - infra_file_content
+      - infra_file
+      - infra_api_access_log
+      - infra_api_error_log
   security:
     token-secret: ${TOKEN_SECRET}
   captcha:
