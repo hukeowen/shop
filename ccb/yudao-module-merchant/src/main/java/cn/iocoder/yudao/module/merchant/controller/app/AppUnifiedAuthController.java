@@ -9,8 +9,13 @@ import cn.iocoder.yudao.framework.common.enums.UserTypeEnum;
 import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.ratelimiter.core.annotation.RateLimiter;
 import cn.iocoder.yudao.framework.ratelimiter.core.keyresolver.impl.ClientIpRateLimiterKeyResolver;
+import cn.iocoder.yudao.framework.security.core.LoginUser;
 import cn.iocoder.yudao.framework.security.core.util.SecurityFrameworkUtils;
 import cn.iocoder.yudao.framework.tenant.core.aop.TenantIgnore;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+import javax.servlet.http.HttpServletRequest;
 import cn.iocoder.yudao.module.member.dal.dataobject.user.MemberUserDO;
 import cn.iocoder.yudao.module.member.dal.mysql.user.MemberUserMapper;
 import cn.iocoder.yudao.module.merchant.controller.app.vo.auth.AppApplyMerchantBySmsReqVO;
@@ -309,23 +314,44 @@ public class AppUnifiedAuthController {
         }
 
         // 4. 创建租户 + 店铺 + 商户（inviteCodeId=null 跳过邀请码逻辑）
-        Long merchantId = merchantService.createMerchantFromMember(
-                member.getId(), member.getMiniAppOpenId(), null, mobile, null);
-        MerchantDO merchant = merchantService.getMerchant(merchantId);
-
-        // 5. 把"新店<userId>"默认值改成用户填的 shopName
-        //    (createMerchantFromMember 内部用 fakeOpenId 拿到的 shopName 是默认值，
-        //     这里用 update 改 merchant_info.name + shop_info.shop_name + system_tenant.name)
+        // PermitAll 路径下 SecurityContext 为空，yudao BaseDO 自动填 creator/updater
+        // 会拿到 null → SQL 报 "Column 'creator' cannot be null"。这里手工设
+        // fakeUser，让 createTenant 等 INSERT 能拿到 member.id 作为 creator。
+        LoginUser fakeUser = new LoginUser();
+        fakeUser.setId(member.getId());
+        fakeUser.setUserType(UserTypeEnum.MEMBER.getValue());
         try {
-            applyCustomShopName(merchant, shopName);
-        } catch (Exception e) {
-            log.warn("[applyMerchantBySms] 改店铺名失败 merchantId={} shopName={}", merchantId, shopName, e);
+            HttpServletRequest req = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
+            SecurityFrameworkUtils.setLoginUser(fakeUser, req);
+        } catch (Exception ignored) {
+            // 没拿到 request 也继续，BaseDO 拿不到 user 才会报错
+        }
+        Long merchantId;
+        MerchantDO merchant;
+        OAuth2AccessTokenRespDTO token;
+        try {
+            merchantId = merchantService.createMerchantFromMember(
+                    member.getId(), member.getMiniAppOpenId(), null, mobile, null);
+            merchant = merchantService.getMerchant(merchantId);
+
+            // 5. 把"新店<userId>"默认值改成用户填的 shopName
+            //    (BaseDO updater 字段也需要 LoginUser，所以放在 try 块内)
+            try {
+                applyCustomShopName(merchant, shopName);
+            } catch (Exception e) {
+                log.warn("[applyMerchantBySms] 改店铺名失败 merchantId={} shopName={}", merchantId, shopName, e);
+            }
+
+            // 6. 发 token（OAuth2 token 表也是 BaseDO，creator 字段同样需要 LoginUser）
+            token = issueToken(member.getId());
+        } finally {
+            // 清掉 fake context，避免污染后续 filter chain
+            SecurityContextHolder.clearContext();
         }
 
         List<String> roles = buildRoles(merchant);
         String activeRole = ActiveRoleCache.ROLE_MERCHANT;
         activeRoleCache.set(member.getId(), activeRole);
-        OAuth2AccessTokenRespDTO token = issueToken(member.getId());
         log.info("[applyMerchantBySms] 申请成功 mobile={} merchantId={} tenantId={} shopName={}",
                 mobile, merchantId, merchant.getTenantId(), shopName);
         return success(buildLoginResp(token, member, merchant, roles, activeRole, member.getMiniAppOpenId()));

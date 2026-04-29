@@ -1,39 +1,97 @@
 <template>
   <view class="page">
+    <!-- 顶部品牌区 -->
     <view class="hero">
-      <view class="title">摊小二 · 商户入驻</view>
-      <view class="sub">填写下方信息，1 分钟开通您的店铺</view>
+      <view class="logo">摊</view>
+      <view class="brand">
+        <view class="brand-name">摊小二</view>
+        <view class="brand-slogan">让每个小摊，都有大生意</view>
+      </view>
     </view>
 
+    <!-- 优势点 -->
+    <view class="benefits">
+      <view class="benefit">
+        <view class="benefit-icon">🚀</view>
+        <view class="benefit-text">1 分钟</view>
+        <view class="benefit-sub">极速开通</view>
+      </view>
+      <view class="benefit">
+        <view class="benefit-icon">🎁</view>
+        <view class="benefit-text">免费用</view>
+        <view class="benefit-sub">30 天试用</view>
+      </view>
+      <view class="benefit">
+        <view class="benefit-icon">🤖</view>
+        <view class="benefit-text">AI 成片</view>
+        <view class="benefit-sub">营销神器</view>
+      </view>
+    </view>
+
+    <!-- 申请表单卡片 -->
     <view class="card">
+      <view class="card-title">立即入驻</view>
+      <view class="card-sub">填写下方信息，开通您的店铺</view>
+
       <view class="field">
-        <text class="label">店铺名称</text>
-        <input class="input" v-model="form.shopName" placeholder="例如：老王烧烤摊" maxlength="32" />
+        <text class="field-icon">🏪</text>
+        <input
+          class="field-input"
+          v-model="form.shopName"
+          placeholder="店铺名称（如：老王烧烤摊）"
+          maxlength="32"
+        />
       </view>
+
       <view class="field">
-        <text class="label">手机号</text>
-        <input class="input" v-model="form.mobile" type="number" placeholder="11 位手机号" maxlength="11" />
+        <text class="field-icon">📱</text>
+        <input
+          class="field-input"
+          v-model="form.mobile"
+          type="number"
+          placeholder="手机号（11 位）"
+          maxlength="11"
+        />
       </view>
-      <view class="field sms-row">
-        <text class="label">验证码</text>
-        <input class="input sms-input" v-model="form.smsCode" type="number" placeholder="6 位验证码" maxlength="6" />
-        <button class="sms-btn" :disabled="smsCooldown > 0" @click="sendSms">
+
+      <view class="field sms-field">
+        <text class="field-icon">🔐</text>
+        <input
+          class="field-input"
+          v-model="form.smsCode"
+          type="number"
+          placeholder="短信验证码（6 位）"
+          maxlength="6"
+        />
+        <view class="sms-btn" :class="{ disabled: smsCooldown > 0 }" @click="sendSms">
           {{ smsCooldown > 0 ? smsCooldown + 's' : '获取验证码' }}
-        </button>
+        </view>
       </view>
 
-      <view class="tips">
-        <text>· 演示模式验证码固定 888888</text>
-        <text>· 申请成功后用同手机号 + 任意 ≥6 位密码登录</text>
+      <view class="demo-hint">
+        <text class="demo-tag">演示</text>
+        验证码固定为 <text class="demo-code">888888</text>
       </view>
 
-      <button class="submit-btn" :disabled="submitting || !canSubmit" @click="submit">
-        {{ submitting ? '申请中…' : '立即申请入驻' }}
+      <button
+        class="submit-btn"
+        :class="{ active: canSubmit, loading: submitting }"
+        :disabled="submitting || !canSubmit"
+        @click="submit"
+      >
+        <text v-if="!submitting">立即申请入驻</text>
+        <text v-else>申请中…</text>
       </button>
 
-      <view class="bottom-link">
-        已有商户账号？<text class="link" @click="goLogin">去登录</text>
+      <view class="agreement">
+        提交即同意 <text class="agreement-link">《摊小二商户服务协议》</text>
       </view>
+    </view>
+
+    <!-- 底部链接 -->
+    <view class="footer">
+      <view class="footer-link">已有商户账号？<text class="link" @click="goLogin">立即登录</text></view>
+      <view class="footer-link">我是顾客？<text class="link" @click="goUserLogin">用户登录</text></view>
     </view>
   </view>
 </template>
@@ -55,12 +113,12 @@ const canSubmit = computed(
 );
 
 function sendSms() {
+  if (smsCooldown.value > 0) return;
   if (!/^1[3-9]\d{9}$/.test(form.mobile)) {
     uni.showToast({ title: '请先填写正确手机号', icon: 'none' });
     return;
   }
-  // 演示模式直接 toast 提示固定 888888；生产替换成调真发码 API
-  uni.showToast({ title: '验证码：888888（演示）', icon: 'none', duration: 3000 });
+  uni.showToast({ title: '验证码：888888（演示模式）', icon: 'none', duration: 3000 });
   smsCooldown.value = 60;
   cooldownTimer = setInterval(() => {
     smsCooldown.value--;
@@ -81,10 +139,14 @@ async function submit() {
         smsCode: form.smsCode,
       },
     });
-    // 自动登录：把 token 存好，跳转商户后台
-    if (resp?.token?.accessToken || resp?.accessToken) {
-      const token = resp.token?.accessToken || resp.accessToken;
-      const userStore = JSON.stringify({ token, userId: resp.userId, phone: resp.phone, role: 'merchant' });
+    const token = resp?.token?.accessToken || resp?.accessToken;
+    if (token) {
+      const userStore = JSON.stringify({
+        token,
+        userId: resp.userId,
+        phone: resp.phone,
+        role: 'merchant',
+      });
       try {
         if (typeof localStorage !== 'undefined') localStorage.setItem('user-store-v1', userStore);
       } catch {}
@@ -94,13 +156,14 @@ async function submit() {
       } catch {}
     }
     uni.showModal({
-      title: '🎉 申请成功',
-      content: '您的店铺已开通！现在为您跳转到商户后台',
+      title: '🎉 入驻成功！',
+      content: `店铺「${form.shopName.trim()}」已开通，现在为您跳转到商户后台`,
       showCancel: false,
+      confirmText: '进入后台',
       success: () => uni.reLaunch({ url: '/pages/me/index' }),
     });
-  } catch (e) {
-    // toast 已由 request.js 处理
+  } catch {
+    // toast 由 request.js 处理
   } finally {
     submitting.value = false;
   }
@@ -109,82 +172,238 @@ async function submit() {
 function goLogin() {
   uni.navigateTo({ url: '/pages/merchant-login/index' });
 }
+function goUserLogin() {
+  uni.navigateTo({ url: '/pages/login/index' });
+}
 </script>
 
 <style lang="scss" scoped>
 .page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #FF6B35 0%, #FF9A4A 100%);
-  padding: 80rpx 32rpx 40rpx;
+  background: linear-gradient(180deg, #FF6B35 0%, #FF9A4A 30%, #FFE5D6 65%, #fff 100%);
+  padding: 60rpx 32rpx 60rpx;
+  position: relative;
+  overflow: hidden;
 }
-.hero {
-  text-align: center;
-  color: #fff;
-  margin-bottom: 48rpx;
-}
-.title { font-size: 56rpx; font-weight: 700; }
-.sub   { font-size: 28rpx; opacity: 0.9; margin-top: 16rpx; }
 
+/* 装饰背景圈 */
+.page::before, .page::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  pointer-events: none;
+}
+.page::before { width: 400rpx; height: 400rpx; top: -100rpx; right: -100rpx; }
+.page::after  { width: 300rpx; height: 300rpx; top: 200rpx; left: -120rpx; }
+
+/* ── 顶部品牌区 ────────────────────────────── */
+.hero {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  margin-bottom: 40rpx;
+  position: relative;
+  z-index: 1;
+}
+.logo {
+  width: 96rpx;
+  height: 96rpx;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 24rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 56rpx;
+  font-weight: 800;
+  color: #FF6B35;
+  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.12);
+}
+.brand-name {
+  font-size: 44rpx;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.2;
+}
+.brand-slogan {
+  font-size: 24rpx;
+  color: rgba(255, 255, 255, 0.9);
+  margin-top: 4rpx;
+}
+
+/* ── 优势点 ────────────────────────────────── */
+.benefits {
+  display: flex;
+  gap: 16rpx;
+  margin-bottom: 36rpx;
+  position: relative;
+  z-index: 1;
+}
+.benefit {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(20rpx);
+  border-radius: 20rpx;
+  padding: 24rpx 12rpx;
+  text-align: center;
+  border: 1rpx solid rgba(255, 255, 255, 0.25);
+}
+.benefit-icon { font-size: 40rpx; }
+.benefit-text {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: #fff;
+  margin-top: 8rpx;
+}
+.benefit-sub {
+  font-size: 20rpx;
+  color: rgba(255, 255, 255, 0.85);
+  margin-top: 2rpx;
+}
+
+/* ── 表单卡片 ─────────────────────────────── */
 .card {
   background: #fff;
-  border-radius: 24rpx;
-  padding: 40rpx 32rpx 32rpx;
-  box-shadow: 0 4rpx 24rpx rgba(0,0,0,0.08);
+  border-radius: 32rpx;
+  padding: 48rpx 36rpx 36rpx;
+  box-shadow: 0 20rpx 60rpx rgba(0, 0, 0, 0.12);
+  position: relative;
+  z-index: 1;
+}
+.card-title {
+  font-size: 40rpx;
+  font-weight: 700;
+  color: #1a1a1a;
+  text-align: center;
+}
+.card-sub {
+  font-size: 24rpx;
+  color: #909399;
+  text-align: center;
+  margin: 8rpx 0 36rpx;
 }
 
 .field {
   display: flex;
   align-items: center;
-  padding: 24rpx 0;
-  border-bottom: 1rpx solid #f0f1f5;
+  background: #F7F8FA;
+  border-radius: 16rpx;
+  padding: 0 20rpx;
+  height: 96rpx;
+  margin-bottom: 20rpx;
+  border: 2rpx solid transparent;
+  transition: border 0.2s;
 
-  .label { width: 160rpx; font-size: 28rpx; color: #606266; flex-shrink: 0; }
-  .input { flex: 1; font-size: 30rpx; color: #303133; }
+  &:focus-within {
+    border-color: #FF6B35;
+    background: #fff;
+  }
 }
-.field:last-of-type { border-bottom: 1rpx solid #f0f1f5; }
-.sms-row .sms-input { flex: 1; }
+.field-icon {
+  font-size: 32rpx;
+  margin-right: 12rpx;
+  flex-shrink: 0;
+}
+.field-input {
+  flex: 1;
+  font-size: 30rpx;
+  color: #1a1a1a;
+  background: transparent;
+  border: none;
+  outline: none;
+}
+.sms-field { padding-right: 8rpx; }
 .sms-btn {
   margin-left: 12rpx;
-  height: 64rpx;
-  line-height: 64rpx;
-  padding: 0 20rpx;
-  background: #FFF4ED;
-  color: #FF6B35;
+  padding: 14rpx 24rpx;
   font-size: 24rpx;
+  background: linear-gradient(135deg, #FF6B35, #FF9A4A);
+  color: #fff;
   border-radius: 32rpx;
-  border: none;
+  font-weight: 600;
   flex-shrink: 0;
-  &[disabled] { background: #f5f5f5; color: #999; }
-  &::after { border: none; }
+  white-space: nowrap;
+
+  &.disabled {
+    background: #E5E7EB;
+    color: #909399;
+  }
 }
 
-.tips {
-  margin-top: 24rpx;
+.demo-hint {
   display: flex;
-  flex-direction: column;
+  align-items: center;
   gap: 8rpx;
   font-size: 22rpx;
-  color: #909399;
+  color: #FF6B35;
+  background: #FFF7F2;
+  border-radius: 12rpx;
+  padding: 16rpx 20rpx;
+  margin: 8rpx 0 32rpx;
+}
+.demo-tag {
+  background: #FF6B35;
+  color: #fff;
+  font-size: 18rpx;
+  padding: 4rpx 12rpx;
+  border-radius: 8rpx;
+  font-weight: 700;
+}
+.demo-code {
+  font-weight: 700;
+  font-size: 28rpx;
+  color: #FF6B35;
 }
 
 .submit-btn {
-  margin-top: 40rpx;
-  height: 96rpx;
-  line-height: 96rpx;
-  background: linear-gradient(135deg, #FF6B35, #FF9A4A);
+  width: 100%;
+  height: 104rpx;
+  line-height: 104rpx;
+  background: linear-gradient(135deg, #C8C9CC, #E5E7EB);
   color: #fff;
-  border-radius: 48rpx;
+  border-radius: 52rpx;
   font-size: 32rpx;
-  font-weight: 600;
-  &[disabled] { opacity: 0.5; }
+  font-weight: 700;
+  letter-spacing: 4rpx;
+  transition: all 0.3s;
+
+  &.active {
+    background: linear-gradient(135deg, #FF6B35, #FF9A4A);
+    box-shadow: 0 8rpx 24rpx rgba(255, 107, 53, 0.35);
+  }
+  &.loading {
+    opacity: 0.8;
+  }
   &::after { border: none; }
 }
 
-.bottom-link {
+.agreement {
+  margin-top: 20rpx;
   text-align: center;
-  margin-top: 32rpx;
-  font-size: 26rpx;
+  font-size: 22rpx;
   color: #909399;
-  .link { color: #FF6B35; margin-left: 8rpx; }
+}
+.agreement-link {
+  color: #FF6B35;
+}
+
+/* ── 底部链接 ─────────────────────────────── */
+.footer {
+  margin-top: 32rpx;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+.footer-link {
+  font-size: 24rpx;
+  color: rgba(255, 255, 255, 0.85);
+  margin: 12rpx 0;
+
+  .link {
+    color: #fff;
+    font-weight: 700;
+    margin-left: 8rpx;
+    text-decoration: underline;
+  }
 }
 </style>
