@@ -665,27 +665,28 @@ export async function publishToDouyin(taskId, onStage) {
 }
 
 /**
- * Path A：保存到相册 + 引导用户去抖音 App 发布（小程序/H5 通用最稳方案）
+ * 「点按钮 → 抖音授权页 → 跳抖音 App 发布页用户手动点发送」混合流程
  *
- * 业内 80% 商家用的就是这个流程，因为：
- *   · 微信小程序对外部 schema 跳转限制极严，只能跳微信小程序，跳不了抖音
- *   · H5 跳 schema 在 iOS Safari 上会弹"无法打开此页面"系统弹窗
- *   · 真正稳定的只有"保存到本地相册 → 用户自己打开抖音 → 选相册视频"
+ * 抖音开放平台要求：通过 schema 调起抖音 App 的发布页，必须先 OAuth 授权
+ * （拿到 access_token 后抖音才认你这个 client_key 的导流），否则抖音 App
+ * 会提示"未授权应用"。所以流程是：
+ *   ① 合并分镜上传 TOS
+ *   ② 弹抖音 OAuth 授权页 → 用户点同意 → 拿 access_token / openId
+ *      （未配 DOUYIN_CLIENT_KEY 时 sidecar 返本地 demo 授权页，演示当天可走通）
+ *   ③ 下载到本地相册（uni.downloadFile + uni.saveVideoToPhotosAlbum）
+ *   ④ 复制标题+hashtag 到剪贴板
+ *   ⑤ snssdk1128://aweme/share?client_key=…&access_token=…&title=…
+ *      拉起抖音 App 到发布页（视频已在相册可选，文案已在剪贴板可粘贴）
+ *   ⑥ 用户在抖音 App 内手动点「发送」完成发布
  *
- * 流程：
- *   1. 合并分镜上传 TOS 拿公网 URL
- *   2. uni.downloadFile 下载到本地临时路径
- *   3. uni.saveVideoToPhotosAlbum 保存到系统相册（小程序需 scope.writePhotosAlbum）
- *   4. 同时 uni.setClipboardData 复制视频文案到剪贴板（用户切到抖音可直接粘贴）
- *   5. H5 端额外尝试 snssdk1128 schema 拉起抖音 App（失败也不影响主流程）
- *   6. 弹引导："视频已保存到相册，请打开抖音 → + → 相册选刚保存的视频"
- *
- * 不需要任何抖音 client_key — 纯本地操作；
- * 拿到 client_key 后会附加到 schema 让抖音 App 知道导流来源（用于看回报数据）。
+ * 跟自动直发（publishToDouyin 调 create_video API）的区别：
+ *   · 不需要 video.upload / video.create scope 严审 + 录屏 demo
+ *   · 「分享到抖音」是默认开通能力，主体认证后即可用
+ *   · 用户在抖音内点最后一下"发送"，符合抖音"用户主动发布"合规要求
  *
  * @param {number} taskId
- * @param {(stage: 'merging'|'downloading'|'saving'|'launching'|'done', data?: any) => void} [onStage]
- * @param {string} [clientKey]  抖音移动应用的 client_key（可选；拿到 KEY 后填 VITE_DOUYIN_CLIENT_KEY）
+ * @param {(stage: 'merging'|'authorizing'|'downloading'|'saving'|'launching'|'done', data?: any) => void} [onStage]
+ * @param {string} [clientKey]  抖音移动应用的 client_key（拿到 KEY 后填 VITE_DOUYIN_CLIENT_KEY）
  */
 export async function shareToDouyinApp(taskId, onStage, clientKey) {
   const t = store.tasks.find((x) => x.id === taskId);
@@ -709,7 +710,19 @@ export async function shareToDouyinApp(taskId, onStage, clientKey) {
     persist();
   }
 
-  // ② 下载到本地临时路径（uni-app API，H5 / 微信小程序通用）
+  // ② 抖音 OAuth 授权（拿 access_token / openId，schema 跳转必需）
+  //    Token 有缓存，授权过的商户下次直接跳 ③；未配 client_key 时走 demo 授权页
+  let tok = (typeof readDouyinToken === 'function') ? readDouyinToken() : null;
+  if (!tok?.accessToken || !tok?.openId) {
+    onStage?.('authorizing');
+    try {
+      tok = await douyinAuthorize();
+    } catch (e) {
+      throw new Error('抖音授权失败：' + (e?.message || e));
+    }
+  }
+
+  // ③ 下载到本地临时路径（uni-app API，H5 / 微信小程序通用）
   onStage?.('downloading');
   const tempPath = await new Promise((resolve, reject) => {
     uni.downloadFile({
@@ -719,7 +732,7 @@ export async function shareToDouyinApp(taskId, onStage, clientKey) {
     });
   });
 
-  // ③ 保存到相册（小程序首次会触发 scope.writePhotosAlbum 授权弹窗）
+  // ④ 保存到相册（小程序首次会触发 scope.writePhotosAlbum 授权弹窗）
   onStage?.('saving');
   let savedToAlbum = false;
   try {
@@ -753,7 +766,7 @@ export async function shareToDouyinApp(taskId, onStage, clientKey) {
     }
   }
 
-  // ④ 复制文案到剪贴板（用户切到抖音可直接粘贴标题 + hashtag）
+  // ⑤ 复制文案到剪贴板（用户切到抖音可直接粘贴标题 + hashtag）
   const title = (t.title || t.userDescription || '').slice(0, 55);
   const clipText = `${title}\n#摊小二 #探店`;
   try {
@@ -767,13 +780,15 @@ export async function shareToDouyinApp(taskId, onStage, clientKey) {
     });
   } catch {}
 
-  // ⑤ H5 端尝试 schema 拉起抖音 App（小程序里 web-view 跳不了 schema，static 失败兜底）
+  // ⑥ 拉起抖音 App 到发布页（schema 带 client_key + access_token + openId）
   let launchedApp = false;
   if (typeof document !== 'undefined' && typeof window !== 'undefined') {
     onStage?.('launching');
     const ck = clientKey || (typeof import.meta !== 'undefined' && import.meta.env?.VITE_DOUYIN_CLIENT_KEY) || '';
     const params = new URLSearchParams();
     if (ck) params.set('client_key', ck);
+    if (tok?.accessToken) params.set('access_token', tok.accessToken);
+    if (tok?.openId) params.set('open_id', tok.openId);
     params.set('title', title);
     params.set('hashtag_list', '#摊小二 #探店');
     const schema = `snssdk1128://aweme/share?${params.toString()}`;

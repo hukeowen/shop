@@ -290,6 +290,7 @@ const publishLabel = computed(() => {
   if (!publishing.value) return '发布到抖音';
   switch (publishStage.value) {
     case 'merging': return '合并视频中…';
+    case 'authorizing': return '等待抖音授权…';
     case 'downloading': return '下载视频…';
     case 'saving': return '保存到相册…';
     case 'launching': return '拉起抖音 App…';
@@ -307,7 +308,7 @@ async function onPublishDouyin() {
     uni.showModal({
       title: '发布到抖音',
       content:
-        '将先合并视频并保存到本机，然后跳转到抖音 App 的发布页。请在抖音里点 + 选「相册」找到刚保存的视频发出。',
+        '将弹出抖音授权页，授权后跳转到抖音 App 的发布页面，视频和文案已预填，你只需在抖音里点「发送」。',
       confirmText: '继续',
       success: (x) => r(x.confirm),
       fail: () => r(false),
@@ -320,17 +321,15 @@ async function onPublishDouyin() {
   try {
     const ret = await shareToDouyinApp(taskId.value, (stage) => {
       publishStage.value = stage;
-      uni.showLoading({ title: publishLabel.value, mask: true });
+      if (stage === 'authorizing') uni.hideLoading();
+      else uni.showLoading({ title: publishLabel.value, mask: true });
     });
     uni.hideLoading();
-    // launchedApp=true：用户已切到抖音 App（仅 H5 能探测到）— 静默成功
-    // savedToAlbum=true 但 launchedApp=false：相册有了但没拉起抖音 → 弹手动指引
-    // 标题/hashtag 已 setClipboardData，用户在抖音可直接粘贴
     if (!ret?.launchedApp) {
       const tip = ret?.savedToAlbum
-        ? '视频已保存到相册，文案已复制到剪贴板。\n请打开抖音 →「+」→ 相册 → 选最新的「摊小二-…」视频 → 长按粘贴文案 → 发布'
-        : '视频合成完成，但相册保存失败。请在浏览器视频播放页长按「保存视频」后再去抖音发布。';
-      uni.showModal({ title: '下一步：去抖音发布', content: tip, showCancel: false });
+        ? '抖音授权完成，视频已保存到相册。\n请打开抖音 App →「+」→ 相册 → 选最新视频 → 长按粘贴文案 → 发送'
+        : '抖音授权完成。视频已合成（可在播放页长按保存），请到抖音 App 手动选相册视频发布。';
+      uni.showModal({ title: '下一步：去抖音点发送', content: tip, showCancel: false });
     }
   } catch (e) {
     uni.hideLoading();

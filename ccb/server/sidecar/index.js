@@ -719,11 +719,19 @@ const DOUYIN_CREATE_VIDEO = 'https://open.douyin.com/api/douyin/v1/video/create_
 
 app.get('/douyin/auth-url', (req, res) => {
   try {
-    if (!DOUYIN_CLIENT_KEY) throw new Error('未配置 DOUYIN_CLIENT_KEY');
     const redirectUri =
       req.query.redirect_uri ||
       `${req.headers['x-forwarded-proto'] || 'http'}://${req.headers.host}/douyin/oauth-callback`;
     const state = crypto.randomBytes(8).toString('hex');
+
+    // Demo 兜底：未配 DOUYIN_CLIENT_KEY 时返一个本地 demo 授权页 URL，
+    // 用户能看到完整 OAuth 弹窗动画，3s 自动跳成功，前端拿到 fake token；
+    // 拿到真 KEY 后切回真链路，前端无改动。
+    if (!DOUYIN_CLIENT_KEY) {
+      const fakeUrl = `${req.headers['x-forwarded-proto'] || 'http'}://${req.headers.host}/douyin/demo-auth?state=${state}&redirect_uri=${encodeURIComponent(redirectUri)}`;
+      return res.json({ ok: true, url: fakeUrl, state, demo: true });
+    }
+
     const u = new URL(DOUYIN_OAUTH_CONNECT);
     u.searchParams.set('client_key', DOUYIN_CLIENT_KEY);
     u.searchParams.set('response_type', 'code');
@@ -736,36 +744,81 @@ app.get('/douyin/auth-url', (req, res) => {
   }
 });
 
+// Demo 兜底：本地 fake 授权页，模拟用户在抖音 App 内点"同意"
+app.get('/douyin/demo-auth', (req, res) => {
+  const { state = '', redirect_uri = '' } = req.query;
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  res.end(`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>抖音授权</title>
+<style>
+  body { margin:0; font-family: -apple-system, "PingFang SC", sans-serif; background:#000; color:#fff; min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:32px; }
+  .logo { width: 80px; height: 80px; background: linear-gradient(135deg, #fe2c55, #25f4ee); border-radius: 18px; display:flex; align-items:center; justify-content:center; font-size:42px; font-weight:bold; margin-bottom:24px; }
+  h1 { font-size: 22px; margin: 8px 0; }
+  .sub { color:#999; margin-bottom: 32px; font-size: 14px; }
+  .card { background:#1a1a1a; border-radius:12px; padding:20px; width:100%; max-width: 320px; margin-bottom: 16px; }
+  .row { display:flex; align-items:center; padding: 8px 0; color:#ddd; font-size:14px; }
+  .row::before { content:"✓"; color:#25f4ee; margin-right: 12px; font-weight:bold; }
+  .btn { width:100%; max-width:320px; height:48px; border-radius:24px; background:#fe2c55; color:#fff; border:none; font-size:16px; font-weight:600; }
+  .tip { color:#666; font-size:12px; margin-top:24px; }
+</style></head><body>
+<div class="logo">抖</div>
+<h1>授权"摊小二"</h1>
+<div class="sub">摊小二 SaaS 想要访问你的抖音账号</div>
+<div class="card">
+  <div class="row">读取你的抖音昵称和头像</div>
+  <div class="row">代你上传视频草稿</div>
+  <div class="row">代你发布视频到你的主页</div>
+</div>
+<button class="btn" onclick="agree()">同意授权</button>
+<div class="tip">⚠️ 演示模式：抖音应用未上线，授权为本地 mock</div>
+<script>
+function agree(){
+  var qs = new URLSearchParams({code:'DEMO_'+Date.now(), state:${JSON.stringify(state)}}).toString();
+  location.href = ${JSON.stringify(redirect_uri)} + (${JSON.stringify(redirect_uri)}.indexOf('?')<0?'?':'&') + qs;
+}
+</script></body></html>`);
+});
+
 app.get('/douyin/oauth-callback', async (req, res) => {
   try {
     const { code, state = '', errcode, error } = req.query;
     const err = errcode || error;
     if (err) throw new Error(`douyin oauth error: ${err} ${req.query.error_description || ''}`);
     if (!code) throw new Error('回调缺少 code');
-    if (!DOUYIN_CLIENT_KEY || !DOUYIN_CLIENT_SECRET) throw new Error('未配置 DOUYIN_CLIENT_KEY/SECRET');
 
-    const body = new URLSearchParams({
-      client_key: DOUYIN_CLIENT_KEY,
-      client_secret: DOUYIN_CLIENT_SECRET,
-      code,
-      grant_type: 'authorization_code',
-    });
-    const r = await fetchRetry(DOUYIN_ACCESS_TOKEN, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: body.toString(),
-    });
-    const payload = await r.json().catch(() => ({}));
-    const d = payload?.data || {};
-    if (!r.ok || !d.access_token) throw new Error(`access_token 换取失败：${JSON.stringify(payload).slice(0, 300)}`);
-
-    const token = {
-      accessToken: d.access_token,
-      refreshToken: d.refresh_token || '',
-      openId: d.open_id || '',
-      expiresIn: d.expires_in || 0,
-      grantedAt: Date.now(),
-    };
+    let token;
+    // Demo 兜底：未配 KEY 或 code 来自本地 demo-auth 页时直接返 fake token
+    if (!DOUYIN_CLIENT_KEY || !DOUYIN_CLIENT_SECRET || String(code).startsWith('DEMO_')) {
+      token = {
+        accessToken: 'DEMO_AT_' + crypto.randomBytes(8).toString('hex'),
+        refreshToken: 'DEMO_RT_' + crypto.randomBytes(8).toString('hex'),
+        openId: 'DEMO_OPENID_' + crypto.randomBytes(4).toString('hex'),
+        expiresIn: 86400,
+        grantedAt: Date.now(),
+        demo: true,
+      };
+    } else {
+      const body = new URLSearchParams({
+        client_key: DOUYIN_CLIENT_KEY,
+        client_secret: DOUYIN_CLIENT_SECRET,
+        code,
+        grant_type: 'authorization_code',
+      });
+      const r = await fetchRetry(DOUYIN_ACCESS_TOKEN, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: body.toString(),
+      });
+      const payload = await r.json().catch(() => ({}));
+      const d = payload?.data || {};
+      if (!r.ok || !d.access_token) throw new Error(`access_token 换取失败：${JSON.stringify(payload).slice(0, 300)}`);
+      token = {
+        accessToken: d.access_token,
+        refreshToken: d.refresh_token || '',
+        openId: d.open_id || '',
+        expiresIn: d.expires_in || 0,
+        grantedAt: Date.now(),
+      };
+    }
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     res.end(`<!doctype html><html><head><meta charset="utf-8"><title>抖音授权成功</title></head>
 <body style="font-family:sans-serif;padding:48px;text-align:center;">
