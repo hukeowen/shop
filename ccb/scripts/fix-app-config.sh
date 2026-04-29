@@ -42,28 +42,78 @@ set -a; source "${ENV_FILE}"; set +a
 : "${REDIS_PASS:?REDIS_PASS 未在 .env 中设置}"
 : "${MERCHANT_INTERNAL_TOKEN:?MERCHANT_INTERNAL_TOKEN 未在 .env 中设置}"
 
-# ── 1. MySQL 用户 + 远程连接 ──────────────────────────────────────────────
+# ── 0. 占位符兜底 — 自动剥离 CHANGE_ME_ 前缀 ─────────────────────────────
+info "[0/6] 检查 .env 占位符"
+ENV_FIXED=false
+for var in MYSQL_ROOT_PASS DB_PASS REDIS_PASS MERCHANT_INTERNAL_TOKEN; do
+  val="${!var}"
+  if [[ "${val}" == CHANGE_ME_* ]]; then
+    new_val="${val#CHANGE_ME_}"
+    if [[ -z "${new_val}" ]]; then
+      err "${var} 是纯 CHANGE_ME_ 占位符，请先在 .env 里填真实值"
+      exit 1
+    fi
+    sed -i "s|^${var}=.*|${var}=${new_val}|" "${ENV_FILE}"
+    eval "${var}='${new_val}'"
+    log "${var} 剥离 CHANGE_ME_ → ${new_val}"
+    ENV_FIXED=true
+  fi
+done
+[[ "${ENV_FIXED}" == true ]] && log "已修正 .env 占位符；重新加载" || log ".env 占位符 OK"
+
+# ── 1. 探测 MySQL 版本（决定用 5.7 还是 8.0 兼容语法）─────────────────────
 info "[1/6] 配置 MySQL 用户 + 开启远程连接"
-# 用 mktemp 写 SQL 到临时文件，避免 heredoc + grep + || 的解析坑
+MYSQL_VER=$(mysql -uroot -p"${MYSQL_ROOT_PASS}" -Nse "SELECT VERSION();" 2>/dev/null || echo "")
+if [[ -z "${MYSQL_VER}" ]]; then
+  err "无法连接 MySQL — 请确认 .env 的 MYSQL_ROOT_PASS 与 mysql root 密码一致"
+  err "  当前 .env 里 MYSQL_ROOT_PASS=${MYSQL_ROOT_PASS}"
+  err "  手工验证: mysql -uroot -p'${MYSQL_ROOT_PASS}' -e 'SELECT 1;'"
+  exit 1
+fi
+log "连上 MySQL，版本 = ${MYSQL_VER}"
+
+# 写 SQL 文件 — 用 MySQL 5.7+/8.0 通用语法（CREATE USER IF NOT EXISTS + ALTER USER + GRANT）
+# 旧的 GRANT ... IDENTIFIED BY 在 8.0 已被移除
 TMP_SQL=$(mktemp)
 chmod 600 "${TMP_SQL}"
 cat > "${TMP_SQL}" <<SQL
--- 1a. 远程开 root（注意：生产环境应改用 IP 白名单代替 '%'）
-GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY '${MYSQL_ROOT_PASS}' WITH GRANT OPTION;
--- 1b. 业务用户 tanxiaer（本地 + 远程都给）
+-- 1a. 创建 / 修密 root@'%'（生产建议改 IP 白名单代替 '%'）
+CREATE USER IF NOT EXISTS 'root'@'%' IDENTIFIED BY '${MYSQL_ROOT_PASS}';
+ALTER USER 'root'@'%' IDENTIFIED BY '${MYSQL_ROOT_PASS}';
+GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' WITH GRANT OPTION;
+
+-- 1b. 建库
 CREATE DATABASE IF NOT EXISTS \`${DB_NAME}\` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-GRANT ALL PRIVILEGES ON \`${DB_NAME}\`.* TO 'tanxiaer'@'localhost' IDENTIFIED BY '${DB_PASS}';
-GRANT ALL PRIVILEGES ON \`${DB_NAME}\`.* TO 'tanxiaer'@'%'         IDENTIFIED BY '${DB_PASS}';
+
+-- 1c. tanxiaer 用户（本地 + 远程）
+CREATE USER IF NOT EXISTS 'tanxiaer'@'localhost' IDENTIFIED BY '${DB_PASS}';
+ALTER USER 'tanxiaer'@'localhost' IDENTIFIED BY '${DB_PASS}';
+GRANT ALL PRIVILEGES ON \`${DB_NAME}\`.* TO 'tanxiaer'@'localhost';
+
+CREATE USER IF NOT EXISTS 'tanxiaer'@'%' IDENTIFIED BY '${DB_PASS}';
+ALTER USER 'tanxiaer'@'%' IDENTIFIED BY '${DB_PASS}';
+GRANT ALL PRIVILEGES ON \`${DB_NAME}\`.* TO 'tanxiaer'@'%';
+
 FLUSH PRIVILEGES;
+
 SELECT user, host FROM mysql.user WHERE user IN ('root','tanxiaer') ORDER BY user, host;
 SQL
-if ! mysql -uroot -p"${MYSQL_ROOT_PASS}" < "${TMP_SQL}" 2>&1 | grep -vE "Warning|password"; then
-  err "MySQL root 密码连接失败，请检查 .env 的 MYSQL_ROOT_PASS"
+
+if ! mysql -uroot -p"${MYSQL_ROOT_PASS}" < "${TMP_SQL}" 2>/tmp/mysql-err.log; then
+  err "MySQL SQL 执行失败，错误："
+  cat /tmp/mysql-err.log >&2
   rm -f "${TMP_SQL}"
   exit 1
 fi
 rm -f "${TMP_SQL}"
-log "MySQL 用户 + 远程访问已开通"
+
+# 验证 tanxiaer 用户能用 DB_PASS 真的连上
+if ! mysql -utanxiaer -p"${DB_PASS}" -D"${DB_NAME}" -e "SELECT 1;" >/dev/null 2>&1; then
+  err "tanxiaer 用户密码验证失败 — DB_PASS 可能含特殊字符未转义"
+  err "  手工试: mysql -utanxiaer -p'${DB_PASS}' -D${DB_NAME} -e 'SELECT 1;'"
+  exit 1
+fi
+log "MySQL 用户 + 远程访问已开通；tanxiaer 连接验证通过"
 
 # ── 2. MySQL bind-address 改 0.0.0.0 + firewall 放 3306 ──────────────────
 info "[2/6] MySQL bind-address 0.0.0.0 + 放行 3306"
