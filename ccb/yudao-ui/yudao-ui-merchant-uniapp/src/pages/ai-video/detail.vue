@@ -141,7 +141,7 @@
 <script setup>
 import { computed, nextTick, ref, watch } from 'vue';
 import { onLoad, onUnload } from '@dcloudio/uni-app';
-import { getTask, publishToDouyin } from '../../api/aiVideo.js';
+import { getTask, shareToDouyinApp } from '../../api/aiVideo.js';
 import { findVoice } from '../../api/voice.js';
 
 const task = ref(null);
@@ -290,9 +290,8 @@ const publishLabel = computed(() => {
   if (!publishing.value) return '发布到抖音';
   switch (publishStage.value) {
     case 'merging': return '合并视频中…';
-    case 'authorizing': return '等待授权…';
-    case 'uploading': return '上传到抖音中…';
-    case 'publishing': return '发布中…';
+    case 'downloading': return '保存到相册…';
+    case 'launching': return '拉起抖音 App…';
     default: return '处理中…';
   }
 });
@@ -306,7 +305,9 @@ async function onPublishDouyin() {
   const confirm = await new Promise((r) =>
     uni.showModal({
       title: '发布到抖音',
-      content: '将自动合并全部分镜、完成抖音授权，并发布到你的抖音账号。约 1-2 分钟，确认继续？',
+      content:
+        '将先合并视频并保存到本机，然后跳转到抖音 App 的发布页。请在抖音里点 + 选「相册」找到刚保存的视频发出。',
+      confirmText: '继续',
       success: (x) => r(x.confirm),
       fail: () => r(false),
     })
@@ -316,21 +317,23 @@ async function onPublishDouyin() {
   publishStage.value = 'merging';
   uni.showLoading({ title: publishLabel.value, mask: true });
   try {
-    await publishToDouyin(taskId.value, (stage) => {
+    await shareToDouyinApp(taskId.value, (stage) => {
       publishStage.value = stage;
-      // 授权阶段弹窗会抢焦点，这里先把 loading 关掉，授权成功后自动继续
-      if (stage === 'authorizing') uni.hideLoading();
-      else uni.showLoading({ title: publishLabel.value, mask: true });
+      uni.showLoading({ title: publishLabel.value, mask: true });
     });
     uni.hideLoading();
-    uni.showModal({
-      title: '已发布',
-      content: '视频已成功推送到你的抖音账号，可在抖音 App「我-作品」里查看。',
-      showCancel: false,
-    });
+    // 1.2s 后弹引导（给抖音 App 拉起留时间，没拉起来再弹手动指引）
+    setTimeout(() => {
+      uni.showModal({
+        title: '视频已保存',
+        content:
+          '视频已保存到本机。如未自动跳转抖音 App：请打开抖音 → 点「+」→ 选「相册」→ 选最新的「摊小二-…」视频发布。',
+        showCancel: false,
+      });
+    }, 1200);
   } catch (e) {
     uni.hideLoading();
-    uni.showModal({ title: '发布失败', content: e.message || String(e), showCancel: false });
+    uni.showModal({ title: '操作失败', content: e.message || String(e), showCancel: false });
   } finally {
     publishing.value = false;
     publishStage.value = '';

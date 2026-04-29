@@ -664,4 +664,80 @@ export async function publishToDouyin(taskId, onStage) {
   return { ok: true, itemId: pubData.itemId };
 }
 
+/**
+ * Path A：H5 → 拉起抖音 App 发布
+ *
+ * 流程：
+ *   1. 合并所有分镜 + 上传 TOS（同 publishToDouyin 第一段）
+ *   2. 浏览器触发 <a download> 把成片保存到本机相册 / 下载文件夹
+ *   3. window.location.href = 'snssdk1128://...' 拉起抖音 App
+ *      抖音装了：跳到 App 的拍摄/发布页（用户从相册选刚下载的视频）
+ *      抖音没装：手机浏览器停在原地 → 调用方 toast 引导装抖音
+ *   4. 不需要 client_secret / OAuth scope 审核，主体认证 + "分享到抖音" 能力
+ *      默认开通即可（路径 A），本月可落地。
+ *
+ * @param {number} taskId
+ * @param {(stage: 'merging'|'downloading'|'launching'|'done', data?: any) => void} [onStage]
+ * @param {string} [clientKey]  抖音移动应用的 client_key（拿到 KEY 后从 import.meta.env.VITE_DOUYIN_CLIENT_KEY 读）
+ */
+export async function shareToDouyinApp(taskId, onStage, clientKey) {
+  const t = store.tasks.find((x) => x.id === taskId);
+  if (!t) throw new Error('任务不存在');
+  const urls = (t.scenes || []).filter((s) => s.clipUrl).map((s) => s.clipUrl);
+  if (!urls.length) throw new Error('没有可发布的分镜');
+
+  // ① 合并 + 上传 TOS
+  onStage?.('merging');
+  let mergedUrl = t.mergedUrl;
+  if (!mergedUrl) {
+    const res = await fetch('/video/merge', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ urls, uploadTos: true }),
+    });
+    const data = res.ok ? await res.json() : { ok: false, error: `HTTP ${res.status}` };
+    if (!data.ok) throw new Error('合并失败：' + (data.error || 'unknown'));
+    mergedUrl = data.url;
+    t.mergedUrl = mergedUrl;
+    persist();
+  }
+
+  // ② H5 下载到本机（用户后续在抖音 App 内从相册选）
+  onStage?.('downloading');
+  try {
+    const blob = await fetch(mergedUrl).then((r) => r.blob());
+    const objectUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = objectUrl;
+    a.download = `${t.title || 'tanxiaoer-video'}-${t.id}.mp4`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
+  } catch (e) {
+    // 下载失败不阻塞跳转，至少把 URL 给用户复制兜底
+    console.warn('[douyin/share] 下载失败，跳过：', e?.message || e);
+  }
+
+  // ③ 拉起抖音 App（snssdk1128 是抖音 App 的私有 scheme）
+  //    title / hashtag_list 抖音 App 会预填到发布页输入框
+  onStage?.('launching');
+  const ck = clientKey || (typeof import.meta !== 'undefined' && import.meta.env?.VITE_DOUYIN_CLIENT_KEY) || '';
+  const title = (t.title || t.userDescription || '').slice(0, 55);
+  const params = new URLSearchParams();
+  if (ck) params.set('client_key', ck);
+  params.set('title', title);
+  params.set('hashtag_list', '#摊小二 #探店');
+  const schema = `snssdk1128://aweme/share?${params.toString()}`;
+
+  // 给浏览器一点时间触发下载，再跳 schema（否则 download 会被打断）
+  await new Promise((r) => setTimeout(r, 600));
+  try {
+    window.location.href = schema;
+  } catch {}
+
+  onStage?.('done');
+  return { ok: true, mergedUrl, schema };
+}
+
 export const CONFIG = { MAX_SCENES };
