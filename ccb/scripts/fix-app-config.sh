@@ -133,6 +133,56 @@ if command -v firewall-cmd &>/dev/null && systemctl is-active --quiet firewalld;
 fi
 warn "⚠️  阿里云 ECS 安全组：去阿里云控制台另行放行 3306（firewalld 不管安全组）"
 
+# ── 2.5. 清理 nginx.conf 默认 server 块（防 /m/assets/*.js 404）───────────
+info "[2.5/6] 清理 nginx.conf 默认 server 块（防 /m/assets/*.js 404）"
+MAIN_CONF="/etc/nginx/nginx.conf"
+if [[ -f "${MAIN_CONF}" ]] && grep -qE "^[[:space:]]*server[[:space:]]*\{" "${MAIN_CONF}"; then
+  TMP_NG=$(mktemp)
+  cp "${MAIN_CONF}" "${TMP_NG}"
+  cp "${MAIN_CONF}" "${MAIN_CONF}.tanxiaer-bak.$(date +%Y%m%d-%H%M%S)"
+  awk '
+    BEGIN { d=0; in_s=0 }
+    /^[[:space:]]*server[[:space:]]*\{/ {
+      if (in_s==0) {
+        in_s=1; d=1
+        print "    # [tanxiaer] 默认 server 已禁用 (路由由 conf.d/tanxiaer.conf 接管)"
+        next
+      }
+    }
+    in_s==1 {
+      n=gsub(/\{/,"{"); m=gsub(/\}/,"}")
+      d += n - m
+      if (d <= 0) { in_s=0 }
+      next
+    }
+    { print }
+  ' "${TMP_NG}" > "${MAIN_CONF}"
+  rm -f "${TMP_NG}"
+
+  if grep -qE "^[[:space:]]*server[[:space:]]*\{" "${MAIN_CONF}"; then
+    err "nginx.conf 清理失败 — server 块仍存在"
+    grep -nE "^[[:space:]]*server[[:space:]]*\{" "${MAIN_CONF}" >&2
+    exit 1
+  fi
+  log "nginx.conf 默认 server 块已清理"
+else
+  log "nginx.conf 无默认 server 块（OK）"
+fi
+
+# 同时清掉 conf.d/default.conf
+if [[ -f /etc/nginx/conf.d/default.conf ]]; then
+  mv -f /etc/nginx/conf.d/default.conf /etc/nginx/conf.d/default.conf.disabled
+  log "禁用 conf.d/default.conf"
+fi
+
+# 校验 + reload
+if nginx -t 2>&1 | tail -3 | grep -q "successful"; then
+  nginx -s reload && log "nginx 已 reload"
+else
+  warn "nginx -t 异常："
+  nginx -t || true
+fi
+
 # ── 3. 写 application-prod.yaml 到 jar 同目录 ───────────────────────────
 info "[3/6] 写 application-prod.yaml 到 ${APP_DIR}/"
 TOKEN_SECRET_FILE="${ROOT_DIR}/.token-secret"
