@@ -61,12 +61,13 @@
 
   <!-- 进件资质预览弹窗 -->
   <el-dialog v-model="kycVisible" title="商户进件资质" width="780px">
-    <div class="kyc-grid" v-if="kycRow">
+    <div v-if="kycLoading" class="kyc-loading">资质加载中…</div>
+    <div class="kyc-grid" v-else-if="kycRow">
       <div class="kyc-item">
         <div class="kyc-label">法人身份证 · 正面</div>
         <el-image
-          v-if="kycRow.idCardFrontUrl"
-          :src="kycRow.idCardFrontUrl"
+          v-if="kycViewUrl.idCardFront"
+          :src="kycViewUrl.idCardFront"
           :preview-src-list="kycPreviewList"
           fit="cover"
           class="kyc-img"
@@ -76,8 +77,8 @@
       <div class="kyc-item">
         <div class="kyc-label">法人身份证 · 背面</div>
         <el-image
-          v-if="kycRow.idCardBackUrl"
-          :src="kycRow.idCardBackUrl"
+          v-if="kycViewUrl.idCardBack"
+          :src="kycViewUrl.idCardBack"
           :preview-src-list="kycPreviewList"
           fit="cover"
           class="kyc-img"
@@ -87,8 +88,8 @@
       <div class="kyc-item">
         <div class="kyc-label">营业执照</div>
         <el-image
-          v-if="kycRow.businessLicenseUrl"
-          :src="kycRow.businessLicenseUrl"
+          v-if="kycViewUrl.businessLicense"
+          :src="kycViewUrl.businessLicense"
           :preview-src-list="kycPreviewList"
           fit="cover"
           class="kyc-img"
@@ -96,6 +97,7 @@
         <div v-else class="kyc-empty">未上传</div>
       </div>
     </div>
+    <div class="kyc-tip">URL 1 小时过期，刷新弹窗重新签发</div>
   </el-dialog>
 
   <!-- 驳回弹窗 -->
@@ -176,17 +178,39 @@ const handleApprove = async (row: PayApplyApi.ShopPayApplyVO) => {
 
 // ===== 进件资质预览弹窗 =====
 const kycVisible = ref(false)
+const kycLoading = ref(false)
 const kycRow = ref<PayApplyApi.ShopPayApplyVO | null>(null)
+const kycViewUrl = reactive({ idCardFront: '', idCardBack: '', businessLicense: '' })
 const kycPreviewList = computed(() =>
-  kycRow.value
-    ? [kycRow.value.idCardFrontUrl, kycRow.value.idCardBackUrl, kycRow.value.businessLicenseUrl].filter(
-        (u): u is string => !!u
-      )
-    : []
+  [kycViewUrl.idCardFront, kycViewUrl.idCardBack, kycViewUrl.businessLicense].filter((u) => !!u)
 )
-const openKycDialog = (row: PayApplyApi.ShopPayApplyVO) => {
+const openKycDialog = async (row: PayApplyApi.ShopPayApplyVO) => {
   kycRow.value = row
+  kycViewUrl.idCardFront = kycViewUrl.idCardBack = kycViewUrl.businessLicense = ''
   kycVisible.value = true
+  kycLoading.value = true
+  try {
+    const fields: Array<['idCardFrontKey' | 'idCardBackKey' | 'businessLicenseKey', keyof typeof kycViewUrl]> = [
+      ['idCardFrontKey', 'idCardFront'],
+      ['idCardBackKey', 'idCardBack'],
+      ['businessLicenseKey', 'businessLicense']
+    ]
+    await Promise.all(
+      fields.map(async ([keyField, viewField]) => {
+        const k = row[keyField]
+        if (k) {
+          try {
+            const { url } = await PayApplyApi.signKycKey(k, 3600)
+            kycViewUrl[viewField] = url
+          } catch (e) {
+            console.warn('[kyc-sign]', keyField, e)
+          }
+        }
+      })
+    )
+  } finally {
+    kycLoading.value = false
+  }
 }
 
 // ===== 驳回弹窗 =====
@@ -228,6 +252,18 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
+.kyc-loading {
+  text-align: center;
+  padding: 40px;
+  color: #909399;
+  font-size: 13px;
+}
+.kyc-tip {
+  margin-top: 12px;
+  font-size: 12px;
+  color: #909399;
+  text-align: center;
+}
 .kyc-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

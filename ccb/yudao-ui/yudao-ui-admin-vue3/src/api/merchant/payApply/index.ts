@@ -8,9 +8,9 @@ export interface ShopPayApplyVO {
   payApplyStatus: number
   payApplyRejectReason?: string
   onlinePayEnabled: boolean
-  idCardFrontUrl?: string
-  idCardBackUrl?: string
-  businessLicenseUrl?: string
+  idCardFrontKey?: string
+  idCardBackKey?: string
+  businessLicenseKey?: string
   createTime: Date
 }
 
@@ -33,3 +33,7 @@ export const getPayApplyPage = (params: PayApplyPageReqVO) =>
 
 export const auditPayApply = (data: PayApplyAuditReqVO) =>
   request.put({ url: `${BASE}/pay-apply/audit`, data })
+
+/** 给 KYC 资质 TOS key 签发 1h 临时 GET URL（审核员预览时调） */
+export const signKycKey = (key: string, ttl = 3600): Promise<{ url: string }> =>
+  request.get({ url: `${BASE}/pay-apply/kyc-sign?key=${encodeURIComponent(key)}&ttl=${ttl}` })

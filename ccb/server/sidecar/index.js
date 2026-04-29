@@ -132,13 +132,13 @@ async function fetchRetry(url, init = {}, tries = 4) {
   throw lastErr;
 }
 
-async function uploadToTos(buf, key, contentType) {
+async function uploadToTos(buf, key, contentType, acl = 'public-read') {
   const { datetime, contentLen, bodyHash, authorization } = tosSign({
     method: 'PUT',
     keyPath: key,
     buf,
     contentType,
-    acl: 'public-read',
+    acl,
   });
   const r = await fetchRetry(`${TOS_BASE}/${key}`, {
     method: 'PUT',
@@ -146,7 +146,7 @@ async function uploadToTos(buf, key, contentType) {
       Authorization: authorization,
       'X-Amz-Date': datetime,
       'X-Amz-Content-Sha256': bodyHash,
-      'X-Amz-Acl': 'public-read',
+      'X-Amz-Acl': acl,
       'Content-Type': contentType,
       'Content-Length': contentLen,
     },
@@ -157,6 +157,46 @@ async function uploadToTos(buf, key, contentType) {
     throw new Error(`TOS put ${r.status}: ${errTxt.slice(0, 300)}`);
   }
   return `${TOS_BASE}/${key}`;
+}
+
+/**
+ * 给 TOS 私有对象签发一个 GET 预签名 URL（SigV4 query 形式，TTL 默认 1h）
+ *
+ * 用于 KYC 证件、商户银行卡照等敏感数据 — 上传时走 acl=private，
+ * 显示时调本接口拿临时 URL。绝不能给敏感数据用 public-read 永久 URL。
+ */
+function tosPresignGet(key, ttlSec = 3600) {
+  const now = new Date();
+  const pad = (n) => String(n).padStart(2, '0');
+  const datetime = `${now.getUTCFullYear()}${pad(now.getUTCMonth() + 1)}${pad(now.getUTCDate())}T${pad(now.getUTCHours())}${pad(now.getUTCMinutes())}${pad(now.getUTCSeconds())}Z`;
+  const shortDate = datetime.slice(0, 8);
+  const credential = `${TOS_AK}/${shortDate}/${TOS_REGION}/s3/aws4_request`;
+  const signedHeaders = 'host';
+  const qs = new URLSearchParams({
+    'X-Amz-Algorithm': 'AWS4-HMAC-SHA256',
+    'X-Amz-Credential': credential,
+    'X-Amz-Date': datetime,
+    'X-Amz-Expires': String(ttlSec),
+    'X-Amz-SignedHeaders': signedHeaders,
+  });
+  const canonReq = [
+    'GET',
+    `/${key}`,
+    qs.toString().split('&').sort().join('&'),
+    `host:${TOS_HOST}\n`,
+    signedHeaders,
+    'UNSIGNED-PAYLOAD',
+  ].join('\n');
+  const credentialScope = `${shortDate}/${TOS_REGION}/s3/aws4_request`;
+  const stringToSign = `AWS4-HMAC-SHA256\n${datetime}\n${credentialScope}\n${tosSha256(canonReq)}`;
+  let sigKey = Buffer.from('AWS4' + TOS_SK);
+  sigKey = tosHmac(sigKey, shortDate);
+  sigKey = tosHmac(sigKey, TOS_REGION);
+  sigKey = tosHmac(sigKey, 's3');
+  sigKey = tosHmac(sigKey, 'aws4_request');
+  const signature = tosHmac(sigKey, stringToSign).toString('hex');
+  qs.set('X-Amz-Signature', signature);
+  return `${TOS_BASE}/${key}?${qs.toString()}`;
 }
 
 // ── 火山豆包 openspeech v3 流式 TTS ────────────────────────────────────
@@ -322,19 +362,59 @@ app.use(express.json({ limit: '50mb' }));
 app.get('/healthz', (_req, res) => res.json({ ok: true, ts: Date.now() }));
 
 // ── /oss/upload ────────────────────────────────────────────────
+// 入参 acl: 'public-read' (默认，公开图片如店铺封面/视频背景图) | 'private' (敏感数据如 KYC 证件)
+//   private 模式：上传后返回的 url 是预签名 1h GET URL；要长期访问得调 /oss/sign 重新签
+//   private key 应入库存储，每次显示再签新的临时 URL
+const ALLOWED_ACL = new Set(['public-read', 'private']);
 app.post('/oss/upload', async (req, res) => {
   try {
-    const { base64, ext = 'jpg', prefix = 'tanxiaoer' } = req.body || {};
+    const { base64, ext = 'jpg', prefix = 'tanxiaoer', acl = 'public-read' } = req.body || {};
     if (!base64) throw new Error('base64 为空');
+    if (!ALLOWED_ACL.has(acl)) throw new Error(`acl 非法：${acl}（仅支持 public-read / private）`);
     const clean = base64.replace(/^data:image\/[a-z]+;base64,/, '');
     const buf = Buffer.from(clean, 'base64');
     const key = `${prefix}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-    const contentType = ext === 'png' ? 'image/png' : 'image/jpeg';
-    const url = await uploadToTos(buf, key, contentType);
-    res.json({ ok: true, url, key });
+    const contentType = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg';
+    await uploadToTos(buf, key, contentType, acl);
+    // public-read：直接返永久公网 URL
+    // private：返 1h 预签名 GET URL（前端可立即展示；入库时只存 key）
+    const url = acl === 'private' ? tosPresignGet(key, 3600) : `${TOS_BASE}/${key}`;
+    res.json({ ok: true, url, key, acl });
   } catch (e) {
     console.error('[oss/upload]', e);
     res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// ── /oss/sign ─ 给私有对象签发临时 GET URL ──────────────────────
+// 用法：GET /oss/sign?key=<TOS key>&ttl=<秒，默认3600，最多86400>
+// 鉴权：必须带 X-Internal-Token == MERCHANT_INTERNAL_TOKEN
+//   yudao-server 鉴权后转发；浏览器/外部不能直连（nginx 反代 /oss/* 会透传 header
+//   而外部不知道 token，所以拒）
+const SIDECAR_INTERNAL_TOKEN = process.env.MERCHANT_INTERNAL_TOKEN || '';
+function checkInternalToken(req, res) {
+  if (!SIDECAR_INTERNAL_TOKEN) {
+    res.status(503).json({ ok: false, error: 'sidecar 未配置 MERCHANT_INTERNAL_TOKEN' });
+    return false;
+  }
+  const t = req.headers['x-internal-token'];
+  if (t !== SIDECAR_INTERNAL_TOKEN) {
+    res.status(401).json({ ok: false, error: 'invalid internal token' });
+    return false;
+  }
+  return true;
+}
+app.get('/oss/sign', (req, res) => {
+  if (!checkInternalToken(req, res)) return;
+  try {
+    const key = String(req.query.key || '').trim();
+    if (!key) throw new Error('key 为空');
+    if (key.includes('..') || key.startsWith('/')) throw new Error('key 非法');
+    const ttl = Math.min(86400, Math.max(60, Number(req.query.ttl) || 3600));
+    const url = tosPresignGet(key, ttl);
+    res.json({ ok: true, url, key, ttl });
+  } catch (e) {
+    res.status(400).json({ ok: false, error: e.message });
   }
 });
 

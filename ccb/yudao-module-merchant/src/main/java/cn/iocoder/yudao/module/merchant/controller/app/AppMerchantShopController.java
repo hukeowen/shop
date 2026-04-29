@@ -10,6 +10,7 @@ import cn.iocoder.yudao.module.merchant.dal.dataobject.ShopInfoDO;
 import cn.iocoder.yudao.module.merchant.dal.mysql.MerchantMapper;
 import cn.iocoder.yudao.module.merchant.dal.mysql.ShopBrokerageConfigMapper;
 import cn.iocoder.yudao.module.merchant.dal.mysql.ShopInfoMapper;
+import cn.iocoder.yudao.module.merchant.service.KycSignService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Value;
@@ -40,6 +41,8 @@ public class AppMerchantShopController {
     private ShopBrokerageConfigMapper shopBrokerageConfigMapper;
     @Resource
     private MerchantMapper merchantMapper;
+    @Resource
+    private KycSignService kycSignService;
 
     @GetMapping("/info")
     @Operation(summary = "获取店铺信息")
@@ -151,10 +154,10 @@ public class AppMerchantShopController {
         resp.setPayApplyStatus(shop.getPayApplyStatus());
         resp.setOnlinePayEnabled(shop.getOnlinePayEnabled());
         resp.setPayApplyRejectReason(shop.getPayApplyRejectReason());
-        // 进件 KYC 资质回显（只读，让商户能看到自己上传过的证件）
-        resp.setIdCardFrontUrl(shop.getIdCardFrontUrl());
-        resp.setIdCardBackUrl(shop.getIdCardBackUrl());
-        resp.setBusinessLicenseUrl(shop.getBusinessLicenseUrl());
+        // 进件 KYC 资质回显：只回 TOS key，前端拿到后调 /oss/sign 现签 1h 预签名 URL 显示
+        resp.setIdCardFrontKey(shop.getIdCardFrontKey());
+        resp.setIdCardBackKey(shop.getIdCardBackKey());
+        resp.setBusinessLicenseKey(shop.getBusinessLicenseKey());
         // 通联密钥脱敏（开通后由系统下发，前端只读展示前4后4）
         if (shop.getTlMchKey() != null) {
             try {
@@ -166,6 +169,26 @@ public class AppMerchantShopController {
                 resp.setTlMchKey("****");
             }
         }
+        return success(resp);
+    }
+
+    @GetMapping("/kyc-sign")
+    @Operation(summary = "签发自己店铺 KYC 资质 TOS key 的临时 GET URL")
+    public CommonResult<java.util.Map<String, String>> signOwnKycKey(@RequestParam String key,
+                                                                     @RequestParam(defaultValue = "3600") int ttl) {
+        Long tenantId = TenantContextHolder.getTenantId();
+        ShopInfoDO shop = shopInfoMapper.selectByTenantId(tenantId);
+        if (shop == null) {
+            throw exception0(1_020_005_000, "店铺信息不存在");
+        }
+        // 必须是自己店铺持有的 3 个 key 之一，否则越权
+        if (!key.equals(shop.getIdCardFrontKey())
+                && !key.equals(shop.getIdCardBackKey())
+                && !key.equals(shop.getBusinessLicenseKey())) {
+            throw exception0(1_020_005_004, "key 不属于当前店铺");
+        }
+        java.util.Map<String, String> resp = new java.util.HashMap<>();
+        resp.put("url", kycSignService.sign(key, ttl));
         return success(resp);
     }
 
@@ -184,17 +207,17 @@ public class AppMerchantShopController {
         if (currentStatus != null && currentStatus == 2) {
             throw exception0(1_020_005_002, "在线支付已开通，无需重复申请");
         }
-        // 必填校验：3 张资质照
-        if (reqDO.getIdCardFrontUrl() == null || reqDO.getIdCardFrontUrl().isEmpty()
-                || reqDO.getIdCardBackUrl() == null || reqDO.getIdCardBackUrl().isEmpty()
-                || reqDO.getBusinessLicenseUrl() == null || reqDO.getBusinessLicenseUrl().isEmpty()) {
+        // 必填校验：3 张资质照（前端走 acl='private' 上传，提交的是 TOS key）
+        if (reqDO.getIdCardFrontKey() == null || reqDO.getIdCardFrontKey().isEmpty()
+                || reqDO.getIdCardBackKey() == null || reqDO.getIdCardBackKey().isEmpty()
+                || reqDO.getBusinessLicenseKey() == null || reqDO.getBusinessLicenseKey().isEmpty()) {
             throw exception0(1_020_005_003, "请上传身份证正反面与营业执照");
         }
         ShopInfoDO update = new ShopInfoDO();
         update.setId(existing.getId());
-        update.setIdCardFrontUrl(reqDO.getIdCardFrontUrl());
-        update.setIdCardBackUrl(reqDO.getIdCardBackUrl());
-        update.setBusinessLicenseUrl(reqDO.getBusinessLicenseUrl());
+        update.setIdCardFrontKey(reqDO.getIdCardFrontKey());
+        update.setIdCardBackKey(reqDO.getIdCardBackKey());
+        update.setBusinessLicenseKey(reqDO.getBusinessLicenseKey());
         update.setPayApplyStatus(1); // 审核中
         update.setPayApplyRejectReason(null);
         shopInfoMapper.updateById(update);

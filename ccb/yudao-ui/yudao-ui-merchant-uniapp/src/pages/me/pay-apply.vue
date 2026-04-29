@@ -28,6 +28,7 @@
         <view class="desc-item">· 未开通时订单走「到店付款」，您手动确认收款</view>
         <view class="desc-item">· 上传 3 张资质照后由平台审核（通常 1-2 个工作日）</view>
         <view class="desc-item">· 审核通过后，系统自动为您开通通联收付通商户号</view>
+        <view class="desc-item">· 您上传的证件照仅平台审核员可见，存储采用临时 URL（1h 过期）</view>
       </view>
     </view>
 
@@ -37,8 +38,8 @@
 
       <view class="upload-row">
         <text class="upload-label">法人身份证 · 正面（人像面）</text>
-        <view class="upload-box" @click="pickImage('idCardFrontUrl')">
-          <image v-if="form.idCardFrontUrl" :src="form.idCardFrontUrl" class="upload-img" mode="aspectFill" />
+        <view class="upload-box" @click="pickImage('idCardFront')">
+          <image v-if="formViewUrl.idCardFront" :src="formViewUrl.idCardFront" class="upload-img" mode="aspectFill" />
           <view v-else class="upload-placeholder">
             <text class="plus">+</text>
             <text class="hint">点击上传</text>
@@ -48,8 +49,8 @@
 
       <view class="upload-row">
         <text class="upload-label">法人身份证 · 背面（国徽面）</text>
-        <view class="upload-box" @click="pickImage('idCardBackUrl')">
-          <image v-if="form.idCardBackUrl" :src="form.idCardBackUrl" class="upload-img" mode="aspectFill" />
+        <view class="upload-box" @click="pickImage('idCardBack')">
+          <image v-if="formViewUrl.idCardBack" :src="formViewUrl.idCardBack" class="upload-img" mode="aspectFill" />
           <view v-else class="upload-placeholder">
             <text class="plus">+</text>
             <text class="hint">点击上传</text>
@@ -59,8 +60,8 @@
 
       <view class="upload-row">
         <text class="upload-label">营业执照（彩色清晰原件）</text>
-        <view class="upload-box" @click="pickImage('businessLicenseUrl')">
-          <image v-if="form.businessLicenseUrl" :src="form.businessLicenseUrl" class="upload-img" mode="aspectFill" />
+        <view class="upload-box" @click="pickImage('businessLicense')">
+          <image v-if="formViewUrl.businessLicense" :src="formViewUrl.businessLicense" class="upload-img" mode="aspectFill" />
           <view v-else class="upload-placeholder">
             <text class="plus">+</text>
             <text class="hint">点击上传</text>
@@ -77,24 +78,29 @@
     <view class="card tip-card" v-if="shop && shop.payApplyStatus === 1">
       <text class="tip">申请已提交，请等待平台审核（通常 1-2 个工作日）</text>
       <view class="readonly-grid">
-        <image v-if="shop.idCardFrontUrl" :src="shop.idCardFrontUrl" class="readonly-img" mode="aspectFill" />
-        <image v-if="shop.idCardBackUrl" :src="shop.idCardBackUrl" class="readonly-img" mode="aspectFill" />
-        <image v-if="shop.businessLicenseUrl" :src="shop.businessLicenseUrl" class="readonly-img" mode="aspectFill" />
+        <image v-if="shopViewUrl.idCardFront" :src="shopViewUrl.idCardFront" class="readonly-img" mode="aspectFill" />
+        <image v-if="shopViewUrl.idCardBack" :src="shopViewUrl.idCardBack" class="readonly-img" mode="aspectFill" />
+        <image v-if="shopViewUrl.businessLicense" :src="shopViewUrl.businessLicense" class="readonly-img" mode="aspectFill" />
       </view>
     </view>
   </view>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, reactive } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
 import { request } from '../../api/request.js';
-import { blobUrlToBase64, uploadImage } from '../../api/oss.js';
+import { blobUrlToBase64, uploadImage, signOss } from '../../api/oss.js';
 
 const BASE = '/app-api/merchant/mini/shop';
 
 const shop = ref(null);
-const form = ref({ idCardFrontUrl: '', idCardBackUrl: '', businessLicenseUrl: '' });
+// formKey：用户当前选好准备提交的 3 个 TOS key
+// formViewUrl：对应的 1h 预签名 URL，用于 <image :src> 渲染
+const formKey = reactive({ idCardFront: '', idCardBack: '', businessLicense: '' });
+const formViewUrl = reactive({ idCardFront: '', idCardBack: '', businessLicense: '' });
+// shopViewUrl：已提交进件的资质对应的预签名 URL（GET /pay-apply 返 *_key 后 sign 出来）
+const shopViewUrl = reactive({ idCardFront: '', idCardBack: '', businessLicense: '' });
 const submitting = ref(false);
 
 const statusText = computed(() => {
@@ -117,11 +123,26 @@ const canApply = computed(() => {
 async function load() {
   try {
     shop.value = await request({ url: `${BASE}/pay-apply` });
-    // 驳回后重新申请：把上次资质回填，方便商户只换被驳回的那张
+    // 已提交进件状态：把已存 key 现签预签名 URL 用于回显
+    const fields = [
+      ['idCardFrontKey', 'idCardFront'],
+      ['idCardBackKey', 'idCardBack'],
+      ['businessLicenseKey', 'businessLicense'],
+    ];
+    await Promise.all(
+      fields.map(async ([keyField, viewField]) => {
+        const k = shop.value?.[keyField];
+        shopViewUrl[viewField] = k ? await signOss(k).catch(() => '') : '';
+      })
+    );
+    // 驳回后重新申请：把上次的 key + 预签名 URL 回填到表单，方便只换被驳回的那张
     if (shop.value?.payApplyStatus === 3) {
-      form.value.idCardFrontUrl = shop.value.idCardFrontUrl || '';
-      form.value.idCardBackUrl = shop.value.idCardBackUrl || '';
-      form.value.businessLicenseUrl = shop.value.businessLicenseUrl || '';
+      formKey.idCardFront = shop.value.idCardFrontKey || '';
+      formKey.idCardBack = shop.value.idCardBackKey || '';
+      formKey.businessLicense = shop.value.businessLicenseKey || '';
+      formViewUrl.idCardFront = shopViewUrl.idCardFront;
+      formViewUrl.idCardBack = shopViewUrl.idCardBack;
+      formViewUrl.businessLicense = shopViewUrl.businessLicense;
     }
   } catch {}
 }
@@ -135,8 +156,10 @@ function pickImage(field) {
       uni.showLoading({ title: '上传中…' });
       try {
         const base64 = await blobUrlToBase64(tempPath);
-        const publicUrl = await uploadImage(base64, { ext: 'jpg' });
-        form.value[field] = publicUrl;
+        // ⚠️ KYC 证件必须 acl=private — 永不向公网开放永久 URL
+        const { url, key } = await uploadImage(base64, { ext: 'jpg', acl: 'private', prefix: 'tanxiaoer/kyc' });
+        formKey[field] = key;
+        formViewUrl[field] = url; // 上传响应里返的预签名 URL 已可立即展示
         uni.hideLoading();
         uni.showToast({ title: '上传成功', icon: 'success' });
       } catch (e) {
@@ -148,7 +171,7 @@ function pickImage(field) {
 }
 
 async function submit() {
-  if (!form.value.idCardFrontUrl || !form.value.idCardBackUrl || !form.value.businessLicenseUrl) {
+  if (!formKey.idCardFront || !formKey.idCardBack || !formKey.businessLicense) {
     uni.showToast({ title: '请上传身份证正反面与营业执照', icon: 'none' });
     return;
   }
@@ -158,13 +181,14 @@ async function submit() {
       url: `${BASE}/pay-apply`,
       method: 'POST',
       data: {
-        idCardFrontUrl: form.value.idCardFrontUrl,
-        idCardBackUrl: form.value.idCardBackUrl,
-        businessLicenseUrl: form.value.businessLicenseUrl,
+        idCardFrontKey: formKey.idCardFront,
+        idCardBackKey: formKey.idCardBack,
+        businessLicenseKey: formKey.businessLicense,
       },
     });
     uni.showToast({ title: '申请已提交', icon: 'success' });
-    form.value = { idCardFrontUrl: '', idCardBackUrl: '', businessLicenseUrl: '' };
+    formKey.idCardFront = formKey.idCardBack = formKey.businessLicense = '';
+    formViewUrl.idCardFront = formViewUrl.idCardBack = formViewUrl.businessLicense = '';
     load();
   } catch {
     // toast from request.js

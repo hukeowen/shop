@@ -95,5 +95,6 @@ export function extractLastFrameBase64(videoUrl) {
  */
 export async function lastFrameToOssUrl(videoUrl) {
   const base64 = await extractLastFrameBase64(videoUrl);
-  return uploadImage(base64, { ext: 'jpg' });
+  const { url } = await uploadImage(base64, { ext: 'jpg' });
+  return url;
 }

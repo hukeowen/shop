@@ -328,7 +328,7 @@ async function pickImage() {
     // 否则商品列表 / shop-home / AI 视频都加载 404。
     const { blobUrlToBase64, uploadImage } = await import('../../api/oss.js');
     const base64 = await blobUrlToBase64(tempPath);
-    const publicUrl = await uploadImage(base64, { ext: 'jpg' });
+    const { url: publicUrl } = await uploadImage(base64, { ext: 'jpg' });
     form.picUrl = publicUrl;
     uni.hideLoading();
     uni.showToast({ title: '上传成功', icon: 'success' });

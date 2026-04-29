@@ -247,7 +247,7 @@ export async function replaceSceneImage({ taskId, sceneIndex, base64 }) {
   if (!t) throw new Error('任务不存在');
   const scene = t.scenes[sceneIndex];
   if (!scene) throw new Error(`分镜 ${sceneIndex} 不存在`);
-  const newUrl = await uploadImage(base64);
+  const { url: newUrl } = await uploadImage(base64);
   // 确保 img_idx 对齐后写回，避免多幕共用一个 slot 时相互污染
   const slot = scene.img_idx ?? sceneIndex;
   scene.img_idx = slot;

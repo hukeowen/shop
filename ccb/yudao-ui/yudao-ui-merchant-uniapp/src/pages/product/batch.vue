@@ -169,7 +169,7 @@ function pickImage() {
       try {
         detectingTip.value = '上传到 OSS…';
         const base64 = await blobUrlToBase64(path);
-        originalOssUrl.value = await uploadImage(base64, { ext: 'jpg' });
+        originalOssUrl.value = (await uploadImage(base64, { ext: 'jpg' })).url;
         detectingTip.value = '豆包视觉模型识别中…';
         const detected = await detectProducts(originalOssUrl.value);
         detectingTip.value = `裁切 ${detected.length} 件商品…`;
@@ -212,7 +212,7 @@ async function onSubmit() {
     for (const it of items.value) {
       uni.showLoading({ title: `上架 ${ok}/${items.value.length}` });
       // 裁切图上传到 OSS → 得到商品主图 URL
-      const picUrl = await uploadImage(it.cropBase64, { ext: 'jpg' });
+      const { url: picUrl } = await uploadImage(it.cropBase64, { ext: 'jpg' });
       await createSpu({
         picUrl,
         name: it.name.trim(),

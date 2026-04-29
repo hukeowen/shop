@@ -360,5 +360,7 @@ merchant:
   internal-token: ${MERCHANT_INTERNAL_TOKEN:please-override-in-production-at-least-16-chars}
   # tlMchKey 字段加密密钥，必须 16 位；生产通过 MERCHANT_FIELD_ENCRYPT_KEY 环境变量覆盖
   field-encrypt-key: ${MERCHANT_FIELD_ENCRYPT_KEY:dev_key_12345678}
+  # sidecar Node 服务（OSS / TTS / 视频后处理）；生产 systemd 守护，dev 自起
+  sidecar-url: ${SIDECAR_URL:http://127.0.0.1:8081}
 
 debug: false

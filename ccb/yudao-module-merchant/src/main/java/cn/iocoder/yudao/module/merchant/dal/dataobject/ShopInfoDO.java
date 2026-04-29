@@ -77,12 +77,16 @@ public class ShopInfoDO extends BaseDO {
     /** 驳回原因 */
     private String payApplyRejectReason;
 
-    // ========== 进件 KYC 资质 ==========
-    /** 法人身份证正面照 URL */
-    private String idCardFrontUrl;
-    /** 法人身份证背面照 URL */
-    private String idCardBackUrl;
-    /** 营业执照照片 URL */
-    private String businessLicenseUrl;
+    // ========== 进件 KYC 资质（TOS key 私有存储） ==========
+    // 仅存 TOS key（VARCHAR(512)），不存 URL：
+    //   · 上传走 sidecar /oss/upload acl='private'，TOS 不开放公网读
+    //   · 显示时由调用方调 sidecar /oss/sign?key=xxx 现签 1h 预签名 URL
+    //   · 这样 KYC 证件落库后，就算 DB 漏出去也无法直接拼出可访问 URL（无 SK 签不了）
+    /** 法人身份证正面 TOS key */
+    private String idCardFrontKey;
+    /** 法人身份证背面 TOS key */
+    private String idCardBackKey;
+    /** 营业执照 TOS key */
+    private String businessLicenseKey;
 
 }

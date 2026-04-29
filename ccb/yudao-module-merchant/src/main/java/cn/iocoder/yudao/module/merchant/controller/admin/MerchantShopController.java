@@ -7,6 +7,7 @@ import cn.iocoder.yudao.module.merchant.controller.admin.vo.shop.ShopPayApplyAud
 import cn.iocoder.yudao.module.merchant.controller.admin.vo.shop.ShopPayApplyPageReqVO;
 import cn.iocoder.yudao.module.merchant.dal.dataobject.ShopInfoDO;
 import cn.iocoder.yudao.module.merchant.dal.mysql.ShopInfoMapper;
+import cn.iocoder.yudao.module.merchant.service.KycSignService;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -16,7 +17,9 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.validation.Valid;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static cn.iocoder.yudao.framework.common.exception.enums.GlobalErrorCodeConstants.BAD_REQUEST;
 import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
@@ -29,6 +32,8 @@ public class MerchantShopController {
 
     @Resource
     private ShopInfoMapper shopInfoMapper;
+    @Resource
+    private KycSignService kycSignService;
 
     @GetMapping("/pay-apply/page")
     @Operation(summary = "分页查询在线支付开通申请")
@@ -48,6 +53,25 @@ public class MerchantShopController {
         List<ShopInfoDO> list = shopInfoMapper.selectList(wrapper);
 
         return success(new PageResult<>(list, total));
+    }
+
+    @GetMapping("/pay-apply/kyc-sign")
+    @Operation(summary = "签发 KYC 资质 TOS key 的临时 GET URL（审核员预览）")
+    @PreAuthorize("@ss.hasPermission('merchant:shop:pay-apply:query')")
+    public CommonResult<Map<String, String>> signKycKey(@RequestParam String key,
+                                                        @RequestParam(defaultValue = "3600") int ttl) {
+        // 校验：key 必须确实属于某个有进件申请的店铺（防审核员越权拼任意 key）
+        long match = shopInfoMapper.selectCount(
+                new LambdaQueryWrapper<ShopInfoDO>()
+                        .and(w -> w.eq(ShopInfoDO::getIdCardFrontKey, key)
+                                .or().eq(ShopInfoDO::getIdCardBackKey, key)
+                                .or().eq(ShopInfoDO::getBusinessLicenseKey, key)));
+        if (match == 0) {
+            throw ServiceExceptionUtil.exception0(BAD_REQUEST.getCode(), "key 未被任何店铺引用");
+        }
+        Map<String, String> resp = new HashMap<>();
+        resp.put("url", kycSignService.sign(key, ttl));
+        return success(resp);
     }
 
     @PutMapping("/pay-apply/audit")
