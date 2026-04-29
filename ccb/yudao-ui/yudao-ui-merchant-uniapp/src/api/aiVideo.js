@@ -665,20 +665,27 @@ export async function publishToDouyin(taskId, onStage) {
 }
 
 /**
- * Path A：H5 → 拉起抖音 App 发布
+ * Path A：保存到相册 + 引导用户去抖音 App 发布（小程序/H5 通用最稳方案）
+ *
+ * 业内 80% 商家用的就是这个流程，因为：
+ *   · 微信小程序对外部 schema 跳转限制极严，只能跳微信小程序，跳不了抖音
+ *   · H5 跳 schema 在 iOS Safari 上会弹"无法打开此页面"系统弹窗
+ *   · 真正稳定的只有"保存到本地相册 → 用户自己打开抖音 → 选相册视频"
  *
  * 流程：
- *   1. 合并所有分镜 + 上传 TOS（同 publishToDouyin 第一段）
- *   2. 浏览器触发 <a download> 把成片保存到本机相册 / 下载文件夹
- *   3. window.location.href = 'snssdk1128://...' 拉起抖音 App
- *      抖音装了：跳到 App 的拍摄/发布页（用户从相册选刚下载的视频）
- *      抖音没装：手机浏览器停在原地 → 调用方 toast 引导装抖音
- *   4. 不需要 client_secret / OAuth scope 审核，主体认证 + "分享到抖音" 能力
- *      默认开通即可（路径 A），本月可落地。
+ *   1. 合并分镜上传 TOS 拿公网 URL
+ *   2. uni.downloadFile 下载到本地临时路径
+ *   3. uni.saveVideoToPhotosAlbum 保存到系统相册（小程序需 scope.writePhotosAlbum）
+ *   4. 同时 uni.setClipboardData 复制视频文案到剪贴板（用户切到抖音可直接粘贴）
+ *   5. H5 端额外尝试 snssdk1128 schema 拉起抖音 App（失败也不影响主流程）
+ *   6. 弹引导："视频已保存到相册，请打开抖音 → + → 相册选刚保存的视频"
+ *
+ * 不需要任何抖音 client_key — 纯本地操作；
+ * 拿到 client_key 后会附加到 schema 让抖音 App 知道导流来源（用于看回报数据）。
  *
  * @param {number} taskId
- * @param {(stage: 'merging'|'downloading'|'launching'|'done', data?: any) => void} [onStage]
- * @param {string} [clientKey]  抖音移动应用的 client_key（拿到 KEY 后从 import.meta.env.VITE_DOUYIN_CLIENT_KEY 读）
+ * @param {(stage: 'merging'|'downloading'|'saving'|'launching'|'done', data?: any) => void} [onStage]
+ * @param {string} [clientKey]  抖音移动应用的 client_key（可选；拿到 KEY 后填 VITE_DOUYIN_CLIENT_KEY）
  */
 export async function shareToDouyinApp(taskId, onStage, clientKey) {
   const t = store.tasks.find((x) => x.id === taskId);
@@ -702,42 +709,92 @@ export async function shareToDouyinApp(taskId, onStage, clientKey) {
     persist();
   }
 
-  // ② H5 下载到本机（用户后续在抖音 App 内从相册选）
+  // ② 下载到本地临时路径（uni-app API，H5 / 微信小程序通用）
   onStage?.('downloading');
+  const tempPath = await new Promise((resolve, reject) => {
+    uni.downloadFile({
+      url: mergedUrl,
+      success: (r) => (r.statusCode === 200 ? resolve(r.tempFilePath) : reject(new Error(`下载失败 ${r.statusCode}`))),
+      fail: (err) => reject(new Error(err?.errMsg || '下载失败')),
+    });
+  });
+
+  // ③ 保存到相册（小程序首次会触发 scope.writePhotosAlbum 授权弹窗）
+  onStage?.('saving');
+  let savedToAlbum = false;
   try {
-    const blob = await fetch(mergedUrl).then((r) => r.blob());
-    const objectUrl = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = objectUrl;
-    a.download = `${t.title || 'tanxiaoer-video'}-${t.id}.mp4`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
+    await new Promise((resolve, reject) => {
+      uni.saveVideoToPhotosAlbum({
+        filePath: tempPath,
+        success: () => resolve(),
+        fail: (err) => reject(new Error(err?.errMsg || '保存到相册失败')),
+      });
+    });
+    savedToAlbum = true;
   } catch (e) {
-    // 下载失败不阻塞跳转，至少把 URL 给用户复制兜底
-    console.warn('[douyin/share] 下载失败，跳过：', e?.message || e);
+    // H5 不支持 saveVideoToPhotosAlbum：降级用 <a download>
+    if (typeof document !== 'undefined') {
+      try {
+        const blob = await fetch(mergedUrl).then((r) => r.blob());
+        const objectUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = objectUrl;
+        a.download = `${t.title || 'tanxiaoer-video'}-${t.id}.mp4`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
+        savedToAlbum = true;
+      } catch (e2) {
+        console.warn('[douyin/share] H5 download fallback 失败：', e2?.message || e2);
+      }
+    } else {
+      console.warn('[douyin/share] saveVideoToPhotosAlbum 失败：', e?.message || e);
+    }
   }
 
-  // ③ 拉起抖音 App（snssdk1128 是抖音 App 的私有 scheme）
-  //    title / hashtag_list 抖音 App 会预填到发布页输入框
-  onStage?.('launching');
-  const ck = clientKey || (typeof import.meta !== 'undefined' && import.meta.env?.VITE_DOUYIN_CLIENT_KEY) || '';
+  // ④ 复制文案到剪贴板（用户切到抖音可直接粘贴标题 + hashtag）
   const title = (t.title || t.userDescription || '').slice(0, 55);
-  const params = new URLSearchParams();
-  if (ck) params.set('client_key', ck);
-  params.set('title', title);
-  params.set('hashtag_list', '#摊小二 #探店');
-  const schema = `snssdk1128://aweme/share?${params.toString()}`;
-
-  // 给浏览器一点时间触发下载，再跳 schema（否则 download 会被打断）
-  await new Promise((r) => setTimeout(r, 600));
+  const clipText = `${title}\n#摊小二 #探店`;
   try {
-    window.location.href = schema;
+    await new Promise((resolve) => {
+      uni.setClipboardData({
+        data: clipText,
+        showToast: false,
+        success: () => resolve(),
+        fail: () => resolve(),
+      });
+    });
   } catch {}
 
+  // ⑤ H5 端尝试 schema 拉起抖音 App（小程序里 web-view 跳不了 schema，static 失败兜底）
+  let launchedApp = false;
+  if (typeof document !== 'undefined' && typeof window !== 'undefined') {
+    onStage?.('launching');
+    const ck = clientKey || (typeof import.meta !== 'undefined' && import.meta.env?.VITE_DOUYIN_CLIENT_KEY) || '';
+    const params = new URLSearchParams();
+    if (ck) params.set('client_key', ck);
+    params.set('title', title);
+    params.set('hashtag_list', '#摊小二 #探店');
+    const schema = `snssdk1128://aweme/share?${params.toString()}`;
+
+    const onVisibility = () => {
+      if (document.hidden) launchedApp = true;
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    try {
+      const iframe = document.createElement('iframe');
+      iframe.style.display = 'none';
+      iframe.src = schema;
+      document.body.appendChild(iframe);
+      setTimeout(() => iframe.remove(), 2000);
+    } catch {}
+    await new Promise((r) => setTimeout(r, 1500));
+    document.removeEventListener('visibilitychange', onVisibility);
+  }
+
   onStage?.('done');
-  return { ok: true, mergedUrl, schema };
+  return { ok: true, mergedUrl, savedToAlbum, launchedApp, clipText };
 }
 
 export const CONFIG = { MAX_SCENES };

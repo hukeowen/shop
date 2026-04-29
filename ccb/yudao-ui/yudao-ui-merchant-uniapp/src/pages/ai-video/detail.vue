@@ -290,7 +290,8 @@ const publishLabel = computed(() => {
   if (!publishing.value) return '发布到抖音';
   switch (publishStage.value) {
     case 'merging': return '合并视频中…';
-    case 'downloading': return '保存到相册…';
+    case 'downloading': return '下载视频…';
+    case 'saving': return '保存到相册…';
     case 'launching': return '拉起抖音 App…';
     default: return '处理中…';
   }
@@ -317,20 +318,20 @@ async function onPublishDouyin() {
   publishStage.value = 'merging';
   uni.showLoading({ title: publishLabel.value, mask: true });
   try {
-    await shareToDouyinApp(taskId.value, (stage) => {
+    const ret = await shareToDouyinApp(taskId.value, (stage) => {
       publishStage.value = stage;
       uni.showLoading({ title: publishLabel.value, mask: true });
     });
     uni.hideLoading();
-    // 1.2s 后弹引导（给抖音 App 拉起留时间，没拉起来再弹手动指引）
-    setTimeout(() => {
-      uni.showModal({
-        title: '视频已保存',
-        content:
-          '视频已保存到本机。如未自动跳转抖音 App：请打开抖音 → 点「+」→ 选「相册」→ 选最新的「摊小二-…」视频发布。',
-        showCancel: false,
-      });
-    }, 1200);
+    // launchedApp=true：用户已切到抖音 App（仅 H5 能探测到）— 静默成功
+    // savedToAlbum=true 但 launchedApp=false：相册有了但没拉起抖音 → 弹手动指引
+    // 标题/hashtag 已 setClipboardData，用户在抖音可直接粘贴
+    if (!ret?.launchedApp) {
+      const tip = ret?.savedToAlbum
+        ? '视频已保存到相册，文案已复制到剪贴板。\n请打开抖音 →「+」→ 相册 → 选最新的「摊小二-…」视频 → 长按粘贴文案 → 发布'
+        : '视频合成完成，但相册保存失败。请在浏览器视频播放页长按「保存视频」后再去抖音发布。';
+      uni.showModal({ title: '下一步：去抖音发布', content: tip, showCancel: false });
+    }
   } catch (e) {
     uni.hideLoading();
     uni.showModal({ title: '操作失败', content: e.message || String(e), showCancel: false });
