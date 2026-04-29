@@ -312,13 +312,30 @@ function onPriceInput(e) {
   form.price = isNaN(n) ? 0 : Math.round(n * 100);
 }
 
-function pickImage() {
-  uni.chooseImage({
-    count: 1,
-    success: (r) => {
-      form.picUrl = r.tempFilePaths[0];
-    },
+async function pickImage() {
+  const tempPath = await new Promise((resolve) => {
+    uni.chooseImage({
+      count: 1,
+      success: (r) => resolve(r.tempFilePaths[0]),
+      fail: () => resolve(null),
+    });
   });
+  if (!tempPath) return;
+  uni.showLoading({ title: '上传中…' });
+  try {
+    // 关键：本地临时路径（blob:// 或 wxfile://）公网不可访问；
+    // 必须先 → base64 → /oss/upload（sidecar TOS 直传）→ 公网 URL，
+    // 否则商品列表 / shop-home / AI 视频都加载 404。
+    const { blobUrlToBase64, uploadImage } = await import('../../api/oss.js');
+    const base64 = await blobUrlToBase64(tempPath);
+    const publicUrl = await uploadImage(base64, { ext: 'jpg' });
+    form.picUrl = publicUrl;
+    uni.hideLoading();
+    uni.showToast({ title: '上传成功', icon: 'success' });
+  } catch (e) {
+    uni.hideLoading();
+    uni.showToast({ title: '上传失败：' + (e?.message || e), icon: 'none' });
+  }
 }
 
 async function loadIfEdit(id) {

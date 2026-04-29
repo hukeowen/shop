@@ -41,13 +41,13 @@
         </template>
       </el-table-column>
       <el-table-column label="申请时间" align="center" prop="createTime" width="180" :formatter="dateFormatter" />
-      <el-table-column label="操作" align="center" width="160" fixed="right">
+      <el-table-column label="操作" align="center" width="240" fixed="right">
         <template #default="{ row }">
+          <el-button link type="primary" @click="openKycDialog(row)">查看资质</el-button>
           <template v-if="row.payApplyStatus === 1">
             <el-button link type="success" @click="handleApprove(row)">通过</el-button>
             <el-button link type="danger" @click="openRejectDialog(row)">驳回</el-button>
           </template>
-          <span v-else class="text-gray-400 text-sm">—</span>
         </template>
       </el-table-column>
     </el-table>
@@ -58,6 +58,45 @@
       @pagination="getList"
     />
   </ContentWrap>
+
+  <!-- 进件资质预览弹窗 -->
+  <el-dialog v-model="kycVisible" title="商户进件资质" width="780px">
+    <div class="kyc-grid" v-if="kycRow">
+      <div class="kyc-item">
+        <div class="kyc-label">法人身份证 · 正面</div>
+        <el-image
+          v-if="kycRow.idCardFrontUrl"
+          :src="kycRow.idCardFrontUrl"
+          :preview-src-list="kycPreviewList"
+          fit="cover"
+          class="kyc-img"
+        />
+        <div v-else class="kyc-empty">未上传</div>
+      </div>
+      <div class="kyc-item">
+        <div class="kyc-label">法人身份证 · 背面</div>
+        <el-image
+          v-if="kycRow.idCardBackUrl"
+          :src="kycRow.idCardBackUrl"
+          :preview-src-list="kycPreviewList"
+          fit="cover"
+          class="kyc-img"
+        />
+        <div v-else class="kyc-empty">未上传</div>
+      </div>
+      <div class="kyc-item">
+        <div class="kyc-label">营业执照</div>
+        <el-image
+          v-if="kycRow.businessLicenseUrl"
+          :src="kycRow.businessLicenseUrl"
+          :preview-src-list="kycPreviewList"
+          fit="cover"
+          class="kyc-img"
+        />
+        <div v-else class="kyc-empty">未上传</div>
+      </div>
+    </div>
+  </el-dialog>
 
   <!-- 驳回弹窗 -->
   <el-dialog v-model="rejectVisible" title="驳回在线支付开通申请" width="480px" @close="resetRejectForm">
@@ -135,6 +174,21 @@ const handleApprove = async (row: PayApplyApi.ShopPayApplyVO) => {
   }
 }
 
+// ===== 进件资质预览弹窗 =====
+const kycVisible = ref(false)
+const kycRow = ref<PayApplyApi.ShopPayApplyVO | null>(null)
+const kycPreviewList = computed(() =>
+  kycRow.value
+    ? [kycRow.value.idCardFrontUrl, kycRow.value.idCardBackUrl, kycRow.value.businessLicenseUrl].filter(
+        (u): u is string => !!u
+      )
+    : []
+)
+const openKycDialog = (row: PayApplyApi.ShopPayApplyVO) => {
+  kycRow.value = row
+  kycVisible.value = true
+}
+
 // ===== 驳回弹窗 =====
 const rejectVisible = ref(false)
 const rejectFormRef = ref()
@@ -172,3 +226,39 @@ onMounted(() => {
   getList()
 })
 </script>
+
+<style lang="scss" scoped>
+.kyc-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+.kyc-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.kyc-label {
+  font-size: 13px;
+  color: #606266;
+  margin-bottom: 8px;
+}
+.kyc-img {
+  width: 220px;
+  height: 150px;
+  border-radius: 6px;
+  cursor: zoom-in;
+  background: #f5f7fa;
+}
+.kyc-empty {
+  width: 220px;
+  height: 150px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #c0c4cc;
+  background: #f5f7fa;
+  border-radius: 6px;
+  font-size: 13px;
+}
+</style>

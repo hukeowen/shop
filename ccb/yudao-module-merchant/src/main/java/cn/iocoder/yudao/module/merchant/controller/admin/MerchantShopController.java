@@ -67,6 +67,14 @@ public class MerchantShopController {
         if (Boolean.TRUE.equals(reqVO.getApproved())) {
             update.setOnlinePayEnabled(true);
             update.setPayApplyStatus(2);
+            // ⚠️ 此处暂时 mock 通联开户：生成 fake tlMchId 让 UI 字段流转完整。
+            // 真实接入：调通联收付通进件 API（POST /apiweb/cusreg/...），异步回调里
+            // 把真实 tlMchId / tlMchKey 写库（参考 docs/通联接入设计.md，待写）。
+            // 演示后第一周替换此段为真 AllinpayMerchantClient.openMerchant 调用即可。
+            String fakeTlMchId = "TLDEMO" + System.currentTimeMillis();
+            update.setTlMchId(fakeTlMchId);
+            // 清空驳回原因（如果之前驳回过又重新通过的场景）
+            update.setPayApplyRejectReason("");
         } else {
             if (reqVO.getRejectReason() == null || reqVO.getRejectReason().isEmpty()) {
                 throw ServiceExceptionUtil.exception0(BAD_REQUEST.getCode(), "驳回原因不能为空");

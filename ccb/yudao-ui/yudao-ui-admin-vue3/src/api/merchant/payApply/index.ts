@@ -8,6 +8,9 @@ export interface ShopPayApplyVO {
   payApplyStatus: number
   payApplyRejectReason?: string
   onlinePayEnabled: boolean
+  idCardFrontUrl?: string
+  idCardBackUrl?: string
+  businessLicenseUrl?: string
   createTime: Date
 }
 

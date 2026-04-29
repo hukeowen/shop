@@ -77,4 +77,12 @@ public class ShopInfoDO extends BaseDO {
     /** 驳回原因 */
     private String payApplyRejectReason;
 
+    // ========== 进件 KYC 资质 ==========
+    /** 法人身份证正面照 URL */
+    private String idCardFrontUrl;
+    /** 法人身份证背面照 URL */
+    private String idCardBackUrl;
+    /** 营业执照照片 URL */
+    private String businessLicenseUrl;
+
 }

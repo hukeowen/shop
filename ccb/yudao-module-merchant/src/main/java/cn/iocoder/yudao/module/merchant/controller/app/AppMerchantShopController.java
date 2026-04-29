@@ -151,7 +151,11 @@ public class AppMerchantShopController {
         resp.setPayApplyStatus(shop.getPayApplyStatus());
         resp.setOnlinePayEnabled(shop.getOnlinePayEnabled());
         resp.setPayApplyRejectReason(shop.getPayApplyRejectReason());
-        // 解密后再脱敏显示
+        // 进件 KYC 资质回显（只读，让商户能看到自己上传过的证件）
+        resp.setIdCardFrontUrl(shop.getIdCardFrontUrl());
+        resp.setIdCardBackUrl(shop.getIdCardBackUrl());
+        resp.setBusinessLicenseUrl(shop.getBusinessLicenseUrl());
+        // 通联密钥脱敏（开通后由系统下发，前端只读展示前4后4）
         if (shop.getTlMchKey() != null) {
             try {
                 String plain = SecureUtil.aes(fieldEncryptKey.getBytes()).decryptStr(shop.getTlMchKey());
@@ -166,10 +170,8 @@ public class AppMerchantShopController {
     }
 
     @PostMapping("/pay-apply")
-    @Operation(summary = "提交在线支付开通申请")
-    public CommonResult<Boolean> submitPayApply(
-            @RequestParam("tlMchId") String tlMchId,
-            @RequestParam("tlMchKey") String tlMchKey) {
+    @Operation(summary = "提交在线支付开通申请（KYC 资质：身份证正反 + 营业执照）")
+    public CommonResult<Boolean> submitPayApply(@RequestBody ShopInfoDO reqDO) {
         Long tenantId = TenantContextHolder.getTenantId();
         ShopInfoDO existing = shopInfoMapper.selectByTenantId(tenantId);
         if (existing == null) {
@@ -182,12 +184,17 @@ public class AppMerchantShopController {
         if (currentStatus != null && currentStatus == 2) {
             throw exception0(1_020_005_002, "在线支付已开通，无需重复申请");
         }
-        // 加密存储
-        String encryptedKey = SecureUtil.aes(fieldEncryptKey.getBytes()).encryptHex(tlMchKey);
+        // 必填校验：3 张资质照
+        if (reqDO.getIdCardFrontUrl() == null || reqDO.getIdCardFrontUrl().isEmpty()
+                || reqDO.getIdCardBackUrl() == null || reqDO.getIdCardBackUrl().isEmpty()
+                || reqDO.getBusinessLicenseUrl() == null || reqDO.getBusinessLicenseUrl().isEmpty()) {
+            throw exception0(1_020_005_003, "请上传身份证正反面与营业执照");
+        }
         ShopInfoDO update = new ShopInfoDO();
         update.setId(existing.getId());
-        update.setTlMchId(tlMchId);
-        update.setTlMchKey(encryptedKey);
+        update.setIdCardFrontUrl(reqDO.getIdCardFrontUrl());
+        update.setIdCardBackUrl(reqDO.getIdCardBackUrl());
+        update.setBusinessLicenseUrl(reqDO.getBusinessLicenseUrl());
         update.setPayApplyStatus(1); // 审核中
         update.setPayApplyRejectReason(null);
         shopInfoMapper.updateById(update);

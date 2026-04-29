@@ -24,24 +24,48 @@
     <view class="card desc-card">
       <view class="desc-title">关于在线支付</view>
       <view class="desc-body">
-        <view class="desc-item">· 开通后用户可通过微信支付在线下单</view>
+        <view class="desc-item">· 开通后用户可通过微信支付在线下单，资金 T+1 直达您的账户</view>
         <view class="desc-item">· 未开通时订单走「到店付款」，您手动确认收款</view>
-        <view class="desc-item">· 需提供通联支付平台分配的商户号和密钥</view>
-        <view class="desc-item">· 平台审核通常 1-2 个工作日完成</view>
+        <view class="desc-item">· 上传 3 张资质照后由平台审核（通常 1-2 个工作日）</view>
+        <view class="desc-item">· 审核通过后，系统自动为您开通通联收付通商户号</view>
       </view>
     </view>
 
     <!-- 申请表单（未申请或已驳回时显示） -->
     <view class="card form-card" v-if="canApply">
-      <view class="form-title">{{ shop && shop.payApplyStatus === 3 ? '重新申请' : '提交申请' }}</view>
+      <view class="form-title">{{ shop && shop.payApplyStatus === 3 ? '重新提交资质' : '提交开通申请' }}</view>
 
-      <view class="field">
-        <text class="field-label">通联商户号</text>
-        <input class="field-input" v-model="form.tlMchId" placeholder="请输入商户号" />
+      <view class="upload-row">
+        <text class="upload-label">法人身份证 · 正面（人像面）</text>
+        <view class="upload-box" @click="pickImage('idCardFrontUrl')">
+          <image v-if="form.idCardFrontUrl" :src="form.idCardFrontUrl" class="upload-img" mode="aspectFill" />
+          <view v-else class="upload-placeholder">
+            <text class="plus">+</text>
+            <text class="hint">点击上传</text>
+          </view>
+        </view>
       </view>
-      <view class="field">
-        <text class="field-label">通联密钥</text>
-        <input class="field-input" v-model="form.tlMchKey" placeholder="请输入密钥（不会明文存储）" password />
+
+      <view class="upload-row">
+        <text class="upload-label">法人身份证 · 背面（国徽面）</text>
+        <view class="upload-box" @click="pickImage('idCardBackUrl')">
+          <image v-if="form.idCardBackUrl" :src="form.idCardBackUrl" class="upload-img" mode="aspectFill" />
+          <view v-else class="upload-placeholder">
+            <text class="plus">+</text>
+            <text class="hint">点击上传</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="upload-row">
+        <text class="upload-label">营业执照（彩色清晰原件）</text>
+        <view class="upload-box" @click="pickImage('businessLicenseUrl')">
+          <image v-if="form.businessLicenseUrl" :src="form.businessLicenseUrl" class="upload-img" mode="aspectFill" />
+          <view v-else class="upload-placeholder">
+            <text class="plus">+</text>
+            <text class="hint">点击上传</text>
+          </view>
+        </view>
       </view>
 
       <button class="submit-btn" :disabled="submitting" @click="submit">
@@ -49,9 +73,14 @@
       </button>
     </view>
 
-    <!-- 已提交等待审核 -->
+    <!-- 已提交等待审核：展示已上传资质 -->
     <view class="card tip-card" v-if="shop && shop.payApplyStatus === 1">
       <text class="tip">申请已提交，请等待平台审核（通常 1-2 个工作日）</text>
+      <view class="readonly-grid">
+        <image v-if="shop.idCardFrontUrl" :src="shop.idCardFrontUrl" class="readonly-img" mode="aspectFill" />
+        <image v-if="shop.idCardBackUrl" :src="shop.idCardBackUrl" class="readonly-img" mode="aspectFill" />
+        <image v-if="shop.businessLicenseUrl" :src="shop.businessLicenseUrl" class="readonly-img" mode="aspectFill" />
+      </view>
     </view>
   </view>
 </template>
@@ -60,11 +89,12 @@
 import { ref, computed } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
 import { request } from '../../api/request.js';
+import { blobUrlToBase64, uploadImage } from '../../api/oss.js';
 
 const BASE = '/app-api/merchant/mini/shop';
 
 const shop = ref(null);
-const form = ref({ tlMchId: '', tlMchKey: '' });
+const form = ref({ idCardFrontUrl: '', idCardBackUrl: '', businessLicenseUrl: '' });
 const submitting = ref(false);
 
 const statusText = computed(() => {
@@ -87,23 +117,54 @@ const canApply = computed(() => {
 async function load() {
   try {
     shop.value = await request({ url: `${BASE}/pay-apply` });
+    // 驳回后重新申请：把上次资质回填，方便商户只换被驳回的那张
+    if (shop.value?.payApplyStatus === 3) {
+      form.value.idCardFrontUrl = shop.value.idCardFrontUrl || '';
+      form.value.idCardBackUrl = shop.value.idCardBackUrl || '';
+      form.value.businessLicenseUrl = shop.value.businessLicenseUrl || '';
+    }
   } catch {}
 }
 
+function pickImage(field) {
+  uni.chooseImage({
+    count: 1,
+    success: async (r) => {
+      const tempPath = r.tempFilePaths?.[0];
+      if (!tempPath) return;
+      uni.showLoading({ title: '上传中…' });
+      try {
+        const base64 = await blobUrlToBase64(tempPath);
+        const publicUrl = await uploadImage(base64, { ext: 'jpg' });
+        form.value[field] = publicUrl;
+        uni.hideLoading();
+        uni.showToast({ title: '上传成功', icon: 'success' });
+      } catch (e) {
+        uni.hideLoading();
+        uni.showToast({ title: '上传失败：' + (e?.message || e), icon: 'none' });
+      }
+    },
+  });
+}
+
 async function submit() {
-  if (!form.value.tlMchId.trim() || !form.value.tlMchKey.trim()) {
-    uni.showToast({ title: '请填写商户号和密钥', icon: 'none' });
+  if (!form.value.idCardFrontUrl || !form.value.idCardBackUrl || !form.value.businessLicenseUrl) {
+    uni.showToast({ title: '请上传身份证正反面与营业执照', icon: 'none' });
     return;
   }
   submitting.value = true;
   try {
-    const params = new URLSearchParams({
-      tlMchId: form.value.tlMchId.trim(),
-      tlMchKey: form.value.tlMchKey.trim(),
+    await request({
+      url: `${BASE}/pay-apply`,
+      method: 'POST',
+      data: {
+        idCardFrontUrl: form.value.idCardFrontUrl,
+        idCardBackUrl: form.value.idCardBackUrl,
+        businessLicenseUrl: form.value.businessLicenseUrl,
+      },
     });
-    await request({ url: `${BASE}/pay-apply?${params}`, method: 'POST' });
     uni.showToast({ title: '申请已提交', icon: 'success' });
-    form.value = { tlMchId: '', tlMchKey: '' };
+    form.value = { idCardFrontUrl: '', idCardBackUrl: '', businessLicenseUrl: '' };
     load();
   } catch {
     // toast from request.js
@@ -176,29 +237,54 @@ onShow(() => load());
   }
 }
 
-.field {
-  display: flex;
-  align-items: center;
-  min-height: 88rpx;
-  border-bottom: 1rpx solid $border-color;
+.upload-row {
+  margin-bottom: 28rpx;
 
-  .field-label {
-    font-size: 28rpx;
+  .upload-label {
+    display: block;
+    font-size: 26rpx;
     color: $text-secondary;
-    width: 180rpx;
-    flex-shrink: 0;
+    margin-bottom: 12rpx;
   }
 
-  .field-input {
-    flex: 1;
-    font-size: 28rpx;
-    color: $text-primary;
-    text-align: right;
+  .upload-box {
+    width: 320rpx;
+    height: 200rpx;
+    border-radius: 12rpx;
+    background: #f7f8fa;
+    border: 1rpx dashed #d8dde6;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .upload-img {
+    width: 100%;
+    height: 100%;
+  }
+
+  .upload-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    .plus {
+      font-size: 56rpx;
+      color: #b6bcc6;
+      line-height: 1;
+    }
+    .hint {
+      margin-top: 8rpx;
+      font-size: 24rpx;
+      color: $text-placeholder;
+    }
   }
 }
 
 .submit-btn {
-  margin-top: 32rpx;
+  margin-top: 16rpx;
   height: 88rpx;
   line-height: 88rpx;
   background: $brand-primary;
@@ -211,9 +297,24 @@ onShow(() => load());
   &::after { border: none; }
 }
 
-.tip-card .tip {
-  font-size: 26rpx;
-  color: #F59E0B;
-  line-height: 1.6;
+.tip-card {
+  .tip {
+    font-size: 26rpx;
+    color: #F59E0B;
+    line-height: 1.6;
+  }
+
+  .readonly-grid {
+    margin-top: 20rpx;
+    display: flex;
+    gap: 12rpx;
+    flex-wrap: wrap;
+
+    .readonly-img {
+      width: 200rpx;
+      height: 140rpx;
+      border-radius: 8rpx;
+    }
+  }
 }
 </style>
