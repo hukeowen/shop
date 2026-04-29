@@ -17,6 +17,11 @@ public interface ShopInfoMapper extends BaseMapperX<ShopInfoDO> {
         return selectOne(ShopInfoDO::getTenantId, tenantId);
     }
 
+    /** 通联回调按 outOrderId 反查店铺（进件结果异步推送时用） */
+    default ShopInfoDO selectByTlOpenOrderId(String outOrderId) {
+        return selectOne(ShopInfoDO::getTlOpenOrderId, outOrderId);
+    }
+
     /**
      * 按地理位置近距离 + 综合评分排序。
      *

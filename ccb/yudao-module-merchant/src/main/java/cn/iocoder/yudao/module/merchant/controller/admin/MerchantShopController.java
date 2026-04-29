@@ -3,14 +3,17 @@ package cn.iocoder.yudao.module.merchant.controller.admin;
 import cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil;
 import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
+import cn.iocoder.yudao.framework.security.core.util.SecurityFrameworkUtils;
 import cn.iocoder.yudao.module.merchant.controller.admin.vo.shop.ShopPayApplyAuditReqVO;
 import cn.iocoder.yudao.module.merchant.controller.admin.vo.shop.ShopPayApplyPageReqVO;
 import cn.iocoder.yudao.module.merchant.dal.dataobject.ShopInfoDO;
 import cn.iocoder.yudao.module.merchant.dal.mysql.ShopInfoMapper;
+import cn.iocoder.yudao.module.merchant.event.ShopPayApplyApprovedEvent;
 import cn.iocoder.yudao.module.merchant.service.KycSignService;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -34,6 +37,8 @@ public class MerchantShopController {
     private ShopInfoMapper shopInfoMapper;
     @Resource
     private KycSignService kycSignService;
+    @Resource
+    private ApplicationEventPublisher eventPublisher;
 
     @GetMapping("/pay-apply/page")
     @Operation(summary = "分页查询在线支付开通申请")
@@ -88,18 +93,15 @@ public class MerchantShopController {
 
         ShopInfoDO update = new ShopInfoDO();
         update.setId(reqVO.getShopId());
-        if (Boolean.TRUE.equals(reqVO.getApproved())) {
-            // 状态 2 = 已开通；tlMchId / tlMchKey 由通联进件 API 异步回调（webhook）写入。
-            //   流程：审核通过(2) → AllinpayMerchantClient.openMerchant 异步发送进件 →
-            //         通联回调 /admin-api/merchant/pay/tl-notify → 写真 tlMchId/tlMchKey
-            // 当前阶段（通联接入未完成 = P1-6）：tlMchId 留空，状态先到 2，真接入完成后
-            // 商户重新刷新页面即可看到通联号。
+        boolean approved = Boolean.TRUE.equals(reqVO.getApproved());
+        if (approved) {
+            // 状态先置 2 = 已开通；tlMchId / tlMchKey 由 ShopPayApplyApprovedListener 监听本事件
+            // → 异步调通联进件 API → 通联 webhook 回调 /admin-api/merchant/pay/tl-notify
+            //   → AllinpayNotifyController 验签后写真 tlMchId / tlMchKey
+            // 期间状态可能短暂变 4 (通联进件中)，最终回到 2 (已开通) 或 3 (通联拒绝)
             update.setOnlinePayEnabled(true);
             update.setPayApplyStatus(2);
-            // 清空驳回原因（如果之前驳回过又重新通过的场景）
             update.setPayApplyRejectReason("");
-            // TODO P1-6: 在事务提交后 publish ShopPayApplyApprovedEvent，
-            //          事件监听器异步调 AllinpayMerchantClient.openMerchant
         } else {
             if (reqVO.getRejectReason() == null || reqVO.getRejectReason().isEmpty()) {
                 throw ServiceExceptionUtil.exception0(BAD_REQUEST.getCode(), "驳回原因不能为空");
@@ -109,6 +111,12 @@ public class MerchantShopController {
             update.setPayApplyRejectReason(reqVO.getRejectReason());
         }
         shopInfoMapper.updateById(update);
+
+        if (approved) {
+            // 事务提交后 listener 才会跑（TransactionPhase.AFTER_COMMIT），主事务回滚则不发开户
+            Long auditorId = SecurityFrameworkUtils.getLoginUserId();
+            eventPublisher.publishEvent(new ShopPayApplyApprovedEvent(this, reqVO.getShopId(), auditorId));
+        }
         return success(true);
     }
 
