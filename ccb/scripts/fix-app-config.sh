@@ -42,24 +42,9 @@ set -a; source "${ENV_FILE}"; set +a
 : "${REDIS_PASS:?REDIS_PASS 未在 .env 中设置}"
 : "${MERCHANT_INTERNAL_TOKEN:?MERCHANT_INTERNAL_TOKEN 未在 .env 中设置}"
 
-# ── 0. 占位符兜底 — 自动剥离 CHANGE_ME_ 前缀 ─────────────────────────────
-info "[0/6] 检查 .env 占位符"
-ENV_FIXED=false
-for var in MYSQL_ROOT_PASS DB_PASS REDIS_PASS MERCHANT_INTERNAL_TOKEN; do
-  val="${!var}"
-  if [[ "${val}" == CHANGE_ME_* ]]; then
-    new_val="${val#CHANGE_ME_}"
-    if [[ -z "${new_val}" ]]; then
-      err "${var} 是纯 CHANGE_ME_ 占位符，请先在 .env 里填真实值"
-      exit 1
-    fi
-    sed -i "s|^${var}=.*|${var}=${new_val}|" "${ENV_FILE}"
-    eval "${var}='${new_val}'"
-    log "${var} 剥离 CHANGE_ME_ → ${new_val}"
-    ENV_FIXED=true
-  fi
-done
-[[ "${ENV_FIXED}" == true ]] && log "已修正 .env 占位符；重新加载" || log ".env 占位符 OK"
+# ── 0. 用 .env 原始值（不剥离 CHANGE_ME_ 前缀，密码完全按 .env 字面量用） ──
+info "[0/6] 使用 .env 原始密码（含 CHANGE_ME_ 前缀也按字面量用）"
+log "MYSQL_ROOT_PASS 长度=${#MYSQL_ROOT_PASS}, DB_PASS 长度=${#DB_PASS}"
 
 # ── 1. 探测 MySQL 版本（决定用 5.7 还是 8.0 兼容语法）─────────────────────
 info "[1/6] 配置 MySQL 用户 + 开启远程连接"
