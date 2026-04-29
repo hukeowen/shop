@@ -815,6 +815,7 @@ configure_nginx() {
   step "配置 Nginx"
   # CentOS 的 nginx 使用 /etc/nginx/conf.d/*.conf，无 sites-available/enabled
   local NGINX_CONF="/etc/nginx/conf.d/tanxiaer.conf"
+  local MAIN_CONF="/etc/nginx/nginx.conf"
 
   # 让 nginx 可以读取 /opt/tanxiaer 下的静态文件
   chmod -R a+rX "${ROOT_DIR}/website" "${ROOT_DIR}/admin-dist" "${ROOT_DIR}/m" 2>/dev/null || true
@@ -828,12 +829,38 @@ configure_nginx() {
       || warn "restorecon 失败"
   fi
 
-  # CentOS nginx 默认安装会生成 /etc/nginx/conf.d/default.conf 抢占 80 端口的
-  # default_server，导致 IP 直访 (47.109.143.146/m/) 落到 /usr/share/nginx/html
-  # 出现空白页。我们的 tanxiaer.conf 已声明 default_server，必须把默认配挪走。
+  # ── 清理两处 nginx 默认 server，防止 default_server 冲突 ─────────────────
+  # 1) /etc/nginx/conf.d/default.conf — 通常是 CentOS 包自带
   if [[ -f /etc/nginx/conf.d/default.conf ]]; then
-    info "禁用 nginx 默认 server_block (default.conf → default.conf.disabled)"
+    info "禁用 conf.d/default.conf → default.conf.disabled"
     mv -f /etc/nginx/conf.d/default.conf /etc/nginx/conf.d/default.conf.disabled
+  fi
+  # 2) /etc/nginx/nginx.conf — 默认有 server { listen 80 default_server; ... }
+  #    会和 tanxiaer.conf 的 default_server 冲突，nginx 提示 "conflicting server
+  #    name '_' on 0.0.0.0:80, ignored"，结果我们的 location /m/ 不生效，
+  #    /m/assets/*.js 落到默认 root /usr/share/nginx/html → 404。
+  #    用 awk 配大括号深度计数，把第一个 server { ... } 块整段注释掉。
+  if grep -qE "^[[:space:]]*server[[:space:]]*\{" "${MAIN_CONF}" 2>/dev/null; then
+    info "禁用 nginx.conf 里的默认 server 块（避免与 tanxiaer.conf 冲突）"
+    [[ ! -f "${MAIN_CONF}.tanxiaer-bak" ]] && cp "${MAIN_CONF}" "${MAIN_CONF}.tanxiaer-bak"
+    awk '
+      BEGIN { in_s=0; d=0 }
+      /^[[:space:]]*server[[:space:]]*\{/ && in_s==0 {
+        in_s=1; d=1
+        print "    # [tanxiaer-deploy] 默认 server 已禁用，路由由 conf.d/tanxiaer.conf 接管"
+        next
+      }
+      in_s==1 {
+        n=gsub(/\{/,"{"); m=gsub(/\}/,"}")
+        d += n - m
+        if (d <= 0) { in_s=0 }
+        next
+      }
+      { print }
+    ' "${MAIN_CONF}.tanxiaer-bak" > "${MAIN_CONF}"
+    log "nginx.conf 默认 server 块已清理（备份 → ${MAIN_CONF}.tanxiaer-bak）"
+  else
+    log "nginx.conf 里无默认 server 块（OK）"
   fi
 
   cat > "${NGINX_CONF}" << NGINX_EOF
