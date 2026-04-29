@@ -476,23 +476,16 @@ SQL
     done
   fi
 
-  # 排除清单：这些 fix_*.sql 是破坏性脚本，绝不能自动跑
-  # fix_tenant_id.sql 会 DROP 50+ 张业务表，仅供人工定点执行
-  local FIX_EXCLUDE=("fix_tenant_id.sql")
+  # 迁移文件：V001__/V002__/... 风格按版本号字典序执行（替代旧 fix_*.sql）
+  # 每个 V 文件都必须幂等（IF NOT EXISTS / 存储过程检查），重复跑不报错。
+  # 命名约定 docs/database-migrations.md 有详细说明。
+  # _DANGER__*.sql 是破坏性脚本（如 _DANGER__tenant_reset.sql 会 DROP 50+ 张表），永不自动跑。
   shopt -s nullglob
-  local FIX_FILES=("${SQL_DIR}"/fix_*.sql)
+  local V_FILES=("${SQL_DIR}"/V*.sql)
   shopt -u nullglob
-  IFS=$'\n' FIX_FILES=($(printf '%s\n' "${FIX_FILES[@]}" | sort)); unset IFS
-  for f in "${FIX_FILES[@]}"; do
+  IFS=$'\n' V_FILES=($(printf '%s\n' "${V_FILES[@]}" | sort)); unset IFS
+  for f in "${V_FILES[@]}"; do
     local bn="$(basename "${f}")"
-    local skip=false
-    for ex in "${FIX_EXCLUDE[@]}"; do
-      [[ "${bn}" == "${ex}" ]] && skip=true && break
-    done
-    if [[ "${skip}" == true ]]; then
-      warn "跳过危险脚本：${bn}（需人工定点执行）"
-      continue
-    fi
     info "导入 ${bn}..."
     mysql_safe "${DB_NAME}" < "${f}"
     log "${bn} 导入完成"
