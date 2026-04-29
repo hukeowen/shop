@@ -10,9 +10,11 @@ import cn.iocoder.yudao.module.merchant.dal.dataobject.TenantSubscriptionDO;
 import cn.iocoder.yudao.module.merchant.dal.mysql.MerchantApplyMapper;
 import cn.iocoder.yudao.module.merchant.dal.mysql.ShopInfoMapper;
 import cn.iocoder.yudao.module.merchant.dal.mysql.TenantSubscriptionMapper;
+import cn.iocoder.yudao.module.merchant.enums.MerchantLogRecordConstants;
 import cn.iocoder.yudao.module.system.controller.admin.tenant.vo.tenant.TenantSaveReqVO;
 import cn.iocoder.yudao.module.system.service.sms.SmsSendService;
 import cn.iocoder.yudao.module.system.service.tenant.TenantService;
+import com.mzt.logapi.starter.annotation.LogRecord;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
@@ -115,6 +117,11 @@ public class MerchantApplyServiceImpl implements MerchantApplyService {
 
     // ==================== 审核通过 ====================
 
+    @LogRecord(type = MerchantLogRecordConstants.MERCHANT_APPLY_TYPE,
+            subType = MerchantLogRecordConstants.MERCHANT_APPLY_AUDIT_SUB_TYPE,
+            bizNo = "{{#apply.id}}",
+            success = MerchantLogRecordConstants.MERCHANT_APPLY_APPROVE_SUCCESS,
+            extra = "{{#apply}}")
     private void approveApply(MerchantApplyDO apply, Long auditorId) {
         // 1. 创建租户（账号密码由首次登录短信验证码流程设置，此处用随机密码占位）
         TenantSaveReqVO tenantReqVO = buildTenantSaveReqVO(apply);
@@ -224,6 +231,10 @@ public class MerchantApplyServiceImpl implements MerchantApplyService {
 
     // ==================== 审核驳回 ====================
 
+    @LogRecord(type = MerchantLogRecordConstants.MERCHANT_APPLY_TYPE,
+            subType = MerchantLogRecordConstants.MERCHANT_APPLY_AUDIT_SUB_TYPE,
+            bizNo = "{{#apply.id}}",
+            success = MerchantLogRecordConstants.MERCHANT_APPLY_REJECT_SUCCESS)
     private void rejectApply(MerchantApplyDO apply, Long auditorId, String rejectReason) {
         MerchantApplyDO update = new MerchantApplyDO();
         update.setId(apply.getId());

@@ -11,6 +11,9 @@ import cn.iocoder.yudao.module.merchant.dal.mysql.ShopInfoMapper;
 import cn.iocoder.yudao.module.merchant.event.ShopPayApplyApprovedEvent;
 import cn.iocoder.yudao.module.merchant.service.KycSignService;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.mzt.logapi.starter.annotation.LogRecord;
+
+import static cn.iocoder.yudao.module.merchant.enums.MerchantLogRecordConstants.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.context.ApplicationEventPublisher;
@@ -82,6 +85,9 @@ public class MerchantShopController {
     @PutMapping("/pay-apply/audit")
     @Operation(summary = "审核在线支付开通申请（通过或驳回）")
     @PreAuthorize("@ss.hasPermission('merchant:shop:pay-apply:audit')")
+    @LogRecord(type = SHOP_PAY_APPLY_TYPE, subType = SHOP_PAY_APPLY_AUDIT_SUB_TYPE,
+            bizNo = "{{#reqVO.shopId}}",
+            success = "{{#_ret.data ? (#reqVO.approved ? '审核通过' : '驳回') : '操作失败'}} 店铺ID={{#reqVO.shopId}}，rejectReason={{#reqVO.rejectReason}}")
     public CommonResult<Boolean> auditPayApply(@Valid @RequestBody ShopPayApplyAuditReqVO reqVO) {
         ShopInfoDO shop = shopInfoMapper.selectById(reqVO.getShopId());
         if (shop == null) {

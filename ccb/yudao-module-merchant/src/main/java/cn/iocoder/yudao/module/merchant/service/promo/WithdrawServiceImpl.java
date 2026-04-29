@@ -6,9 +6,12 @@ import cn.iocoder.yudao.module.merchant.dal.dataobject.promo.PromoConfigDO;
 import cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopPromoWithdrawDO;
 import cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopUserStarDO;
 import cn.iocoder.yudao.module.merchant.dal.mysql.promo.ShopPromoWithdrawMapper;
+import com.mzt.logapi.starter.annotation.LogRecord;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import static cn.iocoder.yudao.module.merchant.enums.MerchantLogRecordConstants.*;
 
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
@@ -35,6 +38,8 @@ public class WithdrawServiceImpl implements WithdrawService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
+    @LogRecord(type = SHOP_WITHDRAW_TYPE, subType = SHOP_WITHDRAW_APPLY_SUB_TYPE,
+            bizNo = "{{#_ret.id}}", success = SHOP_WITHDRAW_APPLY_SUCCESS)
     public ShopPromoWithdrawDO apply(Long userId, long amount) {
         if (userId == null) {
             throw new IllegalArgumentException("userId 不能为空");
@@ -73,6 +78,8 @@ public class WithdrawServiceImpl implements WithdrawService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
+    @LogRecord(type = SHOP_WITHDRAW_TYPE, subType = SHOP_WITHDRAW_AUDIT_SUB_TYPE,
+            bizNo = "{{#applyId}}", success = SHOP_WITHDRAW_APPROVE_SUCCESS)
     public void approve(Long applyId, Long processorId, String remark) {
         mustGet(applyId);
         // 原子状态机：仅当 PENDING 才转 APPROVED；并发下另一个事务先转过去会撞 0 行
@@ -84,6 +91,8 @@ public class WithdrawServiceImpl implements WithdrawService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
+    @LogRecord(type = SHOP_WITHDRAW_TYPE, subType = SHOP_WITHDRAW_AUDIT_SUB_TYPE,
+            bizNo = "{{#applyId}}", success = SHOP_WITHDRAW_REJECT_SUCCESS)
     public void reject(Long applyId, Long processorId, String remark) {
         ShopPromoWithdrawDO record = mustGet(applyId);
         int rows = withdrawMapper.transitionStatus(applyId, STATUS_PENDING, STATUS_REJECTED, processorId, remark);
@@ -97,6 +106,8 @@ public class WithdrawServiceImpl implements WithdrawService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
+    @LogRecord(type = SHOP_WITHDRAW_TYPE, subType = SHOP_WITHDRAW_PAY_SUB_TYPE,
+            bizNo = "{{#applyId}}", success = SHOP_WITHDRAW_PAY_SUCCESS)
     public void markPaid(Long applyId, Long processorId, String remark) {
         mustGet(applyId);
         int rows = withdrawMapper.transitionStatus(applyId, STATUS_APPROVED, STATUS_PAID, processorId, remark);
