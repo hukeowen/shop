@@ -703,7 +703,16 @@ ENVEOF
 
   # 4G 机器 Node 堆给 2.5G（H5 比 admin 略小，留点给 esbuild）
   export NODE_OPTIONS="--max-old-space-size=2560"
-  pnpm install --registry=https://registry.npmmirror.com \
+  # ffmpeg-static / aws-sdk / msedge-tts 只是历史 vite-plugin sidecar 的依赖，
+  # build:h5 实际产物不打包它们（生产 sidecar 已抽到 server/sidecar/ 独立服务）。
+  # 国内 ECS 拉 GitHub release（ffmpeg 二进制）会 30s timeout，pnpm 报 ELIFECYCLE。
+  # --ignore-scripts 跳过 postinstall 下载 ffmpeg 二进制，build:h5 不受影响。
+  # 同时给 ffmpeg-static 配 GITHUB_PROXY 镜像，万一被某条路径 require 也有兜底。
+  if [[ -n "${GITHUB_PROXY:-}" ]]; then
+    export FFMPEG_BINARIES_URL="${GITHUB_PROXY%/}/https://github.com/eugeneware/ffmpeg-static/releases/download/b6.0"
+  fi
+  pnpm install --ignore-scripts \
+               --registry=https://registry.npmmirror.com \
                --network-concurrency=4 --child-concurrency=2
   pnpm build:h5
 
