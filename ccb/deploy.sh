@@ -987,6 +987,23 @@ deploy_sidecar() {
   fi
   ensure_pnpm8
 
+  # CentOS 7 (glibc 2.17) 上 ffmpeg-static 5.x 二进制要求 GLIBC_2.18+，会报错。
+  # 优先装系统 ffmpeg（EPEL + RPM Fusion）让 sidecar resolveFfmpegPath() 自动选用。
+  if [[ ! -x /usr/bin/ffmpeg && ! -x /usr/local/bin/ffmpeg ]]; then
+    if [[ -f /etc/centos-release ]] || grep -qi centos /etc/os-release 2>/dev/null; then
+      info "CentOS 检测到，安装 ffmpeg (EPEL + RPM Fusion)..."
+      yum install -y epel-release >/dev/null 2>&1 || warn "epel-release 安装失败"
+      # RPM Fusion 提供 ffmpeg 包；按 CentOS 主版本号选 repo
+      local RH_VER="$(rpm -E %rhel 2>/dev/null || echo 7)"
+      yum install -y "https://download1.rpmfusion.org/free/el/rpmfusion-free-release-${RH_VER}.noarch.rpm" >/dev/null 2>&1 || true
+      yum install -y ffmpeg ffmpeg-devel >/dev/null 2>&1 \
+        && log "系统 ffmpeg 安装成功 → $(ffmpeg -version 2>/dev/null | head -1)" \
+        || warn "系统 ffmpeg 安装失败，sidecar 会尝试 ffmpeg-static (CentOS 7 上可能 GLIBC 报错)"
+    fi
+  else
+    log "ffmpeg 已存在 → $(/usr/bin/ffmpeg -version 2>/dev/null | head -1 | head -c 80)"
+  fi
+
   # 同步代码到 ${SIDECAR_DEST}
   mkdir -p "${SIDECAR_DEST}"
   cp -f "${SIDECAR_SRC}/package.json" "${SIDECAR_DEST}/"
@@ -1009,14 +1026,21 @@ VOLCANO_AK=${VOLCANO_AK}
 VOLCANO_SK=${VOLCANO_SK}
 DOUYIN_CLIENT_KEY=${DOUYIN_CLIENT_KEY}
 DOUYIN_CLIENT_SECRET=${DOUYIN_CLIENT_SECRET}
+MERCHANT_INTERNAL_TOKEN=${MERCHANT_INTERNAL_TOKEN}
+DEMO_MODE=${DEMO_MODE:-false}
+# 强制 sidecar 用系统 ffmpeg（CentOS 7 glibc 2.17 下 ffmpeg-static 不可用）
+FFMPEG_PATH=${FFMPEG_PATH:-/usr/bin/ffmpeg}
 SIDECAR_ENV_EOF
   umask 022
 
   # 装依赖（npm ci 比 pnpm 适合 production，少一层 pnpm-lock）
   cd "${SIDECAR_DEST}"
   export PATH="/opt/nodejs/bin:${PATH}"
-  info "sidecar npm install --omit=dev ..."
-  npm install --omit=dev --registry=https://registry.npmmirror.com --no-audit --fund=false 2>&1 | tail -8
+  info "sidecar npm install --omit=dev --ignore-scripts ..."
+  # --ignore-scripts：跳过 ffmpeg-static postinstall 下载 GitHub release
+  # （CentOS 7 上即使下成功 GLIBC 也不够；走系统 yum 装的 ffmpeg）
+  npm install --omit=dev --ignore-scripts --registry=https://registry.npmmirror.com \
+              --no-audit --fund=false 2>&1 | tail -8
 
   # 装一份系统中文字体，sidecar 端卡 / 字幕烧录用得上
   if ! ls /usr/share/fonts/wqy-zenhei/wqy-zenhei.ttc 2>/dev/null && \

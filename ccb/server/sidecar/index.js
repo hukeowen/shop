@@ -29,8 +29,40 @@ const os = require('node:os');
 const path = require('node:path');
 const { spawn } = require('node:child_process');
 const express = require('express');
-const ffmpegPath = require('ffmpeg-static');
 const QRCode = require('qrcode');
+
+// ffmpeg 二进制选择 — CentOS 7 (glibc 2.17) 下 ffmpeg-static 5.x 二进制
+// 要求 GLIBC_2.18+，会报"version `GLIBC_2.18' not found"。优先用系统 ffmpeg
+// （yum install epel-release && yum install ffmpeg），找不到才回退 ffmpeg-static。
+// FFMPEG_PATH 环境变量可强制指定路径。
+function resolveFfmpegPath() {
+  // 1) 环境变量显式覆盖
+  if (process.env.FFMPEG_PATH && fs.existsSync(process.env.FFMPEG_PATH)) {
+    console.log('[ffmpeg] 使用 FFMPEG_PATH 指定:', process.env.FFMPEG_PATH);
+    return process.env.FFMPEG_PATH;
+  }
+  // 2) 系统 ffmpeg（CentOS 7 + EPEL / Nux Dextop / RPM Fusion 安装的）
+  for (const p of ['/usr/bin/ffmpeg', '/usr/local/bin/ffmpeg', '/opt/ffmpeg/bin/ffmpeg']) {
+    if (fs.existsSync(p)) {
+      console.log('[ffmpeg] 使用系统 ffmpeg:', p);
+      return p;
+    }
+  }
+  // 3) 回退 ffmpeg-static（要求 glibc ≥ 2.18，CentOS 8+/Ubuntu 18+ OK）
+  try {
+    const staticPath = require('ffmpeg-static');
+    if (staticPath && fs.existsSync(staticPath)) {
+      console.warn('[ffmpeg] 回退到 ffmpeg-static (glibc < 2.18 时可能 GLIBC 报错):', staticPath);
+      return staticPath;
+    }
+  } catch (e) {
+    console.warn('[ffmpeg] ffmpeg-static 不可用:', e.message);
+  }
+  console.error('[ffmpeg] 系统未装 ffmpeg 且 ffmpeg-static 不可用 — 视频合成功能将报错。'
+              + '\n         CentOS 7 修复：yum install -y epel-release && yum install -y ffmpeg');
+  return null;
+}
+const ffmpegPath = resolveFfmpegPath();
 // Node 16 没原生 fetch / FormData / Blob，从 undici 拿；Node 18+ 也安全（覆盖 global）
 const {
   fetch,
