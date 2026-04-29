@@ -483,13 +483,19 @@ SQL
   shopt -s nullglob
   local V_FILES=("${SQL_DIR}"/V*.sql)
   shopt -u nullglob
-  IFS=$'\n' V_FILES=($(printf '%s\n' "${V_FILES[@]}" | sort)); unset IFS
-  for f in "${V_FILES[@]}"; do
-    local bn="$(basename "${f}")"
-    info "导入 ${bn}..."
-    mysql_safe "${DB_NAME}" < "${f}"
-    log "${bn} 导入完成"
-  done
+  # 防御 set -u + bash 4.x 经典坑：empty array 用 ${arr[@]} 报 unbound variable
+  if (( ${#V_FILES[@]} > 0 )); then
+    IFS=$'\n' V_FILES=($(printf '%s\n' "${V_FILES[@]}" | sort)); unset IFS
+    for f in "${V_FILES[@]}"; do
+      local bn
+      bn="$(basename "${f}")"
+      info "导入 ${bn}..."
+      mysql_safe "${DB_NAME}" < "${f}"
+      log "${bn} 导入完成"
+    done
+  else
+    warn "未找到任何 V*.sql 迁移文件 — 仅 base SQL 已导入；如需新增字段请补 V0XX__*.sql"
+  fi
 
   log "数据库初始化完成"
 }
