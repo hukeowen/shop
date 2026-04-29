@@ -836,6 +836,105 @@ function jimengSign(action, bodyStr) {
   };
 }
 
+/**
+ * 即梦图生图调用（共用 helper）
+ * @param {string} action  即梦 API Action 名（CVProcess / Img2ImgInpainting / OutPainting 等）
+ * @param {object} payload 请求体
+ */
+async function callJimeng(action, payload) {
+  if (!JIMENG_AK || !JIMENG_SK) throw new Error('JIMENG_AK/SK 未配置');
+  const bodyStr = JSON.stringify(payload || {});
+  const headers = jimengSign(action, bodyStr);
+  const r = await fetchRetry(
+    `https://visual.volcengineapi.com?Action=${action}&Version=${JIMENG_VERSION}`,
+    { method: 'POST', headers, body: bodyStr },
+  );
+  const text = await r.text();
+  let json;
+  try { json = JSON.parse(text); } catch { throw new Error(`即梦返回非 JSON: ${text.slice(0, 200)}`); }
+  if (!r.ok || (json.code != null && json.code !== 10000)) {
+    throw new Error(`即梦 ${action} 失败: ${json.message || json.msg || r.status}`);
+  }
+  return json;
+}
+
+// ── /jimeng/enhance ─ 改造点 ① 图生图美化预处理 ────────────────────
+//
+// 老板手机拍的图常光线差/构图随意，先用即梦图生图增强一遍再喂 Seedance：
+// - 食物自动提亮、加饱和
+// - 浅景深虚化背景
+// - 街拍质感（暖色调 + film grain）
+// 输入: { imageUrl, businessHint? } — businessHint 帮 LLM 描述更准
+// 输出: { ok, url } — 增强后的图片公网 URL（已落 TOS）
+app.post('/jimeng/enhance', async (req, res) => {
+  try {
+    const { imageUrl, businessHint = '美食/产品' } = req.body || {};
+    if (!imageUrl) throw new Error('imageUrl 为空');
+
+    const enhancePrompt =
+      `专业${businessHint}摄影，自然光，浅景深，色彩饱满，` +
+      `街头夜市质感，金黄时刻光线，电影感胶片颗粒，竖屏构图`;
+
+    const json = await callJimeng('CVProcess', {
+      req_key: 'high_aes_general_v30l_zt2i',  // 通用图像处理（增强类）
+      prompt: enhancePrompt,
+      image_urls: [imageUrl],
+      scale: 7,
+      ddim_steps: 20,
+      width: 1080,
+      height: 1920,
+      return_url: true,
+    });
+
+    // 即梦返回 image_urls 数组
+    const out = (json.data && json.data.image_urls && json.data.image_urls[0]) || null;
+    if (!out) throw new Error(`即梦未返图: ${JSON.stringify(json).slice(0, 200)}`);
+    res.json({ ok: true, url: out, enhanced: true });
+  } catch (e) {
+    console.warn('[jimeng/enhance]', e.message);
+    // 失败时返回原图 URL，让上游不阻塞主流程
+    res.json({ ok: false, url: req.body?.imageUrl, enhanced: false, error: e.message });
+  }
+});
+
+// ── /jimeng/poster ─ 改造点 ④ 即梦图生图生成端卡海报 ───────────────
+//
+// 替代原 ffmpeg drawtext 拼图端卡，用即梦生成专业海报：
+// - 店名艺术字 + 二维码视觉位 + 暖色背景
+// 输入: { shopName, slogan? } — slogan 默认 "扫码进店"
+// 输出: { ok, url } — 海报图 URL（之后 sidecar /video/endcard 用这个图当背景）
+app.post('/jimeng/poster', async (req, res) => {
+  try {
+    const { shopName, slogan = '扫码进店领优惠' } = req.body || {};
+    if (!shopName) throw new Error('shopName 为空');
+
+    const posterPrompt =
+      `Chinese street food restaurant promotional poster, ` +
+      `shop name "${shopName}" centered with bold modern typography, ` +
+      `space below for QR code, ` +
+      `slogan "${slogan}" at bottom, ` +
+      `warm orange gradient background, ` +
+      `cinematic high-end commercial photography style, vertical 9:16`;
+
+    const json = await callJimeng('CVProcess', {
+      req_key: 'high_aes_general_v30l',
+      prompt: posterPrompt,
+      scale: 7.5,
+      ddim_steps: 25,
+      width: 1080,
+      height: 1920,
+      return_url: true,
+    });
+
+    const out = (json.data && json.data.image_urls && json.data.image_urls[0]) || null;
+    if (!out) throw new Error(`即梦未返图: ${JSON.stringify(json).slice(0, 200)}`);
+    res.json({ ok: true, url: out });
+  } catch (e) {
+    console.warn('[jimeng/poster]', e.message);
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
 app.post('/jimeng', async (req, res) => {
   try {
     const action = req.query.action;
