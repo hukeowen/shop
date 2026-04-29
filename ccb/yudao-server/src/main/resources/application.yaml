@@ -332,10 +332,11 @@ yudao:
     send-maximum-quantity-per-day: 10
     begin-code: 9999 # 正式模式随机区间下限
     end-code: 9999 # 正式模式随机区间上限
-    # 演示模式：true 时不调真实短信渠道，仅落库固定验证码 demoCode；
-    # 部署上线（真发短信）请改为 false。
-    demo-mode: true
-    demo-code: "888888"
+    # demo-mode：true 时不调真实短信渠道，仅落库 demo-code 固定验证码；
+    # 默认 false（生产真发短信）；本地/演示需要时通过 ENV 显式开启：
+    #   SMS_DEMO_MODE=true SMS_DEMO_CODE=888888 ./deploy.sh
+    demo-mode: ${SMS_DEMO_MODE:false}
+    demo-code: ${SMS_DEMO_CODE:888888}
   trade:
     order:
       pay-expire-time: 2h # 支付的过期时间

@@ -9,13 +9,19 @@ import cn.iocoder.yudao.module.merchant.service.MerchantService;
 import cn.iocoder.yudao.module.video.service.CopywritingService;
 import cn.iocoder.yudao.module.video.service.VideoGenerateService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
 import javax.annotation.Resource;
 import java.util.List;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * AI 成片事件监听器（生产版）
@@ -47,45 +53,58 @@ public class AiVideoTaskCreatedListener {
     private VideoGenerateService videoGenerateService;
     @Resource
     private MerchantService merchantService;
+    @Resource
+    @Qualifier("aiVideoTaskExecutor")
+    private ThreadPoolTaskExecutor aiVideoTaskExecutor;
+
+    /** 文案生成超时（秒）；豆包 LLM 一般 5-15s，给到 60s 兜底 */
+    @Value("${merchant.ai-video.copywriting-timeout-sec:60}")
+    private int copywritingTimeoutSec;
+    /** 视频合成超时（秒）；Seedance 一般 60-180s，给到 360s 兜底 */
+    @Value("${merchant.ai-video.video-timeout-sec:360}")
+    private int videoTimeoutSec;
 
     // ==================== 阶段 1：LLM 文案生成 ====================
 
-    @Async
+    @Async("aiVideoTaskExecutor")
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onAiVideoTaskCreated(AiVideoTaskCreatedEvent event) {
         Long taskId = event.getAiVideoTaskId();
         log.info("[onAiVideoTaskCreated] 收到AI成片任务事件 taskId={}, merchantId={}",
                 taskId, event.getMerchantId());
-        try {
+        Future<List<String>> future = aiVideoTaskExecutor.submit(() -> {
             String shopName = resolveShopName(event.getMerchantId());
-            List<String> lines = copywritingService.generateCopywriting(
-                    shopName, event.getUserDescription());
+            return copywritingService.generateCopywriting(shopName, event.getUserDescription());
+        });
+        try {
+            List<String> lines = future.get(copywritingTimeoutSec, TimeUnit.SECONDS);
             if (lines == null || lines.isEmpty()) {
                 TenantUtils.executeIgnore(() -> aiVideoTaskService.onCopywritingFailed(taskId, "LLM 生成文案为空"));
                 return;
             }
             // ai_video_task 是租户隔离表，@Async 切线程后租户上下文丢失，回写必须 executeIgnore
             TenantUtils.executeIgnore(() -> aiVideoTaskService.onCopywritingGenerated(taskId, lines));
+        } catch (TimeoutException e) {
+            future.cancel(true);
+            log.warn("[onAiVideoTaskCreated] 文案生成超时 ({}s) taskId={}", copywritingTimeoutSec, taskId);
+            failSafe(() -> aiVideoTaskService.onCopywritingFailed(taskId,
+                    "AI 文案生成超时（" + copywritingTimeoutSec + "s）"));
         } catch (Exception e) {
             log.error("[onAiVideoTaskCreated] 文案生成失败 taskId={}", taskId, e);
-            try {
-                TenantUtils.executeIgnore(() -> aiVideoTaskService.onCopywritingFailed(taskId,
-                        "AI 文案生成失败：" + safeMessage(e)));
-            } catch (Exception inner) {
-                log.error("[onAiVideoTaskCreated] 回写失败状态本身异常 taskId={}", taskId, inner);
-            }
+            failSafe(() -> aiVideoTaskService.onCopywritingFailed(taskId,
+                    "AI 文案生成失败：" + safeMessage(e)));
         }
     }
 
     // ==================== 阶段 2：视频合成 ====================
 
-    @Async
+    @Async("aiVideoTaskExecutor")
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onCopywritingConfirmed(AiVideoCopywritingConfirmedEvent event) {
         Long taskId = event.getAiVideoTaskId();
         log.info("[onCopywritingConfirmed] 收到文案确认事件 taskId={}, lines={}",
                 taskId, event.getFinalCopywriting().size());
-        try {
+        Future<VideoResult> future = aiVideoTaskExecutor.submit(() -> {
             // 1. 取任务原始数据（图片列表）；ai_video_task 为租户隔离表，@Async 下需 executeIgnore
             cn.iocoder.yudao.module.merchant.dal.dataobject.AiVideoTaskDO task =
                     TenantUtils.executeIgnore(() ->
@@ -110,18 +129,37 @@ public class AiVideoTaskCreatedListener {
             // 5. 封面：取首张原图作为封面（Seedance 暂未提供 cover_url 字段）
             String coverUrl = task.getImageUrls() != null && !task.getImageUrls().isEmpty()
                     ? task.getImageUrls().get(0) : null;
-
+            return new VideoResult(ossVideoUrl, coverUrl);
+        });
+        try {
+            VideoResult result = future.get(videoTimeoutSec, TimeUnit.SECONDS);
             TenantUtils.executeIgnore(() -> aiVideoTaskService.onTaskComplete(
-                    taskId, true, ossVideoUrl, coverUrl, null));
+                    taskId, true, result.videoUrl, result.coverUrl, null));
+        } catch (TimeoutException e) {
+            future.cancel(true);
+            log.warn("[onCopywritingConfirmed] 视频合成超时 ({}s) taskId={}", videoTimeoutSec, taskId);
+            failSafe(() -> aiVideoTaskService.onTaskComplete(taskId, false, null, null,
+                    "视频合成超时（" + videoTimeoutSec + "s），请重试"));
         } catch (Exception e) {
             log.error("[onCopywritingConfirmed] 视频合成失败 taskId={}", taskId, e);
-            try {
-                TenantUtils.executeIgnore(() -> aiVideoTaskService.onTaskComplete(
-                        taskId, false, null, null, "视频合成失败：" + safeMessage(e)));
-            } catch (Exception inner) {
-                log.error("[onCopywritingConfirmed] 回写失败状态本身异常 taskId={}", taskId, inner);
-            }
+            failSafe(() -> aiVideoTaskService.onTaskComplete(taskId, false, null, null,
+                    "视频合成失败：" + safeMessage(e)));
         }
+    }
+
+    /** 安全回写状态：异常吞掉只记 log（避免再抛把线程池工作线程搞挂） */
+    private void failSafe(Runnable r) {
+        try {
+            TenantUtils.executeIgnore(r);
+        } catch (Exception inner) {
+            log.error("[AiVideoListener] 回写失败状态本身异常", inner);
+        }
+    }
+
+    private static class VideoResult {
+        final String videoUrl;
+        final String coverUrl;
+        VideoResult(String v, String c) { this.videoUrl = v; this.coverUrl = c; }
     }
 
     // ==================== 私有方法 ====================

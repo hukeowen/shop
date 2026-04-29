@@ -797,6 +797,9 @@ const DOUYIN_ACCESS_TOKEN = 'https://open.douyin.com/oauth/access_token/';
 const DOUYIN_UPLOAD_VIDEO = 'https://open.douyin.com/api/douyin/v1/video/upload_video/';
 const DOUYIN_CREATE_VIDEO = 'https://open.douyin.com/api/douyin/v1/video/create_video/';
 
+// 全局 demo 兜底守卫：DEMO_MODE=true 才允许走 fake 抖音授权链路
+const DEMO_MODE = process.env.DEMO_MODE === 'true';
+
 app.get('/douyin/auth-url', (req, res) => {
   try {
     const redirectUri =
@@ -804,10 +807,12 @@ app.get('/douyin/auth-url', (req, res) => {
       `${req.headers['x-forwarded-proto'] || 'http'}://${req.headers.host}/douyin/oauth-callback`;
     const state = crypto.randomBytes(8).toString('hex');
 
-    // Demo 兜底：未配 DOUYIN_CLIENT_KEY 时返一个本地 demo 授权页 URL，
-    // 用户能看到完整 OAuth 弹窗动画，3s 自动跳成功，前端拿到 fake token；
+    // Demo 兜底（仅 DEMO_MODE=true 时启用）：未配 DOUYIN_CLIENT_KEY 时返一个本地
+    // demo 授权页 URL，用户能看到完整 OAuth 弹窗动画，前端拿到 fake token；
     // 拿到真 KEY 后切回真链路，前端无改动。
+    // 生产 (DEMO_MODE=false) 必须有 DOUYIN_CLIENT_KEY，否则直接报错让运维补 KEY。
     if (!DOUYIN_CLIENT_KEY) {
+      if (!DEMO_MODE) throw new Error('DOUYIN_CLIENT_KEY 未配置 — 请在 .env 中填抖音开放平台分配的 client_key');
       const fakeUrl = `${req.headers['x-forwarded-proto'] || 'http'}://${req.headers.host}/douyin/demo-auth?state=${state}&redirect_uri=${encodeURIComponent(redirectUri)}`;
       return res.json({ ok: true, url: fakeUrl, state, demo: true });
     }
@@ -824,8 +829,9 @@ app.get('/douyin/auth-url', (req, res) => {
   }
 });
 
-// Demo 兜底：本地 fake 授权页，模拟用户在抖音 App 内点"同意"
+// Demo 兜底：本地 fake 授权页（仅 DEMO_MODE=true 时启用，生产 404）
 app.get('/douyin/demo-auth', (req, res) => {
+  if (!DEMO_MODE) return res.status(404).end('Not Found');
   const { state = '', redirect_uri = '' } = req.query;
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
   res.end(`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>抖音授权</title>
@@ -866,8 +872,8 @@ app.get('/douyin/oauth-callback', async (req, res) => {
     if (!code) throw new Error('回调缺少 code');
 
     let token;
-    // Demo 兜底：未配 KEY 或 code 来自本地 demo-auth 页时直接返 fake token
-    if (!DOUYIN_CLIENT_KEY || !DOUYIN_CLIENT_SECRET || String(code).startsWith('DEMO_')) {
+    // Demo 兜底（仅 DEMO_MODE=true）：未配 KEY 或 code 来自本地 demo-auth 页时返 fake token
+    if (DEMO_MODE && (!DOUYIN_CLIENT_KEY || !DOUYIN_CLIENT_SECRET || String(code).startsWith('DEMO_'))) {
       token = {
         accessToken: 'DEMO_AT_' + crypto.randomBytes(8).toString('hex'),
         refreshToken: 'DEMO_RT_' + crypto.randomBytes(8).toString('hex'),
@@ -876,6 +882,8 @@ app.get('/douyin/oauth-callback', async (req, res) => {
         grantedAt: Date.now(),
         demo: true,
       };
+    } else if (!DOUYIN_CLIENT_KEY || !DOUYIN_CLIENT_SECRET) {
+      throw new Error('未配置 DOUYIN_CLIENT_KEY/SECRET');
     } else {
       const body = new URLSearchParams({
         client_key: DOUYIN_CLIENT_KEY,
