@@ -632,12 +632,16 @@ build_admin_frontend() {
   local UI_DIR="${PROJECT_DIR}/yudao-ui/yudao-ui-admin-vue3"
   cd "${UI_DIR}"
 
-  cat > .env.production << 'ENVEOF'
-VITE_DEV = false
-VITE_APP_TITLE = 摊小二管理后台
-VITE_BASE_URL = /
-VITE_API_URL = /admin-api
-VITE_APP_CAPTCHA_ENABLE = false
+  # vite --mode prod 加载 .env.prod，再加载 .env.prod.local 覆盖（约定俗成）。
+  # 我们用 .env.prod.local 注入部署专属覆写（相对 API 路径 / 关闭验证码），
+  # 不破坏仓库内 .env.prod 默认值；且 .env.prod.local 默认在 .gitignore 里，安全。
+  cat > .env.prod.local << 'ENVEOF'
+VITE_DEV=false
+VITE_APP_TITLE=摊小二管理后台
+VITE_BASE_URL=/
+VITE_API_URL=/admin-api
+VITE_APP_CAPTCHA_ENABLE=false
+VITE_OUT_DIR=dist-prod
 ENVEOF
 
   # 4G 机器：swap 已扩到 6G。Node 堆 3G 足够；
@@ -648,9 +652,15 @@ ENVEOF
   node --max_old_space_size=3072 ./node_modules/vite/bin/vite.js build --mode prod
 
   local DIST_DIR="${ROOT_DIR}/admin-dist"
+  # vite --mode prod 输出目录由 .env.prod 的 VITE_OUT_DIR 决定（dist-prod）；
+  # 写死 dist 会触发 "cp: cannot stat 'dist'" — 优先 dist-prod，回退 dist 兼容老配置。
+  local SRC_DIST=""
+  if [[ -d dist-prod ]]; then SRC_DIST="dist-prod";
+  elif [[ -d dist ]]; then SRC_DIST="dist";
+  else err "vite build 未产出 dist-prod/ 或 dist/"; exit 1; fi
   rm -rf "${DIST_DIR}"
-  cp -r dist "${DIST_DIR}"
-  log "管理后台前端编译完成 → ${DIST_DIR}"
+  cp -r "${SRC_DIST}" "${DIST_DIR}"
+  log "管理后台前端编译完成 → ${DIST_DIR}（源：${SRC_DIST}）"
 }
 
 build_merchant_h5() {

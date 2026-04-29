@@ -7,3 +7,6 @@ pnpm-debug
 auto-*.d.ts
 .idea
 .history
+# 部署期由 deploy.sh 写入的本地覆写（含 BASE_URL=/ 等）— vite 约定的 .env.[mode].local
+.env.*.local
+.env.local
