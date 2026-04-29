@@ -262,6 +262,30 @@ if [[ -n "$MYSQL_PASS" ]]; then
 fi
 
 echo ""
+echo "=== 在线支付进件 KYC 字段是否已迁移 ==="
+
+if [[ -n "$MYSQL_PASS" ]]; then
+  for col in id_card_front_url id_card_back_url business_license_url; do
+    cnt=$(mysql_q "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema='$DB_NAME' AND table_name='shop_info' AND column_name='$col'")
+    [[ "$cnt" == "1" ]] && ok "shop_info.$col 已迁移" || ko "shop_info.$col 缺失 → 跑 fix_pay_apply_kyc.sql"
+  done
+fi
+
+# 商户端进件提交链路（依赖 token + tenant_id；缺则 skip）
+if [[ -n "$TOKEN" && -n "$TENANT_ID" ]]; then
+  RESP=$(curl -s -X POST "$BASE_URL/app-api/merchant/mini/shop/pay-apply" \
+    -H "Content-Type: application/json" \
+    -H "Authorization: Bearer $TOKEN" \
+    -H "tenant-id: $TENANT_ID" \
+    -d '{"idCardFrontUrl":"https://example.com/idf.jpg","idCardBackUrl":"https://example.com/idb.jpg","businessLicenseUrl":"https://example.com/bl.jpg"}')
+  if echo "$RESP" | grep -qE '"code":0|"data":true'; then
+    ok "商户提交在线支付进件 KYC OK（status=审核中）"
+  else
+    warn "进件提交返：$(echo "$RESP" | head -c 200)"
+  fi
+fi
+
+echo ""
 echo "=== 火山 ApiKey 配置自检 ==="
 
 if [[ -f /opt/tanxiaer/app/runtime.env ]]; then
