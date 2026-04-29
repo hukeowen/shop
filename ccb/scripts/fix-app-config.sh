@@ -188,6 +188,11 @@ yudao:
     enable: false
   api-encrypt:
     enable: false
+  pay:
+    # 支付回调地址（通联回调路径走 merchant 模块的 webhook，但 yudao.pay.* 字段必填）
+    order-notify-url: http://127.0.0.1:${SERVER_PORT}/admin-api/pay/notify/order
+    refund-notify-url: http://127.0.0.1:${SERVER_PORT}/admin-api/pay/notify/refund
+    transfer-notify-url: http://127.0.0.1:${SERVER_PORT}/admin-api/pay/notify/transfer
 
 # 微信占位（即使 autoconfigure.exclude 已禁用 wx，社交登录代码里有些字段读取兜底）
 wx:
