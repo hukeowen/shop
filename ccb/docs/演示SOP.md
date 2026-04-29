@@ -53,27 +53,22 @@ mysql -uroot -p"${MYSQL_ROOT_PASS}" -D ruoyi-vue-pro -e \
 - H5 / PC 入口返 200
 - 10 条 menu / 1 条邀请码 / status=0 的 Job
 
-## 二·B、演示前 1 分钟开启 mock 支付渠道（必做）
+## 二·B、Mock 支付渠道（已自动 seed）
 
-> 这一步 deploy.sh **不会自动做** — yudao 默认不预 seed pay_app / pay_channel
-> 实例，避免破坏既有支付配置。客户没真实微信支付的情况下，演示「用户下单 → 支付 → 营销引擎触发」必须开 mock 渠道。
+✅ **deploy.sh 会自动跑 `sql/mysql/fix_demo_pay.sql`** seed 一份 pay_app（id=1, app_key='mall'）+ mock 渠道（status=0 启用）。无需手工配置。
 
-PC 后台（`http://<HOST>/admin/`，admin/admin123）：
-
-1. **创建支付应用**：左侧「支付管理 → 应用信息 → 新增」
-   - 应用标识 `demo`，名称 `演示`，状态 `开启`
-   - 回调地址全部填 `http://localhost:48080/admin-api/pay/notify/order/${channelId}`
-2. **添加 mock 支付渠道**：选刚创建的应用 → 点「渠道」→ 新增
-   - 渠道：`模拟支付（mock）`
-   - 状态 `开启`，费率 0
-   - 配置 JSON：`{}`（mock 不需要任何 KEY）
-3. **关联到交易**：左侧「交易中心 → 配置 → 交易设置」
-   - 选刚创建的支付应用为默认 `payAppId`
-   - 保存
+自检：
+```bash
+mysql -uroot -p"${MYSQL_ROOT_PASS}" -D ruoyi-vue-pro -e \
+  "SELECT a.id, a.app_key, a.name, c.code, c.status FROM pay_app a JOIN pay_channel c ON c.app_id=a.id WHERE a.app_key='mall';"
+```
+预期看到 1 行：`mall | 商城支付应用（演示用）| mock | 0`。
 
 完成后客户在 H5 下单 → 选「模拟支付」→ 自动成功 → 触发 `MerchantPromoOrderHandler.afterPayOrder` → 营销引擎跑 5 步全跑通。
 
-> 演示完毕：进 pay_channel 把 mock 渠道 status 改成 0 关闭，避免被真实用户白嫖订单。
+> 演示完毕生产上线：`UPDATE pay_channel SET status=1 WHERE code='mock'` 关 mock 渠道，PC 后台新增微信/支付宝真实渠道。
+
+> ⚠️ 商户子租户（首次开通通过邀请码 DEMO20260428 创建）若登录 PC 后台支付管理看不到 mall 应用，需到 PC 后台 → 选商户租户 → 支付管理 → 复制 admin 租户的 pay_app / pay_channel 一次（yudao 默认按租户隔离）。**演示当天没人会去商户的 PC 后台开支付，所以这一步可忽略**——商户用 H5 下单时调的是 admin 租户 (tenant-id 默认 1) 的支付应用。
 
 ## 三、演示链路（按顺序走）
 
