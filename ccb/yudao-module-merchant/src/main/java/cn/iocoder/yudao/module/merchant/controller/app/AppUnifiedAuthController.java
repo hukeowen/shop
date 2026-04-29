@@ -12,6 +12,7 @@ import cn.iocoder.yudao.framework.ratelimiter.core.keyresolver.impl.ClientIpRate
 import cn.iocoder.yudao.framework.security.core.LoginUser;
 import cn.iocoder.yudao.framework.security.core.util.SecurityFrameworkUtils;
 import cn.iocoder.yudao.framework.tenant.core.aop.TenantIgnore;
+import cn.iocoder.yudao.framework.tenant.core.context.TenantContextHolder;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -352,6 +353,18 @@ public class AppUnifiedAuthController {
         Long merchantId;
         MerchantDO merchant;
         OAuth2AccessTokenRespDTO token;
+        // 关键：方法上 @TenantIgnore 让 step 1-3 能跨租户查 member_user / merchant_info
+        // （member_user 是全局表，merchant_info 是租户表但要按 openId 全局幂等查）。
+        // 但进入 createMerchantFromMember 后 yudao 内部会调 createTenant → createRole，
+        // RoleMapper.selectByName('租户管理员') 是 TenantBaseDO 表，必须按新租户的
+        // tenant_id 过滤。如果继续保持 ignore=true，会全表扫到 ruoyi-vue-pro.sql
+        // seed 的 (id=109,tenant_id=121) + (id=111,tenant_id=122) 两条历史 demo 数据 →
+        // selectOne 直接 TooManyResultsException 把整条申请流程崩掉。
+        // 做法：手工 setIgnore(false)，让 yudao 内部 TenantUtils.execute(newTenantId)
+        // 切到新租户 ctx 后能正确加 tenant_id 过滤；finally 恢复成 true 让 aspect 不
+        // 混乱（aspect finally 会基于进入时的 oldIgnore 恢复）。
+        Boolean prevIgnore = TenantContextHolder.isIgnore();
+        TenantContextHolder.setIgnore(false);
         try {
             merchantId = merchantService.createMerchantFromMember(
                     member.getId(), member.getMiniAppOpenId(), null, mobile, null);
@@ -370,6 +383,8 @@ public class AppUnifiedAuthController {
         } finally {
             // 清掉 fake context，避免污染后续 filter chain
             SecurityContextHolder.clearContext();
+            // 还原 tenant ignore，aspect finally 会再基于 oldIgnore 还原一次（幂等）
+            TenantContextHolder.setIgnore(prevIgnore);
         }
 
         List<String> roles = buildRoles(merchant);
