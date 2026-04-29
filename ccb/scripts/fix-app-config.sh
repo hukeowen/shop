@@ -149,6 +149,11 @@ cat > "${APP_DIR}/application-prod.yaml" << YAML_EOF
 # 生产配置 — 由 fix-app-config.sh 生成；spring boot 启动时优先读取 jar 同目录的此文件
 # 覆盖 jar 内 application-local.yaml 的默认 root/root
 spring:
+  # 禁用未配置的第三方自动装配（避免启动时 NPE：appid 不能为 null 等）
+  autoconfigure:
+    exclude:
+      - com.binarywang.spring.starter.wxjava.mp.config.WxMpServiceAutoConfiguration
+      - com.binarywang.spring.starter.wxjava.miniapp.config.WxMaAutoConfiguration
   datasource:
     dynamic:
       primary: master
@@ -188,6 +193,20 @@ yudao:
     enable: false
   api-encrypt:
     enable: false
+
+# 微信占位（即使 autoconfigure.exclude 已禁用 wx，社交登录代码里有些字段读取兜底）
+wx:
+  mp:
+    app-id: dev_disabled
+    secret: dev_disabled
+    token: dev
+    aes-key: ""
+  miniapp:
+    appid: dev_disabled
+    secret: dev_disabled
+    token: dev
+    aes-key: ""
+    msg-data-format: JSON
 
 merchant:
   internal-token: ${MERCHANT_INTERNAL_TOKEN}
