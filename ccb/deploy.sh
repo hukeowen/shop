@@ -181,13 +181,44 @@ install_base() {
 }
 
 configure_selinux() {
-  step "检查 SELinux"
-  if command -v getenforce &>/dev/null && [[ $(getenforce) == "Enforcing" ]]; then
-    setenforce 0
-    sed -i 's/^SELINUX=.*/SELINUX=permissive/' /etc/selinux/config
-    warn "SELinux 已切为 permissive（避免 nginx 访问 /opt/tanxiaer 被阻），持久化生效需重启一次"
+  step "配置 SELinux（标签法 — 即使 Enforcing 也能让 nginx 读 /opt/tanxiaer）"
+  if ! command -v getenforce &>/dev/null; then
+    log "未装 SELinux 工具链，跳过"
+    return 0
+  fi
+
+  # 双保险方案：
+  # 1) 给 /opt/tanxiaer 打 httpd_sys_content_t 标签 — 永久 + Enforcing 下也读
+  # 2) 临时 setenforce 0 — 当前会话立即生效
+  # 3) /etc/selinux/config 改 permissive — 下次重启永久（即使没装 semanage 也兜底）
+  yum install -y policycoreutils-python >/dev/null 2>&1 || warn "policycoreutils-python 装失败"
+  if command -v semanage &>/dev/null; then
+    info "给 ${ROOT_DIR} 打 SELinux 标签 httpd_sys_content_t..."
+    if semanage fcontext -l 2>/dev/null | grep -q "^${ROOT_DIR}(/\.\*)?"; then
+      semanage fcontext -m -t httpd_sys_content_t "${ROOT_DIR}(/.*)?" 2>/dev/null \
+        || warn "fcontext -m 失败"
+    else
+      semanage fcontext -a -t httpd_sys_content_t "${ROOT_DIR}(/.*)?" 2>/dev/null \
+        || warn "fcontext -a 失败（可能已存在，下一步 restorecon 仍会生效）"
+    fi
   else
-    log "SELinux 未启用或已为 permissive，跳过"
+    warn "semanage 未就位，仅靠 setenforce 0 兜底（重启后 nginx 可能 404）"
+  fi
+
+  # 关键：restorecon 应用标签到磁盘上所有文件（这一步必须每次 deploy 跑，因为
+  # 新 cp 进来的文件标签默认是 user_home_t，没标签 nginx 读不到）
+  if [[ -d "${ROOT_DIR}" ]] && command -v restorecon &>/dev/null; then
+    restorecon -R "${ROOT_DIR}" 2>/dev/null && log "SELinux 标签已应用到 ${ROOT_DIR}/" \
+      || warn "restorecon 失败"
+  fi
+
+  # 临时 + 永久兜底（即使标签法也没生效，至少 setenforce 0 让当前会话能用）
+  if [[ "$(getenforce)" == "Enforcing" ]]; then
+    setenforce 0 2>/dev/null || true
+    sed -i 's/^SELINUX=.*/SELINUX=permissive/' /etc/selinux/config 2>/dev/null || true
+    log "SELinux 临时切为 permissive（标签法已配，即使重启回 Enforcing 也能用）"
+  else
+    log "SELinux 状态: $(getenforce)"
   fi
 }
 
@@ -787,6 +818,15 @@ configure_nginx() {
 
   # 让 nginx 可以读取 /opt/tanxiaer 下的静态文件
   chmod -R a+rX "${ROOT_DIR}/website" "${ROOT_DIR}/admin-dist" "${ROOT_DIR}/m" 2>/dev/null || true
+
+  # SELinux 关键：每次 deploy 都重新打标签 — H5/admin-dist 是 cp 出来的新文件，
+  # 没继承父目录的 httpd_sys_content_t 标签 → nginx (httpd_t) 读不到 → 404
+  # configure_selinux 阶段已 fcontext -a 加规则，这里只需 restorecon 应用
+  if command -v restorecon &>/dev/null; then
+    restorecon -R "${ROOT_DIR}" 2>/dev/null \
+      && log "SELinux 标签已重新应用 (deploy 后 cp 出来的新文件需要)" \
+      || warn "restorecon 失败"
+  fi
 
   # CentOS nginx 默认安装会生成 /etc/nginx/conf.d/default.conf 抢占 80 端口的
   # default_server，导致 IP 直访 (47.109.143.146/m/) 落到 /usr/share/nginx/html
