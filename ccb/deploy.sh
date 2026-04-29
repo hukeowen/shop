@@ -911,19 +911,27 @@ server {
     }
 
     # 管理后台
-    location /admin/ {
+    # ^~ 关键：让前缀匹配优先于上面 .js/.css 正则 location（否则 /admin/assets/*.js
+    # 会落到官网 root /opt/tanxiaer/website 找不到 → 404）
+    location ^~ /admin/ {
         alias ${ROOT_DIR}/admin-dist/;
         index index.html;
         try_files \$uri \$uri/ /admin/index.html;
     }
+    location ^~ /admin/assets/ {
+        alias ${ROOT_DIR}/admin-dist/assets/;
+        expires 30d;
+        add_header Cache-Control "public, immutable";
+        access_log off;
+    }
 
     # 商户/用户端 H5（uni-app 输出，hash 路由）
-    location /m/ {
+    location ^~ /m/ {
         alias ${ROOT_DIR}/m/;
         index index.html;
         try_files \$uri \$uri/ /m/index.html;
     }
-    location /m/assets/ {
+    location ^~ /m/assets/ {
         alias ${ROOT_DIR}/m/assets/;
         expires 30d;
         add_header Cache-Control "public, immutable";

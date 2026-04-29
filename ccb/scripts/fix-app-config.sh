@@ -133,6 +133,20 @@ if command -v firewall-cmd &>/dev/null && systemctl is-active --quiet firewalld;
 fi
 warn "⚠️  阿里云 ECS 安全组：去阿里云控制台另行放行 3306（firewalld 不管安全组）"
 
+# ── 2.4. 修 tanxiaer.conf 的 location 优先级（^~ 强制前缀优先于正则）─────
+info "[2.4/6] 修 nginx /m/ /admin/ location 加 ^~（防被 .js/.css 正则 location 抢请求）"
+TX_CONF="/etc/nginx/conf.d/tanxiaer.conf"
+if [[ -f "${TX_CONF}" ]]; then
+  cp "${TX_CONF}" "${TX_CONF}.bak.$(date +%Y%m%d-%H%M%S)"
+  # 把 4 个 location（/m/ /m/assets/ /admin/ /admin/assets/）加 ^~ 前缀，
+  # 让普通前缀匹配优先于上面 .js/.css/.png 等正则 location
+  sed -i 's|^\([[:space:]]*\)location /m/ {|\1location ^~ /m/ {|'                 "${TX_CONF}"
+  sed -i 's|^\([[:space:]]*\)location /m/assets/ {|\1location ^~ /m/assets/ {|'   "${TX_CONF}"
+  sed -i 's|^\([[:space:]]*\)location /admin/ {|\1location ^~ /admin/ {|'         "${TX_CONF}"
+  sed -i 's|^\([[:space:]]*\)location /admin/assets/ {|\1location ^~ /admin/assets/ {|' "${TX_CONF}"
+  log "tanxiaer.conf location 优先级已修正"
+fi
+
 # ── 2.5. 清理 nginx.conf 默认 server 块（防 /m/assets/*.js 404）───────────
 info "[2.5/6] 清理 nginx.conf 默认 server 块（防 /m/assets/*.js 404）"
 MAIN_CONF="/etc/nginx/nginx.conf"
