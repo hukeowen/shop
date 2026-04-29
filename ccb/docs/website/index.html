@@ -2544,28 +2544,32 @@
     document.getElementById(d.dataset.target)?.scrollIntoView({ behavior: 'smooth' });
   }));
 
+  /* hero kinetic word — 单 DOM 元素更新 textContent，永远只有一个词在场
+   * 之前用 append/remove 双 DOM 切换会偶发"两个词同屏叠加"渲染 bug
+   * （setInterval 节奏抖动 / remove() 异步未完成 / 脚本被加载多次时累积） */
   const words = ['小摊', '夜市档口', '咖啡车', '街边奶茶店', '社区小店', '个体商户'];
   const kWrap = document.getElementById('kinetic');
-  let kIdx = 0;
-  const FADE_MS = 200;        /* 与 CSS .kinetic-word transition 对齐 */
-  setInterval(() => {
-    const cur = kWrap.querySelector('.kinetic-word.in');
-    if (cur) {
-      cur.classList.remove('in');
-      cur.classList.add('out');
-      const stale = cur;
-      /* 旧词淡出后立即从 DOM 移除，确保不与新词同屏 */
-      setTimeout(() => stale.remove(), FADE_MS);
-    }
-    setTimeout(() => {
-      const nextWord = words[(++kIdx) % words.length];
-      const next = document.createElement('span');
-      next.className = 'kinetic-word';
-      next.textContent = nextWord;
-      kWrap.appendChild(next);
-      requestAnimationFrame(() => requestAnimationFrame(() => next.classList.add('in')));
-    }, FADE_MS + 30);
-  }, 2800);
+  if (kWrap) {
+    /* 防御式清理：把 HTML 里写死的所有 kinetic-word 全干掉，只保留一个新建的 */
+    kWrap.innerHTML = '';
+    const kEl = document.createElement('span');
+    kEl.className = 'kinetic-word in';
+    kEl.textContent = words[0];
+    kWrap.appendChild(kEl);
+
+    let kIdx = 0;
+    const FADE_MS = 200;
+    setInterval(() => {
+      kEl.classList.remove('in');
+      kEl.classList.add('out');
+      setTimeout(() => {
+        kIdx = (kIdx + 1) % words.length;
+        kEl.textContent = words[kIdx];
+        kEl.classList.remove('out');
+        requestAnimationFrame(() => requestAnimationFrame(() => kEl.classList.add('in')));
+      }, FADE_MS);
+    }, 2800);
+  }
 
   const hstatsEl = document.getElementById('hstats');
   const cnumObs = new IntersectionObserver(entries => {
