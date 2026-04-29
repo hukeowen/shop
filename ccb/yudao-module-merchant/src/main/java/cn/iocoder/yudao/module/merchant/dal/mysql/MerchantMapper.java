@@ -5,9 +5,12 @@ import cn.iocoder.yudao.framework.mybatis.core.mapper.BaseMapperX;
 import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
 import cn.iocoder.yudao.module.merchant.controller.admin.vo.MerchantPageReqVO;
 import cn.iocoder.yudao.module.merchant.dal.dataobject.MerchantDO;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Update;
+
+import java.util.List;
 
 @Mapper
 public interface MerchantMapper extends BaseMapperX<MerchantDO> {
@@ -20,12 +23,20 @@ public interface MerchantMapper extends BaseMapperX<MerchantDO> {
                 .orderByDesc(MerchantDO::getId));
     }
 
+    // 防御历史脏数据：同 user_id / open_id 可能多条 → selectList + 取 id 最小
+    // selectOne 撞 TooManyResultsException 是商户重复申请的核心崩点
     default MerchantDO selectByUserId(Long userId) {
-        return selectOne(MerchantDO::getUserId, userId);
+        List<MerchantDO> list = selectList(new LambdaQueryWrapper<MerchantDO>()
+                .eq(MerchantDO::getUserId, userId)
+                .orderByAsc(MerchantDO::getId).last("LIMIT 1"));
+        return list.isEmpty() ? null : list.get(0);
     }
 
     default MerchantDO selectByOpenId(String openId) {
-        return selectOne(MerchantDO::getOpenId, openId);
+        List<MerchantDO> list = selectList(new LambdaQueryWrapper<MerchantDO>()
+                .eq(MerchantDO::getOpenId, openId)
+                .orderByAsc(MerchantDO::getId).last("LIMIT 1"));
+        return list.isEmpty() ? null : list.get(0);
     }
 
     /**
