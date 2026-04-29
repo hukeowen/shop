@@ -92,12 +92,16 @@ SKIP_INSTALL=false
 SKIP_BUILD=false
 SKIP_BACKEND=false
 SKIP_FRONTEND=false
+RESET_DATA=false
+ASSUME_YES=false
 for arg in "$@"; do
   case $arg in
     --skip-install)  SKIP_INSTALL=true ;;
     --skip-build)    SKIP_BUILD=true ;;
     --skip-backend)  SKIP_BACKEND=true ;;
     --skip-frontend) SKIP_FRONTEND=true ;;
+    --reset)         RESET_DATA=true ;;
+    --yes|-y)        ASSUME_YES=true ;;
     --help)
       cat << HELP
 用法: sudo bash deploy.sh [选项]
@@ -106,6 +110,9 @@ for arg in "$@"; do
   --skip-build     跳过前后端所有编译（仅重新部署已有制品）
   --skip-backend   只跳过后端 Maven 构建（沿用已打好的 jar）
   --skip-frontend  只跳过前端 pnpm 构建（沿用已打好的 dist）
+  --reset          ⚠ 危险：DROP DATABASE + Redis FLUSHALL 重头来过
+                   （会删掉所有商户 / 用户 / 视频任务，仅留 OSS 上的对象）
+  --yes / -y       --reset 时跳过交互确认（脚本里自动化用）
 
 配置文件: ${ENV_FILE}
   首次使用请 cp .env.example .env 后填写密码
@@ -484,6 +491,67 @@ pull_code() {
     git clone --branch "${BRANCH}" --depth=1 "${CLONE_URL}" "${ROOT_DIR}/repo"
   fi
   log "代码已更新到 $(cd "${ROOT_DIR}/repo" && git rev-parse --short HEAD)"
+}
+
+reset_data() {
+  step "⚠ 重置数据：DROP DATABASE + Redis FLUSHALL"
+  init_mysql_defaults_file
+
+  # 1. 交互确认（除非 --yes）
+  if [[ "${ASSUME_YES}" != true ]]; then
+    echo -e "${RED}危险操作！将永久删除：${NC}"
+    echo "  - MySQL 数据库 ${DB_NAME}（所有租户/商户/订单/视频任务）"
+    echo "  - Redis 全部 key（OAuth token / 验证码 / 缓存）"
+    echo "  - OSS 上已上传的文件 不会删，需自行去阿里云控制台清"
+    read -r -p "确认重置？输入 YES 继续，其它任意键取消：" confirm
+    if [[ "${confirm}" != "YES" ]]; then
+      err "已取消重置"
+      exit 1
+    fi
+  fi
+
+  # 2. 停服务避免重置期间被写
+  info "停 tanxiaer / tanxiaer-sidecar 服务（避免写入正在重置的库）"
+  systemctl stop tanxiaer 2>/dev/null || true
+  systemctl stop tanxiaer-sidecar 2>/dev/null || true
+
+  # 3. DROP + 重建库（保留用户授权）
+  if systemctl is-active --quiet mysqld 2>/dev/null; then
+    info "DROP DATABASE ${DB_NAME} → 重建空库"
+    mysql_safe << SQL
+DROP DATABASE IF EXISTS \`${DB_NAME}\`;
+CREATE DATABASE \`${DB_NAME}\` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+GRANT ALL PRIVILEGES ON \`${DB_NAME}\`.* TO '${DB_USER}'@'localhost';
+FLUSH PRIVILEGES;
+SQL
+    log "MySQL 库 ${DB_NAME} 已重置"
+  else
+    warn "mysqld 未运行，跳过 DROP DATABASE（后续 setup_database 会重建）"
+  fi
+
+  # 4. 清 Redis（OAuth token、验证码、tenant 缓存全清）
+  if systemctl is-active --quiet redis 2>/dev/null; then
+    info "Redis FLUSHALL（清所有 db）"
+    if [[ -n "${REDIS_PASS:-}" ]]; then
+      redis-cli -p "${REDIS_PORT}" -a "${REDIS_PASS}" --no-auth-warning FLUSHALL >/dev/null \
+        && log "Redis 已清空" \
+        || warn "redis-cli FLUSHALL 失败（密码错？端口错？继续）"
+    else
+      redis-cli -p "${REDIS_PORT}" FLUSHALL >/dev/null \
+        && log "Redis 已清空" \
+        || warn "redis-cli FLUSHALL 失败（继续）"
+    fi
+  else
+    warn "redis 未运行，跳过 FLUSHALL"
+  fi
+
+  # 5. 清 sidecar 临时文件（视频中间产物 / OSS 上传缓存）
+  if [[ -d "${ROOT_DIR}/sidecar/tmp" ]]; then
+    info "清 sidecar 临时目录 ${ROOT_DIR}/sidecar/tmp"
+    rm -rf "${ROOT_DIR}/sidecar/tmp"/* 2>/dev/null || true
+  fi
+
+  log "数据重置完成 — 后续步骤会重新建表 + seed 演示数据"
 }
 
 setup_database() {
@@ -1264,6 +1332,14 @@ main() {
 
   create_service_user
   pull_code
+
+  # --reset 必须在 setup_database 之前、mysql/redis 已起来之后
+  # （install_mysql / install_redis 在 SKIP_INSTALL=false 路径下已起；
+  #   SKIP_INSTALL=true 时假定服务已在跑）
+  if [[ "${RESET_DATA}" == true ]]; then
+    reset_data
+  fi
+
   setup_database
   write_prod_config
 
