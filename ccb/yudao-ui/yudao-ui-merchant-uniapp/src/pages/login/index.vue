@@ -303,7 +303,16 @@ async function onApplyWithPhone(e) {
   }
 }
 
-onLoad(() => {
+onLoad((query) => {
+  // 接收 query.redirect — shop-home 跳过来时带的回跳路径
+  // 优先级：query.redirect > localStorage redirect:after-login > 默认 /pages/index/index
+  if (query?.redirect) {
+    try {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('redirect:after-login', decodeURIComponent(query.redirect));
+      }
+    } catch {}
+  }
   // 已有 token：直接刷新 me 再跳（避免每次进入都重登录）
   if (userStore.token) {
     loading.value = true;

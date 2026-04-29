@@ -97,13 +97,33 @@ export default {
     if (referrerUserId) {
       savePendingReferrer(referrerUserId);
     }
+    let isLoggedIn = false;
     try {
       const us = useUserStore();
-      if (us?.userId) {
-        flushPendingReferrer(us.userId);
-      }
+      isLoggedIn = !!(us?.token || us?.userId);
+      if (isLoggedIn && us?.userId) flushPendingReferrer(us.userId);
     } catch {}
     this.loadAll();
+
+    // 未登录用户首次进店 → 引导去登录（成功后跳回 shop-home，自动绑定到该商户）
+    if (!isLoggedIn && this.tenantId) {
+      const redirect =
+        `/pages/shop-home/index?tenantId=${this.tenantId}` +
+        (referrerUserId ? `&inviter=${referrerUserId}` : '');
+      setTimeout(() => {
+        uni.showModal({
+          title: '欢迎光临',
+          content: '登录后即可下单 / 参与营销活动',
+          confirmText: '去登录',
+          cancelText: '先逛逛',
+          success: (r) => {
+            if (r.confirm) {
+              uni.navigateTo({ url: `/pages/login/index?redirect=${encodeURIComponent(redirect)}` });
+            }
+          },
+        });
+      }, 600);
+    }
   },
   methods: {
     fen2yuan,

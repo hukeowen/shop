@@ -34,7 +34,7 @@ REPO_SUBDIR="${REPO_SUBDIR:-ccb}"
 ROOT_DIR="${ROOT_DIR:-/opt/tanxiaer}"
 # 实际项目根（clone 目录 + 子目录），所有构建/SQL/资源路径都基于此
 PROJECT_DIR="${ROOT_DIR}/repo${REPO_SUBDIR:+/${REPO_SUBDIR}}"
-SERVER_NAME="${SERVER_NAME:-_}"
+SERVER_NAME="${SERVER_NAME:-www.doupaidoudian.com}"
 DB_NAME="${DB_NAME:-ruoyi-vue-pro}"
 DB_USER="${DB_USER:-tanxiaer}"
 REDIS_PORT="${REDIS_PORT:-6379}"

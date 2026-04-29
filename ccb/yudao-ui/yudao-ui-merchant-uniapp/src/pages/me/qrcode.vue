@@ -41,19 +41,24 @@ const qrUrl = ref('');
 const shopName = ref('');
 const shareUrl = ref('');
 
-const FALLBACK_ORIGIN = 'https://www.doupaidoudian.com';
+// 二维码分享必须用真域名 www.doupaidoudian.com（即使商户在 IP 直访 ECS 后台，
+// 顾客拿到二维码后跑在公网上）。优先级：
+//   1) VITE_PUBLIC_BASE_URL 环境变量（运维改 .env 可覆盖）
+//   2) 当前 location.origin 含 doupaidoudian（域名访问），用 location.origin
+//   3) 最终 fallback http://www.doupaidoudian.com
+const PUBLIC_BASE_URL =
+  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_PUBLIC_BASE_URL) ||
+  'http://www.doupaidoudian.com';
 
-// 关键：tenantId 必须从 ShopInfoDO 取（商户的真实 tenant），不是 userStore.tenantId（普通 member 是 0）；
-// 否则客户扫码进 shop-home 后 loadProducts 因 tenantId null 不加载，看不到商品。
 function buildShareUrl(tenantId) {
   const inviter = userStore.userId || '';
-  let origin = FALLBACK_ORIGIN;
+  let origin = PUBLIC_BASE_URL;
   try {
-    if (typeof location !== 'undefined' && location.origin) {
-      origin = location.origin;
+    if (typeof location !== 'undefined' && location.origin && /doupaidoudian/i.test(location.origin)) {
+      origin = location.origin; // 已经在域名下访问，直接复用（保留 https 等）
     }
   } catch {
-    // 小程序无 location，用兜底
+    // 小程序无 location
   }
   const params = [];
   if (tenantId) params.push('tenantId=' + tenantId);
