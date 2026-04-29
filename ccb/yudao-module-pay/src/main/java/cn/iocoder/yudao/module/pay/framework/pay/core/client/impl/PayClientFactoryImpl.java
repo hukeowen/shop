@@ -8,6 +8,8 @@ import cn.iocoder.yudao.module.pay.framework.pay.core.client.PayClient;
 import cn.iocoder.yudao.module.pay.framework.pay.core.client.PayClientConfig;
 import cn.iocoder.yudao.module.pay.framework.pay.core.client.PayClientFactory;
 import cn.iocoder.yudao.module.pay.framework.pay.core.client.impl.alipay.*;
+import cn.iocoder.yudao.module.pay.framework.pay.core.client.impl.allinpay.AllinpayLitePayClient;
+import cn.iocoder.yudao.module.pay.framework.pay.core.client.impl.allinpay.AllinpayQrPayClient;
 import cn.iocoder.yudao.module.pay.framework.pay.core.client.impl.wallet.WalletPayClient;
 import cn.iocoder.yudao.module.pay.framework.pay.core.client.impl.weixin.*;
 import cn.iocoder.yudao.module.pay.framework.pay.core.client.impl.mock.MockPayClient;
@@ -57,6 +59,9 @@ public class PayClientFactoryImpl implements PayClientFactory {
         clientClass.put(ALIPAY_BAR, AlipayBarPayClient.class);
         // 钱包支付客户端
         clientClass.put(WALLET, WalletPayClient.class);
+        // 通联收付通客户端（多商户聚合方案，资金 T+1 直达商户子户）
+        clientClass.put(ALLINPAY_QR, AllinpayQrPayClient.class);
+        clientClass.put(ALLINPAY_LITE, AllinpayLitePayClient.class);
         // Mock 支付客户端
         clientClass.put(MOCK, MockPayClient.class);
     }

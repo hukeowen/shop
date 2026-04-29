@@ -33,7 +33,12 @@ public enum PayChannelEnum implements ArrayValuable<String> {
 
     MOCK("mock", "模拟支付"),
 
-    WALLET("wallet", "钱包支付");
+    WALLET("wallet", "钱包支付"),
+
+    /** 通联收付通聚合码（H5/小程序扫码 → 通联签发支付链 → 微信/支付宝） */
+    ALLINPAY_QR("allinpay_qr", "通联收付通聚合扫码"),
+    /** 通联收付通微信小程序支付（JSAPI） */
+    ALLINPAY_LITE("allinpay_lite", "通联收付通微信小程序支付");
 
     public static final String[] ARRAYS = Arrays.stream(values()).map(PayChannelEnum::getCode).toArray(String[]::new);
 
