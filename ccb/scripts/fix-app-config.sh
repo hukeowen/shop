@@ -188,11 +188,52 @@ yudao:
     enable: false
   api-encrypt:
     enable: false
+
+  # ── 支付回调（必填） ──────────────────────────────────────────
   pay:
-    # 支付回调地址（通联回调路径走 merchant 模块的 webhook，但 yudao.pay.* 字段必填）
     order-notify-url: http://127.0.0.1:${SERVER_PORT}/admin-api/pay/notify/order
     refund-notify-url: http://127.0.0.1:${SERVER_PORT}/admin-api/pay/notify/refund
     transfer-notify-url: http://127.0.0.1:${SERVER_PORT}/admin-api/pay/notify/transfer
+
+  # ── 第三方 dummy 占位（避免 @Value placeholder 不存在崩溃；不用的功能给空字符串） ──
+  tencent-lbs-key: ""           # 腾讯地图 LBS key（mall 商城距离/坐标用，演示给空）
+  amap-key: ""                  # 高德地图 key
+  baidu-map-key: ""             # 百度地图 key
+  weather-key: ""               # 和风天气 key
+
+  # ── 文件上传（默认本地，不依赖云 OSS） ──────────────────────────
+  file:
+    type: LOCAL
+
+  # ── 短信占位（生产用阿里云请覆盖；演示走 demo-mode） ─────────────
+  sms:
+    aliyun:
+      access-key-id: ""
+      access-key-secret: ""
+      sign-name: ""
+    tencent:
+      secret-id: ""
+      secret-key: ""
+      region: ""
+
+  # ── 钉钉 / 飞书 / 邮件 占位 ──────────────────────────────────
+  dingtalk:
+    app-key: dev_disabled
+    app-secret: dev_disabled
+  feishu:
+    app-id: dev_disabled
+    app-secret: dev_disabled
+
+  # ── IP 库（关闭，不需要） ────────────────────────────────────
+  ip2region:
+    enable: false
+
+  # ── 链路监控 ─────────────────────────────────────────────────
+  access-log:
+    enable: true
+  error-code:
+    enable: false
+  demo: false
 
 # 微信占位（即使 autoconfigure.exclude 已禁用 wx，社交登录代码里有些字段读取兜底）
 wx:
