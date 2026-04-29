@@ -846,13 +846,22 @@ configure_nginx() {
   #    用 awk 配大括号深度计数，把第一个 server { ... } 块整段注释掉。
   if grep -qE "^[[:space:]]*server[[:space:]]*\{" "${MAIN_CONF}" 2>/dev/null; then
     info "禁用 nginx.conf 里的默认 server 块（避免与 tanxiaer.conf 冲突）"
-    [[ ! -f "${MAIN_CONF}.tanxiaer-bak" ]] && cp "${MAIN_CONF}" "${MAIN_CONF}.tanxiaer-bak"
+    # 关键修复：每次都用"当前 nginx.conf"作为 awk 输入（不复用旧 .bak）
+    # 之前 bug：旧 .bak 是上次清理前的版本，yum 升级回滚 / 手工 mv 后 .bak 也含
+    # server 块，第二次 deploy 用 .bak 覆盖等于没清。
+    local TMP_NGINX
+    TMP_NGINX="$(mktemp)"
+    cp "${MAIN_CONF}" "${TMP_NGINX}"
+    # 时间戳备份，永远是清理前的当前版本，不覆盖历史
+    cp "${MAIN_CONF}" "${MAIN_CONF}.tanxiaer-bak.$(date +%Y%m%d-%H%M%S)"
     awk '
-      BEGIN { in_s=0; d=0 }
-      /^[[:space:]]*server[[:space:]]*\{/ && in_s==0 {
-        in_s=1; d=1
-        print "    # [tanxiaer-deploy] 默认 server 已禁用，路由由 conf.d/tanxiaer.conf 接管"
-        next
+      BEGIN { d=0; in_s=0 }
+      /^[[:space:]]*server[[:space:]]*\{/ {
+        if (in_s==0) {
+          in_s=1; d=1
+          print "    # [tanxiaer-deploy] 默认 server 已禁用，路由由 conf.d/tanxiaer.conf 接管"
+          next
+        }
       }
       in_s==1 {
         n=gsub(/\{/,"{"); m=gsub(/\}/,"}")
@@ -861,8 +870,15 @@ configure_nginx() {
         next
       }
       { print }
-    ' "${MAIN_CONF}.tanxiaer-bak" > "${MAIN_CONF}"
-    log "nginx.conf 默认 server 块已清理（备份 → ${MAIN_CONF}.tanxiaer-bak）"
+    ' "${TMP_NGINX}" > "${MAIN_CONF}"
+    rm -f "${TMP_NGINX}"
+    # 验证清干净
+    if grep -qE "^[[:space:]]*server[[:space:]]*\{" "${MAIN_CONF}" 2>/dev/null; then
+      err "nginx.conf 仍含 server 块 — awk 清理失败"
+      grep -nE "^[[:space:]]*server[[:space:]]*\{" "${MAIN_CONF}" >&2
+      exit 1
+    fi
+    log "nginx.conf 默认 server 块已清理（备份 → ${MAIN_CONF}.tanxiaer-bak.<时间戳>）"
   else
     log "nginx.conf 里无默认 server 块（OK）"
   fi
