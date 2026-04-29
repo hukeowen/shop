@@ -3,6 +3,7 @@ package cn.iocoder.yudao.module.merchant.service;
 import cn.hutool.core.util.IdUtil;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.tenant.core.util.TenantUtils;
+import org.springframework.jdbc.core.JdbcTemplate;
 import cn.iocoder.yudao.module.merchant.controller.admin.vo.MerchantAuditReqVO;
 import cn.iocoder.yudao.module.merchant.controller.admin.vo.MerchantCreateReqVO;
 import cn.iocoder.yudao.module.merchant.controller.admin.vo.MerchantPageReqVO;
@@ -58,6 +59,8 @@ public class MerchantServiceImpl implements MerchantService {
     private ShopInfoMapper shopInfoMapper;
     @Resource
     private TenantSubscriptionMapper tenantSubscriptionMapper;
+    @Resource
+    private JdbcTemplate jdbcTemplate;
 
     @Autowired(required = false)
     private WxMaService wxMaService;
@@ -206,6 +209,11 @@ public class MerchantServiceImpl implements MerchantService {
                 .build();
         tenantSubscriptionMapper.insert(subscription);
 
+        // 3.5 复制 admin 租户的 pay_app + pay_channel 到新租户
+        // 原因：PayAppDO/PayChannelDO 都是 TenantBaseDO，按 tenant_id 隔离；
+        // 商户租户开通后没复制 → trade 模块下单调 selectByAppKey('mall') 找不到 → 用户在商户店铺无法支付
+        copyPayResourcesToNewTenant(tenantId);
+
         // 4. 创建 merchant_info（继承 TenantBaseDO，靠 TenantContextHolder 由 MP 拦截器自动填 tenant_id）
         MerchantDO merchant = MerchantDO.builder()
                 .name(shopName)
@@ -229,6 +237,50 @@ public class MerchantServiceImpl implements MerchantService {
             sb.append(PLACEHOLDER_CHARS[SECURE_RANDOM.nextInt(PLACEHOLDER_CHARS.length)]);
         }
         return sb.toString();
+    }
+
+    /**
+     * 把 admin 租户（id=1）的 pay_app + pay_channel 复制到新租户。
+     *
+     * <p>yudao 默认 tenant 初始化只复制 menu_ids 给 admin 角色，
+     * 不复制 pay_app / pay_channel 等业务资源。商户租户开通后没有
+     * mall 应用 → trade 模块下单时按 yudao.trade.order.payAppKey
+     * 查 pay_app(tenant=商户) 找不到 → H5 用户在商户店铺无法支付。</p>
+     *
+     * <p>用 JdbcTemplate 直接执行 INSERT … SELECT，避开跨模块 import
+     * pay 模块的 mapper 接口。两条 SQL 在同一个商户开通事务内，要么都成功要么都回滚。</p>
+     *
+     * <p>失败时仅 log.warn 不抛异常 — 商户开通仍算成功，只是要演示前 PC 后台
+     * 切到该租户手工配一份 mock 渠道。</p>
+     */
+    private void copyPayResourcesToNewTenant(Long newTenantId) {
+        try {
+            int appCopied = jdbcTemplate.update(
+                "INSERT INTO pay_app (app_key, name, status, remark, " +
+                "  order_notify_url, refund_notify_url, transfer_notify_url, " +
+                "  tenant_id, creator, create_time, updater, update_time, deleted) " +
+                "SELECT app_key, name, status, remark, " +
+                "  order_notify_url, refund_notify_url, transfer_notify_url, " +
+                "  ?, creator, NOW(), updater, NOW(), deleted " +
+                "FROM pay_app WHERE tenant_id = 1 AND deleted = b'0'",
+                newTenantId
+            );
+            int channelCopied = jdbcTemplate.update(
+                "INSERT INTO pay_channel (code, status, fee_rate, remark, app_id, config, " +
+                "  tenant_id, creator, create_time, updater, update_time, deleted) " +
+                "SELECT c.code, c.status, c.fee_rate, c.remark, " +
+                "  (SELECT a2.id FROM pay_app a2 WHERE a2.app_key = a1.app_key AND a2.tenant_id = ? LIMIT 1), " +
+                "  c.config, ?, c.creator, NOW(), c.updater, NOW(), c.deleted " +
+                "FROM pay_channel c JOIN pay_app a1 ON c.app_id = a1.id " +
+                "WHERE c.tenant_id = 1 AND c.deleted = b'0'",
+                newTenantId, newTenantId
+            );
+            log.info("[copyPayResourcesToNewTenant] 复制完成 tenantId={} app={}行 channel={}行",
+                    newTenantId, appCopied, channelCopied);
+        } catch (Exception e) {
+            // 软失败：不影响商户开通主流程；演示前可手工去 PC 后台补
+            log.warn("[copyPayResourcesToNewTenant] 复制失败 tenantId={}，新商户租户支付不可用，需 PC 后台手工配", newTenantId, e);
+        }
     }
 
     @Override
