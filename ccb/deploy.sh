@@ -140,7 +140,7 @@ echo ""
 
 # =============================================================================
 install_base() {
-  step "安装基础依赖 + EPEL + 时区"
+  step "安装基础依赖 + EPEL + 时区 + ffmpeg + 中文字体"
   yum install -y epel-release
   yum install -y \
     curl wget git unzip zip which \
@@ -149,6 +149,34 @@ install_base() {
     net-tools firewalld \
     yum-utils policycoreutils-python
   timedatectl set-timezone Asia/Shanghai || true
+
+  # CentOS 7 glibc 2.17 不支持 ffmpeg-static 5.x（要 GLIBC_2.18+），sidecar 视频
+  # 合成必须用系统 ffmpeg。这里在最早期就装好，整个部署期间所有视频/字幕逻辑都
+  # 能用 /usr/bin/ffmpeg。
+  if ! command -v ffmpeg &>/dev/null; then
+    info "安装 ffmpeg（CentOS 7 视频合成必需，走 RPM Fusion 仓库）"
+    local RH_VER
+    RH_VER="$(rpm -E %rhel 2>/dev/null || echo 7)"
+    yum install -y "https://download1.rpmfusion.org/free/el/rpmfusion-free-release-${RH_VER}.noarch.rpm" >/dev/null 2>&1 \
+      || warn "RPM Fusion 仓库添加失败（网络问题？）"
+    if yum install -y ffmpeg ffmpeg-devel >/dev/null 2>&1; then
+      log "系统 ffmpeg 安装成功 → $(ffmpeg -version 2>/dev/null | head -1 | head -c 80)"
+    else
+      warn "ffmpeg 安装失败 — sidecar 视频合成功能将不可用；解决方案："
+      warn "  yum install -y https://download1.rpmfusion.org/free/el/rpmfusion-free-release-${RH_VER}.noarch.rpm"
+      warn "  yum install -y ffmpeg ffmpeg-devel"
+    fi
+  else
+    log "ffmpeg 已存在 → $(ffmpeg -version 2>/dev/null | head -1 | head -c 80)"
+  fi
+
+  # 中文字体（sidecar 端卡 / 字幕烧录用）
+  if [[ ! -f /usr/share/fonts/wqy-zenhei/wqy-zenhei.ttc ]]; then
+    yum install -y wqy-zenhei-fonts >/dev/null 2>&1 \
+      && log "中文字体 wqy-zenhei 安装成功" \
+      || warn "中文字体安装失败（视频字幕无法烧录中文，仅是降级，不阻塞）"
+  fi
+
   log "基础依赖安装完成"
 }
 
@@ -997,25 +1025,17 @@ deploy_sidecar() {
   fi
   ensure_pnpm8
 
-  # CentOS 7 (glibc 2.17) 上 ffmpeg-static 5.x 二进制要求 GLIBC_2.18+，会报错。
-  # 优先装系统 ffmpeg（EPEL + RPM Fusion）让 sidecar resolveFfmpegPath() 自动选用。
-  if [[ ! -x /usr/bin/ffmpeg && ! -x /usr/local/bin/ffmpeg ]]; then
-    if [[ -f /etc/centos-release ]] || grep -qi centos /etc/os-release 2>/dev/null; then
-      info "CentOS 检测到，安装 ffmpeg (EPEL + RPM Fusion)..."
-      yum install -y epel-release >/dev/null 2>&1 || warn "epel-release 安装失败"
-      # RPM Fusion 提供 ffmpeg 包；按 CentOS 主版本号选 repo
-      local RH_VER="$(rpm -E %rhel 2>/dev/null || echo 7)"
-      yum install -y "https://download1.rpmfusion.org/free/el/rpmfusion-free-release-${RH_VER}.noarch.rpm" >/dev/null 2>&1 || true
-      yum install -y ffmpeg ffmpeg-devel >/dev/null 2>&1 \
-        && log "系统 ffmpeg 安装成功 → $(ffmpeg -version 2>/dev/null | head -1)" \
-        || warn "系统 ffmpeg 安装失败，sidecar 会尝试 ffmpeg-static (CentOS 7 上可能 GLIBC 报错)"
-    fi
+  # ffmpeg 已在 install_base 阶段装好；这里仅检测确认
+  if command -v ffmpeg &>/dev/null; then
+    log "ffmpeg → $(command -v ffmpeg)"
   else
-    log "ffmpeg 已存在 → $(/usr/bin/ffmpeg -version 2>/dev/null | head -1 | head -c 80)"
+    warn "未找到系统 ffmpeg；视频合成将不可用（不阻塞 sidecar 启动）"
   fi
 
-  # 同步代码到 ${SIDECAR_DEST}
+  # 同步代码到 ${SIDECAR_DEST}（清掉旧 node_modules + lock，避免残留 ffmpeg-static
+  # 在 CentOS 7 上跑出 GLIBC_2.18 错；干净 install）
   mkdir -p "${SIDECAR_DEST}"
+  rm -rf "${SIDECAR_DEST}/node_modules" "${SIDECAR_DEST}/package-lock.json"
   cp -f "${SIDECAR_SRC}/package.json" "${SIDECAR_DEST}/"
   cp -f "${SIDECAR_SRC}/index.js" "${SIDECAR_DEST}/"
   cp -f "${SIDECAR_SRC}/README.md" "${SIDECAR_DEST}/" 2>/dev/null || true
@@ -1043,14 +1063,22 @@ FFMPEG_PATH=${FFMPEG_PATH:-/usr/bin/ffmpeg}
 SIDECAR_ENV_EOF
   umask 022
 
-  # 装依赖（npm ci 比 pnpm 适合 production，少一层 pnpm-lock）
+  # 装依赖
   cd "${SIDECAR_DEST}"
   export PATH="/opt/nodejs/bin:${PATH}"
   info "sidecar npm install --omit=dev --ignore-scripts ..."
-  # --ignore-scripts：跳过 ffmpeg-static postinstall 下载 GitHub release
-  # （CentOS 7 上即使下成功 GLIBC 也不够；走系统 yum 装的 ffmpeg）
-  npm install --omit=dev --ignore-scripts --registry=https://registry.npmmirror.com \
-              --no-audit --fund=false 2>&1 | tail -8
+  # --ignore-scripts：跳过 ffmpeg-static / aws-sdk 等的 postinstall 脚本
+  # （CentOS 7 上即使下载成功 GLIBC 2.17 也跑不了；走系统 yum 装的 ffmpeg）
+  # 走淘宝镜像 + 失败兜底：第一次失败重试一次 + 加 --prefer-offline；都失败了
+  # 至少 sidecar 已存在的 node_modules 仍可用（如果是首次部署则 sidecar 起不来 — warn 提示）
+  if ! npm install --omit=dev --ignore-scripts \
+                   --registry=https://registry.npmmirror.com \
+                   --no-audit --fund=false 2>&1 | tail -10; then
+    warn "首次 npm install 失败，重试 (官方源 + --prefer-offline)..."
+    npm install --omit=dev --ignore-scripts \
+                --prefer-offline --no-audit --fund=false 2>&1 | tail -10 \
+      || warn "sidecar npm install 仍失败 — 视频/OSS 等功能不可用，但不阻塞主部署"
+  fi
 
   # 装一份系统中文字体，sidecar 端卡 / 字幕烧录用得上
   if ! ls /usr/share/fonts/wqy-zenhei/wqy-zenhei.ttc 2>/dev/null && \
@@ -1093,7 +1121,7 @@ SIDECAR_UNIT_EOF
   chmod 644 /etc/systemd/system/tanxiaer-sidecar.service
   systemctl daemon-reload
   systemctl enable tanxiaer-sidecar
-  systemctl restart tanxiaer-sidecar
+  systemctl restart tanxiaer-sidecar || warn "sidecar systemctl restart 失败（继续）"
 
   # 心跳检查
   local i=0
@@ -1101,11 +1129,13 @@ SIDECAR_UNIT_EOF
     sleep 2
     if curl -sf "http://127.0.0.1:8081/healthz" &>/dev/null; then
       log "sidecar 服务就绪 ✓ (http://127.0.0.1:8081)"
-      return
+      return 0
     fi
     i=$((i+1))
   done
-  warn "sidecar 启动超时，请检查: journalctl -u tanxiaer-sidecar -n 50 --no-pager"
+  warn "sidecar 启动超时（不阻塞），AI 视频 / OSS / 抖音功能降级"
+  warn "排查：journalctl -u tanxiaer-sidecar -n 80 --no-pager"
+  return 0
 }
 
 setup_firewall() {
@@ -1190,8 +1220,23 @@ main() {
   fi
   configure_nginx
   deploy_backend_service
-  deploy_sidecar
+
+  # sidecar 部署允许失败（视频/抖音功能可降级，不阻塞主部署完成）
+  if ! deploy_sidecar; then
+    warn "sidecar 部署失败 — AI 视频 / OSS / 抖音相关功能降级"
+    warn "排查：journalctl -u tanxiaer-sidecar -n 80 --no-pager"
+  fi
+
   setup_firewall
+
+  # 跑完冒烟自检（10 幕，覆盖 P0-1 ~ P2-11 全部链路；任意失败给清单）
+  if [[ -x "${PROJECT_DIR}/scripts/post-deploy-verify.sh" ]]; then
+    info "跑部署后冒烟自检（10 幕）..."
+    bash "${PROJECT_DIR}/scripts/post-deploy-verify.sh" \
+         --base-url "http://localhost" \
+         --mysql-pass "${MYSQL_ROOT_PASS}" \
+         --project-dir "${PROJECT_DIR}" || warn "自检发现问题，详见上方清单"
+  fi
 
   PUBLIC_IP=$(curl -s --max-time 5 https://ipinfo.io/ip 2>/dev/null || curl -s --max-time 5 ifconfig.me 2>/dev/null || echo "YOUR_SERVER_IP")
   echo ""
