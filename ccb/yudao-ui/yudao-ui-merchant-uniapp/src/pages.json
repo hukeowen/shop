@@ -40,6 +40,20 @@
       }
     },
     {
+      "path": "pages/merchant-apply/index",
+      "style": {
+        "navigationBarTitleText": "商户入驻",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/merchant-login/index",
+      "style": {
+        "navigationBarTitleText": "商户登录",
+        "navigationStyle": "custom"
+      }
+    },
+    {
       "path": "pages/order/detail",
       "style": {
         "navigationBarTitleText": "订单详情"

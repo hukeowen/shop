@@ -13,6 +13,7 @@ import cn.iocoder.yudao.framework.security.core.util.SecurityFrameworkUtils;
 import cn.iocoder.yudao.framework.tenant.core.aop.TenantIgnore;
 import cn.iocoder.yudao.module.member.dal.dataobject.user.MemberUserDO;
 import cn.iocoder.yudao.module.member.dal.mysql.user.MemberUserMapper;
+import cn.iocoder.yudao.module.merchant.controller.app.vo.auth.AppApplyMerchantBySmsReqVO;
 import cn.iocoder.yudao.module.merchant.controller.app.vo.auth.AppApplyMerchantReqVO;
 import cn.iocoder.yudao.module.merchant.controller.app.vo.auth.AppBindPhoneReqVO;
 import cn.iocoder.yudao.module.merchant.controller.app.vo.auth.AppLoginRespVO;
@@ -252,6 +253,111 @@ public class AppUnifiedAuthController {
 
         OAuth2AccessTokenRespDTO token = issueToken(userId);
         return success(buildLoginResp(token, member, merchant, roles, activeRole, openid));
+    }
+
+    // ==================== 3B. 公网申请商户（不要邀请码、SMS 验证） ====================
+
+    @PostMapping("/apply-merchant-by-sms")
+    @Operation(summary = "店铺名+手机号+SMS 一键申请商户（无需登录、无需邀请码）")
+    @PermitAll
+    @TenantIgnore // member_user / merchant_info 都是全局表，JWT 解析前先 ignore
+    @Transactional(rollbackFor = Exception.class)
+    @RateLimiter(time = 60, count = 3, keyResolver = ClientIpRateLimiterKeyResolver.class,
+                 message = "申请频率过高，请稍后再试")
+    public CommonResult<AppLoginRespVO> applyMerchantBySms(@Valid @RequestBody AppApplyMerchantBySmsReqVO reqVO) {
+        String mobile = reqVO.getMobile();
+        String shopName = reqVO.getShopName().trim();
+        String smsCode = reqVO.getSmsCode();
+
+        // 1. 校验验证码（演示模式固定 888888；生产应改为调 SmsCodeService.useSmsCode 真验码）
+        // TODO 接入真 SMS：smsCodeService.useSmsCode(SmsCodeUseReqDTO.builder()
+        //         .mobile(mobile).code(smsCode).scene(MERCHANT_APPLY).build());
+        if (!"888888".equals(smsCode)) {
+            throw exception(PASSWORD_INVALID); // 复用密码错误的错误码（演示用）
+        }
+
+        // 2. 幂等：找/建会员（password 留空，首次密码登录时再设）
+        MemberUserDO member = memberUserMapper.selectByMobile(mobile);
+        String fakeOpenId = "h5:" + mobile;
+        if (member == null) {
+            MemberUserDO newMember = new MemberUserDO();
+            newMember.setMobile(mobile);
+            newMember.setMiniAppOpenId(fakeOpenId);
+            newMember.setNickname(shopName);
+            newMember.setStatus(0);
+            newMember.setRegisterTerminal(TerminalEnum.H5.getTerminal());
+            memberUserMapper.insert(newMember);
+            member = newMember;
+            log.info("[applyMerchantBySms] 自动注册会员 mobile={} userId={}", mobile, member.getId());
+        } else if (StrUtil.isBlank(member.getMiniAppOpenId())) {
+            MemberUserDO upd = new MemberUserDO();
+            upd.setId(member.getId());
+            upd.setMiniAppOpenId(fakeOpenId);
+            memberUserMapper.updateById(upd);
+            member.setMiniAppOpenId(fakeOpenId);
+        }
+
+        // 3. 已是商户：直接返登录态（幂等，避免重复点击重复建租户）
+        MerchantDO existed = merchantService.getMerchantByOpenId(member.getMiniAppOpenId());
+        if (existed != null) {
+            log.info("[applyMerchantBySms] 该手机号 {} 已是商户 (merchantId={})，幂等返回", mobile, existed.getId());
+            List<String> roles = buildRoles(existed);
+            String activeRole = ActiveRoleCache.ROLE_MERCHANT;
+            activeRoleCache.set(member.getId(), activeRole);
+            OAuth2AccessTokenRespDTO token = issueToken(member.getId());
+            return success(buildLoginResp(token, member, existed, roles, activeRole, member.getMiniAppOpenId()));
+        }
+
+        // 4. 创建租户 + 店铺 + 商户（inviteCodeId=null 跳过邀请码逻辑）
+        Long merchantId = merchantService.createMerchantFromMember(
+                member.getId(), member.getMiniAppOpenId(), null, mobile, null);
+        MerchantDO merchant = merchantService.getMerchant(merchantId);
+
+        // 5. 把"新店<userId>"默认值改成用户填的 shopName
+        //    (createMerchantFromMember 内部用 fakeOpenId 拿到的 shopName 是默认值，
+        //     这里用 update 改 merchant_info.name + shop_info.shop_name + system_tenant.name)
+        try {
+            applyCustomShopName(merchant, shopName);
+        } catch (Exception e) {
+            log.warn("[applyMerchantBySms] 改店铺名失败 merchantId={} shopName={}", merchantId, shopName, e);
+        }
+
+        List<String> roles = buildRoles(merchant);
+        String activeRole = ActiveRoleCache.ROLE_MERCHANT;
+        activeRoleCache.set(member.getId(), activeRole);
+        OAuth2AccessTokenRespDTO token = issueToken(member.getId());
+        log.info("[applyMerchantBySms] 申请成功 mobile={} merchantId={} tenantId={} shopName={}",
+                mobile, merchantId, merchant.getTenantId(), shopName);
+        return success(buildLoginResp(token, member, merchant, roles, activeRole, member.getMiniAppOpenId()));
+    }
+
+    /** 把默认 "新店<userId>" 名字改成用户填的 shopName */
+    private void applyCustomShopName(MerchantDO merchant, String shopName) {
+        if (merchant == null || StrUtil.isBlank(shopName)) return;
+        // (a) merchant_info.name
+        MerchantDO mUpd = new MerchantDO();
+        mUpd.setId(merchant.getId());
+        mUpd.setName(shopName);
+        merchantMapper.updateById(mUpd);
+        // (b) shop_info.shop_name (跨租户写：用 TenantContextHolder 切到该租户)
+        cn.iocoder.yudao.module.merchant.dal.dataobject.ShopInfoDO si =
+                cn.iocoder.yudao.framework.tenant.core.util.TenantUtils.execute(
+                        merchant.getTenantId(),
+                        () -> {
+                            cn.iocoder.yudao.module.merchant.dal.mysql.ShopInfoMapper m =
+                                    cn.hutool.extra.spring.SpringUtil.getBean(
+                                            cn.iocoder.yudao.module.merchant.dal.mysql.ShopInfoMapper.class);
+                            cn.iocoder.yudao.module.merchant.dal.dataobject.ShopInfoDO existed =
+                                    m.selectByTenantId(merchant.getTenantId());
+                            if (existed != null) {
+                                cn.iocoder.yudao.module.merchant.dal.dataobject.ShopInfoDO upd =
+                                        new cn.iocoder.yudao.module.merchant.dal.dataobject.ShopInfoDO();
+                                upd.setId(existed.getId());
+                                upd.setShopName(shopName);
+                                m.updateById(upd);
+                            }
+                            return existed;
+                        });
     }
 
     // ==================== 4. 切换角色 ====================

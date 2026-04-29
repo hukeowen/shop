@@ -700,6 +700,10 @@ VITE_BASE_URL=/
 VITE_API_URL=/admin-api
 VITE_APP_CAPTCHA_ENABLE=false
 VITE_OUT_DIR=dist-prod
+# nginx 把 admin-vue3 部署到 /admin/ 子路径，必须设 base 让产物里的资源 URL
+# 是 /admin/assets/... 而不是 /assets/...，否则浏览器加载 JS 时 nginx 会
+# 因找不到 /assets/* 走 fallback 返 index.html，触发 MIME 错（HTML 当 JS）
+VITE_BASE_PATH=/admin/
 ENVEOF
 
   # 4G 机器：swap 已扩到 6G。Node 堆 3G 足够；
