@@ -282,9 +282,15 @@ public class AppUnifiedAuthController {
         }
 
         // 2. 幂等：找/建会员（password 留空，首次密码登录时再设）
-        MemberUserDO member = memberUserMapper.selectByMobile(mobile);
+        // 用 selectList 防御历史脏数据（mobile 列没唯一索引时同手机号可能多条）
+        // 同手机号多 member 时，复用 id 最小的（最早注册的）；删多余的避免后续 selectOne 报 TooManyResults
+        java.util.List<MemberUserDO> existedMembers = memberUserMapper.selectList(
+                new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<MemberUserDO>()
+                        .eq(MemberUserDO::getMobile, mobile)
+                        .orderByAsc(MemberUserDO::getId));
+        MemberUserDO member;
         String fakeOpenId = "h5:" + mobile;
-        if (member == null) {
+        if (existedMembers.isEmpty()) {
             MemberUserDO newMember = new MemberUserDO();
             newMember.setMobile(mobile);
             newMember.setMiniAppOpenId(fakeOpenId);
@@ -293,17 +299,34 @@ public class AppUnifiedAuthController {
             newMember.setRegisterTerminal(TerminalEnum.H5.getTerminal());
             memberUserMapper.insert(newMember);
             member = newMember;
-            log.info("[applyMerchantBySms] 自动注册会员 mobile={} userId={}", mobile, member.getId());
-        } else if (StrUtil.isBlank(member.getMiniAppOpenId())) {
-            MemberUserDO upd = new MemberUserDO();
-            upd.setId(member.getId());
-            upd.setMiniAppOpenId(fakeOpenId);
-            memberUserMapper.updateById(upd);
-            member.setMiniAppOpenId(fakeOpenId);
+            // member_user 是商户的【底层账号载体】(yudao 统一账号体系)：
+            //   member_user (mobile/password/openid) ← 关联 ─ merchant_info (店铺名/tenantId/通联号)
+            // 这条 log 是"建商户账号底盘"，不是"把申请人变成普通用户"
+            log.info("[applyMerchantBySms] 创建商户账号底盘 mobile={} userId={} (后续 merchant_info 会关联此 user_id)",
+                    mobile, member.getId());
+        } else {
+            member = existedMembers.get(0);
+            // 软删除多余 member 行（保留 id 最小的）
+            if (existedMembers.size() > 1) {
+                log.warn("[applyMerchantBySms] mobile={} 有 {} 条 member_user 记录，保留 userId={}，软删多余",
+                        mobile, existedMembers.size(), member.getId());
+                for (int i = 1; i < existedMembers.size(); i++) {
+                    memberUserMapper.deleteById(existedMembers.get(i).getId());
+                }
+            }
+            // 老账号 openId 缺失则补上
+            if (StrUtil.isBlank(member.getMiniAppOpenId())) {
+                MemberUserDO upd = new MemberUserDO();
+                upd.setId(member.getId());
+                upd.setMiniAppOpenId(fakeOpenId);
+                memberUserMapper.updateById(upd);
+                member.setMiniAppOpenId(fakeOpenId);
+            }
         }
 
         // 3. 已是商户：直接返登录态（幂等，避免重复点击重复建租户）
-        MerchantDO existed = merchantService.getMerchantByOpenId(member.getMiniAppOpenId());
+        // selectListByOpenId 防御 merchant_info.open_id 重复脏数据
+        MerchantDO existed = selectMerchantByOpenIdSafe(member.getMiniAppOpenId());
         if (existed != null) {
             log.info("[applyMerchantBySms] 该手机号 {} 已是商户 (merchantId={})，幂等返回", mobile, existed.getId());
             List<String> roles = buildRoles(existed);
@@ -355,6 +378,24 @@ public class AppUnifiedAuthController {
         log.info("[applyMerchantBySms] 申请成功 mobile={} merchantId={} tenantId={} shopName={}",
                 mobile, merchantId, merchant.getTenantId(), shopName);
         return success(buildLoginResp(token, member, merchant, roles, activeRole, member.getMiniAppOpenId()));
+    }
+
+    /**
+     * 防御 merchant_info.open_id 历史脏数据（同 openid 多条）— 用 selectList 取最早那条
+     * （对比 merchantService.getMerchantByOpenId 内部用 selectOne 会撞 TooManyResults）
+     */
+    private MerchantDO selectMerchantByOpenIdSafe(String openId) {
+        if (StrUtil.isBlank(openId)) return null;
+        java.util.List<MerchantDO> list = merchantMapper.selectList(
+                new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<MerchantDO>()
+                        .eq(MerchantDO::getOpenId, openId)
+                        .orderByAsc(MerchantDO::getId));
+        if (list.isEmpty()) return null;
+        if (list.size() > 1) {
+            log.warn("[selectMerchantByOpenIdSafe] openId={} 有 {} 条 merchant_info，复用 id={}",
+                    openId, list.size(), list.get(0).getId());
+        }
+        return list.get(0);
     }
 
     /** 把默认 "新店<userId>" 名字改成用户填的 shopName */
