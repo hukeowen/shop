@@ -760,6 +760,14 @@ configure_nginx() {
   # 让 nginx 可以读取 /opt/tanxiaer 下的静态文件
   chmod -R a+rX "${ROOT_DIR}/website" "${ROOT_DIR}/admin-dist" "${ROOT_DIR}/m" 2>/dev/null || true
 
+  # CentOS nginx 默认安装会生成 /etc/nginx/conf.d/default.conf 抢占 80 端口的
+  # default_server，导致 IP 直访 (47.109.143.146/m/) 落到 /usr/share/nginx/html
+  # 出现空白页。我们的 tanxiaer.conf 已声明 default_server，必须把默认配挪走。
+  if [[ -f /etc/nginx/conf.d/default.conf ]]; then
+    info "禁用 nginx 默认 server_block (default.conf → default.conf.disabled)"
+    mv -f /etc/nginx/conf.d/default.conf /etc/nginx/conf.d/default.conf.disabled
+  fi
+
   cat > "${NGINX_CONF}" << NGINX_EOF
 upstream tanxiaer_backend {
     server 127.0.0.1:${SERVER_PORT};
@@ -767,8 +775,10 @@ upstream tanxiaer_backend {
 }
 
 server {
-    listen 80;
-    server_name ${SERVER_NAME};
+    # default_server：未带 server_name 的请求（如 IP 直访 47.109.143.146/m/）
+    # 也走这个 block；否则会落到 nginx 默认 /usr/share/nginx/html 出现空白页
+    listen 80 default_server;
+    server_name ${SERVER_NAME} _;
     charset utf-8;
     client_max_body_size 50m;
 
