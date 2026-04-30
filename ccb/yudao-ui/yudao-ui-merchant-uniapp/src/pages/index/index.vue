@@ -18,7 +18,7 @@
       </view>
       <view class="quick-item" @click="jumpAddProduct">
         <view class="icon product">＋</view>
-        <text>上架商品</text>
+        <text>AI上架</text>
       </view>
       <view class="quick-item" @click="jumpVerify">
         <view class="icon verify">扫</view>
@@ -121,7 +121,8 @@ function jumpVerify() {
   uni.switchTab({ url: '/pages/order/list' });
 }
 function jumpAddProduct() {
-  uni.navigateTo({ url: '/pages/product/edit' });
+  // 主页快捷入口走 AI 识别上架（batch），手动 edit 仍保留在商品管理列表里
+  uni.navigateTo({ url: '/pages/product/batch' });
 }
 
 onMounted(() => {
