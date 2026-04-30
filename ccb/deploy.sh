@@ -1203,6 +1203,17 @@ deploy_sidecar() {
   cp -f "${SIDECAR_SRC}/index.js" "${SIDECAR_DEST}/"
   cp -f "${SIDECAR_SRC}/README.md" "${SIDECAR_DEST}/" 2>/dev/null || true
 
+  # bgm/ 子目录：只刷新脚本/README，不动已下载的 *.mp3（首次部署后用户跑
+  # `cd ${SIDECAR_DEST}/bgm && bash download-bgm.sh` 拉素材；以后重部署素材保留）
+  mkdir -p "${SIDECAR_DEST}/bgm"
+  if [[ -f "${SIDECAR_SRC}/bgm/download-bgm.sh" ]]; then
+    cp -f "${SIDECAR_SRC}/bgm/download-bgm.sh" "${SIDECAR_DEST}/bgm/"
+    chmod +x "${SIDECAR_DEST}/bgm/download-bgm.sh"
+  fi
+  if [[ -f "${SIDECAR_SRC}/bgm/README.md" ]]; then
+    cp -f "${SIDECAR_SRC}/bgm/README.md" "${SIDECAR_DEST}/bgm/"
+  fi
+
   # 写运行环境变量（mode 600 防泄露）
   umask 077
   cat > "${SIDECAR_DEST}/.env" << SIDECAR_ENV_EOF
