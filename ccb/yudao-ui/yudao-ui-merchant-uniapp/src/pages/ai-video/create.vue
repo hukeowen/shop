@@ -2,7 +2,7 @@
   <view class="page">
     <view class="card">
       <view class="section-title">上传商品照片</view>
-      <view class="section-sub">1-6 张，角度多一点脚本更丰富（自动上传到 OSS）</view>
+      <view class="section-sub">1-3 张，角度选最有代表性的（自动上传到 OSS，省流量）</view>
 
       <view class="pics">
         <view
@@ -13,10 +13,10 @@
         >
           <view class="pic-del" @click="removePic(i)">×</view>
         </view>
-        <view v-if="images.length < 6" class="pic add" @click="pickImage">
+        <view v-if="images.length < 3" class="pic add" @click="pickImage">
           <text class="plus">＋</text>
           <text class="add-text">{{ images.length ? '继续加' : '拍 / 选图' }}</text>
-          <text class="add-count">{{ images.length }}/6</text>
+          <text class="add-count">{{ images.length }}/3</text>
         </view>
       </view>
     </view>
@@ -162,7 +162,7 @@ async function triggerAutoFill() {
 
 function pickImage() {
   uni.chooseImage({
-    count: 6 - images.value.length,
+    count: 3 - images.value.length,
     sizeType: ['compressed'],
     sourceType: ['camera', 'album'],
     success: async (r) => {
@@ -171,7 +171,7 @@ function pickImage() {
         for (const p of r.tempFilePaths) {
           const base64 = await blobUrlToBase64(p);
           images.value.push({ preview: p, base64 });
-          if (images.value.length >= 6) break;
+          if (images.value.length >= 3) break;
         }
       } catch (e) {
         uni.showToast({ title: '图片读取失败：' + e.message, icon: 'none' });

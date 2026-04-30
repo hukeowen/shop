@@ -50,10 +50,10 @@ async function arkChat(model, messages) {
  * @returns {{title:string, scenes:Array<{img_idx,narration,visual_prompt,image_summary}>}}
  */
 export async function generateScript({ imageCount, imageUrls, userDescription, sceneCount, sceneDuration }) {
-  const urls = Array.isArray(imageUrls) ? imageUrls.filter(Boolean).slice(0, 6) : [];
+  const urls = Array.isArray(imageUrls) ? imageUrls.filter(Boolean).slice(0, 3) : [];
   if (!urls.length) {
     // 没图无法走 vision；返一个最小可用的兜底，让前端流程不崩
-    const n = Math.max(1, Math.min(6, sceneCount || imageCount || 1));
+    const n = Math.max(1, Math.min(3, sceneCount || imageCount || 1));
     const scenes = Array.from({ length: n }, (_, i) => ({
       img_idx: i,
       image_summary: '',

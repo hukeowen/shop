@@ -21,10 +21,10 @@ import { generateScript } from './scriptLlm.js';
 import { createClipTask, waitClip } from './jimeng.js';
 import { findVoice } from './voice.js';
 
-const MAX_SCENES = 6;
+const MAX_SCENES = 3;
 const MAX_TOTAL_SEC = 30;
 
-// 幕数 = 图片数（cap 6），每幕独占一张图
+// 幕数 = 图片数（cap 3，避免老板上传太多图费流量+ 加重 enhance/seedance 配额）
 function sceneCountFor(imageCount) {
   return Math.max(1, Math.min(MAX_SCENES, imageCount || 1));
 }

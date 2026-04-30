@@ -48,8 +48,8 @@ public class CopywritingServiceImpl implements CopywritingService {
 
     /** 多幕的最少幕数（前端 imageCount cap 1） */
     private static final int MULTI_MIN_SCENES = 1;
-    /** 多幕的最多幕数（前端 imageCount cap 6） */
-    private static final int MULTI_MAX_SCENES = 6;
+    /** 多幕的最多幕数（业务约束：老板上传 ≤ 3 张避免流量浪费 + 加重 enhance/seedance 配额） */
+    private static final int MULTI_MAX_SCENES = 3;
     /** 多幕单幕 narration 最长字数 */
     private static final int MULTI_NARRATION_MAX_CHARS = 36;
     /** 最后一幕固定的扫码引导文案（前端 scriptLlm.js 里的 FIXED_CTA） */
