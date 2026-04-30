@@ -76,6 +76,22 @@
       </view>
     </view>
 
+    <!-- 美化开关：默认开（即梦 CV 给每张图加暖色调/浅景深/电影质感后再喂 Seedance） -->
+    <view class="card enhance-card">
+      <view class="enhance-row">
+        <view class="enhance-info">
+          <view class="enhance-title">✨ AI 美化预处理</view>
+          <view class="enhance-desc">手机原图 → 即梦 CV 美化 → 浅景深 / 暖色调 / 电影质感，视频质感提升一档</view>
+        </view>
+        <switch
+          :checked="enhance"
+          color="#FF6B35"
+          @change="(e) => (enhance = e.detail.value)"
+        />
+      </view>
+      <view class="enhance-tip">关闭可省 ~20 秒；开启每张耗 3-5 秒，失败自动回原图</view>
+    </view>
+
     <view class="card tips">
       <view class="tip-title">接下来会发生</view>
       <view class="tip-item">1. 图片上传到 OSS（秒级）</view>
@@ -88,7 +104,7 @@
 
     <view class="actions safe-bottom">
       <button class="btn primary" :disabled="!canSubmit || submitting" @click="onSubmit">
-        {{ submitting ? 'AI 处理中...' : '开始生成' }}
+        {{ submitting ? (submitPhaseLabel || 'AI 处理中...') : '开始生成' }}
       </button>
     </view>
   </view>
@@ -107,7 +123,9 @@ const images = ref([]); // [{ preview: blobUrl, base64 }]
 const description = ref('');
 const voiceKey = ref('cancan');
 const ratio = ref('9:16');
+const enhance = ref(true); // 默认开美化预处理
 const submitting = ref(false);
+const submitPhaseLabel = ref(''); // 提交时分阶段文案
 const autoFilling = ref(false);
 // 标记当前内容是否是 AI 自动填写的（未被用户手动改过）
 let aiFilledText = '';
@@ -175,7 +193,8 @@ function removePic(i) {
 async function onSubmit() {
   if (!canSubmit.value) return;
   submitting.value = true;
-  uni.showLoading({ title: '上传图片 + 拆镜头' });
+  submitPhaseLabel.value = '准备上传…';
+  uni.showLoading({ title: '上传图片' });
   try {
     const taskId = await createTask({
       imageBase64s: images.value.map((x) => x.base64),
@@ -183,6 +202,19 @@ async function onSubmit() {
       voiceKey: voiceKey.value,
       ratio: ratio.value,
       shopName: userStore.shop?.name || '',
+      enhance: enhance.value,
+      onProgress: (s) => {
+        if (s.phase === 'uploading') {
+          submitPhaseLabel.value = '上传图片到 OSS…';
+          uni.showLoading({ title: '上传图片' });
+        } else if (s.phase === 'enhancing') {
+          submitPhaseLabel.value = `AI 美化 ${s.enhancedCount}/${s.totalCount}`;
+          uni.showLoading({ title: `AI 美化 ${s.enhancedCount}/${s.totalCount}` });
+        } else if (s.phase === 'scripting') {
+          submitPhaseLabel.value = 'AI 看图 + 拆镜头';
+          uni.showLoading({ title: 'AI 拆镜头' });
+        }
+      },
     });
     uni.hideLoading();
     uni.redirectTo({ url: `/pages/ai-video/confirm?id=${taskId}` });
@@ -191,6 +223,7 @@ async function onSubmit() {
     uni.showModal({ title: '提交失败', content: e.message || '未知错误', showCancel: false });
   } finally {
     submitting.value = false;
+    submitPhaseLabel.value = '';
   }
 }
 </script>
@@ -410,6 +443,35 @@ async function onSubmit() {
         background: $brand-primary;
       }
     }
+  }
+}
+
+.enhance-card {
+  .enhance-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16rpx;
+  }
+  .enhance-info {
+    flex: 1;
+    min-width: 0;
+  }
+  .enhance-title {
+    font-size: 28rpx;
+    font-weight: 600;
+    color: $text-primary;
+  }
+  .enhance-desc {
+    margin-top: 6rpx;
+    font-size: 22rpx;
+    color: $text-secondary;
+    line-height: 1.5;
+  }
+  .enhance-tip {
+    margin-top: 16rpx;
+    font-size: 20rpx;
+    color: $text-placeholder;
   }
 }
 

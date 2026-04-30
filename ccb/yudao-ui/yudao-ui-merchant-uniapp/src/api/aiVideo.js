@@ -188,6 +188,28 @@ async function fetchRichScript(shopName, userDescription) {
  * 这里只在前端做 UI 选项标签；空字符串 = 不混 BGM（兜底）。
  */
 /**
+ * 调 sidecar /jimeng/enhance 美化单张图片（即梦 CV 增强：浅景深+暖色调+电影感）。
+ * 输入图片公网 URL → 输出美化后图片 URL（1080×1920）；失败 fallback 原图（sidecar 已做）
+ * @returns {Promise<{url: string, enhanced: boolean}>}
+ */
+export async function enhanceImage(imageUrl, businessHint) {
+  if (!imageUrl) throw new Error('imageUrl 为空');
+  const res = await fetch('/jimeng/enhance', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ imageUrl, businessHint: businessHint || '' }),
+  });
+  if (!res.ok) {
+    return { url: imageUrl, enhanced: false };
+  }
+  const data = await res.json().catch(() => null);
+  if (!data || !data.url) {
+    return { url: imageUrl, enhanced: false };
+  }
+  return { url: data.url, enhanced: !!data.enhanced };
+}
+
+/**
  * 调 sidecar /jimeng/poster 生成专业端卡海报。
  * 输入店名 + slogan → 即梦 CV 生成 1080×1920 海报（暖色渐变 + 店名艺术字 + 二维码留位）。
  * 返回 url 字符串（公网 OSS）；失败抛错让调用方决定降级策略。
@@ -263,20 +285,57 @@ function newTask(init) {
 }
 
 /**
- * 步骤①②：上传 + LLM 拆幕（阻塞，通常 10-20 秒）
+ * 步骤①②：上传 + 可选美化 + LLM 拆幕（阻塞，通常 10-20 秒；开美化则 +20-30 秒）
+ *
+ * @param {Object} p
+ * @param {string[]} p.imageBase64s   原图 base64
+ * @param {string} p.userDescription  口语化描述
+ * @param {string} p.voiceKey         TTS 音色
+ * @param {string} p.ratio            画面比例
+ * @param {string} p.shopName         店铺名（用于 LLM/海报）
+ * @param {boolean} [p.enhance=true]  是否对每张图调 /jimeng/enhance 美化预处理；
+ *                                    开 = 视觉品质提升一档；关 = 省时间省即梦配额
+ * @param {(state)=>void} [p.onProgress]  阶段回调，方便 create.vue 展示
+ *                                         state 形如 {phase:'uploading'|'enhancing'|'scripting',
+ *                                                     enhancedCount, totalCount}
  * @returns taskId
  */
-export async function createTask({ imageBase64s, userDescription, voiceKey, ratio, shopName }) {
+export async function createTask({ imageBase64s, userDescription, voiceKey, ratio, shopName, enhance = true, onProgress }) {
   const imgs = (imageBase64s || []).filter(Boolean);
   if (!imgs.length) throw new Error('请至少上传 1 张图片');
 
   const task = newTask({ userDescription, voiceKey, ratio: ratio || '9:16', shopName: shopName || '' });
+  const emit = (s) => { try { onProgress && onProgress(s); } catch {} };
 
   try {
     // ① 上传到 OSS
+    emit({ phase: 'uploading', totalCount: imgs.length });
     task.imageUrls = await uploadImages(imgs);
+
+    // ①.5 美化预处理（即梦 CV）— 把老板手机原图喂给 Seedance 之前提一档
+    //      失败 fallback 原图（sidecar 已经做好降级），不阻塞主流程
+    if (enhance) {
+      emit({ phase: 'enhancing', enhancedCount: 0, totalCount: imgs.length });
+      const businessHint = userDescription ? userDescription.slice(0, 24) : '';
+      const enhancedUrls = [];
+      let succ = 0;
+      for (let i = 0; i < task.imageUrls.length; i++) {
+        try {
+          const r = await enhanceImage(task.imageUrls[i], businessHint);
+          enhancedUrls.push(r.url);
+          if (r.enhanced) succ += 1;
+        } catch (e) {
+          console.warn(`[enhance] 第 ${i + 1} 张失败 fallback 原图:`, e.message);
+          enhancedUrls.push(task.imageUrls[i]);
+        }
+        emit({ phase: 'enhancing', enhancedCount: i + 1, totalCount: imgs.length });
+      }
+      task.imageUrls = enhancedUrls;
+      task.imageEnhancedCount = succ; // detail/confirm 可展示"X/Y 张已美化"
+    }
     task.coverUrl = task.imageUrls[0];
 
+    emit({ phase: 'scripting' });
     // ②a 旁路调后端 generateRichScript 拿 BGM 风格推荐 + 英文运镜基底
     //     这是即梦 API 优化第一波 ③ 的前端接入：bgmStyle 自动落到 task，confirm 页打开
     //     时该选项已被预选；visualPrompt 作为各幕 Seedance 的运镜基底，避免老板写不出
