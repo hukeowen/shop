@@ -92,7 +92,17 @@
       "Bash(bash -n /d/work/yhzc/sass/shop/ccb/scripts/fix-redis-auth.sh)",
       "Bash(chmod +x /d/work/yhzc/sass/shop/ccb/scripts/fix-redis-auth.sh)",
       "Bash(bash -n /d/work/yhzc/sass/shop/ccb/scripts/fix-app-config.sh)",
-      "Bash(chmod +x /d/work/yhzc/sass/shop/ccb/scripts/fix-app-config.sh)"
+      "Bash(chmod +x /d/work/yhzc/sass/shop/ccb/scripts/fix-app-config.sh)",
+      "Bash(bash -n /d/work/yhzc/sass/shop/ccb/server/sidecar/bgm/download-bgm.sh)",
+      "Bash(chmod +x /d/work/yhzc/sass/shop/ccb/server/sidecar/bgm/download-bgm.sh)",
+      "Bash(bash -n /d/work/yhzc/sass/shop/ccb/scripts/e2e-demo-verify.sh)",
+      "Bash(mvn -pl yudao-module-merchant -am compile -DskipTests)",
+      "Bash(mvn -pl yudao-module-merchant test -DskipTests=false -q)",
+      "Bash(grep -n \"INSERT INTO \\\\`system_role\\\\`\" /d/work/yhzc/sass/shop/ccb/sql/mysql/ruoyi-vue-pro.sql)",
+      "Bash(git --no-pager show 53f5a68)",
+      "Read(//tmp/**)",
+      "Bash(mvn -pl yudao-module-merchant -am compile -q)",
+      "Bash(mvn -pl yudao-module-merchant -am compile)"
     ]
   }
 }
