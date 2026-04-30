@@ -105,6 +105,44 @@
         </view>
       </view>
 
+      <!-- 端卡海报（即梦 CV 生成 1080×1920 海报，单独下载分享朋友圈用） -->
+      <view class="card poster-card">
+        <view class="section-title-row">
+          <view class="section-title">🖼 店铺海报</view>
+          <view
+            v-if="task.posterUrl && !posterLoading"
+            class="regen-btn"
+            @click="onPoster(true)"
+          >🔄 重新生成</view>
+        </view>
+        <view class="poster-sub">独立的店铺海报，可单独下载发朋友圈/微信群</view>
+
+        <view v-if="posterLoading" class="poster-state">
+          <view class="spinner small"></view>
+          <text>AI 正在生成海报…通常 20-40 秒</text>
+        </view>
+        <view v-else-if="task.posterUrl" class="poster-box">
+          <image
+            class="poster-img"
+            :src="task.posterUrl"
+            mode="aspectFit"
+            @click="previewPoster"
+          />
+          <view class="poster-actions">
+            <button class="btn ghost" @click="downloadPoster">
+              {{ savingPoster ? '保存中…' : '保存海报到相册' }}
+            </button>
+          </view>
+        </view>
+        <view v-else-if="posterError" class="poster-state error">
+          <text class="poster-err-text">⚠ {{ posterError }}</text>
+          <button class="btn ghost solo" @click="onPoster(true)">重试</button>
+        </view>
+        <view v-else class="poster-state">
+          <button class="btn primary solo" @click="onPoster(false)">生成专业海报</button>
+        </view>
+      </view>
+
       <view class="actions-grid">
         <view class="act" @click="onReplay">
           <view class="act-icon rp">↺</view>
@@ -141,7 +179,7 @@
 <script setup>
 import { computed, nextTick, ref, watch } from 'vue';
 import { onLoad, onUnload } from '@dcloudio/uni-app';
-import { getTask, shareToDouyinApp } from '../../api/aiVideo.js';
+import { getTask, shareToDouyinApp, ensurePosterForTask } from '../../api/aiVideo.js';
 import { findVoice } from '../../api/voice.js';
 
 const task = ref(null);
@@ -151,6 +189,9 @@ const currentIdx = ref(0);
 const playing = ref(false);
 const merging = ref(false);
 const publishing = ref(false);
+const posterLoading = ref(false);
+const posterError = ref('');
+const savingPoster = ref(false);
 const publishStage = ref('');  // 'merging' | 'uploading' | 'publishing' | 'done'
 const duration = computed(() => task.value?.sceneDuration || Number(import.meta.env.VITE_VIDEO_DURATION || 10));
 const scenes = Number(import.meta.env.VITE_VIDEO_SCENES || 3);
@@ -283,6 +324,53 @@ function onReplay() {
   currentIdx.value = 0;
   playing.value = true;
   playCurrent();
+}
+
+// ============ 端卡海报 ============
+async function onPoster(force) {
+  if (posterLoading.value) return;
+  posterLoading.value = true;
+  posterError.value = '';
+  try {
+    const url = await ensurePosterForTask(taskId.value, { force });
+    // 同步到本地 task 引用，让 UI 立刻刷新
+    if (task.value) task.value.posterUrl = url;
+  } catch (e) {
+    posterError.value = e.message || '海报生成失败';
+  } finally {
+    posterLoading.value = false;
+  }
+}
+
+function previewPoster() {
+  if (!task.value?.posterUrl) return;
+  uni.previewImage({ urls: [task.value.posterUrl], current: task.value.posterUrl });
+}
+
+async function downloadPoster() {
+  if (!task.value?.posterUrl || savingPoster.value) return;
+  savingPoster.value = true;
+  try {
+    const dl = await new Promise((resolve, reject) => {
+      uni.downloadFile({
+        url: task.value.posterUrl,
+        success: (r) => (r.statusCode === 200 ? resolve(r) : reject(new Error('下载 HTTP ' + r.statusCode))),
+        fail: (e) => reject(new Error(e?.errMsg || '下载失败')),
+      });
+    });
+    await new Promise((resolve, reject) => {
+      uni.saveImageToPhotosAlbum({
+        filePath: dl.tempFilePath,
+        success: () => resolve(),
+        fail: (e) => reject(new Error(e?.errMsg || '保存失败')),
+      });
+    });
+    uni.showToast({ title: '已保存到相册', icon: 'success' });
+  } catch (e) {
+    uni.showModal({ title: '保存失败', content: e.message || '未知错误', showCancel: false });
+  } finally {
+    savingPoster.value = false;
+  }
 }
 
 const publishLabel = computed(() => {
@@ -702,6 +790,82 @@ onUnload(() => {
   font-weight: 600;
   color: $text-primary;
   margin-bottom: 20rpx;
+}
+
+.section-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  .section-title {
+    margin-bottom: 0;
+  }
+
+  .regen-btn {
+    padding: 6rpx 18rpx;
+    background: $brand-primary-light;
+    color: $brand-primary;
+    border-radius: 999rpx;
+    font-size: 22rpx;
+    font-weight: 500;
+  }
+}
+
+// 全局小号 spinner（poster-card 等卡内 inline 等待用）
+.spinner.small {
+  width: 36rpx;
+  height: 36rpx;
+  margin: 0 auto 12rpx;
+  border: 4rpx solid $brand-primary-light;
+  border-top-color: $brand-primary;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.poster-card {
+  .poster-sub {
+    margin-top: 8rpx;
+    font-size: 22rpx;
+    color: $text-secondary;
+  }
+  .poster-state {
+    margin-top: 24rpx;
+    padding: 32rpx 0;
+    text-align: center;
+    color: $text-secondary;
+    font-size: 24rpx;
+
+    &.error {
+      .poster-err-text {
+        display: block;
+        color: $danger;
+        margin-bottom: 16rpx;
+      }
+    }
+  }
+  .poster-box {
+    margin-top: 20rpx;
+  }
+  .poster-img {
+    width: 100%;
+    aspect-ratio: 9 / 16;
+    border-radius: $radius-md;
+    background: #f0f1f4;
+  }
+  .poster-actions {
+    margin-top: 20rpx;
+    display: flex;
+    gap: 16rpx;
+
+    .btn {
+      flex: 1;
+    }
+  }
+  .btn.solo {
+    width: 60%;
+    margin: 0 auto;
+    display: block;
+  }
 }
 
 .rl {

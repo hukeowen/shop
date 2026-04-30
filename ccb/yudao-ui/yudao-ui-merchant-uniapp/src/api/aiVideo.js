@@ -187,6 +187,42 @@ async function fetchRichScript(shopName, userDescription) {
  * 详细 list 见 docs/design/marketing-system 里的 ai-video 优化方案 / sidecar/bgm/README.md。
  * 这里只在前端做 UI 选项标签；空字符串 = 不混 BGM（兜底）。
  */
+/**
+ * 调 sidecar /jimeng/poster 生成专业端卡海报。
+ * 输入店名 + slogan → 即梦 CV 生成 1080×1920 海报（暖色渐变 + 店名艺术字 + 二维码留位）。
+ * 返回 url 字符串（公网 OSS）；失败抛错让调用方决定降级策略。
+ */
+export async function generatePoster({ shopName, slogan }) {
+  if (!shopName) throw new Error('店铺名为空，无法生成海报');
+  const res = await fetch('/jimeng/poster', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ shopName, slogan: slogan || '扫码进店领优惠' }),
+  });
+  if (!res.ok) {
+    const txt = await res.text().catch(() => '');
+    throw new Error(`HTTP ${res.status}${txt ? ': ' + txt.slice(0, 120) : ''}`);
+  }
+  const data = await res.json();
+  if (!data.ok) throw new Error(data.error || 'poster 生成失败');
+  if (!data.url) throw new Error('poster 未返 url');
+  return data.url;
+}
+
+/**
+ * 给 task 生成海报并缓存到 task.posterUrl；force=true 时强制重新生成
+ * （用户点"重新生成海报"按钮）。返回最新 url。
+ */
+export async function ensurePosterForTask(taskId, { force = false } = {}) {
+  const t = store.tasks.find((x) => x.id === taskId);
+  if (!t) throw new Error('任务不存在');
+  if (!force && t.posterUrl) return t.posterUrl;
+  const url = await generatePoster({ shopName: t.shopName || '我的店铺' });
+  t.posterUrl = url;
+  persist();
+  return url;
+}
+
 export const BGM_STYLES = [
   { key: 'street_food_yelling', label: '街头美食吆喝', desc: '热闹烟火气，烧烤/夜市/小吃' },
   { key: 'cozy_explore', label: '治愈探索', desc: '舒缓安静，茶馆/书店/手作' },
@@ -214,6 +250,9 @@ function newTask(init) {
     scenes: [],            // [{ img_idx, narration, visual_prompt, clipTaskId, clipUrl, audioUrl, status }]
     progress: { total: 0, done: 0 },  // confirmTask 时根据实际幕数再设
     coverUrl: null,
+    // 端卡海报：detail 页生成完成后通过 sidecar /jimeng/poster 拿一张 1080×1920 海报
+    // 让商户单独下载/分享朋友圈；和视频独立，不影响 mux/publish 流程
+    posterUrl: null,
     publishedToDouyin: false,
     failReason: null,
     ...init,
