@@ -363,7 +363,10 @@ public class AppUnifiedAuthController {
         // 做法：手工 setIgnore(false)，让 yudao 内部 TenantUtils.execute(newTenantId)
         // 切到新租户 ctx 后能正确加 tenant_id 过滤；finally 恢复成 true 让 aspect 不
         // 混乱（aspect finally 会基于进入时的 oldIgnore 恢复）。
+        // 同时保存 tenantId — 防 createTenant 中途异常时 TenantUtils.execute 的 finally
+        // 没机会还原，导致这一请求后续逻辑（buildLoginResp / activeRoleCache 等）被新租户 ctx 污染
         Boolean prevIgnore = TenantContextHolder.isIgnore();
+        Long prevTenantId = TenantContextHolder.getTenantId();
         TenantContextHolder.setIgnore(false);
         try {
             merchantId = merchantService.createMerchantFromMember(
@@ -383,8 +386,9 @@ public class AppUnifiedAuthController {
         } finally {
             // 清掉 fake context，避免污染后续 filter chain
             SecurityContextHolder.clearContext();
-            // 还原 tenant ignore，aspect finally 会再基于 oldIgnore 还原一次（幂等）
+            // 同时还原 ignore + tenantId，防异常分支留下脏 ThreadLocal
             TenantContextHolder.setIgnore(prevIgnore);
+            TenantContextHolder.setTenantId(prevTenantId);
         }
 
         List<String> roles = buildRoles(merchant);

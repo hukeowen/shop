@@ -31,10 +31,22 @@ public interface MerchantReferralMapper extends BaseMapperX<MerchantReferralDO> 
                 .isNotNull(MerchantReferralDO::getPaidAt));
     }
 
-    /** 查询被推荐商户的推荐记录（一对一） */
+    /**
+     * 查询被推荐商户的推荐记录（一对一）。
+     *
+     * <p>schema 上 {@code referee_tenant_id} 在 V013 之前没有 UNIQUE 约束，
+     * 重复 recordReferral 会产生多条 → selectOne 撞 TooManyResults。
+     * 用 selectList + LIMIT 1 防御历史脏数据。</p>
+     */
     default MerchantReferralDO selectByRefereeTenantId(Long refereeTenantId) {
-        return selectOne(new LambdaQueryWrapperX<MerchantReferralDO>()
-                .eq(MerchantReferralDO::getRefereeTenantId, refereeTenantId));
+        if (refereeTenantId == null) {
+            return null;
+        }
+        List<MerchantReferralDO> list = selectList(new LambdaQueryWrapperX<MerchantReferralDO>()
+                .eq(MerchantReferralDO::getRefereeTenantId, refereeTenantId)
+                .orderByAsc(MerchantReferralDO::getId)
+                .last("LIMIT 1"));
+        return list.isEmpty() ? null : list.get(0);
     }
 
     /**

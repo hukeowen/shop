@@ -220,6 +220,7 @@ public class MerchantServiceImpl implements MerchantService {
         // 4. 创建 merchant_info（继承 TenantBaseDO，靠 TenantContextHolder 由 MP 拦截器自动填 tenant_id）
         MerchantDO merchant = MerchantDO.builder()
                 .name(shopName)
+                .contactName(shopName) // contact_name NOT NULL 无默认值，先复用店名占位（用户后续可改）
                 .contactPhone(phone)
                 .status(MerchantStatusEnum.APPROVED.getStatus())
                 .userId(memberUserId)

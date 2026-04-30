@@ -2,6 +2,7 @@ package cn.iocoder.yudao.module.merchant.dal.mysql;
 
 import cn.iocoder.yudao.framework.mybatis.core.mapper.BaseMapperX;
 import cn.iocoder.yudao.module.merchant.dal.dataobject.ShopInfoDO;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
@@ -17,9 +18,21 @@ public interface ShopInfoMapper extends BaseMapperX<ShopInfoDO> {
         return selectOne(ShopInfoDO::getTenantId, tenantId);
     }
 
-    /** 通联回调按 outOrderId 反查店铺（进件结果异步推送时用） */
+    /**
+     * 通联回调按 outOrderId 反查店铺（进件结果异步推送时用）。
+     *
+     * <p>{@code tl_open_order_id} 仅普通索引非 UNIQUE，重试场景可能多条；用 selectList
+     * + LIMIT 1 防御 selectOne 撞 TooManyResultsException。V013 已升 UNIQUE，但保留防御。</p>
+     */
     default ShopInfoDO selectByTlOpenOrderId(String outOrderId) {
-        return selectOne(ShopInfoDO::getTlOpenOrderId, outOrderId);
+        if (outOrderId == null || outOrderId.isEmpty()) {
+            return null;
+        }
+        java.util.List<ShopInfoDO> list = selectList(new LambdaQueryWrapper<ShopInfoDO>()
+                .eq(ShopInfoDO::getTlOpenOrderId, outOrderId)
+                .orderByAsc(ShopInfoDO::getId)
+                .last("LIMIT 1"));
+        return list.isEmpty() ? null : list.get(0);
     }
 
     /**
