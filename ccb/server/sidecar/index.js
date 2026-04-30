@@ -614,6 +614,9 @@ app.post('/video/merge', async (req, res) => {
 // 文件由运维去 Pixabay/FreePD 等 CC0 曲库下载，每风格 2-3 首避免雷同
 const BGM_DIR = path.join(__dirname, 'bgm');
 function pickBgm(bgmStyle) {
+  // 'none' 显式不加 BGM —— 前端用户在 confirm 页选"不加 BGM"时传这个 sentinel
+  // 空串 / undefined 仍走默认 cozy_explore（保留向后兼容）
+  if (bgmStyle === 'none') return null;
   const style = (bgmStyle || 'cozy_explore').replace(/[^a-z_]/gi, '');
   if (!fs.existsSync(BGM_DIR)) return null;
   let cand = [];

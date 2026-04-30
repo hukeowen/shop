@@ -98,7 +98,14 @@ function resumeTask(t) {
             const muxRes = await fetch('/video/mux', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ videoUrl: rawUrl, text: scene.narration, voice: v.ark, duration: scene.duration || t.sceneDuration || 10 }),
+              body: JSON.stringify({
+                videoUrl: rawUrl,
+                text: scene.narration,
+                voice: v.ark,
+                duration: scene.duration || t.sceneDuration || 10,
+                // resumeTask 路径同样透 task.bgmStyle
+                bgmStyle: t.bgmStyle || '',
+              }),
             });
             const muxData = muxRes.ok ? await muxRes.json() : { ok: false };
             scene.clipUrl = muxData.ok ? muxData.url : rawUrl;
@@ -152,6 +159,20 @@ if (typeof window !== 'undefined') {
   }, 2000);
 }
 
+/**
+ * 6 个 BGM 风格 key（与 sidecar/bgm/<style>_*.mp3 文件名前缀一一对应）。
+ * 详细 list 见 docs/design/marketing-system 里的 ai-video 优化方案 / sidecar/bgm/README.md。
+ * 这里只在前端做 UI 选项标签；空字符串 = 不混 BGM（兜底）。
+ */
+export const BGM_STYLES = [
+  { key: 'street_food_yelling', label: '街头美食吆喝', desc: '热闹烟火气，烧烤/夜市/小吃' },
+  { key: 'cozy_explore', label: '治愈探索', desc: '舒缓安静，茶馆/书店/手作' },
+  { key: 'asmr_macro', label: 'ASMR 微距', desc: '细节特写，质感/工艺/食材' },
+  { key: 'elegant_tea', label: '茶楼优雅', desc: '中式古典，茶/酒/精致服务' },
+  { key: 'trendy_pop', label: '潮流流行', desc: '年轻活力，奶茶/咖啡/快餐' },
+  { key: 'emotional_story', label: '情绪叙事', desc: '故事感，老店/匠人/传承' },
+];
+
 function newTask(init) {
   const t = {
     id: store.nextId++,
@@ -162,6 +183,11 @@ function newTask(init) {
     voiceKey: 'cancan',
     ratio: '9:16',
     title: '',
+    // BGM 风格：confirm.vue 让用户从 BGM_STYLES 6 选 1；'none' = 用户主动选"不加 BGM"
+    // 默认 '' → sidecar 走它的默认 cozy_explore（保留旧行为兼容）
+    // sidecar /video/mux 接到 bgmStyle 后从 sidecar/bgm/<style>_*.mp3 随机挑 1 首，
+    // ffmpeg amix: TTS 1.0 + BGM 0.18(-15dB) + duration=longest
+    bgmStyle: '',
     scenes: [],            // [{ img_idx, narration, visual_prompt, clipTaskId, clipUrl, audioUrl, status }]
     progress: { total: 0, done: 0 },  // confirmTask 时根据实际幕数再设
     coverUrl: null,
@@ -312,7 +338,7 @@ export async function regenerateScript(taskId) {
  * @param {number} p.taskId
  * @param {Array} [p.scenes]  可选：用户编辑过的 scenes 列表
  */
-export async function confirmTask({ taskId, scenes }) {
+export async function confirmTask({ taskId, scenes, bgmStyle }) {
   const t = store.tasks.find((x) => x.id === taskId);
   if (!t) throw new Error('任务不存在');
 
@@ -322,6 +348,10 @@ export async function confirmTask({ taskId, scenes }) {
       narration: scenes[i]?.narration || s.narration,
       visual_prompt: scenes[i]?.visual_prompt || s.visual_prompt,
     }));
+  }
+  // 用户在 confirm 页选了 BGM 风格 → 落到 task 上，runClip 调 mux 时透传
+  if (typeof bgmStyle === 'string') {
+    t.bgmStyle = bgmStyle;
   }
 
   t.status = 3;
@@ -405,7 +435,15 @@ async function runClip(task, scene, startImageUrl) {
         const muxRes = await fetch('/video/mux', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ videoUrl: rawUrl, text: scene.narration, voice: v.ark, duration: scene.duration || task.sceneDuration || 10 }),
+          body: JSON.stringify({
+            videoUrl: rawUrl,
+            text: scene.narration,
+            voice: v.ark,
+            duration: scene.duration || task.sceneDuration || 10,
+            // 透传 task.bgmStyle 给 sidecar：mux 内部按 style 从 sidecar/bgm/<style>_*.mp3 随机挑 1 首
+            // 空串 = 不混 BGM，sidecar 也兼容
+            bgmStyle: task.bgmStyle || '',
+          }),
         });
         const muxData = muxRes.ok ? await muxRes.json() : { ok: false, error: `HTTP ${muxRes.status}` };
         if (muxData.ok) {

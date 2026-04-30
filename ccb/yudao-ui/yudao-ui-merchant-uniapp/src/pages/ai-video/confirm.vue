@@ -12,6 +12,32 @@
         <view class="title-text">{{ task.title || '—' }}</view>
       </view>
 
+      <!-- BGM 风格 6 选 1（不选 = 仅 TTS 不混 BGM） -->
+      <view class="card bgm-card">
+        <view class="section-title">🎵 背景音乐风格（可选）</view>
+        <view class="section-sub">选一个最贴合店铺氛围的风格；不选则只保留口播</view>
+        <view class="bgm-grid">
+          <view
+            v-for="opt in bgmStyles"
+            :key="opt.key"
+            class="bgm-chip"
+            :class="{ active: selectedBgm === opt.key }"
+            @click="onPickBgm(opt.key)"
+          >
+            <text class="bgm-label">{{ opt.label }}</text>
+            <text class="bgm-desc">{{ opt.desc }}</text>
+          </view>
+          <view
+            class="bgm-chip none"
+            :class="{ active: selectedBgm === 'none' }"
+            @click="onPickBgm('none')"
+          >
+            <text class="bgm-label">不加 BGM</text>
+            <text class="bgm-desc">只保留口播</text>
+          </view>
+        </view>
+      </view>
+
       <view class="card">
         <view class="section-title-row">
           <view class="section-title">{{ scenes.length }} 幕脚本（每幕 {{ effDuration }} 秒，共 {{ scenes.length * effDuration }} 秒）</view>
@@ -88,7 +114,7 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { onLoad, onUnload } from '@dcloudio/uni-app';
-import { getTask, confirmTask, regenerateScript, replaceSceneImage } from '../../api/aiVideo.js';
+import { getTask, confirmTask, regenerateScript, replaceSceneImage, BGM_STYLES } from '../../api/aiVideo.js';
 import { blobUrlToBase64 } from '../../api/oss.js';
 
 const task = ref(null);
@@ -96,6 +122,13 @@ const taskId = ref(0);
 const scenes = ref([]);
 const regenerating = ref(false);
 const replacingIdx = ref(-1);
+const bgmStyles = BGM_STYLES;
+// 用户选的 BGM 风格 key；'none' = 不加 BGM；初始从 task.bgmStyle 读，没有就 'none'（更符合
+// "用户没主动选就不强加 BGM" 的预期；用户想加 BGM 必须显式点一个风格）
+const selectedBgm = ref('none');
+function onPickBgm(key) {
+  selectedBgm.value = key;
+}
 const effDuration = computed(() => task.value?.sceneDuration || Number(import.meta.env.VITE_VIDEO_DURATION || 10));
 let pollTimer = null;
 
@@ -108,6 +141,11 @@ async function load() {
       narration: s.narration,
       visual_prompt: s.visual_prompt,
     }));
+    // 同步初始 BGM 选择：task 上非空就用 task 的（重进确认页保留之前的选择）；
+    // 空串视为"未选过"，保持默认 'none'（不强加 BGM）
+    if (typeof task.value.bgmStyle === 'string' && task.value.bgmStyle) {
+      selectedBgm.value = task.value.bgmStyle;
+    }
   }
   if (task.value?.status === 1) {
     pollTimer = setTimeout(load, 1500);
@@ -167,7 +205,11 @@ function onReplaceImage(i) {
 async function onConfirm() {
   uni.showLoading({ title: '启动生成' });
   try {
-    await confirmTask({ taskId: taskId.value, scenes: scenes.value });
+    await confirmTask({
+      taskId: taskId.value,
+      scenes: scenes.value,
+      bgmStyle: selectedBgm.value, // 'none' = 不混 BGM；'' = 走 sidecar 默认 cozy_explore；其它 = 6 选 1 风格 key
+    });
     uni.hideLoading();
     uni.redirectTo({ url: `/pages/ai-video/detail?id=${taskId.value}` });
   } catch (e) {
@@ -218,6 +260,67 @@ onUnload(() => {
     margin-top: 8rpx;
     font-size: 36rpx;
     font-weight: 700;
+  }
+}
+
+.bgm-card {
+  .section-title {
+    font-size: 28rpx;
+    font-weight: 600;
+    color: $text-primary;
+  }
+  .section-sub {
+    margin-top: 6rpx;
+    font-size: 22rpx;
+    color: $text-secondary;
+  }
+  .bgm-grid {
+    margin-top: 20rpx;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12rpx;
+  }
+  .bgm-chip {
+    display: flex;
+    flex-direction: column;
+    padding: 18rpx 20rpx;
+    background: #f6f7f9;
+    border: 2rpx solid transparent;
+    border-radius: $radius-md;
+
+    .bgm-label {
+      font-size: 26rpx;
+      font-weight: 600;
+      color: $text-primary;
+    }
+    .bgm-desc {
+      margin-top: 4rpx;
+      font-size: 20rpx;
+      color: $text-secondary;
+    }
+
+    &.active {
+      background: rgba(255, 107, 53, 0.10);
+      border-color: $brand-primary;
+
+      .bgm-label {
+        color: $brand-primary;
+      }
+    }
+
+    &.none {
+      background: #f0f1f3;
+      .bgm-label {
+        color: $text-secondary;
+      }
+      &.active {
+        background: rgba(120, 120, 128, 0.18);
+        border-color: $text-secondary;
+        .bgm-label {
+          color: $text-primary;
+        }
+      }
+    }
   }
 }
 
