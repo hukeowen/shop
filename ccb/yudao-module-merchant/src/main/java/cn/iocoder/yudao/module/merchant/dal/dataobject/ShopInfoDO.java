@@ -2,6 +2,7 @@ package cn.iocoder.yudao.module.merchant.dal.dataobject;
 
 import cn.iocoder.yudao.framework.mybatis.core.dataobject.BaseDO;
 import com.baomidou.mybatisplus.annotation.KeySequence;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.*;
@@ -57,7 +58,8 @@ public class ShopInfoDO extends BaseDO {
     private Integer status;
 
     // ========== 排名缓存（每日定时更新） ==========
-    /** 近30天销量 */
+    /** 近30天销量（字段名含数字，MP 驼峰转下划线不生效，必须显式指定列名） */
+    @TableField("sales_30d")
     private Integer sales30d;
     /** 平均评分 */
     private BigDecimal avgRating;
