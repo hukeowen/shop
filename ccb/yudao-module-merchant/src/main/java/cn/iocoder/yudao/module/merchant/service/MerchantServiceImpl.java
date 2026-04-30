@@ -158,14 +158,17 @@ public class MerchantServiceImpl implements MerchantService {
     @Transactional(rollbackFor = Exception.class)
     public Long createMerchantFromMember(Long memberUserId, String openId, String unionId,
                                          String phone, Long inviteCodeId) {
-        // 幂等：同一 openid 已建过商户直接返回
-        MerchantDO existed = merchantMapper.selectByOpenId(openId);
+        // 幂等：openId / userId 全局唯一（同手机号不论之前注册到哪个租户都算已建）。
+        // merchant_info 是 TenantBaseDO，外层 controller 此处 ignore=false 且当前线程
+        // 没设 tenantId（PermitAll 申请路径），直接查会触发 TenantLineInnerInterceptor
+        // 走 getRequiredTenantId NPE。显式 executeIgnore 让这两次幂等查询跨租户。
+        MerchantDO existed = TenantUtils.executeIgnore(() -> merchantMapper.selectByOpenId(openId));
         if (existed != null) {
             return existed.getId();
         }
-        existed = merchantMapper.selectByUserId(memberUserId);
-        if (existed != null) {
-            return existed.getId();
+        MerchantDO existedByUser = TenantUtils.executeIgnore(() -> merchantMapper.selectByUserId(memberUserId));
+        if (existedByUser != null) {
+            return existedByUser.getId();
         }
 
         String shopName = "新店" + memberUserId;
