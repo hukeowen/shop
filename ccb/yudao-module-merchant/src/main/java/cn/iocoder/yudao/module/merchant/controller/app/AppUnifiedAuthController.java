@@ -13,6 +13,7 @@ import cn.iocoder.yudao.framework.security.core.LoginUser;
 import cn.iocoder.yudao.framework.security.core.util.SecurityFrameworkUtils;
 import cn.iocoder.yudao.framework.tenant.core.aop.TenantIgnore;
 import cn.iocoder.yudao.framework.tenant.core.context.TenantContextHolder;
+import cn.iocoder.yudao.framework.tenant.core.util.TenantUtils;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -369,16 +370,20 @@ public class AppUnifiedAuthController {
         Long prevTenantId = TenantContextHolder.getTenantId();
         TenantContextHolder.setIgnore(false);
         try {
-            merchantId = merchantService.createMerchantFromMember(
+            final Long mid = merchantService.createMerchantFromMember(
                     member.getId(), member.getMiniAppOpenId(), null, mobile, null);
-            merchant = merchantService.getMerchant(merchantId);
+            merchantId = mid;
+            // createMerchantFromMember 出来后 TenantUtils.execute 的 finally 已把 tenantId 还原成 null
+            //（H5 PermitAll 路径请求进来就没带 tenant-id），这里 selectById merchant_info 是 TenantBaseDO
+            // 走拦截器会调 getRequiredTenantId NPE。按 id 查跨租户安全，executeIgnore 即可
+            merchant = TenantUtils.executeIgnore(() -> merchantService.getMerchant(mid));
 
             // 5. 把"新店<userId>"默认值改成用户填的 shopName
             //    (BaseDO updater 字段也需要 LoginUser，所以放在 try 块内)
             try {
                 applyCustomShopName(merchant, shopName);
             } catch (Exception e) {
-                log.warn("[applyMerchantBySms] 改店铺名失败 merchantId={} shopName={}", merchantId, shopName, e);
+                log.warn("[applyMerchantBySms] 改店铺名失败 merchantId={} shopName={}", mid, shopName, e);
             }
 
             // 6. 发 token（OAuth2 token 表也是 BaseDO，creator 字段同样需要 LoginUser）
