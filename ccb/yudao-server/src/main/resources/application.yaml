@@ -4,6 +4,12 @@ spring:
 
   profiles:
     active: local
+    # 把 module-video / 后续 module-merchant 等模块自带的 application-{name}.yaml 永远包进来。
+    # Spring Boot 默认 profile-specific 文件只在该 profile 激活时加载，include 声明的 profile
+    # 跟 active profile 一起被加载，所有环境都生效（local/dev/prod 不漏）。
+    # 不写这个的话 application-video.yaml 永远不读，${ARK_API_KEY:} 占位符不会注入，
+    # 导致 ArkBffClient 拿到空 key 报"ARK_API_KEY 未配置"。
+    include: video
 
   main:
     allow-circular-references: true # 允许循环依赖，因为项目是三层架构，无法避免这个情况。

@@ -377,17 +377,23 @@ public class AppUnifiedAuthController {
             //（H5 PermitAll 路径请求进来就没带 tenant-id），这里 selectById merchant_info 是 TenantBaseDO
             // 走拦截器会调 getRequiredTenantId NPE。按 id 查跨租户安全，executeIgnore 即可
             merchant = TenantUtils.executeIgnore(() -> merchantService.getMerchant(mid));
+            final MerchantDO finalMerchant = merchant;
 
-            // 5. 把"新店<userId>"默认值改成用户填的 shopName
-            //    (BaseDO updater 字段也需要 LoginUser，所以放在 try 块内)
-            try {
-                applyCustomShopName(merchant, shopName);
-            } catch (Exception e) {
-                log.warn("[applyMerchantBySms] 改店铺名失败 merchantId={} shopName={}", mid, shopName, e);
-            }
-
-            // 6. 发 token（OAuth2 token 表也是 BaseDO，creator 字段同样需要 LoginUser）
-            token = issueToken(member.getId());
+            // 5+6. 切到新租户上下文执行 改店名 + 发 token：
+            //   - merchant_info / shop_info 都是 TenantBaseDO，UPDATE 必须有 tenantId 才能命中
+            //   - system_oauth2_access_token 也是 TenantBaseDO，token 入库 tenant_id 必须 = 新租户，
+            //     否则前端拿 token 后 TokenAuthenticationFilter 解出 LoginUser.tenantId=null
+            //     → TenantSecurityWebFilter 直接返 "请求的租户标识未传递"，商户主页一直显示未登录
+            final OAuth2AccessTokenRespDTO[] tokenHolder = new OAuth2AccessTokenRespDTO[1];
+            TenantUtils.execute(merchant.getTenantId(), () -> {
+                try {
+                    applyCustomShopName(finalMerchant, shopName);
+                } catch (Exception e) {
+                    log.warn("[applyMerchantBySms] 改店铺名失败 merchantId={} shopName={}", mid, shopName, e);
+                }
+                tokenHolder[0] = issueToken(member.getId());
+            });
+            token = tokenHolder[0];
         } finally {
             // 清掉 fake context，避免污染后续 filter chain
             SecurityContextHolder.clearContext();
