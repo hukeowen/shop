@@ -108,7 +108,9 @@
               @input="(e) => (promo.tuijianRatios[i] = e.detail.value)"
             />
           </view>
-          <text class="hint inline">合计建议 ≤ 100%；后端按 % 入库</text>
+          <text class="hint inline" :class="{ warn: ratiosSum > 100 }">
+            合计 {{ ratiosSum.toFixed(1) }}% / 100%（超过 100% 不能保存）
+          </text>
         </view>
       </template>
 
@@ -258,11 +260,31 @@ async function loadPromo(spuId) {
   }
 }
 
+// N 个比例的实时加总，模板里展示 + 保存时强校验
+const ratiosSum = computed(() => {
+  if (!promo.tuijianEnabled) return 0;
+  const n = parseInt(promo.tuijianN) || 0;
+  let s = 0;
+  for (let i = 0; i < n && i < promo.tuijianRatios.length; i++) {
+    s += Number(promo.tuijianRatios[i]) || 0;
+  }
+  return s;
+});
+
 async function onSavePromo() {
   syncTuijianN();
   const n = parseInt(promo.tuijianN) || 0;
   if (promo.tuijianEnabled && n <= 0) {
     uni.showToast({ title: '推 N 反 1 启用时 N 必须 > 0', icon: 'none' });
+    return;
+  }
+  // v6 文档：N 个比例加总不能超过 100%（会把商品价超额返出去）
+  if (promo.tuijianEnabled && ratiosSum.value > 100) {
+    uni.showToast({
+      title: `N 个比例加总 ${ratiosSum.value.toFixed(1)}% > 100%，请调整`,
+      icon: 'none',
+      duration: 2500,
+    });
     return;
   }
   promoSaving.value = true;
@@ -650,6 +672,11 @@ onLoad((q) => {
     margin-top: 8rpx;
     font-size: 22rpx;
     color: $text-secondary;
+
+    &.warn {
+      color: #e63946;
+      font-weight: 600;
+    }
   }
 
   .promo-actions {

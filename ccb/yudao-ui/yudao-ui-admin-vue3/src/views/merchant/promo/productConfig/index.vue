@@ -33,26 +33,49 @@
 
       <el-divider content-position="left">推 N 反 1（直推 / 队列 / 自然推）</el-divider>
 
-      <el-form-item label="启用推 N 反 1" prop="tuijianEnabled">
+      <el-form-item label="启用推 N 反 1">
         <el-switch v-model="form.tuijianEnabled" />
       </el-form-item>
 
-      <el-form-item label="N 值（推几个）" prop="tuijianN">
-        <el-input-number v-model="form.tuijianN" :min="0" :max="20" :step="1" />
-      </el-form-item>
+      <template v-if="form.tuijianEnabled">
+        <el-form-item label="N 值（推几个）">
+          <el-input-number
+            v-model="form.tuijianN"
+            :min="1"
+            :max="20"
+            :step="1"
+            @change="onNChange"
+          />
+          <span class="ml-2 text-gray-400 text-sm">改 N 会同步增减下方比例输入框</span>
+        </el-form-item>
 
-      <el-form-item label="N 个返佣比例(%)" prop="tuijianRatios">
-        <el-input
-          v-model="form.tuijianRatios"
-          type="textarea"
-          :rows="2"
-          placeholder='JSON 数组，长度 = N。例：[25,25,25,25]，加总建议 = 100'
-        />
-      </el-form-item>
+        <el-form-item label="N 个返佣比例(%)">
+          <div class="ratios-grid">
+            <div v-for="(r, i) in ratios" :key="i" class="ratio-cell">
+              <span class="ratio-tag">第 {{ i + 1 }} 次</span>
+              <el-input-number
+                v-model="ratios[i]"
+                :min="0"
+                :max="100"
+                :step="1"
+                :precision="1"
+                size="default"
+                controls-position="right"
+              />
+              <span class="ratio-unit">%</span>
+            </div>
+          </div>
+          <div class="ratios-sum" :class="{ warn: ratiosSum > 100 }">
+            合计 {{ ratiosSum.toFixed(1) }}% / 100%
+            <span v-if="ratiosSum > 100" class="warn-text">超过 100% 不能保存</span>
+            <span v-else-if="ratiosSum < 100" class="hint-text">建议加总 = 100%（推满 N 次累计返足商品价）</span>
+          </div>
+        </el-form-item>
+      </template>
 
       <el-divider content-position="left">星级积分池</el-divider>
 
-      <el-form-item label="参与星级积分池" prop="poolEnabled">
+      <el-form-item label="参与星级积分池">
         <el-switch v-model="form.poolEnabled" />
       </el-form-item>
 
@@ -86,25 +109,48 @@ const form = reactive<PromoApi.ProductPromoConfigVO>({
   poolEnabled: false
 })
 
+// N 个比例独立维护成数字数组，提交时再 stringify 回 form.tuijianRatios
+const ratios = ref<number[]>([25, 25, 25, 25])
+
+const ratiosSum = computed(() => {
+  let s = 0
+  for (let i = 0; i < ratios.value.length; i++) {
+    s += Number(ratios.value[i]) || 0
+  }
+  return s
+})
+
 const rules = {
-  consumePointRatio: [{ required: true, message: '请输入倍率', trigger: 'blur' }],
-  tuijianEnabled: [{ required: true }],
-  tuijianN: [{ required: true, message: '请输入 N', trigger: 'blur' }],
-  tuijianRatios: [{ required: true, validator: jsonArrayValidator, trigger: 'blur' }],
-  poolEnabled: [{ required: true }]
+  consumePointRatio: [{ required: true, message: '请输入倍率', trigger: 'blur' }]
 }
 
-function jsonArrayValidator(_rule: any, value: string, cb: any) {
+/**
+ * N 切换 → ratios 数组按 N 截断或补 0；保持已有值不丢
+ */
+function onNChange(n: number | undefined) {
+  const target = Math.max(1, Math.min(20, Number(n) || 1))
+  form.tuijianN = target
+  while (ratios.value.length < target) ratios.value.push(0)
+  if (ratios.value.length > target) ratios.value.length = target
+}
+
+/**
+ * 把后端的 JSON 字符串安全解析成数字数组，长度对齐到 N
+ */
+function parseRatios(json: string, n: number): number[] {
+  let arr: any[] = []
   try {
-    const v = JSON.parse(value)
-    if (!Array.isArray(v)) {
-      cb(new Error('需为 JSON 数组'))
-      return
-    }
-    cb()
+    const v = JSON.parse(json)
+    if (Array.isArray(v)) arr = v
   } catch {
-    cb(new Error('JSON 解析失败'))
+    arr = []
   }
+  const out: number[] = []
+  for (let i = 0; i < n; i++) {
+    const v = Number(arr[i])
+    out.push(Number.isFinite(v) ? v : 0)
+  }
+  return out
 }
 
 const loadConfig = async () => {
@@ -117,6 +163,9 @@ const loadConfig = async () => {
     const data = await PromoApi.getProductPromoConfig(spuId.value)
     if (data) Object.assign(form, data)
     form.spuId = spuId.value
+    const n = Math.max(1, Math.min(20, Number(form.tuijianN) || 4))
+    form.tuijianN = n
+    ratios.value = parseRatios(form.tuijianRatios || '[]', n)
     loaded.value = true
   } finally {
     loading.value = false
@@ -124,14 +173,79 @@ const loadConfig = async () => {
 }
 
 const onSave = async () => {
-  const valid = await formRef.value.validate().catch(() => false)
-  if (!valid) return
+  if (form.tuijianEnabled) {
+    if (!form.tuijianN || form.tuijianN <= 0) {
+      message.warning('启用推 N 反 1 时 N 必须 > 0')
+      return
+    }
+    // v6 文档：N 个比例加总不能超过 100%（避免商家把商品价超额返出去）
+    if (ratiosSum.value > 100) {
+      message.warning(`N 个比例加总 ${ratiosSum.value.toFixed(1)}% > 100%，请调整`)
+      return
+    }
+  }
   submitting.value = true
   try {
-    await PromoApi.saveProductPromoConfig({ ...form, spuId: spuId.value! })
+    await PromoApi.saveProductPromoConfig({
+      ...form,
+      spuId: spuId.value!,
+      tuijianRatios: JSON.stringify(ratios.value.map((v) => Number(v) || 0))
+    })
     message.success('保存成功')
   } finally {
     submitting.value = false
   }
 }
 </script>
+
+<style lang="scss" scoped>
+.ratios-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.ratio-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ratio-tag {
+  flex: 0 0 64px;
+  text-align: center;
+  font-size: 12px;
+  color: #909399;
+  background: #f4f4f5;
+  border-radius: 4px;
+  padding: 4px 6px;
+}
+
+.ratio-unit {
+  font-size: 12px;
+  color: #909399;
+}
+
+.ratios-sum {
+  margin-top: 4px;
+  font-size: 13px;
+  color: #606266;
+
+  &.warn {
+    color: #f56c6c;
+    font-weight: 600;
+  }
+
+  .warn-text {
+    margin-left: 8px;
+    color: #f56c6c;
+  }
+
+  .hint-text {
+    margin-left: 8px;
+    color: #909399;
+    font-weight: 400;
+  }
+}
+</style>
