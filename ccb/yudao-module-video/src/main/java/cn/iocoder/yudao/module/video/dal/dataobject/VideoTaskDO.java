@@ -1,10 +1,10 @@
 package cn.iocoder.yudao.module.video.dal.dataobject;
 
-import cn.iocoder.yudao.framework.mybatis.core.type.StringListTypeHandler;
 import cn.iocoder.yudao.framework.tenant.core.db.TenantBaseDO;
 import com.baomidou.mybatisplus.annotation.KeySequence;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -45,8 +45,11 @@ public class VideoTaskDO extends TenantBaseDO {
     private String description;
     /**
      * 上传的图片URL列表
+     *
+     * <p>schema 列是 json NOT NULL —— 必须用 JacksonTypeHandler 序列化成 JSON 数组；
+     * 之前用 StringListTypeHandler 是逗号分隔字符串，前端 JSON.parse 会挂。</p>
      */
-    @TableField(typeHandler = StringListTypeHandler.class)
+    @TableField(typeHandler = JacksonTypeHandler.class)
     private List<String> imageUrls;
     /**
      * 背景音乐URL（可选）

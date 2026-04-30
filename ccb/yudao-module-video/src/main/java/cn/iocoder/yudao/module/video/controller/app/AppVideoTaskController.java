@@ -22,7 +22,9 @@ import javax.validation.constraints.NotEmpty;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
 import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
+import static cn.iocoder.yudao.module.merchant.enums.MerchantErrorCodeConstants.AI_VIDEO_MERCHANT_NOT_FOUND;
 
 @Tag(name = "用户 App - AI视频")
 @RestController
@@ -42,7 +44,7 @@ public class AppVideoTaskController {
         Long userId = SecurityFrameworkUtils.getLoginUserId();
         cn.iocoder.yudao.module.merchant.dal.dataobject.MerchantDO merchant = merchantService.getMerchantByUserId(userId);
         if (merchant == null) {
-            throw new RuntimeException("请先完成商户入驻");
+            throw exception(AI_VIDEO_MERCHANT_NOT_FOUND);
         }
         return success(videoTaskService.createVideoTask(createReqVO, merchant.getId(), userId));
     }
@@ -106,8 +108,12 @@ public class AppVideoTaskController {
     public CommonResult<Long> register(@Valid @RequestBody RegisterReqVO req) {
         Long userId = SecurityFrameworkUtils.getLoginUserId();
         MerchantDO merchant = merchantService.getMerchantByUserId(userId);
-        Long merchantId = merchant != null ? merchant.getId() : 0L;
-        Long dbId = videoTaskService.registerClientTask(req.getTitle(), req.getDescription(), req.getImageUrls(), merchantId, userId);
+        if (merchant == null) {
+            // 没有商户身份直接抛业务码，不再用 merchantId=0 落孤儿数据
+            throw exception(AI_VIDEO_MERCHANT_NOT_FOUND);
+        }
+        Long dbId = videoTaskService.registerClientTask(req.getTitle(), req.getDescription(),
+                req.getImageUrls(), merchant.getId(), userId);
         return success(dbId);
     }
 

@@ -42,6 +42,13 @@ public class VideoTaskServiceImpl implements VideoTaskService {
 
     @Override
     public Long createVideoTask(VideoTaskCreateReqVO createReqVO, Long merchantId, Long userId) {
+        // video_task.description / image_urls 都是 NOT NULL，入参缺失就直接抛业务码
+        if (createReqVO.getDescription() == null || createReqVO.getDescription().trim().isEmpty()) {
+            throw exception0(1_030_001_010, "视频描述不能为空");
+        }
+        if (createReqVO.getImageUrls() == null || createReqVO.getImageUrls().isEmpty()) {
+            throw exception0(1_030_001_011, "图片列表不能为空");
+        }
         VideoTaskDO task = VideoTaskDO.builder()
                 .merchantId(merchantId)
                 .userId(userId)
@@ -157,6 +164,19 @@ public class VideoTaskServiceImpl implements VideoTaskService {
 
     @Override
     public Long registerClientTask(String title, String description, List<String> imageUrls, Long merchantId, Long userId) {
+        // video_task.description / image_urls / merchant_id / user_id 都是 NOT NULL
+        if (description == null || description.trim().isEmpty()) {
+            throw exception0(1_030_001_010, "视频描述不能为空");
+        }
+        if (imageUrls == null || imageUrls.isEmpty()) {
+            throw exception0(1_030_001_011, "图片列表不能为空");
+        }
+        if (merchantId == null || merchantId <= 0L) {
+            throw exception0(1_030_001_012, "缺少商户身份，无法落库");
+        }
+        if (userId == null || userId <= 0L) {
+            throw exception0(1_030_001_013, "缺少用户身份，无法落库");
+        }
         VideoTaskDO task = VideoTaskDO.builder()
                 .merchantId(merchantId)
                 .userId(userId)
