@@ -13,9 +13,11 @@ import cn.iocoder.yudao.module.video.client.TtsBffClient;
 import cn.iocoder.yudao.module.video.config.VolcanoEngineProperties;
 import cn.iocoder.yudao.module.video.controller.app.vo.bff.BffJimengQueryReqVO;
 import cn.iocoder.yudao.module.video.controller.app.vo.bff.BffJimengSubmitReqVO;
+import cn.iocoder.yudao.module.video.controller.app.vo.bff.BffMultiSceneScriptReqVO;
 import cn.iocoder.yudao.module.video.controller.app.vo.bff.BffRichScriptReqVO;
 import cn.iocoder.yudao.module.video.controller.app.vo.bff.BffTtsReqVO;
 import cn.iocoder.yudao.module.video.service.CopywritingService;
+import cn.iocoder.yudao.module.video.service.dto.AiVideoMultiSceneScriptDTO;
 import cn.iocoder.yudao.module.video.service.dto.AiVideoScriptDTO;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -313,6 +315,38 @@ public class AppMerchantAiVideoBffController {
             shopName = merchant.getName();
         }
         AiVideoScriptDTO dto = copywritingService.generateRichScript(shopName, req.getUserDescription());
+        return success(dto);
+    }
+
+    /**
+     * 多幕分镜脚本生成（即梦 API 优化第一波 ③ 的多幕扩展版）。
+     *
+     * <p>用豆包 vision-pro 看图分幕：N 张图 → N 个 scene，每幕自带
+     * narration + visualPrompt + imageSummary，外加全局 bgmStyle。</p>
+     *
+     * <p>把前端 {@code scriptLlm.js} 自拼 system prompt 调 ark/chat 收到后端，
+     * 业务规则（imgIdx 不重不漏、最后一幕固定 CTA、屏蔽词剔除、字数截断、
+     * bgmStyle 白名单）全部在 service 层 postProcess 强制兜底，前端只负责显示。</p>
+     */
+    @PostMapping("/script/multi-scene")
+    @Operation(summary = "AI 视频 - 多幕分镜脚本（视觉 LLM 看图）")
+    public CommonResult<AiVideoMultiSceneScriptDTO> generateMultiSceneScript(
+            @Valid @RequestBody BffMultiSceneScriptReqVO req) {
+        MerchantDO merchant = getMerchantOrThrow();
+        log.info("[bff/script/multi-scene] merchantId={} imgs={} n={} dur={}",
+                merchant.getId(),
+                req.getImageUrls() == null ? 0 : req.getImageUrls().size(),
+                req.getSceneCount(), req.getSceneDuration());
+        String shopName = req.getShopName();
+        if (shopName == null || shopName.isEmpty()) {
+            shopName = merchant.getName();
+        }
+        AiVideoMultiSceneScriptDTO dto = copywritingService.generateMultiSceneScript(
+                shopName,
+                req.getUserDescription(),
+                req.getImageUrls(),
+                req.getSceneCount() == null ? req.getImageUrls().size() : req.getSceneCount(),
+                req.getSceneDuration() == null ? 10 : req.getSceneDuration());
         return success(dto);
     }
 

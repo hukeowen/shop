@@ -3,6 +3,7 @@ package cn.iocoder.yudao.module.video.service;
 import cn.hutool.core.util.StrUtil;
 import cn.iocoder.yudao.framework.common.util.json.JsonUtils;
 import cn.iocoder.yudao.module.video.config.VolcanoEngineProperties;
+import cn.iocoder.yudao.module.video.service.dto.AiVideoMultiSceneScriptDTO;
 import cn.iocoder.yudao.module.video.service.dto.AiVideoScriptDTO;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.extern.slf4j.Slf4j;
@@ -19,8 +20,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -39,6 +43,34 @@ public class CopywritingServiceImpl implements CopywritingService {
     private static final int MIN_LINES = 6;
     /** 最多句数（多了视频会过长） */
     private static final int MAX_LINES = 18;
+
+    // ==================== 多幕分镜（generateMultiSceneScript） ====================
+
+    /** 多幕的最少幕数（前端 imageCount cap 1） */
+    private static final int MULTI_MIN_SCENES = 1;
+    /** 多幕的最多幕数（前端 imageCount cap 6） */
+    private static final int MULTI_MAX_SCENES = 6;
+    /** 多幕单幕 narration 最长字数 */
+    private static final int MULTI_NARRATION_MAX_CHARS = 36;
+    /** 最后一幕固定的扫码引导文案（前端 scriptLlm.js 里的 FIXED_CTA） */
+    private static final String FIXED_CTA = "扫码进店领优惠";
+    /** 兜底通用 visual prompt（含运镜+风格词，避免 LLM 缺值时 Seedance 拿空字符串） */
+    private static final String FALLBACK_VISUAL_PROMPT =
+            "Cinematic vertical product shot, push-in macro lens, food photography, golden hour lighting, film grain, soft natural color";
+    /** 多幕分镜默认视觉模型（豆包 vision pro） */
+    private static final String VISION_MODEL = "doubao-1-5-vision-pro-32k-250115";
+    /** 多幕分镜默认 BGM 风格（LLM 没返时兜底） */
+    private static final String DEFAULT_BGM_STYLE = "cozy_explore";
+    /** 6 个合法 BGM 风格 key（与 sidecar/bgm/<style>_*.mp3 一致） */
+    private static final Set<String> VALID_BGM_STYLES = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
+            "street_food_yelling", "cozy_explore", "asmr_macro",
+            "elegant_tea", "trendy_pop", "emotional_story"
+    )));
+    /** 屏蔽词（吆喝/促销/极限词，违反广告法或 LLM 易踩雷） */
+    private static final List<String> BLACKLIST_WORDS = Arrays.asList(
+            "老板", "赔本", "大减价", "限时", "秒杀", "小黄车", "购物车", "点击链接",
+            "最", "第一", "全网", "绝对", "独家"
+    );
 
     private static final String SYSTEM_PROMPT =
             "你是一位专业的抖音/微信短视频文案策划。根据用户提供的商品介绍，生成一段适合竖屏短视频的口播文案。" +
@@ -214,6 +246,331 @@ public class CopywritingServiceImpl implements CopywritingService {
         } catch (IOException e) {
             log.error("[generateCopywriting] Ark LLM 调用 IO 异常", e);
             throw new RuntimeException("LLM 文案生成 IO 异常", e);
+        }
+    }
+
+    // ==================== 多幕分镜（视觉模型 + 后处理） ====================
+
+    @Override
+    public AiVideoMultiSceneScriptDTO generateMultiSceneScript(
+            String shopName, String userDescription,
+            List<String> imageUrls, int sceneCount, int sceneDuration) {
+        // 1. 入参规整：scenes / images 数量都 cap [1, 6]，sceneDuration ≥ 1
+        List<String> imgs = imageUrls == null
+                ? Collections.emptyList()
+                : imageUrls.stream().filter(StrUtil::isNotBlank).collect(Collectors.toList());
+        int imgCount = clamp(imgs.size(), MULTI_MIN_SCENES, MULTI_MAX_SCENES);
+        int n = clamp(sceneCount, MULTI_MIN_SCENES, MULTI_MAX_SCENES);
+        if (imgCount > 0 && n > imgCount) {
+            // 幕数超过图片数会逼 LLM 重复用图，体验不好；硬切到 imgCount
+            n = imgCount;
+        }
+        int dur = Math.max(1, sceneDuration);
+
+        if (StrUtil.isBlank(properties.getArkApiKey())) {
+            log.warn("[generateMultiSceneScript] ARK_API_KEY 未配置，返回兜底脚本");
+            return fallbackMultiSceneScript(n, dur);
+        }
+        if (imgs.isEmpty()) {
+            log.warn("[generateMultiSceneScript] imageUrls 为空，返回兜底");
+            return fallbackMultiSceneScript(n, dur);
+        }
+
+        // 2. 调豆包 vision-pro：messages 含 system + user (含图)
+        try {
+            String content = callVisionLlmForScript(shopName, userDescription, imgs, n, dur);
+            return postProcessMultiScene(content, imgCount, n, dur);
+        } catch (Exception e) {
+            log.error("[generateMultiSceneScript] 调用 / 解析失败，返回兜底", e);
+            return fallbackMultiSceneScript(n, dur);
+        }
+    }
+
+    /** 真实调 vision-pro 拿原始 JSON 文本；失败抛 RuntimeException 让外层兜底 */
+    private String callVisionLlmForScript(
+            String shopName, String userDescription,
+            List<String> imageUrls, int n, int dur) {
+        String systemPrompt = buildMultiSceneSystemPrompt(n, dur);
+        String userText = buildMultiSceneUserText(shopName, userDescription, imageUrls.size(), n, dur);
+
+        // 视觉消息：text + N 个 image_url（detail=low 节省 token）
+        List<Object> userContents = new ArrayList<>();
+        Map<String, Object> textPart = new LinkedHashMap<>();
+        textPart.put("type", "text");
+        textPart.put("text", userText);
+        userContents.add(textPart);
+        for (int i = 0; i < imageUrls.size(); i++) {
+            Map<String, Object> imgPart = new LinkedHashMap<>();
+            imgPart.put("type", "image_url");
+            Map<String, Object> imgUrl = new LinkedHashMap<>();
+            imgUrl.put("url", imageUrls.get(i));
+            imgUrl.put("detail", "low");
+            imgPart.put("image_url", imgUrl);
+            userContents.add(imgPart);
+        }
+
+        Map<String, Object> systemMsg = new LinkedHashMap<>();
+        systemMsg.put("role", "system");
+        systemMsg.put("content", systemPrompt);
+        Map<String, Object> userMsg = new LinkedHashMap<>();
+        userMsg.put("role", "user");
+        userMsg.put("content", userContents);
+
+        Map<String, Object> body = new LinkedHashMap<>();
+        // 使用视觉模型；如果配置里 ark-allowed-models 没包含会怎样？
+        // 此调用走 service 直连 Ark（不经 BFF /ark/chat），不受 BFF 白名单限制；
+        // 但仍建议在 properties.arkAllowedModels 里包含 vision 模型，便于运维
+        body.put("model", VISION_MODEL);
+        body.put("messages", Arrays.asList(systemMsg, userMsg));
+        body.put("temperature", 0.85);
+        body.put("top_p", 0.9);
+        body.put("max_tokens", 1500);
+        Map<String, String> responseFormat = new LinkedHashMap<>();
+        responseFormat.put("type", "json_object");
+        body.put("response_format", responseFormat);
+
+        Request request = new Request.Builder()
+                .url(properties.getArkChatUrl())
+                .post(RequestBody.create(JsonUtils.toJsonString(body), MediaType.parse("application/json")))
+                .addHeader("Authorization", "Bearer " + properties.getArkApiKey())
+                .addHeader("Content-Type", "application/json")
+                .build();
+
+        try (Response response = httpClient.newCall(request).execute()) {
+            String responseBody = response.body() != null ? response.body().string() : "";
+            if (!response.isSuccessful()) {
+                log.error("[generateMultiSceneScript] vision LLM 失败 status={} body={}",
+                        response.code(), responseBody);
+                throw new RuntimeException("vision LLM HTTP " + response.code());
+            }
+            JsonNode root = JsonUtils.parseTree(responseBody);
+            JsonNode content = root.path("choices").path(0).path("message").path("content");
+            if (content.isMissingNode() || content.asText().isEmpty()) {
+                throw new RuntimeException("vision LLM 返回内容为空");
+            }
+            return content.asText();
+        } catch (IOException e) {
+            throw new RuntimeException("vision LLM IO 异常", e);
+        }
+    }
+
+    private String buildMultiSceneSystemPrompt(int n, int dur) {
+        return "你是会讲故事的店主+短视频编剧，擅长抖音爆款竖屏短视频脚本。\n"
+                + "我会给你 N 张商品/店铺照片，请你看图后写一段 N 幕的视频脚本：每张图独立 1 幕。\n\n"
+                + "【硬规则】严格遵守，违反算失败：\n"
+                + "1) 每幕一个对象 {imgIdx, imageSummary, narration, visualPrompt}；\n"
+                + "2) imgIdx 取值 0..N-1，每张图必须用上且只用一次（不要重复也不要遗漏）；\n"
+                + "3) narration 自然口语，最长 " + (dur >= 10 ? "36" : "18") + " 中文字；\n"
+                + "4) visualPrompt 必须英文，1 句话内 ≤ 80 词，结构 [主体]+[动作]+[环境]+[运镜]+[风格]；\n"
+                + "   必含运镜词（push-in/pull-out/pan/tilt-up/dolly/macro shot/slow motion 任选）；\n"
+                + "   必含风格词（cinematic/food photography/vlog/asmr/golden hour/film grain 任选）；\n"
+                + "5) imageSummary 中文一句（≤ 20 字），描述这张图最动人的细节；\n"
+                + "6) 全文严禁吆喝/违规词：老板/赔本/大减价/限时/秒杀/小黄车/购物车/点击链接；\n"
+                + "7) 严禁广告法极限词：最/第一/全网/绝对/独家；\n"
+                + "8) 第 1 幕用画面感钩子（不要痛点喊话/数字冲击）；\n"
+                + "9) 最后一幕 narration 固定为「" + FIXED_CTA + "」，前面几幕不要提扫码/二维码/下单引导；\n"
+                + "10) 同时输出全局 bgmStyle，从下面 6 选 1：\n"
+                + "    street_food_yelling / cozy_explore / asmr_macro / elegant_tea / trendy_pop / emotional_story；\n"
+                + "11) 严格仅按下面 JSON 返回，不要 Markdown 代码块、不要额外文字：\n"
+                + "{\n"
+                + "  \"title\": \"视频标题（8-16字）\",\n"
+                + "  \"bgmStyle\": \"cozy_explore\",\n"
+                + "  \"scenes\": [\n"
+                + "    {\"imgIdx\": 0, \"imageSummary\": \"...\", \"narration\": \"...\", \"visualPrompt\": \"...\"},\n"
+                + "    ...\n"
+                + "  ]\n"
+                + "}\n";
+    }
+
+    private String buildMultiSceneUserText(String shopName, String userDescription, int imgCount, int n, int dur) {
+        StringBuilder sb = new StringBuilder();
+        if (StrUtil.isNotBlank(shopName)) {
+            sb.append("店铺名称：").append(shopName).append("\n");
+        }
+        sb.append("商品/店铺背景：").append(StrUtil.nullToEmpty(userDescription)).append("\n");
+        sb.append("共 ").append(imgCount).append(" 张图，请输出 ").append(n)
+                .append(" 幕脚本（每幕 ").append(dur).append(" 秒，共 ")
+                .append(n * dur).append(" 秒）。\n");
+        sb.append("注意：最后一幕 narration 必须是「").append(FIXED_CTA).append("」。");
+        return sb.toString();
+    }
+
+    /**
+     * 后处理 LLM 返回：解析 + 强制规则。
+     *
+     * <p>不信任 LLM 输出，全部硬规则在 Java 这层兜：</p>
+     * <ul>
+     *     <li>imgIdx 越界 / 重复 / 缺失 → 自动修正分配未使用的索引</li>
+     *     <li>narration 字数超 → 截断；最后一幕强制覆盖为 FIXED_CTA</li>
+     *     <li>visualPrompt 缺失 → 用 FALLBACK_VISUAL_PROMPT</li>
+     *     <li>bgmStyle 不在白名单 → DEFAULT_BGM_STYLE</li>
+     *     <li>scenes 数量不足 → 用兜底 scene 补满</li>
+     *     <li>scenes 数量超出 → 截断到 n</li>
+     *     <li>违禁词扫描 → 替换为安全词（中文）/ 跳过（英文）</li>
+     * </ul>
+     */
+    AiVideoMultiSceneScriptDTO postProcessMultiScene(String rawContent, int imgCount, int n, int dur) {
+        String trimmed = rawContent == null ? "" : rawContent.trim();
+        if (trimmed.startsWith("```")) {
+            int first = trimmed.indexOf('\n');
+            int last = trimmed.lastIndexOf("```");
+            if (first > 0 && last > first) trimmed = trimmed.substring(first + 1, last).trim();
+        }
+
+        String title = "新品推荐";
+        String bgmStyle = DEFAULT_BGM_STYLE;
+        List<RawScene> rawScenes = new ArrayList<>();
+
+        try {
+            JsonNode root = JsonUtils.parseTree(trimmed);
+            String t = root.path("title").asText("").trim();
+            if (!t.isEmpty()) title = sanitizeChinese(t, 30);
+            String b = root.path("bgmStyle").asText("").trim();
+            if (VALID_BGM_STYLES.contains(b)) bgmStyle = b;
+            JsonNode sceneArr = root.get("scenes");
+            if (sceneArr != null && sceneArr.isArray()) {
+                for (JsonNode s : sceneArr) {
+                    int idx = s.path("imgIdx").asInt(-1);
+                    String summary = s.path("imageSummary").asText("").trim();
+                    String narration = s.path("narration").asText("").trim();
+                    String vp = s.path("visualPrompt").asText("").trim();
+                    rawScenes.add(new RawScene(idx, summary, narration, vp));
+                }
+            }
+        } catch (Exception e) {
+            log.warn("[postProcessMultiScene] 解析失败 raw={} err={}", trimmed.substring(0, Math.min(200, trimmed.length())), e.getMessage());
+        }
+
+        // ① 数量不足 → 用空 scene 补；超出 → 截断
+        while (rawScenes.size() < n) rawScenes.add(new RawScene(-1, "", "", ""));
+        if (rawScenes.size() > n) rawScenes = new ArrayList<>(rawScenes.subList(0, n));
+
+        // ② imgIdx 修正：去重 + 越界回收 + 缺失补位
+        rawScenes = reassignImgIdx(rawScenes, imgCount);
+
+        // ③ 文本规整：narration 限字 + 屏蔽词、visualPrompt 缺失兜底、imageSummary 限字
+        for (RawScene s : rawScenes) {
+            s.narration = sanitizeChinese(s.narration, MULTI_NARRATION_MAX_CHARS);
+            s.imageSummary = sanitizeChinese(s.imageSummary, 20);
+            if (StrUtil.isBlank(s.visualPrompt) || s.visualPrompt.length() < 10) {
+                s.visualPrompt = FALLBACK_VISUAL_PROMPT;
+            }
+        }
+
+        // ④ 最后一幕 narration 强制 = FIXED_CTA（覆盖 LLM 不听话的情况）
+        if (!rawScenes.isEmpty()) {
+            rawScenes.get(rawScenes.size() - 1).narration = FIXED_CTA;
+        }
+
+        // ⑤ build DTO
+        List<AiVideoMultiSceneScriptDTO.Scene> scenes = new ArrayList<>(rawScenes.size());
+        for (RawScene r : rawScenes) {
+            scenes.add(AiVideoMultiSceneScriptDTO.Scene.builder()
+                    .imgIdx(r.imgIdx)
+                    .imageSummary(r.imageSummary)
+                    .narration(r.narration)
+                    .visualPrompt(r.visualPrompt)
+                    .build());
+        }
+        return AiVideoMultiSceneScriptDTO.builder()
+                .title(title.isEmpty() ? "新品推荐" : title)
+                .bgmStyle(bgmStyle)
+                .scenes(scenes)
+                .build();
+    }
+
+    /**
+     * imgIdx 修正：保证 0..imgCount-1 每个值最多用一次。
+     * 算法：先一遍扫描收集"已用过"的合法 idx；遇到非法/重复/越界的 scene 标记待补；
+     * 然后再扫一遍把"未被任何 scene 用上"的 idx 按顺序分给待补。
+     * 这样原 LLM 给的合理分配尽量保留，错误 / 缺失才修。
+     */
+    private List<RawScene> reassignImgIdx(List<RawScene> scenes, int imgCount) {
+        Set<Integer> used = new HashSet<>();
+        boolean[] need = new boolean[scenes.size()];
+        for (int i = 0; i < scenes.size(); i++) {
+            RawScene s = scenes.get(i);
+            int idx = s.imgIdx;
+            if (idx < 0 || idx >= imgCount || used.contains(idx)) {
+                need[i] = true;
+            } else {
+                used.add(idx);
+            }
+        }
+        // 收集未使用的 idx（按顺序）
+        List<Integer> remaining = new ArrayList<>();
+        for (int j = 0; j < imgCount; j++) {
+            if (!used.contains(j)) remaining.add(j);
+        }
+        int rIdx = 0;
+        for (int i = 0; i < scenes.size(); i++) {
+            if (!need[i]) continue;
+            int idx;
+            if (rIdx < remaining.size()) {
+                idx = remaining.get(rIdx++);
+            } else {
+                // 极端：scenes 比 imgCount 多 → 复用 i % imgCount
+                idx = i % Math.max(1, imgCount);
+            }
+            scenes.get(i).imgIdx = idx;
+            used.add(idx);
+        }
+        return scenes;
+    }
+
+    /**
+     * 中文文本清洗：去序号前缀（"1. "/"第一句："）、屏蔽词替换为""、最长 maxChars 截断。
+     */
+    private String sanitizeChinese(String s, int maxChars) {
+        if (s == null) return "";
+        String x = s.replaceFirst(
+                "^\\s*([0-9]+[\\.、:：\\)]|第[一二三四五六七八九十]句[:：]?)\\s*", "").trim();
+        for (String bad : BLACKLIST_WORDS) {
+            if (x.contains(bad)) {
+                x = x.replace(bad, "");
+            }
+        }
+        x = x.trim();
+        if (x.length() > maxChars) x = x.substring(0, maxChars);
+        return x;
+    }
+
+    /** Ark Key 缺失 / LLM 整体失败时，返一份合法兜底脚本，前端不崩。 */
+    private AiVideoMultiSceneScriptDTO fallbackMultiSceneScript(int n, int dur) {
+        List<AiVideoMultiSceneScriptDTO.Scene> scenes = new ArrayList<>(n);
+        for (int i = 0; i < n; i++) {
+            String narr = (i == n - 1) ? FIXED_CTA : "现拍现做，新鲜出炉";
+            scenes.add(AiVideoMultiSceneScriptDTO.Scene.builder()
+                    .imgIdx(i)
+                    .imageSummary("")
+                    .narration(narr)
+                    .visualPrompt(FALLBACK_VISUAL_PROMPT)
+                    .build());
+        }
+        return AiVideoMultiSceneScriptDTO.builder()
+                .title("新品推荐")
+                .bgmStyle(DEFAULT_BGM_STYLE)
+                .scenes(scenes)
+                .build();
+    }
+
+    private static int clamp(int v, int lo, int hi) {
+        if (v < lo) return lo;
+        if (v > hi) return hi;
+        return v;
+    }
+
+    /** 内部可变持有 imgIdx / 文本字段，方便 reassignImgIdx 修改 */
+    private static class RawScene {
+        int imgIdx;
+        String imageSummary;
+        String narration;
+        String visualPrompt;
+        RawScene(int imgIdx, String imageSummary, String narration, String visualPrompt) {
+            this.imgIdx = imgIdx;
+            this.imageSummary = imageSummary == null ? "" : imageSummary;
+            this.narration = narration == null ? "" : narration;
+            this.visualPrompt = visualPrompt == null ? "" : visualPrompt;
         }
     }
 

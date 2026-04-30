@@ -1,5 +1,6 @@
 package cn.iocoder.yudao.module.video.service;
 
+import cn.iocoder.yudao.module.video.service.dto.AiVideoMultiSceneScriptDTO;
 import cn.iocoder.yudao.module.video.service.dto.AiVideoScriptDTO;
 
 import java.util.List;
@@ -31,4 +32,25 @@ public interface CopywritingService {
      * 由 LLM 自动补齐，生成的视频从"PPT 拼接"升级为"专业短片"。</p>
      */
     AiVideoScriptDTO generateRichScript(String shopName, String userDescription);
+
+    /**
+     * 生成多幕分镜脚本 — 用视觉模型（豆包 vision-pro）"看图分幕"。
+     *
+     * <p>每张图一幕，每幕自带 narration + visualPrompt + imageSummary，外加全局
+     * bgmStyle。返回的 scenes 数量 ≤ sceneCount 且 ≤ imageUrls.size()；最后一幕
+     * narration 固定为扫码引导文案（"扫码进店领优惠"）。</p>
+     *
+     * <p>把前端 scriptLlm.js 自拼 system prompt 调 ark/chat 的逻辑收到后端，
+     * 前端只做 thin wrapper。</p>
+     *
+     * @param shopName        店铺名（用于 LLM 推断行业 / 选 BGM 风格）
+     * @param userDescription 商户口语化描述
+     * @param imageUrls       图片公网 URL 列表（豆包 vision 模型按 url 看图）
+     * @param sceneCount      期望幕数（一般 = imageUrls.size()，cap 6）
+     * @param sceneDuration   每幕时长（秒，影响 narration 字数提示）
+     */
+    AiVideoMultiSceneScriptDTO generateMultiSceneScript(
+            String shopName, String userDescription,
+            java.util.List<String> imageUrls,
+            int sceneCount, int sceneDuration);
 }
