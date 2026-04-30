@@ -29,7 +29,9 @@ import cn.iocoder.yudao.module.merchant.controller.app.vo.auth.AppSwitchRoleReqV
 import cn.iocoder.yudao.module.merchant.controller.app.vo.auth.AppWxMiniLoginReqVO;
 import cn.iocoder.yudao.module.merchant.dal.dataobject.MerchantDO;
 import cn.iocoder.yudao.module.merchant.dal.dataobject.MerchantInviteCodeDO;
+import cn.iocoder.yudao.module.merchant.dal.dataobject.ShopInfoDO;
 import cn.iocoder.yudao.module.merchant.dal.mysql.MerchantMapper;
+import cn.iocoder.yudao.module.merchant.dal.mysql.ShopInfoMapper;
 import cn.iocoder.yudao.module.merchant.service.MerchantInviteCodeService;
 import cn.iocoder.yudao.module.merchant.service.MerchantService;
 import cn.iocoder.yudao.module.merchant.service.auth.ActiveRoleCache;
@@ -91,6 +93,8 @@ public class AppUnifiedAuthController {
     private MemberUserMapper memberUserMapper;
     @Resource
     private MerchantMapper merchantMapper;
+    @Resource
+    private ShopInfoMapper shopInfoMapper;
     @Resource
     private MerchantService merchantService;
     @Resource
@@ -499,6 +503,8 @@ public class AppUnifiedAuthController {
         resp.setRoles(roles);
         resp.setActiveRole(activeRole);
         resp.setMerchantId(merchant == null ? null : merchant.getId());
+        resp.setNickname(member.getNickname());
+        fillShopFields(resp, merchant);
         return success(resp);
     }
 
@@ -571,6 +577,36 @@ public class AppUnifiedAuthController {
         vo.setActiveRole(activeRole);
         vo.setOpenid(openid);
         vo.setMerchantId(merchant == null ? null : merchant.getId());
+        vo.setNickname(member.getNickname());
+        fillShopFields(vo, merchant);
         return vo;
+    }
+
+    /**
+     * 填店铺名 + logo。merchant_info 是 TenantBaseDO，shop_info 是 BaseDO（tenantId 普通列），
+     * 这里调用方有的在 ignore tenant ctx 里（me/login），所以查 shop_info 直接按 merchant.tenantId
+     * 走 ShopInfoMapper.selectByTenantId（其内部 selectOne）即可，不依赖当前线程 tenant 上下文。
+     */
+    private void fillShopFields(AppLoginRespVO vo, MerchantDO merchant) {
+        if (merchant == null) {
+            return;
+        }
+        // 默认回退到 merchant_info（SMS 一键申请只建了 merchant 壳，shop_info 还没建）
+        vo.setShopName(merchant.getName());
+        vo.setShopLogo(merchant.getLogo());
+        try {
+            ShopInfoDO shop = shopInfoMapper.selectByTenantId(merchant.getTenantId());
+            if (shop != null) {
+                if (StrUtil.isNotBlank(shop.getShopName())) {
+                    vo.setShopName(shop.getShopName());
+                }
+                if (StrUtil.isNotBlank(shop.getCoverUrl())) {
+                    vo.setShopLogo(shop.getCoverUrl());
+                }
+            }
+        } catch (Exception e) {
+            // 查 shop_info 不应阻塞登录态返回
+            log.warn("[fillShopFields] 查 shop_info 失败 merchantId={} tenantId={}", merchant.getId(), merchant.getTenantId(), e);
+        }
     }
 }

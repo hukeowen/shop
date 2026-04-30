@@ -125,11 +125,14 @@ function jumpAddProduct() {
   uni.navigateTo({ url: '/pages/product/batch' });
 }
 
-onMounted(() => {
+onMounted(async () => {
   if (!userStore.loggedIn) {
     uni.reLaunch({ url: '/pages/login/index' });
     return;
   }
+  // 拉一次最新登录态：老 token（升级前签的）store 里没 nickname/shopName，
+  // 必须 refreshMe 把店铺名填上，否则一直显示"未关联店铺"
+  try { await userStore.refreshMe(); } catch (e) { /* 忽略，不阻塞看板 */ }
   load();
 });
 

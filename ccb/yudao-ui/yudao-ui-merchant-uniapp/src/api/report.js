@@ -1,24 +1,53 @@
-import { mockDelay } from './request.js';
+import { request } from './request.js';
 
-// 首页数据看板
-export function getDashboard() {
-  return mockDelay({
+/**
+ * 商户首页数据看板（实时）。
+ * 后端 AppMerchantDashboardController -> /app-api/merchant/mini/dashboard/summary。
+ *
+ * 后端 RespVO 字段：
+ *   today*       —— todayOrderCount / todayOrderAmount(分) / todayNewMemberCount
+ *   pending*     —— pendingShipmentCount / pendingVerifyCount / pendingAfterSaleCount
+ *   trend*       —— trendLabels[7] / trendOrderCounts[7] / trendSalesAmount[7]
+ *   topProducts  —— [{spuId,name,picUrl,salesCount,salesAmount}]
+ *
+ * 这里把它扁平化成首页 index.vue 现用的 today/trend/topProducts 三段结构，
+ * 让模板代码不用大改。
+ */
+export async function getDashboard() {
+  const resp = await request({
+    url: '/app-api/merchant/mini/dashboard/summary',
+    method: 'GET',
+  });
+  const r = resp || {};
+  return {
     today: {
-      orderCount: 18,
-      salesAmount: 36800, // 分
-      newMembers: 5,
-      pendingOrders: 3,
+      orderCount: numOr(r.todayOrderCount, 0),
+      salesAmount: numOr(r.todayOrderAmount, 0),
+      newMembers: numOr(r.todayNewMemberCount, 0),
+      // 首页"待处理"卡只展示一个数 → 三档相加
+      pendingOrders:
+        numOr(r.pendingShipmentCount, 0) +
+        numOr(r.pendingVerifyCount, 0) +
+        numOr(r.pendingAfterSaleCount, 0),
     },
     trend: {
-      // 最近 7 天销售额（分）
-      labels: ['4-14', '4-15', '4-16', '4-17', '4-18', '4-19', '4-20'],
-      sales: [21500, 26800, 19200, 31000, 28400, 42100, 36800],
-      orders: [11, 15, 9, 17, 14, 21, 18],
+      labels: Array.isArray(r.trendLabels) ? r.trendLabels : [],
+      sales: Array.isArray(r.trendSalesAmount) ? r.trendSalesAmount.map((v) => numOr(v, 0)) : [],
+      orders: Array.isArray(r.trendOrderCounts) ? r.trendOrderCounts.map((v) => numOr(v, 0)) : [],
     },
-    topProducts: [
-      { name: '蜜薯（大）', count: 42, amount: 21000 },
-      { name: '烤地瓜（大）', count: 35, amount: 21000 },
-      { name: '甜玉米', count: 28, amount: 8400 },
-    ],
-  });
+    topProducts: Array.isArray(r.topProducts)
+      ? r.topProducts.map((p) => ({
+          name: p.name || '未命名商品',
+          picUrl: p.picUrl || '',
+          count: numOr(p.salesCount, 0),
+          amount: numOr(p.salesAmount, 0),
+        }))
+      : [],
+  };
+}
+
+function numOr(v, fallback) {
+  if (v === null || v === undefined) return fallback;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : fallback;
 }

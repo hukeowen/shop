@@ -101,8 +101,26 @@ export const useUserStore = defineStore('user', {
       this.phone = resp.phone || mobile;
       this.roles = Array.isArray(resp.roles) ? resp.roles : [];
       this.activeRole = resp.activeRole || (this.roles[0] || '');
+      this._writeProfile(resp);
       this.persist();
       return resp;
+    },
+
+    /**
+     * 把后端 AppLoginRespVO 里 nickname / shopName / shopLogo 拍到 user/shop 上，
+     * 没有就保留旧值（不要覆盖成 null，会让头部突然清空）。
+     */
+    _writeProfile(resp) {
+      if (resp && resp.nickname !== undefined) {
+        this.user = { ...(this.user || {}), nickname: resp.nickname || '' };
+      }
+      if (resp && (resp.shopName !== undefined || resp.shopLogo !== undefined)) {
+        this.shop = {
+          ...(this.shop || {}),
+          name: resp.shopName != null ? resp.shopName : (this.shop && this.shop.name) || '',
+          logo: resp.shopLogo != null ? resp.shopLogo : (this.shop && this.shop.logo) || '',
+        };
+      }
     },
 
     /**
@@ -134,6 +152,7 @@ export const useUserStore = defineStore('user', {
       this.phone = resp.phone || '';
       this.roles = Array.isArray(resp.roles) ? resp.roles : [];
       this.activeRole = resp.activeRole || (this.roles[0] || '');
+      this._writeProfile(resp);
       this.persist();
       return resp;
     },
@@ -175,6 +194,7 @@ export const useUserStore = defineStore('user', {
       this.merchantId = resp.merchantId || this.merchantId;
       if (Array.isArray(resp.roles)) this.roles = resp.roles;
       this.activeRole = 'merchant';
+      this._writeProfile(resp);
       this.persist();
       return resp;
     },
@@ -188,6 +208,7 @@ export const useUserStore = defineStore('user', {
       });
       if (resp.token) this.token = resp.token;
       this.activeRole = resp.activeRole || role;
+      this._writeProfile(resp);
       this.persist();
       return resp;
     },
@@ -201,6 +222,7 @@ export const useUserStore = defineStore('user', {
       this.phone = me.phone || this.phone;
       if (Array.isArray(me.roles)) this.roles = me.roles;
       this.activeRole = me.activeRole || this.activeRole;
+      this._writeProfile(me);
       this.persist();
       return me;
     },

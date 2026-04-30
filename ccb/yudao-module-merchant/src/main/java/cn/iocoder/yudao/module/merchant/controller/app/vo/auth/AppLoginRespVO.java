@@ -39,4 +39,13 @@ public class AppLoginRespVO {
 
     @Schema(description = "关联商户 ID，未开通商户时为 null")
     private Long merchantId;
+
+    @Schema(description = "用户昵称，未设置时为空，前端兜底用 phone 末四位")
+    private String nickname;
+
+    @Schema(description = "店铺名称，优先 shop_info.shop_name，回退 merchant_info.name")
+    private String shopName;
+
+    @Schema(description = "店铺 logo / 封面 URL，优先 shop_info.cover_url，回退 merchant_info.logo")
+    private String shopLogo;
 }
