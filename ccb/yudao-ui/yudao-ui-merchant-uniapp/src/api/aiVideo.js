@@ -160,6 +160,29 @@ if (typeof window !== 'undefined') {
 }
 
 /**
+ * 调后端 /script/rich 拿富脚本（lines + visualPrompt + bgmStyle）。
+ * 主要用 bgmStyle 给 confirm 页 BGM 选择器自动预选；visualPrompt 作为各幕基底。
+ * 失败返 null，调用方自行兜底。
+ */
+async function fetchRichScript(shopName, userDescription) {
+  if (!userDescription || !userDescription.trim()) return null;
+  try {
+    const data = await request({
+      url: '/app-api/merchant/mini/ai-video/bff/script/rich',
+      method: 'POST',
+      data: {
+        shopName: shopName || '',
+        userDescription: userDescription.trim(),
+      },
+    });
+    return data || null;
+  } catch (e) {
+    console.warn('[fetchRichScript]', e.message);
+    return null;
+  }
+}
+
+/**
  * 6 个 BGM 风格 key（与 sidecar/bgm/<style>_*.mp3 文件名前缀一一对应）。
  * 详细 list 见 docs/design/marketing-system 里的 ai-video 优化方案 / sidecar/bgm/README.md。
  * 这里只在前端做 UI 选项标签；空字符串 = 不混 BGM（兜底）。
@@ -215,7 +238,22 @@ export async function createTask({ imageBase64s, userDescription, voiceKey, rati
     task.imageUrls = await uploadImages(imgs);
     task.coverUrl = task.imageUrls[0];
 
-    // ② LLM 拆 N 幕（视觉模型，真的看到每张图；幕数 = 图数，每幕 1:1 用对应图）
+    // ②a 旁路调后端 generateRichScript 拿 BGM 风格推荐 + 英文运镜基底
+    //     这是即梦 API 优化第一波 ③ 的前端接入：bgmStyle 自动落到 task，confirm 页打开
+    //     时该选项已被预选；visualPrompt 作为各幕 Seedance 的运镜基底，避免老板写不出
+    //     "push-in macro"" "golden hour" 等词。失败不阻塞主流程（task.bgmStyle 仍空）
+    let richBaseVisualPrompt = '';
+    try {
+      const rich = await fetchRichScript(shopName, userDescription);
+      if (rich) {
+        if (rich.bgmStyle) task.bgmStyle = rich.bgmStyle;
+        if (rich.visualPrompt) richBaseVisualPrompt = rich.visualPrompt;
+      }
+    } catch (e) {
+      console.warn('[aiVideo] generateRichScript 失败，fallback 老路径:', e.message);
+    }
+
+    // ②b LLM 拆 N 幕（视觉模型，真的看到每张图；幕数 = 图数，每幕 1:1 用对应图）
     const sceneCount = sceneCountFor(imgs.length);
     const perSceneDuration = sceneDurationFor(imgs.length);
     task.sceneDuration = perSceneDuration;
@@ -227,6 +265,14 @@ export async function createTask({ imageBase64s, userDescription, voiceKey, rati
       sceneCount,
       sceneDuration: perSceneDuration,
     });
+    // 用 rich.visualPrompt 当 fallback：LLM 没给某幕 visual_prompt 时填这个基底
+    if (richBaseVisualPrompt) {
+      scenes.forEach((s) => {
+        if (!s.visual_prompt || !s.visual_prompt.trim()) {
+          s.visual_prompt = richBaseVisualPrompt;
+        }
+      });
+    }
     task.title = title;
     task.scenes = scenes.map((s, i) => {
       const isEndCard = i === scenes.length - 1;

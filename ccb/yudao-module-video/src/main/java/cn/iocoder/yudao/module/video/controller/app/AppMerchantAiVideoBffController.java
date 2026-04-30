@@ -13,7 +13,10 @@ import cn.iocoder.yudao.module.video.client.TtsBffClient;
 import cn.iocoder.yudao.module.video.config.VolcanoEngineProperties;
 import cn.iocoder.yudao.module.video.controller.app.vo.bff.BffJimengQueryReqVO;
 import cn.iocoder.yudao.module.video.controller.app.vo.bff.BffJimengSubmitReqVO;
+import cn.iocoder.yudao.module.video.controller.app.vo.bff.BffRichScriptReqVO;
 import cn.iocoder.yudao.module.video.controller.app.vo.bff.BffTtsReqVO;
+import cn.iocoder.yudao.module.video.service.CopywritingService;
+import cn.iocoder.yudao.module.video.service.dto.AiVideoScriptDTO;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.annotations.Operation;
@@ -84,6 +87,8 @@ public class AppMerchantAiVideoBffController {
     private MerchantVideoQuotaLogService merchantVideoQuotaLogService;
     @Resource
     private VolcanoEngineProperties volcanoEngineProperties;
+    @Resource
+    private CopywritingService copywritingService;
 
     /**
      * Ark Chat 代理。
@@ -279,6 +284,36 @@ public class AppMerchantAiVideoBffController {
 
         String respText = jimengBffClient.callAction("CVSync2AsyncGetResult", bodyJson);
         return success(parseOrRaw(respText));
+    }
+
+    /**
+     * 富脚本生成（即梦 API 优化第一波 ③）。
+     *
+     * <p>把"老板写不出的运镜词汇"由后端 LLM 自动补齐：一次输出</p>
+     * <ul>
+     *     <li>{@code lines}: 6-10 句口播文案（TTS 念）</li>
+     *     <li>{@code visualPrompt}: 一句英文运镜+风格 prompt（喂 Seedance）</li>
+     *     <li>{@code bgmStyle}: 6 选 1 BGM 风格 key（sidecar 据此选 mp3 混音）</li>
+     * </ul>
+     *
+     * <p>前端 ai-video 流程：先调本接口拿 bgmStyle 推荐（auto-fill confirm 页 BGM 选择器），
+     * 同时把 visualPrompt 作为各幕 Seedance 的基底英文运镜词。</p>
+     */
+    @PostMapping("/script/rich")
+    @Operation(summary = "AI 视频 - 富脚本生成（lines + visualPrompt + bgmStyle）")
+    public CommonResult<AiVideoScriptDTO> generateRichScript(@Valid @RequestBody BffRichScriptReqVO req) {
+        MerchantDO merchant = getMerchantOrThrow();
+        log.info("[bff/script/rich] merchantId={} shopName={} descLen={}",
+                merchant.getId(),
+                req.getShopName() == null ? "" : req.getShopName(),
+                req.getUserDescription() == null ? 0 : req.getUserDescription().length());
+        String shopName = req.getShopName();
+        if (shopName == null || shopName.isEmpty()) {
+            // 没传店铺名，用 merchant_info.name 兜底，让 LLM prompt 上下文更完整
+            shopName = merchant.getName();
+        }
+        AiVideoScriptDTO dto = copywritingService.generateRichScript(shopName, req.getUserDescription());
+        return success(dto);
     }
 
     /**
