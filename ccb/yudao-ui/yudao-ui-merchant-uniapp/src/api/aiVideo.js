@@ -24,6 +24,92 @@ import { findVoice } from './voice.js';
 const MAX_SCENES = 3;
 const MAX_TOTAL_SEC = 30;
 
+// ============ 后端 thin wrappers（B 改造 Step 4.1）============
+// 走 yudao 后端 /app-api/video/app/task/* 接口（商户鉴权 + 商户隔离）
+// 把前端 store.tasks 里的关键状态（scenes / 元数据）持久化到 video_task 表 + video_scene 表
+// 失败不抛错（避免阻塞前端主链路），只 console.warn；前端 store 仍是当前会话的真相源
+
+const VIDEO_TASK_BASE = '/app-api/video/app/task';
+
+/**
+ * 一次拉全：任务详情 + 全部分镜（detail/confirm 页冷启动时用）
+ * @param {number} taskId 后端 video_task.id（注意：不是前端 store.tasks.id）
+ * @returns {Promise<Object|null>} 后端返 VideoTaskWithScenesRespVO 形态；不存在/跨商户返 null
+ */
+export async function fetchTaskWithScenes(taskId) {
+  if (!taskId || taskId <= 0) return null;
+  try {
+    const data = await request({ url: `${VIDEO_TASK_BASE}/get-with-scenes?id=${taskId}`, method: 'GET' });
+    return data || null;
+  } catch (e) {
+    console.warn('[fetchTaskWithScenes]', taskId, e.message);
+    return null;
+  }
+}
+
+/**
+ * 批量保存分镜（confirmTask 落库 N 幕脚本时调）
+ * @param {number} taskId 后端 video_task.id
+ * @param {Array<{sceneIndex,imgIdx,startImageUrl,narration,visualPrompt,imageSummary,duration,isEndCard,status}>} scenes
+ */
+export async function saveScenesToDB(taskId, scenes) {
+  if (!taskId || taskId <= 0 || !Array.isArray(scenes) || !scenes.length) return false;
+  try {
+    await request({
+      url: `${VIDEO_TASK_BASE}/scenes/save`,
+      method: 'POST',
+      data: { taskId, scenes },
+    });
+    return true;
+  } catch (e) {
+    console.warn('[saveScenesToDB]', taskId, e.message);
+    return false;
+  }
+}
+
+/**
+ * 单幕 partial 更新（runClip 各阶段同步 status/clipTaskId/clipUrl）
+ * @param {number} taskId
+ * @param {number} sceneIndex
+ * @param {{status?,clipTaskId?,clipUrl?,audioUrl?,failReason?,startImageUrl?}} patch
+ */
+export async function patchSceneToDB(taskId, sceneIndex, patch) {
+  if (!taskId || taskId <= 0 || sceneIndex == null || sceneIndex < 0) return false;
+  if (!patch || typeof patch !== 'object') return false;
+  try {
+    await request({
+      url: `${VIDEO_TASK_BASE}/scenes/patch`,
+      method: 'PUT',
+      data: { taskId, sceneIndex, ...patch },
+    });
+    return true;
+  } catch (e) {
+    console.warn('[patchSceneToDB]', taskId, sceneIndex, e.message);
+    return false;
+  }
+}
+
+/**
+ * 任务元数据 partial 更新（confirmTask 完成 / 海报生成 / 最终落库时用）
+ * @param {number} id 后端 video_task.id
+ * @param {{title?,description?,imageUrls?,bgmStyle?,posterUrl?,voiceKey?,ratio?,coverUrl?,videoUrl?,duration?,status?,failReason?}} patch
+ */
+export async function patchTaskMetaToDB(id, patch) {
+  if (!id || id <= 0) return false;
+  if (!patch || typeof patch !== 'object') return false;
+  try {
+    await request({
+      url: `${VIDEO_TASK_BASE}/update-meta`,
+      method: 'PUT',
+      data: { id, ...patch },
+    });
+    return true;
+  } catch (e) {
+    console.warn('[patchTaskMetaToDB]', id, e.message);
+    return false;
+  }
+}
+
 // 幕数 = 图片数（cap 3，避免老板上传太多图费流量+ 加重 enhance/seedance 配额）
 function sceneCountFor(imageCount) {
   return Math.max(1, Math.min(MAX_SCENES, imageCount || 1));
