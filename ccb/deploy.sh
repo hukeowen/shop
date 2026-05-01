@@ -673,6 +673,17 @@ yudao:
     enable: false
   api-encrypt:
     enable: false
+  # SMS 验证码：
+  #   demo-mode=true 时全场景固定码（生产前请改为 false 并接入真短信网关）
+  #   demo-code 仅 demo-mode=true 生效
+  sms-code:
+    demo-mode: ${YUDAO_SMS_DEMO_MODE:-true}
+    demo-code: ${YUDAO_SMS_DEMO_CODE:-888888}
+    expire-times: 600
+    send-frequency: 60
+    send-maximum-quantity-per-day: 10
+    begin-code: 1000
+    end-code: 9999
 YAML_EOF
   chmod 600 "${RESOURCES}/application-prod.yaml"
   umask 022
@@ -1115,6 +1126,8 @@ VOLCANO_AK=${VOLCANO_AK}
 VOLCANO_SK=${VOLCANO_SK}
 DOUYIN_CLIENT_KEY=${DOUYIN_CLIENT_KEY}
 DOUYIN_CLIENT_SECRET=${DOUYIN_CLIENT_SECRET}
+YUDAO_SMS_DEMO_MODE=${YUDAO_SMS_DEMO_MODE:-true}
+YUDAO_SMS_DEMO_CODE=${YUDAO_SMS_DEMO_CODE:-888888}
 ENV_EOF
   chown "${SERVICE_USER}:${SERVICE_USER}" "${ENV_UNIT}"
   chmod 600 "${ENV_UNIT}"
