@@ -495,7 +495,10 @@ watch(currentIdx, (nv, ov) => {
 });
 
 onLoad((q) => {
-  taskId.value = Number(q.id);
+  // B 改造 Step 4.6：兼容 'db_123' 字符串 id（来自历史页后端任务）和数字 id（本地 store 任务）
+  // getTask 内部会按形态分别走本地/后端兜底
+  const raw = q.id;
+  taskId.value = (typeof raw === 'string' && raw.startsWith('db_')) ? raw : Number(raw);
   load();
 });
 

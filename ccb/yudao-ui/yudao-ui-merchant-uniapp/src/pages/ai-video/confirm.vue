@@ -223,7 +223,9 @@ function back() {
 }
 
 onLoad((q) => {
-  taskId.value = Number(q.id);
+  // B 改造 Step 4.6：兼容 'db_123' 字符串 id 和数字 id
+  const raw = q.id;
+  taskId.value = (typeof raw === 'string' && raw.startsWith('db_')) ? raw : Number(raw);
   load();
 });
 onUnload(() => {
