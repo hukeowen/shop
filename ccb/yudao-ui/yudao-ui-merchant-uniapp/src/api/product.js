@@ -3,9 +3,14 @@ import { request } from './request.js';
 const BASE = '/app-api/merchant/mini/product';
 
 /**
- * 分类列表（本地常量 — 后续接入 product_category 接口时替换）
+ * 商品分类（B 改造：去 mock）
+ *   - 优先调后端 GET /app-api/product/category/list 拉真分类（admin 后台维护）
+ *   - 网络/接口失败时 fallback 到本地常量，保证离线/初次部署能用
+ *   - splice 替换数组内容保留引用，让 Vue 模板能响应
+ *
+ * CATEGORIES 同步访问入口保留以兼容老代码；推荐新代码 await loadCategories()。
  */
-export const CATEGORIES = [
+const FALLBACK_CATEGORIES = [
   { id: 1, name: '小吃' },
   { id: 2, name: '饮品' },
   { id: 3, name: '水果' },
@@ -16,7 +21,44 @@ export const CATEGORIES = [
   { id: 99, name: '其他' },
 ];
 
+export const CATEGORIES = [...FALLBACK_CATEGORIES];
 export const DEFAULT_CATEGORY_ID = 1;
+
+let _categoriesLoaded = false;
+let _loadingPromise = null;
+
+/**
+ * 异步拉后端商品分类，缓存到 CATEGORIES。失败用 fallback，不抛错。
+ */
+export async function loadCategories(force = false) {
+  if (!force && _categoriesLoaded) return CATEGORIES;
+  if (_loadingPromise) return _loadingPromise;
+  _loadingPromise = (async () => {
+    try {
+      const list = await request({ url: '/app-api/product/category/list' });
+      if (Array.isArray(list) && list.length) {
+        const normalized = list
+            .filter((c) => c && c.id != null && c.name)
+            .map((c) => ({ id: Number(c.id), name: String(c.name) }));
+        if (normalized.length) {
+          CATEGORIES.splice(0, CATEGORIES.length, ...normalized);
+          _categoriesLoaded = true;
+        }
+      }
+    } catch (e) {
+      console.warn('[product] loadCategories 失败，用本地 fallback:', e?.message);
+    } finally {
+      _loadingPromise = null;
+    }
+    return CATEGORIES;
+  })();
+  return _loadingPromise;
+}
+
+// 模块加载时触发一次预热（异步），让 product/edit.vue 打开时大概率已就绪
+if (typeof window !== 'undefined') {
+  loadCategories().catch(() => {});
+}
 
 function catName(id) {
   return (CATEGORIES.find((c) => c.id === id) || { name: '其他' }).name;

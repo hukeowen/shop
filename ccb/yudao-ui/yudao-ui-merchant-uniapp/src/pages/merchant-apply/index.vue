@@ -388,22 +388,36 @@ function goUserLogin() {
 }
 
 /* ── 底部链接 ─────────────────────────────── */
+/* 页面背景为「橙→米→白」渐变，footer 处于白底区域，
+ * 必须用深色文字才能在手机端清晰可读 */
 .footer {
-  margin-top: 32rpx;
+  margin-top: 40rpx;
+  padding: 16rpx 0 8rpx;
   text-align: center;
   position: relative;
   z-index: 1;
 }
 .footer-link {
-  font-size: 24rpx;
-  color: rgba(255, 255, 255, 0.85);
-  margin: 12rpx 0;
+  font-size: 26rpx;
+  color: #5A6577;            /* 深灰，白底可读 */
+  margin: 18rpx 0;
+  line-height: 1.6;
 
   .link {
-    color: #fff;
-    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 56rpx;        /* 触控区 ≥ 44pt */
+    padding: 6rpx 20rpx;
     margin-left: 8rpx;
-    text-decoration: underline;
+    color: #FF6B35;           /* 品牌橙，可读 */
+    font-weight: 700;
+    border-radius: 28rpx;
+    border: 1rpx solid rgba(255, 107, 53, 0.32);
+    background: rgba(255, 107, 53, 0.06);
+  }
+  .link:active {
+    background: rgba(255, 107, 53, 0.16);
   }
 }
 </style>

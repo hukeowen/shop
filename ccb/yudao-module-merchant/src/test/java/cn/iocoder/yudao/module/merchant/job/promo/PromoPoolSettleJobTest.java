@@ -103,11 +103,15 @@ class PromoPoolSettleJobTest {
 
     @Test
     void skipsSettle_whenCronNotYetDue() {
-        // tenant 1: 每月 1 号 cron；上次结算 5 天前 → 还没到下个月 1 号
+        // tenant 1: 每月 1 号 cron。lastSettledAt 用"本月 1 号 01:00"绝对时间锚点 →
+        // next 一定是下月 1 号 0:00 → 当前测试运行时（除非恰好跑在月底 23:59 直到下月 1 号
+        // 0:00 之间，不会发生）一定未到。避免 now.minusDays(5) 在月初跨月时的脆性。
         configByTenant.put(1L, config(true, "0 0 0 1 * ?", "FULL"));
+        java.time.LocalDateTime lastSettled = java.time.LocalDate.now()
+                .withDayOfMonth(1).atTime(1, 0); // 本月 1 号 01:00
         when(poolMapper.selectList(any(Wrapper.class)))
                 .thenReturn(Collections.singletonList(
-                        pool(1L, 10000L, LocalDateTime.now().minusDays(5))));
+                        pool(1L, 10000L, lastSettled)));
 
         job.execute(null);
 
@@ -168,9 +172,12 @@ class PromoPoolSettleJobTest {
         configByTenant.put(1L, config(true, "0 0 0 * * ?", "FULL"));
         configByTenant.put(2L, config(true, "0 0 0 1 * ?", "FULL"));   // 月度，未到
         configByTenant.put(3L, config(false, "0 0 0 * * ?", "FULL"));  // disabled
+        // tenant 2 月度 cron 用绝对锚点（本月 1 号 01:00）确保 next 始终在下月 1 号 0:00 未到
+        java.time.LocalDateTime monthlyAnchor = java.time.LocalDate.now()
+                .withDayOfMonth(1).atTime(1, 0);
         when(poolMapper.selectList(any(Wrapper.class))).thenReturn(Arrays.asList(
                 pool(1L, 10000L, LocalDateTime.now().minusDays(2)),
-                pool(2L, 5000L, LocalDateTime.now().minusDays(5)),
+                pool(2L, 5000L, monthlyAnchor),
                 pool(3L, 1000L, LocalDateTime.now().minusDays(2))));
 
         job.execute(null);

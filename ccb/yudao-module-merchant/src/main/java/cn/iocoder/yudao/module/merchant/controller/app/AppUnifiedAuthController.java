@@ -37,7 +37,11 @@ import cn.iocoder.yudao.module.merchant.service.MerchantService;
 import cn.iocoder.yudao.module.merchant.service.auth.ActiveRoleCache;
 import cn.iocoder.yudao.module.merchant.service.wechat.Jscode2SessionResult;
 import cn.iocoder.yudao.module.merchant.service.wechat.WeChatMiniAppService;
+import cn.iocoder.yudao.module.system.api.sms.SmsCodeApi;
+import cn.iocoder.yudao.module.system.api.sms.dto.code.SmsCodeSendReqDTO;
+import cn.iocoder.yudao.module.system.api.sms.dto.code.SmsCodeUseReqDTO;
 import cn.iocoder.yudao.module.system.enums.oauth2.OAuth2ClientConstants;
+import cn.iocoder.yudao.module.system.enums.sms.SmsSceneEnum;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
@@ -105,6 +109,8 @@ public class AppUnifiedAuthController {
     private OAuth2TokenCommonApi oauth2TokenApi;
     @Resource
     private PasswordEncoder passwordEncoder;
+    @Resource
+    private SmsCodeApi smsCodeApi;
 
     // ==================== 1. 微信登录 ====================
 
@@ -268,6 +274,33 @@ public class AppUnifiedAuthController {
 
     // ==================== 3B. 公网申请商户（不要邀请码、SMS 验证） ====================
 
+    /**
+     * 发送商户申请 / 登录用 SMS 验证码。
+     *
+     * <p>无需登录的 PermitAll 接口，IP 限流（每分钟 5 次）。底层走 SmsCodeApi.sendSmsCode，
+     * 生产 yudao.sms-code.demo-mode=false 时真发短信；演示模式 true 时不发，由
+     * smsCodeProperties.demoCode 兜底（前端 demo 阶段填固定码）。</p>
+     *
+     * <p>scene 复用 {@link SmsSceneEnum#MEMBER_LOGIN}（templateCode=user-sms-login），
+     * 避免新增枚举值改动 system 模块。</p>
+     */
+    @PostMapping("/send-sms-code")
+    @Operation(summary = "发送商户申请验证码（手机号短信）")
+    @PermitAll
+    @TenantIgnore
+    @RateLimiter(time = 60, count = 5, keyResolver = ClientIpRateLimiterKeyResolver.class,
+                 message = "发送频率过高，请稍后再试")
+    public CommonResult<Boolean> sendSmsCodeForMerchantApply(
+            @Valid @RequestBody cn.iocoder.yudao.module.merchant.controller.app.vo.auth.AppSmsCodeSendReqVO reqVO) {
+        SmsCodeSendReqDTO dto = new SmsCodeSendReqDTO();
+        dto.setMobile(reqVO.getMobile());
+        dto.setScene(SmsSceneEnum.MEMBER_LOGIN.getScene());
+        dto.setCreateIp(resolveClientIp());
+        smsCodeApi.sendSmsCode(dto);
+        log.info("[sendSmsCode] mobile={} scene=MEMBER_LOGIN", reqVO.getMobile());
+        return success(true);
+    }
+
     @PostMapping("/apply-merchant-by-sms")
     @Operation(summary = "店铺名+手机号+SMS 一键申请商户（无需登录、无需邀请码）")
     @PermitAll
@@ -280,11 +313,19 @@ public class AppUnifiedAuthController {
         String shopName = reqVO.getShopName().trim();
         String smsCode = reqVO.getSmsCode();
 
-        // 1. 校验验证码（演示模式固定 888888；生产应改为调 SmsCodeService.useSmsCode 真验码）
-        // TODO 接入真 SMS：smsCodeService.useSmsCode(SmsCodeUseReqDTO.builder()
-        //         .mobile(mobile).code(smsCode).scene(MERCHANT_APPLY).build());
-        if (!"888888".equals(smsCode)) {
-            throw exception(PASSWORD_INVALID); // 复用密码错误的错误码（演示用）
+        // 1. 校验验证码：调 SmsCodeApi.useSmsCode 真服务
+        //    yudao.sms-code.demo-mode=true 时全场景固定码（开发演示）；生产 false → 真发码真校验
+        //    复用 MEMBER_LOGIN scene（templateCode=user-sms-login），避免新增 scene 改 enum
+        try {
+            SmsCodeUseReqDTO useDTO = new SmsCodeUseReqDTO();
+            useDTO.setMobile(mobile);
+            useDTO.setCode(smsCode);
+            useDTO.setScene(SmsSceneEnum.MEMBER_LOGIN.getScene());
+            useDTO.setUsedIp(resolveClientIp());
+            smsCodeApi.useSmsCode(useDTO);
+        } catch (Exception e) {
+            log.warn("[applyMerchantBySms] SMS 验证失败 mobile={} reason={}", mobile, e.getMessage());
+            throw exception(PASSWORD_INVALID); // 复用错误码：验证码错误
         }
 
         // 2. 幂等：找/建会员（password 留空，首次密码登录时再设）
@@ -580,6 +621,25 @@ public class AppUnifiedAuthController {
         vo.setNickname(member.getNickname());
         fillShopFields(vo, merchant);
         return vo;
+    }
+
+    /**
+     * 取当前 HTTP 请求客户端 IP，处理 X-Forwarded-For（nginx 反代场景）。
+     */
+    private String resolveClientIp() {
+        try {
+            HttpServletRequest req = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
+            String xff = req.getHeader("X-Forwarded-For");
+            if (StrUtil.isNotBlank(xff)) {
+                int comma = xff.indexOf(',');
+                return (comma > 0 ? xff.substring(0, comma) : xff).trim();
+            }
+            String real = req.getHeader("X-Real-IP");
+            if (StrUtil.isNotBlank(real)) return real.trim();
+            return req.getRemoteAddr();
+        } catch (Exception e) {
+            return "unknown";
+        }
     }
 
     /**

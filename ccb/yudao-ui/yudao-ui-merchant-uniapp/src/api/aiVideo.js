@@ -126,7 +126,8 @@ const STORAGE_KEY = 'ai-video-tasks-v1';
 
 const store = {
   nextId: 100001,
-  quota: { total: 999, used: 0 },
+  // quota 字段保留作为本地 cache（getQuota 接后端真值）；初始 0 避免误导
+  quota: { total: 0, used: 0, remaining: 0 },
   tasks: [],
 };
 
@@ -711,7 +712,8 @@ export async function confirmTask({ taskId, scenes, bgmStyle }) {
       return;
     }
     t.status = 4;
-    store.quota.used += 1;
+    // 配额扣减由后端 BFF /jimeng/submit 已经原子扣过（decreaseVideoQuota），
+    // 前端不再瞎累加 store.quota.used；下次 getQuota 走后端拿真值
     persist();
     syncStatusToDB(t);
   })();
@@ -950,18 +952,50 @@ export async function getTaskPage() {
   }
 }
 
+/**
+ * 配额查询：以后端 video_quota 表为准；接口失败时返 0（不再 fallback 到 mock 999）
+ * 后端 RespVO: {remaining, total, used}
+ */
 export async function getQuota() {
   try {
     const data = await request({ url: '/app-api/merchant/mini/video-quota/me' });
-    const remaining = data?.remaining ?? 0;
-    return { total: remaining, used: 0, remaining };
-  } catch {
-    return { ...store.quota };
+    const remaining = Number(data?.remaining ?? 0);
+    const total = Number(data?.total ?? remaining);
+    const used = Number(data?.used ?? Math.max(0, total - remaining));
+    return { total, used, remaining };
+  } catch (e) {
+    console.warn('[getQuota] 接口失败，按 0 处理:', e?.message);
+    return { total: 0, used: 0, remaining: 0 };
   }
 }
 
-export function buyQuota() {
-  return Promise.resolve({ ok: false, msg: '配额由火山方舟账户余额承担' });
+/**
+ * 购买配额套餐。
+ * 后端 POST /merchant/mini/video-quota/packages/{packageId}/purchase
+ * 返回 AppMerchantPackagePurchaseRespVO {orderId,payOrderId,...}，前端拿到 orderId
+ * 跳支付页（/app-api/pay/order/submit 完成支付，回调后台扣款 + 加配额）。
+ */
+export async function buyQuota(packageId) {
+  if (!packageId) return { ok: false, msg: '套餐 ID 为空' };
+  try {
+    const data = await request({
+      url: `/app-api/merchant/mini/video-quota/packages/${packageId}/purchase`,
+      method: 'POST',
+    });
+    return { ok: true, data };
+  } catch (e) {
+    return { ok: false, msg: e?.message || '配额购买暂未开通，请联系平台' };
+  }
+}
+
+/** 配额套餐列表（quota.vue 展示） */
+export async function listQuotaPackages() {
+  try {
+    return await request({ url: '/app-api/merchant/mini/video-quota/packages' });
+  } catch (e) {
+    console.warn('[listQuotaPackages]', e?.message);
+    return [];
+  }
 }
 
 const DOUYIN_TOKEN_KEY = 'douyin-token-v1';
