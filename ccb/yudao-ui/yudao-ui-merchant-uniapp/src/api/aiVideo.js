@@ -588,6 +588,15 @@ export async function confirmTask({ taskId, scenes, bgmStyle }) {
   t.progress = { total: t.scenes.length, done: 0 };
   persist();
 
+  // B 改造 Step 4.2：把 N 幕脚本 + 任务元数据落到后端 video_scene / video_task 表，
+  // 实现"老板换设备登录能看到自己生成中的任务+分镜"。失败不抛错（thin wrapper 内部
+  // catch + warn），不阻塞下面的 runClip。需要 task.dbId 已就位（registerTaskToDB
+  // 在 createTask 末尾已调）；register 失败的话 dbId 为空就跳过同步。
+  if (t.dbId) {
+    syncScenesAndMetaToDB(t).catch((e) =>
+        console.warn('[confirmTask] syncScenesAndMetaToDB 异常:', e?.message));
+  }
+
   // 后台跑：每幕独立生成（幕 i 起始帧 = 图 i），所有幕并行
   // TTS 在 runClip 内部与视频生成串行，视频就绪后立即合流
   (async () => {
@@ -706,6 +715,38 @@ async function runClip(task, scene, startImageUrl) {
 }
 
 const TASK_BASE = '/app-api/video/app/task';
+
+/**
+ * B 改造 Step 4.2：批量同步当前 task 的 N 幕脚本 + 元数据到后端。
+ * 失败由 saveScenesToDB / patchTaskMetaToDB 内部静默吞掉（仅 warn），不抛错。
+ * 字段名映射：前端用下划线（img_idx/visual_prompt/image_summary）→ 后端驼峰
+ * （imgIdx/visualPrompt/imageSummary）。
+ */
+async function syncScenesAndMetaToDB(task) {
+  if (!task || !task.dbId) return;
+  // 1. 分镜：UPSERT N 幕
+  const scenes = (task.scenes || []).map((s) => ({
+    sceneIndex: s.index,
+    imgIdx: s.img_idx,
+    startImageUrl: task.imageUrls && s.img_idx != null ? (task.imageUrls[s.img_idx] || '') : '',
+    narration: s.narration || '',
+    visualPrompt: s.visual_prompt || '',
+    imageSummary: s.image_summary || '',
+    duration: s.duration || null,
+    isEndCard: !!s.isEndCard,
+    status: s.status || 'pending',
+  }));
+  await saveScenesToDB(task.dbId, scenes);
+  // 2. 元数据：bgmStyle / voiceKey / ratio / coverUrl / title + status=1 (PROCESSING)
+  await patchTaskMetaToDB(task.dbId, {
+    title: task.title || undefined,
+    bgmStyle: task.bgmStyle || undefined,
+    voiceKey: task.voiceKey || undefined,
+    ratio: task.ratio || undefined,
+    coverUrl: task.coverUrl || undefined,
+    status: 1, // VideoTaskStatusEnum.PROCESSING
+  });
+}
 
 /** 注册任务到 DB（在图片上传完成后调用），返回 dbId */
 async function registerTaskToDB(task) {
