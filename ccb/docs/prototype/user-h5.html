@@ -690,51 +690,347 @@
   .addr-row .ops span { font-size: 12px; color: var(--t3); }
   .addr-row .ops span:hover { color: var(--brand); }
 
-  /* ========== 屏 4 店铺详情 (shop-home C 端) ========== */
+  /* ========== 屏 4 店铺详情 (shop-home C 端) — 升级版 ========== */
   .sh-cover {
-    height: 180px; position: relative;
-    background: linear-gradient(135deg,#ffd1ba,#ff9a4a 50%,var(--brand) 100%);
-    display: flex; align-items: flex-end; padding: 16px;
+    height: 240px; position: relative; overflow: hidden;
+    background: linear-gradient(135deg,#ff9a4a 0%,var(--brand) 50%,var(--brand-d) 100%);
   }
-  .sh-cover .nav-back {
-    position: absolute; top: 12px; left: 12px;
+  /* 头图大 emoji 装饰（半透明） */
+  .sh-cover::before {
+    content: '🍠'; position: absolute;
+    right: -30px; bottom: -30px; font-size: 200px;
+    opacity: .18; filter: blur(.5px);
+    transform: rotate(-12deg);
+  }
+  /* 头图光斑装饰 */
+  .sh-cover::after {
+    content: ''; position: absolute;
+    left: -40px; top: -40px;
+    width: 200px; height: 200px;
+    background: radial-gradient(circle, rgba(255,255,255,.18) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+  .sh-cover-inner {
+    position: relative; z-index: 2;
+    height: 100%;
+    display: flex; flex-direction: column; justify-content: flex-end;
+    padding: 16px;
+  }
+  .sh-nav-row {
+    position: absolute; top: 12px; left: 12px; right: 12px;
+    display: flex; justify-content: space-between; align-items: center;
+    z-index: 3;
+  }
+  .sh-nav-row .group { display: flex; gap: 8px; }
+  .sh-icon-btn {
     width: 36px; height: 36px; border-radius: 50%;
-    background: rgba(0,0,0,.30);
-    color: #fff; font-size: 24px; line-height: 36px; text-align: center;
+    background: rgba(255,255,255,.25); backdrop-filter: blur(8px);
+    color: #fff; line-height: 36px; text-align: center;
+    border: 1px solid rgba(255,255,255,.30);
+    box-shadow: 0 2px 8px rgba(0,0,0,.10);
   }
-  .sh-cover .nav-share {
-    position: absolute; top: 12px; right: 12px;
-    width: 36px; height: 36px; border-radius: 50%;
-    background: rgba(0,0,0,.30);
-    color: #fff; font-size: 18px; line-height: 36px; text-align: center;
+  .sh-icon-btn.back { font-size: 22px; font-weight: 600; }
+  .sh-icon-btn.fav, .sh-icon-btn.share { font-size: 16px; }
+  .sh-cover .name-block {
+    color: #fff;
+    text-shadow: 0 2px 12px rgba(0,0,0,.18);
   }
-  .sh-cover .name {
-    color: #fff; font-size: 24px; font-weight: 800;
-    text-shadow: 0 2px 8px rgba(0,0,0,.20);
+  .sh-cover .name-block .biz-tag {
+    display: inline-block;
+    background: rgba(255,255,255,.20); backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,.30);
+    padding: 2px 10px; border-radius: var(--r-pill);
+    font-size: 11px; font-weight: 600; margin-bottom: 8px;
   }
+  .sh-cover .name-block .name {
+    font-size: 26px; font-weight: 800; line-height: 1.2;
+    letter-spacing: 0.5px;
+  }
+  .sh-cover .name-block .slogan {
+    margin-top: 4px;
+    font-size: 13px; opacity: .92;
+    font-weight: 500;
+  }
+
+  /* 店铺信息卡（升级） */
   .sh-info-card {
-    margin: -28px 16px 0; padding: 14px;
+    margin: -32px 16px 0; padding: 16px;
     background: var(--card); border-radius: var(--r-lg);
-    box-shadow: var(--shadow-card); position: relative; z-index: 2;
+    box-shadow: 0 4px 16px rgba(15,23,42,.06);
+    position: relative; z-index: 5;
   }
-  .sh-info-card .row1 {
+  .sh-info-card .stat-row {
+    display: flex; align-items: center; gap: 16px;
+    padding-bottom: 12px; border-bottom: 1px dashed var(--line);
+  }
+  .sh-info-card .stat-row .stat {
+    text-align: center;
+  }
+  .sh-info-card .stat-row .stat:first-child { text-align: left; }
+  .sh-info-card .stat-row .stat .num {
+    font-size: 18px; font-weight: 800; color: var(--t1);
+    font-variant-numeric: tabular-nums;
+  }
+  .sh-info-card .stat-row .stat .num.brand { color: var(--brand); }
+  .sh-info-card .stat-row .stat .num .icon { font-size: 14px; color: var(--brand); margin-right: 2px; }
+  .sh-info-card .stat-row .stat .lbl {
+    font-size: 10px; color: var(--t3); margin-top: 2px;
+  }
+  .sh-info-card .stat-divider {
+    width: 1px; height: 28px; background: var(--line);
+    align-self: center;
+  }
+  .sh-info-card .stat-row .my-star {
+    margin-left: auto; padding: 6px 12px;
+    background: linear-gradient(135deg,#fff5ef,#ffe1c8);
+    border: 1px solid var(--brand-light-2);
+    border-radius: var(--r-pill);
+    font-size: 11px; font-weight: 600; color: var(--brand);
+    text-align: center; line-height: 1.2;
+  }
+  .sh-info-card .feature-chips {
+    margin-top: 10px;
+    display: flex; flex-wrap: wrap; gap: 6px;
+  }
+  .sh-info-card .chip {
+    background: var(--bg);
+    color: var(--t2);
+    font-size: 11px; padding: 4px 10px;
+    border-radius: var(--r-pill);
+    font-weight: 500;
+  }
+  .sh-info-card .chip.hot {
+    background: var(--brand-light);
+    color: var(--brand);
+    font-weight: 600;
+  }
+  .sh-info-card .quick-meta {
+    margin-top: 10px;
+    display: flex; align-items: center; gap: 8px;
+    font-size: 11px; color: var(--t2);
+  }
+  .sh-info-card .quick-meta .pt { display: inline-flex; align-items: center; gap: 3px; }
+  .sh-info-card .quick-meta .pt .ic { font-size: 12px; }
+  .sh-info-card .quick-meta .open-now {
+    color: var(--success); font-weight: 700;
+  }
+  .sh-info-card .quick-meta .dot {
+    width: 3px; height: 3px; border-radius: 50%;
+    background: var(--t3);
+  }
+
+  /* 会员特权 + 邀请合并条 */
+  .vip-strip {
+    margin: 12px 16px;
+    padding: 14px 16px;
+    background: linear-gradient(135deg, #fff5ef 0%, #ffe1c8 100%);
+    border-radius: var(--r-lg);
+    border: 1px solid var(--brand-light-2);
+    display: flex; align-items: center; gap: 12px;
+    position: relative;
+    overflow: hidden;
+  }
+  .vip-strip::before {
+    content: ''; position: absolute;
+    right: -40px; top: -40px;
+    width: 100px; height: 100px;
+    background: radial-gradient(circle, rgba(255,107,53,.18), transparent);
+    border-radius: 50%;
+  }
+  .vip-strip .vip-icon {
+    width: 44px; height: 44px;
+    background: linear-gradient(135deg, var(--brand), var(--brand-d));
+    color: #fff;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px;
+    box-shadow: 0 4px 12px rgba(255,107,53,.30);
+    flex-shrink: 0;
+    z-index: 1;
+  }
+  .vip-strip .vip-info { flex: 1; min-width: 0; z-index: 1; }
+  .vip-strip .vip-title {
+    font-size: 13px; font-weight: 700; color: var(--t1);
+  }
+  .vip-strip .vip-title b {
+    color: var(--brand);
+    font-size: 14px;
+  }
+  .vip-strip .vip-sub {
+    margin-top: 2px;
+    font-size: 11px; color: var(--t2);
+    font-variant-numeric: tabular-nums;
+  }
+  .vip-strip .vip-cta {
+    background: var(--brand); color: #fff;
+    font-size: 12px; font-weight: 700;
+    padding: 6px 14px;
+    border-radius: var(--r-pill);
+    box-shadow: 0 2px 8px rgba(255,107,53,.30);
+    z-index: 1;
+  }
+
+  /* 优惠券领取条 */
+  .coupon-strip {
+    margin: 12px 16px;
+    display: flex; gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+  .coupon-strip::-webkit-scrollbar { height: 0; }
+  .coupon-card {
+    flex: 0 0 auto;
+    min-width: 168px;
+    background: linear-gradient(135deg, #fff 0%, #fff5ef 100%);
+    border: 1px dashed var(--brand);
+    border-radius: var(--r-md);
+    padding: 10px 12px;
+    position: relative;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .coupon-card::before, .coupon-card::after {
+    content: ''; position: absolute;
+    width: 12px; height: 12px;
+    background: var(--bg);
+    border-radius: 50%;
+    top: 50%; transform: translateY(-50%);
+  }
+  .coupon-card::before { left: -6px; }
+  .coupon-card::after { right: -6px; }
+  .coupon-card .amt {
+    font-size: 22px; font-weight: 800; color: var(--brand);
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .coupon-card .amt small { font-size: 12px; }
+  .coupon-card .info { flex: 1; }
+  .coupon-card .cond { font-size: 11px; color: var(--t2); }
+  .coupon-card .grab {
+    margin-top: 4px;
+    background: var(--brand); color: #fff;
+    font-size: 10px; font-weight: 700;
+    padding: 2px 8px;
+    border-radius: var(--r-pill);
+    display: inline-block;
+  }
+  .coupon-card.taken .grab {
+    background: var(--success);
+  }
+
+  /* 社交证明条 */
+  .social-proof {
+    margin: 12px 16px;
+    padding: 10px 14px;
+    background: var(--card);
+    border-radius: var(--r-md);
+    box-shadow: var(--shadow-card);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .social-proof .avatars {
+    display: flex;
+  }
+  .social-proof .avatars .av {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    margin-left: -8px;
+    color: #fff; font-size: 10px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .social-proof .avatars .av:first-child { margin-left: 0; }
+  .social-proof .text {
+    flex: 1; font-size: 12px; color: var(--t2);
+    line-height: 1.4;
+  }
+  .social-proof .text b { color: var(--brand); }
+
+  /* Section title within shop */
+  .sh-section-title {
+    margin: 16px 16px 8px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .sh-section-title h3 {
+    margin: 0;
+    font-size: 15px; font-weight: 700; color: var(--t1);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .sh-section-title h3 .icon { color: var(--brand); font-size: 16px; }
+  .sh-section-title .sub { font-size: 11px; color: var(--t3); }
+
+  /* 招牌商品大卡 */
+  .signature-card {
+    margin: 0 16px 12px;
+    background: linear-gradient(135deg, #fff 0%, #fff5ef 50%, #fff 100%);
+    border: 2px solid var(--brand-light-2);
+    border-radius: var(--r-lg);
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 4px 16px rgba(255,107,53,.10);
+  }
+  .signature-card .crown-tag {
+    position: absolute;
+    top: 0; left: 0;
+    background: linear-gradient(135deg, var(--brand), var(--brand-d));
+    color: #fff;
+    font-size: 11px; font-weight: 800;
+    padding: 3px 14px 3px 10px;
+    border-radius: var(--r-lg) 0 var(--r-pill) 0;
+    z-index: 2;
+    box-shadow: 0 2px 8px rgba(255,107,53,.40);
+  }
+  .signature-card-inner {
+    display: flex; gap: 12px;
+    padding: 16px;
+  }
+  .signature-card .pic {
+    width: 100px; height: 100px;
+    border-radius: var(--r-md);
+    background: linear-gradient(135deg,#ffe1c8,#ffae74);
+    color: #fff; font-size: 56px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(255,107,53,.20);
+  }
+  .signature-card .info { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .signature-card .pname {
+    font-size: 16px; font-weight: 700; color: var(--t1);
+  }
+  .signature-card .ptag {
+    margin-top: 4px;
+    font-size: 11px; color: var(--t3);
+  }
+  .signature-card .stats {
+    margin-top: auto;
     display: flex; gap: 10px; align-items: center;
+    font-size: 11px; color: var(--t3);
+    font-variant-numeric: tabular-nums;
   }
-  .sh-info-card .star-row .stars { color: var(--brand); font-size: 14px; }
-  .sh-info-card .row1 .rating { font-size: 14px; font-weight: 700; color: var(--t1); }
-  .sh-info-card .row1 .sales { font-size: 11px; color: var(--t3); margin-left: 4px; }
-  .sh-info-card .row1 .badge {
-    margin-left: auto; background: var(--brand-light);
-    color: var(--brand); font-size: 11px; font-weight: 600;
-    padding: 3px 10px; border-radius: var(--r-pill);
+  .signature-card .stats em {
+    font-style: normal; color: var(--brand); font-weight: 700;
   }
-  .sh-info-card .meta-list { margin-top: 10px; }
-  .sh-info-card .meta-list .meta-row {
-    display: flex; gap: 10px; padding: 4px 0;
-    font-size: 12px; color: var(--t2);
+  .signature-card .price-row {
+    margin-top: 8px;
+    display: flex; align-items: center; justify-content: space-between;
   }
-  .sh-info-card .meta-list .meta-row .key {
-    width: 56px; color: var(--t3); flex-shrink: 0;
+  .signature-card .price {
+    color: var(--brand); font-weight: 800;
+    font-size: 22px; line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .signature-card .price small { font-size: 12px; }
+  .signature-card .price .original {
+    color: var(--t3); font-size: 11px; font-weight: 400;
+    text-decoration: line-through;
+    margin-left: 6px;
+  }
+  .signature-card .add-big {
+    background: linear-gradient(135deg, var(--brand), var(--brand-d));
+    color: #fff;
+    height: 32px; padding: 0 16px;
+    border-radius: var(--r-pill);
+    font-size: 13px; font-weight: 700;
+    line-height: 32px;
+    box-shadow: 0 4px 12px rgba(255,107,53,.30);
   }
 
   /* 商品分类 tab + 列表 */
@@ -743,6 +1039,7 @@
     margin: 12px 16px 0;
     border-radius: var(--r-md);
     padding: 4px;
+    box-shadow: var(--shadow-card);
   }
   .cat-tab .it {
     flex: 1; text-align: center; padding: 8px;
@@ -758,7 +1055,18 @@
   .pcard {
     background: var(--card); border-radius: var(--r-md);
     overflow: hidden; box-shadow: var(--shadow-card);
+    position: relative;
   }
+  /* 商品卡角标（热销 / NEW） */
+  .pcard .corner-tag {
+    position: absolute; top: 6px; left: 0;
+    background: linear-gradient(135deg, var(--brand), var(--brand-d));
+    color: #fff; font-size: 10px; font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 0 var(--r-pill) var(--r-pill) 0;
+    z-index: 2;
+  }
+  .pcard .corner-tag.new { background: linear-gradient(135deg, #6196f0, #4271dd); }
   .pcard .pic {
     height: 110px;
     background: linear-gradient(135deg,#ffe1c8,#ffae74);
@@ -1334,6 +1642,28 @@
         <div class="me-row"><div class="me-row-icon">🔗</div><div class="me-row-name">邀请好友（先选店铺）</div><div class="me-row-tag">已邀 12 人</div><span class="me-row-arrow">›</span></div>
       </div>
 
+      <!-- 内容收藏 -->
+      <div class="me-grid">
+        <div class="me-grid-title">收藏 · 浏览</div>
+        <div class="me-row">
+          <div class="me-row-icon" style="background:rgba(238,90,139,.14);color:#ee5a8b;">❤</div>
+          <div class="me-row-name">我收藏的店铺</div>
+          <div class="me-row-tag">8 家</div>
+          <span class="me-row-arrow">›</span>
+        </div>
+        <div class="me-row">
+          <div class="me-row-icon alt-1">⭐</div>
+          <div class="me-row-name">商品收藏夹</div>
+          <div class="me-row-tag">23 件</div>
+          <span class="me-row-arrow">›</span>
+        </div>
+        <div class="me-row">
+          <div class="me-row-icon alt-2">🕒</div>
+          <div class="me-row-name">最近浏览</div>
+          <span class="me-row-arrow">›</span>
+        </div>
+      </div>
+
       <!-- 平台级功能 -->
       <div class="me-grid">
         <div class="me-grid-title">平台 · 设置</div>
@@ -1861,37 +2191,145 @@
   <div class="phone">
     <div class="status-bar"><span>9:41</span><div class="status-icons"><span>📶</span><span>📡</span><span>🔋</span></div></div>
     <div class="view no-tab">
+      <!-- 沉浸式头图 + 顶部导航 + 店名 slogan -->
       <div class="sh-cover">
-        <div class="nav-back">‹</div>
-        <div class="nav-share">↗</div>
-        <div class="name">王师傅烤地瓜</div>
+        <div class="sh-nav-row">
+          <div class="sh-icon-btn back">‹</div>
+          <div class="group">
+            <div class="sh-icon-btn fav">♥</div>
+            <div class="sh-icon-btn share">↗</div>
+          </div>
+        </div>
+        <div class="sh-cover-inner">
+          <div class="name-block">
+            <span class="biz-tag">🔥 老字号 · 三里屯排队 No.1</span>
+            <div class="name">王师傅烤地瓜</div>
+            <div class="slogan">现烤蜜薯 · 流糖心 · 老式炭火 30 分钟</div>
+          </div>
+        </div>
       </div>
 
-      <!-- 店铺信息卡 -->
+      <!-- 店铺信息卡（升级：3 列数据 + 我的星级 + 特色 chips + 营业状态） -->
       <div class="sh-info-card">
-        <div class="row1 star-row">
-          <span class="stars">★★★★★</span>
-          <span class="rating">4.9</span>
-          <span class="sales">月售 1280 单</span>
-          <span class="badge">⭐ 你 3 星</span>
+        <div class="stat-row">
+          <div class="stat">
+            <div class="num"><span class="icon">★</span>4.9</div>
+            <div class="lbl">128 评分</div>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat">
+            <div class="num">1280</div>
+            <div class="lbl">月售</div>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat">
+            <div class="num brand">¥38</div>
+            <div class="lbl">你已赚</div>
+          </div>
+          <div class="my-star">⭐ 3 星会员<br>享 9 折</div>
         </div>
-        <div class="meta-list">
-          <div class="meta-row"><span class="key">📍 位置</span><span>北京市朝阳区三里屯路 19 号 · 0.3km</span></div>
-          <div class="meta-row"><span class="key">⏰ 营业</span><span>09:00 - 22:00（营业中）</span></div>
-          <div class="meta-row"><span class="key">📞 电话</span><span>138 0013 8888</span></div>
+        <div class="feature-chips">
+          <span class="chip hot">🔥 招牌烤地瓜</span>
+          <span class="chip">炭火现烤</span>
+          <span class="chip">现做现卖</span>
+          <span class="chip">不赶时间</span>
+        </div>
+        <div class="quick-meta">
+          <span class="pt"><span class="ic">📍</span>0.3km · 三里屯</span>
+          <span class="dot"></span>
+          <span class="pt"><span class="open-now">● 营业中</span></span>
+          <span class="dot"></span>
+          <span class="pt">09:00-22:00</span>
+          <span style="margin-left:auto;color:var(--brand);">详情 ›</span>
         </div>
       </div>
 
-      <!-- 推广提示 -->
-      <div class="promo-banner">
-        <div class="ic">🎯</div>
-        <div class="txt">
-          本店参与 <b>推 N 反 1</b> 营销 · 邀请朋友买同款返推广积分
-          <div class="sub">点右上 ↗ 分享给好友 · 你已在该店赚 ¥38.00</div>
+      <!-- 会员特权 + 邀请合并条 -->
+      <div class="vip-strip">
+        <div class="vip-icon">🎁</div>
+        <div class="vip-info">
+          <div class="vip-title">你是 <b>3 星会员</b>，本单享 <b>9 折</b></div>
+          <div class="vip-sub">已邀请 5 位好友 · 累计返奖 ¥38 · 还差 3 单升 4 星</div>
+        </div>
+        <div class="vip-cta">邀请赚奖 ›</div>
+      </div>
+
+      <!-- 优惠券领取条 -->
+      <div class="coupon-strip">
+        <div class="coupon-card">
+          <div class="amt"><small>¥</small>1</div>
+          <div class="info">
+            <div class="cond">满 10 可用</div>
+            <div class="grab">领取</div>
+          </div>
+        </div>
+        <div class="coupon-card taken">
+          <div class="amt"><small>¥</small>5</div>
+          <div class="info">
+            <div class="cond">满 30 可用</div>
+            <div class="grab">已领取</div>
+          </div>
+        </div>
+        <div class="coupon-card">
+          <div class="amt"><small>¥</small>10</div>
+          <div class="info">
+            <div class="cond">满 50 可用</div>
+            <div class="grab">领取</div>
+          </div>
+        </div>
+        <div class="coupon-card">
+          <div class="amt" style="font-size:14px;line-height:1.2;">新人<br>专享</div>
+          <div class="info">
+            <div class="cond">立减 ¥3</div>
+            <div class="grab">领取</div>
+          </div>
         </div>
       </div>
 
-      <!-- 商品分类 -->
+      <!-- 社交证明条 -->
+      <div class="social-proof">
+        <div class="avatars">
+          <div class="av" style="background:linear-gradient(135deg,#ff9a4a,var(--brand));">李</div>
+          <div class="av" style="background:linear-gradient(135deg,#c9e0ff,#6196f0);">王</div>
+          <div class="av" style="background:linear-gradient(135deg,#d3f4d3,#4cb84c);">陈</div>
+          <div class="av" style="background:linear-gradient(135deg,#ffd0dc,#ee5a8b);">林</div>
+          <div class="av" style="background:linear-gradient(135deg,#e0d4ff,#9170dd);">+</div>
+        </div>
+        <div class="text"><b>32 位</b>三里屯邻居常买这家 · 多人下午 5 点回购</div>
+      </div>
+
+      <!-- 招牌商品大卡 -->
+      <div class="sh-section-title">
+        <h3><span class="icon">🏆</span>本店招牌</h3>
+        <span class="sub">3 件招牌 ›</span>
+      </div>
+      <div class="signature-card">
+        <div class="crown-tag">👑 招牌 No.1</div>
+        <div class="signature-card-inner">
+          <div class="pic">🍠</div>
+          <div class="info">
+            <div class="pname">现烤蜜薯（流糖心 大）</div>
+            <div class="ptag">山东烟台沙土地 · 老式炭火 30 分钟慢烤</div>
+            <div class="stats">
+              <span>已售 <em>1280</em></span>
+              <span>★ <em>4.9</em></span>
+              <span style="color:var(--brand);">推 4 反 1</span>
+            </div>
+            <div class="price-row">
+              <div class="price">
+                <small>¥</small>5.00
+                <span class="original">¥7</span>
+              </div>
+              <div class="add-big">+ 加入</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 商品分类 tab -->
+      <div class="sh-section-title" style="margin-top:0;">
+        <h3>全部商品</h3>
+      </div>
       <div class="cat-tab">
         <div class="it active">全部</div>
         <div class="it">招牌</div>
@@ -1899,38 +2337,41 @@
         <div class="it">饮料</div>
       </div>
 
-      <!-- 商品 grid -->
+      <!-- 商品 grid（带角标） -->
       <div class="product-grid">
         <div class="pcard">
-          <div class="pic">🍠</div>
-          <div class="body">
-            <div class="name">现烤蜜薯（大）</div>
-            <div class="tag">流糖心 · 现烤现卖</div>
-            <div class="row"><div class="price"><small>¥</small>5.00</div><div class="add-btn">+</div></div>
-          </div>
-        </div>
-        <div class="pcard alt-1">
+          <div class="corner-tag">🔥 热销</div>
           <div class="pic">🌽</div>
           <div class="body">
             <div class="name">水果玉米</div>
-            <div class="tag">现摘冰镇 · 鲜甜爆汁</div>
+            <div class="tag">现摘冰镇 · 已售 580</div>
             <div class="row"><div class="price"><small>¥</small>3.00</div><div class="add-btn">+</div></div>
           </div>
         </div>
         <div class="pcard alt-2">
+          <div class="corner-tag">🔥 热销</div>
           <div class="pic">🥔</div>
           <div class="body">
             <div class="name">蜜薯 + 玉米套餐</div>
-            <div class="tag">经典组合</div>
+            <div class="tag">经典组合 · 省 ¥3</div>
             <div class="row"><div class="price"><small>¥</small>18.00</div><div class="add-btn">+</div></div>
           </div>
         </div>
         <div class="pcard alt-3">
+          <div class="corner-tag new">NEW</div>
           <div class="pic">🥯</div>
           <div class="body">
             <div class="name">手工烤馒头</div>
             <div class="tag">炭火慢烤 · 微焦</div>
             <div class="row"><div class="price"><small>¥</small>2.50</div><div class="add-btn">+</div></div>
+          </div>
+        </div>
+        <div class="pcard alt-1">
+          <div class="pic">🍵</div>
+          <div class="body">
+            <div class="name">罐装酸梅汤</div>
+            <div class="tag">解腻必备</div>
+            <div class="row"><div class="price"><small>¥</small>4.00</div><div class="add-btn">+</div></div>
           </div>
         </div>
       </div>
@@ -1940,14 +2381,14 @@
     <div class="sh-cart-bar">
       <div class="cart-icon">🛒<span class="badge">2</span></div>
       <div class="total">
-        <div class="price">¥21.00</div>
-        <div class="delivery">已减 ¥0 · 满 30 减 5</div>
+        <div class="price">¥13.00</div>
+        <div class="delivery">满 30 立减 5 · 还差 ¥17</div>
       </div>
       <div class="pay-btn">去结算</div>
     </div>
     <div class="home-indicator"></div>
   </div>
-  <div class="phone-label">④ <b>店铺详情</b> · 进店浏览</div>
+  <div class="phone-label">④ <b>店铺详情</b> · 升级版（沉浸式 · 会员 · 优惠券 · 招牌大卡）</div>
 </div>
 
 <!-- ============== 屏 5：商品详情 ============== -->
