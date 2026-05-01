@@ -1481,10 +1481,351 @@
 <body>
 
 <h1 class="page-title">摊小二 · 普通用户 H5 全屏原型
-  <small>3 主屏 + 7 我的子页 + 5 进店下单链路屏 = 共 15 屏</small>
+  <small>1 登录页 + 3 主屏 + 7 我的子页 + 5 进店下单链路屏 = 共 16 屏</small>
 </h1>
 
+<style>
+  /* ========== 屏 ⓪ 登录注册页 ========== */
+  .login-page {
+    background: linear-gradient(180deg, #FF6B35 0%, #FF9A4A 35%, #FFE1C8 60%, #fff 100%);
+    height: 100%;
+    overflow-y: auto;
+    padding-top: env(safe-area-inset-top, 24px);
+    position: relative;
+  }
+  .login-page::before {
+    content: '';
+    position: absolute;
+    width: 280px; height: 280px;
+    background: radial-gradient(circle, rgba(255,255,255,.30) 0%, transparent 70%);
+    border-radius: 50%;
+    top: -80px; right: -80px;
+  }
+  .login-page::after {
+    content: '🍠';
+    position: absolute;
+    top: 28px; right: -32px;
+    font-size: 180px; opacity: .12;
+    transform: rotate(-15deg);
+    pointer-events: none;
+  }
+  .login-hero {
+    text-align: center; padding: 28px 24px 32px;
+    color: #fff; position: relative; z-index: 2;
+  }
+  .login-logo {
+    width: 72px; height: 72px;
+    background: rgba(255,255,255,0.20);
+    backdrop-filter: blur(8px);
+    border: 2px solid rgba(255,255,255,0.40);
+    border-radius: 18px;
+    line-height: 70px; text-align: center;
+    font-size: 38px; color: #fff; font-weight: 800;
+    margin: 0 auto 16px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.16);
+  }
+  .login-brand {
+    font-size: 32px; font-weight: 900; letter-spacing: 1px;
+    text-shadow: 0 2px 12px rgba(0,0,0,.20);
+  }
+  .login-slogan {
+    margin-top: 6px;
+    font-size: 14px; opacity: .94;
+    font-weight: 500;
+  }
+  .login-tagline {
+    margin-top: 16px;
+    display: inline-block;
+    padding: 6px 16px;
+    background: rgba(255,255,255,.22);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,.30);
+    border-radius: var(--r-pill);
+    font-size: 12px; font-weight: 600;
+  }
+
+  /* 新人礼包卡 */
+  .gift-card {
+    margin: 0 16px; padding: 14px 16px;
+    background: linear-gradient(135deg, #fff 0%, #fff5ef 100%);
+    border: 2px dashed var(--brand);
+    border-radius: var(--r-lg);
+    position: relative; z-index: 3;
+    display: flex; align-items: center; gap: 12px;
+    box-shadow: 0 8px 24px rgba(255,107,53,.20);
+  }
+  .gift-card .gift-icon {
+    width: 48px; height: 48px;
+    background: linear-gradient(135deg, var(--brand), var(--brand-d));
+    color: #fff; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px; flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(255,107,53,.40);
+  }
+  .gift-card .gift-info { flex: 1; min-width: 0; }
+  .gift-card .gift-title {
+    font-size: 14px; font-weight: 800; color: var(--t1);
+  }
+  .gift-card .gift-title b {
+    color: var(--brand); font-size: 18px;
+    font-variant-numeric: tabular-nums;
+    margin: 0 4px;
+  }
+  .gift-card .gift-sub {
+    margin-top: 2px;
+    font-size: 11px; color: var(--t2);
+  }
+  .gift-card .gift-cta {
+    background: var(--brand); color: #fff;
+    font-size: 12px; font-weight: 700;
+    padding: 6px 14px; border-radius: var(--r-pill);
+    box-shadow: 0 2px 8px rgba(255,107,53,.30);
+    flex-shrink: 0;
+  }
+
+  /* 价值主张 3 卡 */
+  .value-prop {
+    margin: 16px;
+    background: #fff;
+    border-radius: var(--r-lg);
+    padding: 8px 4px;
+    box-shadow: 0 4px 16px rgba(15,23,42,.06);
+    position: relative; z-index: 2;
+  }
+  .value-prop .vp {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 14px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .value-prop .vp:last-child { border-bottom: 0; }
+  .value-prop .vp .ic {
+    width: 40px; height: 40px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+  }
+  .value-prop .vp:nth-child(1) .ic { background: rgba(255,107,53,.12); color: var(--brand); }
+  .value-prop .vp:nth-child(2) .ic { background: rgba(99,102,241,.12); color: #6366F1; }
+  .value-prop .vp:nth-child(3) .ic { background: rgba(16,185,129,.12); color: #10B981; }
+  .value-prop .vp .body { flex: 1; min-width: 0; }
+  .value-prop .vp .ttl {
+    font-size: 14px; font-weight: 700; color: var(--t1);
+  }
+  .value-prop .vp .ttl b {
+    color: var(--brand); font-weight: 800;
+  }
+  .value-prop .vp .desc {
+    margin-top: 2px;
+    font-size: 11px; color: var(--t2);
+    line-height: 1.5;
+  }
+
+  /* 社交证明 */
+  .social-strip {
+    margin: 0 16px 16px;
+    padding: 10px 14px;
+    background: rgba(255,255,255,.7);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,107,53,.20);
+    border-radius: var(--r-pill);
+    display: flex; align-items: center; gap: 10px;
+    position: relative; z-index: 2;
+  }
+  .social-strip .avatars { display: flex; }
+  .social-strip .avatars .av {
+    width: 22px; height: 22px;
+    border-radius: 50%; border: 2px solid #fff;
+    margin-left: -6px;
+    color: #fff; font-size: 9px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .social-strip .avatars .av:first-child { margin-left: 0; }
+  .social-strip .text {
+    flex: 1; font-size: 12px; color: var(--t1);
+    font-weight: 500;
+  }
+  .social-strip .text b {
+    color: var(--brand); font-weight: 800;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* CTA 区 */
+  .login-actions {
+    margin: 0 16px;
+    padding: 16px 16px 12px;
+    background: #fff; border-radius: var(--r-lg);
+    box-shadow: 0 -2px 16px rgba(15,23,42,.06);
+    position: relative; z-index: 3;
+  }
+  .login-actions .cta-wx {
+    height: 50px; border-radius: 25px;
+    background: linear-gradient(135deg, #07C160 0%, #06AD56 100%);
+    color: #fff;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    font-size: 16px; font-weight: 700;
+    box-shadow: 0 6px 18px rgba(7,193,96,.30);
+  }
+  .login-actions .cta-wx .ic {
+    font-size: 22px;
+  }
+  .login-actions .cta-wx .new-tag {
+    background: #fff; color: #07C160;
+    font-size: 10px; font-weight: 800;
+    padding: 2px 6px; border-radius: var(--r-pill);
+    margin-left: 4px;
+  }
+  .login-actions .cta-phone {
+    margin-top: 12px;
+    height: 46px; border-radius: 23px;
+    background: var(--bg);
+    color: var(--t1);
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    font-size: 14px; font-weight: 600;
+    border: 1px solid var(--line);
+  }
+  .login-actions .other-options {
+    margin-top: 14px;
+    display: flex; align-items: center; justify-content: center; gap: 16px;
+    font-size: 12px; color: var(--t3);
+  }
+  .login-actions .other-options a {
+    color: var(--brand); font-weight: 600;
+  }
+  .login-actions .other-options .div {
+    width: 1px; height: 12px; background: var(--line);
+  }
+  .login-agreement {
+    margin: 16px 16px 24px;
+    text-align: center;
+    font-size: 11px; color: var(--t3);
+    line-height: 1.6;
+    padding-bottom: env(safe-area-inset-bottom, 16px);
+  }
+  .login-agreement .check {
+    display: inline-block;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--brand);
+    color: #fff; font-size: 9px; line-height: 14px;
+    text-align: center;
+    vertical-align: middle;
+    margin-right: 4px;
+  }
+  .login-agreement a {
+    color: var(--brand); text-decoration: none;
+  }
+</style>
+
 <div class="grid">
+
+<!-- ============== 屏 ⓪：登录注册页 ============== -->
+<div class="group-title"><em>入口</em>登录注册页（吸引用户注册）</div>
+<div class="phone-wrap">
+  <div class="phone">
+    <div class="status-bar"><span>9:41</span><div class="status-icons"><span>📶</span><span>📡</span><span>🔋</span></div></div>
+    <div class="login-page">
+      <!-- 品牌头部 -->
+      <div class="login-hero">
+        <div class="login-logo">摊</div>
+        <div class="login-brand">摊小二</div>
+        <div class="login-slogan">小摊主的生意伙伴</div>
+        <div class="login-tagline">🎁 边吃边赚 · 邀请就返</div>
+      </div>
+
+      <!-- 被分享场景：邀请人 + 店铺信息 hero 卡（仅 query 带 ?inviter&tenantId 时显示） -->
+      <div style="margin: 0 16px 12px; padding: 14px 16px; background: #fff; border-radius: var(--r-lg); position: relative; z-index: 3; box-shadow: 0 8px 24px rgba(0,0,0,.10); display: flex; align-items: center; gap: 12px; border: 2px solid rgba(255,107,53,.20);">
+        <!-- 邀请人头像 -->
+        <div style="width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg,#ff9a4a,var(--brand)); color: #fff; font-size: 18px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border: 2px solid var(--brand-light-2);">李</div>
+        <div style="flex: 1; min-width: 0;">
+          <div style="font-size: 13px; color: var(--t2); display: flex; align-items: center; gap: 4px;">
+            <span style="color: var(--brand); font-weight: 700;">小李 🌟</span>
+            <span>邀请你来</span>
+          </div>
+          <div style="margin-top: 2px; font-size: 15px; font-weight: 800; color: var(--t1); display: flex; align-items: center; gap: 6px;">
+            <span style="width: 22px; height: 22px; border-radius: 6px; background: linear-gradient(135deg,#ffd1ba,var(--brand)); color: #fff; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center;">王</span>
+            王师傅烤地瓜
+          </div>
+        </div>
+        <div style="background: var(--brand-light); color: var(--brand); font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: var(--r-pill); flex-shrink: 0;">登录得 ¥3 见面礼</div>
+      </div>
+
+      <!-- 新人礼包 -->
+      <div class="gift-card">
+        <div class="gift-icon">🎁</div>
+        <div class="gift-info">
+          <div class="gift-title">新人见面礼<b>¥18</b>等你领</div>
+          <div class="gift-sub">注册即送 5 张优惠券 + 100 推广积分起步</div>
+        </div>
+        <div class="gift-cta">立即领</div>
+      </div>
+
+      <!-- 3 大价值主张 -->
+      <div class="value-prop">
+        <div class="vp">
+          <div class="ic">🎯</div>
+          <div class="body">
+            <div class="ttl">边吃边赚 · 邀请最高 <b>返 100%</b> 商品价</div>
+            <div class="desc">推 N 个朋友买同款，每位都给你返推广积分</div>
+          </div>
+        </div>
+        <div class="vp">
+          <div class="ic">🏪</div>
+          <div class="body">
+            <div class="ttl">已有 <b>1280+</b> 家本地小店入驻</div>
+            <div class="desc">三里屯 · 望京 · 国贸 · 五道口…身边好店一键直达</div>
+          </div>
+        </div>
+        <div class="vp">
+          <div class="ic">⭐</div>
+          <div class="body">
+            <div class="ttl">多店独立会员 · 越买越省</div>
+            <div class="desc">每家店独立星级 + 余额 + 优惠券，老回头客最赚</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 社交证明 -->
+      <div class="social-strip">
+        <div class="avatars">
+          <div class="av" style="background:linear-gradient(135deg,#ff9a4a,var(--brand));">李</div>
+          <div class="av" style="background:linear-gradient(135deg,#c9e0ff,#6196f0);">王</div>
+          <div class="av" style="background:linear-gradient(135deg,#d3f4d3,#4cb84c);">陈</div>
+          <div class="av" style="background:linear-gradient(135deg,#ffd0dc,#ee5a8b);">林</div>
+          <div class="av" style="background:linear-gradient(135deg,#e0d4ff,#9170dd);">张</div>
+        </div>
+        <div class="text"><b>8.5 万</b>用户已在用 · 今日新增 <b>+152</b></div>
+      </div>
+
+      <!-- CTA 区 -->
+      <div class="login-actions">
+        <!-- 微信一键登录（主 CTA） -->
+        <div class="cta-wx">
+          <span class="ic">💬</span>
+          <span>微信一键登录</span>
+          <span class="new-tag">送 ¥18</span>
+        </div>
+        <!-- 手机号登录（次 CTA） -->
+        <div class="cta-phone">
+          <span>📱</span>
+          <span>手机号登录 / 注册</span>
+        </div>
+        <div class="other-options">
+          <a>先逛逛 ›</a>
+          <span class="div"></span>
+          <span>商户入驻 ›</span>
+        </div>
+      </div>
+
+      <!-- 协议 -->
+      <div class="login-agreement">
+        <span class="check">✓</span>
+        我已阅读并同意 <a>《用户协议》</a> 和 <a>《隐私政策》</a>
+      </div>
+    </div>
+  </div>
+  <div class="phone-label">⓪ <b>登录注册页</b> · 价值主张 + 新人礼包 + 微信一键</div>
+</div>
 
 <!-- ============== 屏 1：首页 ============== -->
 <div class="group-title"><em>主屏</em>底部 Tab 三屏</div>

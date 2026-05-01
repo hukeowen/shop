@@ -6,11 +6,25 @@
       <view class="slogan">一个人的摊，也能做出一家店</view>
     </view>
 
-    <!-- 扫码进店登录引导（onLoad 解析到 redirect 中的 tenantId 后展示） -->
-    <view v-if="shopName" class="shop-welcome card">
-      <view class="welcome-tag">欢迎光临</view>
-      <view class="welcome-shop-name">{{ shopName }}</view>
-      <view class="welcome-sub">登录后即可下单 · 自动成为店铺会员</view>
+    <!-- 被邀请落地引导：同时展示邀请人 + 店铺（onLoad 解析 redirect 中 inviter+tenantId） -->
+    <view v-if="inviterNick || shopName" class="invite-welcome card">
+      <view v-if="inviterNick" class="invite-row">
+        <view class="invite-avatar">{{ inviterNick.slice(0, 1) }}</view>
+        <view class="invite-text">
+          <view class="invite-from"><text class="invite-name">{{ inviterNick }}</text> 邀请你来</view>
+          <view v-if="shopName" class="invite-shop">
+            <text class="invite-shop-icon">{{ shopName.slice(0, 1) }}</text>
+            <text class="invite-shop-name">{{ shopName }}</text>
+          </view>
+        </view>
+        <view class="invite-gift">登录得 ¥3 见面礼</view>
+      </view>
+      <!-- 没有 inviter 但有 shopName：扫码进店场景 -->
+      <view v-else-if="shopName" class="shop-welcome">
+        <view class="welcome-tag">欢迎光临</view>
+        <view class="welcome-shop-name">{{ shopName }}</view>
+        <view class="welcome-sub">登录后即可下单 · 自动成为店铺会员</view>
+      </view>
     </view>
 
     <!-- H5（非小程序）环境：手机号+密码登录（演示用，首次输入即注册） -->
@@ -142,6 +156,8 @@ const userStore = useUserStore();
 const loading = ref(false);
 // 扫码进店登录时展示的店铺名（onLoad 解析 redirect 中的 tenantId 后异步拉取）
 const shopName = ref('');
+// 被邀请场景：邀请人昵称（拉自 /app/auth/inviter-info）
+const inviterNick = ref('');
 const loadingText = ref('登录中…');
 const applying = ref(false);
 const showApplyMerchant = ref(false);
@@ -322,17 +338,22 @@ onLoad((query) => {
         localStorage.setItem('redirect:after-login', decodeURIComponent(query.redirect));
       }
     } catch {}
-    // 解析 redirect 中的 tenantId → 异步拉店铺名展示在登录卡片上方
-    // 让用户清楚自己要登录的是哪家店铺，登录后会自动成为该店会员
+    // 解析 redirect 中的 tenantId + inviter → 拉店铺名 + 邀请人昵称
+    // 双展示让用户清楚"谁邀请我来哪家店"，登录后会自动绑上下级 + 入会员
     try {
       const decoded = decodeURIComponent(query.redirect);
-      const m = decoded.match(/[?&]tenantId=(\d+)/);
-      const tid = m ? Number(m[1]) : null;
+      const tm = decoded.match(/[?&]tenantId=(\d+)/);
+      const im = decoded.match(/[?&](?:inviter|referrerUserId)=(\d+)/);
+      const tid = tm ? Number(tm[1]) : null;
+      const inviterId = im ? Number(im[1]) : null;
       if (tid) {
         request({ url: `/app-api/merchant/shop/public/info?tenantId=${tid}` })
-          .then((info) => {
-            if (info?.shopName) shopName.value = info.shopName;
-          })
+          .then((info) => { if (info?.shopName) shopName.value = info.shopName; })
+          .catch(() => {});
+      }
+      if (inviterId && inviterId > 0) {
+        request({ url: `/app-api/app/auth/inviter-info?inviterUserId=${inviterId}` })
+          .then((info) => { if (info?.nickname) inviterNick.value = info.nickname; })
           .catch(() => {});
       }
     } catch {}
@@ -412,6 +433,74 @@ onLoad((query) => {
   &.center {
     text-align: center;
     padding: 64rpx 32rpx;
+  }
+}
+
+// 被邀请落地：邀请人 + 店铺联合卡
+.invite-welcome {
+  margin-bottom: 24rpx;
+  padding: 28rpx 28rpx 24rpx;
+  background: $bg-card;
+  border-radius: $radius-lg;
+  border: 2rpx solid rgba(255, 107, 53, 0.20);
+  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.06);
+
+  .invite-row {
+    display: flex;
+    align-items: center;
+    gap: 20rpx;
+  }
+  .invite-avatar {
+    width: 80rpx;
+    height: 80rpx;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ff9a4a, #FF6B35);
+    color: #fff;
+    font-size: 32rpx;
+    font-weight: 700;
+    text-align: center;
+    line-height: 80rpx;
+    flex-shrink: 0;
+    border: 4rpx solid rgba(255, 107, 53, 0.18);
+  }
+  .invite-text { flex: 1; min-width: 0; }
+  .invite-from {
+    font-size: 24rpx;
+    color: $text-secondary;
+  }
+  .invite-name {
+    color: $brand-primary;
+    font-weight: 700;
+  }
+  .invite-shop {
+    margin-top: 6rpx;
+    font-size: 28rpx;
+    font-weight: 800;
+    color: $text-primary;
+    display: flex;
+    align-items: center;
+    gap: 10rpx;
+  }
+  .invite-shop-icon {
+    width: 40rpx;
+    height: 40rpx;
+    border-radius: 8rpx;
+    background: linear-gradient(135deg, #ffd1ba, $brand-primary);
+    color: #fff;
+    font-size: 22rpx;
+    font-weight: 700;
+    text-align: center;
+    line-height: 40rpx;
+  }
+  .invite-shop-name { font-size: 30rpx; }
+  .invite-gift {
+    background: rgba(255, 107, 53, 0.12);
+    color: $brand-primary;
+    font-size: 22rpx;
+    font-weight: 700;
+    padding: 6rpx 14rpx;
+    border-radius: 999rpx;
+    flex-shrink: 0;
   }
 }
 

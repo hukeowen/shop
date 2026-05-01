@@ -134,6 +134,40 @@ public class AppUnifiedAuthController {
         return success(buildLoginResp(token, member, merchant, roles, activeRole, session.getOpenid()));
     }
 
+    // ==================== 1A. C 端被分享落地：邀请人公开信息（无需登录） ====================
+
+    /**
+     * 通过 inviter userId 拉取邀请人的公开展示信息（昵称 + 头像）。
+     *
+     * <p>用于 C 端用户从分享链接 ({@code /m/shop-home?tenantId=X&inviter=Y})
+     * 进入登录页时，登录页能展示"小李 邀请你来 王师傅烤地瓜"的引导。仅返展示用字段，
+     * 不暴露手机号 / openid 等敏感信息。</p>
+     *
+     * <p>幂等 + 容错：找不到 user / mobile 不存在时返 null（不抛错，前端兜底）。</p>
+     */
+    @GetMapping("/inviter-info")
+    @Operation(summary = "C 端被分享落地：拉邀请人公开展示信息（昵称+头像）")
+    @PermitAll
+    @TenantIgnore
+    public CommonResult<java.util.Map<String, Object>> getInviterInfo(
+            @org.springframework.web.bind.annotation.RequestParam("inviterUserId") Long inviterUserId) {
+        if (inviterUserId == null || inviterUserId <= 0) {
+            return success(null);
+        }
+        try {
+            MemberUserDO inviter = memberUserMapper.selectById(inviterUserId);
+            if (inviter == null) return success(null);
+            java.util.Map<String, Object> resp = new java.util.LinkedHashMap<>();
+            resp.put("userId", inviter.getId());
+            resp.put("nickname", StrUtil.isBlank(inviter.getNickname()) ? "好友" : inviter.getNickname());
+            resp.put("avatarUrl", inviter.getAvatar());
+            return success(resp);
+        } catch (Exception e) {
+            log.warn("[getInviterInfo] failed inviterUserId={}", inviterUserId, e);
+            return success(null);
+        }
+    }
+
     // ==================== 1B. 演示用 — 手机号+密码登录（不发短信） ====================
 
     @PostMapping("/password-login")
