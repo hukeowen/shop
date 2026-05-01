@@ -202,6 +202,7 @@ import {
   createSpu,
   deleteSpu,
   getSpu,
+  loadCategories,
   updateSpu,
 } from '../../api/product.js';
 import { getProductPromoConfig, saveProductPromoConfig } from '../../api/promo.js';
@@ -417,7 +418,10 @@ async function onDelete() {
   setTimeout(() => uni.navigateBack(), 800);
 }
 
-onLoad((q) => {
+onLoad(async (q) => {
+  // 显式预热商品分类（小程序环境无 window，模块加载时自动预热不会触发）
+  // CATEGORIES 是引用，loadCategories 内部 splice 替换内容；模板里 v-for 会响应
+  loadCategories().catch(() => {});
   if (q.id) {
     isEdit.value = true;
     editingId.value = Number(q.id);

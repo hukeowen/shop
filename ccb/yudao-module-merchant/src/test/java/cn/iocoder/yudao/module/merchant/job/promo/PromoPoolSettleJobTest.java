@@ -107,8 +107,10 @@ class PromoPoolSettleJobTest {
         // next 一定是下月 1 号 0:00 → 当前测试运行时（除非恰好跑在月底 23:59 直到下月 1 号
         // 0:00 之间，不会发生）一定未到。避免 now.minusDays(5) 在月初跨月时的脆性。
         configByTenant.put(1L, config(true, "0 0 0 1 * ?", "FULL"));
+        // 本月 15 号 00:00 — 月度 cron 中位数最稳：next from 15 号 = 下月 1 号，
+        // 距离当前测试运行时刻 ≥ 14 天，永远未到。避免 1 号 01:00 在月底 race。
         java.time.LocalDateTime lastSettled = java.time.LocalDate.now()
-                .withDayOfMonth(1).atTime(1, 0); // 本月 1 号 01:00
+                .withDayOfMonth(15).atStartOfDay();
         when(poolMapper.selectList(any(Wrapper.class)))
                 .thenReturn(Collections.singletonList(
                         pool(1L, 10000L, lastSettled)));

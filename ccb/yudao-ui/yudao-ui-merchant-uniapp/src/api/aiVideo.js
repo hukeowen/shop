@@ -68,6 +68,24 @@ export async function saveScenesToDB(taskId, scenes) {
 }
 
 /**
+ * 过滤 patch 对象：移除值为 undefined / null / 空字符串 / 空数组的字段，
+ * 避免前端误传空值把 DB 已有值清掉（partial update 语义）。
+ * Integer 0 / boolean false 仍保留（合法值）。
+ */
+function pickNonEmpty(patch) {
+  if (!patch || typeof patch !== 'object') return null;
+  const out = {};
+  for (const k of Object.keys(patch)) {
+    const v = patch[k];
+    if (v == null) continue; // null / undefined 跳过
+    if (typeof v === 'string' && v.length === 0) continue; // 空字符串跳过
+    if (Array.isArray(v) && v.length === 0) continue; // 空数组跳过
+    out[k] = v;
+  }
+  return Object.keys(out).length ? out : null;
+}
+
+/**
  * 单幕 partial 更新（runClip 各阶段同步 status/clipTaskId/clipUrl）
  * @param {number} taskId
  * @param {number} sceneIndex
@@ -75,12 +93,13 @@ export async function saveScenesToDB(taskId, scenes) {
  */
 export async function patchSceneToDB(taskId, sceneIndex, patch) {
   if (!taskId || taskId <= 0 || sceneIndex == null || sceneIndex < 0) return false;
-  if (!patch || typeof patch !== 'object') return false;
+  const clean = pickNonEmpty(patch);
+  if (!clean) return false;
   try {
     await request({
       url: `${VIDEO_TASK_BASE}/scenes/patch`,
       method: 'PUT',
-      data: { taskId, sceneIndex, ...patch },
+      data: { taskId, sceneIndex, ...clean },
     });
     return true;
   } catch (e) {
@@ -96,12 +115,13 @@ export async function patchSceneToDB(taskId, sceneIndex, patch) {
  */
 export async function patchTaskMetaToDB(id, patch) {
   if (!id || id <= 0) return false;
-  if (!patch || typeof patch !== 'object') return false;
+  const clean = pickNonEmpty(patch);
+  if (!clean) return false;
   try {
     await request({
       url: `${VIDEO_TASK_BASE}/update-meta`,
       method: 'PUT',
-      data: { id, ...patch },
+      data: { id, ...clean },
     });
     return true;
   } catch (e) {

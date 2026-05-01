@@ -231,13 +231,31 @@ public class AppVideoTaskController {
 
     /**
      * 商户隔离 + 任务存在性校验：当前登录商户必须是该任务的拥有者。
-     * 不是 → 抛 AI_VIDEO_MERCHANT_NOT_FOUND（避免暴露任务是否存在）。
+     *
+     * <p>双层数据隔离：
+     * <ol>
+     *   <li><b>租户隔离</b>（隐式）：{@link VideoTaskDO} extends TenantBaseDO，
+     *       yudao TenantLineHandler 在 SQL 层自动给 SELECT 加
+     *       {@code WHERE tenant_id = currentTenant}；跨租户的 taskId 直接查不到。</li>
+     *   <li><b>商户隔离</b>（显式）：同租户内不同商户也不能互访，比对
+     *       {@code merchant.id == task.merchantId}。</li>
+     * </ol>
+     *
+     * <p>不通过任一层 → 抛 AI_VIDEO_MERCHANT_NOT_FOUND（统一返"不存在"，
+     * 避免攻击者通过响应区分"任务不存在"和"任务存在但无权访问"）。</p>
      */
     private VideoTaskDO ensureMyTask(Long taskId) {
+        if (taskId == null || taskId <= 0) {
+            throw exception(AI_VIDEO_MERCHANT_NOT_FOUND);
+        }
         VideoTaskDO task = videoTaskService.getVideoTask(taskId);
         Long userId = SecurityFrameworkUtils.getLoginUserId();
         MerchantDO merchant = userId == null ? null : merchantService.getMerchantByUserId(userId);
-        if (task == null || merchant == null || !merchant.getId().equals(task.getMerchantId())) {
+        if (task == null
+                || merchant == null
+                || merchant.getId() == null
+                || task.getMerchantId() == null
+                || !merchant.getId().equals(task.getMerchantId())) {
             throw exception(AI_VIDEO_MERCHANT_NOT_FOUND);
         }
         return task;

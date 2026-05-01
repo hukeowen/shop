@@ -22,15 +22,23 @@
 
 ## 二、三步部署（首次）
 
+> **国内阿里云 ECS 务必先配 GitHub 反代**，否则 `git clone` / `curl raw.githubusercontent.com`
+> 容易超时。任选其一（已实测可用）：`https://gh-proxy.com/` / `https://ghfast.top/` /
+> `https://gh.llkk.cc/`，下面的 `${GH}` 是反代前缀，**不需要可留空**。
+
 ```bash
+# 0) 国内 ECS 加速（可选）
+GH=https://gh-proxy.com/        # 国内 ECS：填反代；境外/国内大厂 BGP：留空 GH=
+
 # 1) 拉脚本
-curl -fsSL https://raw.githubusercontent.com/hukeowen/shop/main/ccb/deploy.sh -o /tmp/deploy.sh
+curl -fsSL ${GH}https://raw.githubusercontent.com/hukeowen/shop/main/ccb/deploy.sh -o /tmp/deploy.sh
 
 # 2) 准备配置（在脚本所在目录执行）
 mkdir -p /opt/tanxiaer && cd /opt/tanxiaer
-curl -fsSL https://raw.githubusercontent.com/hukeowen/shop/main/ccb/.env.example -o .env.example
+curl -fsSL ${GH}https://raw.githubusercontent.com/hukeowen/shop/main/ccb/.env.example -o .env.example
 cp .env.example .env
 vi .env                # 把 CHANGE_ME_xxx 全部改成真实强密码
+                       # 国内 ECS 还要在 .env 里写一行 GITHUB_PROXY=${GH}（让脚本 git clone 用反代）
 
 # 3) 一键跑完（约 25-40 分钟，取决于网络）
 sudo ENV_FILE=/opt/tanxiaer/.env bash /tmp/deploy.sh
@@ -88,6 +96,8 @@ sudo bash /tmp/deploy.sh --skip-install --reset
 - [ ] DNS 解析域名到 ECS 公网 IP（修改 `.env` 的 `SERVER_NAME=你的域名` 重跑）
 - [ ] HTTPS：`yum install -y certbot python2-certbot-nginx && certbot --nginx`
 - [ ] `.env` 中 `YUDAO_SMS_DEMO_MODE=false`，PC 后台「系统管理 → 短信渠道」配置短信网关 + 「短信模板」绑 `user-sms-login`
+- [ ] **PC 后台「商品 → 商品分类」建立至少 1 条真分类**（前端 product/edit 优先拉后端，
+      为空时降级 fallback 8 类，但生产建议显式配置）
 - [ ] 填入真实 `ARK_API_KEY` / `JIMENG_AK/SK`（如不用 AI 视频可留空）
 - [ ] 填入真实 `DOUYIN_CLIENT_KEY/SECRET`（如不用抖音发布可留空）
 - [ ] 演示邀请码 `DEMO20260428` **禁用**（PC 后台 → merchant_invite_code → 改 status=2）
