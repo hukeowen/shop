@@ -210,6 +210,50 @@ public class VideoTaskServiceImpl implements VideoTaskService {
         return videoTaskMapper.selectListByUserId(userId);
     }
 
+    @Override
+    public void updateTaskMeta(Long id, VideoTaskDO patch) {
+        if (id == null || id <= 0 || patch == null) {
+            return;
+        }
+        VideoTaskDO existed = videoTaskMapper.selectById(id);
+        if (existed == null) {
+            log.warn("[updateTaskMeta] taskId={} 不存在，跳过", id);
+            return;
+        }
+        VideoTaskDO updateObj = new VideoTaskDO();
+        updateObj.setId(id);
+        boolean dirty = false;
+        // 仅覆盖非空字段；status / douyinPublishStatus 是 Integer，0 是合法值不算空
+        if (patch.getTitle() != null && !patch.getTitle().isEmpty()) {
+            updateObj.setTitle(patch.getTitle()); dirty = true;
+        }
+        if (patch.getDescription() != null && !patch.getDescription().isEmpty()) {
+            updateObj.setDescription(patch.getDescription()); dirty = true;
+        }
+        if (patch.getImageUrls() != null && !patch.getImageUrls().isEmpty()) {
+            updateObj.setImageUrls(patch.getImageUrls()); dirty = true;
+        }
+        if (patch.getBgmUrl() != null) { updateObj.setBgmUrl(patch.getBgmUrl()); dirty = true; }
+        if (patch.getTtsAudioUrl() != null) { updateObj.setTtsAudioUrl(patch.getTtsAudioUrl()); dirty = true; }
+        if (patch.getVideoUrl() != null) { updateObj.setVideoUrl(patch.getVideoUrl()); dirty = true; }
+        if (patch.getDuration() != null) { updateObj.setDuration(patch.getDuration()); dirty = true; }
+        if (patch.getStatus() != null) { updateObj.setStatus(patch.getStatus()); dirty = true; }
+        if (patch.getFailReason() != null) {
+            String truncated = patch.getFailReason().length() > 200
+                    ? patch.getFailReason().substring(0, 200) : patch.getFailReason();
+            updateObj.setFailReason(truncated); dirty = true;
+        }
+        // V014 新元数据
+        if (patch.getBgmStyle() != null) { updateObj.setBgmStyle(patch.getBgmStyle()); dirty = true; }
+        if (patch.getPosterUrl() != null) { updateObj.setPosterUrl(patch.getPosterUrl()); dirty = true; }
+        if (patch.getVoiceKey() != null) { updateObj.setVoiceKey(patch.getVoiceKey()); dirty = true; }
+        if (patch.getRatio() != null) { updateObj.setRatio(patch.getRatio()); dirty = true; }
+        if (patch.getCoverUrl() != null) { updateObj.setCoverUrl(patch.getCoverUrl()); dirty = true; }
+        if (dirty) {
+            videoTaskMapper.updateById(updateObj);
+        }
+    }
+
     private List<String> splitToLines(String description) {
         if (description == null || description.isEmpty()) {
             return java.util.Collections.emptyList();

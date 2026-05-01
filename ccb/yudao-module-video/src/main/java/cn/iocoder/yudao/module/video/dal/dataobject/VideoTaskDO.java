@@ -88,4 +88,32 @@ public class VideoTaskDO extends TenantBaseDO {
      */
     private LocalDateTime douyinPublishTime;
 
+    // ==================== V014 新增（B 改造 Step 2）：把前端 store.tasks 的元数据落库 ====================
+
+    /**
+     * BGM 风格 key（confirm 页用户从 6 选 1）：
+     * street_food_yelling / cozy_explore / asmr_macro / elegant_tea / trendy_pop / emotional_story / none
+     * none = 主动选不混 BGM；空 = sidecar 走默认 cozy_explore
+     */
+    private String bgmStyle;
+
+    /**
+     * 即梦 CV 端卡海报 URL（detail 页单独下载用，与视频独立）
+     */
+    private String posterUrl;
+
+    /**
+     * TTS 音色 key（cancan / qingxin / ...）
+     */
+    private String voiceKey;
+
+    /**
+     * 画面比例：9:16 / 16:9 / 1:1
+     */
+    private String ratio;
+
+    /**
+     * 视频封面图 URL（一般取 image_urls[0] 或第一幕的起始帧）
+     */
+    private String coverUrl;
 }

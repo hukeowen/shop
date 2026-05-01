@@ -52,4 +52,15 @@ public interface VideoTaskService {
      */
     List<VideoTaskDO> listByUserId(Long userId);
 
+    /**
+     * 部分更新任务的元数据（B 改造 Step 2）—— 仅覆盖 patch 中非空字段，
+     * 用于前端 createTask / confirmTask 完成后把 bgmStyle / posterUrl / voiceKey /
+     * ratio / coverUrl / title / description / imageUrls / status / failReason
+     * 等元数据同步落库。
+     *
+     * <p>幂等：基于 id 直接 selectById + updateById；不存在则忽略。null/空字段
+     * 不覆盖原值，避免误清。</p>
+     */
+    void updateTaskMeta(Long id, VideoTaskDO patch);
+
 }
