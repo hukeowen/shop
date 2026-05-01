@@ -1,0 +1,1120 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+<title>摊小二 · 普通用户 H5 原型</title>
+<style>
+  /* ============== 设计 token（与商户端 uni.scss 同色系） ============== */
+  :root {
+    --brand: #FF6B35;
+    --brand-d: #E25316;
+    --brand-light: rgba(255, 107, 53, 0.10);
+    --brand-light-2: rgba(255, 107, 53, 0.18);
+    --bg: #F6F7F9;
+    --card: #FFFFFF;
+    --t1: #1B1F23;
+    --t2: #5A6577;
+    --t3: #8A93A0;
+    --line: #EEF0F4;
+    --danger: #E63946;
+    --warn: #F59E0B;
+    --success: #10B981;
+    --r-sm: 8px;
+    --r-md: 12px;
+    --r-lg: 16px;
+    --r-pill: 999px;
+    --shadow-card: 0 2px 12px rgba(15, 23, 42, 0.04);
+    --ease: cubic-bezier(.2,.8,.2,1);
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: #2a2d33;
+    font: 14px/1.5 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    color: var(--t1);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 32px;
+    padding: 32px 16px;
+  }
+
+  /* ============== 手机外壳（375x812 仿 iPhone X 视觉） ============== */
+  .phone {
+    width: 375px;
+    height: 812px;
+    background: var(--bg);
+    border-radius: 36px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 25px 60px rgba(0,0,0,0.35), 0 0 0 6px #1c1d20, 0 0 0 8px #2a2d33;
+    display: flex;
+    flex-direction: column;
+  }
+  .phone-label {
+    text-align: center;
+    color: #fff;
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: .5px;
+    margin-top: 12px;
+    opacity: 0.75;
+  }
+
+  /* ============== iOS 状态栏 ============== */
+  .status-bar {
+    height: 44px;
+    flex-shrink: 0;
+    background: linear-gradient(135deg, #fff5ef, #fff);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px 0 24px;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--t1);
+    position: relative;
+  }
+  .status-bar::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 124px; height: 30px;
+    background: #1c1d20;
+    border-radius: 0 0 18px 18px;
+  }
+  .status-icons {
+    display: flex; gap: 6px;
+    font-size: 14px;
+  }
+
+  /* ============== 视图容器 + Tab 切换 ============== */
+  .view {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-bottom: 88px; /* 给 tab bar 留位 */
+  }
+  .view::-webkit-scrollbar { width: 0; }
+  .pane { display: none; }
+  .pane.active { display: block; }
+
+  /* ============== 通用卡片 / 标题 ============== */
+  .card {
+    background: var(--card);
+    border-radius: var(--r-lg);
+    margin: 12px 16px;
+    padding: 16px;
+    box-shadow: var(--shadow-card);
+  }
+  .section-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 16px 16px 8px;
+  }
+  .section-title h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--t1);
+  }
+  .section-title .more {
+    font-size: 12px;
+    color: var(--t3);
+  }
+
+  /* ============== 1️⃣ 首页 ============== */
+  /* 顶部欢迎条 + 搜索 */
+  .home-top {
+    background: linear-gradient(135deg, #ffd1ba 0%, #ff9a4a 60%, var(--brand) 100%);
+    padding: 12px 16px 28px;
+    color: #fff;
+  }
+  .home-greeting {
+    font-size: 13px;
+    opacity: 0.9;
+  }
+  .home-name {
+    font-size: 22px;
+    font-weight: 800;
+    margin-top: 2px;
+    letter-spacing: 0.5px;
+  }
+  .home-search {
+    margin-top: 14px;
+    background: rgba(255,255,255,0.95);
+    backdrop-filter: blur(8px);
+    border-radius: var(--r-pill);
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 4px 14px rgba(255, 107, 53, 0.18);
+  }
+  .home-search .icon { font-size: 16px; color: var(--t3); }
+  .home-search input {
+    border: 0;
+    outline: 0;
+    flex: 1;
+    background: transparent;
+    font-size: 14px;
+    color: var(--t1);
+  }
+  .home-search input::placeholder { color: var(--t3); }
+  .home-search .voice {
+    width: 32px; height: 32px; line-height: 32px; text-align: center;
+    border-radius: 50%; background: var(--brand-light);
+    color: var(--brand); font-size: 16px;
+  }
+
+  /* 快捷入口 */
+  .home-quick {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    background: var(--card);
+    border-radius: var(--r-lg);
+    margin: -12px 16px 0;
+    padding: 14px 8px;
+    box-shadow: var(--shadow-card);
+    position: relative;
+    z-index: 2;
+  }
+  .qk {
+    text-align: center;
+    padding: 6px 0;
+  }
+  .qk-icon {
+    width: 40px; height: 40px;
+    margin: 0 auto 4px;
+    border-radius: var(--r-md);
+    background: var(--brand-light);
+    color: var(--brand);
+    line-height: 40px;
+    text-align: center;
+    font-size: 20px;
+  }
+  .qk:nth-child(1) .qk-icon { background: rgba(255, 107, 53, 0.10); color: var(--brand); }
+  .qk:nth-child(2) .qk-icon { background: rgba(16, 185, 129, 0.12); color: #10B981; }
+  .qk:nth-child(3) .qk-icon { background: rgba(99, 102, 241, 0.12); color: #6366F1; }
+  .qk:nth-child(4) .qk-icon { background: rgba(245, 158, 11, 0.14); color: #F59E0B; }
+  .qk-text { font-size: 12px; color: var(--t1); }
+
+  /* 最近去过的店铺（横滑卡） */
+  .recent-scroll {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    padding: 4px 16px 12px;
+  }
+  .recent-scroll::-webkit-scrollbar { height: 0; }
+  .recent-card {
+    flex: 0 0 168px;
+    background: var(--card);
+    border-radius: var(--r-md);
+    box-shadow: var(--shadow-card);
+    overflow: hidden;
+  }
+  .recent-cover {
+    height: 92px;
+    background: linear-gradient(135deg, #ffe1c8, #ffae74);
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    padding: 8px;
+  }
+  .recent-cover.theme-2 { background: linear-gradient(135deg, #d6e9ff, #80b3ff); }
+  .recent-cover.theme-3 { background: linear-gradient(135deg, #d8f5d6, #6fcf6f); }
+  .recent-cover.theme-4 { background: linear-gradient(135deg, #ffd6e0, #ff8aa7); }
+  .recent-tag {
+    background: rgba(0,0,0,0.28);
+    color: #fff;
+    border-radius: var(--r-pill);
+    padding: 2px 10px;
+    font-size: 11px;
+    backdrop-filter: blur(8px);
+  }
+  .recent-body { padding: 10px; }
+  .recent-name { font-size: 13px; font-weight: 600; color: var(--t1); }
+  .recent-meta { display: flex; align-items: center; gap: 6px; margin-top: 4px; font-size: 11px; color: var(--t3); }
+  .recent-meta .dot { width: 4px; height: 4px; background: var(--t3); border-radius: 50%; }
+
+  /* 附近商家列表卡 */
+  .shop {
+    display: flex;
+    gap: 12px;
+    padding: 14px 16px;
+    background: var(--card);
+    border-radius: var(--r-lg);
+    margin: 0 16px 12px;
+    box-shadow: var(--shadow-card);
+  }
+  .shop-pic {
+    flex: 0 0 76px;
+    height: 76px;
+    border-radius: var(--r-md);
+    background: linear-gradient(135deg, #ffd1ba, var(--brand));
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    font-weight: 800;
+  }
+  .shop-pic.alt-1 { background: linear-gradient(135deg, #c9e0ff, #6196f0); }
+  .shop-pic.alt-2 { background: linear-gradient(135deg, #d3f4d3, #4cb84c); }
+  .shop-pic.alt-3 { background: linear-gradient(135deg, #ffd0dc, #ee5a8b); }
+  .shop-info { flex: 1; min-width: 0; }
+  .shop-row1 {
+    display: flex; align-items: center; gap: 6px;
+  }
+  .shop-name {
+    font-size: 15px; font-weight: 700; color: var(--t1);
+    flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .shop-badge {
+    background: var(--brand-light);
+    color: var(--brand);
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: var(--r-pill);
+    flex-shrink: 0;
+  }
+  .shop-tag-line {
+    margin-top: 4px;
+    font-size: 12px;
+    color: var(--t2);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .shop-meta {
+    margin-top: 8px;
+    display: flex; align-items: center; gap: 10px;
+    font-size: 11px; color: var(--t3);
+  }
+  .shop-meta .rating { color: var(--brand); font-weight: 600; }
+  .shop-meta .distance { color: var(--success); font-weight: 600; }
+  .shop-meta .sales { color: var(--t2); }
+
+  /* 平台 banner */
+  .banner {
+    margin: 12px 16px;
+    border-radius: var(--r-lg);
+    background: linear-gradient(135deg, #ff9a4a, var(--brand-d));
+    color: #fff;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 6px 18px rgba(255, 107, 53, 0.30);
+  }
+  .banner-icon {
+    width: 48px; height: 48px;
+    background: rgba(255,255,255,0.18);
+    border-radius: var(--r-md);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px;
+  }
+  .banner h4 { margin: 0; font-size: 15px; font-weight: 700; }
+  .banner p { margin: 4px 0 0; font-size: 12px; opacity: 0.9; }
+
+  /* ============== 2️⃣ 订单 ============== */
+  .order-top {
+    background: var(--card);
+    padding: 14px 16px 0;
+    box-shadow: 0 1px 0 var(--line);
+  }
+  .order-top h2 {
+    margin: 0 0 12px;
+    font-size: 20px;
+    font-weight: 800;
+  }
+  /* 状态筛选 */
+  .order-filter {
+    display: flex;
+    gap: 16px;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 12px;
+  }
+  .order-filter .it {
+    font-size: 13px;
+    color: var(--t2);
+    padding-bottom: 4px;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+  }
+  .order-filter .it.active {
+    color: var(--brand);
+    border-bottom-color: var(--brand);
+    font-weight: 600;
+  }
+  /* 店铺分组 */
+  .shop-group {
+    margin: 12px 16px;
+    background: var(--card);
+    border-radius: var(--r-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-card);
+  }
+  .group-head {
+    display: flex; align-items: center; gap: 8px;
+    padding: 12px 14px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .group-pic {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #ffd1ba, var(--brand));
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 800;
+    flex-shrink: 0;
+  }
+  .group-pic.alt-1 { background: linear-gradient(135deg, #c9e0ff, #6196f0); }
+  .group-pic.alt-2 { background: linear-gradient(135deg, #d3f4d3, #4cb84c); }
+  .group-shop-name { font-size: 14px; font-weight: 700; color: var(--t1); flex: 1; }
+  .group-arrow { font-size: 14px; color: var(--t3); }
+  /* 订单条 */
+  .order-row {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--line);
+  }
+  .order-row:last-child { border-bottom: 0; }
+  .order-row1 {
+    display: flex; align-items: center;
+    margin-bottom: 8px;
+  }
+  .order-no {
+    font-size: 11px; color: var(--t3); flex: 1;
+  }
+  .order-status {
+    font-size: 12px; font-weight: 600; color: var(--brand);
+  }
+  .order-status.success { color: var(--success); }
+  .order-status.danger { color: var(--danger); }
+  .order-status.warn { color: var(--warn); }
+  .order-items {
+    display: flex; gap: 8px; margin-bottom: 8px;
+  }
+  .order-pic {
+    width: 56px; height: 56px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #f3e1d4, #ffae74);
+    flex-shrink: 0;
+    color: #fff; font-size: 22px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .order-pic.alt-1 { background: linear-gradient(135deg, #d4e3ff, #6196f0); }
+  .order-pic.alt-2 { background: linear-gradient(135deg, #d3f4d3, #4cb84c); }
+  .order-info { flex: 1; min-width: 0; }
+  .order-pname { font-size: 13px; color: var(--t1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .order-spec { font-size: 11px; color: var(--t3); margin-top: 2px; }
+  .order-amt {
+    text-align: right; flex-shrink: 0;
+  }
+  .order-amt .price { font-size: 14px; font-weight: 700; color: var(--t1); }
+  .order-amt .qty { font-size: 11px; color: var(--t3); margin-top: 2px; }
+  .order-foot {
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .order-total {
+    font-size: 12px; color: var(--t2);
+  }
+  .order-total b { color: var(--t1); font-size: 14px; font-weight: 700; }
+  .order-actions {
+    display: flex; gap: 8px;
+  }
+  .order-actions .btn {
+    padding: 5px 12px;
+    border-radius: var(--r-pill);
+    font-size: 12px;
+    border: 1px solid var(--line);
+    background: var(--card);
+    color: var(--t2);
+  }
+  .order-actions .btn.primary {
+    background: var(--brand);
+    color: #fff;
+    border-color: var(--brand);
+    font-weight: 600;
+  }
+
+  /* 空态 */
+  .empty {
+    text-align: center;
+    padding: 60px 24px;
+    color: var(--t3);
+    font-size: 13px;
+  }
+  .empty .icon {
+    font-size: 56px; margin-bottom: 12px; opacity: 0.4;
+  }
+
+  /* ============== 3️⃣ 我的 ============== */
+  .me-top {
+    background: linear-gradient(135deg, var(--brand), var(--brand-d));
+    color: #fff;
+    padding: 16px 16px 32px;
+  }
+  .me-top-row {
+    display: flex; align-items: center; gap: 12px;
+  }
+  .me-avatar {
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.22);
+    backdrop-filter: blur(6px);
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px; font-weight: 800;
+    border: 2px solid rgba(255,255,255,0.4);
+  }
+  .me-info {
+    flex: 1; min-width: 0;
+  }
+  .me-name { font-size: 17px; font-weight: 700; }
+  .me-phone { font-size: 12px; opacity: 0.85; margin-top: 2px; }
+  .me-edit {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.18);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+  }
+  /* 资产卡 */
+  .me-assets {
+    background: var(--card);
+    border-radius: var(--r-lg);
+    margin: -16px 16px 0;
+    box-shadow: var(--shadow-card);
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    padding: 16px 0;
+    position: relative;
+    z-index: 2;
+  }
+  .me-asset {
+    text-align: center;
+    border-right: 1px solid var(--line);
+  }
+  .me-asset:last-child { border-right: 0; }
+  .me-asset .num {
+    font-size: 18px; font-weight: 800; color: var(--t1);
+    font-variant-numeric: tabular-nums;
+  }
+  .me-asset .label {
+    font-size: 11px; color: var(--t3); margin-top: 2px;
+  }
+  .me-asset .num.brand { color: var(--brand); }
+
+  /* 功能 grid */
+  .me-grid {
+    background: var(--card);
+    border-radius: var(--r-lg);
+    margin: 12px 16px;
+    box-shadow: var(--shadow-card);
+    overflow: hidden;
+  }
+  .me-grid-title {
+    padding: 12px 16px 4px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--t1);
+  }
+  .me-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 16px;
+    border-top: 1px solid var(--line);
+  }
+  .me-row:first-of-type { border-top: 0; }
+  .me-row-icon {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    background: var(--brand-light);
+    color: var(--brand);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+  .me-row-icon.alt-1 { background: rgba(99, 102, 241, 0.12); color: #6366F1; }
+  .me-row-icon.alt-2 { background: rgba(16, 185, 129, 0.12); color: #10B981; }
+  .me-row-icon.alt-3 { background: rgba(245, 158, 11, 0.14); color: #F59E0B; }
+  .me-row-name {
+    flex: 1; font-size: 14px; color: var(--t1);
+  }
+  .me-row-tag {
+    font-size: 11px;
+    background: var(--brand-light);
+    color: var(--brand);
+    padding: 2px 8px;
+    border-radius: var(--r-pill);
+  }
+  .me-row-arrow {
+    font-size: 16px; color: var(--t3);
+  }
+
+  /* ============== 底部 Tab Bar ============== */
+  .tab-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 72px;
+    padding-bottom: 16px;
+    background: rgba(255,255,255,0.96);
+    backdrop-filter: blur(12px);
+    border-top: 1px solid var(--line);
+    display: flex;
+    align-items: stretch;
+    z-index: 50;
+  }
+  .tab-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--t3);
+    font-size: 11px;
+    cursor: pointer;
+    user-select: none;
+    transition: color 0.2s;
+  }
+  .tab-item .ic {
+    font-size: 22px;
+    line-height: 1;
+    margin-bottom: 3px;
+    transition: transform 0.3s var(--ease);
+  }
+  .tab-item.active {
+    color: var(--brand);
+    font-weight: 600;
+  }
+  .tab-item.active .ic {
+    transform: translateY(-2px) scale(1.1);
+  }
+
+  /* 底部安全区 */
+  .home-indicator {
+    position: absolute;
+    bottom: 6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 134px;
+    height: 5px;
+    background: var(--t1);
+    border-radius: 3px;
+    opacity: 0.85;
+    z-index: 60;
+  }
+
+  /* 三屏并排说明 */
+  .pane-label {
+    position: absolute;
+    top: 8px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    color: rgba(255,255,255,0.55);
+    font-size: 11px;
+    pointer-events: none;
+    letter-spacing: 1px;
+  }
+</style>
+</head>
+<body>
+
+<!-- ============== 屏幕 1：首页 ============== -->
+<div>
+  <div class="phone">
+    <div class="status-bar">
+      <span>9:41</span>
+      <div class="status-icons"><span>📶</span><span>📡</span><span>🔋</span></div>
+    </div>
+    <div class="view">
+      <div class="pane active">
+        <!-- Top + 搜索 -->
+        <div class="home-top">
+          <div class="home-greeting">下午好 ☀</div>
+          <div class="home-name">想吃点什么？</div>
+          <div class="home-search">
+            <span class="icon">🔍</span>
+            <input placeholder="搜店铺、找商品、看附近" />
+            <span class="voice">🎙</span>
+          </div>
+        </div>
+
+        <!-- 4 个快捷 -->
+        <div class="home-quick">
+          <div class="qk"><div class="qk-icon">📍</div><div class="qk-text">附近</div></div>
+          <div class="qk"><div class="qk-icon">🛍</div><div class="qk-text">分类</div></div>
+          <div class="qk"><div class="qk-icon">🎁</div><div class="qk-text">优惠</div></div>
+          <div class="qk"><div class="qk-icon">📜</div><div class="qk-text">扫码</div></div>
+        </div>
+
+        <!-- 最近去过的店铺 -->
+        <div class="section-title">
+          <h3>最近去过</h3>
+          <span class="more">全部 ›</span>
+        </div>
+        <div class="recent-scroll">
+          <div class="recent-card">
+            <div class="recent-cover"><span class="recent-tag">2 小时前</span></div>
+            <div class="recent-body">
+              <div class="recent-name">王师傅烤地瓜</div>
+              <div class="recent-meta">
+                <span>已下 5 单</span><span class="dot"></span><span>0.3km</span>
+              </div>
+            </div>
+          </div>
+          <div class="recent-card">
+            <div class="recent-cover theme-2"><span class="recent-tag">昨天</span></div>
+            <div class="recent-body">
+              <div class="recent-name">林家茶馆</div>
+              <div class="recent-meta">
+                <span>已下 2 单</span><span class="dot"></span><span>1.1km</span>
+              </div>
+            </div>
+          </div>
+          <div class="recent-card">
+            <div class="recent-cover theme-3"><span class="recent-tag">3 天前</span></div>
+            <div class="recent-body">
+              <div class="recent-name">老张水果摊</div>
+              <div class="recent-meta">
+                <span>已下 1 单</span><span class="dot"></span><span>0.8km</span>
+              </div>
+            </div>
+          </div>
+          <div class="recent-card">
+            <div class="recent-cover theme-4"><span class="recent-tag">上周</span></div>
+            <div class="recent-body">
+              <div class="recent-name">小陈奶茶店</div>
+              <div class="recent-meta">
+                <span>已下 8 单</span><span class="dot"></span><span>2.0km</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 平台 banner -->
+        <div class="banner">
+          <div class="banner-icon">🎬</div>
+          <div style="flex:1;">
+            <h4>商家 AI 一键成片</h4>
+            <p>看看附近商家用 AI 拍的短视频，找新店</p>
+          </div>
+          <div style="font-size:18px;">›</div>
+        </div>
+
+        <!-- 附近商家 -->
+        <div class="section-title">
+          <h3>附近商家</h3>
+          <span class="more">距离 ↓</span>
+        </div>
+        <div class="shop">
+          <div class="shop-pic">王</div>
+          <div class="shop-info">
+            <div class="shop-row1">
+              <div class="shop-name">王师傅烤地瓜</div>
+              <div class="shop-badge">连续打卡</div>
+            </div>
+            <div class="shop-tag-line">现烤蜜薯 · 流糖心 · 5 块一个</div>
+            <div class="shop-meta">
+              <span class="rating">★ 4.9</span>
+              <span class="distance">📍 0.3km</span>
+              <span class="sales">月售 1280 单</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="shop">
+          <div class="shop-pic alt-1">林</div>
+          <div class="shop-info">
+            <div class="shop-row1">
+              <div class="shop-name">林家茶馆</div>
+              <div class="shop-badge">新店</div>
+            </div>
+            <div class="shop-tag-line">手工茶饼 · 老白茶 · 现泡现喝</div>
+            <div class="shop-meta">
+              <span class="rating">★ 4.7</span>
+              <span class="distance">📍 1.1km</span>
+              <span class="sales">月售 320 单</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="shop">
+          <div class="shop-pic alt-2">张</div>
+          <div class="shop-info">
+            <div class="shop-row1">
+              <div class="shop-name">老张水果摊</div>
+            </div>
+            <div class="shop-tag-line">每日新鲜进货 · 凤梨 / 火龙果 / 阳光玫瑰</div>
+            <div class="shop-meta">
+              <span class="rating">★ 4.8</span>
+              <span class="distance">📍 0.8km</span>
+              <span class="sales">月售 2150 单</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="shop">
+          <div class="shop-pic alt-3">陈</div>
+          <div class="shop-info">
+            <div class="shop-row1">
+              <div class="shop-name">小陈奶茶店</div>
+              <div class="shop-badge">满 30 立减 5</div>
+            </div>
+            <div class="shop-tag-line">手摇奶茶 · 杨枝甘露 · 现做现卖</div>
+            <div class="shop-meta">
+              <span class="rating">★ 4.6</span>
+              <span class="distance">📍 2.0km</span>
+              <span class="sales">月售 580 单</span>
+            </div>
+          </div>
+        </div>
+        <div style="height: 12px;"></div>
+      </div>
+    </div>
+    <!-- Tab Bar (静态展示) -->
+    <div class="tab-bar">
+      <div class="tab-item active">
+        <span class="ic">🏠</span><span>首页</span>
+      </div>
+      <div class="tab-item">
+        <span class="ic">📋</span><span>订单</span>
+      </div>
+      <div class="tab-item">
+        <span class="ic">👤</span><span>我的</span>
+      </div>
+    </div>
+    <div class="home-indicator"></div>
+  </div>
+  <div class="phone-label">① 首页 · 发现店铺</div>
+</div>
+
+
+<!-- ============== 屏幕 2：订单 ============== -->
+<div>
+  <div class="phone">
+    <div class="status-bar">
+      <span>9:41</span>
+      <div class="status-icons"><span>📶</span><span>📡</span><span>🔋</span></div>
+    </div>
+    <div class="view">
+      <div class="pane active">
+        <!-- 顶部标题 + 状态筛选 -->
+        <div class="order-top">
+          <h2>我的订单</h2>
+          <div class="order-filter">
+            <div class="it active">全部</div>
+            <div class="it">待付款</div>
+            <div class="it">待发货</div>
+            <div class="it">待收货</div>
+            <div class="it">已完成</div>
+          </div>
+        </div>
+
+        <!-- 店铺 1 分组 -->
+        <div class="shop-group">
+          <div class="group-head">
+            <div class="group-pic">王</div>
+            <div class="group-shop-name">王师傅烤地瓜</div>
+            <span class="group-arrow">›</span>
+          </div>
+          <div class="order-row">
+            <div class="order-row1">
+              <div class="order-no">#TX2026050100123</div>
+              <div class="order-status warn">待收货</div>
+            </div>
+            <div class="order-items">
+              <div class="order-pic">🍠</div>
+              <div class="order-info">
+                <div class="order-pname">现烤蜜薯（流糖心 大）</div>
+                <div class="order-spec">规格：大 × 2</div>
+              </div>
+              <div class="order-amt">
+                <div class="price">¥10.00</div>
+                <div class="qty">x 2</div>
+              </div>
+            </div>
+            <div class="order-foot">
+              <div class="order-total">合计 <b>¥10.00</b></div>
+              <div class="order-actions">
+                <span class="btn">查看物流</span>
+                <span class="btn primary">确认收货</span>
+              </div>
+            </div>
+          </div>
+          <div class="order-row">
+            <div class="order-row1">
+              <div class="order-no">#TX2026042900876</div>
+              <div class="order-status success">已完成</div>
+            </div>
+            <div class="order-items">
+              <div class="order-pic">🍠</div>
+              <div class="order-info">
+                <div class="order-pname">现烤蜜薯 + 烤玉米套餐</div>
+                <div class="order-spec">规格：经典套餐</div>
+              </div>
+              <div class="order-amt">
+                <div class="price">¥18.00</div>
+                <div class="qty">x 1</div>
+              </div>
+            </div>
+            <div class="order-foot">
+              <div class="order-total">合计 <b>¥18.00</b></div>
+              <div class="order-actions">
+                <span class="btn">再来一单</span>
+                <span class="btn">评价</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 店铺 2 分组 -->
+        <div class="shop-group">
+          <div class="group-head">
+            <div class="group-pic alt-1">林</div>
+            <div class="group-shop-name">林家茶馆</div>
+            <span class="group-arrow">›</span>
+          </div>
+          <div class="order-row">
+            <div class="order-row1">
+              <div class="order-no">#TX2026043000345</div>
+              <div class="order-status">待发货</div>
+            </div>
+            <div class="order-items">
+              <div class="order-pic alt-1">🍵</div>
+              <div class="order-info">
+                <div class="order-pname">老白茶 · 100g 礼盒装</div>
+                <div class="order-spec">陈期 5 年</div>
+              </div>
+              <div class="order-amt">
+                <div class="price">¥168.00</div>
+                <div class="qty">x 1</div>
+              </div>
+            </div>
+            <div class="order-foot">
+              <div class="order-total">合计 <b>¥168.00</b></div>
+              <div class="order-actions">
+                <span class="btn">取消订单</span>
+                <span class="btn">联系商家</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 店铺 3 分组 -->
+        <div class="shop-group">
+          <div class="group-head">
+            <div class="group-pic alt-2">张</div>
+            <div class="group-shop-name">老张水果摊</div>
+            <span class="group-arrow">›</span>
+          </div>
+          <div class="order-row">
+            <div class="order-row1">
+              <div class="order-no">#TX2026042700112</div>
+              <div class="order-status danger">待付款</div>
+            </div>
+            <div class="order-items">
+              <div class="order-pic alt-2">🍇</div>
+              <div class="order-info">
+                <div class="order-pname">阳光玫瑰葡萄 · 1.5 斤装</div>
+                <div class="order-spec">果园直发 当日采摘</div>
+              </div>
+              <div class="order-amt">
+                <div class="price">¥58.00</div>
+                <div class="qty">x 1</div>
+              </div>
+            </div>
+            <div class="order-foot">
+              <div class="order-total">合计 <b>¥58.00</b></div>
+              <div class="order-actions">
+                <span class="btn">取消</span>
+                <span class="btn primary">立即付款</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="height: 12px;"></div>
+      </div>
+    </div>
+    <div class="tab-bar">
+      <div class="tab-item">
+        <span class="ic">🏠</span><span>首页</span>
+      </div>
+      <div class="tab-item active">
+        <span class="ic">📋</span><span>订单</span>
+      </div>
+      <div class="tab-item">
+        <span class="ic">👤</span><span>我的</span>
+      </div>
+    </div>
+    <div class="home-indicator"></div>
+  </div>
+  <div class="phone-label">② 订单 · 按店铺分组</div>
+</div>
+
+
+<!-- ============== 屏幕 3：我的 ============== -->
+<div>
+  <div class="phone">
+    <div class="status-bar">
+      <span>9:41</span>
+      <div class="status-icons"><span>📶</span><span>📡</span><span>🔋</span></div>
+    </div>
+    <div class="view">
+      <div class="pane active">
+        <div class="me-top">
+          <div class="me-top-row">
+            <div class="me-avatar">小</div>
+            <div class="me-info">
+              <div class="me-name">小明 · 普通用户</div>
+              <div class="me-phone">138****8000 · 已加入 4 家店</div>
+            </div>
+            <div class="me-edit">⚙</div>
+          </div>
+        </div>
+
+        <!-- 4 个数字资产卡 -->
+        <div class="me-assets">
+          <div class="me-asset">
+            <div class="num">328</div>
+            <div class="label">推广积分</div>
+          </div>
+          <div class="me-asset">
+            <div class="num brand">¥86.50</div>
+            <div class="label">店铺余额</div>
+          </div>
+          <div class="me-asset">
+            <div class="num">1245</div>
+            <div class="label">消费积分</div>
+          </div>
+          <div class="me-asset">
+            <div class="num">3</div>
+            <div class="label">排队中</div>
+          </div>
+        </div>
+
+        <!-- 消费 / 财务 -->
+        <div class="me-grid">
+          <div class="me-grid-title">消费 · 财务</div>
+          <div class="me-row">
+            <div class="me-row-icon">💰</div>
+            <div class="me-row-name">我的钱包</div>
+            <div class="me-row-tag">¥86.50</div>
+            <span class="me-row-arrow">›</span>
+          </div>
+          <div class="me-row">
+            <div class="me-row-icon alt-1">📊</div>
+            <div class="me-row-name">推广积分明细</div>
+            <span class="me-row-arrow">›</span>
+          </div>
+          <div class="me-row">
+            <div class="me-row-icon alt-2">🪙</div>
+            <div class="me-row-name">店铺余额管理</div>
+            <span class="me-row-arrow">›</span>
+          </div>
+          <div class="me-row">
+            <div class="me-row-icon alt-3">💸</div>
+            <div class="me-row-name">提现申请</div>
+            <span class="me-row-arrow">›</span>
+          </div>
+        </div>
+
+        <!-- 推广 -->
+        <div class="me-grid">
+          <div class="me-grid-title">推广 · 队列</div>
+          <div class="me-row">
+            <div class="me-row-icon">🔗</div>
+            <div class="me-row-name">邀请好友（按店铺）</div>
+            <div class="me-row-tag">已邀 12 人</div>
+            <span class="me-row-arrow">›</span>
+          </div>
+          <div class="me-row">
+            <div class="me-row-icon alt-1">🎯</div>
+            <div class="me-row-name">我的队列（v6 推 N 反 1）</div>
+            <div class="me-row-tag">3 个商品排队中</div>
+            <span class="me-row-arrow">›</span>
+          </div>
+          <div class="me-row">
+            <div class="me-row-icon alt-2">🏆</div>
+            <div class="me-row-name">店铺星级</div>
+            <span class="me-row-arrow">›</span>
+          </div>
+        </div>
+
+        <!-- 我加入的店铺 -->
+        <div class="me-grid">
+          <div class="me-grid-title">我加入的店铺</div>
+          <div class="me-row">
+            <div class="me-row-icon">王</div>
+            <div class="me-row-name" style="display:flex;flex-direction:column;align-items:flex-start;">
+              <span>王师傅烤地瓜</span>
+              <span style="font-size:11px;color:var(--t3);margin-top:2px;">⭐ 3 星 · 12 单 · 余额 ¥38.00</span>
+            </div>
+            <span class="me-row-arrow">›</span>
+          </div>
+          <div class="me-row">
+            <div class="me-row-icon alt-1">林</div>
+            <div class="me-row-name" style="display:flex;flex-direction:column;align-items:flex-start;">
+              <span>林家茶馆</span>
+              <span style="font-size:11px;color:var(--t3);margin-top:2px;">⭐ 1 星 · 2 单 · 余额 ¥18.00</span>
+            </div>
+            <span class="me-row-arrow">›</span>
+          </div>
+          <div class="me-row">
+            <div class="me-row-icon alt-2">张</div>
+            <div class="me-row-name" style="display:flex;flex-direction:column;align-items:flex-start;">
+              <span>老张水果摊</span>
+              <span style="font-size:11px;color:var(--t3);margin-top:2px;">⭐ 2 星 · 6 单 · 余额 ¥30.50</span>
+            </div>
+            <span class="me-row-arrow">›</span>
+          </div>
+        </div>
+
+        <!-- 设置 -->
+        <div class="me-grid">
+          <div class="me-grid-title">设置</div>
+          <div class="me-row">
+            <div class="me-row-icon alt-3">📍</div>
+            <div class="me-row-name">收货地址</div>
+            <span class="me-row-arrow">›</span>
+          </div>
+          <div class="me-row">
+            <div class="me-row-icon">❓</div>
+            <div class="me-row-name">帮助与反馈</div>
+            <span class="me-row-arrow">›</span>
+          </div>
+          <div class="me-row">
+            <div class="me-row-icon alt-1">ℹ</div>
+            <div class="me-row-name">关于摊小二</div>
+            <span class="me-row-arrow">›</span>
+          </div>
+        </div>
+        <div style="height: 12px;"></div>
+      </div>
+    </div>
+    <div class="tab-bar">
+      <div class="tab-item">
+        <span class="ic">🏠</span><span>首页</span>
+      </div>
+      <div class="tab-item">
+        <span class="ic">📋</span><span>订单</span>
+      </div>
+      <div class="tab-item active">
+        <span class="ic">👤</span><span>我的</span>
+      </div>
+    </div>
+    <div class="home-indicator"></div>
+  </div>
+  <div class="phone-label">③ 我的 · 跨店铺资产</div>
+</div>
+
+</body>
+</html>
