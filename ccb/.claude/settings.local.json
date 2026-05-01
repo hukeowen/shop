@@ -102,7 +102,25 @@
       "Bash(git --no-pager show 53f5a68)",
       "Read(//tmp/**)",
       "Bash(mvn -pl yudao-module-merchant -am compile -q)",
-      "Bash(mvn -pl yudao-module-merchant -am compile)"
+      "Bash(mvn -pl yudao-module-merchant -am compile)",
+      "Bash(mvn -pl yudao-module-merchant -am compile -DskipTests -q)",
+      "Bash(mvn -pl yudao-module-merchant clean compile -DskipTests -o)",
+      "Bash(grep -rn \"mockDelay\\\\|Promise\\\\.resolve.*{.*}\\\\s*;$\\\\|// mock\\\\|// 假数据\" \"D:/work/yhzc/sass/shop/ccb/yudao-ui/yudao-ui-mall-uniapp/sheep/api\" --include=\"*.js\")",
+      "Bash(pnpm ts:check)",
+      "Bash(mvn -pl yudao-module-merchant test -Dtest=PromoQueueServiceImplTest -q)",
+      "Bash(mvn -pl yudao-module-merchant test -Dtest=PromoQueueServiceImplTest)",
+      "Bash(mvn -pl yudao-module-merchant test -Dtest='*Promo*')",
+      "Bash(mvn -pl yudao-module-video compile -DskipTests)",
+      "Bash(mvn -pl yudao-module-video test -DfailIfNoTests=false)",
+      "Bash(mvn -pl yudao-module-video test -Dtest=CopywritingServiceMultiSceneTest)",
+      "Bash(mvn -pl yudao-module-video test)",
+      "Bash(mvn -pl yudao-module-video test -Dtest=VideoSceneServiceImplTest)",
+      "Bash(mvn -pl yudao-module-video test-compile)",
+      "Bash(mvn -pl yudao-module-video test-compile -X)",
+      "Bash(mvn -pl yudao-module-video test -Dtest=VideoTaskServiceImplMetaTest,VideoSceneServiceImplTest,CopywritingServiceMultiSceneTest)",
+      "Bash(grep -rEn \"url:.*\\\\\\\\\\\\$\\\\{|/jimeng|/video/|/oss/|/tts/|/douyin/\" yudao-ui/yudao-ui-merchant-uniapp/src/api --include=\"*.js\")",
+      "Bash(mvn -pl yudao-module-merchant,yudao-module-video test -Dtest='*Promo*,*VideoScene*,*VideoTaskMeta*,*MultiScene*')",
+      "Bash(mvn -pl yudao-module-merchant test -Dtest=PromoPoolSettleJobTest)"
     ]
   }
 }

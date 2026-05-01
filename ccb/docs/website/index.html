@@ -3,17 +3,17 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>摊小二 — 让每个小摊，都有大生意</title>
-  <meta name="description" content="摊小二 · 面向个体摊主与小商户的 SaaS 经营平台：AI 一键成片、商城下单、推广返佣、微信/抖音一键发布，10 分钟开店上线。" />
-  <meta name="keywords" content="摊小二,SaaS商城,AI视频生成,抖音推广,小程序商城,推广返佣,摊主经营,火山引擎" />
+  <title>摊小二 — AI 视频带货工具，顺手送你一个店</title>
+  <meta name="description" content="摊小二 · 面向小摊主和个体商户的 AI 视频带货工具：20 秒 AI 一键成片、一键发抖音；¥298/年 在线商城套餐，首购送 10 条 AI 视频 + 推广裂变工具，续费再送视频大礼包。" />
+  <meta name="keywords" content="AI视频带货,AI成片工具,小摊主,抖音带货,即梦AI,火山引擎,SaaS商城,多种推广裂变工具,个体商户,20秒成片" />
   <meta name="theme-color" content="#fafaff" />
   <meta property="og:type" content="website" />
-  <meta property="og:title" content="摊小二 — 让每个小摊，都有大生意" />
-  <meta property="og:description" content="AI 成片 × SaaS 商城 × 推广返佣，一站式激活小摊生意。" />
+  <meta property="og:title" content="摊小二 — AI 视频带货工具，顺手送你一个店" />
+  <meta property="og:description" content="20 秒 AI 成片 × 一键发抖音，¥298/年 在线商城套餐：首购送 10 条 AI 视频 + 推广裂变工具，续费再送视频大礼包。" />
   <meta property="og:locale" content="zh_CN" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="摊小二 — 让每个小摊，都有大生意" />
-  <meta name="twitter:description" content="AI 成片 × SaaS 商城 × 推广返佣，一站式激活小摊生意。" />
+  <meta name="twitter:title" content="摊小二 — AI 视频带货工具，顺手送你一个店" />
+  <meta name="twitter:description" content="20 秒 AI 成片 × 一键发抖音，¥298/年 在线商城套餐：首购送 10 条 AI 视频 + 推广裂变工具，续费再送视频大礼包。" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
@@ -131,8 +131,10 @@
     .sdot:hover::after { opacity: 1; }
     .sdot.on {
       background: var(--ai-1);
-      box-shadow: 0 0 0 4px rgba(37,99,235,0.20), 0 0 10px rgba(37,99,235,0.45);
-      transform: scale(1.2);
+      width: 10px; height: 10px;
+      box-shadow: 0 0 0 3px rgba(255,255,255,0.92), 0 0 0 5px rgba(37,99,235,0.40), 0 0 14px rgba(37,99,235,0.55);
+      transform: scale(1.1);
+      transition: all .3s var(--ease);
     }
 
     /* ═══ GRADIENT TEXT + SHIMMER ═══ */
@@ -224,7 +226,21 @@
       color: var(--t1); margin-bottom: 18px;
     }
     .s-lead {
-      font-size: 17px; color: var(--t2); line-height: 1.78; max-width: 540px;
+      font-size: clamp(15px, 1.35vw, 18px); color: var(--t2); line-height: 1.78; max-width: 540px;
+    }
+
+    /* "20秒" visual anchor in AI section heading */
+    .ai-20s-anchor {
+      display: inline-flex; align-items: baseline;
+      background: linear-gradient(135deg, var(--brand) 0%, #FF9D6C 60%, var(--brand-d) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+      font-variant-numeric: tabular-nums;
+      position: relative;
+    }
+    .ai-20s-unit {
+      font-size: .62em; font-weight: 800; letter-spacing: 0;
+      margin-left: .05em;
     }
 
     /* ═══ NAV ═══ */
@@ -309,12 +325,35 @@
       box-shadow: var(--sh);
     }
 
+    /* Ghost-glass: secondary CTA with frosted glass look */
+    .btn-glass {
+      background: rgba(255,255,255,0.55);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      color: var(--t1);
+      border: 1px solid rgba(255,255,255,0.70);
+      box-shadow: 0 2px 8px rgba(37,99,235,0.06), inset 0 1px 0 rgba(255,255,255,0.80);
+    }
+    .btn-glass:hover {
+      background: rgba(255,255,255,0.78);
+      border-color: rgba(255,255,255,0.95);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(37,99,235,0.10), inset 0 1px 0 rgba(255,255,255,0.90);
+    }
+
     .btn-brand {
       background: linear-gradient(135deg, var(--brand), var(--brand-d));
       color: #fff;
       box-shadow:
         0 0 0 1px rgba(255,107,53,0.25),
-        0 6px 20px rgba(255,107,53,0.35);
+        0 6px 20px rgba(255,107,53,0.35),
+        0 0 0 0 rgba(255,107,53,0.40);
+      animation: brand-breathe 3.2s ease-in-out infinite;
+    }
+    /* Primary CTA breathing glow — draws the eye without distracting */
+    @keyframes brand-breathe {
+      0%,100% { box-shadow: 0 0 0 1px rgba(255,107,53,0.25), 0 6px 20px rgba(255,107,53,0.32), 0 0 0 0 rgba(255,107,53,0.20); }
+      50%      { box-shadow: 0 0 0 1px rgba(255,107,53,0.40), 0 10px 34px rgba(255,107,53,0.50), 0 0 28px 4px rgba(255,107,53,0.14); }
     }
     .btn-brand::before {
       content: ''; position: absolute; top: 0; left: -100%;
@@ -323,10 +362,12 @@
       transition: left .6s var(--ease);
     }
     .btn-brand:hover {
-      transform: translateY(-2px);
+      transform: translateY(-3px) scale(1.02);
       box-shadow:
-        0 0 0 1px rgba(255,107,53,0.4),
-        0 10px 32px rgba(255,107,53,0.45);
+        0 0 0 1px rgba(255,107,53,0.5),
+        0 14px 40px rgba(255,107,53,0.55),
+        0 0 40px 6px rgba(255,107,53,0.18);
+      animation: none;
     }
     .btn-brand:hover::before { left: 100%; }
 
@@ -336,6 +377,11 @@
       box-shadow:
         0 0 0 1px rgba(168,85,247,0.25),
         0 6px 22px rgba(168,85,247,0.32);
+      animation: ai-breathe 3.6s ease-in-out infinite;
+    }
+    @keyframes ai-breathe {
+      0%,100% { box-shadow: 0 0 0 1px rgba(168,85,247,0.22), 0 6px 22px rgba(168,85,247,0.28), 0 0 0 0 rgba(168,85,247,0.15); }
+      50%      { box-shadow: 0 0 0 1px rgba(168,85,247,0.42), 0 12px 36px rgba(168,85,247,0.52), 0 0 32px 4px rgba(168,85,247,0.16); }
     }
     .btn-ai::before {
       content: ''; position: absolute; top: 0; left: -100%;
@@ -344,10 +390,12 @@
       transition: left .6s var(--ease);
     }
     .btn-ai:hover {
-      transform: translateY(-2px); filter: brightness(1.08);
+      transform: translateY(-3px) scale(1.02); filter: brightness(1.08);
       box-shadow:
-        0 0 0 1px rgba(168,85,247,0.4),
-        0 10px 34px rgba(168,85,247,0.48);
+        0 0 0 1px rgba(168,85,247,0.5),
+        0 14px 40px rgba(168,85,247,0.58),
+        0 0 40px 6px rgba(168,85,247,0.18);
+      animation: none;
     }
     .btn-ai:hover::before { left: 100%; }
     .btn-ai-ghost {
@@ -592,6 +640,41 @@
     .hstat-ai:hover {
       border-color: rgba(168,85,247,0.40);
     }
+
+    /* Price highlight — ¥298/年 is the anchor number, biggest financial signal */
+    .hstat-price {
+      background: linear-gradient(145deg, #fff5f2 0%, #fff 100%);
+      border-color: rgba(255,107,53,0.30);
+      box-shadow: 0 0 0 1px rgba(255,107,53,0.12), var(--sh-lg);
+      transform: translateY(-6px) scale(1.04);
+      z-index: 1;
+    }
+    .hstat-price::after {
+      content: '';
+      position: absolute; top: -24px; right: -24px;
+      width: 80px; height: 80px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(255,107,53,0.40) 0%, transparent 65%);
+      filter: blur(14px); pointer-events: none;
+    }
+    .hstat-price:hover {
+      border-color: rgba(255,107,53,0.45);
+      transform: translateY(-9px) scale(1.05);
+      box-shadow: 0 0 0 1px rgba(255,107,53,0.22), var(--sh-xl);
+    }
+    .hstat-n-price {
+      font-size: 48px; font-weight: 900; color: var(--brand-d);
+      line-height: 1; margin-bottom: 10px; letter-spacing: -2px;
+      font-variant-numeric: tabular-nums;
+      font-family: 'Space Grotesk', 'Inter', sans-serif;
+    }
+    .hstat-n-unit {
+      font-size: 18px; font-weight: 600; letter-spacing: 0;
+      color: rgba(232,85,31,0.65);
+      vertical-align: baseline;
+    }
+    /* Dim the less-important stats so ¥298 anchors attention */
+    .hstat-dim { opacity: 0.78; }
+    .hstat-dim:hover { opacity: 1; }
 
     /* Scroll hint */
     .scroll-hint {
@@ -1481,6 +1564,82 @@
       box-shadow: 0 2px 6px rgba(168,85,247,0.3);
     }
 
+    /* ═══ PRICING grid override — 3 columns on desktop ═══ */
+    #pricing .promo-grid {
+      grid-template-columns: 1fr 1fr 1fr;
+      align-items: start;
+    }
+    @media (max-width: 960px) {
+      #pricing .promo-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ═══ PRICING featured card ═══ */
+    .promo-card-featured {
+      border-color: rgba(255,107,53,0.35);
+      box-shadow:
+        0 0 0 1px rgba(255,107,53,0.14),
+        0 4px 12px rgba(255,107,53,0.06),
+        var(--sh-lg);
+      background: linear-gradient(160deg, #fff 0%, #fff8f5 100%);
+      /* Lift above sibling cards — anchors the pricing eye scan */
+      transform: translateY(-8px);
+    }
+    .promo-card-featured::before {
+      background: linear-gradient(145deg, rgba(255,107,53,0.45), transparent 45%, rgba(255,107,53,0.12));
+    }
+    .promo-card-featured:hover {
+      transform: translateY(-16px);
+      box-shadow:
+        0 0 0 1px rgba(255,107,53,0.28),
+        0 12px 40px rgba(255,107,53,0.18),
+        var(--sh-xl);
+    }
+
+    /* "热门首选" ribbon — top-right corner diagonal, clipped by overflow:hidden on .promo-card */
+    .pricing-ribbon {
+      position: absolute; top: 22px; right: -36px;
+      width: 150px;
+      background: linear-gradient(135deg, var(--brand), var(--brand-d));
+      color: #fff; font-size: 11px; font-weight: 800;
+      letter-spacing: .07em; text-align: center;
+      padding: 7px 0;
+      transform: rotate(38deg);
+      transform-origin: center;
+      box-shadow: 0 2px 10px rgba(255,107,53,0.40);
+      pointer-events: none;
+    }
+
+    /* Price hero — ¥298 is the biggest financial signal on the page */
+    .pricing-price-hero {
+      display: flex; align-items: baseline; gap: 0;
+      margin: 8px 0 14px;
+      line-height: 1;
+      color: var(--brand-d);
+      font-family: 'Space Grotesk', 'Inter', sans-serif;
+      font-weight: 900;
+      font-size: 28px;
+    }
+    .pricing-price-num {
+      font-size: 64px; font-weight: 900;
+      letter-spacing: -3px;
+      background: linear-gradient(135deg, #FF6B35 0%, #e8551f 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+      font-variant-numeric: tabular-nums;
+    }
+    .pricing-price-sub {
+      font-size: 13px; font-weight: 500;
+      color: var(--t2); letter-spacing: 0;
+      -webkit-text-fill-color: var(--t2);
+      margin-left: 6px; align-self: center;
+    }
+
+    /* Mobile: featured card resets transform so it doesn't cause overflow */
+    @media (max-width: 600px) {
+      .promo-card-featured { transform: none; }
+      .promo-card-featured:hover { transform: translateY(-8px); }
+    }
+
     /* ═══ FLOW ═══ */
     .flow-section {
       padding: 120px 0;
@@ -1699,17 +1858,17 @@
     .f-brand p { font-size: 13.5px; color: rgba(255,255,255,0.5); line-height: 1.75; max-width: 220px; }
     .fcol h5 {
       font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.5);
-      text-transform: uppercase; letter-spacing: .12em; margin-bottom: 18px;
+      text-transform: uppercase; letter-spacing: .12em; margin-bottom: 20px;
     }
-    .fcol ul { list-style: none; display: flex; flex-direction: column; gap: 13px; }
+    .fcol ul { list-style: none; display: flex; flex-direction: column; gap: 15px; }
     .fcol a {
       font-size: 13.5px; color: rgba(255,255,255,0.58); text-decoration: none;
-      transition: color .2s, transform .2s;
-      display: inline-block;
+      transition: color .25s, transform .25s;
+      display: inline-block; line-height: 1.5;
     }
-    .fcol a:hover { color: #fff; transform: translateX(3px); }
-    .foot-bot { display: flex; justify-content: space-between; align-items: center; gap: 18px; }
-    .foot-copy { font-size: 13px; color: rgba(255,255,255,0.4); }
+    .fcol a:hover { color: #fff; transform: translateX(4px); }
+    .foot-bot { display: flex; justify-content: space-between; align-items: center; gap: 18px; padding-top: 4px; }
+    .foot-copy { font-size: 13px; color: rgba(255,255,255,0.4); line-height: 1.65; }
     .foot-badge {
       font-size: 12px; color: rgba(255,255,255,0.55);
       display: inline-flex; align-items: center; gap: 6px;
@@ -1726,6 +1885,17 @@
     .reveal { opacity: 0; transform: translateY(26px); transition: opacity .6s var(--ease), transform .6s var(--ease); }
     .reveal.in { opacity: 1; transform: none; }
 
+    /* ─── Focus visible — keyboard accessibility ─── */
+    :focus-visible {
+      outline: 2px solid var(--ai-1);
+      outline-offset: 3px;
+      border-radius: 4px;
+    }
+    .btn:focus-visible {
+      outline: 2px solid currentColor;
+      outline-offset: 3px;
+    }
+
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after {
         animation-duration: .001ms !important;
@@ -1733,6 +1903,7 @@
         transition-duration: .001ms !important;
       }
       .reveal { opacity: 1; transform: none; }
+      .btn-brand, .btn-ai { animation: none; }
     }
 
     /* ═══ RESPONSIVE ═══ */
@@ -1765,6 +1936,359 @@
       .foot-bot { flex-direction: column; gap: 12px; text-align: center; }
       .phone { width: 280px; height: 570px; }
     }
+
+    /* ═══════════════════════════════════════════════════════════════
+     *  POLISH PASS — UI/UX Pro Max (cascade overrides, non-breaking)
+     *  Touchpoints: trust marquee chips · flow step numbers ·
+     *               bento hover ring · roles card differentiation ·
+     *               footer link affordance · focus-visible refinement
+     * ═══════════════════════════════════════════════════════════════ */
+
+    /* 1 ─ Trust marquee chips · premium glass+gradient border */
+    .tchip {
+      padding: 11px 22px;
+      background: linear-gradient(180deg, #ffffff 0%, #f7faff 100%);
+      border: 1px solid transparent;
+      background-clip: padding-box;
+      box-shadow:
+        0 1px 0 rgba(255,255,255,0.9) inset,
+        0 1px 2px rgba(15,23,42,0.04),
+        0 4px 14px rgba(15,23,42,0.05);
+      letter-spacing: .01em;
+      position: relative;
+    }
+    .tchip::before {
+      content: ''; position: absolute; inset: 0;
+      border-radius: inherit; padding: 1px;
+      background: linear-gradient(135deg,
+        rgba(37,99,235,0.18), rgba(168,85,247,0.18) 50%, rgba(6,182,212,0.18));
+      -webkit-mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+      -webkit-mask-composite: xor; mask-composite: exclude;
+      pointer-events: none;
+    }
+    .tchip:hover {
+      transform: translateY(-3px);
+      box-shadow:
+        0 1px 0 rgba(255,255,255,0.9) inset,
+        0 6px 12px rgba(15,23,42,0.06),
+        0 14px 36px rgba(37,99,235,0.10);
+    }
+    .tchip:hover::before {
+      background: linear-gradient(135deg,
+        rgba(37,99,235,0.55), rgba(168,85,247,0.55) 50%, rgba(6,182,212,0.55));
+    }
+
+    /* 2 ─ Flow step numbers · stronger flow markers with accent rule */
+    .fstep-n {
+      font-size: 64px;
+      letter-spacing: -3px;
+      background: linear-gradient(135deg, #2563EB 0%, #6366F1 35%, #A855F7 75%, rgba(168,85,247,0.18) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+      position: relative;
+      display: inline-block;
+      padding-bottom: 8px;
+      margin-bottom: 18px;
+    }
+    .fstep-n::after {
+      content: ''; position: absolute;
+      left: 4px; bottom: 0; width: 28px; height: 3px; border-radius: 3px;
+      background: linear-gradient(90deg, var(--ai-1), var(--ai-2));
+      transition: width .35s var(--ease);
+    }
+    .fstep:hover .fstep-n::after { width: 56px; }
+
+    /* 3 ─ Bento card · gradient ring on hover (over the existing spotlight) */
+    .bcell {
+      transition:
+        transform .3s var(--ease),
+        box-shadow .3s,
+        border-color .25s,
+        background .3s;
+    }
+    .bcell::after {
+      content: ''; position: absolute; inset: 0; border-radius: inherit;
+      padding: 1px; pointer-events: none; opacity: 0;
+      background: linear-gradient(135deg,
+        rgba(37,99,235,0.55), rgba(168,85,247,0.55) 50%, rgba(6,182,212,0.55));
+      -webkit-mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+      -webkit-mask-composite: xor; mask-composite: exclude;
+      transition: opacity .3s;
+      z-index: 0;
+    }
+    .bcell:hover {
+      transform: translateY(-4px);
+      box-shadow:
+        0 4px 8px rgba(15,23,42,0.04),
+        0 24px 56px rgba(37,99,235,0.10);
+    }
+    .bcell:hover::after { opacity: 1; }
+
+    /* 4 ─ Roles cards · stronger merchant↔user palette differentiation */
+    .rcard-m {
+      background:
+        radial-gradient(120% 80% at 100% 0%, rgba(255,107,53,0.10), transparent 55%),
+        linear-gradient(150deg, #fffaf6 0%, #fff1e8 45%, #ffe2ce 100%);
+      border-color: rgba(255,107,53,0.18);
+    }
+    .rcard-m::before {
+      background: radial-gradient(circle, rgba(255,107,53,0.35), transparent 60%);
+    }
+    .rcard-m::after {
+      background: radial-gradient(circle, rgba(232,85,31,0.30), transparent 65%);
+      width: 320px; height: 320px;
+    }
+    .rcard-m .r-emoji { filter: drop-shadow(0 8px 24px rgba(255,107,53,0.45)); }
+    .rcard-u {
+      background:
+        radial-gradient(120% 80% at 100% 0%, rgba(168,85,247,0.14), transparent 55%),
+        linear-gradient(150deg, #fbf8ff 0%, #f0eafe 45%, #e2d8fb 100%);
+      border-color: rgba(168,85,247,0.20);
+    }
+    .rcard-u::before {
+      background: radial-gradient(circle, rgba(168,85,247,0.42), transparent 60%);
+    }
+    .rcard:hover { transform: translateY(-6px); box-shadow: var(--sh-xl); }
+
+    /* 5 ─ Footer · breathing room + link affordance with underline reveal */
+    .foot-grid { gap: 56px; }
+    .fcol h5 {
+      letter-spacing: .04em;
+      margin-bottom: 18px;
+    }
+    .fcol ul { gap: 12px; }
+    .fcol a {
+      position: relative;
+      display: inline-block;
+      padding: 2px 0;
+      transition: color .22s var(--ease), transform .22s var(--ease);
+    }
+    .fcol a::after {
+      content: ''; position: absolute;
+      left: 0; bottom: -2px;
+      height: 1.5px; width: 0;
+      background: linear-gradient(90deg, var(--ai-glow), var(--ai-2));
+      transition: width .28s var(--ease);
+    }
+    .fcol a:hover::after { width: 100%; }
+
+    /* 6 ─ Focus visible · slightly more pronounced ring (a11y) */
+    :focus-visible {
+      outline: 2px solid var(--ai-1);
+      outline-offset: 3px;
+      border-radius: 6px;
+      box-shadow: 0 0 0 4px rgba(37,99,235,0.18);
+    }
+    .btn:focus-visible {
+      outline: 2px solid currentColor;
+      outline-offset: 4px;
+      box-shadow: 0 0 0 5px rgba(37,99,235,0.18);
+    }
+
+    /* Responsive parity for the polish layer */
+    @media (max-width: 768px) {
+      .fstep-n { font-size: 52px; }
+      .foot-grid { gap: 32px; }
+    }
+    @media (max-width: 480px) {
+      .fstep-n { font-size: 46px; }
+      .tchip { padding: 9px 16px; font-size: 12.5px; }
+    }
+
+    /* Honor reduced-motion globally for the new transitions */
+    @media (prefers-reduced-motion: reduce) {
+      .tchip, .bcell, .rcard, .fcol a, .fstep-n::after { transition: none !important; }
+      .tchip:hover, .bcell:hover, .rcard:hover { transform: none; }
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+     *  MOBILE HARDENING — 兼顾手机端 (375 / 414 / 768)
+     *  Targets: hero pill overflow · h1 letter-spacing · pricing
+     *  ¥298 oversized · button touch targets · marquee speed ·
+     *  bento padding · CTA stacking · footer link min-height
+     * ═══════════════════════════════════════════════════════════════ */
+
+    /* ─ < 768px: tablets and large phones ─ */
+    @media (max-width: 768px) {
+      /* Hero pill: 长文案在窄屏多行展示，控制最大宽度 */
+      .hero-pill {
+        max-width: 92vw;
+        white-space: normal;
+        line-height: 1.5;
+        padding: 8px 14px 8px 10px;
+        font-size: 13px;
+        text-align: left;
+      }
+      .hero-pill .pill-arrow { flex-shrink: 0; }
+
+      /* Hero CTA 按钮组：堆叠+居中拉伸 */
+      .hero-btns { gap: 12px; flex-direction: column; align-items: stretch; max-width: 360px; margin-left: auto; margin-right: auto; }
+      .hero-btns .btn { width: 100%; justify-content: center; }
+
+      /* CTA section 按钮也堆叠 */
+      .cta-btns { flex-direction: column; gap: 12px; max-width: 360px; margin-left: auto; margin-right: auto; }
+      .cta-btns .btn { width: 100%; }
+
+      /* Hero stats 4 张卡：2x2 网格更整齐，避免奇数行残卡 */
+      .hero-stats {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        max-width: 480px;
+        margin: 0 auto;
+      }
+      .hstat { min-width: 0; padding: 18px 16px; }
+      .hstat-n { font-size: clamp(26px, 7vw, 36px); }
+
+      /* 触控区：所有 btn-sm 提到 44px 最小高度（WCAG/HIG/MD） */
+      .btn-sm {
+        min-height: 44px;
+        padding: 10px 18px;
+        display: inline-flex; align-items: center; justify-content: center;
+      }
+
+      /* Pricing 价格数字：64px → 适配窄屏，避免被切 */
+      .pricing-price-num { font-size: clamp(44px, 11vw, 64px); letter-spacing: -2px; }
+      .pricing-price-hero { flex-wrap: wrap; }
+
+      /* Bento 边距收紧，避免文本撞边 */
+      .bcell { padding: 28px 22px; }
+      .bcell-big { padding: 28px 22px; }
+      .bcell-wide { padding: 26px 22px; }
+
+      /* Trust marquee 在中屏稍降速，文字更易识别 */
+      .marquee-track { animation-duration: 38s; }
+
+      /* Roles 卡片在 mobile 收紧 padding */
+      .rcard { padding: 32px 26px; }
+      .rcard h3 { font-size: 26px; }
+
+      /* AI section 间距收紧 */
+      .ai-section, .features-section, .promo-section, .flow-section, .roles-section, .showcase-section {
+        padding: 80px 0;
+      }
+
+      /* Footer 链接增高，达到触控最小高度 */
+      .fcol a { min-height: 32px; padding: 6px 0; }
+    }
+
+    /* ─ < 480px: small phones (iPhone SE class) ─ */
+    @media (max-width: 480px) {
+      .wrap { padding: 0 18px; }
+
+      /* Hero h1：收紧字距 + 行高，防止 5+8 字符在 375 严重断行 */
+      .hero h1 {
+        font-size: clamp(38px, 11vw, 56px);
+        letter-spacing: -2px;
+        line-height: 1.08;
+      }
+      .hero-sub { font-size: 15.5px; line-height: 1.7; padding: 0 4px; }
+      .hero-pill { font-size: 12.5px; padding: 7px 12px 7px 8px; }
+      .hero-pill .pill-tag { font-size: 11px; padding: 2px 8px; }
+
+      /* 主 CTA 字号收一点，内容不超出 */
+      .btn-xl { padding: 14px 28px; font-size: 15.5px; }
+      .btn-lg { padding: 12px 22px; font-size: 14.5px; }
+
+      /* Pricing 价格 + 卡片内边距 */
+      .promo-card { padding: 28px 22px; }
+      .promo-card h3 { font-size: 22px; }
+      .pricing-price-num { font-size: clamp(40px, 12vw, 56px); }
+
+      /* Pricing ribbon 在窄屏更小更克制 */
+      .pricing-ribbon {
+        width: 130px; font-size: 10px; padding: 6px 0;
+        top: 18px; right: -34px;
+      }
+
+      /* Section 标题 H2 字号控制 */
+      .s-head h2 { font-size: clamp(26px, 7vw, 36px); line-height: 1.18; }
+      .s-lead { font-size: 14.5px; padding: 0 4px; }
+
+      /* Stats 在很窄屏：保持 2 列但内容更紧 */
+      .hstat { padding: 14px 12px; }
+      .hstat-l { font-size: 11px; }
+
+      /* Trust marquee 在窄屏再降速一档 */
+      .marquee-track { animation-duration: 45s; }
+
+      /* Roles cards 字号 */
+      .rcard h3 { font-size: 24px; }
+      .rcard > p { font-size: 14px; }
+
+      /* Flow steps 单列时 padding 收紧 */
+      .fstep { padding: 22px 20px; }
+
+      /* Bento card hover ring 在 mobile 关闭以省 paint */
+      .bcell::after { display: none; }
+
+      /* Footer 单列时所有链接放大触控区 */
+      .fcol ul { gap: 14px; }
+      .fcol a { font-size: 14.5px; min-height: 36px; padding: 8px 0; }
+      .foot-copy { font-size: 12.5px; line-height: 1.7; }
+    }
+
+    /* ─ < 380px: super narrow safety net ─ */
+    @media (max-width: 380px) {
+      .hero h1 { font-size: 36px; }
+      .pricing-price-num { font-size: 38px; }
+      .hstat-n { font-size: 22px; }
+    }
+
+    /* ─ Gift highlight — 强调「全功能商城 + 推广工具」赠品价值 ─ */
+    .hl-gift {
+      background: linear-gradient(180deg, transparent 55%, rgba(255,107,53,0.22) 55%, rgba(255,107,53,0.30) 100%);
+      padding: 0 4px 1px;
+      font-weight: 700;
+      color: var(--brand-d);
+      border-radius: 3px;
+      white-space: nowrap;
+    }
+    .hero-pill .hl-gift {
+      background: rgba(255,107,53,0.18);
+      color: var(--brand-d);
+      padding: 1px 6px;
+      border-radius: 6px;
+      font-size: .95em;
+      white-space: nowrap;
+    }
+    .ck-list .hl-gift { white-space: normal; }
+
+    /* Mobile：hero pill 内部胶囊降级为「下划高亮」，避免 5 段断块 */
+    @media (max-width: 600px) {
+      .hero-pill .hl-gift {
+        background: linear-gradient(180deg, transparent 60%, rgba(255,107,53,0.30) 60%);
+        padding: 0 2px 1px;
+        border-radius: 2px;
+        font-size: 1em;
+        font-weight: 700;
+      }
+    }
+    @media (max-width: 480px) {
+      .hl-gift { padding: 0 3px; }
+    }
+
+    /* Mobile：kinetic-wrap min-width 从 6em 收到 4.5em，防止"给…的"两端撑开 */
+    @media (max-width: 600px) {
+      .kinetic-wrap {
+        min-width: 4.5em;
+      }
+      .hero h1 .kinetic { gap: .08em; }
+    }
+    @media (max-width: 380px) {
+      .kinetic-wrap { min-width: 4em; }
+    }
+
+    /* ─ Touch device：禁用 hover transform 避免 sticky hover bug ─ */
+    @media (hover: none) {
+      .tchip:hover, .bcell:hover, .fstep:hover, .rcard:hover, .hstat:hover { transform: none; }
+      .promo-card-featured:hover { transform: translateY(-8px); }
+      .fcol a:hover { transform: none; }
+    }
   </style>
 </head>
 <body>
@@ -1780,15 +2304,15 @@
         摊小二
       </a>
       <ul class="nav-links">
-        <li><a href="#features">功能</a></li>
         <li><a href="#ai">AI 成片</a></li>
         <li><a href="#showcase">实战演示</a></li>
-        <li><a href="#promo">推广机制</a></li>
-        <li><a href="#flow">使用流程</a></li>
+        <li><a href="#features">附赠商城</a></li>
+        <li><a href="#promo">推广合伙人</a></li>
+        <li><a href="#pricing">定价</a></li>
       </ul>
       <div class="nav-right">
         <a href="/m/#/pages/login/index" class="btn btn-ghost btn-sm">用户登录</a>
-        <a href="/m/#/pages/merchant-apply/index" class="btn btn-brand btn-sm">商户入驻 →</a>
+        <a href="/m/#/pages/merchant-apply/index" class="btn btn-brand btn-sm">¥298/年 入驻 →</a>
       </div>
     </div>
   </div>
@@ -1797,12 +2321,12 @@
 <!-- ══ SECTION DOTS ══ -->
 <div class="sdots" id="sdots">
   <div class="sdot on" data-target="hero" data-label="首页"></div>
-  <div class="sdot" data-target="features" data-label="核心功能"></div>
   <div class="sdot" data-target="ai" data-label="AI 成片"></div>
   <div class="sdot" data-target="showcase" data-label="实战演示"></div>
-  <div class="sdot" data-target="promo" data-label="推广机制"></div>
+  <div class="sdot" data-target="features" data-label="附赠商城"></div>
+  <div class="sdot" data-target="promo" data-label="推广合伙人"></div>
+  <div class="sdot" data-target="pricing" data-label="定价"></div>
   <div class="sdot" data-target="flow" data-label="使用流程"></div>
-  <div class="sdot" data-target="roles" data-label="双端入口"></div>
   <div class="sdot" data-target="cta" data-label="立即开始"></div>
 </div>
 
@@ -1847,39 +2371,39 @@
   </svg>
   <div class="h-fade"></div>
   <div class="wrap hero-inner">
-    <a href="#ai" class="hero-pill">
-      <span class="pill-tag">NEW</span>
-      AI 驱动的摊位数字化平台
+    <a href="#pricing" class="hero-pill">
+      <span class="pill-tag">赠送</span>
+      10 条 AI 视频 + <span class="hl-gift">全套商城</span> + <span class="hl-gift">推广裂变工具</span>
       <span class="pill-arrow">→</span>
     </a>
     <h1>
-      让每个
+      给
       <span class="kinetic"><span class="kinetic-wrap" id="kinetic">
-        <span class="kinetic-word in">小摊</span>
-      </span></span><br/>
-      都有<span class="gt-ai">大生意</span>
+        <span class="kinetic-word in">小摊主</span>
+      </span></span>的<br/>
+      <span class="gt-ai">AI 视频带货工具</span>
     </h1>
-    <p class="hero-sub">商品管理、智能订单、会员积分、推广返佣与 AI 视频营销一体化，每一位摊主的数字化助手。</p>
+    <p class="hero-sub">输入商品 → 20 秒出片 → 一键发抖音。不会剪、不会写、不会配音都没关系。<br/>顺带送你<span class="hl-gift">一套全功能商城</span>和<span class="hl-gift">多种推广裂变工具</span>，开张就能跑起来。</p>
     <div class="hero-btns">
-      <a href="/m/#/pages/merchant-apply/index" class="btn btn-brand btn-xl">立即开店 →</a>
-      <a href="#features" class="btn btn-ink btn-lg">了解全部功能</a>
+      <a href="/m/#/pages/merchant-apply/index" class="btn btn-brand btn-xl">¥298/年 立即入驻 →</a>
+      <a href="#pricing" class="btn btn-ghost btn-lg">查看完整套餐</a>
     </div>
     <div class="hero-stats" id="hstats">
-      <div class="hstat">
-        <div class="hstat-n"><span class="cnum" data-to="6">0</span><span class="a">+</span></div>
-        <div class="hstat-l">核心功能模块</div>
-      </div>
       <div class="hstat hstat-ai">
-        <div class="hstat-n">AI<span class="a">∞</span></div>
-        <div class="hstat-l">视频营销赋能</div>
+        <div class="hstat-n"><span class="cnum" data-to="20">0</span><span class="a">秒</span></div>
+        <div class="hstat-l">AI 一条视频出片</div>
       </div>
-      <div class="hstat">
-        <div class="hstat-n"><span class="cnum" data-to="10">0</span><span class="a">m</span></div>
-        <div class="hstat-l">快速开业上线</div>
+      <div class="hstat hstat-price">
+        <div class="hstat-n hstat-n-price">¥<span class="cnum" data-to="298">0</span><span class="hstat-n-unit">/年</span></div>
+        <div class="hstat-l">首购送 10 条 AI 视频</div>
       </div>
-      <div class="hstat">
-        <div class="hstat-n">¥<span class="a cnum" data-to="0">0</span></div>
-        <div class="hstat-l">零门槛注册开店</div>
+      <div class="hstat hstat-dim">
+        <div class="hstat-n"><span class="cnum" data-to="1">0</span><span class="a">键</span></div>
+        <div class="hstat-l">直发抖音不用剪辑</div>
+      </div>
+      <div class="hstat hstat-dim">
+        <div class="hstat-n">¥<span class="cnum" data-to="0">0</span></div>
+        <div class="hstat-l">商城免费随包附赠</div>
       </div>
     </div>
   </div>
@@ -1894,114 +2418,37 @@
   <div class="wrap">
     <div class="trust-head">
       <span class="trust-line"></span>
-      <span class="trust-lbl">摊小二能为你带来什么</span>
+      <span class="trust-lbl">摊小二能为你做什么</span>
       <span class="trust-line"></span>
     </div>
   </div>
   <div class="marquee-track">
-    <div class="tchip">⏱️ 10 分钟极速开店</div>
-    <div class="tchip">🎬 AI 30 秒生成带货视频</div>
-    <div class="tchip">📈 月营收平均提升 32%</div>
-    <div class="tchip">💸 获客成本直降 60%</div>
-    <div class="tchip">🤖 AI 自动写营销文案</div>
-    <div class="tchip">📱 一键发布抖音推广</div>
-    <div class="tchip">💰 推广返佣自动结算</div>
-    <div class="tchip">⭐ 积分锁住回头客</div>
-    <div class="tchip">🎯 附近顾客精准触达</div>
-    <div class="tchip">🛠️ 零技术零剪辑门槛</div>
-    <div class="tchip">📊 经营数据实时掌握</div>
-    <div class="tchip">🚀 抖音微信全域获客</div>
-    <div class="tchip">⏱️ 10 分钟极速开店</div>
-    <div class="tchip">🎬 AI 30 秒生成带货视频</div>
-    <div class="tchip">📈 月营收平均提升 32%</div>
-    <div class="tchip">💸 获客成本直降 60%</div>
-    <div class="tchip">🤖 AI 自动写营销文案</div>
-    <div class="tchip">📱 一键发布抖音推广</div>
-    <div class="tchip">💰 推广返佣自动结算</div>
-    <div class="tchip">⭐ 积分锁住回头客</div>
-    <div class="tchip">🎯 附近顾客精准触达</div>
-    <div class="tchip">🛠️ 零技术零剪辑门槛</div>
-    <div class="tchip">📊 经营数据实时掌握</div>
-    <div class="tchip">🚀 抖音微信全域获客</div>
+    <div class="tchip">🎬 20 秒 AI 生成带货短视频</div>
+    <div class="tchip">📱 一键直发抖音不用剪辑</div>
+    <div class="tchip">🤖 火山引擎 + 即梦 AI 加持</div>
+    <div class="tchip">🎙️ 真人级 AI 配音 多种音色</div>
+    <div class="tchip">✍️ 商品卖点 AI 自动写文案</div>
+    <div class="tchip">💡 ¥298/年 首购送 10 条 AI 视频</div>
+    <div class="tchip">🛍️ 附赠全套商城 0 费上线</div>
+    <div class="tchip">📦 订单库存自提核销一站搞定</div>
+    <div class="tchip">💰 多种推广裂变工具 自动结算</div>
+    <div class="tchip">🤝 推广激励按 GMV 归本 合规</div>
+    <div class="tchip">⭐ 积分会员锁回头客</div>
+    <div class="tchip">🛠️ 不会剪不会写都能用</div>
+    <div class="tchip">🎬 20 秒 AI 生成带货短视频</div>
+    <div class="tchip">📱 一键直发抖音不用剪辑</div>
+    <div class="tchip">🤖 火山引擎 + 即梦 AI 加持</div>
+    <div class="tchip">🎙️ 真人级 AI 配音 多种音色</div>
+    <div class="tchip">✍️ 商品卖点 AI 自动写文案</div>
+    <div class="tchip">💡 ¥298/年 首购送 10 条 AI 视频</div>
+    <div class="tchip">🛍️ 附赠全套商城 0 费上线</div>
+    <div class="tchip">📦 订单库存自提核销一站搞定</div>
+    <div class="tchip">💰 多种推广裂变工具 自动结算</div>
+    <div class="tchip">🤝 推广激励按 GMV 归本 合规</div>
+    <div class="tchip">⭐ 积分会员锁回头客</div>
+    <div class="tchip">🛠️ 不会剪不会写都能用</div>
   </div>
 </div>
-
-<!-- ══ FEATURES ══ -->
-<section id="features" class="features-section">
-  <div class="wrap">
-    <div class="s-head c">
-      <div class="stag"><span class="stag-dot"></span>核心功能</div>
-      <h2>一个平台，覆盖<span class="gt-ai">全流程经营</span></h2>
-      <p class="s-lead">从商品上架到订单履约，从会员积分到推广返佣，摊小二帮你把每个环节做好。</p>
-    </div>
-    <div class="bento" id="bento">
-
-      <!-- Big card: AI Video -->
-      <div class="bcell bcell-big reveal">
-        <div class="bc-inner">
-          <div>
-            <div class="bcell-n">MODULE · 05</div>
-            <div class="bcell-ico bi-5">🎬</div>
-            <h3>AI 视频营销</h3>
-            <p>输入商品信息，AI 自动生成营销文案并合成带货短视频，支持一键发布抖音，无需任何剪辑经验。</p>
-          </div>
-          <div class="ai-preview-mini">
-            <div class="ap-row"><div class="ap-dot ap-d1"></div><div class="ap-dot ap-d2"></div><div class="ap-dot ap-d3"></div></div>
-            <div class="ap-step active"><span class="ap-step-num">1</span>输入商品 &amp; 卖点</div>
-            <div class="ap-step"><span class="ap-step-num">2</span>AI 生成文案</div>
-            <div class="ap-step"><span class="ap-step-num">3</span>合成配音画面</div>
-            <div class="ap-step"><span class="ap-step-num">4</span>一键发布抖音</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="bcell reveal">
-        <div class="bcell-n">MODULE · 01</div>
-        <div class="bcell-ico bi-1">🛍️</div>
-        <h3>智能商品管理</h3>
-        <p>多 SKU 规格、图片上传、库存管理。拍照即可 AI 识别上架，商品信息自动填写完毕。</p>
-      </div>
-
-      <div class="bcell reveal">
-        <div class="bcell-n">MODULE · 02</div>
-        <div class="bcell-ico bi-2">📦</div>
-        <h3>全链路订单管理</h3>
-        <p>到店自提与快递发货双模式。扫码核销、填单号、确认收款一气呵成，实时消息推送。</p>
-      </div>
-
-      <div class="bcell reveal">
-        <div class="bcell-n">MODULE · 03</div>
-        <div class="bcell-ico bi-3">💰</div>
-        <h3>会员积分 &amp; 余额</h3>
-        <p>消费自动积分，积分可抵扣下单金额。余额充值与提现全流程线上化，留住每位回头客。</p>
-      </div>
-
-      <div class="bcell reveal">
-        <div class="bcell-n">MODULE · 04</div>
-        <div class="bcell-ico bi-4">🎯</div>
-        <h3>推广返佣机制</h3>
-        <p>顾客分享带来新客，返佣自动结算到账。商户自定义佣金比例，构建专属推广大使团队。</p>
-      </div>
-
-      <div class="bcell bcell-wide reveal">
-        <div class="bc-body">
-          <div class="bc-text">
-            <div class="bcell-n">MODULE · 06</div>
-            <div class="bcell-ico bi-6" style="margin-bottom:14px;">📊</div>
-            <h3>数据经营分析</h3>
-            <p>实时销售看板、会员消费排行、配额使用流水，经营数据一目了然，辅助精准决策。</p>
-          </div>
-          <div class="bc-extra">
-            <div class="bc-mini-stat"><div class="n">↑32%</div><div class="l">月销售额</div></div>
-            <div class="bc-mini-stat"><div class="n">128</div><div class="l">活跃会员</div></div>
-            <div class="bc-mini-stat"><div class="n">¥4.2k</div><div class="l">返佣总计</div></div>
-          </div>
-        </div>
-      </div>
-
-    </div>
-  </div>
-</section>
 
 <!-- ══ AI SECTION ══ -->
 <section id="ai" class="ai-section">
@@ -2042,9 +2489,9 @@
   </svg>
   <div class="wrap">
     <div class="s-head">
-      <div class="stag stag-purple"><span class="stag-dot"></span>AI 成片</div>
-      <h2>输入文字，输出<span class="gt-purple">爆款视频</span></h2>
-      <p class="s-lead">内置火山引擎 TTS + 即梦 AI 合成，30 秒生成一条带货短视频，零剪辑经验即可使用。</p>
+      <div class="stag stag-purple"><span class="stag-dot"></span>主打 · AI 成片</div>
+      <h2>输入商品，<span class="ai-20s-anchor">20<span class="ai-20s-unit">秒</span></span>出<span class="gt-purple">带货短视频</span></h2>
+      <p class="s-lead">这是平台的<strong>主菜</strong>。火山引擎 TTS + 即梦 AI 合成，文案、配音、字幕、画面一站完成，发抖音一键到位。<br/><span style="color:var(--t3);font-size:14px;">¥298/年 首购送 10 条 ｜ 续费再送视频大礼包</span></p>
     </div>
     <div class="ai-layout">
       <div class="ai-feats">
@@ -2067,7 +2514,7 @@
             <div class="apc-play">▶</div>
             <div class="apc-meta">
               <strong>output_v0427.mp4</strong>
-              720P · 30s · ready to publish
+              高清成片 · 20s · ready to publish
             </div>
           </div>
         </div>
@@ -2090,7 +2537,7 @@
           <div class="af-ico">🎞️</div>
           <div>
             <h4>自动视频合成</h4>
-            <p>商品图片 + 配音 + 字幕自动合成短视频，支持 720P 高清输出。</p>
+            <p>商品图片 + 配音 + 字幕自动合成短视频，高清成片直接发布。</p>
           </div>
         </div>
         <div class="ai-feat reveal">
@@ -2129,12 +2576,89 @@
             <div class="ph-tech">
               <span class="chip">火山引擎</span>
               <span class="chip">即梦 AI</span>
-              <span class="chip">720P</span>
+              <span class="chip">高清</span>
               <span class="chip">抖音</span>
             </div>
           </div>
         </div>
       </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ FEATURES — 附赠的全套商城 ══ -->
+<section id="features" class="features-section">
+  <div class="wrap">
+    <div class="s-head c">
+      <div class="stag"><span class="stag-dot"></span>附赠商城</div>
+      <h2>视频引来的客人，<span class="gt-ai">用商城接住</span></h2>
+      <p class="s-lead">订阅 ¥298/年 套餐，下面这套全功能商城<strong>一并送你</strong>—— 商品、订单、会员、积分、数据，全开。</p>
+    </div>
+    <div class="bento" id="bento">
+
+      <!-- Big card: 上架 + 订单 闭环 -->
+      <div class="bcell bcell-big reveal">
+        <div class="bc-inner">
+          <div>
+            <div class="bcell-n">送 · 01</div>
+            <div class="bcell-ico bi-5">🛍️</div>
+            <h3>拍照上架 &amp; 订单履约闭环</h3>
+            <p>拍张照 AI 自动识别商品信息上架；订单到了一键扫码核销/发货，到店自提 + 快递双模式。摆摊老板也能 5 分钟掌握。</p>
+          </div>
+          <div class="ai-preview-mini">
+            <div class="ap-row"><div class="ap-dot ap-d1"></div><div class="ap-dot ap-d2"></div><div class="ap-dot ap-d3"></div></div>
+            <div class="ap-step active"><span class="ap-step-num">1</span>拍照上传商品图</div>
+            <div class="ap-step"><span class="ap-step-num">2</span>AI 识别填规格价</div>
+            <div class="ap-step"><span class="ap-step-num">3</span>顾客下单付款</div>
+            <div class="ap-step"><span class="ap-step-num">4</span>扫码核销/发货</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bcell reveal">
+        <div class="bcell-n">送 · 02</div>
+        <div class="bcell-ico bi-1">📦</div>
+        <h3>多 SKU &amp; 库存管理</h3>
+        <p>规格、价格、库存随时改；售罄自动下架，避免空单。</p>
+      </div>
+
+      <div class="bcell reveal">
+        <div class="bcell-n">送 · 03</div>
+        <div class="bcell-ico bi-2">⭐</div>
+        <h3>会员积分 &amp; 余额</h3>
+        <p>消费自动积分、下单可抵扣，余额线上充值/提现，回头客留得住。</p>
+      </div>
+
+      <div class="bcell reveal">
+        <div class="bcell-n">送 · 04</div>
+        <div class="bcell-ico bi-3">💬</div>
+        <h3>消息提醒 &amp; 客服</h3>
+        <p>下单/到店/退款实时通知，店长不漏单、顾客不投诉。</p>
+      </div>
+
+      <div class="bcell reveal">
+        <div class="bcell-n">送 · 05</div>
+        <div class="bcell-ico bi-4">🎯</div>
+        <h3>推广海报 &amp; 二维码</h3>
+        <p>店铺/商品专属二维码海报一键生成，扫码就能下单。</p>
+      </div>
+
+      <div class="bcell bcell-wide reveal">
+        <div class="bc-body">
+          <div class="bc-text">
+            <div class="bcell-n">送 · 06</div>
+            <div class="bcell-ico bi-6" style="margin-bottom:14px;">📊</div>
+            <h3>经营数据看板</h3>
+            <p>每日销售、客单价、视频带来的转化、推广合伙人贡献，实时呈现。哪条视频有效一眼看穿。</p>
+          </div>
+          <div class="bc-extra">
+            <div class="bc-mini-stat"><div class="n">↑32%</div><div class="l">视频带客转化</div></div>
+            <div class="bc-mini-stat"><div class="n">128</div><div class="l">活跃会员</div></div>
+            <div class="bc-mini-stat"><div class="n">¥4.2k</div><div class="l">合伙人贡献</div></div>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 </section>
@@ -2153,7 +2677,7 @@
       <div class="fb-text">
         <div class="fb-stag"><span class="fb-stag-num">1</span>FOR MERCHANT</div>
         <h3>拍一张照，<br/>商品自动上架</h3>
-        <p>对准商品拍一张照片，AI 自动识别品类、规格、推荐价格与文案，30 秒完成传统 5 分钟的录入工作。</p>
+        <p>对准商品拍一张照片，AI 自动识别品类、规格、推荐价格与文案，20 秒完成传统 5 分钟的录入工作。</p>
         <ul class="fb-feats">
           <li><span class="fb-check">✓</span><span>支持<b>多 SKU 规格</b>自动识别（颜色 / 重量 / 包装）</span></li>
           <li><span class="fb-check">✓</span><span>商品名 / 卖点 / 单位 / 库存<b>一键填充</b></span></li>
@@ -2244,7 +2768,7 @@
               <div class="ms-field"><span class="lbl">积分抵扣 (200)</span><span class="val ai">- ¥ 2.00</span></div>
               <div class="ms-field"><span class="lbl">余额支付</span><span class="val">¥ 51.00</span></div>
               <div class="ms-row" style="margin-top:auto;">
-                <span class="ms-token cyan">微信支付</span>
+                <span class="ms-token cyan">通联支付</span>
                 <span class="ms-token">余额</span>
                 <span class="ms-token brand">到店付</span>
               </div>
@@ -2274,10 +2798,10 @@
     <div class="flow-block reveal">
       <div class="fb-text">
         <div class="fb-stag"><span class="fb-stag-num">3</span>AI VIDEO × 抖音</div>
-        <h3>30 秒成片，<br/>一键投到抖音</h3>
+        <h3>20 秒成片，<br/>一键投到抖音</h3>
         <p>输入商品文字，AI 自动生成画面 + 配音 + 字幕，预览满意后授权抖音账号一键发布，24h 看到播放量与点赞数据。</p>
         <ul class="fb-feats">
-          <li><span class="fb-check">✓</span><span>火山引擎 + 即梦 AI 双引擎，<b>720P 高清输出</b></span></li>
+          <li><span class="fb-check">✓</span><span>火山引擎 + 即梦 AI 双引擎，<b>高清成片直发抖音</b></span></li>
           <li><span class="fb-check">✓</span><span>预览页直接<b>修改文案 / 配音</b>无需重头来</span></li>
           <li><span class="fb-check">✓</span><span>抖音播放量 / 点赞 / 订单<b>全链路回流</b></span></li>
         </ul>
@@ -2308,7 +2832,7 @@
         <div class="mphone">
           <div class="mscreen">
             <div class="ms-status"><span>9:41</span><div class="dots"><span></span><span></span><span></span></div></div>
-            <div class="ms-hdr">预览 &amp; 发布<span class="ms-meta">720P · 30s</span></div>
+            <div class="ms-hdr">预览 &amp; 发布<span class="ms-meta">高清 · 20s</span></div>
             <div class="ms-body">
               <div class="ms-video" style="flex:0 0 130px;">
                 <div class="ms-video-play">▶</div>
@@ -2349,34 +2873,96 @@
 <section id="promo" class="promo-section">
   <div class="wrap">
     <div class="s-head c">
-      <div class="stag"><span class="stag-dot"></span>推广机制</div>
-      <h2>让顾客帮你<span class="gt-ai">裂变增长</span></h2>
-      <p class="s-lead">推广返佣 + 积分体系双管齐下，将老顾客变成推广大使，获客成本持续降低。</p>
+      <div class="stag"><span class="stag-dot"></span>推广合伙人</div>
+      <h2>让老客户帮你<span class="gt-ai">直推新客户</span></h2>
+      <p class="s-lead">仅 1 级直推 + 推广激励，<strong>不做多级分销</strong>。基于真实成交结算、合规归本，老板放心做。</p>
     </div>
     <div class="promo-grid">
       <div class="promo-card reveal" data-bg="¥">
-        <span class="pchip pchip-o">返佣推广</span>
-        <h3>推广返佣，自动结算</h3>
-        <p>顾客分享店铺带来新客，推荐人自动获得返佣奖励，全部自动计算，商户零工作量。</p>
+        <span class="pchip pchip-o">直推 · 1 级</span>
+        <h3>直推 1 级返佣，自动到账</h3>
+        <p>老客户分享商品/店铺，扫码下单成交即按比例返佣。<strong>仅限 1 级直推关系</strong>，无层级展开，不触碰多级分销红线。</p>
         <ul class="ck-list">
-          <li><span class="ck-o">✓</span>商户自由设置返佣比例</li>
-          <li><span class="ck-o">✓</span>各店推荐关系独立，互不干扰</li>
-          <li><span class="ck-o">✓</span>佣金冻结期可配置，有效防刷单</li>
-          <li><span class="ck-o">✓</span>用户随时申请提现，商户线上审核</li>
+          <li><span class="ck-o">✓</span>商户自定义返佣比例（1%-30%）</li>
+          <li><span class="ck-o">✓</span>仅 1 级关系，依据真实订单结算</li>
+          <li><span class="ck-o">✓</span>佣金冻结期可设，防止刷单退款</li>
+          <li><span class="ck-o">✓</span>提现线上审核，流水全留痕</li>
         </ul>
       </div>
-      <div class="promo-card purple reveal" data-bg="★">
-        <span class="pchip pchip-p">积分体系</span>
-        <h3>消费赚积分，积分当钱花</h3>
-        <p>顾客每次消费自动累积积分，积分可在下单时直接抵扣金额，形成持续复购的正向循环。</p>
+      <div class="promo-card purple reveal" data-bg="%">
+        <span class="pchip pchip-p">推广激励</span>
+        <h3>推广激励，按 GMV 归本</h3>
+        <p>商户可设立 1 名推广组长，组长每达成 GMV 目标可领取约定的<strong>推广激励</strong>（不与下级人头挂钩，仅与销量挂钩），让老板回本节奏可控。</p>
         <ul class="ck-list">
-          <li><span class="ck-p">✓</span>商户自定义积分兑换比例</li>
-          <li><span class="ck-p">✓</span>积分可转换为余额</li>
-          <li><span class="ck-p">✓</span>结算页实时显示可抵扣金额</li>
-          <li><span class="ck-p">✓</span>积分流水全程可查，透明公正</li>
+          <li><span class="ck-p">✓</span>固定档位/阶梯比例，老板自定</li>
+          <li><span class="ck-p">✓</span>结算依据：成交 GMV，不计人头</li>
+          <li><span class="ck-p">✓</span>合同/协议模板内置，直接用</li>
+          <li><span class="ck-p">✓</span>所有结算可导出，备查备税</li>
         </ul>
       </div>
     </div>
+  </div>
+</section>
+
+<!-- ══ PRICING ══ -->
+<section id="pricing" class="promo-section" style="background:var(--bg-soft);">
+  <div class="wrap">
+    <div class="s-head c">
+      <div class="stag stag-brand"><span class="stag-dot"></span>定价</div>
+      <h2>明码标价，<span class="gt-brand">¥298/年 全套就能开张</span></h2>
+      <p class="s-lead">在线商城按年订阅，AI 视频套餐随小程序灵活续。开张就送，续费再送，越用越值。</p>
+    </div>
+    <div class="promo-grid">
+
+      <!-- 主套餐：¥298/年 -->
+      <div class="promo-card promo-card-featured reveal" data-bg="¥">
+        <div class="pricing-ribbon">热门首选</div>
+        <span class="pchip pchip-o">在线商城 · 年付</span>
+        <h3>¥298 / 年 主套餐</h3>
+        <p class="pricing-price-hero">¥<span class="pricing-price-num">298</span><span class="pricing-price-sub"> / 年 · 全功能在线商城</span></p>
+        <p>开通即享一年商城使用权。<strong>首次购买大礼包：10 条 AI 制作视频 + <span class="hl-gift">全功能商城</span> + <span class="hl-gift">推广裂变工具</span></strong>，开张就能跑起来。</p>
+        <ul class="ck-list">
+          <li><span class="ck-o">✓</span><strong>首购赠送 10 条 AI 带货视频</strong></li>
+          <li><span class="ck-o">✓</span><span class="hl-gift">全套在线商城</span> + 订单 + 会员积分</li>
+          <li><span class="ck-o">✓</span><span class="hl-gift">多种推广裂变工具</span>（直推 + 推广激励 + 二维码海报等）</li>
+          <li><span class="ck-o">✓</span>抖音一键发布通道</li>
+          <li><span class="ck-o">✓</span>一年期订阅，到期续费即可</li>
+        </ul>
+        <a href="/m/#/pages/merchant-apply/index" class="btn btn-brand btn-lg" style="margin-top:14px;">¥298/年 立即入驻 →</a>
+      </div>
+
+      <!-- 续费有礼 -->
+      <div class="promo-card purple reveal" data-bg="🎁">
+        <span class="pchip pchip-p">续费有礼 · 老客回馈</span>
+        <h3>续费再送 AI 视频大礼包</h3>
+        <p style="font-size:14px;color:var(--t2);margin:6px 0 10px;">老客户每年续费，平台再追加一份 AI 视频福利，一年不断片。</p>
+        <ul class="ck-list">
+          <li><span class="ck-p">✓</span>续费即送 AI 视频大礼包</li>
+          <li><span class="ck-p">✓</span>视频套餐档位详见小程序套餐中心</li>
+          <li><span class="ck-p">✓</span>建议单条 ≤20s（性价比甜蜜点）</li>
+          <li><span class="ck-p">✓</span>高清成片，含配音 + 字幕</li>
+          <li><span class="ck-p">✓</span>账号一直在，福利每年涨</li>
+        </ul>
+        <a href="/m/#/pages/merchant-apply/index" class="btn btn-ai btn-lg" style="margin-top:14px;">先入驻再领礼包 →</a>
+      </div>
+
+      <!-- 推广合伙人 -->
+      <div class="promo-card reveal" data-bg="🤝" style="border-color:rgba(20,184,166,0.25);">
+        <span class="pchip" style="background:rgba(20,184,166,0.1);color:#0d9488;border-color:rgba(20,184,166,0.25);">资金安全 · T+0</span>
+        <h3>钱不过平台，直入老板账户</h3>
+        <p>顾客付款 <strong>T+0 即时到账</strong>，<strong>平台不碰一分钱用户资金</strong>——钱直接进到商户自己的<strong>通联支付账号</strong>，随时提现，老板心里踏实。</p>
+        <ul class="ck-list">
+          <li><span class="ck-o" style="background:rgba(20,184,166,0.12);color:#0d9488;">✓</span>T+0 即时到账，资金不留过夜</li>
+          <li><span class="ck-o" style="background:rgba(20,184,166,0.12);color:#0d9488;">✓</span>平台不碰用户钱，零二清风险</li>
+          <li><span class="ck-o" style="background:rgba(20,184,166,0.12);color:#0d9488;">✓</span>资金落到商户自己的通联账号</li>
+          <li><span class="ck-o" style="background:rgba(20,184,166,0.12);color:#0d9488;">✓</span>余额随时提现到本人银行卡</li>
+          <li><span class="ck-o" style="background:rgba(20,184,166,0.12);color:#0d9488;">✓</span>商城 GMV 0 抽成、0 服务费</li>
+        </ul>
+      </div>
+
+    </div>
+
+    <p style="text-align:center;color:var(--t3);font-size:13px;margin-top:30px;">* AI 视频按"成片条数"计；建议单条 ≤20s。详细套餐及续费福利以小程序内套餐中心为准。所有价格含税。 *</p>
   </div>
 </section>
 
@@ -2457,11 +3043,11 @@
   <div class="cta-dots"></div>
   <div class="wrap cta-inner">
     <div class="stag stag-purple" style="margin:0 auto 20px;width:fit-content;"><span class="stag-dot"></span>立即开始</div>
-    <h2>你的数字摊位<br/><span class="gt-purple">今天就能开</span></h2>
-    <p class="cta-sub">注册免费，功能全开，技术支持全程跟进。</p>
+    <h2>第一条 AI 带货视频<br/><span class="gt-purple">今天就能发出去</span></h2>
+    <p class="cta-sub">¥298/年 主套餐，首购送 10 条 AI 视频 + <span class="hl-gift">全套商城</span> + <span class="hl-gift">推广裂变工具</span>，一站搞定。</p>
     <div class="cta-btns">
-      <a href="/m/#/pages/merchant-apply/index" class="btn btn-ai btn-xl">立即入驻商户 →</a>
-      <a href="/m/#/pages/login/index" class="btn btn-ai-ghost btn-xl">用户登录</a>
+      <a href="/m/#/pages/merchant-apply/index" class="btn btn-ai btn-xl">¥298/年 入驻 →</a>
+      <a href="#pricing" class="btn btn-glass btn-xl">看完整定价</a>
     </div>
   </div>
 </section>
@@ -2475,26 +3061,26 @@
           <div class="flogo-mark">摊</div>
           摊小二
         </div>
-        <p>让每个小摊，都有大生意。AI 驱动的摊位数字化经营平台。</p>
+        <p>给小摊主的 AI 视频带货工具，顺手送你一个店。</p>
       </div>
       <div class="fcol">
         <h5>产品功能</h5>
         <ul>
-          <li><a href="#features">商品管理</a></li>
-          <li><a href="#features">订单管理</a></li>
-          <li><a href="#features">会员积分</a></li>
           <li><a href="#ai">AI 成片</a></li>
-          <li><a href="#promo">推广返佣</a></li>
+          <li><a href="#showcase">实战演示</a></li>
+          <li><a href="#features">附赠商城</a></li>
+          <li><a href="#promo">推广合伙人</a></li>
+          <li><a href="#pricing">定价 ¥298/年</a></li>
         </ul>
       </div>
       <div class="fcol">
         <h5>快速入口</h5>
         <ul>
+          <li><a href="/m/#/pages/merchant-apply/index">¥298/年 入驻</a></li>
           <li><a href="/m/#/pages/merchant-login/index">商户登录</a></li>
-          <li><a href="/m/#/pages/merchant-apply/index">商户入驻</a></li>
           <li><a href="/m/#/pages/login/index">用户登录</a></li>
           <li><a href="#flow">使用流程</a></li>
-          <li><a href="#features">功能介绍</a></li>
+          <li><a href="#pricing">续买 AI 视频</a></li>
         </ul>
       </div>
       <div class="fcol">
@@ -2508,8 +3094,7 @@
       </div>
     </div>
     <div class="foot-bot">
-      <span class="foot-copy">© 2025 摊小二科技 · 让每个小摊，都有大生意</span>
-      <span class="foot-badge">系统运行中 · Powered by AI</span>
+      <span class="foot-copy">© 2026 优航智创科技有限公司 · AI 视频带货工具，顺手送你一个店 · <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;">蜀ICP备2026021394号</a></span>
     </div>
   </div>
 </footer>
@@ -2547,7 +3132,7 @@
   /* hero kinetic word — 单 DOM 元素更新 textContent，永远只有一个词在场
    * 之前用 append/remove 双 DOM 切换会偶发"两个词同屏叠加"渲染 bug
    * （setInterval 节奏抖动 / remove() 异步未完成 / 脚本被加载多次时累积） */
-  const words = ['小摊', '夜市档口', '咖啡车', '街边奶茶店', '社区小店', '个体商户'];
+  const words = ['小摊主', '夜市档口', '路边果蔬', '奶茶店', '便利店', '怕剪辑的老板'];
   const kWrap = document.getElementById('kinetic');
   if (kWrap) {
     /* 防御式清理：把 HTML 里写死的所有 kinetic-word 全干掉，只保留一个新建的 */
