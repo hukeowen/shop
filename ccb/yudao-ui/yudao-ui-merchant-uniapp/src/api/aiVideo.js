@@ -172,13 +172,16 @@ function resumeTask(t) {
         // 没开始就丢了：这种幕我们没有 task_id 可接管，只能标失败
         scene.error = 'video: 页面刷新前该分镜尚未提交到 Seedance';
         scene.status = 'video_failed';
+        pushSceneToDB(t, scene, { status: 'video_failed', failReason: scene.error });
         return;
       }
       try {
         scene.status = 'video_running';
+        pushSceneToDB(t, scene, { status: 'video_running' });
         const rawUrl = await waitClip(scene.clipTaskId, { intervalMs: 4000 });
         if (scene.narration?.trim()) {
           scene.status = 'audio_muxing';
+          pushSceneToDB(t, scene, { status: 'audio_muxing' });
           try {
             const v = findVoice(t.voiceKey);
             const muxRes = await fetch('/video/mux', {
@@ -203,10 +206,12 @@ function resumeTask(t) {
         }
         scene.status = 'ready';
         if (scene.index === 0 && t.status === 3) t.status = 4;
+        pushSceneToDB(t, scene, { status: 'ready', clipUrl: scene.clipUrl });
       } catch (e) {
         scene.error = 'video: ' + e.message;
         scene.status = 'video_failed';
         if (scene.index === 0 && t.status === 3) t.status = 4;
+        pushSceneToDB(t, scene, { status: 'video_failed', failReason: scene.error });
       }
       persist();
     });
@@ -626,14 +631,27 @@ export async function confirmTask({ taskId, scenes, bgmStyle }) {
   return true;
 }
 
+/**
+ * B 改造 Step 4.3：单幕状态/产出 fire-and-forget 同步到后端。
+ * task.dbId 缺失（register 失败 / 老 task）时静默跳过；网络错由 patchSceneToDB
+ * 内部 swallow，不阻塞 runClip 主流程。
+ */
+function pushSceneToDB(task, scene, patch) {
+  if (!task || !task.dbId || !scene || scene.index == null) return;
+  // fire-and-forget；不 await 避免拖慢生成
+  patchSceneToDB(task.dbId, scene.index, patch).catch(() => {});
+}
+
 /** 单段视频：用指定起始图 + prompt 跑即梦AI；视频就绪后立即合入 TTS 配音 */
 async function runClip(task, scene, startImageUrl) {
   try {
     scene.startImageUrl = startImageUrl;
+    pushSceneToDB(task, scene, { startImageUrl });
 
     // 端卡不走即梦AI：静止商品图 + 正中大二维码 + 店名，直接 sidecar 合成
     if (scene.isEndCard) {
       scene.status = 'endcard_building';
+      pushSceneToDB(task, scene, { status: 'endcard_building' });
       const v = findVoice(task.voiceKey);
       const endRes = await fetch('/video/endcard', {
         method: 'POST',
@@ -653,10 +671,12 @@ async function runClip(task, scene, startImageUrl) {
       scene.status = 'ready';
       if (scene.index === 0 && task.status === 3) task.status = 4;
       persist();
+      pushSceneToDB(task, scene, { status: 'ready', clipUrl: endData.url });
       return true;
     }
 
     scene.status = 'video_creating';
+    pushSceneToDB(task, scene, { status: 'video_creating' });
     scene.clipTaskId = await createClipTask({
       imageUrl: startImageUrl,
       prompt: scene.visual_prompt || scene.narration,
@@ -664,11 +684,13 @@ async function runClip(task, scene, startImageUrl) {
       duration: scene.duration || task.sceneDuration || 10,
     });
     scene.status = 'video_running';
+    pushSceneToDB(task, scene, { status: 'video_running', clipTaskId: scene.clipTaskId });
     const rawUrl = await waitClip(scene.clipTaskId, { intervalMs: 4000 });
 
     // 视频就绪后合入配音（sidecar 内完成：TTS + FFmpeg mux + 上传 TOS）
     if (scene.narration?.trim()) {
       scene.status = 'audio_muxing';
+      pushSceneToDB(task, scene, { status: 'audio_muxing' });
       try {
         const v = findVoice(task.voiceKey);
         const muxRes = await fetch('/video/mux', {
@@ -703,6 +725,7 @@ async function runClip(task, scene, startImageUrl) {
     scene.status = 'ready';
     if (scene.index === 0 && task.status === 3) task.status = 4;
     persist();
+    pushSceneToDB(task, scene, { status: 'ready', clipUrl: scene.clipUrl });
     return true;
   } catch (e) {
     scene.error = 'video: ' + e.message;
@@ -710,6 +733,7 @@ async function runClip(task, scene, startImageUrl) {
     console.warn(`[scene ${scene.index}] 视频失败:`, e.message);
     if (scene.index === 0 && task.status === 3) task.status = 4;
     persist();
+    pushSceneToDB(task, scene, { status: 'video_failed', failReason: scene.error });
     return false;
   }
 }
