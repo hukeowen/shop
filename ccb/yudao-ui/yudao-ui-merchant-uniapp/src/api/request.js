@@ -146,7 +146,3 @@ export function request({ url, method = 'GET', data, header, responseType, raw =
   });
 }
 
-/** 模拟异步延迟（原型阶段剩余 mock 代码复用） */
-export function mockDelay(data, ms = 400) {
-  return new Promise((resolve) => setTimeout(() => resolve(data), ms));
-}

@@ -68,10 +68,6 @@
         </view>
       </view>
 
-      <view class="demo-hint">
-        <text class="demo-tag">演示</text>
-        验证码固定为 <text class="demo-code">888888</text>
-      </view>
 
       <button
         class="submit-btn"
@@ -112,18 +108,29 @@ const canSubmit = computed(
     form.smsCode.length === 6
 );
 
-function sendSms() {
+async function sendSms() {
   if (smsCooldown.value > 0) return;
   if (!/^1[3-9]\d{9}$/.test(form.mobile)) {
     uni.showToast({ title: '请先填写正确手机号', icon: 'none' });
     return;
   }
-  uni.showToast({ title: '验证码：888888（演示模式）', icon: 'none', duration: 3000 });
-  smsCooldown.value = 60;
-  cooldownTimer = setInterval(() => {
-    smsCooldown.value--;
-    if (smsCooldown.value <= 0) clearInterval(cooldownTimer);
-  }, 1000);
+  try {
+    await request({
+      url: '/app-api/app/auth/send-sms-code',
+      method: 'POST',
+      data: { mobile: form.mobile },
+    });
+    uni.showToast({ title: '验证码已发送，请注意查收', icon: 'success' });
+    smsCooldown.value = 60;
+    cooldownTimer = setInterval(() => {
+      smsCooldown.value--;
+      if (smsCooldown.value <= 0) clearInterval(cooldownTimer);
+    }, 1000);
+  } catch (e) {
+    // 后端 demo-mode=true 时也是这条路径成功（不真发码，固定 888888 可用）；失败一般是手机号
+    // 已黑名单 / 限流 / 短信网关未配，错误信息从 request 拦截器透传
+    uni.showToast({ title: e?.message || '发送失败，请稍后再试', icon: 'none' });
+  }
 }
 
 async function submit() {
