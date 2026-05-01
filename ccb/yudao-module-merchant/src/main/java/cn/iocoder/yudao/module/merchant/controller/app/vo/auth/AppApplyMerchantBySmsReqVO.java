@@ -32,8 +32,8 @@ public class AppApplyMerchantBySmsReqVO {
     @Pattern(regexp = "^1[3-9]\\d{9}$", message = "手机号格式不正确")
     private String mobile;
 
-    @Schema(description = "短信验证码（来自 /send-sms-code；demo-mode=true 时固定 yudao.sms-code.demo-code）",
-            requiredMode = Schema.RequiredMode.REQUIRED, example = "123456")
+    @Schema(description = "短信验证码（当前固定 888888，待接入真 SMS 服务时改为真验码）",
+            requiredMode = Schema.RequiredMode.REQUIRED, example = "888888")
     @NotBlank(message = "验证码不能为空")
     private String smsCode;
 }

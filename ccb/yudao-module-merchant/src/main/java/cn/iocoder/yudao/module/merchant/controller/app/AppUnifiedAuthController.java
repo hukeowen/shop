@@ -277,27 +277,30 @@ public class AppUnifiedAuthController {
     /**
      * 发送商户申请 / 登录用 SMS 验证码。
      *
-     * <p>无需登录的 PermitAll 接口，IP 限流（每分钟 5 次）。底层走 SmsCodeApi.sendSmsCode，
-     * 生产 yudao.sms-code.demo-mode=false 时真发短信；演示模式 true 时不发，由
-     * smsCodeProperties.demoCode 兜底（前端 demo 阶段填固定码）。</p>
+     * <p><b>当前实现：固定验证码 888888（不真发短信）</b></p>
      *
-     * <p>scene 复用 {@link SmsSceneEnum#MEMBER_LOGIN}（templateCode=user-sms-login），
-     * 避免新增枚举值改动 system 模块。</p>
+     * <p>简化处理：用户点"发送验证码" → 后端直接返成功，验证码默认 888888。
+     * 接口仍保留 IP 限流（每分钟 5 次）和参数校验，前端流程完整。</p>
+     *
+     * <p>TODO 接入真 SMS 服务时把下面 5 行恢复成 SmsCodeApi.sendSmsCode 调用：</p>
+     * <pre>
+     *   SmsCodeSendReqDTO dto = new SmsCodeSendReqDTO();
+     *   dto.setMobile(reqVO.getMobile());
+     *   dto.setScene(SmsSceneEnum.MEMBER_LOGIN.getScene());
+     *   dto.setCreateIp(resolveClientIp());
+     *   smsCodeApi.sendSmsCode(dto);
+     * </pre>
      */
     @PostMapping("/send-sms-code")
-    @Operation(summary = "发送商户申请验证码（手机号短信）")
+    @Operation(summary = "发送商户申请验证码（当前固定 888888，不真发短信）")
     @PermitAll
     @TenantIgnore
     @RateLimiter(time = 60, count = 5, keyResolver = ClientIpRateLimiterKeyResolver.class,
                  message = "发送频率过高，请稍后再试")
     public CommonResult<Boolean> sendSmsCodeForMerchantApply(
             @Valid @RequestBody cn.iocoder.yudao.module.merchant.controller.app.vo.auth.AppSmsCodeSendReqVO reqVO) {
-        SmsCodeSendReqDTO dto = new SmsCodeSendReqDTO();
-        dto.setMobile(reqVO.getMobile());
-        dto.setScene(SmsSceneEnum.MEMBER_LOGIN.getScene());
-        dto.setCreateIp(resolveClientIp());
-        smsCodeApi.sendSmsCode(dto);
-        log.info("[sendSmsCode] mobile={} scene=MEMBER_LOGIN", reqVO.getMobile());
+        // 简化处理：不真发短信，验证码固定 888888（applyMerchantBySms 那侧硬比对）
+        log.info("[sendSmsCode] mobile={} 固定码模式（待接入真 SMS）", reqVO.getMobile());
         return success(true);
     }
 
@@ -313,19 +316,16 @@ public class AppUnifiedAuthController {
         String shopName = reqVO.getShopName().trim();
         String smsCode = reqVO.getSmsCode();
 
-        // 1. 校验验证码：调 SmsCodeApi.useSmsCode 真服务
-        //    yudao.sms-code.demo-mode=true 时全场景固定码（开发演示）；生产 false → 真发码真校验
-        //    复用 MEMBER_LOGIN scene（templateCode=user-sms-login），避免新增 scene 改 enum
-        try {
-            SmsCodeUseReqDTO useDTO = new SmsCodeUseReqDTO();
-            useDTO.setMobile(mobile);
-            useDTO.setCode(smsCode);
-            useDTO.setScene(SmsSceneEnum.MEMBER_LOGIN.getScene());
-            useDTO.setUsedIp(resolveClientIp());
-            smsCodeApi.useSmsCode(useDTO);
-        } catch (Exception e) {
-            log.warn("[applyMerchantBySms] SMS 验证失败 mobile={} reason={}", mobile, e.getMessage());
-            throw exception(PASSWORD_INVALID); // 复用错误码：验证码错误
+        // 1. 校验验证码：当前固定 888888（不依赖短信网关）
+        //    与 /send-sms-code 简化处理对应；接入真 SMS 服务时改回 SmsCodeApi.useSmsCode：
+        //    SmsCodeUseReqDTO useDTO = new SmsCodeUseReqDTO();
+        //    useDTO.setMobile(mobile); useDTO.setCode(smsCode);
+        //    useDTO.setScene(SmsSceneEnum.MEMBER_LOGIN.getScene());
+        //    useDTO.setUsedIp(resolveClientIp());
+        //    smsCodeApi.useSmsCode(useDTO);
+        if (!"888888".equals(smsCode)) {
+            log.warn("[applyMerchantBySms] 验证码错误 mobile={}", mobile);
+            throw exception(PASSWORD_INVALID);
         }
 
         // 2. 幂等：找/建会员（password 留空，首次密码登录时再设）
