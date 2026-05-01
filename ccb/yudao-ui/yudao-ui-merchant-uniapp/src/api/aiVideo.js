@@ -497,9 +497,93 @@ export async function createTask({ imageBase64s, userDescription, voiceKey, rati
   return task.id;
 }
 
-export function getTask(id) {
-  const t = store.tasks.find((x) => x.id === id);
-  return Promise.resolve(t ? { ...t, scenes: t.scenes.map((s) => ({ ...s })) } : null);
+/**
+ * 取任务详情。
+ *
+ * <p>B 改造 Step 4.5：本地命中直接返；本地没有时走后端 /get-with-scenes 拉全
+ * (含完整分镜)，并 hydrate 回本地 cache，让换设备 / 浏览器历史也能继续看。</p>
+ *
+ * <p>id 兼容三种形态：</p>
+ * <ul>
+ *     <li>纯数字 (本地 store.tasks.id, 如 100001) → 优先本地</li>
+ *     <li>"db_123" 字符串 (历史列表用) → 直接按 dbId=123 走后端</li>
+ *     <li>本地未找到的纯数字也尝试当 dbId 兜底</li>
+ * </ul>
+ */
+export async function getTask(id) {
+  // 1. 先查本地
+  const local = store.tasks.find((x) => x.id === id);
+  if (local) {
+    return { ...local, scenes: (local.scenes || []).map((s) => ({ ...s })) };
+  }
+  // 2. 解析出 dbId
+  let dbId = null;
+  if (typeof id === 'string' && id.startsWith('db_')) {
+    dbId = parseInt(id.substring(3), 10);
+  } else if (typeof id === 'number' && id > 0) {
+    dbId = id; // 兜底：当作 dbId 试一次
+  }
+  if (!dbId || isNaN(dbId)) return null;
+  // 3. 后端拉详情 + 全分镜，转成本地形态后 hydrate 进 store
+  const remote = await fetchTaskWithScenes(dbId);
+  if (!remote) return null;
+  const t = remoteTaskToLocal(remote);
+  // 写入 cache（避免下次再请求；持久 localStorage）
+  if (!store.tasks.find((x) => x.dbId === dbId)) {
+    store.tasks.unshift(t);
+    persist();
+  }
+  return { ...t, scenes: (t.scenes || []).map((s) => ({ ...s })) };
+}
+
+/**
+ * 后端 VideoTaskWithScenesRespVO → 前端 task 形态。
+ * 字段映射：
+ *   imgIdx → img_idx, visualPrompt → visual_prompt, imageSummary → image_summary
+ *   后端 status (0/1/2/3) → 前端 task.status (3/3/4/5) 同 dbTaskToLocal
+ */
+function remoteTaskToLocal(r) {
+  const statusMap = { 0: 3, 1: 3, 2: 4, 3: 5 };
+  const clientStatus = statusMap[r.status] ?? 3;
+  const scenes = Array.isArray(r.scenes) ? r.scenes.map((s) => ({
+    index: s.sceneIndex,
+    img_idx: s.imgIdx,
+    image_summary: s.imageSummary || '',
+    narration: s.narration || '',
+    visual_prompt: s.visualPrompt || '',
+    duration: s.duration || null,
+    isEndCard: !!s.isEndCard,
+    status: s.status || 'pending',
+    clipTaskId: s.clipTaskId || null,
+    clipUrl: s.clipUrl || null,
+    audioUrl: s.audioUrl || null,
+    audioSource: null,
+    error: s.failReason || null,
+    startImageUrl: s.startImageUrl || null,
+  })) : [];
+  return {
+    id: `db_${r.id}`,
+    dbId: r.id,
+    status: clientStatus,
+    title: r.title || '',
+    userDescription: r.description || '',
+    imageUrls: r.imageUrls || [],
+    coverUrl: r.coverUrl || (r.imageUrls && r.imageUrls[0]) || null,
+    posterUrl: r.posterUrl || null,
+    bgmStyle: r.bgmStyle || '',
+    voiceKey: r.voiceKey || 'cancan',
+    ratio: r.ratio || '9:16',
+    scenes,
+    sceneDuration: scenes[0]?.duration || 10,
+    progress: { total: scenes.length, done: scenes.filter((s) => s.clipUrl).length },
+    publishedToDouyin: r.douyinPublishStatus === 2,
+    douyinItemId: r.douyinItemId || null,
+    failReason: r.failReason || null,
+    createdAt: r.createTime
+      ? (typeof r.createTime === 'string' ? r.createTime.replace('T', ' ').substring(0, 16) : String(r.createTime))
+      : '',
+    shopName: '',
+  };
 }
 
 /**
