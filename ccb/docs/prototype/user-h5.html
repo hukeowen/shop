@@ -9,7 +9,8 @@
   :root {
     --brand: #FF6B35; --brand-d: #E25316; --brand-light: rgba(255,107,53,.10); --brand-light-2: rgba(255,107,53,.18);
     --bg: #F6F7F9; --card: #FFFFFF;
-    --t1: #1B1F23; --t2: #5A6577; --t3: #8A93A0;
+    --t1: #1B1F23; --t2: #5A6577; --t3: #6F7785;
+    /* --t3 #6F7785 在白底对比度 ≈ 4.62:1，达 WCAG AA 4.5:1（原 #8A93A0 仅 3.46:1） */
     --line: #EEF0F4; --danger: #E63946; --warn: #F59E0B; --success: #10B981;
     --r-sm: 8px; --r-md: 12px; --r-lg: 16px; --r-pill: 999px;
     --shadow-card: 0 2px 12px rgba(15,23,42,.04);
@@ -373,6 +374,7 @@
   }
   .shop-row .stats em {
     font-style: normal; color: var(--brand); font-weight: 700;
+    font-variant-numeric: tabular-nums; /* 数字等宽，避免布局跳动 */
   }
   .shop-row .arrow { color: var(--t3); font-size: 18px; align-self: center; }
 
@@ -452,6 +454,12 @@
   .wallet-row .right { text-align: right; flex-shrink: 0; }
   .wallet-row .balance {
     font-size: 16px; font-weight: 800; color: var(--brand);
+    font-variant-numeric: tabular-nums;
+  }
+  /* 流水金额、订单金额等数字统一等宽 */
+  .flow-row .amt, .order-amt .price, .order-total b,
+  .ck-row .price, .pd-info .price, .pcard .price,
+  .succ-card .row b, .succ-card .row.amt b {
     font-variant-numeric: tabular-nums;
   }
   .wallet-row .withdraw-btn {
@@ -2057,33 +2065,34 @@
       <div class="ck-method">
         <div class="gh">店铺资产抵扣 <span style="font-weight:400;color:var(--t3);font-size:11px;">· 可叠加</span></div>
 
-        <!-- 消费积分 -->
-        <div style="padding: 12px 14px; border-top: 1px solid var(--line); display:flex; align-items:center;">
+        <!-- 消费积分（已开启） -->
+        <div style="padding: 12px 14px; border-top: 1px solid var(--line); display:flex; align-items:center; min-height: 44px;">
           <div class="ic" style="width:32px;height:32px;border-radius:var(--r-md);display:flex;align-items:center;justify-content:center;font-size:16px;background:rgba(245,158,11,.14);color:#F59E0B;margin-right:10px;">🪙</div>
           <div style="flex:1;min-width:0;">
             <div style="font-size:14px;color:var(--t1);font-weight:600;">王师傅 · 消费积分</div>
-            <div style="font-size:11px;color:var(--t3);margin-top:2px;">余 820 分（10 分=¥1）· 本单最多抵 ¥8</div>
+            <div style="font-size:11px;color:var(--t3);margin-top:2px;font-variant-numeric:tabular-nums;">余 820 分（10 分=¥1）· 本单最多抵 ¥8</div>
           </div>
-          <!-- 输入抵扣金额 + 开关 -->
           <div style="display:flex;align-items:center;gap:8px;">
-            <span style="color:var(--brand);font-weight:700;font-size:13px;">-¥4.00</span>
-            <div style="width:44px;height:24px;border-radius:12px;background:var(--brand);position:relative;">
+            <span style="color:var(--brand);font-weight:700;font-size:13px;font-variant-numeric:tabular-nums;">-¥4.00 ›</span>
+            <!-- ON 状态：橙色背景 + 圆点在右 -->
+            <div style="width:44px;height:24px;border-radius:12px;background:var(--brand);position:relative;transition:all .2s;">
               <div style="position:absolute;right:2px;top:2px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.2);"></div>
             </div>
           </div>
         </div>
 
-        <!-- 店铺余额 -->
-        <div style="padding: 12px 14px; border-top: 1px solid var(--line); display:flex; align-items:center;">
+        <!-- 店铺余额（未启用样态：让用户看到可点开关 + 启用后才会扣） -->
+        <div style="padding: 12px 14px; border-top: 1px solid var(--line); display:flex; align-items:center; min-height: 44px;">
           <div class="ic balance" style="width:32px;height:32px;border-radius:var(--r-md);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;margin-right:10px;">余</div>
           <div style="flex:1;min-width:0;">
             <div style="font-size:14px;color:var(--t1);font-weight:600;">王师傅 · 店铺余额</div>
-            <div style="font-size:11px;color:var(--t3);margin-top:2px;">余 ¥38.00 · 本单最多抵 ¥12</div>
+            <div style="font-size:11px;color:var(--t3);margin-top:2px;font-variant-numeric:tabular-nums;">余 ¥38.00 · 点击开关用余额抵扣</div>
           </div>
           <div style="display:flex;align-items:center;gap:8px;">
-            <span style="color:var(--brand);font-weight:700;font-size:13px;">-¥5.00</span>
-            <div style="width:44px;height:24px;border-radius:12px;background:var(--brand);position:relative;">
-              <div style="position:absolute;right:2px;top:2px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.2);"></div>
+            <span style="color:var(--t3);font-weight:600;font-size:13px;">未使用</span>
+            <!-- OFF 状态：灰色背景 + 圆点在左 -->
+            <div style="width:44px;height:24px;border-radius:12px;background:#D6D9DF;position:relative;transition:all .2s;">
+              <div style="position:absolute;left:2px;top:2px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.2);"></div>
             </div>
           </div>
         </div>
@@ -2091,13 +2100,13 @@
         <!-- 抵扣后 / 还需在线支付 -->
         <div style="padding: 12px 14px; border-top: 1px solid var(--line); background: linear-gradient(135deg, #fff5ef, #fff); display:flex;justify-content:space-between;align-items:center;">
           <span style="font-size:12px;color:var(--t2);">抵扣后还需在线支付</span>
-          <span style="font-size:18px;font-weight:800;color:var(--brand);">¥7.00</span>
+          <span style="font-size:18px;font-weight:800;color:var(--brand);font-variant-numeric:tabular-nums;">¥12.00</span>
         </div>
       </div>
 
       <!-- 在线支付方式（仅对剩余金额生效） -->
       <div class="ck-method">
-        <div class="gh">在线支付剩余 ¥7.00</div>
+        <div class="gh">在线支付剩余 ¥12.00</div>
         <div class="ck-method-row on">
           <div class="ic wx">微</div>
           <div class="name">微信支付</div>
@@ -2114,19 +2123,19 @@
       <!-- 组合支付明细提示 -->
       <div class="form-tip" style="background:#FFF8EF;color:#B26A00;border-left:3px solid var(--warn);">
         <b>组合支付明细：</b><br>
-        · 消费积分抵扣 <b>-¥4.00</b>（用 40 分）<br>
-        · 店铺余额抵扣 <b>-¥5.00</b>（仅可用王师傅店余额）<br>
-        · 微信在线支付 <b>¥7.00</b><br>
-        · 三项合计 = 店铺合计 ¥16.00 ✓
+        · 消费积分抵扣 <b>-¥4.00</b>（已开启 · 用 40 分）<br>
+        · 店铺余额抵扣 <b>未开启</b>（点开关启用后可再叠加抵扣 ≤ ¥12）<br>
+        · 微信在线支付 <b>¥12.00</b><br>
+        · 两项合计 = 店铺合计 ¥16.00 ✓
       </div>
     </div>
     <div class="ck-bottom">
-      <div class="total">合计 ¥16.00 · 实付微信 <b>¥7.00</b></div>
+      <div class="total">合计 ¥16.00 · 实付微信 <b>¥12.00</b></div>
       <div class="pay-btn">提交订单</div>
     </div>
     <div class="home-indicator"></div>
   </div>
-  <div class="phone-label">⑦ <b>结算页</b> · 商品 + 优惠 + 支付方式</div>
+  <div class="phone-label">⑦ <b>结算页</b> · 组合支付（积分 ON + 余额 OFF 示例）</div>
 </div>
 
 <!-- ============== 屏 8：支付完成 ============== -->
