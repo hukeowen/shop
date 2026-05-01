@@ -6,6 +6,13 @@
       <view class="slogan">一个人的摊，也能做出一家店</view>
     </view>
 
+    <!-- 扫码进店登录引导（onLoad 解析到 redirect 中的 tenantId 后展示） -->
+    <view v-if="shopName" class="shop-welcome card">
+      <view class="welcome-tag">欢迎光临</view>
+      <view class="welcome-shop-name">{{ shopName }}</view>
+      <view class="welcome-sub">登录后即可下单 · 自动成为店铺会员</view>
+    </view>
+
     <!-- H5（非小程序）环境：手机号+密码登录（演示用，首次输入即注册） -->
     <view v-if="isH5 && !hasToken" class="card">
       <view class="sec-title">手机号登录</view>
@@ -128,10 +135,13 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
+import { request } from '../../api/request.js';
 import { useUserStore } from '../../store/user.js';
 
 const userStore = useUserStore();
 const loading = ref(false);
+// 扫码进店登录时展示的店铺名（onLoad 解析 redirect 中的 tenantId 后异步拉取）
+const shopName = ref('');
 const loadingText = ref('登录中…');
 const applying = ref(false);
 const showApplyMerchant = ref(false);
@@ -312,6 +322,20 @@ onLoad((query) => {
         localStorage.setItem('redirect:after-login', decodeURIComponent(query.redirect));
       }
     } catch {}
+    // 解析 redirect 中的 tenantId → 异步拉店铺名展示在登录卡片上方
+    // 让用户清楚自己要登录的是哪家店铺，登录后会自动成为该店会员
+    try {
+      const decoded = decodeURIComponent(query.redirect);
+      const m = decoded.match(/[?&]tenantId=(\d+)/);
+      const tid = m ? Number(m[1]) : null;
+      if (tid) {
+        request({ url: `/app-api/merchant/shop/public/info?tenantId=${tid}` })
+          .then((info) => {
+            if (info?.shopName) shopName.value = info.shopName;
+          })
+          .catch(() => {});
+      }
+    } catch {}
   }
   // 已有 token：直接刷新 me 再跳（避免每次进入都重登录）
   if (userStore.token) {
@@ -388,6 +412,36 @@ onLoad((query) => {
   &.center {
     text-align: center;
     padding: 64rpx 32rpx;
+  }
+}
+
+// 扫码进店登录引导卡（带店铺名）
+.shop-welcome {
+  margin-bottom: 24rpx;
+  text-align: center;
+  padding: 36rpx 32rpx 32rpx;
+  background: linear-gradient(135deg, rgba(255, 107, 53, 0.10), rgba(255, 154, 74, 0.06));
+  border: 1rpx solid rgba(255, 107, 53, 0.18);
+
+  .welcome-tag {
+    display: inline-block;
+    padding: 4rpx 16rpx;
+    background: $brand-primary;
+    color: #fff;
+    border-radius: 999rpx;
+    font-size: 22rpx;
+    margin-bottom: 16rpx;
+  }
+  .welcome-shop-name {
+    font-size: 36rpx;
+    font-weight: 700;
+    color: $text-primary;
+    line-height: 1.2;
+  }
+  .welcome-sub {
+    margin-top: 12rpx;
+    font-size: 24rpx;
+    color: $text-secondary;
   }
 }
 
