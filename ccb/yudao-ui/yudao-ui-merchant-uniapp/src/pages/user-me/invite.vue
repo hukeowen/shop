@@ -5,6 +5,12 @@
       <view class="hero-sub">好友通过你的链接进店并下单，你可获得直推奖 / 队列返奖</view>
     </view>
 
+    <view v-if="!tenantId" class="warn-card">
+      <view class="warn-title">⚠ 未识别店铺</view>
+      <view class="warn-text">请先进入一家店铺再来生成邀请链接（推荐链 + 营销奖励都按店铺隔离，没有店铺无法生成有效邀请）</view>
+      <button class="warn-btn" @click="goNearby">去逛附近店铺</button>
+    </view>
+
     <view class="card qr-card">
       <view v-if="qrLoading" class="qr-placeholder">
         <text>二维码生成中…</text>
@@ -44,9 +50,21 @@ const userStore = useUserStore();
 
 const FALLBACK_ORIGIN = 'https://www.doupaidoudian.com';
 
+// 取最近访问的店铺 tenantId（shop-home 进店时已 setStorageSync('lastShopTenantId')）
+// 没有则页面提示用户先去逛店再来分享 — 推荐链是按店铺隔离的，没 tenantId 链接无效
+const tenantId = ref(null);
+try {
+  const v = uni.getStorageSync('lastShopTenantId');
+  if (v) tenantId.value = Number(v);
+} catch {}
+
+function goNearby() {
+  uni.switchTab({ url: '/pages/nearby/index' });
+}
+
 const shareUrl = computed(() => {
   const uid = userStore.userId;
-  if (!uid) return '';
+  if (!uid || !tenantId.value) return '';
   let origin = FALLBACK_ORIGIN;
   try {
     if (typeof location !== 'undefined' && location.origin) {
@@ -55,7 +73,8 @@ const shareUrl = computed(() => {
   } catch {
     // 小程序环境无 location，用兜底
   }
-  return `${origin}/m/shop-home?inviter=${uid}`;
+  // 必须带 tenantId — 否则朋友打开 shop-home 拿不到店铺信息也无法 visit 落库
+  return `${origin}/m/shop-home?tenantId=${tenantId.value}&inviter=${uid}`;
 });
 
 const qrDataUrl = ref('');
@@ -100,6 +119,37 @@ onMounted(() => {
 .page {
   padding: 24rpx 24rpx 60rpx;
   min-height: 100vh;
+}
+
+.warn-card {
+  background: #fff8ef;
+  border: 1rpx solid #f5c89a;
+  border-radius: $radius-lg;
+  padding: 32rpx;
+  margin-bottom: 24rpx;
+  text-align: center;
+
+  .warn-title {
+    font-size: 30rpx;
+    font-weight: 700;
+    color: #b34a00;
+  }
+  .warn-text {
+    margin-top: 12rpx;
+    font-size: 24rpx;
+    color: $text-secondary;
+    line-height: 1.6;
+  }
+  .warn-btn {
+    margin-top: 20rpx;
+    padding: 12rpx 32rpx;
+    background: $brand-primary;
+    color: #fff;
+    border-radius: 999rpx;
+    font-size: 26rpx;
+    display: inline-block;
+    &::after { border: none; }
+  }
 }
 
 .hero {

@@ -4,9 +4,41 @@
     <view class="nav-bar safe-top">
       <view class="nav-back" @click="goBack">‹</view>
       <text class="nav-title">{{ shopInfo ? shopInfo.name : '店铺' }}</text>
-      <view class="nav-cart" @click="goCart">
-        <text class="cart-icon">🛒</text>
-        <view v-if="cartCount > 0" class="cart-badge">{{ cartCount }}</view>
+      <view class="nav-actions">
+        <view class="nav-share" @click="onShare" title="邀请好友进店">
+          <text class="share-icon">↗</text>
+        </view>
+        <view class="nav-cart" @click="goCart">
+          <text class="cart-icon">🛒</text>
+          <view v-if="cartCount > 0" class="cart-badge">{{ cartCount }}</view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 分享弹层（"邀请好友进店"按钮触发） -->
+    <view v-if="showShare" class="share-mask" @click.self="showShare = false">
+      <view class="share-sheet">
+        <view class="share-title">邀请好友进店</view>
+        <view class="share-sub">朋友通过你的链接进店并下单，按商家配置返奖到你的推广积分</view>
+
+        <view v-if="myShareQr" class="share-qr-wrap">
+          <image :src="myShareQr" class="share-qr" mode="aspectFit" />
+          <text class="share-qr-tip">长按图片可保存到相册</text>
+        </view>
+
+        <view class="share-link-row">
+          <text class="share-link">{{ myShareUrl }}</text>
+        </view>
+
+        <view class="share-actions">
+          <button class="share-btn primary" @click="onCopyShare">复制链接</button>
+          <button class="share-btn ghost" @click="showShare = false">关闭</button>
+        </view>
+
+        <view class="share-tips">
+          <text class="tip">· 仅登录用户能生成自己的邀请码</text>
+          <text class="tip">· 朋友首次进店登录后，自动绑定为你的下级（v6 终生制）</text>
+        </view>
       </view>
     </view>
 
@@ -62,10 +94,15 @@
 </template>
 
 <script>
+import QRCode from 'qrcode';
 import { request } from '../../api/request.js';
 import { fen2yuan } from '../../utils/format.js';
 import { savePendingReferrer, flushPendingReferrer } from '../../utils/referral.js';
 import { useUserStore } from '../../store/user.js';
+
+const PUBLIC_BASE_URL =
+  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_PUBLIC_BASE_URL) ||
+  'http://www.doupaidoudian.com';
 
 export default {
   data() {
@@ -75,6 +112,10 @@ export default {
       products: [],
       cartCount: 0,
       loading: false,
+      // 分享弹层 + 用户自己的邀请链接 / 二维码
+      showShare: false,
+      myShareUrl: '',
+      myShareQr: '',
     };
   },
   onLoad(query) {
@@ -178,6 +219,58 @@ export default {
     goBack() {
       uni.navigateBack();
     },
+    /**
+     * 拼用户自己的邀请进店链接：/m/shop-home?tenantId=<currentShop>&inviter=<myUserId>
+     * - 必须有 tenantId（当前店铺）+ userId（已登录）
+     * - origin 优先 location（H5），fallback 配置 PUBLIC_BASE_URL
+     * 朋友打开后：shop-home onLoad 会暂存 inviter，登录后 visit 接口
+     * 自动写 member_shop_rel + shop_user_referral 上下级。
+     */
+    buildMyShareUrl() {
+      const us = useUserStore();
+      if (!us?.userId) return '';
+      if (!this.tenantId) return '';
+      let origin = PUBLIC_BASE_URL;
+      try {
+        if (typeof location !== 'undefined' && location.origin && /doupaidoudian/i.test(location.origin)) {
+          origin = location.origin;
+        }
+      } catch {}
+      return `${origin}/m/shop-home?tenantId=${this.tenantId}&inviter=${us.userId}`;
+    },
+    async onShare() {
+      const us = useUserStore();
+      if (!us?.userId || !us?.token) {
+        uni.showModal({
+          title: '请先登录',
+          content: '登录后才能生成自己的邀请链接',
+          showCancel: false,
+        });
+        return;
+      }
+      if (!this.tenantId) {
+        uni.showToast({ title: '店铺信息缺失，无法分享', icon: 'none' });
+        return;
+      }
+      this.myShareUrl = this.buildMyShareUrl();
+      // 异步生成 QR；失败也无所谓，文本链接还能复制
+      try {
+        this.myShareQr = await QRCode.toDataURL(this.myShareUrl, {
+          width: 480, margin: 1, errorCorrectionLevel: 'M',
+        });
+      } catch {
+        this.myShareQr = '';
+      }
+      this.showShare = true;
+    },
+    onCopyShare() {
+      if (!this.myShareUrl) return;
+      uni.setClipboardData({
+        data: this.myShareUrl,
+        success: () => uni.showToast({ title: '已复制，去微信分享吧', icon: 'success' }),
+        fail: () => uni.showToast({ title: '复制失败', icon: 'none' }),
+      });
+    },
   },
 };
 </script>
@@ -212,6 +305,29 @@ export default {
   color: $text-primary;
 }
 
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.nav-share {
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 28rpx;
+  background: rgba(255, 107, 53, 0.10);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  .share-icon {
+    font-size: 32rpx;
+    color: $brand-primary;
+    font-weight: 700;
+    transform: rotate(-45deg);
+  }
+}
+
 .nav-cart {
   position: relative;
   padding: 8rpx;
@@ -219,6 +335,100 @@ export default {
 
 .cart-icon {
   font-size: 40rpx;
+}
+
+// 分享弹层
+.share-mask {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 2000;
+  display: flex;
+  align-items: flex-end;
+}
+.share-sheet {
+  width: 100%;
+  background: #fff;
+  border-radius: 32rpx 32rpx 0 0;
+  padding: 36rpx 32rpx calc(env(safe-area-inset-bottom) + 32rpx);
+
+  .share-title {
+    font-size: 34rpx;
+    font-weight: 700;
+    color: $text-primary;
+    text-align: center;
+  }
+  .share-sub {
+    margin-top: 12rpx;
+    text-align: center;
+    font-size: 24rpx;
+    color: $text-secondary;
+    line-height: 1.5;
+  }
+  .share-qr-wrap {
+    margin-top: 28rpx;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .share-qr {
+    width: 360rpx;
+    height: 360rpx;
+    border-radius: $radius-md;
+    background: #f6f7f9;
+  }
+  .share-qr-tip {
+    margin-top: 12rpx;
+    font-size: 22rpx;
+    color: $text-placeholder;
+  }
+  .share-link-row {
+    margin-top: 24rpx;
+    padding: 16rpx 20rpx;
+    background: #f6f7f9;
+    border-radius: $radius-md;
+  }
+  .share-link {
+    font-size: 22rpx;
+    color: $text-secondary;
+    word-break: break-all;
+  }
+  .share-actions {
+    margin-top: 24rpx;
+    display: flex;
+    gap: 16rpx;
+
+    .share-btn {
+      flex: 1;
+      height: 84rpx;
+      line-height: 84rpx;
+      border-radius: $radius-md;
+      font-size: 28rpx;
+      font-weight: 600;
+      &::after { border: none; }
+
+      &.primary {
+        background: $brand-primary;
+        color: #fff;
+      }
+      &.ghost {
+        background: #f6f7f9;
+        color: $text-secondary;
+      }
+    }
+  }
+  .share-tips {
+    margin-top: 20rpx;
+    display: flex;
+    flex-direction: column;
+    gap: 6rpx;
+
+    .tip {
+      font-size: 22rpx;
+      color: $text-placeholder;
+      line-height: 1.5;
+    }
+  }
 }
 
 .cart-badge {
