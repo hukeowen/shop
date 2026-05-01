@@ -3,1117 +3,2072 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
-<title>摊小二 · 普通用户 H5 原型</title>
+<title>摊小二 · 普通用户 H5 原型 · 全屏</title>
 <style>
-  /* ============== 设计 token（与商户端 uni.scss 同色系） ============== */
+  /* ========== 设计 token ========== */
   :root {
-    --brand: #FF6B35;
-    --brand-d: #E25316;
-    --brand-light: rgba(255, 107, 53, 0.10);
-    --brand-light-2: rgba(255, 107, 53, 0.18);
-    --bg: #F6F7F9;
-    --card: #FFFFFF;
-    --t1: #1B1F23;
-    --t2: #5A6577;
-    --t3: #8A93A0;
-    --line: #EEF0F4;
-    --danger: #E63946;
-    --warn: #F59E0B;
-    --success: #10B981;
-    --r-sm: 8px;
-    --r-md: 12px;
-    --r-lg: 16px;
-    --r-pill: 999px;
-    --shadow-card: 0 2px 12px rgba(15, 23, 42, 0.04);
+    --brand: #FF6B35; --brand-d: #E25316; --brand-light: rgba(255,107,53,.10); --brand-light-2: rgba(255,107,53,.18);
+    --bg: #F6F7F9; --card: #FFFFFF;
+    --t1: #1B1F23; --t2: #5A6577; --t3: #8A93A0;
+    --line: #EEF0F4; --danger: #E63946; --warn: #F59E0B; --success: #10B981;
+    --r-sm: 8px; --r-md: 12px; --r-lg: 16px; --r-pill: 999px;
+    --shadow-card: 0 2px 12px rgba(15,23,42,.04);
     --ease: cubic-bezier(.2,.8,.2,1);
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body { margin: 0; padding: 0; }
   body {
-    background: #2a2d33;
+    background: linear-gradient(180deg, #2a2d33 0, #1c1d20 600px);
     font: 14px/1.5 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif;
     color: var(--t1);
     min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 32px;
-    padding: 32px 16px;
+    padding: 32px 16px 80px;
   }
-
-  /* ============== 手机外壳（375x812 仿 iPhone X 视觉） ============== */
+  h1.page-title {
+    color: #fff; text-align: center; margin: 0 0 24px;
+    font-size: 22px; font-weight: 700; letter-spacing: 1px;
+  }
+  h1.page-title small { display: block; font-size: 13px; opacity: .55; margin-top: 6px; font-weight: 400; }
+  .group-title {
+    grid-column: 1 / -1;
+    color: rgba(255,255,255,.65); font-size: 14px; font-weight: 600;
+    padding: 18px 0 6px;
+    border-bottom: 1px dashed rgba(255,255,255,.12);
+    margin-bottom: 6px;
+    letter-spacing: 1px;
+  }
+  .group-title em {
+    background: var(--brand); color: #fff; font-style: normal;
+    padding: 2px 10px; border-radius: var(--r-pill); font-size: 11px; margin-right: 8px;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(395px, 1fr));
+    gap: 32px 24px;
+    max-width: 1700px;
+    margin: 0 auto;
+  }
+  .phone-wrap { display: flex; flex-direction: column; align-items: center; }
   .phone {
-    width: 375px;
-    height: 812px;
+    width: 375px; height: 812px;
     background: var(--bg);
     border-radius: 36px;
     overflow: hidden;
     position: relative;
-    box-shadow: 0 25px 60px rgba(0,0,0,0.35), 0 0 0 6px #1c1d20, 0 0 0 8px #2a2d33;
-    display: flex;
-    flex-direction: column;
+    box-shadow: 0 20px 50px rgba(0,0,0,.4), 0 0 0 6px #1c1d20, 0 0 0 8px #2a2d33;
+    display: flex; flex-direction: column;
   }
   .phone-label {
-    text-align: center;
-    color: #fff;
-    font-weight: 600;
-    font-size: 13px;
-    letter-spacing: .5px;
-    margin-top: 12px;
-    opacity: 0.75;
+    margin-top: 10px; color: #fff; font-size: 12px; opacity: .8;
+    letter-spacing: .5px; text-align: center;
   }
+  .phone-label b { color: var(--brand); font-weight: 700; }
 
-  /* ============== iOS 状态栏 ============== */
+  /* iOS 状态栏 */
   .status-bar {
-    height: 44px;
-    flex-shrink: 0;
-    background: linear-gradient(135deg, #fff5ef, #fff);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 24px 0 24px;
-    font-size: 15px;
-    font-weight: 600;
-    color: var(--t1);
+    height: 44px; flex-shrink: 0;
+    background: linear-gradient(135deg,#fff5ef,#fff);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 24px; font-size: 15px; font-weight: 600; color: var(--t1);
     position: relative;
   }
   .status-bar::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 50%;
-    transform: translateX(-50%);
-    width: 124px; height: 30px;
-    background: #1c1d20;
-    border-radius: 0 0 18px 18px;
+    content: ''; position: absolute; top: 0; left: 50%;
+    transform: translateX(-50%); width: 124px; height: 30px;
+    background: #1c1d20; border-radius: 0 0 18px 18px;
   }
-  .status-icons {
-    display: flex; gap: 6px;
-    font-size: 14px;
-  }
+  .status-icons { display: flex; gap: 6px; font-size: 14px; }
 
-  /* ============== 视图容器 + Tab 切换 ============== */
-  .view {
-    flex: 1;
-    overflow-y: auto;
-    overflow-x: hidden;
-    padding-bottom: 88px; /* 给 tab bar 留位 */
-  }
+  .view { flex: 1; overflow-y: auto; overflow-x: hidden; padding-bottom: 88px; }
   .view::-webkit-scrollbar { width: 0; }
-  .pane { display: none; }
-  .pane.active { display: block; }
+  .view.no-tab { padding-bottom: 0; }
 
-  /* ============== 通用卡片 / 标题 ============== */
-  .card {
-    background: var(--card);
-    border-radius: var(--r-lg);
-    margin: 12px 16px;
-    padding: 16px;
-    box-shadow: var(--shadow-card);
-  }
+  /* ========== 通用 ========== */
+  .card { background: var(--card); border-radius: var(--r-lg); margin: 12px 16px; padding: 16px; box-shadow: var(--shadow-card); }
   .section-title {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+    display: flex; align-items: center; justify-content: space-between;
     margin: 16px 16px 8px;
   }
-  .section-title h3 {
-    margin: 0;
-    font-size: 16px;
-    font-weight: 700;
-    color: var(--t1);
+  .section-title h3 { margin: 0; font-size: 16px; font-weight: 700; color: var(--t1); }
+  .section-title .more { font-size: 12px; color: var(--t3); }
+
+  /* 通用顶部导航 */
+  .topbar {
+    height: 48px; background: #fff; display: flex; align-items: center;
+    padding: 0 12px; border-bottom: 1px solid var(--line);
+    position: relative;
   }
-  .section-title .more {
-    font-size: 12px;
-    color: var(--t3);
+  .topbar .back { font-size: 24px; color: var(--t1); padding: 4px 8px; line-height: 1; }
+  .topbar .title { flex: 1; text-align: center; font-size: 16px; font-weight: 600; color: var(--t1); }
+  .topbar .right { font-size: 13px; color: var(--brand); padding: 4px 8px; }
+
+  /* 操作按钮 */
+  .btn-pill {
+    display: inline-block; padding: 6px 14px;
+    border-radius: var(--r-pill); font-size: 12px;
+    background: var(--card); color: var(--t2); border: 1px solid var(--line);
+  }
+  .btn-pill.primary { background: var(--brand); color: #fff; border-color: var(--brand); font-weight: 600; }
+
+  /* 底部 Tab Bar */
+  .tab-bar {
+    position: absolute; bottom: 0; left: 0; right: 0; height: 72px; padding-bottom: 16px;
+    background: rgba(255,255,255,.96); backdrop-filter: blur(12px);
+    border-top: 1px solid var(--line);
+    display: flex; align-items: stretch; z-index: 50;
+  }
+  .tab-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--t3); font-size: 11px; }
+  .tab-item .ic { font-size: 22px; margin-bottom: 3px; line-height: 1; }
+  .tab-item.active { color: var(--brand); font-weight: 600; }
+  .tab-item.active .ic { transform: translateY(-2px) scale(1.1); }
+  .home-indicator {
+    position: absolute; bottom: 6px; left: 50%; transform: translateX(-50%);
+    width: 134px; height: 5px; background: var(--t1); border-radius: 3px; opacity: .85; z-index: 60;
   }
 
-  /* ============== 1️⃣ 首页 ============== */
-  /* 顶部欢迎条 + 搜索 */
+  /* ========== 屏 1 首页 ========== */
   .home-top {
-    background: linear-gradient(135deg, #ffd1ba 0%, #ff9a4a 60%, var(--brand) 100%);
-    padding: 12px 16px 28px;
-    color: #fff;
+    background: linear-gradient(135deg,#ffd1ba 0%,#ff9a4a 60%,var(--brand) 100%);
+    padding: 12px 16px 28px; color: #fff;
   }
-  .home-greeting {
-    font-size: 13px;
-    opacity: 0.9;
-  }
-  .home-name {
-    font-size: 22px;
-    font-weight: 800;
-    margin-top: 2px;
-    letter-spacing: 0.5px;
-  }
+  .home-greeting { font-size: 13px; opacity: .9; }
+  .home-name { font-size: 22px; font-weight: 800; margin-top: 2px; }
   .home-search {
-    margin-top: 14px;
-    background: rgba(255,255,255,0.95);
-    backdrop-filter: blur(8px);
-    border-radius: var(--r-pill);
-    padding: 10px 16px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    box-shadow: 0 4px 14px rgba(255, 107, 53, 0.18);
+    margin-top: 14px; background: rgba(255,255,255,.95);
+    border-radius: var(--r-pill); padding: 10px 16px;
+    display: flex; align-items: center; gap: 8px;
+    box-shadow: 0 4px 14px rgba(255,107,53,.18);
   }
   .home-search .icon { font-size: 16px; color: var(--t3); }
-  .home-search input {
-    border: 0;
-    outline: 0;
-    flex: 1;
-    background: transparent;
-    font-size: 14px;
-    color: var(--t1);
-  }
+  .home-search input { border: 0; outline: 0; flex: 1; background: transparent; font-size: 14px; color: var(--t1); }
   .home-search input::placeholder { color: var(--t3); }
   .home-search .voice {
     width: 32px; height: 32px; line-height: 32px; text-align: center;
-    border-radius: 50%; background: var(--brand-light);
-    color: var(--brand); font-size: 16px;
+    border-radius: 50%; background: var(--brand-light); color: var(--brand); font-size: 16px;
   }
-
-  /* 快捷入口 */
   .home-quick {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
-    background: var(--card);
-    border-radius: var(--r-lg);
-    margin: -12px 16px 0;
-    padding: 14px 8px;
-    box-shadow: var(--shadow-card);
-    position: relative;
-    z-index: 2;
+    display: grid; grid-template-columns: repeat(4,1fr); gap: 8px;
+    background: var(--card); border-radius: var(--r-lg);
+    margin: -12px 16px 0; padding: 14px 8px;
+    box-shadow: var(--shadow-card); position: relative; z-index: 2;
   }
-  .qk {
-    text-align: center;
-    padding: 6px 0;
-  }
+  .qk { text-align: center; padding: 6px 0; }
   .qk-icon {
-    width: 40px; height: 40px;
-    margin: 0 auto 4px;
-    border-radius: var(--r-md);
-    background: var(--brand-light);
-    color: var(--brand);
-    line-height: 40px;
-    text-align: center;
+    width: 40px; height: 40px; margin: 0 auto 4px;
+    border-radius: var(--r-md); line-height: 40px; text-align: center;
     font-size: 20px;
+    background: var(--brand-light); color: var(--brand);
   }
-  .qk:nth-child(1) .qk-icon { background: rgba(255, 107, 53, 0.10); color: var(--brand); }
-  .qk:nth-child(2) .qk-icon { background: rgba(16, 185, 129, 0.12); color: #10B981; }
-  .qk:nth-child(3) .qk-icon { background: rgba(99, 102, 241, 0.12); color: #6366F1; }
-  .qk:nth-child(4) .qk-icon { background: rgba(245, 158, 11, 0.14); color: #F59E0B; }
+  .qk:nth-child(2) .qk-icon { background: rgba(16,185,129,.12); color: #10B981; }
+  .qk:nth-child(3) .qk-icon { background: rgba(99,102,241,.12); color: #6366F1; }
+  .qk:nth-child(4) .qk-icon { background: rgba(245,158,11,.14); color: #F59E0B; }
   .qk-text { font-size: 12px; color: var(--t1); }
 
-  /* 最近去过的店铺（横滑卡） */
-  .recent-scroll {
-    display: flex;
-    gap: 12px;
-    overflow-x: auto;
-    padding: 4px 16px 12px;
-  }
+  .recent-scroll { display: flex; gap: 12px; overflow-x: auto; padding: 4px 16px 12px; }
   .recent-scroll::-webkit-scrollbar { height: 0; }
-  .recent-card {
-    flex: 0 0 168px;
-    background: var(--card);
-    border-radius: var(--r-md);
-    box-shadow: var(--shadow-card);
-    overflow: hidden;
-  }
+  .recent-card { flex: 0 0 168px; background: var(--card); border-radius: var(--r-md); box-shadow: var(--shadow-card); overflow: hidden; }
   .recent-cover {
-    height: 92px;
-    background: linear-gradient(135deg, #ffe1c8, #ffae74);
-    position: relative;
-    display: flex;
-    align-items: flex-end;
-    padding: 8px;
+    height: 92px; background: linear-gradient(135deg,#ffe1c8,#ffae74);
+    position: relative; display: flex; align-items: flex-end; padding: 8px;
   }
-  .recent-cover.theme-2 { background: linear-gradient(135deg, #d6e9ff, #80b3ff); }
-  .recent-cover.theme-3 { background: linear-gradient(135deg, #d8f5d6, #6fcf6f); }
-  .recent-cover.theme-4 { background: linear-gradient(135deg, #ffd6e0, #ff8aa7); }
-  .recent-tag {
-    background: rgba(0,0,0,0.28);
-    color: #fff;
-    border-radius: var(--r-pill);
-    padding: 2px 10px;
-    font-size: 11px;
-    backdrop-filter: blur(8px);
-  }
+  .recent-cover.theme-2 { background: linear-gradient(135deg,#d6e9ff,#80b3ff); }
+  .recent-cover.theme-3 { background: linear-gradient(135deg,#d8f5d6,#6fcf6f); }
+  .recent-cover.theme-4 { background: linear-gradient(135deg,#ffd6e0,#ff8aa7); }
+  .recent-tag { background: rgba(0,0,0,.28); color: #fff; border-radius: var(--r-pill); padding: 2px 10px; font-size: 11px; }
   .recent-body { padding: 10px; }
   .recent-name { font-size: 13px; font-weight: 600; color: var(--t1); }
   .recent-meta { display: flex; align-items: center; gap: 6px; margin-top: 4px; font-size: 11px; color: var(--t3); }
   .recent-meta .dot { width: 4px; height: 4px; background: var(--t3); border-radius: 50%; }
 
-  /* 附近商家列表卡 */
   .shop {
-    display: flex;
-    gap: 12px;
-    padding: 14px 16px;
-    background: var(--card);
-    border-radius: var(--r-lg);
-    margin: 0 16px 12px;
-    box-shadow: var(--shadow-card);
+    display: flex; gap: 12px; padding: 14px 16px;
+    background: var(--card); border-radius: var(--r-lg);
+    margin: 0 16px 12px; box-shadow: var(--shadow-card);
   }
   .shop-pic {
-    flex: 0 0 76px;
-    height: 76px;
-    border-radius: var(--r-md);
-    background: linear-gradient(135deg, #ffd1ba, var(--brand));
-    color: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 28px;
-    font-weight: 800;
+    flex: 0 0 76px; height: 76px; border-radius: var(--r-md);
+    background: linear-gradient(135deg,#ffd1ba,var(--brand)); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px; font-weight: 800;
   }
-  .shop-pic.alt-1 { background: linear-gradient(135deg, #c9e0ff, #6196f0); }
-  .shop-pic.alt-2 { background: linear-gradient(135deg, #d3f4d3, #4cb84c); }
-  .shop-pic.alt-3 { background: linear-gradient(135deg, #ffd0dc, #ee5a8b); }
+  .shop-pic.alt-1 { background: linear-gradient(135deg,#c9e0ff,#6196f0); }
+  .shop-pic.alt-2 { background: linear-gradient(135deg,#d3f4d3,#4cb84c); }
+  .shop-pic.alt-3 { background: linear-gradient(135deg,#ffd0dc,#ee5a8b); }
   .shop-info { flex: 1; min-width: 0; }
-  .shop-row1 {
-    display: flex; align-items: center; gap: 6px;
-  }
+  .shop-row1 { display: flex; align-items: center; gap: 6px; }
   .shop-name {
-    font-size: 15px; font-weight: 700; color: var(--t1);
-    flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  }
-  .shop-badge {
-    background: var(--brand-light);
-    color: var(--brand);
-    font-size: 10px;
-    padding: 2px 7px;
-    border-radius: var(--r-pill);
-    flex-shrink: 0;
-  }
-  .shop-tag-line {
-    margin-top: 4px;
-    font-size: 12px;
-    color: var(--t2);
+    font-size: 15px; font-weight: 700; color: var(--t1); flex: 1;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
-  .shop-meta {
-    margin-top: 8px;
-    display: flex; align-items: center; gap: 10px;
-    font-size: 11px; color: var(--t3);
+  .shop-badge {
+    background: var(--brand-light); color: var(--brand);
+    font-size: 10px; padding: 2px 7px; border-radius: var(--r-pill); flex-shrink: 0;
   }
+  .shop-tag-line {
+    margin-top: 4px; font-size: 12px; color: var(--t2);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .shop-meta { margin-top: 8px; display: flex; align-items: center; gap: 10px; font-size: 11px; color: var(--t3); }
   .shop-meta .rating { color: var(--brand); font-weight: 600; }
   .shop-meta .distance { color: var(--success); font-weight: 600; }
-  .shop-meta .sales { color: var(--t2); }
 
-  /* 平台 banner */
   .banner {
-    margin: 12px 16px;
-    border-radius: var(--r-lg);
-    background: linear-gradient(135deg, #ff9a4a, var(--brand-d));
-    color: #fff;
-    padding: 16px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    box-shadow: 0 6px 18px rgba(255, 107, 53, 0.30);
+    margin: 12px 16px; border-radius: var(--r-lg);
+    background: linear-gradient(135deg,#ff9a4a,var(--brand-d)); color: #fff;
+    padding: 16px; display: flex; align-items: center; gap: 12px;
+    box-shadow: 0 6px 18px rgba(255,107,53,.30);
   }
   .banner-icon {
-    width: 48px; height: 48px;
-    background: rgba(255,255,255,0.18);
-    border-radius: var(--r-md);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 24px;
+    width: 48px; height: 48px; background: rgba(255,255,255,.18);
+    border-radius: var(--r-md); display: flex; align-items: center; justify-content: center; font-size: 24px;
   }
   .banner h4 { margin: 0; font-size: 15px; font-weight: 700; }
-  .banner p { margin: 4px 0 0; font-size: 12px; opacity: 0.9; }
+  .banner p { margin: 4px 0 0; font-size: 12px; opacity: .9; }
 
-  /* ============== 2️⃣ 订单 ============== */
-  .order-top {
-    background: var(--card);
-    padding: 14px 16px 0;
-    box-shadow: 0 1px 0 var(--line);
-  }
-  .order-top h2 {
-    margin: 0 0 12px;
-    font-size: 20px;
-    font-weight: 800;
-  }
-  /* 状态筛选 */
-  .order-filter {
-    display: flex;
-    gap: 16px;
-    border-bottom: 1px solid var(--line);
-    padding-bottom: 12px;
-  }
+  /* ========== 屏 2 订单 ========== */
+  .order-top { background: var(--card); padding: 14px 16px 0; box-shadow: 0 1px 0 var(--line); }
+  .order-top h2 { margin: 0 0 12px; font-size: 20px; font-weight: 800; }
+  .order-filter { display: flex; gap: 16px; border-bottom: 1px solid var(--line); padding-bottom: 12px; }
   .order-filter .it {
-    font-size: 13px;
-    color: var(--t2);
-    padding-bottom: 4px;
-    border-bottom: 2px solid transparent;
-    cursor: pointer;
+    font-size: 13px; color: var(--t2);
+    padding-bottom: 4px; border-bottom: 2px solid transparent;
   }
-  .order-filter .it.active {
-    color: var(--brand);
-    border-bottom-color: var(--brand);
-    font-weight: 600;
-  }
-  /* 店铺分组 */
+  .order-filter .it.active { color: var(--brand); border-bottom-color: var(--brand); font-weight: 600; }
+
   .shop-group {
-    margin: 12px 16px;
-    background: var(--card);
-    border-radius: var(--r-lg);
-    overflow: hidden;
-    box-shadow: var(--shadow-card);
+    margin: 12px 16px; background: var(--card);
+    border-radius: var(--r-lg); overflow: hidden; box-shadow: var(--shadow-card);
   }
-  .group-head {
-    display: flex; align-items: center; gap: 8px;
-    padding: 12px 14px;
-    border-bottom: 1px dashed var(--line);
-  }
+  .group-head { display: flex; align-items: center; gap: 8px; padding: 12px 14px; border-bottom: 1px dashed var(--line); }
   .group-pic {
-    width: 28px; height: 28px;
-    border-radius: 8px;
-    background: linear-gradient(135deg, #ffd1ba, var(--brand));
-    color: #fff;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 14px; font-weight: 800;
-    flex-shrink: 0;
+    width: 28px; height: 28px; border-radius: 8px;
+    background: linear-gradient(135deg,#ffd1ba,var(--brand));
+    color: #fff; display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 800; flex-shrink: 0;
   }
-  .group-pic.alt-1 { background: linear-gradient(135deg, #c9e0ff, #6196f0); }
-  .group-pic.alt-2 { background: linear-gradient(135deg, #d3f4d3, #4cb84c); }
+  .group-pic.alt-1 { background: linear-gradient(135deg,#c9e0ff,#6196f0); }
+  .group-pic.alt-2 { background: linear-gradient(135deg,#d3f4d3,#4cb84c); }
+  .group-pic.alt-3 { background: linear-gradient(135deg,#ffd0dc,#ee5a8b); }
   .group-shop-name { font-size: 14px; font-weight: 700; color: var(--t1); flex: 1; }
   .group-arrow { font-size: 14px; color: var(--t3); }
-  /* 订单条 */
-  .order-row {
-    padding: 12px 14px;
-    border-bottom: 1px solid var(--line);
-  }
+
+  .order-row { padding: 12px 14px; border-bottom: 1px solid var(--line); }
   .order-row:last-child { border-bottom: 0; }
-  .order-row1 {
-    display: flex; align-items: center;
-    margin-bottom: 8px;
-  }
-  .order-no {
-    font-size: 11px; color: var(--t3); flex: 1;
-  }
-  .order-status {
-    font-size: 12px; font-weight: 600; color: var(--brand);
-  }
+  .order-row1 { display: flex; align-items: center; margin-bottom: 8px; }
+  .order-no { font-size: 11px; color: var(--t3); flex: 1; }
+  .order-status { font-size: 12px; font-weight: 600; color: var(--brand); }
   .order-status.success { color: var(--success); }
   .order-status.danger { color: var(--danger); }
   .order-status.warn { color: var(--warn); }
-  .order-items {
-    display: flex; gap: 8px; margin-bottom: 8px;
-  }
+  .order-items { display: flex; gap: 8px; margin-bottom: 8px; }
   .order-pic {
-    width: 56px; height: 56px;
-    border-radius: 8px;
-    background: linear-gradient(135deg, #f3e1d4, #ffae74);
-    flex-shrink: 0;
-    color: #fff; font-size: 22px;
+    width: 56px; height: 56px; border-radius: 8px;
+    background: linear-gradient(135deg,#f3e1d4,#ffae74);
+    color: #fff; font-size: 22px; flex-shrink: 0;
     display: flex; align-items: center; justify-content: center;
   }
-  .order-pic.alt-1 { background: linear-gradient(135deg, #d4e3ff, #6196f0); }
-  .order-pic.alt-2 { background: linear-gradient(135deg, #d3f4d3, #4cb84c); }
+  .order-pic.alt-1 { background: linear-gradient(135deg,#d4e3ff,#6196f0); }
+  .order-pic.alt-2 { background: linear-gradient(135deg,#d3f4d3,#4cb84c); }
   .order-info { flex: 1; min-width: 0; }
   .order-pname { font-size: 13px; color: var(--t1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .order-spec { font-size: 11px; color: var(--t3); margin-top: 2px; }
-  .order-amt {
-    text-align: right; flex-shrink: 0;
-  }
+  .order-amt { text-align: right; flex-shrink: 0; }
   .order-amt .price { font-size: 14px; font-weight: 700; color: var(--t1); }
   .order-amt .qty { font-size: 11px; color: var(--t3); margin-top: 2px; }
-  .order-foot {
-    display: flex; align-items: center; justify-content: space-between;
-  }
-  .order-total {
-    font-size: 12px; color: var(--t2);
-  }
+  .order-foot { display: flex; align-items: center; justify-content: space-between; }
+  .order-total { font-size: 12px; color: var(--t2); }
   .order-total b { color: var(--t1); font-size: 14px; font-weight: 700; }
-  .order-actions {
-    display: flex; gap: 8px;
-  }
+  .order-actions { display: flex; gap: 8px; }
   .order-actions .btn {
-    padding: 5px 12px;
-    border-radius: var(--r-pill);
-    font-size: 12px;
-    border: 1px solid var(--line);
-    background: var(--card);
-    color: var(--t2);
+    padding: 5px 12px; border-radius: var(--r-pill);
+    font-size: 12px; border: 1px solid var(--line);
+    background: var(--card); color: var(--t2);
   }
   .order-actions .btn.primary {
-    background: var(--brand);
-    color: #fff;
-    border-color: var(--brand);
-    font-weight: 600;
+    background: var(--brand); color: #fff;
+    border-color: var(--brand); font-weight: 600;
   }
 
-  /* 空态 */
-  .empty {
-    text-align: center;
-    padding: 60px 24px;
-    color: var(--t3);
-    font-size: 13px;
-  }
-  .empty .icon {
-    font-size: 56px; margin-bottom: 12px; opacity: 0.4;
-  }
-
-  /* ============== 3️⃣ 我的 ============== */
+  /* ========== 屏 3 我的（重做：按店独立资产） ========== */
   .me-top {
-    background: linear-gradient(135deg, var(--brand), var(--brand-d));
-    color: #fff;
-    padding: 16px 16px 32px;
+    background: linear-gradient(135deg,var(--brand),var(--brand-d));
+    color: #fff; padding: 16px 16px 32px;
   }
-  .me-top-row {
-    display: flex; align-items: center; gap: 12px;
-  }
+  .me-top-row { display: flex; align-items: center; gap: 12px; }
   .me-avatar {
-    width: 56px; height: 56px;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.22);
-    backdrop-filter: blur(6px);
-    color: #fff;
+    width: 56px; height: 56px; border-radius: 50%;
+    background: rgba(255,255,255,.22); color: #fff;
     display: flex; align-items: center; justify-content: center;
-    font-size: 24px; font-weight: 800;
-    border: 2px solid rgba(255,255,255,0.4);
+    font-size: 24px; font-weight: 800; border: 2px solid rgba(255,255,255,.4);
   }
-  .me-info {
-    flex: 1; min-width: 0;
-  }
+  .me-info { flex: 1; min-width: 0; }
   .me-name { font-size: 17px; font-weight: 700; }
-  .me-phone { font-size: 12px; opacity: 0.85; margin-top: 2px; }
+  .me-phone { font-size: 12px; opacity: .85; margin-top: 2px; }
   .me-edit {
-    width: 32px; height: 32px;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.18);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 14px;
+    width: 32px; height: 32px; border-radius: 50%;
+    background: rgba(255,255,255,.18);
+    display: flex; align-items: center; justify-content: center; font-size: 14px;
   }
-  /* 资产卡 */
-  .me-assets {
-    background: var(--card);
-    border-radius: var(--r-lg);
-    margin: -16px 16px 0;
-    box-shadow: var(--shadow-card);
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    padding: 16px 0;
-    position: relative;
-    z-index: 2;
+
+  /* 跨店聚合卡（不是 4 数字资产，而是 3 个聚合统计） */
+  .me-summary {
+    background: var(--card); border-radius: var(--r-lg);
+    margin: -16px 16px 0; box-shadow: var(--shadow-card);
+    display: grid; grid-template-columns: repeat(3,1fr);
+    padding: 16px 0; position: relative; z-index: 2;
   }
-  .me-asset {
-    text-align: center;
-    border-right: 1px solid var(--line);
-  }
-  .me-asset:last-child { border-right: 0; }
-  .me-asset .num {
-    font-size: 18px; font-weight: 800; color: var(--t1);
+  .me-summary .item { text-align: center; border-right: 1px solid var(--line); }
+  .me-summary .item:last-child { border-right: 0; }
+  .me-summary .num {
+    font-size: 20px; font-weight: 800; color: var(--t1);
     font-variant-numeric: tabular-nums;
   }
-  .me-asset .label {
-    font-size: 11px; color: var(--t3); margin-top: 2px;
-  }
-  .me-asset .num.brand { color: var(--brand); }
+  .me-summary .num.brand { color: var(--brand); }
+  .me-summary .label { font-size: 11px; color: var(--t3); margin-top: 2px; }
 
-  /* 功能 grid */
+  /* 警示条：跨店资产无法合并 */
+  .me-tip-bar {
+    margin: 12px 16px; padding: 10px 14px;
+    background: #FFF8EF; border-radius: var(--r-md);
+    border-left: 3px solid var(--warn);
+    font-size: 12px; color: #B26A00;
+    line-height: 1.55;
+  }
+
+  /* 我加入的店铺（按店列表，每店独立资产） */
+  .shops-list { background: var(--card); border-radius: var(--r-lg); margin: 12px 16px; box-shadow: var(--shadow-card); overflow: hidden; }
+  .shops-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--line);
+  }
+  .shops-head .ttl { font-size: 14px; font-weight: 700; color: var(--t1); }
+  .shops-head .more { font-size: 12px; color: var(--t3); }
+  .shop-row {
+    display: flex; gap: 12px; padding: 14px 16px;
+    border-bottom: 1px solid var(--line);
+  }
+  .shop-row:last-child { border-bottom: 0; }
+  .shop-row .pic {
+    width: 40px; height: 40px; border-radius: var(--r-md);
+    background: linear-gradient(135deg,#ffd1ba,var(--brand)); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; font-weight: 800; flex-shrink: 0;
+  }
+  .shop-row .pic.alt-1 { background: linear-gradient(135deg,#c9e0ff,#6196f0); }
+  .shop-row .pic.alt-2 { background: linear-gradient(135deg,#d3f4d3,#4cb84c); }
+  .shop-row .pic.alt-3 { background: linear-gradient(135deg,#ffd0dc,#ee5a8b); }
+  .shop-row .center { flex: 1; min-width: 0; }
+  .shop-row .name {
+    font-size: 14px; font-weight: 600; color: var(--t1);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .shop-row .star {
+    background: var(--brand-light); color: var(--brand);
+    font-size: 10px; padding: 1px 7px; border-radius: var(--r-pill);
+  }
+  .shop-row .stats {
+    margin-top: 6px; display: flex; gap: 12px;
+    font-size: 11px; color: var(--t3);
+  }
+  .shop-row .stats em {
+    font-style: normal; color: var(--brand); font-weight: 700;
+  }
+  .shop-row .arrow { color: var(--t3); font-size: 18px; align-self: center; }
+
+  /* 功能 grid（平台级） */
   .me-grid {
-    background: var(--card);
-    border-radius: var(--r-lg);
-    margin: 12px 16px;
-    box-shadow: var(--shadow-card);
-    overflow: hidden;
+    background: var(--card); border-radius: var(--r-lg);
+    margin: 12px 16px; box-shadow: var(--shadow-card); overflow: hidden;
   }
   .me-grid-title {
     padding: 12px 16px 4px;
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--t1);
+    font-size: 13px; font-weight: 700; color: var(--t1);
   }
   .me-row {
     display: flex; align-items: center; gap: 12px;
-    padding: 14px 16px;
-    border-top: 1px solid var(--line);
+    padding: 14px 16px; border-top: 1px solid var(--line);
   }
   .me-row:first-of-type { border-top: 0; }
   .me-row-icon {
-    width: 32px; height: 32px;
-    border-radius: 8px;
-    background: var(--brand-light);
-    color: var(--brand);
+    width: 32px; height: 32px; border-radius: 8px;
+    background: var(--brand-light); color: var(--brand);
     display: flex; align-items: center; justify-content: center;
-    font-size: 16px;
+    font-size: 16px; flex-shrink: 0;
+  }
+  .me-row-icon.alt-1 { background: rgba(99,102,241,.12); color: #6366F1; }
+  .me-row-icon.alt-2 { background: rgba(16,185,129,.12); color: #10B981; }
+  .me-row-icon.alt-3 { background: rgba(245,158,11,.14); color: #F59E0B; }
+  .me-row-name { flex: 1; font-size: 14px; color: var(--t1); }
+  .me-row-tag {
+    font-size: 11px; background: var(--brand-light); color: var(--brand);
+    padding: 2px 8px; border-radius: var(--r-pill);
+  }
+  .me-row-arrow { font-size: 16px; color: var(--t3); }
+
+  /* ========== 子页通用 ========== */
+  .sub-content { padding: 12px 0; }
+
+  /* 钱包总览（每店一行余额） */
+  .wallet-summary {
+    margin: 12px 16px; padding: 20px;
+    border-radius: var(--r-lg);
+    background: linear-gradient(135deg, var(--brand) 0%, var(--brand-d) 100%);
+    color: #fff;
+  }
+  .wallet-summary .label { font-size: 12px; opacity: .85; }
+  .wallet-summary .num {
+    font-size: 32px; font-weight: 800; margin-top: 4px;
+    font-variant-numeric: tabular-nums;
+  }
+  .wallet-summary .num small { font-size: 14px; font-weight: 600; opacity: .85; }
+  .wallet-summary .hint {
+    font-size: 11px; opacity: .85; margin-top: 8px;
+    border-top: 1px solid rgba(255,255,255,.20); padding-top: 8px;
+  }
+
+  /* 单店钱包卡：左 logo / 中名+余额 / 右积分+提现 */
+  .wallet-row {
+    display: flex; align-items: stretch; gap: 12px;
+    padding: 14px;
+    border-bottom: 1px solid var(--line);
+  }
+  .wallet-row:last-child { border-bottom: 0; }
+  .wallet-row .pic {
+    width: 44px; height: 44px; border-radius: var(--r-md);
+    background: linear-gradient(135deg,#ffd1ba,var(--brand)); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; font-weight: 800; flex-shrink: 0;
+  }
+  .wallet-row .pic.alt-1 { background: linear-gradient(135deg,#c9e0ff,#6196f0); }
+  .wallet-row .pic.alt-2 { background: linear-gradient(135deg,#d3f4d3,#4cb84c); }
+  .wallet-row .info { flex: 1; min-width: 0; }
+  .wallet-row .name { font-size: 14px; font-weight: 600; color: var(--t1); }
+  .wallet-row .mini-stats {
+    margin-top: 4px;
+    display: flex; gap: 12px; font-size: 11px; color: var(--t3);
+  }
+  .wallet-row .mini-stats em { font-style: normal; color: var(--t1); font-weight: 600; }
+  .wallet-row .right { text-align: right; flex-shrink: 0; }
+  .wallet-row .balance {
+    font-size: 16px; font-weight: 800; color: var(--brand);
+    font-variant-numeric: tabular-nums;
+  }
+  .wallet-row .withdraw-btn {
+    margin-top: 6px; display: inline-block;
+    padding: 4px 10px; border-radius: var(--r-pill);
+    font-size: 11px; background: var(--brand-light); color: var(--brand);
+  }
+
+  /* 流水条（积分明细 / 余额流水） */
+  .flow-row {
+    display: flex; align-items: center; padding: 14px 16px;
+    border-bottom: 1px solid var(--line);
+  }
+  .flow-row:last-child { border-bottom: 0; }
+  .flow-row .icon {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: rgba(16,185,129,.12); color: var(--success);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; flex-shrink: 0;
+  }
+  .flow-row.minus .icon { background: rgba(230,57,70,.12); color: var(--danger); }
+  .flow-row .body { flex: 1; min-width: 0; padding-left: 12px; }
+  .flow-row .name { font-size: 13px; color: var(--t1); font-weight: 500; }
+  .flow-row .meta { margin-top: 2px; font-size: 11px; color: var(--t3); }
+  .flow-row .amt {
+    font-size: 16px; font-weight: 800; color: var(--success);
+    font-variant-numeric: tabular-nums;
+  }
+  .flow-row.minus .amt { color: var(--danger); }
+
+  /* 队列状态卡 */
+  .queue-card {
+    margin: 12px 16px; padding: 16px;
+    background: var(--card); border-radius: var(--r-lg); box-shadow: var(--shadow-card);
+  }
+  .queue-card .hdr {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 10px;
+  }
+  .queue-card .pic-mini {
+    width: 28px; height: 28px; border-radius: 8px;
+    background: linear-gradient(135deg,#ffd1ba,var(--brand));
+    color: #fff; font-size: 12px; font-weight: 800;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .queue-card .pic-mini.alt-1 { background: linear-gradient(135deg,#c9e0ff,#6196f0); }
+  .queue-card .name { font-size: 13px; font-weight: 700; color: var(--t1); flex: 1; }
+  .queue-card .layer-tag {
+    font-size: 10px; font-weight: 700;
+    padding: 2px 8px; border-radius: var(--r-pill);
+  }
+  .queue-card .layer-tag.A { background: rgba(255,107,53,.18); color: var(--brand); }
+  .queue-card .layer-tag.B { background: rgba(99,102,241,.15); color: #6366F1; }
+  .queue-card .product {
+    font-size: 12px; color: var(--t2); margin-bottom: 12px;
+  }
+  /* 进度条：N 段 */
+  .progress {
+    display: flex; gap: 4px; margin-bottom: 6px;
+  }
+  .progress .seg {
+    flex: 1; height: 8px; border-radius: 4px;
+    background: var(--line);
+  }
+  .progress .seg.done { background: var(--brand); }
+  .progress .seg.cur { background: var(--brand); position: relative; }
+  .progress .seg.cur::after {
+    content: ''; position: absolute; right: 0; top: 0; bottom: 0;
+    width: 50%; background: rgba(255,107,53,.30);
+  }
+  .queue-card .progress-text {
+    font-size: 11px; color: var(--t3); display: flex; justify-content: space-between;
+  }
+  .queue-card .progress-text b { color: var(--brand); font-weight: 700; }
+
+  /* 星级卡 */
+  .star-card {
+    margin: 12px 16px; padding: 16px;
+    background: linear-gradient(135deg,#fff5ef,#fff);
+    border-radius: var(--r-lg); border: 1px solid var(--brand-light-2);
+  }
+  .star-card .hdr {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 12px;
+  }
+  .star-card .pic-mini {
+    width: 32px; height: 32px; border-radius: 8px;
+    background: linear-gradient(135deg,#ffd1ba,var(--brand));
+    color: #fff; font-size: 14px; font-weight: 800;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .star-card .pic-mini.alt-1 { background: linear-gradient(135deg,#c9e0ff,#6196f0); }
+  .star-card .name { flex: 1; font-size: 14px; font-weight: 700; color: var(--t1); }
+  .star-card .stars { color: var(--brand); font-size: 16px; letter-spacing: 2px; }
+  .star-card .stars .empty { color: var(--line); }
+  .star-card .next-cond {
+    background: rgba(255,255,255,.7); border-radius: var(--r-md);
+    padding: 10px 12px; margin-top: 8px;
+    font-size: 11px; color: var(--t2);
+  }
+  .star-card .next-cond .row {
+    display: flex; align-items: center; gap: 8px; margin-top: 4px;
+  }
+  .star-card .next-cond .bar-bg {
+    flex: 1; height: 6px; background: var(--line); border-radius: 3px; overflow: hidden;
+  }
+  .star-card .next-cond .bar-fg {
+    height: 100%; background: var(--brand);
+  }
+  .star-card .next-cond .nm { width: 90px; }
+  .star-card .next-cond em { font-style: normal; color: var(--t1); font-weight: 600; }
+
+  /* 提现申请表单 */
+  .form-group { margin: 16px; }
+  .form-group label {
+    display: block; font-size: 13px; color: var(--t2); margin-bottom: 8px;
+  }
+  .form-group .field {
+    width: 100%;
+    background: var(--card); border-radius: var(--r-md);
+    padding: 12px 14px;
+    border: 1px solid var(--line);
+    font-size: 15px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .form-group .field input { flex: 1; border: 0; outline: 0; font-size: 15px; }
+  .form-group .field .prefix { color: var(--t3); }
+  .form-group .field .suffix { font-size: 12px; color: var(--brand); }
+  .form-shop {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--card); border-radius: var(--r-md);
+    padding: 12px 14px; border: 1px solid var(--line);
+  }
+  .form-shop .pic {
+    width: 32px; height: 32px; border-radius: 8px;
+    background: linear-gradient(135deg,#ffd1ba,var(--brand));
+    color: #fff; font-weight: 800; font-size: 14px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .form-shop .ctx { flex: 1; }
+  .form-shop .nm { font-size: 14px; font-weight: 600; color: var(--t1); }
+  .form-shop .bal { font-size: 11px; color: var(--t3); margin-top: 2px; }
+  .form-tip {
+    margin: 16px; padding: 12px;
+    background: #FFF8EF; border-radius: var(--r-md);
+    font-size: 11px; color: #B26A00; line-height: 1.55;
+  }
+  .form-submit {
+    margin: 24px 16px;
+    height: 48px; line-height: 48px; text-align: center;
+    background: var(--brand); color: #fff; border-radius: var(--r-md);
+    font-size: 16px; font-weight: 600;
+    box-shadow: 0 4px 14px rgba(255,107,53,.30);
+  }
+
+  /* 邀请页 */
+  .invite-hero {
+    margin: 16px;
+    background: linear-gradient(135deg,#ff9a4a,var(--brand-d)); color: #fff;
+    border-radius: var(--r-lg); padding: 20px;
+    box-shadow: 0 6px 18px rgba(255,107,53,.30);
+  }
+  .invite-hero h2 { margin: 0; font-size: 18px; font-weight: 800; }
+  .invite-hero p { margin: 6px 0 0; font-size: 12px; opacity: .9; line-height: 1.5; }
+  .invite-shop-pick {
+    margin: 12px 16px;
+    background: var(--card); border-radius: var(--r-md);
+    padding: 14px;
+    display: flex; align-items: center; gap: 10px;
+    border: 1px solid var(--line);
+  }
+  .invite-shop-pick .pic {
+    width: 36px; height: 36px; border-radius: 8px;
+    background: linear-gradient(135deg,#ffd1ba,var(--brand));
+    color: #fff; font-weight: 800; font-size: 16px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .invite-shop-pick .info { flex: 1; }
+  .invite-shop-pick .label { font-size: 11px; color: var(--t3); }
+  .invite-shop-pick .name { font-size: 14px; font-weight: 600; color: var(--t1); }
+  .invite-shop-pick .switch { color: var(--brand); font-size: 12px; }
+  .invite-qr {
+    margin: 12px 16px; padding: 24px;
+    background: var(--card); border-radius: var(--r-lg);
+    text-align: center; box-shadow: var(--shadow-card);
+  }
+  .qr-ph {
+    width: 200px; height: 200px; margin: 0 auto 12px;
+    background:
+      repeating-linear-gradient(0deg, #1c1d20 0 8px, transparent 8px 16px),
+      repeating-linear-gradient(90deg, #1c1d20 0 8px, transparent 8px 16px);
+    background-color: #fff;
+    border-radius: 12px;
+    border: 8px solid #fff;
+    box-shadow: 0 0 0 1px var(--line);
+    position: relative;
+  }
+  .qr-ph::after {
+    content: '示意'; position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%);
+    background: #fff; padding: 6px 12px; border-radius: 6px;
+    font-size: 12px; color: var(--t3);
+  }
+  .invite-qr .url {
+    font-size: 12px; color: var(--t3); word-break: break-all; margin-top: 4px;
+  }
+
+  /* 地址 */
+  .addr-row {
+    margin: 12px 16px; padding: 16px;
+    background: var(--card); border-radius: var(--r-lg); box-shadow: var(--shadow-card);
+    position: relative;
+  }
+  .addr-row.default::before {
+    content: '默认'; position: absolute; top: 14px; right: 14px;
+    background: var(--brand); color: #fff; font-size: 10px;
+    padding: 2px 8px; border-radius: var(--r-pill);
+  }
+  .addr-row .name-row {
+    display: flex; align-items: baseline; gap: 12px;
+  }
+  .addr-row .name { font-size: 16px; font-weight: 700; color: var(--t1); }
+  .addr-row .phone { font-size: 12px; color: var(--t2); }
+  .addr-row .addr {
+    margin-top: 6px; font-size: 13px; color: var(--t2); line-height: 1.5;
+  }
+  .addr-row .ops {
+    margin-top: 12px; display: flex; gap: 10px; padding-top: 10px;
+    border-top: 1px dashed var(--line);
+  }
+  .addr-row .ops span { font-size: 12px; color: var(--t3); }
+  .addr-row .ops span:hover { color: var(--brand); }
+
+  /* ========== 屏 4 店铺详情 (shop-home C 端) ========== */
+  .sh-cover {
+    height: 180px; position: relative;
+    background: linear-gradient(135deg,#ffd1ba,#ff9a4a 50%,var(--brand) 100%);
+    display: flex; align-items: flex-end; padding: 16px;
+  }
+  .sh-cover .nav-back {
+    position: absolute; top: 12px; left: 12px;
+    width: 36px; height: 36px; border-radius: 50%;
+    background: rgba(0,0,0,.30);
+    color: #fff; font-size: 24px; line-height: 36px; text-align: center;
+  }
+  .sh-cover .nav-share {
+    position: absolute; top: 12px; right: 12px;
+    width: 36px; height: 36px; border-radius: 50%;
+    background: rgba(0,0,0,.30);
+    color: #fff; font-size: 18px; line-height: 36px; text-align: center;
+  }
+  .sh-cover .name {
+    color: #fff; font-size: 24px; font-weight: 800;
+    text-shadow: 0 2px 8px rgba(0,0,0,.20);
+  }
+  .sh-info-card {
+    margin: -28px 16px 0; padding: 14px;
+    background: var(--card); border-radius: var(--r-lg);
+    box-shadow: var(--shadow-card); position: relative; z-index: 2;
+  }
+  .sh-info-card .row1 {
+    display: flex; gap: 10px; align-items: center;
+  }
+  .sh-info-card .star-row .stars { color: var(--brand); font-size: 14px; }
+  .sh-info-card .row1 .rating { font-size: 14px; font-weight: 700; color: var(--t1); }
+  .sh-info-card .row1 .sales { font-size: 11px; color: var(--t3); margin-left: 4px; }
+  .sh-info-card .row1 .badge {
+    margin-left: auto; background: var(--brand-light);
+    color: var(--brand); font-size: 11px; font-weight: 600;
+    padding: 3px 10px; border-radius: var(--r-pill);
+  }
+  .sh-info-card .meta-list { margin-top: 10px; }
+  .sh-info-card .meta-list .meta-row {
+    display: flex; gap: 10px; padding: 4px 0;
+    font-size: 12px; color: var(--t2);
+  }
+  .sh-info-card .meta-list .meta-row .key {
+    width: 56px; color: var(--t3); flex-shrink: 0;
+  }
+
+  /* 商品分类 tab + 列表 */
+  .cat-tab {
+    display: flex; gap: 0; background: var(--card);
+    margin: 12px 16px 0;
+    border-radius: var(--r-md);
+    padding: 4px;
+  }
+  .cat-tab .it {
+    flex: 1; text-align: center; padding: 8px;
+    font-size: 13px; color: var(--t2);
+    border-radius: var(--r-sm);
+  }
+  .cat-tab .it.active { background: var(--brand-light); color: var(--brand); font-weight: 600; }
+
+  .product-grid {
+    display: grid; grid-template-columns: repeat(2,1fr);
+    gap: 8px; padding: 12px 16px;
+  }
+  .pcard {
+    background: var(--card); border-radius: var(--r-md);
+    overflow: hidden; box-shadow: var(--shadow-card);
+  }
+  .pcard .pic {
+    height: 110px;
+    background: linear-gradient(135deg,#ffe1c8,#ffae74);
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 36px;
+  }
+  .pcard.alt-1 .pic { background: linear-gradient(135deg,#d6e9ff,#80b3ff); }
+  .pcard.alt-2 .pic { background: linear-gradient(135deg,#d8f5d6,#6fcf6f); }
+  .pcard.alt-3 .pic { background: linear-gradient(135deg,#ffd6e0,#ff8aa7); }
+  .pcard .body { padding: 8px 10px 10px; }
+  .pcard .name {
+    font-size: 13px; font-weight: 600; color: var(--t1);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .pcard .tag {
+    margin-top: 2px; font-size: 10px; color: var(--t3);
+  }
+  .pcard .row {
+    margin-top: 6px; display: flex; align-items: center; justify-content: space-between;
+  }
+  .pcard .price {
+    font-size: 16px; font-weight: 800; color: var(--brand);
+  }
+  .pcard .price small { font-size: 11px; font-weight: 600; }
+  .pcard .add-btn {
+    width: 26px; height: 26px;
+    background: var(--brand); color: #fff;
+    border-radius: 50%; line-height: 26px; text-align: center;
+    font-size: 18px; font-weight: 700;
+  }
+
+  /* 店铺底部购物车栏 */
+  .sh-cart-bar {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: var(--card); padding: 12px 16px calc(env(safe-area-inset-bottom) + 12px);
+    box-shadow: 0 -2px 16px rgba(0,0,0,.06);
+    display: flex; align-items: center; gap: 10px; z-index: 50;
+  }
+  .sh-cart-bar .cart-icon {
+    width: 48px; height: 48px;
+    background: var(--brand); border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; color: #fff;
+    position: relative;
+  }
+  .sh-cart-bar .badge {
+    position: absolute; top: -2px; right: -2px;
+    min-width: 18px; height: 18px; border-radius: 9px;
+    background: var(--danger); color: #fff;
+    font-size: 10px; line-height: 18px; text-align: center;
+    padding: 0 4px;
+  }
+  .sh-cart-bar .total { flex: 1; }
+  .sh-cart-bar .total .price { font-size: 18px; font-weight: 800; color: var(--brand); }
+  .sh-cart-bar .total .delivery { font-size: 11px; color: var(--t3); }
+  .sh-cart-bar .pay-btn {
+    background: var(--brand); color: #fff;
+    height: 40px; padding: 0 20px;
+    border-radius: 20px; font-size: 14px; font-weight: 700;
+    line-height: 40px;
+  }
+
+  /* ========== 屏 5 商品详情 ========== */
+  .pd-pic {
+    height: 320px; position: relative;
+    background: linear-gradient(135deg,#ffd1ba,#ff9a4a 50%,var(--brand) 100%);
+    color: #fff; display: flex; align-items: center; justify-content: center;
+    font-size: 96px;
+  }
+  .pd-pic .nav-back, .pd-pic .nav-share {
+    position: absolute; top: 12px;
+    width: 36px; height: 36px; border-radius: 50%;
+    background: rgba(0,0,0,.30); color: #fff;
+    line-height: 36px; text-align: center; font-size: 18px;
+  }
+  .pd-pic .nav-back { left: 12px; font-size: 24px; }
+  .pd-pic .nav-share { right: 12px; }
+  .pd-pic .pager {
+    position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%);
+    background: rgba(0,0,0,.30); color: #fff;
+    padding: 4px 12px; border-radius: var(--r-pill);
+    font-size: 11px;
+  }
+  .pd-info {
+    background: var(--card); padding: 16px;
+    border-radius: var(--r-lg) var(--r-lg) 0 0;
+    margin-top: -12px; position: relative; z-index: 2;
+  }
+  .pd-info .price-row {
+    display: flex; align-items: baseline; gap: 8px;
+  }
+  .pd-info .price {
+    color: var(--brand); font-size: 28px; font-weight: 800;
+  }
+  .pd-info .price small { font-size: 14px; }
+  .pd-info .original {
+    color: var(--t3); font-size: 13px; text-decoration: line-through;
+  }
+  .pd-info .promo-tag {
+    margin-left: auto;
+    background: var(--brand); color: #fff;
+    font-size: 11px; padding: 2px 8px; border-radius: var(--r-pill);
+  }
+  .pd-info .name {
+    margin-top: 8px;
+    font-size: 18px; font-weight: 700; color: var(--t1);
+  }
+  .pd-info .intro {
+    margin-top: 4px; font-size: 12px; color: var(--t2);
+  }
+  .pd-info .meta {
+    margin-top: 10px;
+    display: flex; gap: 16px;
+    font-size: 11px; color: var(--t3);
+  }
+  .pd-info .meta b { color: var(--t1); font-size: 13px; font-weight: 700; }
+
+  .pd-section {
+    background: var(--card); border-radius: var(--r-lg);
+    margin: 12px 16px; padding: 14px;
+    box-shadow: var(--shadow-card);
+  }
+  .pd-section .hdr {
+    font-size: 13px; font-weight: 600; color: var(--t1);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .pd-section .body { margin-top: 8px; font-size: 13px; color: var(--t2); line-height: 1.7; }
+
+  /* 推 N 反 1 高亮 */
+  .promo-banner {
+    margin: 12px 16px; padding: 12px 14px;
+    background: linear-gradient(135deg,#fff5ef,#ffe1c8);
+    border-radius: var(--r-md); border: 1px solid var(--brand-light-2);
+    font-size: 12px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .promo-banner .ic { font-size: 22px; }
+  .promo-banner .txt { flex: 1; }
+  .promo-banner .txt b { color: var(--brand); }
+  .promo-banner .txt .sub { font-size: 10px; color: var(--t3); margin-top: 2px; }
+
+  /* 商品详情底部操作栏 */
+  .pd-bottom {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    height: 64px; background: var(--card);
+    box-shadow: 0 -2px 16px rgba(0,0,0,.06);
+    display: flex; align-items: stretch; padding: 8px 12px;
+    gap: 8px;
+  }
+  .pd-bottom .ic-btn {
+    width: 48px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    color: var(--t2); font-size: 10px; gap: 2px;
+  }
+  .pd-bottom .ic-btn .ic { font-size: 20px; }
+  .pd-bottom .add-cart {
+    flex: 1; background: linear-gradient(135deg,#ff9a4a,var(--brand));
+    color: #fff; border-radius: var(--r-pill);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700;
+  }
+  .pd-bottom .buy-now {
+    flex: 1; background: var(--brand-d);
+    color: #fff; border-radius: var(--r-pill);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700;
+  }
+
+  /* ========== 屏 6 购物车 ========== */
+  .cart-shop-grp {
+    margin: 12px 16px; background: var(--card);
+    border-radius: var(--r-lg); overflow: hidden; box-shadow: var(--shadow-card);
+  }
+  .cart-shop-grp .gh {
+    padding: 12px 14px; display: flex; align-items: center; gap: 10px;
+    border-bottom: 1px solid var(--line);
+  }
+  .cart-shop-grp .gh .check {
+    width: 18px; height: 18px; border-radius: 50%;
+    border: 2px solid var(--brand); color: var(--brand);
+    text-align: center; line-height: 14px; font-size: 12px; font-weight: 700;
+  }
+  .cart-shop-grp .gh .check.on { background: var(--brand); color: #fff; }
+  .cart-shop-grp .gh .pic {
+    width: 24px; height: 24px; border-radius: 6px;
+    background: linear-gradient(135deg,#ffd1ba,var(--brand));
+    color: #fff; font-size: 12px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .cart-shop-grp .gh .name { font-size: 14px; font-weight: 700; color: var(--t1); flex: 1; }
+  .cart-row {
+    display: flex; gap: 10px; padding: 12px 14px;
+    border-bottom: 1px solid var(--line);
+  }
+  .cart-row:last-child { border-bottom: 0; }
+  .cart-row .check {
+    width: 18px; height: 18px; border-radius: 50%;
+    border: 2px solid var(--brand); color: var(--brand);
+    text-align: center; line-height: 14px; font-size: 12px; font-weight: 700;
+    align-self: center;
+  }
+  .cart-row .check.on { background: var(--brand); color: #fff; }
+  .cart-row .pic {
+    width: 64px; height: 64px; border-radius: var(--r-md);
+    background: linear-gradient(135deg,#ffe1c8,#ffae74);
+    color: #fff; font-size: 28px;
+    display: flex; align-items: center; justify-content: center;
     flex-shrink: 0;
   }
-  .me-row-icon.alt-1 { background: rgba(99, 102, 241, 0.12); color: #6366F1; }
-  .me-row-icon.alt-2 { background: rgba(16, 185, 129, 0.12); color: #10B981; }
-  .me-row-icon.alt-3 { background: rgba(245, 158, 11, 0.14); color: #F59E0B; }
-  .me-row-name {
-    flex: 1; font-size: 14px; color: var(--t1);
+  .cart-row .pic.alt-1 { background: linear-gradient(135deg,#d6e9ff,#80b3ff); }
+  .cart-row .info { flex: 1; min-width: 0; }
+  .cart-row .name { font-size: 13px; color: var(--t1); font-weight: 500; }
+  .cart-row .spec { font-size: 11px; color: var(--t3); margin-top: 4px; }
+  .cart-row .row {
+    margin-top: 8px; display: flex; align-items: center; justify-content: space-between;
   }
-  .me-row-tag {
-    font-size: 11px;
-    background: var(--brand-light);
-    color: var(--brand);
-    padding: 2px 8px;
-    border-radius: var(--r-pill);
+  .cart-row .price { color: var(--brand); font-weight: 800; font-size: 15px; }
+  .cart-row .qty {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--bg); border-radius: var(--r-pill);
+    padding: 2px;
   }
-  .me-row-arrow {
-    font-size: 16px; color: var(--t3);
+  .cart-row .qty .btn {
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--card); color: var(--t2); font-size: 14px;
+    line-height: 22px; text-align: center;
+  }
+  .cart-row .qty .num { font-size: 13px; font-weight: 700; min-width: 18px; text-align: center; }
+
+  /* 购物车底部结算栏 */
+  .cart-bottom {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: var(--card); padding: 12px 16px calc(env(safe-area-inset-bottom) + 12px);
+    box-shadow: 0 -2px 16px rgba(0,0,0,.06);
+    display: flex; align-items: center; gap: 10px; z-index: 50;
+  }
+  .cart-bottom .check-all {
+    width: 18px; height: 18px; border-radius: 50%;
+    border: 2px solid var(--brand); color: var(--brand);
+    text-align: center; line-height: 14px; font-size: 12px;
+  }
+  .cart-bottom .check-all.on { background: var(--brand); color: #fff; }
+  .cart-bottom .label-all { font-size: 12px; color: var(--t2); }
+  .cart-bottom .total { flex: 1; text-align: right; }
+  .cart-bottom .total .price { font-size: 20px; font-weight: 800; color: var(--brand); }
+  .cart-bottom .total .label { font-size: 11px; color: var(--t3); margin-right: 4px; }
+  .cart-bottom .checkout-btn {
+    background: var(--brand); color: #fff;
+    height: 42px; padding: 0 22px;
+    border-radius: 21px; line-height: 42px;
+    font-size: 14px; font-weight: 700;
   }
 
-  /* ============== 底部 Tab Bar ============== */
-  .tab-bar {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 72px;
-    padding-bottom: 16px;
-    background: rgba(255,255,255,0.96);
-    backdrop-filter: blur(12px);
-    border-top: 1px solid var(--line);
-    display: flex;
-    align-items: stretch;
-    z-index: 50;
+  /* ========== 屏 7 结算 ========== */
+  .ck-addr {
+    margin: 12px 16px; background: var(--card);
+    border-radius: var(--r-lg); padding: 14px;
+    box-shadow: var(--shadow-card); display: flex; align-items: center; gap: 12px;
+    border-top: 3px solid var(--brand);
   }
-  .tab-item {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    color: var(--t3);
-    font-size: 11px;
-    cursor: pointer;
-    user-select: none;
-    transition: color 0.2s;
+  .ck-addr .ic { font-size: 20px; color: var(--brand); }
+  .ck-addr .body { flex: 1; }
+  .ck-addr .row1 { font-size: 14px; font-weight: 700; color: var(--t1); }
+  .ck-addr .row1 .phone { font-size: 12px; color: var(--t2); margin-left: 8px; font-weight: 400; }
+  .ck-addr .row2 { font-size: 12px; color: var(--t2); margin-top: 2px; }
+  .ck-addr .arrow { color: var(--t3); font-size: 18px; }
+
+  .ck-shop {
+    margin: 12px 16px;
+    background: var(--card); border-radius: var(--r-lg);
+    box-shadow: var(--shadow-card); overflow: hidden;
   }
-  .tab-item .ic {
-    font-size: 22px;
-    line-height: 1;
-    margin-bottom: 3px;
-    transition: transform 0.3s var(--ease);
+  .ck-shop .gh {
+    padding: 12px 14px; border-bottom: 1px solid var(--line);
+    display: flex; align-items: center; gap: 8px;
   }
-  .tab-item.active {
-    color: var(--brand);
-    font-weight: 600;
+  .ck-shop .gh .pic {
+    width: 24px; height: 24px; border-radius: 6px;
+    background: linear-gradient(135deg,#ffd1ba,var(--brand)); color: #fff;
+    font-size: 12px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
   }
-  .tab-item.active .ic {
-    transform: translateY(-2px) scale(1.1);
+  .ck-shop .gh .name { font-size: 14px; font-weight: 700; color: var(--t1); }
+  .ck-row {
+    display: flex; gap: 10px; padding: 12px 14px;
+    border-bottom: 1px solid var(--line);
+  }
+  .ck-row .pic {
+    width: 56px; height: 56px; border-radius: var(--r-md);
+    background: linear-gradient(135deg,#ffe1c8,#ffae74);
+    color: #fff; font-size: 24px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .ck-row .info { flex: 1; min-width: 0; }
+  .ck-row .name { font-size: 13px; color: var(--t1); }
+  .ck-row .spec { font-size: 11px; color: var(--t3); margin-top: 2px; }
+  .ck-row .right { text-align: right; flex-shrink: 0; }
+  .ck-row .price { color: var(--t1); font-weight: 700; font-size: 14px; }
+  .ck-row .qty { font-size: 11px; color: var(--t3); margin-top: 2px; }
+  .ck-fee {
+    padding: 10px 14px;
+    display: flex; justify-content: space-between;
+    border-bottom: 1px solid var(--line);
+    font-size: 12px; color: var(--t2);
+  }
+  .ck-fee .v { color: var(--t1); font-weight: 600; }
+  .ck-fee.total { font-size: 14px; padding: 12px 14px; }
+  .ck-fee.total .v { color: var(--brand); font-size: 18px; font-weight: 800; }
+  .ck-method {
+    margin: 12px 16px; padding: 4px 0;
+    background: var(--card); border-radius: var(--r-lg); box-shadow: var(--shadow-card);
+  }
+  .ck-method .gh { padding: 12px 14px 4px; font-size: 13px; font-weight: 700; color: var(--t1); }
+  .ck-method-row {
+    display: flex; align-items: center; padding: 12px 14px;
+  }
+  .ck-method-row .ic {
+    width: 32px; height: 32px; border-radius: var(--r-md);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; color: #fff; margin-right: 10px;
+  }
+  .ck-method-row .ic.wx { background: #07C160; }
+  .ck-method-row .ic.alipay { background: #1678FF; }
+  .ck-method-row .ic.balance { background: var(--brand); }
+  .ck-method-row .name { flex: 1; font-size: 14px; color: var(--t1); }
+  .ck-method-row .desc { font-size: 11px; color: var(--t3); margin-right: 10px; }
+  .ck-method-row .radio {
+    width: 18px; height: 18px; border-radius: 50%;
+    border: 2px solid var(--line);
+  }
+  .ck-method-row.on .radio { border-color: var(--brand); background: var(--brand);
+    position: relative;
+  }
+  .ck-method-row.on .radio::after {
+    content: ''; position: absolute; left: 50%; top: 50%;
+    transform: translate(-50%,-50%); width: 6px; height: 6px;
+    border-radius: 50%; background: #fff;
   }
 
-  /* 底部安全区 */
-  .home-indicator {
-    position: absolute;
-    bottom: 6px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 134px;
-    height: 5px;
-    background: var(--t1);
-    border-radius: 3px;
-    opacity: 0.85;
-    z-index: 60;
+  .ck-bottom {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: var(--card); padding: 12px 16px calc(env(safe-area-inset-bottom) + 12px);
+    box-shadow: 0 -2px 16px rgba(0,0,0,.06);
+    display: flex; align-items: center; gap: 10px; z-index: 50;
+  }
+  .ck-bottom .total {
+    flex: 1; font-size: 12px; color: var(--t2);
+  }
+  .ck-bottom .total b {
+    color: var(--brand); font-size: 22px; font-weight: 800;
+  }
+  .ck-bottom .pay-btn {
+    background: var(--brand); color: #fff;
+    height: 44px; padding: 0 28px;
+    border-radius: 22px; line-height: 44px;
+    font-size: 15px; font-weight: 700;
   }
 
-  /* 三屏并排说明 */
-  .pane-label {
-    position: absolute;
-    top: 8px;
-    left: 0;
-    right: 0;
-    text-align: center;
-    color: rgba(255,255,255,0.55);
-    font-size: 11px;
-    pointer-events: none;
-    letter-spacing: 1px;
+  /* ========== 屏 8 付款成功 ========== */
+  .succ-page {
+    text-align: center; padding: 60px 24px 24px;
   }
+  .succ-page .icon-circle {
+    width: 80px; height: 80px; border-radius: 50%;
+    background: var(--success); color: #fff;
+    line-height: 80px; font-size: 38px; margin: 0 auto;
+    box-shadow: 0 6px 20px rgba(16,185,129,.30);
+  }
+  .succ-page h2 { margin: 16px 0 4px; font-size: 22px; font-weight: 800; color: var(--t1); }
+  .succ-page p { margin: 0; font-size: 13px; color: var(--t2); }
+  .succ-card {
+    margin: 24px 16px; background: var(--card);
+    border-radius: var(--r-lg); padding: 16px;
+    box-shadow: var(--shadow-card); text-align: left;
+  }
+  .succ-card .row {
+    display: flex; justify-content: space-between; padding: 6px 0;
+    font-size: 12px; color: var(--t2);
+  }
+  .succ-card .row b { color: var(--t1); font-weight: 600; }
+  .succ-card .row.amt b { color: var(--brand); font-size: 16px; font-weight: 800; }
+
+  .succ-promo {
+    margin: 12px 16px; padding: 16px;
+    background: linear-gradient(135deg,#fff5ef,#ffe1c8);
+    border: 1px solid var(--brand-light-2);
+    border-radius: var(--r-lg);
+  }
+  .succ-promo .hdr {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 13px; font-weight: 700; color: var(--brand);
+  }
+  .succ-promo .body {
+    font-size: 12px; color: var(--t2); line-height: 1.6; margin-top: 6px;
+  }
+  .succ-promo .body b { color: var(--brand); }
+
+  .succ-actions {
+    display: flex; gap: 10px; margin: 16px;
+  }
+  .succ-actions .btn {
+    flex: 1; height: 44px; border-radius: 22px;
+    line-height: 44px; text-align: center;
+    font-size: 14px; font-weight: 600;
+  }
+  .succ-actions .btn.ghost { background: var(--card); color: var(--t2); border: 1px solid var(--line); }
+  .succ-actions .btn.primary { background: var(--brand); color: #fff; }
+
 </style>
 </head>
 <body>
 
-<!-- ============== 屏幕 1：首页 ============== -->
-<div>
+<h1 class="page-title">摊小二 · 普通用户 H5 全屏原型
+  <small>3 主屏 + 7 我的子页 + 5 进店下单链路屏 = 共 15 屏</small>
+</h1>
+
+<div class="grid">
+
+<!-- ============== 屏 1：首页 ============== -->
+<div class="group-title"><em>主屏</em>底部 Tab 三屏</div>
+<div class="phone-wrap">
   <div class="phone">
-    <div class="status-bar">
-      <span>9:41</span>
-      <div class="status-icons"><span>📶</span><span>📡</span><span>🔋</span></div>
-    </div>
+    <div class="status-bar"><span>9:41</span><div class="status-icons"><span>📶</span><span>📡</span><span>🔋</span></div></div>
     <div class="view">
-      <div class="pane active">
-        <!-- Top + 搜索 -->
-        <div class="home-top">
-          <div class="home-greeting">下午好 ☀</div>
-          <div class="home-name">想吃点什么？</div>
-          <div class="home-search">
-            <span class="icon">🔍</span>
-            <input placeholder="搜店铺、找商品、看附近" />
-            <span class="voice">🎙</span>
-          </div>
-        </div>
-
-        <!-- 4 个快捷 -->
-        <div class="home-quick">
-          <div class="qk"><div class="qk-icon">📍</div><div class="qk-text">附近</div></div>
-          <div class="qk"><div class="qk-icon">🛍</div><div class="qk-text">分类</div></div>
-          <div class="qk"><div class="qk-icon">🎁</div><div class="qk-text">优惠</div></div>
-          <div class="qk"><div class="qk-icon">📜</div><div class="qk-text">扫码</div></div>
-        </div>
-
-        <!-- 最近去过的店铺 -->
-        <div class="section-title">
-          <h3>最近去过</h3>
-          <span class="more">全部 ›</span>
-        </div>
-        <div class="recent-scroll">
-          <div class="recent-card">
-            <div class="recent-cover"><span class="recent-tag">2 小时前</span></div>
-            <div class="recent-body">
-              <div class="recent-name">王师傅烤地瓜</div>
-              <div class="recent-meta">
-                <span>已下 5 单</span><span class="dot"></span><span>0.3km</span>
-              </div>
-            </div>
-          </div>
-          <div class="recent-card">
-            <div class="recent-cover theme-2"><span class="recent-tag">昨天</span></div>
-            <div class="recent-body">
-              <div class="recent-name">林家茶馆</div>
-              <div class="recent-meta">
-                <span>已下 2 单</span><span class="dot"></span><span>1.1km</span>
-              </div>
-            </div>
-          </div>
-          <div class="recent-card">
-            <div class="recent-cover theme-3"><span class="recent-tag">3 天前</span></div>
-            <div class="recent-body">
-              <div class="recent-name">老张水果摊</div>
-              <div class="recent-meta">
-                <span>已下 1 单</span><span class="dot"></span><span>0.8km</span>
-              </div>
-            </div>
-          </div>
-          <div class="recent-card">
-            <div class="recent-cover theme-4"><span class="recent-tag">上周</span></div>
-            <div class="recent-body">
-              <div class="recent-name">小陈奶茶店</div>
-              <div class="recent-meta">
-                <span>已下 8 单</span><span class="dot"></span><span>2.0km</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 平台 banner -->
-        <div class="banner">
-          <div class="banner-icon">🎬</div>
-          <div style="flex:1;">
-            <h4>商家 AI 一键成片</h4>
-            <p>看看附近商家用 AI 拍的短视频，找新店</p>
-          </div>
-          <div style="font-size:18px;">›</div>
-        </div>
-
-        <!-- 附近商家 -->
-        <div class="section-title">
-          <h3>附近商家</h3>
-          <span class="more">距离 ↓</span>
-        </div>
-        <div class="shop">
-          <div class="shop-pic">王</div>
-          <div class="shop-info">
-            <div class="shop-row1">
-              <div class="shop-name">王师傅烤地瓜</div>
-              <div class="shop-badge">连续打卡</div>
-            </div>
-            <div class="shop-tag-line">现烤蜜薯 · 流糖心 · 5 块一个</div>
-            <div class="shop-meta">
-              <span class="rating">★ 4.9</span>
-              <span class="distance">📍 0.3km</span>
-              <span class="sales">月售 1280 单</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="shop">
-          <div class="shop-pic alt-1">林</div>
-          <div class="shop-info">
-            <div class="shop-row1">
-              <div class="shop-name">林家茶馆</div>
-              <div class="shop-badge">新店</div>
-            </div>
-            <div class="shop-tag-line">手工茶饼 · 老白茶 · 现泡现喝</div>
-            <div class="shop-meta">
-              <span class="rating">★ 4.7</span>
-              <span class="distance">📍 1.1km</span>
-              <span class="sales">月售 320 单</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="shop">
-          <div class="shop-pic alt-2">张</div>
-          <div class="shop-info">
-            <div class="shop-row1">
-              <div class="shop-name">老张水果摊</div>
-            </div>
-            <div class="shop-tag-line">每日新鲜进货 · 凤梨 / 火龙果 / 阳光玫瑰</div>
-            <div class="shop-meta">
-              <span class="rating">★ 4.8</span>
-              <span class="distance">📍 0.8km</span>
-              <span class="sales">月售 2150 单</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="shop">
-          <div class="shop-pic alt-3">陈</div>
-          <div class="shop-info">
-            <div class="shop-row1">
-              <div class="shop-name">小陈奶茶店</div>
-              <div class="shop-badge">满 30 立减 5</div>
-            </div>
-            <div class="shop-tag-line">手摇奶茶 · 杨枝甘露 · 现做现卖</div>
-            <div class="shop-meta">
-              <span class="rating">★ 4.6</span>
-              <span class="distance">📍 2.0km</span>
-              <span class="sales">月售 580 单</span>
-            </div>
-          </div>
-        </div>
-        <div style="height: 12px;"></div>
+      <div class="home-top">
+        <div class="home-greeting">下午好 ☀</div>
+        <div class="home-name">想吃点什么？</div>
+        <div class="home-search"><span class="icon">🔍</span><input placeholder="搜店铺、找商品、看附近" /><span class="voice">🎙</span></div>
       </div>
+      <div class="home-quick">
+        <div class="qk"><div class="qk-icon">📍</div><div class="qk-text">附近</div></div>
+        <div class="qk"><div class="qk-icon">🛍</div><div class="qk-text">分类</div></div>
+        <div class="qk"><div class="qk-icon">🎁</div><div class="qk-text">优惠</div></div>
+        <div class="qk"><div class="qk-icon">📜</div><div class="qk-text">扫码</div></div>
+      </div>
+      <div class="section-title"><h3>最近去过</h3><span class="more">全部 ›</span></div>
+      <div class="recent-scroll">
+        <div class="recent-card"><div class="recent-cover"><span class="recent-tag">2 小时前</span></div><div class="recent-body"><div class="recent-name">王师傅烤地瓜</div><div class="recent-meta"><span>已下 5 单</span><span class="dot"></span><span>0.3km</span></div></div></div>
+        <div class="recent-card"><div class="recent-cover theme-2"><span class="recent-tag">昨天</span></div><div class="recent-body"><div class="recent-name">林家茶馆</div><div class="recent-meta"><span>已下 2 单</span><span class="dot"></span><span>1.1km</span></div></div></div>
+        <div class="recent-card"><div class="recent-cover theme-3"><span class="recent-tag">3 天前</span></div><div class="recent-body"><div class="recent-name">老张水果摊</div><div class="recent-meta"><span>已下 1 单</span><span class="dot"></span><span>0.8km</span></div></div></div>
+        <div class="recent-card"><div class="recent-cover theme-4"><span class="recent-tag">上周</span></div><div class="recent-body"><div class="recent-name">小陈奶茶店</div><div class="recent-meta"><span>已下 8 单</span><span class="dot"></span><span>2.0km</span></div></div></div>
+      </div>
+      <div class="banner"><div class="banner-icon">🎬</div><div style="flex:1;"><h4>商家 AI 一键成片</h4><p>看看附近商家用 AI 拍的短视频，找新店</p></div><div style="font-size:18px;">›</div></div>
+      <div class="section-title"><h3>附近商家</h3><span class="more">距离 ↓</span></div>
+      <div class="shop"><div class="shop-pic">王</div><div class="shop-info"><div class="shop-row1"><div class="shop-name">王师傅烤地瓜</div><div class="shop-badge">连续打卡</div></div><div class="shop-tag-line">现烤蜜薯 · 流糖心 · 5 块一个</div><div class="shop-meta"><span class="rating">★ 4.9</span><span class="distance">📍 0.3km</span><span>月售 1280</span></div></div></div>
+      <div class="shop"><div class="shop-pic alt-1">林</div><div class="shop-info"><div class="shop-row1"><div class="shop-name">林家茶馆</div><div class="shop-badge">新店</div></div><div class="shop-tag-line">手工茶饼 · 老白茶 · 现泡现喝</div><div class="shop-meta"><span class="rating">★ 4.7</span><span class="distance">📍 1.1km</span><span>月售 320</span></div></div></div>
+      <div class="shop"><div class="shop-pic alt-2">张</div><div class="shop-info"><div class="shop-row1"><div class="shop-name">老张水果摊</div></div><div class="shop-tag-line">每日新鲜进货 · 凤梨 / 火龙果 / 阳光玫瑰</div><div class="shop-meta"><span class="rating">★ 4.8</span><span class="distance">📍 0.8km</span><span>月售 2150</span></div></div></div>
+      <div class="shop"><div class="shop-pic alt-3">陈</div><div class="shop-info"><div class="shop-row1"><div class="shop-name">小陈奶茶店</div><div class="shop-badge">满 30 减 5</div></div><div class="shop-tag-line">手摇奶茶 · 杨枝甘露 · 现做现卖</div><div class="shop-meta"><span class="rating">★ 4.6</span><span class="distance">📍 2.0km</span><span>月售 580</span></div></div></div>
+      <div style="height:12px;"></div>
     </div>
-    <!-- Tab Bar (静态展示) -->
-    <div class="tab-bar">
-      <div class="tab-item active">
-        <span class="ic">🏠</span><span>首页</span>
-      </div>
-      <div class="tab-item">
-        <span class="ic">📋</span><span>订单</span>
-      </div>
-      <div class="tab-item">
-        <span class="ic">👤</span><span>我的</span>
-      </div>
-    </div>
+    <div class="tab-bar"><div class="tab-item active"><span class="ic">🏠</span><span>首页</span></div><div class="tab-item"><span class="ic">📋</span><span>订单</span></div><div class="tab-item"><span class="ic">👤</span><span>我的</span></div></div>
     <div class="home-indicator"></div>
   </div>
-  <div class="phone-label">① 首页 · 发现店铺</div>
+  <div class="phone-label">① <b>首页</b> · 发现店铺 + 搜索</div>
 </div>
 
-
-<!-- ============== 屏幕 2：订单 ============== -->
-<div>
+<!-- ============== 屏 2：订单 ============== -->
+<div class="phone-wrap">
   <div class="phone">
-    <div class="status-bar">
-      <span>9:41</span>
-      <div class="status-icons"><span>📶</span><span>📡</span><span>🔋</span></div>
-    </div>
+    <div class="status-bar"><span>9:41</span><div class="status-icons"><span>📶</span><span>📡</span><span>🔋</span></div></div>
     <div class="view">
-      <div class="pane active">
-        <!-- 顶部标题 + 状态筛选 -->
-        <div class="order-top">
-          <h2>我的订单</h2>
-          <div class="order-filter">
-            <div class="it active">全部</div>
-            <div class="it">待付款</div>
-            <div class="it">待发货</div>
-            <div class="it">待收货</div>
-            <div class="it">已完成</div>
-          </div>
-        </div>
-
-        <!-- 店铺 1 分组 -->
-        <div class="shop-group">
-          <div class="group-head">
-            <div class="group-pic">王</div>
-            <div class="group-shop-name">王师傅烤地瓜</div>
-            <span class="group-arrow">›</span>
-          </div>
-          <div class="order-row">
-            <div class="order-row1">
-              <div class="order-no">#TX2026050100123</div>
-              <div class="order-status warn">待收货</div>
-            </div>
-            <div class="order-items">
-              <div class="order-pic">🍠</div>
-              <div class="order-info">
-                <div class="order-pname">现烤蜜薯（流糖心 大）</div>
-                <div class="order-spec">规格：大 × 2</div>
-              </div>
-              <div class="order-amt">
-                <div class="price">¥10.00</div>
-                <div class="qty">x 2</div>
-              </div>
-            </div>
-            <div class="order-foot">
-              <div class="order-total">合计 <b>¥10.00</b></div>
-              <div class="order-actions">
-                <span class="btn">查看物流</span>
-                <span class="btn primary">确认收货</span>
-              </div>
-            </div>
-          </div>
-          <div class="order-row">
-            <div class="order-row1">
-              <div class="order-no">#TX2026042900876</div>
-              <div class="order-status success">已完成</div>
-            </div>
-            <div class="order-items">
-              <div class="order-pic">🍠</div>
-              <div class="order-info">
-                <div class="order-pname">现烤蜜薯 + 烤玉米套餐</div>
-                <div class="order-spec">规格：经典套餐</div>
-              </div>
-              <div class="order-amt">
-                <div class="price">¥18.00</div>
-                <div class="qty">x 1</div>
-              </div>
-            </div>
-            <div class="order-foot">
-              <div class="order-total">合计 <b>¥18.00</b></div>
-              <div class="order-actions">
-                <span class="btn">再来一单</span>
-                <span class="btn">评价</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 店铺 2 分组 -->
-        <div class="shop-group">
-          <div class="group-head">
-            <div class="group-pic alt-1">林</div>
-            <div class="group-shop-name">林家茶馆</div>
-            <span class="group-arrow">›</span>
-          </div>
-          <div class="order-row">
-            <div class="order-row1">
-              <div class="order-no">#TX2026043000345</div>
-              <div class="order-status">待发货</div>
-            </div>
-            <div class="order-items">
-              <div class="order-pic alt-1">🍵</div>
-              <div class="order-info">
-                <div class="order-pname">老白茶 · 100g 礼盒装</div>
-                <div class="order-spec">陈期 5 年</div>
-              </div>
-              <div class="order-amt">
-                <div class="price">¥168.00</div>
-                <div class="qty">x 1</div>
-              </div>
-            </div>
-            <div class="order-foot">
-              <div class="order-total">合计 <b>¥168.00</b></div>
-              <div class="order-actions">
-                <span class="btn">取消订单</span>
-                <span class="btn">联系商家</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 店铺 3 分组 -->
-        <div class="shop-group">
-          <div class="group-head">
-            <div class="group-pic alt-2">张</div>
-            <div class="group-shop-name">老张水果摊</div>
-            <span class="group-arrow">›</span>
-          </div>
-          <div class="order-row">
-            <div class="order-row1">
-              <div class="order-no">#TX2026042700112</div>
-              <div class="order-status danger">待付款</div>
-            </div>
-            <div class="order-items">
-              <div class="order-pic alt-2">🍇</div>
-              <div class="order-info">
-                <div class="order-pname">阳光玫瑰葡萄 · 1.5 斤装</div>
-                <div class="order-spec">果园直发 当日采摘</div>
-              </div>
-              <div class="order-amt">
-                <div class="price">¥58.00</div>
-                <div class="qty">x 1</div>
-              </div>
-            </div>
-            <div class="order-foot">
-              <div class="order-total">合计 <b>¥58.00</b></div>
-              <div class="order-actions">
-                <span class="btn">取消</span>
-                <span class="btn primary">立即付款</span>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div style="height: 12px;"></div>
+      <div class="order-top">
+        <h2>我的订单</h2>
+        <div class="order-filter"><div class="it active">全部</div><div class="it">待付款</div><div class="it">待发货</div><div class="it">待收货</div><div class="it">已完成</div></div>
       </div>
+      <div class="shop-group">
+        <div class="group-head"><div class="group-pic">王</div><div class="group-shop-name">王师傅烤地瓜</div><span class="group-arrow">›</span></div>
+        <div class="order-row">
+          <div class="order-row1"><div class="order-no">#TX2026050100123</div><div class="order-status warn">待收货</div></div>
+          <div class="order-items"><div class="order-pic">🍠</div><div class="order-info"><div class="order-pname">现烤蜜薯（流糖心 大）</div><div class="order-spec">规格：大 × 2</div></div><div class="order-amt"><div class="price">¥10.00</div><div class="qty">x 2</div></div></div>
+          <div class="order-foot"><div class="order-total">合计 <b>¥10.00</b></div><div class="order-actions"><span class="btn">查看物流</span><span class="btn primary">确认收货</span></div></div>
+        </div>
+        <div class="order-row">
+          <div class="order-row1"><div class="order-no">#TX2026042900876</div><div class="order-status success">已完成</div></div>
+          <div class="order-items"><div class="order-pic">🍠</div><div class="order-info"><div class="order-pname">蜜薯 + 烤玉米套餐</div><div class="order-spec">规格：经典套餐</div></div><div class="order-amt"><div class="price">¥18.00</div><div class="qty">x 1</div></div></div>
+          <div class="order-foot"><div class="order-total">合计 <b>¥18.00</b></div><div class="order-actions"><span class="btn">再来一单</span><span class="btn">评价</span></div></div>
+        </div>
+      </div>
+      <div class="shop-group">
+        <div class="group-head"><div class="group-pic alt-1">林</div><div class="group-shop-name">林家茶馆</div><span class="group-arrow">›</span></div>
+        <div class="order-row">
+          <div class="order-row1"><div class="order-no">#TX2026043000345</div><div class="order-status">待发货</div></div>
+          <div class="order-items"><div class="order-pic alt-1">🍵</div><div class="order-info"><div class="order-pname">老白茶 · 100g 礼盒装</div><div class="order-spec">陈期 5 年</div></div><div class="order-amt"><div class="price">¥168.00</div><div class="qty">x 1</div></div></div>
+          <div class="order-foot"><div class="order-total">合计 <b>¥168.00</b></div><div class="order-actions"><span class="btn">取消订单</span><span class="btn">联系商家</span></div></div>
+        </div>
+      </div>
+      <div class="shop-group">
+        <div class="group-head"><div class="group-pic alt-2">张</div><div class="group-shop-name">老张水果摊</div><span class="group-arrow">›</span></div>
+        <div class="order-row">
+          <div class="order-row1"><div class="order-no">#TX2026042700112</div><div class="order-status danger">待付款</div></div>
+          <div class="order-items"><div class="order-pic alt-2">🍇</div><div class="order-info"><div class="order-pname">阳光玫瑰葡萄 · 1.5 斤装</div><div class="order-spec">果园直发 · 当日采摘</div></div><div class="order-amt"><div class="price">¥58.00</div><div class="qty">x 1</div></div></div>
+          <div class="order-foot"><div class="order-total">合计 <b>¥58.00</b></div><div class="order-actions"><span class="btn">取消</span><span class="btn primary">立即付款</span></div></div>
+        </div>
+      </div>
+      <div style="height:12px;"></div>
     </div>
-    <div class="tab-bar">
-      <div class="tab-item">
-        <span class="ic">🏠</span><span>首页</span>
-      </div>
-      <div class="tab-item active">
-        <span class="ic">📋</span><span>订单</span>
-      </div>
-      <div class="tab-item">
-        <span class="ic">👤</span><span>我的</span>
-      </div>
-    </div>
+    <div class="tab-bar"><div class="tab-item"><span class="ic">🏠</span><span>首页</span></div><div class="tab-item active"><span class="ic">📋</span><span>订单</span></div><div class="tab-item"><span class="ic">👤</span><span>我的</span></div></div>
     <div class="home-indicator"></div>
   </div>
-  <div class="phone-label">② 订单 · 按店铺分组</div>
+  <div class="phone-label">② <b>订单</b> · 按店铺分组</div>
 </div>
 
-
-<!-- ============== 屏幕 3：我的 ============== -->
-<div>
+<!-- ============== 屏 3：我的（重做：按店独立资产） ============== -->
+<div class="phone-wrap">
   <div class="phone">
-    <div class="status-bar">
-      <span>9:41</span>
-      <div class="status-icons"><span>📶</span><span>📡</span><span>🔋</span></div>
-    </div>
+    <div class="status-bar"><span>9:41</span><div class="status-icons"><span>📶</span><span>📡</span><span>🔋</span></div></div>
     <div class="view">
-      <div class="pane active">
-        <div class="me-top">
-          <div class="me-top-row">
-            <div class="me-avatar">小</div>
-            <div class="me-info">
-              <div class="me-name">小明 · 普通用户</div>
-              <div class="me-phone">138****8000 · 已加入 4 家店</div>
-            </div>
-            <div class="me-edit">⚙</div>
-          </div>
+      <div class="me-top">
+        <div class="me-top-row">
+          <div class="me-avatar">小</div>
+          <div class="me-info"><div class="me-name">小明</div><div class="me-phone">138****8000 · 已加入 4 家店</div></div>
+          <div class="me-edit">⚙</div>
         </div>
+      </div>
 
-        <!-- 4 个数字资产卡 -->
-        <div class="me-assets">
-          <div class="me-asset">
-            <div class="num">328</div>
-            <div class="label">推广积分</div>
-          </div>
-          <div class="me-asset">
-            <div class="num brand">¥86.50</div>
-            <div class="label">店铺余额</div>
-          </div>
-          <div class="me-asset">
-            <div class="num">1245</div>
-            <div class="label">消费积分</div>
-          </div>
-          <div class="me-asset">
-            <div class="num">3</div>
-            <div class="label">排队中</div>
-          </div>
-        </div>
+      <!-- 跨店聚合（仅做总览，不按店独立显示） -->
+      <div class="me-summary">
+        <div class="item"><div class="num">4</div><div class="label">加入店铺</div></div>
+        <div class="item"><div class="num">22</div><div class="label">累计订单</div></div>
+        <div class="item"><div class="num brand">12</div><div class="label">推荐好友</div></div>
+      </div>
 
-        <!-- 消费 / 财务 -->
-        <div class="me-grid">
-          <div class="me-grid-title">消费 · 财务</div>
-          <div class="me-row">
-            <div class="me-row-icon">💰</div>
-            <div class="me-row-name">我的钱包</div>
-            <div class="me-row-tag">¥86.50</div>
-            <span class="me-row-arrow">›</span>
-          </div>
-          <div class="me-row">
-            <div class="me-row-icon alt-1">📊</div>
-            <div class="me-row-name">推广积分明细</div>
-            <span class="me-row-arrow">›</span>
-          </div>
-          <div class="me-row">
-            <div class="me-row-icon alt-2">🪙</div>
-            <div class="me-row-name">店铺余额管理</div>
-            <span class="me-row-arrow">›</span>
-          </div>
-          <div class="me-row">
-            <div class="me-row-icon alt-3">💸</div>
-            <div class="me-row-name">提现申请</div>
-            <span class="me-row-arrow">›</span>
-          </div>
-        </div>
+      <div class="me-tip-bar">
+        💡 资产按<b>店铺独立</b>：余额、推广积分、消费积分、星级都隔离在每个店铺账户，
+        点开下方"我加入的店铺"查看每家店的独立资产。
+      </div>
 
-        <!-- 推广 -->
-        <div class="me-grid">
-          <div class="me-grid-title">推广 · 队列</div>
-          <div class="me-row">
-            <div class="me-row-icon">🔗</div>
-            <div class="me-row-name">邀请好友（按店铺）</div>
-            <div class="me-row-tag">已邀 12 人</div>
-            <span class="me-row-arrow">›</span>
+      <!-- 我加入的店铺：每店独立资产展示 -->
+      <div class="shops-list">
+        <div class="shops-head"><span class="ttl">我加入的店铺（4）</span><span class="more">管理 ›</span></div>
+        <div class="shop-row">
+          <div class="pic">王</div>
+          <div class="center">
+            <div class="name">王师傅烤地瓜 <span class="star">⭐ 3 星</span></div>
+            <div class="stats"><span>订单 <em>12</em></span><span>余额 <em>¥38.00</em></span><span>推广积分 <em>156</em></span></div>
           </div>
-          <div class="me-row">
-            <div class="me-row-icon alt-1">🎯</div>
-            <div class="me-row-name">我的队列（v6 推 N 反 1）</div>
-            <div class="me-row-tag">3 个商品排队中</div>
-            <span class="me-row-arrow">›</span>
-          </div>
-          <div class="me-row">
-            <div class="me-row-icon alt-2">🏆</div>
-            <div class="me-row-name">店铺星级</div>
-            <span class="me-row-arrow">›</span>
-          </div>
+          <div class="arrow">›</div>
         </div>
+        <div class="shop-row">
+          <div class="pic alt-1">林</div>
+          <div class="center">
+            <div class="name">林家茶馆 <span class="star">⭐ 1 星</span></div>
+            <div class="stats"><span>订单 <em>2</em></span><span>余额 <em>¥18.00</em></span><span>推广积分 <em>72</em></span></div>
+          </div>
+          <div class="arrow">›</div>
+        </div>
+        <div class="shop-row">
+          <div class="pic alt-2">张</div>
+          <div class="center">
+            <div class="name">老张水果摊 <span class="star">⭐ 2 星</span></div>
+            <div class="stats"><span>订单 <em>6</em></span><span>余额 <em>¥30.50</em></span><span>推广积分 <em>100</em></span></div>
+          </div>
+          <div class="arrow">›</div>
+        </div>
+        <div class="shop-row">
+          <div class="pic alt-3">陈</div>
+          <div class="center">
+            <div class="name">小陈奶茶店</div>
+            <div class="stats"><span>订单 <em>2</em></span><span>余额 <em>¥0.00</em></span><span>推广积分 <em>0</em></span></div>
+          </div>
+          <div class="arrow">›</div>
+        </div>
+      </div>
 
-        <!-- 我加入的店铺 -->
-        <div class="me-grid">
-          <div class="me-grid-title">我加入的店铺</div>
-          <div class="me-row">
-            <div class="me-row-icon">王</div>
-            <div class="me-row-name" style="display:flex;flex-direction:column;align-items:flex-start;">
-              <span>王师傅烤地瓜</span>
-              <span style="font-size:11px;color:var(--t3);margin-top:2px;">⭐ 3 星 · 12 单 · 余额 ¥38.00</span>
-            </div>
-            <span class="me-row-arrow">›</span>
-          </div>
-          <div class="me-row">
-            <div class="me-row-icon alt-1">林</div>
-            <div class="me-row-name" style="display:flex;flex-direction:column;align-items:flex-start;">
-              <span>林家茶馆</span>
-              <span style="font-size:11px;color:var(--t3);margin-top:2px;">⭐ 1 星 · 2 单 · 余额 ¥18.00</span>
-            </div>
-            <span class="me-row-arrow">›</span>
-          </div>
-          <div class="me-row">
-            <div class="me-row-icon alt-2">张</div>
-            <div class="me-row-name" style="display:flex;flex-direction:column;align-items:flex-start;">
-              <span>老张水果摊</span>
-              <span style="font-size:11px;color:var(--t3);margin-top:2px;">⭐ 2 星 · 6 单 · 余额 ¥30.50</span>
-            </div>
-            <span class="me-row-arrow">›</span>
-          </div>
-        </div>
+      <!-- 跨店功能 -->
+      <div class="me-grid">
+        <div class="me-grid-title">资产 · 推广</div>
+        <div class="me-row"><div class="me-row-icon">💰</div><div class="me-row-name">我的钱包（按店铺）</div><div class="me-row-tag">4 家店余额</div><span class="me-row-arrow">›</span></div>
+        <div class="me-row"><div class="me-row-icon alt-1">📊</div><div class="me-row-name">推广积分明细</div><span class="me-row-arrow">›</span></div>
+        <div class="me-row"><div class="me-row-icon alt-2">🎯</div><div class="me-row-name">我的队列（v6 推 N 反 1）</div><div class="me-row-tag">3 个排队中</div><span class="me-row-arrow">›</span></div>
+        <div class="me-row"><div class="me-row-icon alt-3">🏆</div><div class="me-row-name">店铺星级</div><span class="me-row-arrow">›</span></div>
+        <div class="me-row"><div class="me-row-icon">🔗</div><div class="me-row-name">邀请好友（先选店铺）</div><div class="me-row-tag">已邀 12 人</div><span class="me-row-arrow">›</span></div>
+      </div>
 
-        <!-- 设置 -->
-        <div class="me-grid">
-          <div class="me-grid-title">设置</div>
-          <div class="me-row">
-            <div class="me-row-icon alt-3">📍</div>
-            <div class="me-row-name">收货地址</div>
-            <span class="me-row-arrow">›</span>
+      <!-- 平台级功能 -->
+      <div class="me-grid">
+        <div class="me-grid-title">平台 · 设置</div>
+        <div class="me-row"><div class="me-row-icon alt-3">📍</div><div class="me-row-name">收货地址</div><span class="me-row-arrow">›</span></div>
+        <div class="me-row"><div class="me-row-icon">❓</div><div class="me-row-name">帮助与反馈</div><span class="me-row-arrow">›</span></div>
+        <div class="me-row"><div class="me-row-icon alt-1">ℹ</div><div class="me-row-name">关于摊小二</div><span class="me-row-arrow">›</span></div>
+      </div>
+      <div style="height:12px;"></div>
+    </div>
+    <div class="tab-bar"><div class="tab-item"><span class="ic">🏠</span><span>首页</span></div><div class="tab-item"><span class="ic">📋</span><span>订单</span></div><div class="tab-item active"><span class="ic">👤</span><span>我的</span></div></div>
+    <div class="home-indicator"></div>
+  </div>
+  <div class="phone-label">③ <b>我的</b> · 按店独立资产 + 跨店聚合</div>
+</div>
+
+<!-- ============== 屏 3.1：我的钱包（按店列表） ============== -->
+<div class="group-title"><em>子页</em>「我的」7 个详情子页</div>
+<div class="phone-wrap">
+  <div class="phone">
+    <div class="status-bar"><span>9:41</span><div class="status-icons"><span>📶</span><span>📡</span><span>🔋</span></div></div>
+    <div class="topbar"><span class="back">‹</span><span class="title">我的钱包</span><span class="right">明细</span></div>
+    <div class="view no-tab">
+      <div class="wallet-summary">
+        <div class="label">4 家店铺累计余额</div>
+        <div class="num">¥86.50<small> （按店独立，不可合并）</small></div>
+        <div class="hint">💡 各店余额仅可在该店内消费/提现，跨店不互通</div>
+      </div>
+      <div class="card" style="padding: 0;">
+        <div class="wallet-row">
+          <div class="pic">王</div>
+          <div class="info">
+            <div class="name">王师傅烤地瓜</div>
+            <div class="mini-stats"><span>积分 <em>156</em></span><span>消费积分 <em>820</em></span></div>
           </div>
-          <div class="me-row">
-            <div class="me-row-icon">❓</div>
-            <div class="me-row-name">帮助与反馈</div>
-            <span class="me-row-arrow">›</span>
-          </div>
-          <div class="me-row">
-            <div class="me-row-icon alt-1">ℹ</div>
-            <div class="me-row-name">关于摊小二</div>
-            <span class="me-row-arrow">›</span>
-          </div>
+          <div class="right"><div class="balance">¥38.00</div><span class="withdraw-btn">提现 ›</span></div>
         </div>
-        <div style="height: 12px;"></div>
+        <div class="wallet-row">
+          <div class="pic alt-1">林</div>
+          <div class="info">
+            <div class="name">林家茶馆</div>
+            <div class="mini-stats"><span>积分 <em>72</em></span><span>消费积分 <em>336</em></span></div>
+          </div>
+          <div class="right"><div class="balance">¥18.00</div><span class="withdraw-btn">提现 ›</span></div>
+        </div>
+        <div class="wallet-row">
+          <div class="pic alt-2">张</div>
+          <div class="info">
+            <div class="name">老张水果摊</div>
+            <div class="mini-stats"><span>积分 <em>100</em></span><span>消费积分 <em>89</em></span></div>
+          </div>
+          <div class="right"><div class="balance">¥30.50</div><span class="withdraw-btn">提现 ›</span></div>
+        </div>
+        <div class="wallet-row">
+          <div class="pic" style="background:linear-gradient(135deg,#ffd0dc,#ee5a8b);">陈</div>
+          <div class="info">
+            <div class="name">小陈奶茶店</div>
+            <div class="mini-stats"><span>积分 <em>0</em></span><span>消费积分 <em>0</em></span></div>
+          </div>
+          <div class="right"><div class="balance" style="color:var(--t3);">¥0.00</div><span class="withdraw-btn" style="background:var(--line);color:var(--t3);">无可提</span></div>
+        </div>
+      </div>
+      <div class="form-tip">⚠ 摊小二平台不直接管钱：余额是<b>商户预存</b>给你的奖励 / 退款，提现申请会到该商户的运营审批；提现到账时间以商户为准。</div>
+    </div>
+  </div>
+  <div class="phone-label">③.1 <b>我的钱包</b> · 按店列表 · 各店独立</div>
+</div>
+
+<!-- ============== 屏 3.2：推广积分明细（含店铺切换） ============== -->
+<div class="phone-wrap">
+  <div class="phone">
+    <div class="status-bar"><span>9:41</span><div class="status-icons"><span>📶</span><span>📡</span><span>🔋</span></div></div>
+    <div class="topbar"><span class="back">‹</span><span class="title">推广积分明细</span><span class="right">兑换</span></div>
+    <div class="view no-tab">
+      <div class="wallet-summary">
+        <div class="label">王师傅烤地瓜 · 推广积分</div>
+        <div class="num">156<small> 分</small></div>
+        <div class="hint">💡 1 推广积分 = 1 消费积分（可兑换） · 满 100 分可提现到该店余额</div>
+      </div>
+      <!-- 店铺切换条 -->
+      <div class="cat-tab">
+        <div class="it active">王师傅</div>
+        <div class="it">林家茶馆</div>
+        <div class="it">老张</div>
+        <div class="it">小陈</div>
+      </div>
+
+      <div class="section-title"><h3>积分流水</h3><span class="more">筛选</span></div>
+      <div class="card" style="padding:0;">
+        <div class="flow-row"><div class="icon">↗</div><div class="body"><div class="name">直推奖（小李 下单 ¥58）</div><div class="meta">2026-05-01 14:23 · 推 N 反 1 第 1 位</div></div><div class="amt">+17</div></div>
+        <div class="flow-row"><div class="icon">↗</div><div class="body"><div class="name">队列返奖（自然推第 2 位）</div><div class="meta">2026-04-30 10:11</div></div><div class="amt">+12</div></div>
+        <div class="flow-row"><div class="icon">🏆</div><div class="body"><div class="name">团队极差奖（5 星差额 1%）</div><div class="meta">2026-04-29 09:45</div></div><div class="amt">+5</div></div>
+        <div class="flow-row minus"><div class="icon">↘</div><div class="body"><div class="name">提现到该店余额（¥38）</div><div class="meta">2026-04-28 商户已审批</div></div><div class="amt">-38</div></div>
+        <div class="flow-row"><div class="icon">🎲</div><div class="body"><div class="name">星级积分池中奖（4 月）</div><div class="meta">2026-04-25 抽奖结算</div></div><div class="amt">+30</div></div>
+        <div class="flow-row"><div class="icon">↗</div><div class="body"><div class="name">直推奖（小王 下单 ¥10）</div><div class="meta">2026-04-22 16:30</div></div><div class="amt">+3</div></div>
       </div>
     </div>
-    <div class="tab-bar">
-      <div class="tab-item">
-        <span class="ic">🏠</span><span>首页</span>
+  </div>
+  <div class="phone-label">③.2 <b>推广积分明细</b> · 按店切换 · v6 流水分类</div>
+</div>
+
+<!-- ============== 屏 3.3：店铺余额管理 / 提现申请 ============== -->
+<div class="phone-wrap">
+  <div class="phone">
+    <div class="status-bar"><span>9:41</span><div class="status-icons"><span>📶</span><span>📡</span><span>🔋</span></div></div>
+    <div class="topbar"><span class="back">‹</span><span class="title">提现申请</span><span class="right"></span></div>
+    <div class="view no-tab">
+      <div class="form-group">
+        <label>选择店铺</label>
+        <div class="form-shop">
+          <div class="pic">王</div>
+          <div class="ctx"><div class="nm">王师傅烤地瓜</div><div class="bal">可提余额：¥38.00</div></div>
+          <span style="color:var(--brand);font-size:12px;">切换 ›</span>
+        </div>
       </div>
-      <div class="tab-item">
-        <span class="ic">📋</span><span>订单</span>
+      <div class="form-group">
+        <label>提现金额（仅可提该店余额）</label>
+        <div class="field">
+          <span class="prefix">¥</span>
+          <input value="38.00" />
+          <span class="suffix">全部</span>
+        </div>
       </div>
-      <div class="tab-item active">
-        <span class="ic">👤</span><span>我的</span>
+      <div class="form-group">
+        <label>到账方式</label>
+        <div class="form-shop" style="border:2px solid var(--brand);">
+          <div class="pic" style="background:rgba(7,193,96,.12);color:#07C160;">微</div>
+          <div class="ctx"><div class="nm">微信钱包</div><div class="bal">实名认证 · 138****8000</div></div>
+          <span style="color:var(--brand);font-size:14px;">●</span>
+        </div>
+      </div>
+      <div class="form-tip">
+        <b>提现规则：</b><br>
+        · 余额仅可提到本人微信钱包（与登录手机号实名一致）<br>
+        · 提现申请会到 <b>王师傅烤地瓜</b> 的运营审批，预计 1-3 个工作日<br>
+        · 商户拒绝时余额会原路退回，可重新申请<br>
+        · 单笔最低 ¥10，每月最多 5 次
+      </div>
+      <div class="form-submit">提交提现申请</div>
+    </div>
+  </div>
+  <div class="phone-label">③.3 <b>提现申请</b> · 选店 → 填金额</div>
+</div>
+
+<!-- ============== 屏 3.4：我的队列（v6 推 N 反 1） ============== -->
+<div class="phone-wrap">
+  <div class="phone">
+    <div class="status-bar"><span>9:41</span><div class="status-icons"><span>📶</span><span>📡</span><span>🔋</span></div></div>
+    <div class="topbar"><span class="back">‹</span><span class="title">我的队列</span><span class="right">规则</span></div>
+    <div class="view no-tab">
+      <div class="form-tip" style="background:linear-gradient(135deg,#fff5ef,#ffe1c8);color:var(--t1);border-left-color:var(--brand);">
+        <b style="color:var(--brand);">v6 推 N 反 1：</b> 你买过的商品会进入队列，朋友通过你或自然进店买同款 →
+        你按当前位置拿对应比例的推广积分；累计满 N 次出队，共得 100% 商品价。
+      </div>
+
+      <!-- 队列卡 1：A 层（已升级） -->
+      <div class="queue-card">
+        <div class="hdr">
+          <div class="pic-mini">王</div>
+          <div class="name">王师傅烤地瓜 · 现烤蜜薯（大）</div>
+          <div class="layer-tag A">A 层</div>
+        </div>
+        <div class="product">推 4 反 1 · 25%/25%/25%/25% · 商品价 ¥10</div>
+        <div class="progress">
+          <div class="seg done"></div>
+          <div class="seg done"></div>
+          <div class="seg cur"></div>
+          <div class="seg"></div>
+        </div>
+        <div class="progress-text">
+          <span>已得 <b>¥5.00</b>（2/4 次）</span>
+          <span>距出队还差 <b>2 次</b></span>
+        </div>
+      </div>
+
+      <!-- 队列卡 2：B 层 -->
+      <div class="queue-card">
+        <div class="hdr">
+          <div class="pic-mini alt-1">林</div>
+          <div class="name">林家茶馆 · 老白茶 100g 礼盒</div>
+          <div class="layer-tag B">B 层</div>
+        </div>
+        <div class="product">推 3 反 1 · 30%/30%/40% · 商品价 ¥168</div>
+        <div class="progress">
+          <div class="seg cur"></div>
+          <div class="seg"></div>
+          <div class="seg"></div>
+        </div>
+        <div class="progress-text">
+          <span>已得 <b>¥0</b>（0/3 次）</span>
+          <span>等下个朋友买就触发</span>
+        </div>
+      </div>
+
+      <!-- 队列卡 3：A 层快出队 -->
+      <div class="queue-card">
+        <div class="hdr">
+          <div class="pic-mini" style="background:linear-gradient(135deg,#d8f5d6,#6fcf6f);">张</div>
+          <div class="name">老张水果摊 · 阳光玫瑰 1.5 斤</div>
+          <div class="layer-tag A">A 层</div>
+        </div>
+        <div class="product">推 5 反 1 · 20%/20%/20%/20%/20% · 商品价 ¥58</div>
+        <div class="progress">
+          <div class="seg done"></div>
+          <div class="seg done"></div>
+          <div class="seg done"></div>
+          <div class="seg done"></div>
+          <div class="seg cur"></div>
+        </div>
+        <div class="progress-text">
+          <span>已得 <b>¥46.40</b>（4/5 次）</span>
+          <span style="color:var(--brand);font-weight:700;">⚡ 还差 1 次出队</span>
+        </div>
+      </div>
+      <div style="height:12px;"></div>
+    </div>
+  </div>
+  <div class="phone-label">③.4 <b>我的队列</b> · v6 排队进度</div>
+</div>
+
+<!-- ============== 屏 3.5：店铺星级 ============== -->
+<div class="phone-wrap">
+  <div class="phone">
+    <div class="status-bar"><span>9:41</span><div class="status-icons"><span>📶</span><span>📡</span><span>🔋</span></div></div>
+    <div class="topbar"><span class="back">‹</span><span class="title">店铺星级</span><span class="right">规则</span></div>
+    <div class="view no-tab">
+      <div class="form-tip" style="background:linear-gradient(135deg,#fff5ef,#ffe1c8);color:var(--t1);border-left-color:var(--brand);">
+        <b style="color:var(--brand);">v6 星级体系：</b> 在每家店铺独立计算，<b>终生制</b> 永不降级。
+        星级越高拿的团队极差奖差额比例越大；满足升星条件下次成交自动升星。
+      </div>
+
+      <div class="star-card">
+        <div class="hdr">
+          <div class="pic-mini">王</div>
+          <div class="name">王师傅烤地瓜</div>
+          <div class="stars">★★★<span class="empty">☆☆</span></div>
+        </div>
+        <div style="font-size:11px;color:var(--t3);">极差抽成 3% · 当前 3 星</div>
+        <div class="next-cond">
+          <div style="font-weight:600;color:var(--t1);">距 4 星还差：</div>
+          <div class="row">
+            <span class="nm">直推下级数</span>
+            <div class="bar-bg"><div class="bar-fg" style="width:62%;"></div></div>
+            <em>5 / 8</em>
+          </div>
+          <div class="row">
+            <span class="nm">团队销售份数</span>
+            <div class="bar-bg"><div class="bar-fg" style="width:34%;"></div></div>
+            <em>28 / 81</em>
+          </div>
+        </div>
+      </div>
+
+      <div class="star-card">
+        <div class="hdr">
+          <div class="pic-mini alt-1">林</div>
+          <div class="name">林家茶馆</div>
+          <div class="stars">★<span class="empty">☆☆☆☆</span></div>
+        </div>
+        <div style="font-size:11px;color:var(--t3);">极差抽成 1% · 当前 1 星</div>
+        <div class="next-cond">
+          <div style="font-weight:600;color:var(--t1);">距 2 星还差：</div>
+          <div class="row">
+            <span class="nm">直推下级数</span>
+            <div class="bar-bg"><div class="bar-fg" style="width:33%;"></div></div>
+            <em>1 / 3</em>
+          </div>
+          <div class="row">
+            <span class="nm">团队销售份数</span>
+            <div class="bar-bg"><div class="bar-fg" style="width:11%;"></div></div>
+            <em>1 / 9</em>
+          </div>
+        </div>
+      </div>
+
+      <div class="star-card">
+        <div class="hdr">
+          <div class="pic-mini" style="background:linear-gradient(135deg,#d8f5d6,#6fcf6f);">张</div>
+          <div class="name">老张水果摊</div>
+          <div class="stars">★★<span class="empty">☆☆☆</span></div>
+        </div>
+        <div style="font-size:11px;color:var(--t3);">极差抽成 2% · 当前 2 星</div>
+        <div class="next-cond">
+          <div style="font-weight:600;color:var(--t1);">距 3 星还差：</div>
+          <div class="row">
+            <span class="nm">直推下级数</span>
+            <div class="bar-bg"><div class="bar-fg" style="width:80%;"></div></div>
+            <em>4 / 5</em>
+          </div>
+          <div class="row">
+            <span class="nm">团队销售份数</span>
+            <div class="bar-bg"><div class="bar-fg" style="width:55%;"></div></div>
+            <em>15 / 27</em>
+          </div>
+        </div>
+      </div>
+      <div style="height:12px;"></div>
+    </div>
+  </div>
+  <div class="phone-label">③.5 <b>店铺星级</b> · 按店进度条</div>
+</div>
+
+<!-- ============== 屏 3.6：邀请好友（必须先选店） ============== -->
+<div class="phone-wrap">
+  <div class="phone">
+    <div class="status-bar"><span>9:41</span><div class="status-icons"><span>📶</span><span>📡</span><span>🔋</span></div></div>
+    <div class="topbar"><span class="back">‹</span><span class="title">邀请好友</span><span class="right">邀请记录</span></div>
+    <div class="view no-tab">
+      <div class="invite-hero">
+        <h2>邀请好友进店购物</h2>
+        <p>好友通过你的链接进店并下单，按 <b>商家配置的 v6 推 N 反 1 + 团队极差</b> 自动返奖到你的推广积分</p>
+      </div>
+
+      <!-- 选店 -->
+      <div class="invite-shop-pick">
+        <div class="pic">王</div>
+        <div class="info">
+          <div class="label">当前邀请的店铺</div>
+          <div class="name">王师傅烤地瓜</div>
+        </div>
+        <span class="switch">切换 ›</span>
+      </div>
+
+      <div class="invite-qr">
+        <div class="qr-ph"></div>
+        <div style="font-size:13px;color:var(--t1);font-weight:600;margin-top:4px;">长按图片分享给朋友</div>
+        <div class="url">www.doupaidoudian.com/m/shop-home?tenantId=121&inviter=8001</div>
+      </div>
+
+      <div style="display:flex;gap:10px;margin:12px 16px;">
+        <div class="form-submit" style="flex:1;margin:0;">复制链接</div>
+        <div class="form-submit" style="flex:1;margin:0;background:var(--brand-d);">微信分享</div>
+      </div>
+
+      <div class="form-tip">
+        <b>v6 终生制：</b><br>
+        · 朋友首次通过你的链接登录 → <b>永久</b> 绑定为你的下级（仅在 王师傅烤地瓜 这家店）<br>
+        · 朋友购买参与"推 N 反 1"的商品 → 你拿第 1 个比例的返奖<br>
+        · 朋友再推荐别人 → 你拿"团队极差差额"<br>
+        · 已绑定他人为上级的，不会被你覆盖
+      </div>
+      <div style="height:12px;"></div>
+    </div>
+  </div>
+  <div class="phone-label">③.6 <b>邀请好友</b> · 按店生成链接 + QR</div>
+</div>
+
+<!-- ============== 屏 3.7：收货地址 ============== -->
+<div class="phone-wrap">
+  <div class="phone">
+    <div class="status-bar"><span>9:41</span><div class="status-icons"><span>📶</span><span>📡</span><span>🔋</span></div></div>
+    <div class="topbar"><span class="back">‹</span><span class="title">收货地址</span><span class="right">+ 添加</span></div>
+    <div class="view no-tab">
+      <div class="form-tip">📍 收货地址在<b>所有店铺通用</b>（不区分商户），结算时可切换。</div>
+
+      <div class="addr-row default">
+        <div class="name-row"><span class="name">小明</span><span class="phone">138 0013 8000</span></div>
+        <div class="addr">北京市朝阳区三里屯 SOHO 1 号楼 3 单元 502 室</div>
+        <div class="ops"><span>📝 编辑</span><span>📋 复制</span><span>🗑 删除</span></div>
+      </div>
+      <div class="addr-row">
+        <div class="name-row"><span class="name">小明（公司）</span><span class="phone">138 0013 8000</span></div>
+        <div class="addr">北京市海淀区中关村东路 1 号院搜狐大厦 12 层</div>
+        <div class="ops"><span>📝 编辑</span><span>📋 复制</span><span>🗑 删除</span></div>
+      </div>
+      <div class="addr-row">
+        <div class="name-row"><span class="name">妈妈</span><span class="phone">139 1234 5678</span></div>
+        <div class="addr">江苏省南京市鼓楼区中山北路 200 号</div>
+        <div class="ops"><span>📝 编辑</span><span>📋 复制</span><span>🗑 删除</span></div>
+      </div>
+
+      <div style="height:12px;"></div>
+      <div class="form-submit" style="background:var(--brand-light);color:var(--brand);">+ 添加新地址</div>
+    </div>
+  </div>
+  <div class="phone-label">③.7 <b>收货地址</b> · 平台通用</div>
+</div>
+
+<!-- ============== 屏 4：店铺详情 (shop-home C 端进店) ============== -->
+<div class="group-title"><em>下单链路</em>从店铺到付款完成（5 屏）</div>
+<div class="phone-wrap">
+  <div class="phone">
+    <div class="status-bar"><span>9:41</span><div class="status-icons"><span>📶</span><span>📡</span><span>🔋</span></div></div>
+    <div class="view no-tab">
+      <div class="sh-cover">
+        <div class="nav-back">‹</div>
+        <div class="nav-share">↗</div>
+        <div class="name">王师傅烤地瓜</div>
+      </div>
+
+      <!-- 店铺信息卡 -->
+      <div class="sh-info-card">
+        <div class="row1 star-row">
+          <span class="stars">★★★★★</span>
+          <span class="rating">4.9</span>
+          <span class="sales">月售 1280 单</span>
+          <span class="badge">⭐ 你 3 星</span>
+        </div>
+        <div class="meta-list">
+          <div class="meta-row"><span class="key">📍 位置</span><span>北京市朝阳区三里屯路 19 号 · 0.3km</span></div>
+          <div class="meta-row"><span class="key">⏰ 营业</span><span>09:00 - 22:00（营业中）</span></div>
+          <div class="meta-row"><span class="key">📞 电话</span><span>138 0013 8888</span></div>
+        </div>
+      </div>
+
+      <!-- 推广提示 -->
+      <div class="promo-banner">
+        <div class="ic">🎯</div>
+        <div class="txt">
+          本店参与 <b>推 N 反 1</b> 营销 · 邀请朋友买同款返推广积分
+          <div class="sub">点右上 ↗ 分享给好友 · 你已在该店赚 ¥38.00</div>
+        </div>
+      </div>
+
+      <!-- 商品分类 -->
+      <div class="cat-tab">
+        <div class="it active">全部</div>
+        <div class="it">招牌</div>
+        <div class="it">套餐</div>
+        <div class="it">饮料</div>
+      </div>
+
+      <!-- 商品 grid -->
+      <div class="product-grid">
+        <div class="pcard">
+          <div class="pic">🍠</div>
+          <div class="body">
+            <div class="name">现烤蜜薯（大）</div>
+            <div class="tag">流糖心 · 现烤现卖</div>
+            <div class="row"><div class="price"><small>¥</small>5.00</div><div class="add-btn">+</div></div>
+          </div>
+        </div>
+        <div class="pcard alt-1">
+          <div class="pic">🌽</div>
+          <div class="body">
+            <div class="name">水果玉米</div>
+            <div class="tag">现摘冰镇 · 鲜甜爆汁</div>
+            <div class="row"><div class="price"><small>¥</small>3.00</div><div class="add-btn">+</div></div>
+          </div>
+        </div>
+        <div class="pcard alt-2">
+          <div class="pic">🥔</div>
+          <div class="body">
+            <div class="name">蜜薯 + 玉米套餐</div>
+            <div class="tag">经典组合</div>
+            <div class="row"><div class="price"><small>¥</small>18.00</div><div class="add-btn">+</div></div>
+          </div>
+        </div>
+        <div class="pcard alt-3">
+          <div class="pic">🥯</div>
+          <div class="body">
+            <div class="name">手工烤馒头</div>
+            <div class="tag">炭火慢烤 · 微焦</div>
+            <div class="row"><div class="price"><small>¥</small>2.50</div><div class="add-btn">+</div></div>
+          </div>
+        </div>
+      </div>
+      <div style="height:12px;"></div>
+    </div>
+    <!-- 底部购物车栏 -->
+    <div class="sh-cart-bar">
+      <div class="cart-icon">🛒<span class="badge">2</span></div>
+      <div class="total">
+        <div class="price">¥21.00</div>
+        <div class="delivery">已减 ¥0 · 满 30 减 5</div>
+      </div>
+      <div class="pay-btn">去结算</div>
+    </div>
+    <div class="home-indicator"></div>
+  </div>
+  <div class="phone-label">④ <b>店铺详情</b> · 进店浏览</div>
+</div>
+
+<!-- ============== 屏 5：商品详情 ============== -->
+<div class="phone-wrap">
+  <div class="phone">
+    <div class="status-bar"><span>9:41</span><div class="status-icons"><span>📶</span><span>📡</span><span>🔋</span></div></div>
+    <div class="view no-tab">
+      <div class="pd-pic">
+        <div class="nav-back">‹</div>
+        <div class="nav-share">↗</div>
+        <span>🍠</span>
+        <div class="pager">1 / 3</div>
+      </div>
+      <div class="pd-info">
+        <div class="price-row">
+          <span class="price"><small>¥</small>5.00</span>
+          <span class="original">¥7.00</span>
+          <span class="promo-tag">推 4 反 1</span>
+        </div>
+        <div class="name">现烤蜜薯（流糖心 大）</div>
+        <div class="intro">来自山东烟台的红心蜜薯，皮薄肉甜流糖心，炭火现烤 30 分钟，外皮微焦内里软糯</div>
+        <div class="meta">
+          <span>已售 <b>1280</b></span>
+          <span>评分 <b>4.9</b></span>
+          <span>库存 <b>充足</b></span>
+        </div>
+      </div>
+
+      <!-- v6 推 N 反 1 高亮 -->
+      <div class="promo-banner">
+        <div class="ic">🎯</div>
+        <div class="txt">
+          推 4 个朋友买 → 你拿 <b>100% 商品价 ¥5</b>（25%/25%/25%/25% 累积）
+          <div class="sub">推第 1 个 +¥1.25 · 推第 2 个 +¥1.25 · 满 4 次出队累计 ¥5</div>
+        </div>
+      </div>
+
+      <!-- 规格 -->
+      <div class="pd-section">
+        <div class="hdr"><span>已选规格</span><span style="color:var(--brand);">大 × 1 ›</span></div>
+        <div class="body">
+          <span class="btn-pill primary">大</span>
+          <span class="btn-pill" style="margin-left:8px;">中</span>
+          <span class="btn-pill" style="margin-left:8px;">小</span>
+        </div>
+      </div>
+
+      <!-- 评价 -->
+      <div class="pd-section">
+        <div class="hdr"><span>用户评价（128）</span><span style="color:var(--t3);">查看全部 ›</span></div>
+        <div class="body" style="font-size:12px;">
+          <div style="display:flex;gap:8px;align-items:center;">
+            <div style="width:24px;height:24px;border-radius:50%;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;">小</div>
+            <span style="color:var(--t1);font-weight:600;">小李</span>
+            <span style="color:var(--brand);">★★★★★</span>
+          </div>
+          <div style="margin-top:6px;color:var(--t2);">真是流糖心！外皮微焦内里黏糯，5 块钱性价比绝了，下次还来</div>
+        </div>
+      </div>
+
+      <!-- 商品介绍 -->
+      <div class="pd-section">
+        <div class="hdr"><span>商品介绍</span></div>
+        <div class="body">
+          🌱 山东烟台红心蜜薯，海拔 600m+ 沙土地<br>
+          🔥 老式炭火 30 分钟慢烤，外皮微焦<br>
+          🍯 流糖心是天然糖分焦化，无添加任何糖<br>
+          📦 每日 16 时前下单，当日烤好次日送达
+        </div>
+      </div>
+      <div style="height:80px;"></div>
+    </div>
+    <!-- 底部 加购物车 + 立即购买 -->
+    <div class="pd-bottom">
+      <div class="ic-btn"><div class="ic">🏪</div><span>店铺</span></div>
+      <div class="ic-btn"><div class="ic">⭐</div><span>收藏</span></div>
+      <div class="ic-btn"><div class="ic">🛒</div><span>购物车</span></div>
+      <div class="add-cart">加入购物车</div>
+      <div class="buy-now">立即购买</div>
+    </div>
+    <div class="home-indicator"></div>
+  </div>
+  <div class="phone-label">⑤ <b>商品详情</b> · 推 N 反 1 透明展示</div>
+</div>
+
+<!-- ============== 屏 6：购物车 ============== -->
+<div class="phone-wrap">
+  <div class="phone">
+    <div class="status-bar"><span>9:41</span><div class="status-icons"><span>📶</span><span>📡</span><span>🔋</span></div></div>
+    <div class="topbar"><span class="back">‹</span><span class="title">购物车（3）</span><span class="right">编辑</span></div>
+    <div class="view no-tab" style="background:var(--bg);padding-bottom:90px;">
+      <div class="form-tip">💡 不同店铺商品<b>独立结算</b>（每个店生成独立订单 + 走对应商户的 v6 营销）</div>
+
+      <!-- 店铺 1 -->
+      <div class="cart-shop-grp">
+        <div class="gh">
+          <div class="check on">✓</div>
+          <div class="pic">王</div>
+          <div class="name">王师傅烤地瓜</div>
+        </div>
+        <div class="cart-row">
+          <div class="check on">✓</div>
+          <div class="pic">🍠</div>
+          <div class="info">
+            <div class="name">现烤蜜薯（流糖心 大）</div>
+            <div class="spec">规格：大</div>
+            <div class="row"><div class="price">¥5.00</div><div class="qty"><div class="btn">−</div><span class="num">2</span><div class="btn">+</div></div></div>
+          </div>
+        </div>
+        <div class="cart-row">
+          <div class="check on">✓</div>
+          <div class="pic alt-1">🌽</div>
+          <div class="info">
+            <div class="name">水果玉米</div>
+            <div class="spec">规格：单根</div>
+            <div class="row"><div class="price">¥3.00</div><div class="qty"><div class="btn">−</div><span class="num">1</span><div class="btn">+</div></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 店铺 2 -->
+      <div class="cart-shop-grp">
+        <div class="gh">
+          <div class="check">○</div>
+          <div class="pic" style="background:linear-gradient(135deg,#c9e0ff,#6196f0);">林</div>
+          <div class="name">林家茶馆</div>
+        </div>
+        <div class="cart-row">
+          <div class="check">○</div>
+          <div class="pic" style="background:linear-gradient(135deg,#d4e3ff,#6196f0);">🍵</div>
+          <div class="info">
+            <div class="name">老白茶 · 100g 礼盒</div>
+            <div class="spec">陈期 5 年 · 礼盒装</div>
+            <div class="row"><div class="price">¥168.00</div><div class="qty"><div class="btn">−</div><span class="num">1</span><div class="btn">+</div></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div style="text-align:center;color:var(--t3);font-size:11px;padding:12px;">— 本店猜你喜欢 —</div>
+    </div>
+    <div class="cart-bottom">
+      <div class="check-all on">✓</div>
+      <div class="label-all">全选</div>
+      <div class="total">
+        <span class="label">合计</span>
+        <span class="price">¥13.00</span>
+      </div>
+      <div class="checkout-btn">结算（2）</div>
+    </div>
+    <div class="home-indicator"></div>
+  </div>
+  <div class="phone-label">⑥ <b>购物车</b> · 多店分组 · 独立结算</div>
+</div>
+
+<!-- ============== 屏 7：结算页 ============== -->
+<div class="phone-wrap">
+  <div class="phone">
+    <div class="status-bar"><span>9:41</span><div class="status-icons"><span>📶</span><span>📡</span><span>🔋</span></div></div>
+    <div class="topbar"><span class="back">‹</span><span class="title">订单结算</span><span class="right"></span></div>
+    <div class="view no-tab" style="background:var(--bg);padding-bottom:80px;">
+      <!-- 地址 -->
+      <div class="ck-addr">
+        <div class="ic">📍</div>
+        <div class="body">
+          <div class="row1">小明<span class="phone">138 0013 8000</span></div>
+          <div class="row2">北京市朝阳区三里屯 SOHO 1 号楼 3 单元 502 室</div>
+        </div>
+        <div class="arrow">›</div>
+      </div>
+
+      <!-- 商品（分店） -->
+      <div class="ck-shop">
+        <div class="gh">
+          <div class="pic">王</div>
+          <div class="name">王师傅烤地瓜</div>
+        </div>
+        <div class="ck-row">
+          <div class="pic">🍠</div>
+          <div class="info"><div class="name">现烤蜜薯（流糖心 大）</div><div class="spec">大 · 现烤现卖</div></div>
+          <div class="right"><div class="price">¥5.00</div><div class="qty">x 2</div></div>
+        </div>
+        <div class="ck-row">
+          <div class="pic" style="background:linear-gradient(135deg,#d4e3ff,#6196f0);">🌽</div>
+          <div class="info"><div class="name">水果玉米</div><div class="spec">单根</div></div>
+          <div class="right"><div class="price">¥3.00</div><div class="qty">x 1</div></div>
+        </div>
+        <div class="ck-fee"><span>商品小计</span><span class="v">¥13.00</span></div>
+        <div class="ck-fee"><span>配送费</span><span class="v">¥3.00</span></div>
+        <div class="ck-fee"><span>满减优惠</span><span class="v" style="color:var(--success);">-¥0.00</span></div>
+        <div class="ck-fee"><span>使用消费积分（可抵 ¥4）</span><span class="v" style="color:var(--brand);">-¥4.00 ›</span></div>
+        <div class="ck-fee total"><span>店铺合计</span><span class="v">¥12.00</span></div>
+      </div>
+
+      <!-- 备注 -->
+      <div class="ck-shop">
+        <div class="gh"><div class="name" style="font-weight:400;color:var(--t2);">订单备注</div></div>
+        <div style="padding:12px 14px;color:var(--t3);font-size:13px;">点击填写（如：少糖 / 不要葱…）</div>
+      </div>
+
+      <!-- 支付方式 -->
+      <div class="ck-method">
+        <div class="gh">支付方式</div>
+        <div class="ck-method-row on">
+          <div class="ic wx">微</div>
+          <div class="name">微信支付</div>
+          <div class="desc">推荐</div>
+          <div class="radio"></div>
+        </div>
+        <div class="ck-method-row">
+          <div class="ic alipay">支</div>
+          <div class="name">支付宝</div>
+          <div class="radio"></div>
+        </div>
+        <div class="ck-method-row">
+          <div class="ic balance">余</div>
+          <div class="name">店铺余额</div>
+          <div class="desc">余额 ¥38.00</div>
+          <div class="radio"></div>
+        </div>
+      </div>
+    </div>
+    <div class="ck-bottom">
+      <div class="total">实付金额：<b>¥12.00</b></div>
+      <div class="pay-btn">提交订单</div>
+    </div>
+    <div class="home-indicator"></div>
+  </div>
+  <div class="phone-label">⑦ <b>结算页</b> · 商品 + 优惠 + 支付方式</div>
+</div>
+
+<!-- ============== 屏 8：支付完成 ============== -->
+<div class="phone-wrap">
+  <div class="phone">
+    <div class="status-bar"><span>9:41</span><div class="status-icons"><span>📶</span><span>📡</span><span>🔋</span></div></div>
+    <div class="topbar"><span class="back">‹</span><span class="title">支付完成</span><span class="right">分享</span></div>
+    <div class="view no-tab" style="background:var(--bg);">
+      <div class="succ-page">
+        <div class="icon-circle">✓</div>
+        <h2>支付成功</h2>
+        <p>订单已通知商家，预计 30 分钟内出餐</p>
+      </div>
+
+      <div class="succ-card">
+        <div class="row"><span>订单号</span><b>TX2026050100456</b></div>
+        <div class="row"><span>下单店铺</span><b>王师傅烤地瓜</b></div>
+        <div class="row"><span>商品数量</span><b>2 件</b></div>
+        <div class="row"><span>支付方式</span><b>微信支付</b></div>
+        <div class="row amt"><span>支付金额</span><b>¥12.00</b></div>
+      </div>
+
+      <div class="succ-promo">
+        <div class="hdr">🎁 推广奖励已就绪</div>
+        <div class="body">
+          · 你买了"现烤蜜薯（大）" → 自动进入推 N 反 1 队列<br>
+          · <b>推荐 4 个朋友</b>买同款 → 累计返 ¥5 推广积分<br>
+          · 当前位置：<b>B 层第 3 位</b>，等下个朋友进店触发首次返奖
+        </div>
+        <div style="display:flex;gap:8px;margin-top:10px;">
+          <span style="flex:1;text-align:center;background:#fff;color:var(--brand);padding:8px;border-radius:var(--r-md);font-size:13px;font-weight:600;border:1px solid var(--brand-light-2);">复制邀请链接</span>
+          <span style="flex:1;text-align:center;background:var(--brand);color:#fff;padding:8px;border-radius:var(--r-md);font-size:13px;font-weight:600;">微信分享 ›</span>
+        </div>
+      </div>
+
+      <div class="succ-actions">
+        <div class="btn ghost">查看订单</div>
+        <div class="btn primary">回首页继续逛</div>
       </div>
     </div>
     <div class="home-indicator"></div>
   </div>
-  <div class="phone-label">③ 我的 · 跨店铺资产</div>
+  <div class="phone-label">⑧ <b>支付完成</b> · 推 N 反 1 引流分享</div>
+</div>
+
 </div>
 
 </body>
