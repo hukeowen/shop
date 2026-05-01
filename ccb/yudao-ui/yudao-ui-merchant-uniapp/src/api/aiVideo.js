@@ -333,6 +333,10 @@ export async function ensurePosterForTask(taskId, { force = false } = {}) {
   const url = await generatePoster({ shopName: t.shopName || '我的店铺' });
   t.posterUrl = url;
   persist();
+  // B 改造 Step 4.4：海报 URL 同步到后端 video_task.poster_url（用户换设备能看见海报）
+  if (t.dbId) {
+    patchTaskMetaToDB(t.dbId, { posterUrl: url }).catch(() => {});
+  }
   return url;
 }
 
@@ -791,24 +795,28 @@ async function registerTaskToDB(task) {
   }
 }
 
-/** 同步任务最终状态到 DB */
+/**
+ * 同步任务最终状态到 DB。
+ *
+ * <p>B 改造 Step 4.4：从老的 /sync-status（仅 status/videoUrl/failReason）
+ * 升级走新的 /update-meta，能一次写更多字段（如 status / videoUrl / failReason
+ * + 顺手把 coverUrl / posterUrl 等元数据）。</p>
+ *
+ * <p>映射规则：前端 task.status (1=拆幕中 2=等确认 3=生成中 4=完成 5=失败) →
+ * 后端 VideoTaskStatusEnum (0=PENDING 1=PROCESSING 2=COMPLETED 3=FAILED)。</p>
+ */
 async function syncStatusToDB(task) {
   if (!task.dbId) return;
-  try {
-    const firstScene = (task.scenes || []).find((s) => s.clipUrl);
-    await request({
-      url: `${TASK_BASE}/sync-status`,
-      method: 'PUT',
-      data: {
-        dbId: task.dbId,
-        clientStatus: task.status,
-        videoUrl: firstScene?.clipUrl || '',
-        failReason: task.failReason || '',
-      },
-    });
-  } catch (e) {
-    console.warn('[aiVideo] syncStatusToDB 失败:', e.message);
-  }
+  const firstScene = (task.scenes || []).find((s) => s.clipUrl);
+  // 前端 status → 后端 status：4=完成→2、5=失败→3、其余→1（PROCESSING）
+  let dbStatus = 1;
+  if (task.status === 4) dbStatus = 2;
+  else if (task.status === 5) dbStatus = 3;
+  await patchTaskMetaToDB(task.dbId, {
+    status: dbStatus,
+    videoUrl: firstScene?.clipUrl || undefined,
+    failReason: task.failReason || undefined,
+  });
 }
 
 /** DB 任务记录 → 本地 task 格式 */
