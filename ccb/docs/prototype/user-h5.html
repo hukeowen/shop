@@ -1887,14 +1887,18 @@
     <div class="status-bar"><span>9:41</span><div class="status-icons"><span>📶</span><span>📡</span><span>🔋</span></div></div>
     <div class="topbar"><span class="back">‹</span><span class="title">购物车（3）</span><span class="right">编辑</span></div>
     <div class="view no-tab" style="background:var(--bg);padding-bottom:90px;">
-      <div class="form-tip">💡 不同店铺商品<b>独立结算</b>（每个店生成独立订单 + 走对应商户的 v6 营销）</div>
+      <div class="form-tip" style="background:#FFF8EF;color:#B26A00;border-left:3px solid var(--warn);">
+        ⚠ 一次只能在<b>同一家店</b>结算（订单按店独立 + v6 营销 / 余额 / 积分都按店隔离）。
+        切换店铺会清空另一家店的勾选。
+      </div>
 
-      <!-- 店铺 1 -->
-      <div class="cart-shop-grp">
+      <!-- 店铺 1（当前选中结算） -->
+      <div class="cart-shop-grp" style="border:2px solid var(--brand);">
         <div class="gh">
           <div class="check on">✓</div>
           <div class="pic">王</div>
           <div class="name">王师傅烤地瓜</div>
+          <span style="background:var(--brand);color:#fff;font-size:10px;padding:2px 8px;border-radius:var(--r-pill);">本次结算</span>
         </div>
         <div class="cart-row">
           <div class="check on">✓</div>
@@ -1916,15 +1920,16 @@
         </div>
       </div>
 
-      <!-- 店铺 2 -->
-      <div class="cart-shop-grp">
+      <!-- 店铺 2（不可同时勾选，点击会切换） -->
+      <div class="cart-shop-grp" style="opacity:.65;">
         <div class="gh">
-          <div class="check">○</div>
+          <div class="check" style="border-color:var(--t3);color:var(--t3);">○</div>
           <div class="pic" style="background:linear-gradient(135deg,#c9e0ff,#6196f0);">林</div>
           <div class="name">林家茶馆</div>
+          <span style="background:var(--bg);color:var(--t3);font-size:10px;padding:2px 8px;border-radius:var(--r-pill);">点此切换</span>
         </div>
-        <div class="cart-row">
-          <div class="check">○</div>
+        <div class="cart-row" style="pointer-events:none;">
+          <div class="check" style="border-color:var(--t3);color:var(--t3);">○</div>
           <div class="pic" style="background:linear-gradient(135deg,#d4e3ff,#6196f0);">🍵</div>
           <div class="info">
             <div class="name">老白茶 · 100g 礼盒</div>
@@ -1938,9 +1943,9 @@
     </div>
     <div class="cart-bottom">
       <div class="check-all on">✓</div>
-      <div class="label-all">全选</div>
+      <div class="label-all">全选本店</div>
       <div class="total">
-        <span class="label">合计</span>
+        <span class="label">王师傅</span>
         <span class="price">¥13.00</span>
       </div>
       <div class="checkout-btn">结算（2）</div>
@@ -1985,8 +1990,7 @@
         <div class="ck-fee"><span>商品小计</span><span class="v">¥13.00</span></div>
         <div class="ck-fee"><span>配送费</span><span class="v">¥3.00</span></div>
         <div class="ck-fee"><span>满减优惠</span><span class="v" style="color:var(--success);">-¥0.00</span></div>
-        <div class="ck-fee"><span>使用消费积分（可抵 ¥4）</span><span class="v" style="color:var(--brand);">-¥4.00 ›</span></div>
-        <div class="ck-fee total"><span>店铺合计</span><span class="v">¥12.00</span></div>
+        <div class="ck-fee total"><span>店铺合计</span><span class="v">¥16.00</span></div>
       </div>
 
       <!-- 备注 -->
@@ -1995,9 +1999,51 @@
         <div style="padding:12px 14px;color:var(--t3);font-size:13px;">点击填写（如：少糖 / 不要葱…）</div>
       </div>
 
-      <!-- 支付方式 -->
+      <!-- 组合支付 · 店铺资产抵扣（可叠加） -->
       <div class="ck-method">
-        <div class="gh">支付方式</div>
+        <div class="gh">店铺资产抵扣 <span style="font-weight:400;color:var(--t3);font-size:11px;">· 可叠加</span></div>
+
+        <!-- 消费积分 -->
+        <div style="padding: 12px 14px; border-top: 1px solid var(--line); display:flex; align-items:center;">
+          <div class="ic" style="width:32px;height:32px;border-radius:var(--r-md);display:flex;align-items:center;justify-content:center;font-size:16px;background:rgba(245,158,11,.14);color:#F59E0B;margin-right:10px;">🪙</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:14px;color:var(--t1);font-weight:600;">王师傅 · 消费积分</div>
+            <div style="font-size:11px;color:var(--t3);margin-top:2px;">余 820 分（10 分=¥1）· 本单最多抵 ¥8</div>
+          </div>
+          <!-- 输入抵扣金额 + 开关 -->
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="color:var(--brand);font-weight:700;font-size:13px;">-¥4.00</span>
+            <div style="width:44px;height:24px;border-radius:12px;background:var(--brand);position:relative;">
+              <div style="position:absolute;right:2px;top:2px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.2);"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 店铺余额 -->
+        <div style="padding: 12px 14px; border-top: 1px solid var(--line); display:flex; align-items:center;">
+          <div class="ic balance" style="width:32px;height:32px;border-radius:var(--r-md);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;margin-right:10px;">余</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:14px;color:var(--t1);font-weight:600;">王师傅 · 店铺余额</div>
+            <div style="font-size:11px;color:var(--t3);margin-top:2px;">余 ¥38.00 · 本单最多抵 ¥12</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="color:var(--brand);font-weight:700;font-size:13px;">-¥5.00</span>
+            <div style="width:44px;height:24px;border-radius:12px;background:var(--brand);position:relative;">
+              <div style="position:absolute;right:2px;top:2px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.2);"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 抵扣后 / 还需在线支付 -->
+        <div style="padding: 12px 14px; border-top: 1px solid var(--line); background: linear-gradient(135deg, #fff5ef, #fff); display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:12px;color:var(--t2);">抵扣后还需在线支付</span>
+          <span style="font-size:18px;font-weight:800;color:var(--brand);">¥7.00</span>
+        </div>
+      </div>
+
+      <!-- 在线支付方式（仅对剩余金额生效） -->
+      <div class="ck-method">
+        <div class="gh">在线支付剩余 ¥7.00</div>
         <div class="ck-method-row on">
           <div class="ic wx">微</div>
           <div class="name">微信支付</div>
@@ -2009,16 +2055,19 @@
           <div class="name">支付宝</div>
           <div class="radio"></div>
         </div>
-        <div class="ck-method-row">
-          <div class="ic balance">余</div>
-          <div class="name">店铺余额</div>
-          <div class="desc">余额 ¥38.00</div>
-          <div class="radio"></div>
-        </div>
+      </div>
+
+      <!-- 组合支付明细提示 -->
+      <div class="form-tip" style="background:#FFF8EF;color:#B26A00;border-left:3px solid var(--warn);">
+        <b>组合支付明细：</b><br>
+        · 消费积分抵扣 <b>-¥4.00</b>（用 40 分）<br>
+        · 店铺余额抵扣 <b>-¥5.00</b>（仅可用王师傅店余额）<br>
+        · 微信在线支付 <b>¥7.00</b><br>
+        · 三项合计 = 店铺合计 ¥16.00 ✓
       </div>
     </div>
     <div class="ck-bottom">
-      <div class="total">实付金额：<b>¥12.00</b></div>
+      <div class="total">合计 ¥16.00 · 实付微信 <b>¥7.00</b></div>
       <div class="pay-btn">提交订单</div>
     </div>
     <div class="home-indicator"></div>
