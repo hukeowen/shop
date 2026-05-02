@@ -68,6 +68,9 @@
 <script setup>
 import { ref, reactive, computed } from 'vue';
 import { request } from '../../api/request.js';
+import { useUserStore } from '../../store/user.js';
+
+const userStore = useUserStore();
 
 const form = reactive({ mobile: '', password: '' });
 const submitting = ref(false);
@@ -94,21 +97,18 @@ async function submit() {
       uni.showToast({ title: '登录响应缺少 token', icon: 'none' });
       throw new Error('无 token');
     }
-    const userStore = JSON.stringify({
-      token,
-      userId: resp.userId,
-      phone: resp.phone,
-      role: resp.activeRole,
-      nickname: resp.nickname,
-      shopName: resp.shopName,
-    });
-    try {
-      if (typeof localStorage !== 'undefined') localStorage.setItem('user-store-v1', userStore);
-    } catch {}
-    try {
-      uni.setStorageSync('token', token);
-      if (resp.merchantId) uni.setStorageSync('merchantId', resp.merchantId);
-    } catch {}
+    // 走 userStore 持久化（含 nickname/shopName），保证 me 页 / 商户首页能读到店铺名
+    userStore.token = token;
+    userStore.refreshToken = resp.refreshToken || '';
+    userStore.userId = resp.userId || 0;
+    userStore.merchantId = resp.merchantId || 0;
+    userStore.phone = resp.phone || form.mobile;
+    userStore.openid = resp.openid || '';
+    userStore.roles = Array.isArray(resp.roles) ? resp.roles : [];
+    userStore.activeRole = resp.activeRole || (userStore.roles[0] || '');
+    userStore._writeProfile(resp);
+    userStore.persist();
+    try { uni.setStorageSync('token', token); } catch {}
 
     const isMerchant = resp.activeRole === 'merchant' || (resp.roles || []).includes('merchant');
     if (!isMerchant) {
@@ -123,7 +123,8 @@ async function submit() {
       });
       return;
     }
-    uni.reLaunch({ url: '/pages/me/index' });
+    // 商户首页是 dashboard /pages/index/index，不是"我的"
+    uni.reLaunch({ url: '/pages/index/index' });
   } catch (e) {
     // toast 由 request.js 处理；这里仅作为最后兜底，避免 silently 卡住按钮
     if (e?.message === '无 token') {

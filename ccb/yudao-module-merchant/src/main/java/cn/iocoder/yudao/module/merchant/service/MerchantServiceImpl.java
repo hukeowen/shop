@@ -174,19 +174,14 @@ public class MerchantServiceImpl implements MerchantService {
         String shopName = "新店" + memberUserId;
 
         // ========== 完整开通流程（与 MerchantApplyServiceImpl.approveApply 对齐）==========
-        // 1. 创建系统租户（system_tenant）— 商户后续登录的 tenant-id 由此生成
-        TenantSaveReqVO tenantReqVO = new TenantSaveReqVO();
-        tenantReqVO.setName(shopName);
-        tenantReqVO.setContactName(shopName);
-        tenantReqVO.setContactMobile(phone);
-        tenantReqVO.setStatus(0);
-        tenantReqVO.setPackageId(defaultPackageId);
-        tenantReqVO.setExpireTime(LocalDateTime.now().plusYears(100));
-        tenantReqVO.setAccountCount(999);
-        tenantReqVO.setUsername(phone != null ? phone : ("u" + memberUserId));
-        tenantReqVO.setPassword(generatePlaceholderPassword());
-        tenantReqVO.setWebsites(Collections.emptyList());
-        Long tenantId = tenantService.createTenant(tenantReqVO);
+        // 1. 创建系统租户（system_tenant）— 商户后续登录的 tenant-id 由此生成。
+        //
+        // 历史问题：原本调 yudao TenantService.createTenant(...) 会同时 createRole +
+        // createUser，但我们的商户登录走 member_user + JWT，不依赖 system_user/role。
+        // yudao 的 createRole 在并发/边界场景会撞 ROLE_NAME_DUPLICATE 把整个申请流程拖垮。
+        // 改为直接 INSERT system_tenant 行，跳过 createRole/createUser 副作用。
+        // contact_user_id 暂留 NULL（PC 后台"租户管理"页若需可手动绑定 admin）。
+        Long tenantId = createTenantDirectly(shopName, phone, defaultPackageId);
 
         // 2. 初始化 shop_info（商户分享码 / 综合排名 / 营业状态都依赖此表）
         ShopInfoDO shopInfo = ShopInfoDO.builder()
@@ -241,6 +236,51 @@ public class MerchantServiceImpl implements MerchantService {
             sb.append(PLACEHOLDER_CHARS[SECURE_RANDOM.nextInt(PLACEHOLDER_CHARS.length)]);
         }
         return sb.toString();
+    }
+
+    /**
+     * 直接 INSERT system_tenant 行，跳过 yudao TenantService.createTenant 的
+     * createRole + createUser 副作用 —— 避免反复撞 ROLE_NAME_DUPLICATE。
+     *
+     * <p>商户登录走 member_user + JWT，不依赖 system_user / system_role。
+     * contact_user_id 暂留 NULL；PC 后台「租户管理」页若需要操作租户管理员，
+     * 由超管手动绑定即可。</p>
+     *
+     * <p>事务由调用方 @Transactional 控制；本方法内若 INSERT 失败会抛
+     * DataAccessException 让外层回滚。</p>
+     *
+     * @return 新创建的 tenantId（主键）
+     */
+    private Long createTenantDirectly(String shopName, String phone, Long packageId) {
+        // 1. INSERT system_tenant 并通过 GeneratedKey 拿到自增 id
+        org.springframework.jdbc.support.GeneratedKeyHolder kh =
+                new org.springframework.jdbc.support.GeneratedKeyHolder();
+        final String contactName = shopName;
+        final String contactMobile = phone;
+        final java.time.LocalDateTime expireTime = java.time.LocalDateTime.now().plusYears(100);
+        jdbcTemplate.update(con -> {
+            java.sql.PreparedStatement ps = con.prepareStatement(
+                    "INSERT INTO system_tenant " +
+                    "(name, contact_user_id, contact_name, contact_mobile, status, " +
+                    " websites, package_id, expire_time, account_count, " +
+                    " creator, create_time, updater, update_time, deleted) " +
+                    "VALUES (?, NULL, ?, ?, 0, '', ?, ?, 999, 'system', NOW(), 'system', NOW(), b'0')",
+                    java.sql.Statement.RETURN_GENERATED_KEYS);
+            ps.setString(1, shopName);
+            ps.setString(2, contactName);
+            ps.setString(3, contactMobile);
+            ps.setLong(4, packageId);
+            ps.setTimestamp(5, java.sql.Timestamp.valueOf(expireTime));
+            return ps;
+        }, kh);
+        Number key = kh.getKey();
+        if (key == null) {
+            throw new IllegalStateException("createTenantDirectly 拿不到自增 id");
+        }
+        Long tenantId = key.longValue();
+        log.info("[createTenantDirectly] 直建租户 tenantId={} shopName={} mobile={}",
+                tenantId, shopName, phone);
+        return tenantId;
     }
 
     /**

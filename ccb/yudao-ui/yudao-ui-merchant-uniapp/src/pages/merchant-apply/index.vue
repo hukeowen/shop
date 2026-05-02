@@ -95,6 +95,9 @@
 <script setup>
 import { ref, reactive, computed } from 'vue';
 import { request } from '../../api/request.js';
+import { useUserStore } from '../../store/user.js';
+
+const userStore = useUserStore();
 
 const form = reactive({ shopName: '', mobile: '', smsCode: '' });
 const submitting = ref(false);
@@ -150,27 +153,30 @@ async function submit() {
       (typeof resp?.token === 'string' ? resp.token : null) ||
       resp?.token?.accessToken ||
       resp?.accessToken;
-    if (token) {
-      const userStore = JSON.stringify({
-        token,
-        userId: resp.userId,
-        phone: resp.phone,
-        role: 'merchant',
-      });
-      try {
-        if (typeof localStorage !== 'undefined') localStorage.setItem('user-store-v1', userStore);
-      } catch {}
-      try {
-        uni.setStorageSync('token', token);
-        if (resp.merchantId) uni.setStorageSync('merchantId', resp.merchantId);
-      } catch {}
+    if (!token) {
+      uni.showToast({ title: '入驻响应缺少 token', icon: 'none' });
+      return;
     }
+    // 走 userStore 持久化（含 nickname / shopName / shopLogo），保证 me 页能读到店铺名
+    userStore.token = token;
+    userStore.refreshToken = resp.refreshToken || '';
+    userStore.userId = resp.userId || 0;
+    userStore.merchantId = resp.merchantId || 0;
+    userStore.phone = resp.phone || form.mobile;
+    userStore.openid = resp.openid || '';
+    userStore.roles = Array.isArray(resp.roles) ? resp.roles : ['merchant'];
+    userStore.activeRole = 'merchant';
+    userStore._writeProfile(resp);
+    userStore.persist();
+    try { uni.setStorageSync('token', token); } catch {}
+
     uni.showModal({
       title: '🎉 入驻成功！',
-      content: `店铺「${form.shopName.trim()}」已开通，现在为您跳转到商户后台`,
+      content: `店铺「${form.shopName.trim()}」已开通，进入商户工作台`,
       showCancel: false,
-      confirmText: '进入后台',
-      success: () => uni.reLaunch({ url: '/pages/me/index' }),
+      confirmText: '进入工作台',
+      // 商户首页是 pages/index/index（dashboard），不是"我的"
+      success: () => uni.reLaunch({ url: '/pages/index/index' }),
     });
   } catch {
     // toast 由 request.js 处理
