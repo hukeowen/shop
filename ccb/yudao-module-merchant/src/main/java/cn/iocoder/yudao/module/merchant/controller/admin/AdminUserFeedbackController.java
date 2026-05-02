@@ -40,7 +40,9 @@ import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
 @Validated
 public class AdminUserFeedbackController {
 
-    private static final long PLATFORM_TENANT_ID = 1L;
+    /** 平台超管 tenantId，可通过 yudao.tenant.platform-tenant-id 配置覆盖（默认 1） */
+    @org.springframework.beans.factory.annotation.Value("${yudao.tenant.platform-tenant-id:1}")
+    private long platformTenantId;
 
     @Resource
     private UserFeedbackMapper userFeedbackMapper;
@@ -61,7 +63,7 @@ public class AdminUserFeedbackController {
                 .eqIfPresent(UserFeedbackDO::getUserId, userId)
                 .orderByDesc(UserFeedbackDO::getId);
         // 仅平台超管 (tenantId=1) 才能 allTenants；其他租户只能看自己 tenantId 的反馈
-        boolean isPlatformAdmin = currentTenantId != null && currentTenantId == PLATFORM_TENANT_ID;
+        boolean isPlatformAdmin = currentTenantId != null && currentTenantId == platformTenantId;
         if (!isPlatformAdmin || !Boolean.TRUE.equals(allTenants)) {
             q.eq(UserFeedbackDO::getTenantId, currentTenantId == null ? 0L : currentTenantId);
         }
@@ -88,7 +90,7 @@ public class AdminUserFeedbackController {
         }
         // 校验跨租户访问：除超管外只能回复自己 tenantId 的反馈
         Long currentTenantId = cn.iocoder.yudao.framework.tenant.core.context.TenantContextHolder.getTenantId();
-        if (currentTenantId != null && currentTenantId != PLATFORM_TENANT_ID
+        if (currentTenantId != null && currentTenantId != platformTenantId
                 && !java.util.Objects.equals(existing.getTenantId(), currentTenantId)) {
             throw ServiceExceptionUtil.exception0(1_031_002_013, "无权回复其它店铺的反馈");
         }
@@ -119,7 +121,7 @@ public class AdminUserFeedbackController {
             throw ServiceExceptionUtil.exception0(1_031_002_012, "反馈不存在");
         }
         Long currentTenantId = cn.iocoder.yudao.framework.tenant.core.context.TenantContextHolder.getTenantId();
-        if (currentTenantId != null && currentTenantId != PLATFORM_TENANT_ID
+        if (currentTenantId != null && currentTenantId != platformTenantId
                 && !java.util.Objects.equals(existing.getTenantId(), currentTenantId)) {
             throw ServiceExceptionUtil.exception0(1_031_002_013, "无权变更其它店铺的反馈");
         }

@@ -57,6 +57,7 @@ public class AppMerchantCheckoutController {
     @PostMapping("/submit")
     @Operation(summary = "提交订单（支持店铺余额抵扣）")
     @Transactional(rollbackFor = Exception.class)
+    @cn.iocoder.yudao.framework.tenant.core.aop.TenantIgnore  // MAJ-4：C 端跨店下单需 ignore
     public CommonResult<SubmitRespVO> submit(@Valid @RequestBody SubmitReqVO req) {
         Long userId = SecurityFrameworkUtils.getLoginUserId();
         Long tenantId = TenantContextHolder.getTenantId();
@@ -86,9 +87,14 @@ public class AppMerchantCheckoutController {
         // 3. 抵扣余额 + 改价（仅在余额抵扣启用且金额 > 0 时执行）
         int finalDeductFen = 0;
         int finalPayPrice = order.getPayPrice() == null ? 0 : order.getPayPrice();
-        if (useBalance && balanceFen > 0 && finalPayPrice > 0) {
-            // 必须留至少 1 分线上支付（updateOrderPrice 不允许 0 元）
-            int maxAllowed = Math.max(0, finalPayPrice - 1);
+        if (useBalance && balanceFen > 0) {
+            // MAJ-3 修复：必须保留至少 ¥0.01 线上支付（trade 的 updateOrderPrice
+            // 强校验 newPayPrice > 0）。订单金额过小时直接报错，不再静默"扣了但没扣"。
+            if (finalPayPrice <= 1) {
+                throw ServiceExceptionUtil.exception0(1_031_001_017,
+                        "订单金额过小（≤ ¥0.01），无法启用余额抵扣，请取消余额抵扣后再提交");
+            }
+            int maxAllowed = finalPayPrice - 1;
             finalDeductFen = Math.min(balanceFen, maxAllowed);
             if (finalDeductFen > 0) {
                 memberShopRelService.deductBalanceForOrder(userId, tenantId, orderId, finalDeductFen);

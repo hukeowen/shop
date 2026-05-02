@@ -75,21 +75,14 @@
 
       <!-- 组合支付 - 店铺资产抵扣 -->
       <view class="ck-method">
-        <view class="gh">店铺资产抵扣 <text class="sub">· 可叠加</text></view>
-        <!-- 消费积分 -->
-        <view class="m-row" v-if="userPoints > 0">
-          <view class="m-icon i-points">🪙</view>
-          <view class="m-info">
-            <view class="m-name">{{ shopName }} · 消费积分</view>
-            <view class="m-sub">余 {{ userPoints }} 分（{{ pointPerYuan }} 分=¥1）· 本单最多抵 ¥{{ fen2yuan(maxPointDeductFen) }}</view>
-          </view>
-          <view class="m-trail">
-            <text class="amt" :class="{ off: !usePoints }">{{ usePoints ? `-¥${fen2yuan(pointDeductFen)}` : '未使用' }}</text>
-            <view class="switch" :class="{ on: usePoints }" @click="usePoints = !usePoints">
-              <view class="dot"></view>
-            </view>
-          </view>
-        </view>
+        <view class="gh">店铺资产抵扣</view>
+        <!--
+          MAJ-6 修复：移除"店铺消费积分抵扣"开关。
+          原 UI 上的 usePoints 实际通过 trade 模块的 pointStatus 触发 member_user.point 抵扣，
+          而该数值并不是用户在 member_shop_rel.points 看到的"店铺消费积分"——两者是不同账户。
+          直到把 shop_rel.points 也接进 trade 价格计算管线之前，先下线这个 toggle 避免用户误解。
+          后续要恢复请按 V2 规划：扩展 TradeShopBalancePriceCalculator + 价格计算时同步扣 shop_rel.points。
+        -->
         <!-- 店铺余额抵扣（订单创建后调用 deduct-for-order 幂等扣减） -->
         <view class="m-row" :class="{ disabled: !balanceEnabled }">
           <view class="m-icon i-balance">余</view>
@@ -135,8 +128,7 @@
 
       <!-- 组合明细 -->
       <view class="form-tip">
-        <text class="b">组合支付明细：</text><br>
-        · 消费积分抵扣：<text class="hl">{{ usePoints ? `-¥${fen2yuan(pointDeductFen)}` : '未启用' }}</text><br>
+        <text class="b">支付明细：</text><br>
         · 店铺余额抵扣：<text class="hl">{{ useBalance ? `-¥${fen2yuan(balanceDeductFen)}` : '未启用' }}</text><br>
         · 在线支付：<text class="hl">¥{{ fen2yuan(remainFen) }}</text>
       </view>
@@ -300,7 +292,8 @@ async function submitOrder() {
     const reqData = {
       order: {
         items: settleItems,
-        pointStatus: usePoints.value,
+        // pointStatus 暂时禁用：见上方 MAJ-6 注释，shop_rel.points 与 trade member.point 不通
+        pointStatus: false,
         deliveryType: deliveryType.value,
         addressId: addressId.value || undefined,
         receiverName: receiverName.value || undefined,

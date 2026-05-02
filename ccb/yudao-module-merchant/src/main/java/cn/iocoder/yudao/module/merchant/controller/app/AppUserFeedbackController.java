@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
@@ -51,6 +52,7 @@ public class AppUserFeedbackController {
 
     @PostMapping("/submit")
     @Operation(summary = "提交反馈")
+    @TenantIgnore  // MAJ-4 修复：C 端跨店反馈，必须 ignore 拦截器的强一致校验
     @cn.iocoder.yudao.framework.ratelimiter.core.annotation.RateLimiter(
             time = 60,
             count = 5,
@@ -64,15 +66,21 @@ public class AppUserFeedbackController {
         String category = req.getCategory() == null ? "OTHER" : req.getCategory().trim().toUpperCase();
         if (!ALLOWED_CATEGORIES.contains(category)) category = "OTHER";
 
-        // MAJ-1 修复：tenantId 严格取自 server tenant context（请求 Header 经 yudao 拦截器
-        // 解码进入），并校验当前用户与该店铺已有 rel 关系，禁止跨店灌水。
-        // 平台通用反馈 → 不带 tenant header → tenantId=null → 落库为 0。
-        Long tenantId = TenantContextHolder.getTenantId();
-        if (tenantId != null && tenantId > 0) {
-            MemberShopRelDO rel = memberShopRelService.getByUserAndTenant(userId, tenantId);
+        // CRIT-1 修复：scope 来自显式请求体字段，不再依赖 TenantContextHolder == null
+        // 因为 TenantSecurityWebFilter 会在 controller 之前自动用 user.tenantId 兜底，
+        // controller 永远拿不到 null —— 老逻辑导致 PLATFORM 模式不可达。
+        String scope = req.getScope() == null ? "PLATFORM" : req.getScope().trim().toUpperCase();
+        Long tenantId;
+        if ("SHOP".equals(scope)) {
+            // 店铺反馈 → 必须显式带 shopTenantId 且校验 rel 存在
+            if (req.getShopTenantId() == null || req.getShopTenantId() <= 0) {
+                throw ServiceExceptionUtil.exception0(1_031_002_007, "店铺 ID 必填");
+            }
+            MemberShopRelDO rel = memberShopRelService.getByUserAndTenant(userId, req.getShopTenantId());
             if (rel == null) {
                 throw ServiceExceptionUtil.exception0(1_031_002_002, "请先进入该店铺再提交反馈");
             }
+            tenantId = req.getShopTenantId();
         } else {
             tenantId = 0L;
         }
@@ -91,16 +99,25 @@ public class AppUserFeedbackController {
     }
 
     @GetMapping("/my-list")
-    @Operation(summary = "我的反馈记录（按当前店铺过滤，平台通用 = tenantId=0）")
-    public CommonResult<PageResult<UserFeedbackDO>> myList(@Valid PageParam pageParam) {
+    @Operation(summary = "我的反馈记录（按 scope 过滤）")
+    @TenantIgnore  // MAJ-4 修复
+    public CommonResult<PageResult<UserFeedbackDO>> myList(
+            @Valid PageParam pageParam,
+            @RequestParam(value = "scope", required = false, defaultValue = "PLATFORM") String scope,
+            @RequestParam(value = "shopTenantId", required = false) Long shopTenantId) {
         Long userId = SecurityFrameworkUtils.getLoginUserId();
         if (userId == null || userId <= 0) {
             return success(new PageResult<>(0L));
         }
-        // MAJ-6 修复：按当前 tenantId 过滤；不带 tenant header 时返回平台通用反馈
-        Long tenantId = TenantContextHolder.getTenantId();
-        return success(userFeedbackMapper.selectPageByUserAndTenant(
-                userId, tenantId == null ? 0L : tenantId, pageParam));
+        // CRIT-1 修复：scope 显式参数化，与 submit 的 scope 字段语义对齐
+        long filterTenantId;
+        String s = scope == null ? "PLATFORM" : scope.trim().toUpperCase();
+        if ("SHOP".equals(s) && shopTenantId != null && shopTenantId > 0) {
+            filterTenantId = shopTenantId;
+        } else {
+            filterTenantId = 0L;
+        }
+        return success(userFeedbackMapper.selectPageByUserAndTenant(userId, filterTenantId, pageParam));
     }
 
     /**
@@ -132,6 +149,13 @@ public class AppUserFeedbackController {
 
     @lombok.Data
     public static class SubmitReqVO {
+
+        /** PLATFORM = 平台通用反馈（落 tenantId=0）/ SHOP = 给特定店铺（用 shopTenantId） */
+        @Size(max = 16)
+        private String scope;
+
+        /** scope=SHOP 时必填 */
+        private Long shopTenantId;
 
         @Size(max = 32)
         private String category;

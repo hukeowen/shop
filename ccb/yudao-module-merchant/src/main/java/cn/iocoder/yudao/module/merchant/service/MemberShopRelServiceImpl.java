@@ -155,6 +155,10 @@ public class MemberShopRelServiceImpl implements MemberShopRelService {
             throw exception0(1_031_001_015, "余额不足，无法抵扣订单");
         }
         // 3. 写日志（UNIQUE(user,tenant,order) 配合 @Transactional 抗并发）
+        // MAJ-1 修复：DO 不再 extends BaseDO，DefaultDBFieldHandler 不会自动填 creator/updater，
+        // 资金审计表必须保留发起人 ID，故手动设置。
+        java.time.LocalDateTime now = java.time.LocalDateTime.now();
+        String actor = String.valueOf(userId);
         try {
             memberOrderBalanceLogMapper.insert(
                     cn.iocoder.yudao.module.merchant.dal.dataobject.MemberOrderBalanceLogDO.builder()
@@ -162,6 +166,10 @@ public class MemberShopRelServiceImpl implements MemberShopRelService {
                             .tenantId(tenantId)
                             .orderId(orderId)
                             .amount(amount)
+                            .creator(actor)
+                            .createTime(now)
+                            .updater(actor)
+                            .updateTime(now)
                             .build());
         } catch (org.springframework.dao.DuplicateKeyException e) {
             // 并发场景：另一事务先插入了相同 (user,tenant,order)；本事务回滚（@Transactional），余额恢复

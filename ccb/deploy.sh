@@ -1181,8 +1181,13 @@ UNIT_EOF
   local i=0
   while [[ $i -lt 18 ]]; do
     sleep 5
-    if curl -sf "http://localhost:${SERVER_PORT}/admin-api/system/auth/captcha" &>/dev/null; then
-      log "后端服务就绪 ✓"
+    # 探活：HEAD 任意已注册 endpoint，只要不是 5xx / 连接拒绝就算"已就绪"
+    # /admin-api/system/captcha/get 是 POST → HEAD 会返 405，但 405 = Spring DispatcherServlet 已起
+    # 比原来 GET /admin-api/system/auth/captcha（不存在 → 404 但同样 spring 已起）更不会被误判
+    local http_code
+    http_code="$(curl -s -o /dev/null -w '%{http_code}' -X HEAD "http://localhost:${SERVER_PORT}/admin-api/system/captcha/get" 2>/dev/null || echo 000)"
+    if [[ "${http_code}" != "000" && "${http_code:0:1}" != "5" ]]; then
+      log "后端服务就绪 ✓ (HTTP ${http_code})"
       return
     fi
     i=$((i+1))

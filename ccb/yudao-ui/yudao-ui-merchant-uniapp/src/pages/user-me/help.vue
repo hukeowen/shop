@@ -94,7 +94,7 @@
 </template>
 
 <script setup>
-import { ref, computed, reactive, onMounted } from 'vue';
+import { ref, computed, reactive, onMounted, watch } from 'vue';
 import { request } from '../../api/request.js';
 
 const expanded = ref(-1);
@@ -157,15 +157,13 @@ async function submit() {
       url: '/app-api/merchant/mini/feedback/submit',
       method: 'POST',
       data: {
+        scope: scope.value,
+        shopTenantId: scope.value === 'SHOP' ? lastTenantId.value : undefined,
         category: form.category,
         content: form.content.trim(),
         contact: form.contact?.trim() || null,
       },
     };
-    // SHOP 模式 → 带 tenantId header；PLATFORM 模式 → /app-api 默认不带（服务端落 tenantId=0）
-    if (scope.value === 'SHOP' && lastTenantId.value) {
-      reqOpts.tenantId = lastTenantId.value;
-    }
     await request(reqOpts);
     uni.showToast({ title: '已收到，我们会尽快处理', icon: 'success' });
     form.content = '';
@@ -181,13 +179,10 @@ async function submit() {
 async function loadList() {
   loadingList.value = true;
   try {
-    const reqOpts = {
-      url: '/app-api/merchant/mini/feedback/my-list?pageNo=1&pageSize=50',
-    };
-    if (scope.value === 'SHOP' && lastTenantId.value) {
-      reqOpts.tenantId = lastTenantId.value;
-    }
-    const res = await request(reqOpts);
+    const params = `scope=${scope.value}` +
+      (scope.value === 'SHOP' && lastTenantId.value ? `&shopTenantId=${lastTenantId.value}` : '');
+    const url = `/app-api/merchant/mini/feedback/my-list?pageNo=1&pageSize=50&${params}`;
+    const res = await request({ url });
     list.value = res?.list || [];
   } catch { list.value = []; }
   finally { loadingList.value = false; }
@@ -200,6 +195,11 @@ function toggleHistory() {
   }
 }
 function goBack() { uni.navigateBack({ fail: () => uni.switchTab({ url: '/pages/user-me/index' }) }); }
+
+// MIN-1：scope 切换时若在历史 tab，立即刷新
+watch(scope, () => {
+  if (showHistory.value) loadList();
+});
 
 onMounted(async () => {
   // 取最近访问的店铺 tenantId 给"仅给当前店铺"选项作为目标
