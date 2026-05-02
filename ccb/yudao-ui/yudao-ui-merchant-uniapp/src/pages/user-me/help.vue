@@ -26,6 +26,10 @@
 
       <view class="form-card">
         <view class="form-title">还没解决？告诉我们</view>
+        <view class="scope-row">
+          <text :class="['scope', scope === 'PLATFORM' ? 'active' : '']" @click="scope = 'PLATFORM'">平台通用</text>
+          <text v-if="lastTenantId" :class="['scope', scope === 'SHOP' ? 'active' : '']" @click="scope = 'SHOP'">仅给当前店铺</text>
+        </view>
 
         <view class="cat-row">
           <text
@@ -96,6 +100,8 @@ import { request } from '../../api/request.js';
 const expanded = ref(-1);
 const showHistory = ref(false);
 const submitting = ref(false);
+const scope = ref('PLATFORM'); // PLATFORM = 平台通用 / SHOP = 当前店铺
+const lastTenantId = ref(null);
 
 const faqs = [
   { q: '推广积分能干什么？',
@@ -147,7 +153,7 @@ async function submit() {
   }
   submitting.value = true;
   try {
-    await request({
+    const reqOpts = {
       url: '/app-api/merchant/mini/feedback/submit',
       method: 'POST',
       data: {
@@ -155,7 +161,12 @@ async function submit() {
         content: form.content.trim(),
         contact: form.contact?.trim() || null,
       },
-    });
+    };
+    // SHOP 模式 → 带 tenantId header；PLATFORM 模式 → /app-api 默认不带（服务端落 tenantId=0）
+    if (scope.value === 'SHOP' && lastTenantId.value) {
+      reqOpts.tenantId = lastTenantId.value;
+    }
+    await request(reqOpts);
     uni.showToast({ title: '已收到，我们会尽快处理', icon: 'success' });
     form.content = '';
     form.contact = '';
@@ -170,7 +181,13 @@ async function submit() {
 async function loadList() {
   loadingList.value = true;
   try {
-    const res = await request({ url: '/app-api/merchant/mini/feedback/my-list?pageNo=1&pageSize=50' });
+    const reqOpts = {
+      url: '/app-api/merchant/mini/feedback/my-list?pageNo=1&pageSize=50',
+    };
+    if (scope.value === 'SHOP' && lastTenantId.value) {
+      reqOpts.tenantId = lastTenantId.value;
+    }
+    const res = await request(reqOpts);
     list.value = res?.list || [];
   } catch { list.value = []; }
   finally { loadingList.value = false; }
@@ -178,13 +195,21 @@ async function loadList() {
 
 function toggleHistory() {
   showHistory.value = !showHistory.value;
-  if (showHistory.value && !list.value.length) {
+  if (showHistory.value) {
     loadList();
   }
 }
 function goBack() { uni.navigateBack({ fail: () => uni.switchTab({ url: '/pages/user-me/index' }) }); }
 
-onMounted(() => {});
+onMounted(async () => {
+  // 取最近访问的店铺 tenantId 给"仅给当前店铺"选项作为目标
+  try {
+    const list = await request({ url: '/app-api/merchant/mini/member-rel/my-shops-enriched' });
+    if (Array.isArray(list) && list.length) {
+      lastTenantId.value = list[0]?.tenantId || null;
+    }
+  } catch {}
+});
 </script>
 
 <style lang="scss" scoped>
@@ -207,6 +232,10 @@ onMounted(() => {});
 
 .form-card { margin: 24rpx 32rpx; padding: 32rpx; background: $bg-card; border-radius: $radius-lg; box-shadow: 0 4rpx 16rpx rgba(15,23,42,.04); }
 .form-card .form-title { font-size: 30rpx; font-weight: 700; color: $text-primary; margin-bottom: 24rpx; }
+
+.scope-row { display: flex; gap: 12rpx; margin-bottom: 16rpx; padding-bottom: 16rpx; border-bottom: 1rpx solid $border-color; }
+.scope-row .scope { padding: 8rpx 24rpx; background: $bg-page; color: $text-secondary; font-size: 24rpx; border-radius: 8rpx; }
+.scope-row .scope.active { background: rgba(255,107,53,.10); color: $brand-primary; font-weight: 700; border: 1rpx solid $brand-primary; }
 
 .cat-row { display: flex; flex-wrap: wrap; gap: 12rpx; margin-bottom: 24rpx; }
 .cat-row .cat { padding: 12rpx 24rpx; background: $bg-page; color: $text-secondary; font-size: 24rpx; border-radius: 999rpx; }

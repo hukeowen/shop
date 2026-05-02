@@ -59,6 +59,7 @@ import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
 @RestController
 @RequestMapping("/merchant/mini/promo")
 @Validated
+@lombok.extern.slf4j.Slf4j
 public class AppMerchantPromoController {
 
     @Resource
@@ -267,23 +268,33 @@ public class AppMerchantPromoController {
                     aggregated.addAll(rows);
                 });
             } catch (Exception e) {
-                // 单个店铺失败不影响其他店铺聚合结果
+                // 单个店铺失败不影响其他店铺聚合结果，但要 log.warn 留排查痕迹
+                log.warn("[listMyQueues] tenant={} userId={} 聚合失败：{}", tid, userId, e.getMessage());
             }
         }
         if (aggregated.isEmpty()) return success(aggregated);
-        // 3. 一次性补 shopName（shop_info 是 BaseDO，跨租户直接查）
+        // 3. 批量一次性查 shopName（shop_info 是 BaseDO，跨租户直接 IN 查询，避免 N 次往返）
         java.util.Set<Long> tenantIdSet = aggregated.stream()
                 .map(AppQueuePositionRespVO::getTenantId)
                 .filter(java.util.Objects::nonNull)
                 .collect(java.util.stream.Collectors.toSet());
         java.util.Map<Long, String> shopNameMap = new java.util.HashMap<>(tenantIdSet.size());
-        for (Long tid : tenantIdSet) {
+        if (!tenantIdSet.isEmpty()) {
             try {
-                cn.iocoder.yudao.module.merchant.dal.dataobject.ShopInfoDO info = shopInfoMapper.selectByTenantId(tid);
-                if (info != null && info.getShopName() != null) {
-                    shopNameMap.put(tid, info.getShopName());
+                java.util.List<cn.iocoder.yudao.module.merchant.dal.dataobject.ShopInfoDO> infos =
+                        shopInfoMapper.selectList(
+                                new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<cn.iocoder.yudao.module.merchant.dal.dataobject.ShopInfoDO>()
+                                        .in(cn.iocoder.yudao.module.merchant.dal.dataobject.ShopInfoDO::getTenantId, tenantIdSet));
+                if (infos != null) {
+                    for (cn.iocoder.yudao.module.merchant.dal.dataobject.ShopInfoDO info : infos) {
+                        if (info != null && info.getTenantId() != null && info.getShopName() != null) {
+                            shopNameMap.put(info.getTenantId(), info.getShopName());
+                        }
+                    }
                 }
-            } catch (Exception ignore) {}
+            } catch (Exception e) {
+                log.warn("[listMyQueues] 批量查 shop_info 失败，shopName 字段将留空：{}", e.getMessage());
+            }
         }
         for (AppQueuePositionRespVO vo : aggregated) {
             if (vo.getShopName() == null && vo.getTenantId() != null) {

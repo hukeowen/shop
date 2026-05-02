@@ -54,6 +54,8 @@ public class AppMemberShopRelController {
     private MerchantMapper merchantMapper;
     @Resource
     private ShopUserStarMapper shopUserStarMapper;
+    @Resource
+    private cn.iocoder.yudao.module.trade.service.order.TradeOrderQueryService tradeOrderQueryService;
 
     /**
      * 列出当前用户访问过的所有店铺（设计 9.2 节"店铺级收藏"语义，按 lastVisitAt 倒序）。
@@ -278,16 +280,20 @@ public class AppMemberShopRelController {
     }
 
     /**
-     * 订单余额抵扣（C 端 checkout 调用）。
+     * 订单余额抵扣（独立调用入口，已被 /merchant/mini/checkout/submit 的同事务流程取代）。
      *
-     * <p>幂等：每个订单只能抵扣一次（UNIQUE(user,tenant,order) + @Transactional），
-     * 重复点击或网络重试都不会双扣。返回值 true=本次完成扣减，false=之前已扣过。</p>
+     * <p>保留是为兼容历史/管理路径；调用前严格校验：</p>
+     * <ol>
+     *   <li>orderId 必须真实存在，且 userId/tenantId/payPrice 三项与请求一致</li>
+     *   <li>抵扣金额必须 ≤ 订单 payPrice，避免凭空扣余额</li>
+     *   <li>UNIQUE(user,tenant,order) + @Transactional 保证幂等</li>
+     * </ol>
      *
-     * <p>注意：本接口只扣余额、写日志，<b>不</b>同步更新订单的"实付金额"。
-     * 调用方（前端）需在拿到 true 后用扣减后的金额走 trade/order/create 流程。</p>
+     * <p>注意：本接口<b>只扣余额、写日志，不同步更新 trade_order.payPrice</b>。
+     * 因此用户走支付时仍会被收全款 — 故 C 端 checkout 已不再调用本接口。</p>
      */
     @PostMapping("/deduct-for-order")
-    @Operation(summary = "订单余额抵扣（幂等）")
+    @Operation(summary = "订单余额抵扣（兼容入口；新流程请用 /checkout/submit）")
     @TenantIgnore
     public CommonResult<Boolean> deductForOrder(@RequestParam("tenantId") @NotNull Long tenantId,
                                                  @RequestParam("orderId") @NotNull Long orderId,
@@ -296,6 +302,24 @@ public class AppMemberShopRelController {
             throw exception0(1_031_001_006, "抵扣金额必须大于 0");
         }
         Long userId = SecurityFrameworkUtils.getLoginUserId();
+        // CRIT-1 修复：校验订单归属，防止跨用户/跨店铺凭空扣余额
+        cn.iocoder.yudao.module.trade.dal.dataobject.order.TradeOrderDO order =
+                cn.iocoder.yudao.framework.tenant.core.util.TenantUtils.execute(tenantId,
+                        () -> tradeOrderQueryService.getOrder(userId, orderId));
+        if (order == null) {
+            throw exception0(1_031_001_007, "订单不存在或不属于当前用户");
+        }
+        if (!java.util.Objects.equals(order.getUserId(), userId)
+                || !java.util.Objects.equals(order.getTenantId(), tenantId)) {
+            throw exception0(1_031_001_008, "订单归属校验失败");
+        }
+        if (order.getPayStatus() != null && order.getPayStatus()) {
+            throw exception0(1_031_001_009, "订单已支付");
+        }
+        int payPrice = order.getPayPrice() == null ? 0 : order.getPayPrice();
+        if (amount > payPrice) {
+            throw exception0(1_031_001_013, "抵扣金额不能超过订单应付金额");
+        }
         boolean done = memberShopRelService.deductBalanceForOrder(userId, tenantId, orderId, amount);
         return success(done);
     }

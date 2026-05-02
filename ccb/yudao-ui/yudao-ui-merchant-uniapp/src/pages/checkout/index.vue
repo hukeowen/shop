@@ -272,53 +272,65 @@ async function submitOrder() {
     uni.showToast({ title: '余额不足', icon: 'none' });
     return;
   }
+  // 必须保留至少 1 分线上支付（updateOrderPrice 不允许 0 元订单）
+  // 仅在「商品小计 - 消费积分抵扣」结果 > 余额抵扣时才能走余额；否则前端钳制
+  let safeBalanceFen = balanceDeductFen.value;
+  if (useBalance.value && safeBalanceFen > 0) {
+    const afterPoint = grossFen.value - pointDeductFen.value;
+    if (safeBalanceFen >= afterPoint) {
+      safeBalanceFen = Math.max(0, afterPoint - 1);
+    }
+  }
+  if (useBalance.value && safeBalanceFen <= 0) {
+    uni.showModal({
+      title: '无法仅用余额支付',
+      content: '当前订单金额过小，至少需保留 ¥0.01 走线上支付。请取消余额抵扣或加大订单金额。',
+      showCancel: false,
+    });
+    return;
+  }
   try {
     uni.showLoading({ title: '提交中...' });
-    // 1. 创建订单
     const settleItems = items.value.map(it => ({
       cartId: it.id || undefined,
       skuId: it.skuId || it.sku?.id,
       count: it.count || 1,
     }));
-    const data = {
-      items: settleItems,
-      pointStatus: usePoints.value,
-      deliveryType: deliveryType.value,
-      addressId: addressId.value || undefined,
-      receiverName: receiverName.value || undefined,
-      receiverMobile: receiverMobile.value || undefined,
-      remark: remark.value || undefined,
+    // 单事务下单接口：trade/order/create + 余额扣减 + 改价 一把梭
+    const reqData = {
+      order: {
+        items: settleItems,
+        pointStatus: usePoints.value,
+        deliveryType: deliveryType.value,
+        addressId: addressId.value || undefined,
+        receiverName: receiverName.value || undefined,
+        receiverMobile: receiverMobile.value || undefined,
+        remark: remark.value || undefined,
+      },
+      useShopBalance: useBalance.value,
+      balanceFen: useBalance.value ? safeBalanceFen : 0,
     };
     const res = await request({
-      url: '/app-api/trade/order/create',
+      url: '/app-api/merchant/mini/checkout/submit',
       method: 'POST',
       tenantId: tenantId.value,
-      data,
+      data: reqData,
     });
-    const orderId = res?.id || res;
-
-    // 2. 若启用店铺余额抵扣 → 后端幂等扣减
-    if (useBalance.value && balanceDeductFen.value > 0 && orderId) {
-      try {
-        await request({
-          url: `/app-api/merchant/mini/member-rel/deduct-for-order?tenantId=${tenantId.value}&orderId=${orderId}&amount=${balanceDeductFen.value}`,
-          method: 'POST',
-        });
-      } catch (deductErr) {
-        // 余额扣减失败：订单已创建，提示用户改用其它支付方式
-        uni.hideLoading();
-        uni.showModal({
-          title: '余额抵扣失败',
-          content: (deductErr?.message || '余额不足或网络异常') + '\n订单已创建，请前往订单列表选择其它支付方式',
-          showCancel: false,
-        });
-        setTimeout(() => uni.redirectTo({ url: '/pages/user-order/list' }), 1500);
-        return;
-      }
-    }
     uni.hideLoading();
-    uni.showToast({ title: '订单已创建', icon: 'success' });
-    setTimeout(() => uni.redirectTo({ url: '/pages/user-order/list' }), 800);
+    const orderId = res?.orderId;
+    const finalPayPrice = res?.payPrice ?? remainFen.value;
+    if (!orderId) {
+      uni.showModal({ title: '下单失败', content: '未拿到订单号', showCancel: false });
+      return;
+    }
+    if (finalPayPrice > 0) {
+      // MAJ-7 修复：还需线上支付 → 跳订单列表（用户在那里点"去支付"），不显示"创建成功"误导文案
+      uni.showToast({ title: `还需线上支付 ¥${(finalPayPrice / 100).toFixed(2)}`, icon: 'none', duration: 1500 });
+      setTimeout(() => uni.redirectTo({ url: '/pages/user-order/list' }), 1200);
+    } else {
+      uni.showToast({ title: '已支付', icon: 'success' });
+      setTimeout(() => uni.redirectTo({ url: '/pages/user-order/list' }), 800);
+    }
   } catch (e) {
     uni.hideLoading();
     uni.showModal({ title: '下单失败', content: e?.message || '请稍后再试', showCancel: false });

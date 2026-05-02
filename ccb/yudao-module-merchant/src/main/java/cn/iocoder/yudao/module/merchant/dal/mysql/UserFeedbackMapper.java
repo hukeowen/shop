@@ -16,4 +16,11 @@ public interface UserFeedbackMapper extends BaseMapperX<UserFeedbackDO> {
                 .orderByDesc(UserFeedbackDO::getId));
     }
 
+    default PageResult<UserFeedbackDO> selectPageByUserAndTenant(Long userId, Long tenantId, PageParam pageParam) {
+        return selectPage(pageParam, new LambdaQueryWrapperX<UserFeedbackDO>()
+                .eq(UserFeedbackDO::getUserId, userId)
+                .eq(UserFeedbackDO::getTenantId, tenantId)
+                .orderByDesc(UserFeedbackDO::getId));
+    }
+
 }

@@ -71,12 +71,43 @@
         <view class="btn-save" @click="saveAddr">保存</view>
       </view>
     </view>
+
+    <!-- 省市区 picker（三级联动） -->
+    <view v-if="showAreaPicker" class="area-mask" @click="showAreaPicker = false">
+      <view class="area-sheet" @click.stop>
+        <view class="area-hd">
+          <text class="cancel" @click="showAreaPicker = false">取消</text>
+          <text class="title">选择地区</text>
+          <text :class="['done', areaTemp.area ? 'on' : '']" @click="confirmArea">确定</text>
+        </view>
+        <view class="area-tabs">
+          <text :class="['tab', areaStep === 0 ? 'active' : '']" @click="areaStep = 0">
+            {{ areaTemp.province ? areaTemp.province.name : '请选择' }}
+          </text>
+          <text v-if="areaTemp.province" :class="['tab', areaStep === 1 ? 'active' : '']" @click="areaStep = 1">
+            {{ areaTemp.city ? areaTemp.city.name : '请选择' }}
+          </text>
+          <text v-if="areaTemp.city" :class="['tab', areaStep === 2 ? 'active' : '']" @click="areaStep = 2">
+            {{ areaTemp.area ? areaTemp.area.name : '请选择' }}
+          </text>
+        </view>
+        <scroll-view scroll-y class="area-list">
+          <view
+            v-for="n in currentAreaNodes"
+            :key="n.id"
+            :class="['area-row', isAreaActive(n) ? 'active' : '']"
+            @click="pickAreaNode(n)"
+          >{{ n.name }}</view>
+          <view v-if="!currentAreaNodes.length" class="area-empty">无更多</view>
+        </scroll-view>
+      </view>
+    </view>
     <view class="bottom-space"></view>
   </view>
 </template>
 
 <script setup>
-import { ref, onMounted, reactive } from 'vue';
+import { ref, computed, onMounted, reactive } from 'vue';
 import { request } from '../../api/request.js';
 
 const list = ref([]);
@@ -86,6 +117,59 @@ const form = reactive({
   id: null, name: '', mobile: '', areaId: null,
   areaText: '', detailAddress: '', defaultStatus: false,
 });
+
+// 省市区 picker 状态
+const areaTree = ref([]);
+const showAreaPicker = ref(false);
+const areaStep = ref(0); // 0=省 1=市 2=区
+const areaTemp = reactive({ province: null, city: null, area: null });
+
+const currentAreaNodes = computed(() => {
+  if (areaStep.value === 0) return areaTree.value;
+  if (areaStep.value === 1) return areaTemp.province?.children || [];
+  if (areaStep.value === 2) return areaTemp.city?.children || [];
+  return [];
+});
+function isAreaActive(n) {
+  if (areaStep.value === 0) return areaTemp.province?.id === n.id;
+  if (areaStep.value === 1) return areaTemp.city?.id === n.id;
+  return areaTemp.area?.id === n.id;
+}
+function pickAreaNode(n) {
+  if (areaStep.value === 0) {
+    areaTemp.province = n; areaTemp.city = null; areaTemp.area = null;
+    if (n.children?.length) areaStep.value = 1;
+    else confirmArea();
+  } else if (areaStep.value === 1) {
+    areaTemp.city = n; areaTemp.area = null;
+    if (n.children?.length) areaStep.value = 2;
+    else confirmArea();
+  } else {
+    areaTemp.area = n;
+    confirmArea();
+  }
+}
+function confirmArea() {
+  // 至少选到省或更深；优先用最深节点 id
+  const final = areaTemp.area || areaTemp.city || areaTemp.province;
+  if (!final) {
+    uni.showToast({ title: '请选择地区', icon: 'none' });
+    return;
+  }
+  form.areaId = final.id;
+  form.areaText = [areaTemp.province?.name, areaTemp.city?.name, areaTemp.area?.name]
+    .filter(Boolean).join(' / ');
+  showAreaPicker.value = false;
+}
+async function loadAreaTree() {
+  if (areaTree.value.length) return;
+  try {
+    const tree = await request({ url: '/app-api/system/area/tree' });
+    areaTree.value = Array.isArray(tree) ? tree : [];
+  } catch {
+    areaTree.value = [];
+  }
+}
 
 function emptyForm() {
   form.id = null; form.name = ''; form.mobile = '';
@@ -129,28 +213,27 @@ function cancelEdit() {
   emptyForm();
 }
 
-function pickArea() {
-  // uni-app H5 没有内置省市区选择器：用一个最简的输入框降级
-  // 真实生产建议接入 uni-data-picker 或 uni-ui，按 area 表选择 areaId
-  uni.showModal({
-    title: '所在地区',
-    editable: true,
-    placeholderText: '例：北京市朝阳区',
-    content: form.areaText || '',
-    success: ({ confirm, content }) => {
-      if (!confirm) return;
-      form.areaText = (content || '').trim();
-      // 没接入省市区表时，用 0 占位（areaId 必填，0 = 未指定）
-      if (!form.areaId) form.areaId = 0;
-    },
-  });
+async function pickArea() {
+  await loadAreaTree();
+  if (!areaTree.value.length) {
+    uni.showToast({ title: '地区数据加载失败', icon: 'none' });
+    return;
+  }
+  areaStep.value = 0;
+  areaTemp.province = null;
+  areaTemp.city = null;
+  areaTemp.area = null;
+  showAreaPicker.value = true;
 }
 
 async function saveAddr() {
   if (!form.name) { uni.showToast({ title: '请输入收件人', icon: 'none' }); return; }
   if (!/^1\d{10}$/.test(form.mobile)) { uni.showToast({ title: '请输入正确的手机号', icon: 'none' }); return; }
   if (!form.detailAddress) { uni.showToast({ title: '请输入详细地址', icon: 'none' }); return; }
-  if (form.areaId == null) form.areaId = 0;
+  if (form.areaId == null || form.areaId === 0) {
+    uni.showToast({ title: '请选择所在地区', icon: 'none' });
+    return;
+  }
   const data = {
     name: form.name,
     mobile: form.mobile,
@@ -276,4 +359,20 @@ onMounted(load);
 .form-actions .btn-save { background: $brand-primary; color: #fff; }
 
 .bottom-space { height: 80rpx; }
+
+/* 省市区 picker */
+.area-mask { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 200; display: flex; align-items: flex-end; }
+.area-sheet { width: 100%; max-height: 80vh; background: $bg-card; border-radius: 24rpx 24rpx 0 0; display: flex; flex-direction: column; }
+.area-hd { display: flex; align-items: center; padding: 24rpx 32rpx; border-bottom: 1rpx solid $border-color; }
+.area-hd .cancel { font-size: 28rpx; color: $text-secondary; }
+.area-hd .title { flex: 1; text-align: center; font-size: 30rpx; font-weight: 700; color: $text-primary; }
+.area-hd .done { font-size: 28rpx; color: $text-placeholder; }
+.area-hd .done.on { color: $brand-primary; font-weight: 700; }
+.area-tabs { display: flex; gap: 24rpx; padding: 16rpx 32rpx; border-bottom: 1rpx solid $border-color; flex-wrap: wrap; }
+.area-tabs .tab { padding: 8rpx 0; font-size: 26rpx; color: $text-secondary; border-bottom: 4rpx solid transparent; }
+.area-tabs .tab.active { color: $brand-primary; border-bottom-color: $brand-primary; font-weight: 700; }
+.area-list { flex: 1; max-height: 60vh; }
+.area-row { padding: 24rpx 32rpx; font-size: 28rpx; color: $text-primary; border-bottom: 1rpx solid $border-color; }
+.area-row.active { color: $brand-primary; font-weight: 700; }
+.area-empty { padding: 80rpx 0; text-align: center; color: $text-placeholder; font-size: 24rpx; }
 </style>
