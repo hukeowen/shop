@@ -97,20 +97,28 @@ export async function generateScript({ imageCount, imageUrls, userDescription, s
 
 /**
  * 上传图片后自动生成"一句话亮点"，供用户确认/修改。
- * 暂时仍走前端 BFF /ark/chat（看 base64 图片），后续 Phase 2.6 可整合到后端。
  *
- * @param {string[]} imageBase64s 纯 base64（不含 data: 前缀）
+ * 走 /ark/chat 让视觉模型读图。入参支持两种（自动识别）：
+ *   ① http:// / https:// → OSS URL（推荐：body 小，快）
+ *   ② base64（含或不含 data: 前缀） → 拼 data URL 直传
+ *
+ * 之前 3 张几 M 图 base64 直传会撞 yudao 1021010004 "请求体过大"。
+ * create.vue 已改成选图时即刻 OSS 上传，把 url 喂进来。
+ *
+ * @param {string[]} imageBase64sOrUrls
  */
-export async function generateHighlight(imageBase64s) {
-  const imgs = (imageBase64s || []).slice(0, 3).filter(Boolean);
+export async function generateHighlight(imageBase64sOrUrls) {
+  const imgs = (imageBase64sOrUrls || []).slice(0, 3).filter(Boolean);
   if (!imgs.length) throw new Error('无图片');
-  const imageContent = imgs.map((b64) => ({
-    type: 'image_url',
-    image_url: {
-      url: b64.startsWith('data:') ? b64 : `data:image/jpeg;base64,${b64}`,
-      detail: 'low',
-    },
-  }));
+  const imageContent = imgs.map((s) => {
+    const url = /^https?:\/\//i.test(s)
+      ? s
+      : (s.startsWith('data:') ? s : `data:image/jpeg;base64,${s}`);
+    return {
+      type: 'image_url',
+      image_url: { url, detail: 'low' },
+    };
+  });
   const raw = await arkChat(VISION_MODEL, [
     {
       role: 'system',

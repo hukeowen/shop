@@ -416,17 +416,19 @@ function newTask(init) {
  *                                                     enhancedCount, totalCount}
  * @returns taskId
  */
-export async function createTask({ imageBase64s, userDescription, voiceKey, ratio, shopName, enhance = true, onProgress }) {
-  const imgs = (imageBase64s || []).filter(Boolean);
+export async function createTask({ imageBase64s, imageUrls, userDescription, voiceKey, ratio, shopName, enhance = true, onProgress }) {
+  // 优先复用已上传的 OSS URL（create.vue 选图时即上传），没有再走 base64 上传
+  const preUploadedUrls = (imageUrls || []).filter(Boolean);
+  const imgs = preUploadedUrls.length ? preUploadedUrls : (imageBase64s || []).filter(Boolean);
   if (!imgs.length) throw new Error('请至少上传 1 张图片');
 
   const task = newTask({ userDescription, voiceKey, ratio: ratio || '9:16', shopName: shopName || '' });
   const emit = (s) => { try { onProgress && onProgress(s); } catch {} };
 
   try {
-    // ① 上传到 OSS
+    // ① 上传到 OSS（imageUrls 已就绪则跳过，省一次 OSS 调用）
     emit({ phase: 'uploading', totalCount: imgs.length });
-    task.imageUrls = await uploadImages(imgs);
+    task.imageUrls = preUploadedUrls.length ? preUploadedUrls : await uploadImages(imgs);
 
     // ①.5 美化预处理（即梦 CV）— 把老板手机原图喂给 Seedance 之前提一档
     //      失败 fallback 原图（sidecar 已经做好降级），不阻塞主流程

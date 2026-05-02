@@ -113,13 +113,13 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { createTask } from '../../api/aiVideo.js';
-import { blobUrlToBase64 } from '../../api/oss.js';
+import { blobUrlToBase64, uploadImage } from '../../api/oss.js';
 import { VOICES } from '../../api/voice.js';
 import { generateHighlight } from '../../api/scriptLlm.js';
 import { useUserStore } from '../../store/user.js';
 
 const userStore = useUserStore();
-const images = ref([]); // [{ preview: blobUrl, base64 }]
+const images = ref([]); // [{ preview: blobUrl, base64, url }] — url 选图时即刻上传 OSS 拿到
 const description = ref('');
 const voiceKey = ref('cancan');
 const ratio = ref('9:16');
@@ -143,13 +143,17 @@ const canSubmit = computed(
 
 async function triggerAutoFill() {
   if (!images.value.length || autoFilling.value) return;
-  // 用户手动改过就不覆盖，除非主动点"重新识别"
+  // 仅在 OSS url 都已就绪时才发 generateHighlight（避免 base64 撞"请求体过大"）
+  const urls = images.value.slice(0, 3).map((x) => x.url).filter(Boolean);
+  if (urls.length !== Math.min(3, images.value.length)) {
+    // 还有图片没上传完，等 pickImage 的上传完成后由它自己 trigger
+    return;
+  }
   autoFilling.value = true;
   const savedDesc = description.value;
   description.value = '';
   try {
-    const base64s = images.value.slice(0, 3).map((x) => x.base64);
-    const result = await generateHighlight(base64s);
+    const result = await generateHighlight(urls);
     description.value = result;
     aiFilledText = result;
   } catch (e) {
@@ -166,11 +170,21 @@ function pickImage() {
     sizeType: ['compressed'],
     sourceType: ['camera', 'album'],
     success: async (r) => {
-      uni.showLoading({ title: '读取中' });
+      uni.showLoading({ title: '上传图片…' });
       try {
         for (const p of r.tempFilePaths) {
           const base64 = await blobUrlToBase64(p);
-          images.value.push({ preview: p, base64 });
+          // 选图就立刻上传 OSS，避免后续 /ark/chat 用 base64 撞"请求体过大"
+          let url = '';
+          try {
+            const u = await uploadImage(base64);
+            url = u.url;
+          } catch (e) {
+            // 上传失败时仍把图加进来（用 base64 兜底），用户能看见预览
+            // generateHighlight 没 url 不会发请求；onSubmit 还有一次机会上传
+            console.warn('[pickImage] OSS 上传失败，等提交时重试:', e?.message);
+          }
+          images.value.push({ preview: p, base64, url });
           if (images.value.length >= 3) break;
         }
       } catch (e) {
@@ -196,8 +210,12 @@ async function onSubmit() {
   submitPhaseLabel.value = '准备上传…';
   uni.showLoading({ title: '上传图片' });
   try {
+    // 优先复用选图阶段已上传的 OSS URL；只有上传失败的图才回退 base64
+    const preUrls = images.value.map((x) => x.url).filter(Boolean);
+    const allUploaded = preUrls.length === images.value.length;
     const taskId = await createTask({
-      imageBase64s: images.value.map((x) => x.base64),
+      imageUrls: allUploaded ? preUrls : undefined,
+      imageBase64s: allUploaded ? undefined : images.value.map((x) => x.base64),
       userDescription: description.value.trim(),
       voiceKey: voiceKey.value,
       ratio: ratio.value,
