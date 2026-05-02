@@ -449,8 +449,26 @@ public class AppUnifiedAuthController {
         Long prevTenantId = TenantContextHolder.getTenantId();
         TenantContextHolder.setIgnore(false);
         try {
-            final Long mid = merchantService.createMerchantFromMember(
-                    member.getId(), member.getMiniAppOpenId(), null, mobile, null);
+            final Long mid;
+            try {
+                mid = merchantService.createMerchantFromMember(
+                        member.getId(), member.getMiniAppOpenId(), null, mobile, null);
+            } catch (cn.iocoder.yudao.framework.common.exception.ServiceException ye) {
+                // yudao 的 createTenant→createRole 链路若撞 ROLE_NAME_DUPLICATE / TENANT_NAME_DUPLICATE
+                // 多半是上一轮申请部分成功留下的脏 tenant/role（@DSTransactional 与外层 @Transactional
+                // 不嵌套，外层失败时内层已提交不会回滚）。给前端一个友好的诊断错误，并把详细 context
+                // 写日志便于运维通过 SQL 反查清理。
+                log.error("[applyMerchantBySms] yudao createTenant 失败 mobile={} memberUserId={} shopName={} code={} msg={}",
+                        mobile, member.getId(), shopName, ye.getCode(), ye.getMessage(), ye);
+                if (ye.getCode() == 1_002_002_001 /* ROLE_NAME_DUPLICATE */
+                        || ye.getCode() == 1_002_002_002 /* ROLE_CODE_DUPLICATE */
+                        || ye.getCode() == 1_002_015_001 /* TENANT_NAME_DUPLICATE */) {
+                    throw new cn.iocoder.yudao.framework.common.exception.ServiceException(
+                            1_031_004_001,
+                            "店铺初始化遇到历史脏数据残留，已自动记录日志，请稍后重试或联系运维");
+                }
+                throw ye;
+            }
             merchantId = mid;
             // createMerchantFromMember 出来后 TenantUtils.execute 的 finally 已把 tenantId 还原成 null
             //（H5 PermitAll 路径请求进来就没带 tenant-id），这里 selectById merchant_info 是 TenantBaseDO
