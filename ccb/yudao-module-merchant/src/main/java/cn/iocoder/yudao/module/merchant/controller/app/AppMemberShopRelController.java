@@ -278,6 +278,29 @@ public class AppMemberShopRelController {
     }
 
     /**
+     * 订单余额抵扣（C 端 checkout 调用）。
+     *
+     * <p>幂等：每个订单只能抵扣一次（UNIQUE(user,tenant,order) + @Transactional），
+     * 重复点击或网络重试都不会双扣。返回值 true=本次完成扣减，false=之前已扣过。</p>
+     *
+     * <p>注意：本接口只扣余额、写日志，<b>不</b>同步更新订单的"实付金额"。
+     * 调用方（前端）需在拿到 true 后用扣减后的金额走 trade/order/create 流程。</p>
+     */
+    @PostMapping("/deduct-for-order")
+    @Operation(summary = "订单余额抵扣（幂等）")
+    @TenantIgnore
+    public CommonResult<Boolean> deductForOrder(@RequestParam("tenantId") @NotNull Long tenantId,
+                                                 @RequestParam("orderId") @NotNull Long orderId,
+                                                 @RequestParam("amount") @NotNull Integer amount) {
+        if (amount <= 0) {
+            throw exception0(1_031_001_006, "抵扣金额必须大于 0");
+        }
+        Long userId = SecurityFrameworkUtils.getLoginUserId();
+        boolean done = memberShopRelService.deductBalanceForOrder(userId, tenantId, orderId, amount);
+        return success(done);
+    }
+
+    /**
      * 查询当前用户在当前店铺的提现记录列表。
      */
     @GetMapping("/withdraw/list")

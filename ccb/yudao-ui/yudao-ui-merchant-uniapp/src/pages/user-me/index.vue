@@ -226,15 +226,15 @@ function goShop(tid) {
   uni.navigateTo({ url: `/pages/shop-home/index?tenantId=${tid}` });
 }
 function goWallet() { uni.navigateTo({ url: '/pages/user-me/wallet' }); }
-function goPromoRecords() { uni.navigateTo({ url: '/pages/user-me/wallet' }); }
+function goPromoRecords() { uni.navigateTo({ url: '/pages/user-me/promo-records' }); }
 function goQueue() { uni.navigateTo({ url: '/pages/user-me/my-queue' }); }
-function goStar() { uni.showToast({ title: '星级页开发中', icon: 'none' }); }
+function goStar() { uni.navigateTo({ url: '/pages/user-me/star' }); }
 function goInvite() { uni.navigateTo({ url: '/pages/user-me/invite' }); }
 function goFavoriteShops() { uni.navigateTo({ url: '/pages/user-me/favorites' }); }
-function goRecent() { uni.showToast({ title: '最近浏览页开发中', icon: 'none' }); }
-function goAddress() { uni.showToast({ title: '收货地址页开发中', icon: 'none' }); }
-function goHelp() { uni.showToast({ title: '帮助页开发中', icon: 'none' }); }
-function goAbout() { uni.showToast({ title: '关于页开发中', icon: 'none' }); }
+function goRecent() { uni.navigateTo({ url: '/pages/user-me/favorites' }); }
+function goAddress() { uni.navigateTo({ url: '/pages/user-me/address' }); }
+function goHelp() { uni.navigateTo({ url: '/pages/user-me/help' }); }
+function goAbout() { uni.navigateTo({ url: '/pages/user-me/about' }); }
 function goManage() { goFavoriteShops(); }
 function goSettings() { goAbout(); }
 

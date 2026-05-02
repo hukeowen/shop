@@ -7,6 +7,8 @@ import cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopQueueEventDO;
 import cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopQueuePositionDO;
 import cn.iocoder.yudao.module.merchant.dal.mysql.promo.ShopQueueEventMapper;
 import cn.iocoder.yudao.module.merchant.dal.mysql.promo.ShopQueuePositionMapper;
+import cn.iocoder.yudao.module.product.dal.dataobject.spu.ProductSpuDO;
+import cn.iocoder.yudao.module.product.service.spu.ProductSpuService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,6 +19,7 @@ import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -47,6 +50,8 @@ public class PromoQueueServiceImpl implements PromoQueueService {
     private PromoPointService promoPointService;
     @Resource
     private ProductPromoConfigService productPromoConfigService;
+    @Resource
+    private ProductSpuService productSpuService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -206,9 +211,21 @@ public class PromoQueueServiceImpl implements PromoQueueService {
                 .distinct()
                 .collect(Collectors.toList());
         Map<Long, ProductPromoConfigDO> configBySpu = productPromoConfigService.mapBySpuIds(spuIds);
+        Map<Long, ProductSpuDO> spuMap = new HashMap<>();
+        try {
+            List<ProductSpuDO> spus = productSpuService.getSpuList(spuIds);
+            if (spus != null) {
+                for (ProductSpuDO s : spus) {
+                    if (s != null) spuMap.put(s.getId(), s);
+                }
+            }
+        } catch (Exception e) {
+            log.warn("[listMyQueueing] 加载 SPU 列表失败 spuIds={}: {}", spuIds, e.getMessage());
+        }
         List<AppQueuePositionRespVO> result = new ArrayList<>(positions.size());
         for (ShopQueuePositionDO p : positions) {
             AppQueuePositionRespVO vo = new AppQueuePositionRespVO();
+            vo.setTenantId(p.getTenantId());
             vo.setSpuId(p.getSpuId());
             vo.setLayer(p.getLayer());
             vo.setAccumulatedCount(p.getAccumulatedCount());
@@ -217,9 +234,29 @@ public class PromoQueueServiceImpl implements PromoQueueService {
             vo.setPromotedAt(p.getPromotedAt());
             ProductPromoConfigDO config = configBySpu == null ? null : configBySpu.get(p.getSpuId());
             vo.setMaxN(config == null ? null : config.getTuijianN());
+            vo.setRatiosText(config == null ? null : formatRatiosText(config.getTuijianRatios(), config.getTuijianN()));
+            ProductSpuDO spu = spuMap.get(p.getSpuId());
+            if (spu != null) {
+                vo.setSpuName(spu.getName());
+                vo.setUnitPrice(spu.getPrice());
+            }
             result.add(vo);
         }
         return result;
+    }
+
+    /** 把 ratios JSON（"[10,20,70]"）格式化成 "1#10%/2#20%/3#70%" 给前端透传显示。 */
+    private String formatRatiosText(String json, Integer n) {
+        if (json == null || json.isEmpty() || n == null || n <= 0) return null;
+        List<BigDecimal> ratios = parseRatios(json, n);
+        if (ratios.isEmpty()) return null;
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < ratios.size(); i++) {
+            if (i > 0) sb.append('/');
+            BigDecimal r = ratios.get(i);
+            sb.append(i + 1).append('#').append(r.stripTrailingZeros().toPlainString()).append('%');
+        }
+        return sb.toString();
     }
 
     /** 解析 "[25,25,25,25]" → [25,25,25,25]；长度对齐到 n（不足补 0，超出截断） */

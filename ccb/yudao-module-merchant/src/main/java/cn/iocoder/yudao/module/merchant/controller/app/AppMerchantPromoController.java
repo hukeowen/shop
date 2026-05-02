@@ -85,6 +85,10 @@ public class AppMerchantPromoController {
     private ShopConsumePointRecordMapper consumePointRecordMapper;
     @Resource
     private cn.iocoder.yudao.module.merchant.dal.mysql.promo.ShopUserReferralMapper shopUserReferralMapper;
+    @Resource
+    private cn.iocoder.yudao.module.merchant.service.MemberShopRelService memberShopRelService;
+    @Resource
+    private cn.iocoder.yudao.module.merchant.dal.mysql.ShopInfoMapper shopInfoMapper;
 
     // ==================== 商户级营销配置 ====================
 
@@ -238,10 +242,55 @@ public class AppMerchantPromoController {
     // ==================== 我的队列状态 ====================
 
     @GetMapping("/my-queues")
-    @Operation(summary = "当前用户在所有商品队列中的位置（仅 QUEUEING）")
+    @Operation(summary = "当前用户在所有商品队列中的位置（跨店聚合，仅 QUEUEING）")
+    @cn.iocoder.yudao.framework.tenant.core.aop.TenantIgnore
     public CommonResult<List<AppQueuePositionRespVO>> listMyQueues() {
         Long userId = SecurityFrameworkUtils.getLoginUserId();
-        return success(promoQueueService.listMyQueueing(userId));
+        // 1. 找用户加入的所有店铺
+        java.util.List<cn.iocoder.yudao.module.merchant.dal.dataobject.MemberShopRelDO> rels =
+                memberShopRelService.listByUserId(userId);
+        if (rels == null || rels.isEmpty()) {
+            return success(java.util.Collections.emptyList());
+        }
+        java.util.List<AppQueuePositionRespVO> aggregated = new java.util.ArrayList<>();
+        // 2. 每个 tenant 切上下文查队列 + 商品 + 营销配置
+        for (cn.iocoder.yudao.module.merchant.dal.dataobject.MemberShopRelDO rel : rels) {
+            Long tid = rel.getTenantId();
+            if (tid == null || tid <= 0) continue;
+            try {
+                cn.iocoder.yudao.framework.tenant.core.util.TenantUtils.execute(tid, () -> {
+                    java.util.List<AppQueuePositionRespVO> rows = promoQueueService.listMyQueueing(userId);
+                    if (rows == null || rows.isEmpty()) return;
+                    for (AppQueuePositionRespVO vo : rows) {
+                        if (vo.getTenantId() == null) vo.setTenantId(tid);
+                    }
+                    aggregated.addAll(rows);
+                });
+            } catch (Exception e) {
+                // 单个店铺失败不影响其他店铺聚合结果
+            }
+        }
+        if (aggregated.isEmpty()) return success(aggregated);
+        // 3. 一次性补 shopName（shop_info 是 BaseDO，跨租户直接查）
+        java.util.Set<Long> tenantIdSet = aggregated.stream()
+                .map(AppQueuePositionRespVO::getTenantId)
+                .filter(java.util.Objects::nonNull)
+                .collect(java.util.stream.Collectors.toSet());
+        java.util.Map<Long, String> shopNameMap = new java.util.HashMap<>(tenantIdSet.size());
+        for (Long tid : tenantIdSet) {
+            try {
+                cn.iocoder.yudao.module.merchant.dal.dataobject.ShopInfoDO info = shopInfoMapper.selectByTenantId(tid);
+                if (info != null && info.getShopName() != null) {
+                    shopNameMap.put(tid, info.getShopName());
+                }
+            } catch (Exception ignore) {}
+        }
+        for (AppQueuePositionRespVO vo : aggregated) {
+            if (vo.getShopName() == null && vo.getTenantId() != null) {
+                vo.setShopName(shopNameMap.getOrDefault(vo.getTenantId(), null));
+            }
+        }
+        return success(aggregated);
     }
 
 }

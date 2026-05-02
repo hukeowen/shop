@@ -246,6 +246,41 @@
       }
     },
     {
+      "path": "pages/user-me/promo-records",
+      "style": {
+        "navigationBarTitleText": "推广积分明细",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/user-me/star",
+      "style": {
+        "navigationBarTitleText": "店铺星级",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/user-me/address",
+      "style": {
+        "navigationBarTitleText": "收货地址",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/user-me/about",
+      "style": {
+        "navigationBarTitleText": "关于摊小二",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/user-me/help",
+      "style": {
+        "navigationBarTitleText": "帮助与反馈",
+        "navigationStyle": "custom"
+      }
+    },
+    {
       "path": "pages/nearby/index",
       "style": {
         "navigationBarTitleText": "附近店铺"

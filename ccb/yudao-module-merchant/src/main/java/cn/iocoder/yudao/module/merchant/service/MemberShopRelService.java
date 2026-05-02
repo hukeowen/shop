@@ -80,4 +80,16 @@ public interface MemberShopRelService {
      */
     int deductBalance(Long userId, Long tenantId, int amount);
 
+    /**
+     * 订单余额抵扣（幂等）：每个订单只能抵扣一次。
+     *
+     * <p>实现：先 SELECT 日志表 → 已存在直接返回 false（已抵扣过），不存在则
+     * 走 deductBalance + 写入日志，UNIQUE(user,tenant,order) 配合 @Transactional
+     * 防止并发重复扣减。</p>
+     *
+     * @return true = 本次完成扣减；false = 之前已扣过
+     * @throws cn.iocoder.yudao.framework.common.exception.ServiceException 余额不足时抛出
+     */
+    boolean deductBalanceForOrder(Long userId, Long tenantId, Long orderId, int amount);
+
 }

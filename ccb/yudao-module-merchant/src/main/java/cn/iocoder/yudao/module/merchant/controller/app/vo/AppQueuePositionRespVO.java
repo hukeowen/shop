@@ -12,8 +12,23 @@ import java.time.LocalDateTime;
 @Data
 public class AppQueuePositionRespVO {
 
+    @Schema(description = "店铺租户 ID")
+    private Long tenantId;
+
+    @Schema(description = "店铺名称")
+    private String shopName;
+
     @Schema(description = "商品 SPU ID")
     private Long spuId;
+
+    @Schema(description = "商品名称")
+    private String spuName;
+
+    @Schema(description = "商品单价(分)")
+    private Integer unitPrice;
+
+    @Schema(description = "比例文案，例：1#10%/2#20%/3#70%")
+    private String ratiosText;
 
     @Schema(description = "层级，A = 主动层（优先返奖）/ B = 被动层")
     private String layer;

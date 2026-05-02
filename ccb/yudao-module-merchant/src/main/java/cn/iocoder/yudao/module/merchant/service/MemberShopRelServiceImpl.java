@@ -23,6 +23,8 @@ public class MemberShopRelServiceImpl implements MemberShopRelService {
 
     @Resource
     private MemberShopRelMapper memberShopRelMapper;
+    @Resource
+    private cn.iocoder.yudao.module.merchant.dal.mysql.MemberOrderBalanceLogMapper memberOrderBalanceLogMapper;
 
     @Override
     @TenantIgnore
@@ -124,6 +126,40 @@ public class MemberShopRelServiceImpl implements MemberShopRelService {
     @TenantIgnore
     public int deductBalance(Long userId, Long tenantId, int amount) {
         return memberShopRelMapper.deductBalance(userId, tenantId, amount);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    @TenantIgnore
+    public boolean deductBalanceForOrder(Long userId, Long tenantId, Long orderId, int amount) {
+        if (amount <= 0) {
+            return false;
+        }
+        // 1. 已抵扣过则直接返回（幂等）
+        cn.iocoder.yudao.module.merchant.dal.dataobject.MemberOrderBalanceLogDO existing =
+                memberOrderBalanceLogMapper.selectByUserTenantOrder(userId, tenantId, orderId);
+        if (existing != null) {
+            return false;
+        }
+        // 2. 原子扣减余额（WHERE balance >= amount）
+        int affected = memberShopRelMapper.deductBalance(userId, tenantId, amount);
+        if (affected == 0) {
+            throw exception0(1_031_001_004, "余额不足");
+        }
+        // 3. 写日志（UNIQUE(user,tenant,order) 配合 @Transactional 抗并发）
+        try {
+            memberOrderBalanceLogMapper.insert(
+                    cn.iocoder.yudao.module.merchant.dal.dataobject.MemberOrderBalanceLogDO.builder()
+                            .userId(userId)
+                            .tenantId(tenantId)
+                            .orderId(orderId)
+                            .amount(amount)
+                            .build());
+        } catch (org.springframework.dao.DuplicateKeyException e) {
+            // 并发场景：另一事务先插入了相同 (user,tenant,order)；本事务回滚（@Transactional），余额恢复
+            throw exception0(1_031_001_005, "订单已抵扣过，请刷新后重试");
+        }
+        return true;
     }
 
     @Override

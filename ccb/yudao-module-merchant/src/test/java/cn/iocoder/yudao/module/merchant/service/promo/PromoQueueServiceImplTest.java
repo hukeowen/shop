@@ -125,6 +125,8 @@ class PromoQueueServiceImplTest {
         ReflectionTestUtils.setField(service, "referralService", referralService);
         ReflectionTestUtils.setField(service, "promoPointService", pointService);
         ReflectionTestUtils.setField(service, "productPromoConfigService", productPromoConfigService);
+        ReflectionTestUtils.setField(service, "productSpuService",
+                mock(cn.iocoder.yudao.module.product.service.spu.ProductSpuService.class));
     }
 
     @Test

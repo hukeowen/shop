@@ -90,17 +90,17 @@
             </view>
           </view>
         </view>
-        <!-- 店铺余额（暂未启用提示） -->
+        <!-- 店铺余额抵扣（订单创建后调用 deduct-for-order 幂等扣减） -->
         <view class="m-row" :class="{ disabled: !balanceEnabled }">
           <view class="m-icon i-balance">余</view>
           <view class="m-info">
             <view class="m-name">{{ shopName }} · 店铺余额</view>
-            <view class="m-sub" v-if="balanceEnabled">余 ¥{{ fen2yuan(userBalance) }} · 点开关用余额抵扣</view>
-            <view class="m-sub" v-else>V2 启用（开发中）· 当前可用积分 + 在线支付</view>
+            <view class="m-sub" v-if="balanceEnabled">余 ¥{{ fen2yuan(userBalance) }} · 最多抵 ¥{{ fen2yuan(balanceDeductCap) }}</view>
+            <view class="m-sub" v-else>该店余额为 0，请先去"我的钱包"充值或推荐好友赚积分</view>
           </view>
           <view class="m-trail">
-            <text class="amt off">{{ balanceEnabled && useBalance ? `-¥${fen2yuan(balanceDeductFen)}` : '未启用' }}</text>
-            <view class="switch" :class="{ on: useBalance, off: !balanceEnabled }">
+            <text class="amt" :class="{ off: !useBalance }">{{ useBalance ? `-¥${fen2yuan(balanceDeductFen)}` : '未使用' }}</text>
+            <view class="switch" :class="{ on: useBalance && balanceEnabled }" @click="toggleBalance">
               <view class="dot"></view>
             </view>
           </view>
@@ -175,10 +175,20 @@ const payType = ref('wx');
 const shopName = ref('');
 const usePoints = ref(false);
 const useBalance = ref(false);
-const balanceEnabled = ref(false); // V2 再启用
 const userPoints = ref(0);
 const pointPerYuan = ref(100); // 100 分 = ¥1（trade 默认）
 const userBalance = ref(0);
+
+// balanceEnabled 不再写死 false：只要余额 > 0 即开放抵扣
+const balanceEnabled = computed(() => (userBalance.value || 0) > 0);
+
+function toggleBalance() {
+  if (!balanceEnabled.value) {
+    uni.showToast({ title: '该店余额为 0', icon: 'none' });
+    return;
+  }
+  useBalance.value = !useBalance.value;
+}
 
 const initial = computed(() => (shopName.value || '店')[0]);
 const picStyle = computed(() => {
@@ -214,11 +224,12 @@ const pointDeductFen = computed(() => {
   if (!usePoints.value) return 0;
   return Math.min(maxPointDeductFen.value, grossFen.value);
 });
-const balanceDeductFen = computed(() => {
-  if (!useBalance.value || !balanceEnabled.value) return 0;
-  const remainAfterPoint = grossFen.value - pointDeductFen.value;
-  return Math.min(userBalance.value, remainAfterPoint);
+const balanceDeductCap = computed(() => {
+  // 抵扣上限 = min(余额, 商品小计抵扣后剩余)；要求至少留 ¥0.01 在线支付路径，但也可全额抵
+  const remainAfterPoint = Math.max(0, grossFen.value - pointDeductFen.value);
+  return Math.min(userBalance.value || 0, remainAfterPoint);
 });
+const balanceDeductFen = computed(() => useBalance.value && balanceEnabled.value ? balanceDeductCap.value : 0);
 const remainFen = computed(() => Math.max(0, grossFen.value - pointDeductFen.value - balanceDeductFen.value));
 
 async function loadShopAndItems() {
@@ -257,8 +268,13 @@ async function submitOrder() {
     uni.showToast({ title: '请先选择收货地址', icon: 'none' });
     return;
   }
+  if (useBalance.value && balanceDeductFen.value > 0 && balanceDeductFen.value > userBalance.value) {
+    uni.showToast({ title: '余额不足', icon: 'none' });
+    return;
+  }
   try {
     uni.showLoading({ title: '提交中...' });
+    // 1. 创建订单
     const settleItems = items.value.map(it => ({
       cartId: it.id || undefined,
       skuId: it.skuId || it.sku?.id,
@@ -279,13 +295,30 @@ async function submitOrder() {
       tenantId: tenantId.value,
       data,
     });
-    uni.hideLoading();
     const orderId = res?.id || res;
+
+    // 2. 若启用店铺余额抵扣 → 后端幂等扣减
+    if (useBalance.value && balanceDeductFen.value > 0 && orderId) {
+      try {
+        await request({
+          url: `/app-api/merchant/mini/member-rel/deduct-for-order?tenantId=${tenantId.value}&orderId=${orderId}&amount=${balanceDeductFen.value}`,
+          method: 'POST',
+        });
+      } catch (deductErr) {
+        // 余额扣减失败：订单已创建，提示用户改用其它支付方式
+        uni.hideLoading();
+        uni.showModal({
+          title: '余额抵扣失败',
+          content: (deductErr?.message || '余额不足或网络异常') + '\n订单已创建，请前往订单列表选择其它支付方式',
+          showCancel: false,
+        });
+        setTimeout(() => uni.redirectTo({ url: '/pages/user-order/list' }), 1500);
+        return;
+      }
+    }
+    uni.hideLoading();
     uni.showToast({ title: '订单已创建', icon: 'success' });
-    setTimeout(() => {
-      // 跳到支付/订单页（简化：直接回订单列表）
-      uni.redirectTo({ url: '/pages/user-order/list' });
-    }, 800);
+    setTimeout(() => uni.redirectTo({ url: '/pages/user-order/list' }), 800);
   } catch (e) {
     uni.hideLoading();
     uni.showModal({ title: '下单失败', content: e?.message || '请稍后再试', showCancel: false });
