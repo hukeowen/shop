@@ -22,4 +22,14 @@ public interface ShopUserReferralMapper extends BaseMapperX<ShopUserReferralDO> 
                 .eq(ShopUserReferralDO::getParentUserId, parentUserId));
     }
 
+    /**
+     * 跨租户列出某用户的所有下级 user_id（去重）。
+     * 配合 {@code TenantUtils.executeIgnore} 在 service 层调，绕过 TenantBaseDO 自动加的
+     * tenant_id 过滤；同一下级在多个商户都被推荐时只算 1 个人。
+     */
+    default List<ShopUserReferralDO> selectAllByParentUserIdAcrossTenants(Long parentUserId) {
+        return selectList(new LambdaQueryWrapperX<ShopUserReferralDO>()
+                .eq(ShopUserReferralDO::getParentUserId, parentUserId));
+    }
+
 }

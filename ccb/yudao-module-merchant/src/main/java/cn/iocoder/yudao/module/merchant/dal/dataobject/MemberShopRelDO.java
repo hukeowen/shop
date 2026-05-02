@@ -47,4 +47,7 @@ public class MemberShopRelDO extends BaseDO {
     /** 最近进店时间 */
     private LocalDateTime lastVisitAt;
 
+    /** 是否已收藏（C 端店铺收藏夹用，0=否 1=是） */
+    private Boolean favorite;
+
 }

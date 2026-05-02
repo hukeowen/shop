@@ -4,9 +4,17 @@ import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.security.core.util.SecurityFrameworkUtils;
 import cn.iocoder.yudao.framework.tenant.core.aop.TenantIgnore;
 import cn.iocoder.yudao.framework.tenant.core.context.TenantContextHolder;
+import cn.iocoder.yudao.framework.tenant.core.util.TenantUtils;
+import cn.iocoder.yudao.module.merchant.controller.app.vo.AppMyShopRelRespVO;
 import cn.iocoder.yudao.module.merchant.dal.dataobject.MemberShopRelDO;
 import cn.iocoder.yudao.module.merchant.dal.dataobject.MemberWithdrawApplyDO;
+import cn.iocoder.yudao.module.merchant.dal.dataobject.MerchantDO;
+import cn.iocoder.yudao.module.merchant.dal.dataobject.ShopInfoDO;
+import cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopUserStarDO;
 import cn.iocoder.yudao.module.merchant.dal.mysql.MemberWithdrawApplyMapper;
+import cn.iocoder.yudao.module.merchant.dal.mysql.MerchantMapper;
+import cn.iocoder.yudao.module.merchant.dal.mysql.ShopInfoMapper;
+import cn.iocoder.yudao.module.merchant.dal.mysql.promo.ShopUserStarMapper;
 import cn.iocoder.yudao.module.merchant.service.MemberShopRelService;
 import cn.iocoder.yudao.module.merchant.service.promo.ReferralService;
 import cn.iocoder.yudao.module.merchant.service.promo.StarService;
@@ -40,6 +48,12 @@ public class AppMemberShopRelController {
     private ReferralService referralService;
     @Resource
     private StarService starService;
+    @Resource
+    private ShopInfoMapper shopInfoMapper;
+    @Resource
+    private MerchantMapper merchantMapper;
+    @Resource
+    private ShopUserStarMapper shopUserStarMapper;
 
     /**
      * 列出当前用户访问过的所有店铺（设计 9.2 节"店铺级收藏"语义，按 lastVisitAt 倒序）。
@@ -50,6 +64,100 @@ public class AppMemberShopRelController {
     public CommonResult<java.util.List<MemberShopRelDO>> listMyShops() {
         Long userId = SecurityFrameworkUtils.getLoginUserId();
         return success(memberShopRelService.listByUserId(userId));
+    }
+
+    /**
+     * 增强版：返回带店铺名/封面/星级/余额/积分/最近访问的完整 VO，C 端 user-home /
+     * user-me 一次拉全。每个 tenantId 用 TenantUtils.execute 切租户查 shop_info 和
+     * shop_user_star，性能会随店铺数线性增长，正常用户加入店铺数 ≤ 50 不会成瓶颈。
+     *
+     * @param onlyFavorite 是否只返收藏店铺（true=仅 favorite=1，false=全部）
+     */
+    @GetMapping("/my-shops-enriched")
+    @Operation(summary = "我加入的店铺（含店铺名/封面/星级/余额/积分）")
+    @TenantIgnore
+    public CommonResult<java.util.List<AppMyShopRelRespVO>> listMyShopsEnriched(
+            @RequestParam(value = "onlyFavorite", required = false, defaultValue = "false") Boolean onlyFavorite) {
+        Long userId = SecurityFrameworkUtils.getLoginUserId();
+        java.util.List<MemberShopRelDO> rels = memberShopRelService.listByUserId(userId);
+        if (rels == null || rels.isEmpty()) {
+            return success(java.util.Collections.emptyList());
+        }
+        java.util.List<AppMyShopRelRespVO> out = new java.util.ArrayList<>(rels.size());
+        for (MemberShopRelDO rel : rels) {
+            if (Boolean.TRUE.equals(onlyFavorite) && !Boolean.TRUE.equals(rel.getFavorite())) {
+                continue;
+            }
+            AppMyShopRelRespVO vo = new AppMyShopRelRespVO();
+            vo.setTenantId(rel.getTenantId());
+            vo.setBalance(rel.getBalance() == null ? 0 : rel.getBalance());
+            vo.setPoints(rel.getPoints() == null ? 0 : rel.getPoints());
+            vo.setLastVisitAt(rel.getLastVisitAt());
+            vo.setReferrerUserId(rel.getReferrerUserId());
+            // shop_info 是 BaseDO（tenantId 普通字段），跨租户查直接 mapper 即可
+            try {
+                ShopInfoDO shop = shopInfoMapper.selectByTenantId(rel.getTenantId());
+                if (shop != null) {
+                    vo.setShopName(shop.getShopName());
+                    vo.setCoverUrl(shop.getCoverUrl());
+                    vo.setAddress(shop.getAddress());
+                    vo.setBusinessHours(shop.getBusinessHours());
+                }
+            } catch (Exception ignore) {}
+            // 店铺名兜底：shop_info 可能没建（merchant_info 是 TenantBaseDO 要切租户查）
+            if (vo.getShopName() == null) {
+                try {
+                    Long uid = userId;
+                    Long tid = rel.getTenantId();
+                    TenantUtils.execute(tid, () -> {
+                        java.util.List<MerchantDO> mlist = merchantMapper.selectList(
+                                new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<MerchantDO>()
+                                        .eq(MerchantDO::getTenantId, tid)
+                                        .last("LIMIT 1"));
+                        if (!mlist.isEmpty() && vo.getShopName() == null) {
+                            vo.setShopName(mlist.get(0).getName());
+                        }
+                    });
+                } catch (Exception ignore) {}
+            }
+            // shop_user_star 是 TenantBaseDO，要切租户查
+            try {
+                Long tid = rel.getTenantId();
+                TenantUtils.execute(tid, () -> {
+                    ShopUserStarDO star = shopUserStarMapper.selectByUserId(userId);
+                    if (star != null && star.getCurrentStar() != null) {
+                        vo.setStar(star.getCurrentStar());
+                    } else {
+                        vo.setStar(0);
+                    }
+                });
+            } catch (Exception e) {
+                vo.setStar(0);
+            }
+            out.add(vo);
+        }
+        return success(out);
+    }
+
+    /**
+     * 切换店铺收藏（C 端 shop-home 顶部 ♥ 按钮）。
+     * favorite=true → 标记收藏；false → 取消。如果用户尚未访问过该店，会先建 rel
+     * 记录再标 favorite。
+     */
+    @PostMapping("/favorite/toggle")
+    @Operation(summary = "切换店铺收藏")
+    @TenantIgnore
+    public CommonResult<Boolean> toggleFavorite(
+            @RequestParam("tenantId") @NotNull Long tenantId,
+            @RequestParam("favorite") @NotNull Boolean favorite) {
+        Long userId = SecurityFrameworkUtils.getLoginUserId();
+        // 不存在则先建空 rel（不绑推荐人）
+        MemberShopRelDO rel = memberShopRelService.getByUserAndTenant(userId, tenantId);
+        if (rel == null) {
+            memberShopRelService.getOrCreateWithReferrer(userId, tenantId, null);
+        }
+        memberShopRelService.setFavorite(userId, tenantId, favorite);
+        return success(true);
     }
 
     /**

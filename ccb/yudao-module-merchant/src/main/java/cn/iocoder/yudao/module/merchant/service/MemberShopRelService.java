@@ -62,6 +62,12 @@ public interface MemberShopRelService {
     void updateLastVisitAt(Long userId, Long tenantId);
 
     /**
+     * 设置店铺收藏标记（C 端 shop-home 顶部 ♥ 按钮）。
+     * @param favorite true=收藏 false=取消
+     */
+    void setFavorite(Long userId, Long tenantId, boolean favorite);
+
+    /**
      * 余额单向转积分（1:1，需事务）。
      * 校验余额充足后原子扣减余额并增加积分。
      */

@@ -111,6 +111,17 @@ public class MemberShopRelServiceImpl implements MemberShopRelService {
 
     @Override
     @TenantIgnore
+    public void setFavorite(Long userId, Long tenantId, boolean favorite) {
+        MemberShopRelDO rel = memberShopRelMapper.selectByUserIdAndTenantId(userId, tenantId);
+        if (rel == null) return;
+        MemberShopRelDO upd = new MemberShopRelDO();
+        upd.setId(rel.getId());
+        upd.setFavorite(favorite);
+        memberShopRelMapper.updateById(upd);
+    }
+
+    @Override
+    @TenantIgnore
     public int deductBalance(Long userId, Long tenantId, int amount) {
         return memberShopRelMapper.deductBalance(userId, tenantId, amount);
     }

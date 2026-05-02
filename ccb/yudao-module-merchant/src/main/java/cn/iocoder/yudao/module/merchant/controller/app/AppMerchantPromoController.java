@@ -83,6 +83,8 @@ public class AppMerchantPromoController {
     private ShopPromoRecordMapper promoRecordMapper;
     @Resource
     private ShopConsumePointRecordMapper consumePointRecordMapper;
+    @Resource
+    private cn.iocoder.yudao.module.merchant.dal.mysql.promo.ShopUserReferralMapper shopUserReferralMapper;
 
     // ==================== 商户级营销配置 ====================
 
@@ -175,6 +177,27 @@ public class AppMerchantPromoController {
     public CommonResult<Long> getReferralParent() {
         Long userId = SecurityFrameworkUtils.getLoginUserId();
         return success(referralService.getDirectParent(userId));
+    }
+
+    /**
+     * 跨所有店铺，统计当前用户已推荐的不重复下级数（C 端「我的」页跨店聚合用）。
+     * 同一个朋友在多家店都被你推荐时只算 1 个。
+     */
+    @GetMapping("/referral/my-children-count")
+    @Operation(summary = "跨店聚合：我推荐了多少不重复的好友")
+    @cn.iocoder.yudao.framework.tenant.core.aop.TenantIgnore
+    public CommonResult<java.util.Map<String, Object>> myChildrenCount() {
+        Long userId = SecurityFrameworkUtils.getLoginUserId();
+        java.util.List<cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopUserReferralDO> list =
+                cn.iocoder.yudao.framework.tenant.core.util.TenantUtils.executeIgnore(() ->
+                        shopUserReferralMapper.selectAllByParentUserIdAcrossTenants(userId));
+        long count = list.stream()
+                .map(cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopUserReferralDO::getUserId)
+                .filter(java.util.Objects::nonNull)
+                .distinct().count();
+        java.util.Map<String, Object> resp = new java.util.LinkedHashMap<>();
+        resp.put("count", count);
+        return success(resp);
     }
 
     // ==================== 用户钱包（双积分账户） ====================

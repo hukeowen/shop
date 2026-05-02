@@ -227,6 +227,13 @@
       }
     },
     {
+      "path": "pages/user-me/favorites",
+      "style": {
+        "navigationBarTitleText": "我收藏的店铺",
+        "navigationStyle": "custom"
+      }
+    },
+    {
       "path": "pages/user-me/invite",
       "style": {
         "navigationBarTitleText": "邀请好友"
