@@ -145,7 +145,11 @@ async function submit() {
         smsCode: form.smsCode,
       },
     });
-    const token = resp?.token?.accessToken || resp?.accessToken;
+    // 兼容两种返回：① 顶层 token=string ② 嵌套 token.accessToken
+    const token =
+      (typeof resp?.token === 'string' ? resp.token : null) ||
+      resp?.token?.accessToken ||
+      resp?.accessToken;
     if (token) {
       const userStore = JSON.stringify({
         token,

@@ -85,20 +85,33 @@ async function submit() {
       method: 'POST',
       data: { mobile: form.mobile, password: form.password },
     });
-    const token = resp?.token?.accessToken || resp?.accessToken;
-    if (!token) throw new Error('无 token');
+    // 兼容两种返回结构：① 顶层 token=string ② 嵌套 token.accessToken
+    const token =
+      (typeof resp?.token === 'string' ? resp.token : null) ||
+      resp?.token?.accessToken ||
+      resp?.accessToken;
+    if (!token) {
+      uni.showToast({ title: '登录响应缺少 token', icon: 'none' });
+      throw new Error('无 token');
+    }
     const userStore = JSON.stringify({
       token,
       userId: resp.userId,
       phone: resp.phone,
       role: resp.activeRole,
+      nickname: resp.nickname,
+      shopName: resp.shopName,
     });
     try {
       if (typeof localStorage !== 'undefined') localStorage.setItem('user-store-v1', userStore);
     } catch {}
-    try { uni.setStorageSync('token', token); } catch {}
+    try {
+      uni.setStorageSync('token', token);
+      if (resp.merchantId) uni.setStorageSync('merchantId', resp.merchantId);
+    } catch {}
 
-    if (resp.activeRole !== 'merchant' && !(resp.roles || []).includes('merchant')) {
+    const isMerchant = resp.activeRole === 'merchant' || (resp.roles || []).includes('merchant');
+    if (!isMerchant) {
       uni.showModal({
         title: '尚未开通商户',
         content: '该手机号还没申请商户，是否立即入驻？',
@@ -111,8 +124,11 @@ async function submit() {
       return;
     }
     uni.reLaunch({ url: '/pages/me/index' });
-  } catch {
-    // toast 由 request.js 处理
+  } catch (e) {
+    // toast 由 request.js 处理；这里仅作为最后兜底，避免 silently 卡住按钮
+    if (e?.message === '无 token') {
+      // 已在上面 toast 了
+    }
   } finally {
     submitting.value = false;
   }
