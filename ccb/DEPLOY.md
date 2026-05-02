@@ -88,7 +88,30 @@ sudo bash /tmp/deploy.sh --skip-install --reset
 
 ---
 
-## 五、生产上线 checklist
+## 五、C 端用户访问入口
+
+**H5 (浏览器)：**
+- 用户首页：`http://<域名>/m/#/pages/user-home/index`
+- 我的：`/m/#/pages/user-me/index`
+- 订单：`/m/#/pages/user-order/list`
+- 店铺扫码进店：`/m/#/pages/shop-home/index?tenantId=<X>&inviter=<Y>`
+
+**微信小程序 / H5 共用同一个 uniapp 工程**：`yudao-ui-merchant-uniapp`
+- 部署脚本 `deploy.sh` 已自动构建 `dist/build/h5` 拷到 `/m/`
+- 微信小程序需在 HBuilderX 内打开同工程，发布到微信开放平台（不在 deploy.sh 范围）
+
+**C 端核心数据接口**：
+- `GET /merchant/mini/member-rel/my-shops-enriched` — 我加入的店铺（含店名/封面/星级/余额/积分）
+- `POST /merchant/mini/member-rel/favorite/toggle` — 切换店铺收藏
+- `GET /merchant/mini/promo/referral/my-children-count` — 跨店去重统计推荐人数
+- `GET /merchant/shop/public/info?tenantId=` / `/list` — 店铺信息 / 列表
+- `GET /trade/cart/list` / `POST /add` / `PUT /update-count` / `DELETE /delete` — 购物车
+- `POST /trade/order/create` — 下单（pointStatus 抵扣消费积分）
+- `GET /trade/order/page` — 订单列表（前端按 tenantId 分组）
+
+---
+
+## 六、生产上线 checklist
 
 部署完成 ≠ 上线就绪。客户首次面向真实用户前请确认：
 
@@ -107,7 +130,7 @@ sudo bash /tmp/deploy.sh --skip-install --reset
 
 ---
 
-## 六、运行期排查
+## 七、运行期排查
 
 | 现象 | 命令 |
 |---|---|
@@ -133,7 +156,7 @@ systemctl restart nginx               # 反代
 
 ---
 
-## 七、目录结构
+## 八、目录结构
 
 ```
 /opt/tanxiaer/
@@ -150,7 +173,7 @@ systemctl restart nginx               # 反代
 
 ---
 
-## 八、数据库迁移规范
+## 九、数据库迁移规范
 
 `sql/mysql/V*.sql` 按字典序自动执行（`V001__xxx.sql ... V0NN__xxx.sql`），
 **每个迁移必须幂等**（`CREATE TABLE IF NOT EXISTS` / `INFORMATION_SCHEMA` 检查）。
@@ -164,7 +187,7 @@ systemctl restart nginx               # 反代
 
 ---
 
-## 九、Q&A
+## 十、Q&A
 
 **Q：脚本中途失败，可以重跑吗？**
 A：可以。脚本所有步骤设计成幂等（已存在跳过），重跑同一命令会从失败点继续。
