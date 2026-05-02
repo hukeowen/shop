@@ -51,6 +51,11 @@ public class AppUserFeedbackController {
 
     @PostMapping("/submit")
     @Operation(summary = "提交反馈")
+    @cn.iocoder.yudao.framework.ratelimiter.core.annotation.RateLimiter(
+            time = 60,
+            count = 5,
+            message = "提交过于频繁，请 1 分钟后再试",
+            keyResolver = cn.iocoder.yudao.framework.ratelimiter.core.keyresolver.impl.UserRateLimiterKeyResolver.class)
     public CommonResult<Long> submit(@Valid @RequestBody SubmitReqVO req) {
         Long userId = SecurityFrameworkUtils.getLoginUserId();
         if (userId == null || userId <= 0) {

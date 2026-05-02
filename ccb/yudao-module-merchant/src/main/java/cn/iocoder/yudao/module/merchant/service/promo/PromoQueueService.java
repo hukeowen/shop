@@ -37,6 +37,12 @@ public interface PromoQueueService {
      * 列出某用户当前所有 QUEUEING 状态的队列位置（"我的队列"页用）。
      * 已 EXITED 的不返；按 A 层先 / 同层内按晋升时间 / 入队时间升序。
      * 每行附上商品配置的 N（前端可显示进度 "已累计 2/3 次"）。
+     *
+     * <p><b>租户上下文契约（重要）</b>：本方法依赖 MyBatis Plus 的 TenantBaseDO
+     * 自动按 tenant_id 过滤，因此调用方<b>必须先切到目标 tenant 上下文</b>
+     * （{@code TenantUtils.execute(tenantId, ...)} 包裹），否则 SPU / config
+     * 查询会查到空白结果。跨店聚合场景（如 C 端 /my-queues）应外层 for 循环
+     * tenant 然后逐个调用本方法，不要把多个 tenant 的 spuId 揉一起传。</p>
      */
     List<AppQueuePositionRespVO> listMyQueueing(Long userId);
 

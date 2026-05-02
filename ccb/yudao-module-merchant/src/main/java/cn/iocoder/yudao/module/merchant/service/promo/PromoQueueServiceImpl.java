@@ -254,7 +254,9 @@ public class PromoQueueServiceImpl implements PromoQueueService {
         for (int i = 0; i < ratios.size(); i++) {
             if (i > 0) sb.append('/');
             BigDecimal r = ratios.get(i);
-            sb.append(i + 1).append('#').append(r.stripTrailingZeros().toPlainString()).append('%');
+            // signum()==0 时 stripTrailingZeros 在某些 JDK 8u 早期版本会返 "0E-1"，显式短路
+            String num = (r == null || r.signum() == 0) ? "0" : r.stripTrailingZeros().toPlainString();
+            sb.append(i + 1).append('#').append(num).append('%');
         }
         return sb.toString();
     }

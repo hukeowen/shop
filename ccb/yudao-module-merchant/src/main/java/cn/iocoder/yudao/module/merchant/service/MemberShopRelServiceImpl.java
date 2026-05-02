@@ -128,12 +128,19 @@ public class MemberShopRelServiceImpl implements MemberShopRelService {
         return memberShopRelMapper.deductBalance(userId, tenantId, amount);
     }
 
+    /** 单次余额抵扣上限（分），防止前端拼参数导致 Integer 溢出或异常大额扣减 */
+    private static final int MAX_DEDUCT_AMOUNT_FEN = 100_000_000; // ¥1,000,000
+
     @Override
     @Transactional(rollbackFor = Exception.class)
     @TenantIgnore
     public boolean deductBalanceForOrder(Long userId, Long tenantId, Long orderId, int amount) {
         if (amount <= 0) {
             return false;
+        }
+        // 0. 上限钳制（防溢出 / 拼参数）
+        if (amount > MAX_DEDUCT_AMOUNT_FEN) {
+            throw exception0(1_031_001_014, "单次抵扣金额超过限额");
         }
         // 1. 已抵扣过则直接返回（幂等）
         cn.iocoder.yudao.module.merchant.dal.dataobject.MemberOrderBalanceLogDO existing =
@@ -144,7 +151,8 @@ public class MemberShopRelServiceImpl implements MemberShopRelService {
         // 2. 原子扣减余额（WHERE balance >= amount）
         int affected = memberShopRelMapper.deductBalance(userId, tenantId, amount);
         if (affected == 0) {
-            throw exception0(1_031_001_004, "余额不足");
+            // 独立错误码：与 withdraw 路径区分
+            throw exception0(1_031_001_015, "余额不足，无法抵扣订单");
         }
         // 3. 写日志（UNIQUE(user,tenant,order) 配合 @Transactional 抗并发）
         try {
@@ -166,17 +174,20 @@ public class MemberShopRelServiceImpl implements MemberShopRelService {
     @Transactional(rollbackFor = Exception.class)
     @TenantIgnore
     public void balanceToPoints(Long userId, Long tenantId, int amountFen) {
-        MemberShopRelDO rel = getOrCreate(userId, tenantId);
-        int currentBalance = rel.getBalance() != null ? rel.getBalance() : 0;
-        if (currentBalance < amountFen) {
-            throw exception0(1_031_001_000, "余额不足，当前余额：" + currentBalance + " 分");
+        if (amountFen <= 0) {
+            throw exception0(1_031_001_001, "转换金额必须大于 0");
         }
-        // 原子扣余额（带充足校验）
-        int affected = memberShopRelMapper.incrementBalance(userId, tenantId, -amountFen);
+        if (amountFen > MAX_DEDUCT_AMOUNT_FEN) {
+            throw exception0(1_031_001_014, "单次转换金额超过限额");
+        }
+        // 确保关系记录存在
+        getOrCreate(userId, tenantId);
+        // 原子扣余额（带 balance >= amount 充足校验，消除 TOCTOU 窗口）
+        int affected = memberShopRelMapper.deductBalance(userId, tenantId, amountFen);
         if (affected == 0) {
-            throw exception0(1_031_001_001, "扣减余额失败，请重试");
+            throw exception0(1_031_001_000, "余额不足");
         }
-        // 加积分
+        // 加积分（同一事务内，失败会回滚刚才的余额扣减）
         memberShopRelMapper.incrementPoints(userId, tenantId, amountFen);
     }
 

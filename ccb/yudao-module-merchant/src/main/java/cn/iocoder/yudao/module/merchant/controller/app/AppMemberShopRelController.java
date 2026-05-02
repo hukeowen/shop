@@ -38,6 +38,7 @@ import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
 @RestController
 @RequestMapping("/merchant/mini/member-rel")
 @Validated
+@lombok.extern.slf4j.Slf4j
 public class AppMemberShopRelController {
 
     @Resource
@@ -105,11 +106,13 @@ public class AppMemberShopRelController {
                     vo.setAddress(shop.getAddress());
                     vo.setBusinessHours(shop.getBusinessHours());
                 }
-            } catch (Exception ignore) {}
+            } catch (Exception e) {
+                log.warn("[listMyShopsEnriched] 查 shop_info 失败 tenantId={}: {}",
+                        rel.getTenantId(), e.getMessage());
+            }
             // 店铺名兜底：shop_info 可能没建（merchant_info 是 TenantBaseDO 要切租户查）
             if (vo.getShopName() == null) {
                 try {
-                    Long uid = userId;
                     Long tid = rel.getTenantId();
                     TenantUtils.execute(tid, () -> {
                         java.util.List<MerchantDO> mlist = merchantMapper.selectList(
@@ -120,7 +123,10 @@ public class AppMemberShopRelController {
                             vo.setShopName(mlist.get(0).getName());
                         }
                     });
-                } catch (Exception ignore) {}
+                } catch (Exception e) {
+                    log.warn("[listMyShopsEnriched] 兜底查 merchant 失败 tenantId={}: {}",
+                            rel.getTenantId(), e.getMessage());
+                }
             }
             // shop_user_star 是 TenantBaseDO，要切租户查
             try {
@@ -134,6 +140,8 @@ public class AppMemberShopRelController {
                     }
                 });
             } catch (Exception e) {
+                log.warn("[listMyShopsEnriched] 查 shop_user_star 失败 tenantId={}: {}",
+                        rel.getTenantId(), e.getMessage());
                 vo.setStar(0);
             }
             out.add(vo);
@@ -263,7 +271,8 @@ public class AppMemberShopRelController {
         // 原子扣减余额，返回 0 说明余额不足
         int affected = memberShopRelService.deductBalance(userId, tenantId, amount);
         if (affected == 0) {
-            throw exception0(1_031_001_004, "余额不足");
+            // 独立错误码：与 deductForOrder 区分，便于客服按码定位
+            throw exception0(1_031_001_016, "余额不足，无法发起提现");
         }
         MemberWithdrawApplyDO apply = MemberWithdrawApplyDO.builder()
                 .userId(userId)
@@ -300,6 +309,9 @@ public class AppMemberShopRelController {
                                                  @RequestParam("amount") @NotNull Integer amount) {
         if (amount <= 0) {
             throw exception0(1_031_001_006, "抵扣金额必须大于 0");
+        }
+        if (amount > 100_000_000) {
+            throw exception0(1_031_001_014, "单次抵扣金额超过限额");
         }
         Long userId = SecurityFrameworkUtils.getLoginUserId();
         // CRIT-1 修复：校验订单归属，防止跨用户/跨店铺凭空扣余额
