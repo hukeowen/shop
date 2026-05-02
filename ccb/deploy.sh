@@ -1005,16 +1005,24 @@ server {
     }
 
     # 商户/用户端 H5（uni-app 输出，hash 路由）
-    location ^~ /m/ {
-        alias ${ROOT_DIR}/m/;
-        index index.html;
-        try_files \$uri \$uri/ /m/index.html;
+    # /m/assets/*.js 是 hash 文件名，可强缓存 30d；/m/index.html 必须 no-cache
+    # 否则升级 dist 后浏览器拿旧 index.html → 引用新 chunk 时 404（因为旧 chunk 已被 rm -rf 删）
+    location = /m/index.html {
+        alias ${ROOT_DIR}/m/index.html;
+        add_header Cache-Control "no-cache, no-store, must-revalidate";
+        add_header Pragma "no-cache";
+        add_header Expires 0;
     }
     location ^~ /m/assets/ {
         alias ${ROOT_DIR}/m/assets/;
         expires 30d;
         add_header Cache-Control "public, immutable";
         access_log off;
+    }
+    location ^~ /m/ {
+        alias ${ROOT_DIR}/m/;
+        index index.html;
+        try_files \$uri \$uri/ /m/index.html;
     }
 
     # 后端 API
