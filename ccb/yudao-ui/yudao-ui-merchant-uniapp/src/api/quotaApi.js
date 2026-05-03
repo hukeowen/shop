@@ -39,3 +39,16 @@ export function submitPayOrder(payOrderId, channelCode = 'wx_lite') {
     data: { id: payOrderId, channelCode, returnUrl: '' },
   });
 }
+
+/**
+ * 通联 H5 收银台购买（不走微信 JSAPI，由通联收银台接管）
+ * @param {number} packageId
+ * @returns {{ cashierUrl: string, params: Record<string,string> }}
+ */
+export function purchasePackageAllinpay(packageId) {
+  return request({
+    url: `${BASE}/packages/${packageId}/purchase-allinpay`,
+    method: 'POST',
+    data: {},
+  });
+}

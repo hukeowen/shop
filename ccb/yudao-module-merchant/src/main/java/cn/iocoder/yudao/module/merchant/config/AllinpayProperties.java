@@ -49,4 +49,24 @@ public class AllinpayProperties {
     /** HTTP 超时秒，连接 / 读取 */
     private int connectTimeoutSec = 5;
     private int readTimeoutSec = 15;
+
+    // ==================== H5 收银台（套餐购买） ====================
+
+    /** 通联 H5 网关 appid（8 位数字，例：00240592） */
+    private String appid = "";
+
+    /** 商户号（例：56165105331VE5Z） */
+    private String merchantNo = "";
+
+    /** MD5 密钥（异步通知验签 / 部分接口签名用） */
+    private String md5Key = "";
+
+    /** H5 收银台支付完成回跳前端 URL */
+    private String h5CashierReturnUrl = "";
+
+    public boolean isH5Configured() {
+        return appid != null && !appid.isEmpty()
+                && merchantNo != null && !merchantNo.isEmpty()
+                && md5Key != null && !md5Key.isEmpty();
+    }
 }

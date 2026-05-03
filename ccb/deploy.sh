@@ -58,6 +58,18 @@ JIMENG_AK="${JIMENG_AK:-}"
 JIMENG_SK="${JIMENG_SK:-}"
 DOUYIN_CLIENT_KEY="${DOUYIN_CLIENT_KEY:-}"
 DOUYIN_CLIENT_SECRET="${DOUYIN_CLIENT_SECRET:-}"
+# 通联收付通（H5 收银台 + 商户进件）
+ALLINPAY_ENABLED="${ALLINPAY_ENABLED:-true}"
+ALLINPAY_API_BASE_URL="${ALLINPAY_API_BASE_URL:-https://test-vsp.allinpay.com}"
+ALLINPAY_APPID="${ALLINPAY_APPID:-}"
+ALLINPAY_MERCHANT_NO="${ALLINPAY_MERCHANT_NO:-}"
+ALLINPAY_MD5_KEY="${ALLINPAY_MD5_KEY:-}"
+ALLINPAY_RSA_PRIVATE_KEY="${ALLINPAY_RSA_PRIVATE_KEY:-}"
+ALLINPAY_RSA_PUBLIC_KEY="${ALLINPAY_RSA_PUBLIC_KEY:-}"
+ALLINPAY_ORG_ID="${ALLINPAY_ORG_ID:-}"
+SERVER_NAME="${SERVER_NAME:-www.doupaidoudian.com}"
+MERCHANT_PACKAGE_PAY_APP_KEY="${MERCHANT_PACKAGE_PAY_APP_KEY:-tanxiaer-package}"
+MERCHANT_PACKAGE_PAY_APP_ID="${MERCHANT_PACKAGE_PAY_APP_ID:-10001}"
 # 火山 TOS（对象存储）— sidecar 视频上传用；缺时默认沿用 JIMENG_AK/SK（同一套火山账号 IAM 通用）
 TOS_AK="${TOS_AK:-}"
 TOS_SK="${TOS_SK:-}"
@@ -684,6 +696,34 @@ yudao:
     send-maximum-quantity-per-day: 10
     begin-code: 1000
     end-code: 9999
+  pay:
+    order-notify-url: http://${SERVER_NAME:-www.doupaidoudian.com}/admin-api/pay/notify/order
+    refund-notify-url: http://${SERVER_NAME:-www.doupaidoudian.com}/admin-api/pay/notify/refund
+    transfer-notify-url: http://${SERVER_NAME:-www.doupaidoudian.com}/admin-api/pay/notify/transfer
+  merchant:
+    package:
+      # V021 seed 的 pay_app（id=10001, app_key=tanxiaer-package）
+      # 修改后 deploy.sh 重启即生效
+      pay-app-key: \${MERCHANT_PACKAGE_PAY_APP_KEY:tanxiaer-package}
+      pay-app-id: \${MERCHANT_PACKAGE_PAY_APP_ID:10001}
+
+# 通联收付通配置（V008 商户进件 + 套餐 H5 收银台桥接）
+merchant:
+  allinpay:
+    enabled: \${ALLINPAY_ENABLED:true}
+    api-base-url: \${ALLINPAY_API_BASE_URL:https://test-vsp.allinpay.com}
+    org-id: \${ALLINPAY_ORG_ID:}
+    # 收银台 H5 网关参数（appid 是通联给的 8 位数字）
+    appid: \${ALLINPAY_APPID:}
+    merchant-no: \${ALLINPAY_MERCHANT_NO:}
+    md5-key: \${ALLINPAY_MD5_KEY:}
+    # RSA 私钥（PKCS8 PEM base64 内容，单行）—— deploy 通过 .env 注入避免 yaml 转义
+    platform-rsa-private-key: \${ALLINPAY_RSA_PRIVATE_KEY:}
+    allinpay-rsa-public-key: \${ALLINPAY_RSA_PUBLIC_KEY:}
+    # 回调 URL：必须公网可达
+    register-notify-url: http://${SERVER_NAME:-www.doupaidoudian.com}/admin-api/merchant/allinpay/register-notify
+    pay-notify-url: http://${SERVER_NAME:-www.doupaidoudian.com}/admin-api/merchant/allinpay/pay-notify
+    h5-cashier-return-url: http://${SERVER_NAME:-www.doupaidoudian.com}/m/#/pages/ai-video/quota?paid=1
 YAML_EOF
   chmod 600 "${RESOURCES}/application-prod.yaml"
   umask 022
@@ -1139,6 +1179,17 @@ DOUYIN_CLIENT_KEY=${DOUYIN_CLIENT_KEY}
 DOUYIN_CLIENT_SECRET=${DOUYIN_CLIENT_SECRET}
 YUDAO_SMS_DEMO_MODE=${YUDAO_SMS_DEMO_MODE:-true}
 YUDAO_SMS_DEMO_CODE=${YUDAO_SMS_DEMO_CODE:-888888}
+ALLINPAY_ENABLED=${ALLINPAY_ENABLED}
+ALLINPAY_API_BASE_URL=${ALLINPAY_API_BASE_URL}
+ALLINPAY_APPID=${ALLINPAY_APPID}
+ALLINPAY_MERCHANT_NO=${ALLINPAY_MERCHANT_NO}
+ALLINPAY_MD5_KEY=${ALLINPAY_MD5_KEY}
+ALLINPAY_RSA_PRIVATE_KEY=${ALLINPAY_RSA_PRIVATE_KEY}
+ALLINPAY_RSA_PUBLIC_KEY=${ALLINPAY_RSA_PUBLIC_KEY}
+ALLINPAY_ORG_ID=${ALLINPAY_ORG_ID}
+SERVER_NAME=${SERVER_NAME}
+MERCHANT_PACKAGE_PAY_APP_KEY=${MERCHANT_PACKAGE_PAY_APP_KEY}
+MERCHANT_PACKAGE_PAY_APP_ID=${MERCHANT_PACKAGE_PAY_APP_ID}
 ENV_EOF
   chown "${SERVICE_USER}:${SERVICE_USER}" "${ENV_UNIT}"
   chmod 600 "${ENV_UNIT}"

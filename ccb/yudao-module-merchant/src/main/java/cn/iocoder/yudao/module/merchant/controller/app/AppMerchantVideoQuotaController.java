@@ -122,6 +122,36 @@ public class AppMerchantVideoQuotaController {
         return success(resp);
     }
 
+    @Resource
+    private cn.iocoder.yudao.module.merchant.service.allinpay.AllinpayCashierService allinpayCashierService;
+
+    /**
+     * 通联 H5 收银台购买（独立路径，不走 yudao 标准 PayClient）。
+     *
+     * <p>流程：</p>
+     * <ol>
+     *   <li>本端点：创建 merchant_package_order 行（状态 WAITING） + 调通联 H5 收银台
+     *       拼出 form 参数返给前端</li>
+     *   <li>前端把返回的 cashierUrl + params 拼成 form 自动 POST 跳转</li>
+     *   <li>用户在通联收银台完成支付</li>
+     *   <li>通联 POST 到 {@code merchant.allinpay.pay-notify-url} → AllinpayNotifyController.payNotify
+     *       验签后调 packageOrderService.markPaid()</li>
+     * </ol>
+     */
+    @PostMapping("/packages/{packageId}/purchase-allinpay")
+    @Operation(summary = "购买套餐（通联 H5 收银台）")
+    @Parameter(name = "packageId", description = "套餐 ID", required = true)
+    public CommonResult<cn.iocoder.yudao.module.merchant.service.allinpay.AllinpayCashierService.CashierForm>
+            purchaseAllinpay(@PathVariable("packageId") Long packageId) {
+        MerchantDO merchant = getMerchantOrThrow();
+        Long loginUserId = SecurityFrameworkUtils.getLoginUserId();
+        // 复用 createOrder 创业务订单（channelCode 用 allinpay_h5；service 已经放行了）
+        AppMerchantPackagePurchaseRespVO base = packageOrderService.createOrder(
+                merchant.getId(), loginUserId, packageId, "allinpay_h5", getClientIP());
+        // 拼通联收银台 form
+        return success(allinpayCashierService.buildCashierForm(base.getPackageOrderId()));
+    }
+
     /**
      * 支付成功回调 - 由 yudao-module-pay 的 PayNotifyService 在收到支付渠道成功回调后，
      * 按 {@code PayAppDO.orderNotifyUrl}（管理员在 admin-api/pay/app 配置）HTTP POST 到这里。

@@ -55,11 +55,16 @@ public class MerchantPackageOrderServiceImpl implements MerchantPackageOrderServ
     private static final Duration PAY_ORDER_EXPIRE = Duration.ofHours(2L);
 
     /**
-     * 白名单支付渠道。Phase 0.3.3 只开 {@code wx_lite}；接入支付宝 / H5 时扩这里。
+     * 白名单支付渠道。Phase 0.3.3 开 {@code wx_lite}；扩 H5 收银台后加 {@code allinpay_h5}。
      *
-     * <p>不引用 {@code PayChannelEnum} 的原因：那是 pay 模块枚举，不想让上层强耦合。</p>
+     * <p>不引用 {@code PayChannelEnum} 的原因：那是 pay 模块枚举，不想让上层强耦合。
+     * allinpay_h5 不走 yudao 标准 PayClient，仅占位让 createOrder 流程可以建 pay_order 行；
+     * 真正支付走 AllinpayCashierService.buildCashierForm 拼通联收银台 form。</p>
      */
     private static final String CHANNEL_WX_LITE = "wx_lite";
+    private static final String CHANNEL_ALLINPAY_H5 = "allinpay_h5";
+    private static final java.util.Set<String> ALLOWED_CHANNELS =
+            new java.util.HashSet<>(java.util.Arrays.asList(CHANNEL_WX_LITE, CHANNEL_ALLINPAY_H5));
 
     @Resource
     private MerchantPackageOrderMapper packageOrderMapper;
@@ -87,16 +92,17 @@ public class MerchantPackageOrderServiceImpl implements MerchantPackageOrderServ
     public AppMerchantPackagePurchaseRespVO createOrder(Long merchantId, Long memberUserId,
                                                         Long packageId, String channelCode, String userIp) {
         // 1. 白名单渠道（防越权传 wallet / 其他）
-        if (!CHANNEL_WX_LITE.equals(channelCode)) {
+        if (!ALLOWED_CHANNELS.contains(channelCode)) {
             throw exception(PACKAGE_ORDER_CHANNEL_UNSUPPORTED);
         }
 
         // 2. 解析支付应用 appKey
         String appKey = resolvePayAppKey();
 
-        // 3. 校验 openid（wx_lite JSAPI 必需）
+        // 3. 校验 openid（仅 wx_lite JSAPI 必需；allinpay_h5 不需要）
         MemberUserDO member = memberUserMapper.selectById(memberUserId);
-        if (member == null || member.getMiniAppOpenId() == null || member.getMiniAppOpenId().isEmpty()) {
+        if (CHANNEL_WX_LITE.equals(channelCode)
+                && (member == null || member.getMiniAppOpenId() == null || member.getMiniAppOpenId().isEmpty())) {
             throw exception(PACKAGE_ORDER_OPENID_MISSING);
         }
 

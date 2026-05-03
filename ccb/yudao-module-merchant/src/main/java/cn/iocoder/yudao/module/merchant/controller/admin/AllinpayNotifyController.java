@@ -30,7 +30,7 @@ import java.util.Map;
  */
 @Tag(name = "管理后台 - 通联异步通知")
 @RestController
-@RequestMapping("/merchant/pay")
+@RequestMapping("/merchant")
 @Slf4j
 public class AllinpayNotifyController {
 
@@ -38,6 +38,8 @@ public class AllinpayNotifyController {
     private AllinpayProperties props;
     @Resource
     private ShopInfoMapper shopInfoMapper;
+    @Resource
+    private cn.iocoder.yudao.module.merchant.service.allinpay.AllinpayCashierService cashierService;
 
     @Value("${merchant.field-encrypt-key:dev_key_12345678}")
     private String fieldEncryptKey;
@@ -55,7 +57,7 @@ public class AllinpayNotifyController {
      *   sign=base64                  // RSA SHA256 签名
      * </pre>
      */
-    @PostMapping(value = "/tl-notify", produces = "text/plain;charset=UTF-8")
+    @PostMapping(value = "/pay/tl-notify", produces = "text/plain;charset=UTF-8")
     @Operation(summary = "通联进件 / 支付结果异步通知")
     public String onAllinpayNotify(@RequestParam Map<String, String> params) {
         log.info("[allinpay-notify] receive params keys={}", params.keySet());
@@ -123,11 +125,35 @@ public class AllinpayNotifyController {
     }
 
     /** 占位健康检查（debug） */
-    @PostMapping(value = "/tl-notify-echo", produces = "application/json")
+    @PostMapping(value = "/pay/tl-notify-echo", produces = "application/json")
     public Map<String, Object> echo(@RequestParam Map<String, String> params) {
         Map<String, Object> r = new HashMap<>();
         r.put("ok", true);
         r.put("received", params.size());
         return r;
+    }
+
+    /**
+     * 通联 H5 收银台支付结果异步通知（套餐购买）。
+     *
+     * <p>路径与 yaml {@code merchant.allinpay.pay-notify-url} 对齐：
+     * {@code /admin-api/merchant/allinpay/pay-notify}
+     * （RequestMapping=/merchant + 本方法 /allinpay/pay-notify，
+     * yudao admin-api 前缀由 nginx 兜底）。</p>
+     *
+     * <p>必须返 "success" 文本（不要 JSON）让通联停止重试。</p>
+     */
+    @PostMapping(value = "/allinpay/pay-notify", produces = "text/plain;charset=UTF-8")
+    @Operation(summary = "通联 H5 收银台 - 支付结果异步通知")
+    public String onAllinpayPayNotify(@RequestParam Map<String, String> params) {
+        log.info("[allinpay/pay-notify] receive keys={}", params.keySet());
+        return cashierService.handlePayNotify(params);
+    }
+
+    /** 进件通知保留旧路径兼容（如有通联控制台 register-notify-url 写老地址） */
+    @PostMapping(value = "/allinpay/register-notify", produces = "text/plain;charset=UTF-8")
+    @Operation(summary = "通联进件 - 异步通知（兼容路径）")
+    public String onAllinpayRegisterNotify(@RequestParam Map<String, String> params) {
+        return onAllinpayNotify(params);
     }
 }

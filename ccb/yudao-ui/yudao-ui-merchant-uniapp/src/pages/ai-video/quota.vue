@@ -50,10 +50,10 @@
       <button
         class="btn primary"
         :disabled="!selectedPkg || paying"
-        @click="onBuy"
+        @click="onBuyAllinpay"
       >
         <text v-if="paying">支付处理中…</text>
-        <text v-else-if="selectedPkg">立即支付 ¥{{ (selectedPkg.price / 100).toFixed(0) }}</text>
+        <text v-else-if="selectedPkg">立即支付 ¥{{ (selectedPkg.price / 100).toFixed(0) }}（通联）</text>
         <text v-else>请选择套餐</text>
       </button>
     </view>
@@ -63,7 +63,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
-import { getMyQuota, listPackages, purchasePackage, submitPayOrder } from '../../api/quotaApi.js';
+import { getMyQuota, listPackages, purchasePackage, purchasePackageAllinpay, submitPayOrder } from '../../api/quotaApi.js';
 
 const remaining = ref(0);
 const packages = ref([]);
@@ -95,6 +95,37 @@ async function loadPackages() {
     // ignore
   } finally {
     loadingPackages.value = false;
+  }
+}
+
+// 通联 H5 收银台购买：拿到 cashierUrl + form params → 自动 POST 跳转
+async function onBuyAllinpay() {
+  if (!selectedPkg.value || paying.value) return;
+  paying.value = true;
+  try {
+    const resp = await purchasePackageAllinpay(selectedPkg.value.id);
+    if (!resp || !resp.cashierUrl || !resp.params) {
+      uni.showToast({ title: '收银台参数获取失败', icon: 'none' });
+      return;
+    }
+    // 构造 form 自动 POST 跳转通联收银台
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = resp.cashierUrl;
+    form.acceptCharset = 'UTF-8';
+    Object.entries(resp.params).forEach(([k, v]) => {
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = k;
+      input.value = v == null ? '' : String(v);
+      form.appendChild(input);
+    });
+    document.body.appendChild(form);
+    form.submit();
+    // submit 后浏览器跳走，paying 不需要 reset
+  } catch (err) {
+    paying.value = false;
+    uni.showToast({ title: err?.message || '通联购买失败', icon: 'none' });
   }
 }
 
