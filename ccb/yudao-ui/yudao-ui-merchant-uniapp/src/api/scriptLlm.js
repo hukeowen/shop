@@ -18,13 +18,15 @@
 
 import { request } from './request.js';
 
-const FIXED_CTA = '扫码进店领优惠';
+const FIXED_CTA = '立即扫码下单';
 const BFF_MULTI_SCENE = '/app-api/merchant/mini/ai-video/bff/script/multi-scene';
 const BFF_CHAT = '/app-api/merchant/mini/ai-video/bff/ark/chat';
 
 // generateHighlight 仍走 BFF /ark/chat（视觉模型生成"一句话亮点"），不属于
 // 主 LLM 链路，保留以兼容 create.vue 的"AI 重新识别"按钮
 const VISION_MODEL = import.meta.env.VITE_ARK_VISION_MODEL || 'doubao-1-5-vision-pro-32k-250115';
+// 文本润色用纯文本模型（更便宜、更快），不需要看图
+const TEXT_MODEL = import.meta.env.VITE_ARK_LLM_MODEL || 'doubao-1-5-pro-32k-250115';
 
 async function arkChat(model, messages) {
   const body = await request({
@@ -133,4 +135,82 @@ export async function generateHighlight(imageBase64sOrUrls) {
     },
   ]);
   return raw.trim().replace(/^["""''「」【】]|["""''「」【】]$/g, '').trim();
+}
+
+/**
+ * 把老板写的口水话 + 商品图，润色扩写成可发布的短视频解说稿。
+ *
+ * 用户场景：商户多数是路边摊 / 夫妻店老板，描述往往是"地瓜很甜"、"这个超好吃我家做了20年"
+ * 之类的口语；直接喂给 generateScript 拆镜头，narration 出来也很苍白。
+ *
+ * 流程：视觉模型 **同时看图 + 读老板原话** →
+ *   1. 识别图片中能看到的具体内容（颜色、状态、容器、配料、烹饪/加工方式…）
+ *   2. 围绕老板原话扩写（保留原话核心卖点，不编造没说过的产地/年份/数字）
+ *   3. 60-100 字短视频解说基稿
+ *   4. 结尾必须以「立即扫码下单」收口
+ *
+ * @param {string} rawDesc 老板口水话描述（用户在表单里写的）
+ * @param {string} [shopName=''] 店铺名（让润色后稍带店家身份感）
+ * @param {string[]} [imageUrls=[]] 商品图 OSS URL；走视觉模型识图后扩写
+ * @returns {Promise<string>} 润色后的解说稿（一段，不分幕，结尾"立即扫码下单"）
+ */
+export async function polishDescription(rawDesc, shopName = '', imageUrls = []) {
+  const text = (rawDesc || '').trim();
+  if (!text) return text;
+  // 太短（<3 字）或太长（>500 字）跳过：太短没料、太长可能本身已经写好
+  if (text.length < 3 || text.length > 500) return text;
+
+  const sysPrompt = [
+    '你是为路边小店、夫妻摊、街边手艺人写短视频解说稿的资深文案。',
+    '请基于「商品图片 + 老板的原始描述」扩写一段可直接念出来的短视频文案：',
+    '1. 先识别图片：抽出图里能看到的具体细节（颜色、状态、容器、热气、油光、食材、纹理…）',
+    '2. 围绕老板原话扩写：把口水话补成有画面感、有温度的描述',
+    '3. 真实优先：原话已说的事实（年份/产地/工艺/家传）可强化；图里没看到、原话没说的不准编造',
+    '4. 用第三人称叙述，不要"我家""老板"等自称',
+    '5. 总长 60-100 字，能在 30 秒短视频里念完一遍',
+    '6. 禁止吆喝词："秒杀/限时/全网最低/赔本/老板疯了/大减价/今日特惠/必买"等',
+    '7. 结尾必须独立成句，写「立即扫码下单」六个字（一字不差），不加感叹号、不加句号',
+    '8. 不要标题、不要分点、不要 emoji、不要引号、不要解释；只输出正文一段',
+  ].join('\n');
+
+  // 视觉模型 messages：先文本指令，再每张图（OSS URL；base64 也兼容但不推荐）
+  const imgs = (imageUrls || []).slice(0, 3).filter(Boolean);
+  const userTextHead = (shopName ? `店家：${shopName}\n` : '') +
+    `老板原始描述：${text}\n\n` +
+    '请先识别图片中能看到的具体内容，再围绕老板这段话扩写成短视频解说基稿（60-100 字，结尾"立即扫码下单"）：';
+
+  const userContent = imgs.length
+    ? [
+        { type: 'text', text: userTextHead },
+        ...imgs.map((u) => ({
+          type: 'image_url',
+          image_url: {
+            url: /^https?:\/\//i.test(u) ? u : (u.startsWith('data:') ? u : `data:image/jpeg;base64,${u}`),
+            detail: 'low',
+          },
+        })),
+      ]
+    : userTextHead;
+
+  // 有图走视觉模型；没图回退文本模型（仅基于原话扩写）
+  const model = imgs.length ? VISION_MODEL : TEXT_MODEL;
+
+  try {
+    const raw = await arkChat(model, [
+      { role: 'system', content: sysPrompt },
+      { role: 'user', content: userContent },
+    ]);
+    let out = (raw || '').trim().replace(/^["""''「」【】]|["""''「」【】]$/g, '').trim();
+    // 防御：模型偶尔会带"润色后："这种前缀
+    out = out.replace(/^[\s\S]*?[:：]\s*/m, (m) => (m.length < 12 ? '' : m));
+    // 兜底：模型如果忘了 CTA，强制补上
+    if (out && !/立即扫码下单/.test(out)) {
+      out = out.replace(/[。！!.\s]+$/g, '') + '。立即扫码下单';
+    }
+    if (!out || out.length < 5) return text; // 润色失败回退原文
+    return out;
+  } catch (e) {
+    console.warn('[polishDescription] 润色失败，回退原始描述:', e?.message);
+    return text;
+  }
 }

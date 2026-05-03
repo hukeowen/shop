@@ -17,7 +17,7 @@
 
 import { request } from './request.js';
 import { uploadImage, uploadImages } from './oss.js';
-import { generateScript } from './scriptLlm.js';
+import { generateScript, polishDescription } from './scriptLlm.js';
 import { createClipTask, waitClip } from './jimeng.js';
 import { findVoice } from './voice.js';
 
@@ -331,7 +331,7 @@ export async function generatePoster({ shopName, slogan }) {
   const res = await fetch('/jimeng/poster', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ shopName, slogan: slogan || '扫码进店领优惠' }),
+    body: JSON.stringify({ shopName, slogan: slogan || '立即扫码下单' }),
   });
   if (!res.ok) {
     const txt = await res.text().catch(() => '');
@@ -453,6 +453,19 @@ export async function createTask({ imageBase64s, imageUrls, userDescription, voi
     }
     task.coverUrl = task.imageUrls[0];
 
+    // ②.0 文案润色：老板写的是口水话（"地瓜很甜"），先让视觉模型同时看图 + 读老板原话，
+    //      扩写成 60-100 字、有画面感的短视频解说基稿（结尾"立即扫码下单"），
+    //      再喂给后续视觉拆镜。失败回退原文，不阻塞主流程。
+    emit({ phase: 'polishing' });
+    let polishedDescription = userDescription;
+    try {
+      polishedDescription = await polishDescription(userDescription, shopName, task.imageUrls);
+      task.userDescriptionRaw = userDescription;
+      task.userDescriptionPolished = polishedDescription;
+    } catch (e) {
+      console.warn('[aiVideo] polishDescription 失败，沿用原文:', e?.message);
+    }
+
     emit({ phase: 'scripting' });
     // ②a 旁路调后端 generateRichScript 拿 BGM 风格推荐 + 英文运镜基底
     //     这是即梦 API 优化第一波 ③ 的前端接入：bgmStyle 自动落到 task，confirm 页打开
@@ -460,7 +473,7 @@ export async function createTask({ imageBase64s, imageUrls, userDescription, voi
     //     "push-in macro"" "golden hour" 等词。失败不阻塞主流程（task.bgmStyle 仍空）
     let richBaseVisualPrompt = '';
     try {
-      const rich = await fetchRichScript(shopName, userDescription);
+      const rich = await fetchRichScript(shopName, polishedDescription);
       if (rich) {
         if (rich.bgmStyle) task.bgmStyle = rich.bgmStyle;
         if (rich.visualPrompt) richBaseVisualPrompt = rich.visualPrompt;
@@ -477,7 +490,7 @@ export async function createTask({ imageBase64s, imageUrls, userDescription, voi
     const { title, scenes } = await generateScript({
       imageCount: imgs.length,
       imageUrls: task.imageUrls,
-      userDescription,
+      userDescription: polishedDescription,
       sceneCount,
       sceneDuration: perSceneDuration,
     });

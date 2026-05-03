@@ -228,8 +228,11 @@ async function onSubmit() {
         } else if (s.phase === 'enhancing') {
           submitPhaseLabel.value = `AI 美化 ${s.enhancedCount}/${s.totalCount}`;
           uni.showLoading({ title: `AI 美化 ${s.enhancedCount}/${s.totalCount}` });
+        } else if (s.phase === 'polishing') {
+          submitPhaseLabel.value = 'AI 看图 + 润色文案…';
+          uni.showLoading({ title: 'AI 润色文案' });
         } else if (s.phase === 'scripting') {
-          submitPhaseLabel.value = 'AI 看图 + 拆镜头';
+          submitPhaseLabel.value = 'AI 拆镜头';
           uni.showLoading({ title: 'AI 拆镜头' });
         }
       },

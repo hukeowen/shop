@@ -904,11 +904,11 @@ app.post('/jimeng/enhance', async (req, res) => {
 //
 // 替代原 ffmpeg drawtext 拼图端卡，用即梦生成专业海报：
 // - 店名艺术字 + 二维码视觉位 + 暖色背景
-// 输入: { shopName, slogan? } — slogan 默认 "扫码进店"
+// 输入: { shopName, slogan? } — slogan 默认 "立即扫码下单"
 // 输出: { ok, url } — 海报图 URL（之后 sidecar /video/endcard 用这个图当背景）
 app.post('/jimeng/poster', async (req, res) => {
   try {
-    const { shopName, slogan = '扫码进店领优惠' } = req.body || {};
+    const { shopName, slogan = '立即扫码下单' } = req.body || {};
     if (!shopName) throw new Error('shopName 为空');
 
     const posterPrompt =
