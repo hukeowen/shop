@@ -775,7 +775,10 @@ build_admin_frontend() {
   cat > .env.prod.local << 'ENVEOF'
 VITE_DEV=false
 VITE_APP_TITLE=摊小二管理后台
-VITE_BASE_URL=/
+# 关键：VITE_BASE_URL 必须留空，axios 真正用的是 base_url = VITE_BASE_URL + VITE_API_URL
+# 写 "/" 会拼成 "//admin-api"，浏览器解析成 protocol-relative URL `http://admin-api/...`
+# → 整个登录全部 404。留空则拼成 "/admin-api"（相对当前域名），nginx 反代就对了。
+VITE_BASE_URL=
 VITE_API_URL=/admin-api
 VITE_APP_CAPTCHA_ENABLE=false
 VITE_OUT_DIR=dist-prod
