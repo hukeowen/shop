@@ -68,6 +68,7 @@ ALLINPAY_RSA_PRIVATE_KEY="${ALLINPAY_RSA_PRIVATE_KEY:-}"
 ALLINPAY_RSA_PUBLIC_KEY="${ALLINPAY_RSA_PUBLIC_KEY:-}"
 ALLINPAY_ORG_ID="${ALLINPAY_ORG_ID:-}"
 SERVER_NAME="${SERVER_NAME:-www.doupaidoudian.com}"
+LE_EMAIL="${LE_EMAIL:-admin@${SERVER_NAME}}"
 MERCHANT_PACKAGE_PAY_APP_KEY="${MERCHANT_PACKAGE_PAY_APP_KEY:-tanxiaer-package}"
 MERCHANT_PACKAGE_PAY_APP_ID="${MERCHANT_PACKAGE_PAY_APP_ID:-10001}"
 # 火山 TOS（对象存储）— sidecar 视频上传用；缺时默认沿用 JIMENG_AK/SK（同一套火山账号 IAM 通用）
@@ -697,9 +698,9 @@ yudao:
     begin-code: 1000
     end-code: 9999
   pay:
-    order-notify-url: http://${SERVER_NAME:-www.doupaidoudian.com}/admin-api/pay/notify/order
-    refund-notify-url: http://${SERVER_NAME:-www.doupaidoudian.com}/admin-api/pay/notify/refund
-    transfer-notify-url: http://${SERVER_NAME:-www.doupaidoudian.com}/admin-api/pay/notify/transfer
+    order-notify-url: https://${SERVER_NAME:-www.doupaidoudian.com}/admin-api/pay/notify/order
+    refund-notify-url: https://${SERVER_NAME:-www.doupaidoudian.com}/admin-api/pay/notify/refund
+    transfer-notify-url: https://${SERVER_NAME:-www.doupaidoudian.com}/admin-api/pay/notify/transfer
   merchant:
     package:
       # V021 seed 的 pay_app（id=10001, app_key=tanxiaer-package）
@@ -721,9 +722,9 @@ merchant:
     platform-rsa-private-key: \${ALLINPAY_RSA_PRIVATE_KEY:}
     allinpay-rsa-public-key: \${ALLINPAY_RSA_PUBLIC_KEY:}
     # 回调 URL：必须公网可达
-    register-notify-url: http://${SERVER_NAME:-www.doupaidoudian.com}/admin-api/merchant/allinpay/register-notify
-    pay-notify-url: http://${SERVER_NAME:-www.doupaidoudian.com}/admin-api/merchant/allinpay/pay-notify
-    h5-cashier-return-url: http://${SERVER_NAME:-www.doupaidoudian.com}/m/#/pages/ai-video/quota?paid=1
+    register-notify-url: https://${SERVER_NAME:-www.doupaidoudian.com}/admin-api/merchant/allinpay/register-notify
+    pay-notify-url: https://${SERVER_NAME:-www.doupaidoudian.com}/admin-api/merchant/allinpay/pay-notify
+    h5-cashier-return-url: https://${SERVER_NAME:-www.doupaidoudian.com}/m/#/pages/ai-video/quota?paid=1
 YAML_EOF
   chmod 600 "${RESOURCES}/application-prod.yaml"
   umask 022
@@ -1005,19 +1006,64 @@ configure_nginx() {
     log "nginx.conf 里无默认 server 块（OK）"
   fi
 
+  # ─── HTTPS 证书路径（首次部署用 Let's Encrypt 自动签）───
+  local CERT_DIR="/etc/letsencrypt/live/${SERVER_NAME}"
+  local CERT_FILE="${CERT_DIR}/fullchain.pem"
+  local KEY_FILE="${CERT_DIR}/privkey.pem"
+  local USE_HTTPS=false
+  if [[ -f "${CERT_FILE}" && -f "${KEY_FILE}" ]]; then
+    USE_HTTPS=true
+    info "检测到 HTTPS 证书 → 启用 443 + 80→443 跳转"
+  else
+    warn "未检测到证书 ${CERT_FILE} → 先以 HTTP 启动；setup_https 阶段再签发"
+  fi
+  mkdir -p /var/www/letsencrypt 2>/dev/null || true
+
+  # 写 80 端口块：ACME challenge 一直需要走 80
   cat > "${NGINX_CONF}" << NGINX_EOF
 upstream tanxiaer_backend {
     server 127.0.0.1:${SERVER_PORT};
     keepalive 32;
 }
 
+# ── 80 端口：ACME 验证 + （证书就绪后）跳 443 ──
 server {
-    # default_server：未带 server_name 的请求（如 IP 直访 47.109.143.146/m/）
-    # 也走这个 block；否则会落到 nginx 默认 /usr/share/nginx/html 出现空白页
     listen 80 default_server;
     server_name ${SERVER_NAME} _;
     charset utf-8;
     client_max_body_size 50m;
+
+    # certbot --webroot ACME challenge 必走 80 端口；任何时候保持可达
+    location /.well-known/acme-challenge/ {
+        root /var/www/letsencrypt;
+        default_type "text/plain";
+    }
+NGINX_EOF
+
+  if [[ "${USE_HTTPS}" == "true" ]]; then
+    # 证书就绪：80 块只剩 ACME + 跳转；HTTPS 块承担所有 location
+    cat >> "${NGINX_CONF}" << NGINX_EOF
+    location / { return 301 https://\$host\$request_uri; }
+}
+
+server {
+    listen 443 ssl http2 default_server;
+    server_name ${SERVER_NAME} _;
+    charset utf-8;
+    client_max_body_size 50m;
+
+    ssl_certificate     ${CERT_FILE};
+    ssl_certificate_key ${KEY_FILE};
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+    ssl_prefer_server_ciphers on;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 1d;
+    add_header Strict-Transport-Security "max-age=31536000" always;
+NGINX_EOF
+  fi
+  # 不论 USE_HTTPS：location 块写入当前激活的 server（USE_HTTPS=false 写 80；true 写 443）
+  cat >> "${NGINX_CONF}" << NGINX_EOF
 
     # 官网（静态单页 + 任何后续 assets/图片 自动生效）
     location / {
@@ -1151,6 +1197,62 @@ NGINX_EOF
   nginx -t
   systemctl reload nginx 2>/dev/null || systemctl start nginx
   log "Nginx 配置完成"
+}
+
+# Let's Encrypt 自动签发 + 续期（CentOS 7：epel + certbot + nginx 插件）
+setup_https() {
+  step "配置 HTTPS（Let's Encrypt 免费证书）"
+  if [[ "${SERVER_NAME}" == "_" || "${SERVER_NAME}" == "localhost" || -z "${SERVER_NAME}" ]]; then
+    warn "SERVER_NAME 为空 / 本地 → 跳过 HTTPS（域名未配置）"
+    return 0
+  fi
+  local CERT_FILE="/etc/letsencrypt/live/${SERVER_NAME}/fullchain.pem"
+  if [[ -f "${CERT_FILE}" ]]; then
+    info "${SERVER_NAME} 证书已存在 → 跳过签发；cron 自动续期"
+    install_certbot_renew_cron
+    return 0
+  fi
+
+  # 1. 安装 certbot
+  if ! command -v certbot >/dev/null 2>&1; then
+    info "安装 certbot..."
+    yum install -y epel-release >/dev/null 2>&1 || true
+    yum install -y certbot python2-certbot-nginx >/dev/null 2>&1 \
+      || yum install -y certbot python-certbot-nginx >/dev/null 2>&1
+  fi
+  if ! command -v certbot >/dev/null 2>&1; then
+    err "certbot 安装失败 — 请手工：yum install -y epel-release && yum install -y certbot python2-certbot-nginx"
+    return 1
+  fi
+
+  # 2. 用 webroot 模式签发（不需停 nginx；ACME challenge 落 /var/www/letsencrypt）
+  mkdir -p /var/www/letsencrypt
+  chmod 755 /var/www/letsencrypt
+  systemctl reload nginx 2>/dev/null || true
+
+  local LE_EMAIL="${LE_EMAIL:-admin@${SERVER_NAME}}"
+  info "签发证书 domain=${SERVER_NAME} email=${LE_EMAIL}"
+  certbot certonly --webroot -w /var/www/letsencrypt \
+                   -d "${SERVER_NAME}" \
+                   --non-interactive --agree-tos -m "${LE_EMAIL}" \
+                   --no-eff-email || {
+    err "certbot 签发失败 — 检查域名是否解析到本机 + 80 端口是否可达公网"
+    return 1
+  }
+
+  # 3. 重新写 nginx 配置（这次 USE_HTTPS=true）+ reload
+  configure_nginx
+  install_certbot_renew_cron
+  log "HTTPS 已启用 https://${SERVER_NAME}"
+}
+
+install_certbot_renew_cron() {
+  # certbot 自带 systemd timer（如装了 certbot.timer）会接管；这里加 root crontab 兜底
+  local CRON_LINE="0 3 * * * /usr/bin/certbot renew --quiet --deploy-hook 'systemctl reload nginx'"
+  if ! crontab -l 2>/dev/null | grep -Fq "certbot renew"; then
+    (crontab -l 2>/dev/null; echo "${CRON_LINE}") | crontab -
+    info "已安装 certbot 续期 cron（每天 03:00）"
+  fi
 }
 
 deploy_backend_service() {
@@ -1481,6 +1583,7 @@ main() {
     deploy_merchant_h5
   fi
   configure_nginx
+  setup_https || warn "HTTPS 未启用，仍以 HTTP 提供服务"
   deploy_backend_service
 
   # sidecar 部署允许失败（视频/抖音功能可降级，不阻塞主部署完成）

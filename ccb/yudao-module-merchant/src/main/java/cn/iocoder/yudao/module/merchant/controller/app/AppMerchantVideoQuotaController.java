@@ -124,6 +124,8 @@ public class AppMerchantVideoQuotaController {
 
     @Resource
     private cn.iocoder.yudao.module.merchant.service.allinpay.AllinpayCashierService allinpayCashierService;
+    @Resource
+    private cn.iocoder.yudao.module.merchant.service.allinpay.AllinpayPollingService allinpayPollingService;
 
     /**
      * 通联 H5 收银台购买（独立路径，不走 yudao 标准 PayClient）。
@@ -148,6 +150,8 @@ public class AppMerchantVideoQuotaController {
         // 复用 createOrder 创业务订单（channelCode 用 allinpay_h5；service 已经放行了）
         AppMerchantPackagePurchaseRespVO base = packageOrderService.createOrder(
                 merchant.getId(), loginUserId, packageId, "allinpay_h5", getClientIP());
+        // 主动查询轮询：异步通知漏发兜底（5/15/25/35/60/120s）
+        allinpayPollingService.schedulePolling(base.getPackageOrderId());
         // 拼通联收银台 form
         return success(allinpayCashierService.buildCashierForm(base.getPackageOrderId()));
     }

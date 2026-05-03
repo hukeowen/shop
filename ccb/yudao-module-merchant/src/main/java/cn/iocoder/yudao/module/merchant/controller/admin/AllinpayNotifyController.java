@@ -32,6 +32,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/merchant")
 @Slf4j
+@cn.iocoder.yudao.framework.tenant.core.aop.TenantIgnore  // 通联回调没有 tenant-id header
 public class AllinpayNotifyController {
 
     @Resource

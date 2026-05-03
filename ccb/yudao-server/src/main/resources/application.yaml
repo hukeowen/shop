@@ -322,6 +322,10 @@ yudao:
     enable: true
     ignore-urls:
       - /jmreport/* # 积木报表，无法携带租户编号
+      - /admin-api/merchant/pay/tl-notify # 通联进件回调，无 tenant-id
+      - /admin-api/merchant/pay/tl-notify-echo
+      - /admin-api/merchant/allinpay/pay-notify # 通联 H5 收银台支付通知
+      - /admin-api/merchant/allinpay/register-notify
     ignore-visit-urls:
       - /admin-api/system/user/profile/**
       - /admin-api/system/auth/**

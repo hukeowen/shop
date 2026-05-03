@@ -96,12 +96,13 @@ public class MerchantPackageOrderServiceImpl implements MerchantPackageOrderServ
             throw exception(PACKAGE_ORDER_CHANNEL_UNSUPPORTED);
         }
 
-        // 2. 解析支付应用 appKey
-        String appKey = resolvePayAppKey();
+        // 2. 解析支付应用 appKey（仅 wx_lite 需要走 yudao pay 模块；allinpay_h5 通联自管）
+        boolean isWxLite = CHANNEL_WX_LITE.equals(channelCode);
+        String appKey = isWxLite ? resolvePayAppKey() : null;
 
         // 3. 校验 openid（仅 wx_lite JSAPI 必需；allinpay_h5 不需要）
         MemberUserDO member = memberUserMapper.selectById(memberUserId);
-        if (CHANNEL_WX_LITE.equals(channelCode)
+        if (isWxLite
                 && (member == null || member.getMiniAppOpenId() == null || member.getMiniAppOpenId().isEmpty())) {
             throw exception(PACKAGE_ORDER_OPENID_MISSING);
         }
@@ -120,27 +121,30 @@ public class MerchantPackageOrderServiceImpl implements MerchantPackageOrderServ
                 .build();
         packageOrderMapper.insert(order);
 
-        // 6. 创建 pay_order
+        // 6. 仅 wx_lite 创建 pay_order；allinpay_h5 跳过（避免污染 yudao pay 报表 + markPaid 反查失败）
         Integer priceInt = safeToIntPrice(pkg.getPrice());
-        Long payOrderId = payOrderApi.createOrder(new PayOrderCreateReqDTO()
-                .setAppKey(appKey)
-                .setUserIp(userIp)
-                .setUserId(memberUserId)
-                .setUserType(UserTypeEnum.MEMBER.getValue())
-                .setMerchantOrderId(order.getId().toString())
-                .setSubject(truncateSubject("套餐:" + pkg.getName()))
-                .setBody(pkg.getVideoCount() + " 条 AI 视频")
-                .setPrice(priceInt)
-                .setExpireTime(addTime(PAY_ORDER_EXPIRE)));
+        Long payOrderId = null;
+        if (isWxLite) {
+            payOrderId = payOrderApi.createOrder(new PayOrderCreateReqDTO()
+                    .setAppKey(appKey)
+                    .setUserIp(userIp)
+                    .setUserId(memberUserId)
+                    .setUserType(UserTypeEnum.MEMBER.getValue())
+                    .setMerchantOrderId(order.getId().toString())
+                    .setSubject(truncateSubject("套餐:" + pkg.getName()))
+                    .setBody(pkg.getVideoCount() + " 条 AI 视频")
+                    .setPrice(priceInt)
+                    .setExpireTime(addTime(PAY_ORDER_EXPIRE)));
 
-        // 7. 回填 pay_order_id
-        MerchantPackageOrderDO update = new MerchantPackageOrderDO();
-        update.setId(order.getId());
-        update.setPayOrderId(payOrderId);
-        packageOrderMapper.updateById(update);
+            // 7. 回填 pay_order_id
+            MerchantPackageOrderDO update = new MerchantPackageOrderDO();
+            update.setId(order.getId());
+            update.setPayOrderId(payOrderId);
+            packageOrderMapper.updateById(update);
+        }
 
-        log.info("[createOrder] 套餐订单创建成功 merchantId={} packageId={} orderId={} payOrderId={} price={}",
-                merchantId, packageId, order.getId(), payOrderId, priceInt);
+        log.info("[createOrder] 套餐订单创建成功 merchantId={} packageId={} orderId={} payOrderId={} channel={} price={}",
+                merchantId, packageId, order.getId(), payOrderId, channelCode, priceInt);
 
         // 8. 组装响应
         AppMerchantPackagePurchaseRespVO resp = new AppMerchantPackagePurchaseRespVO();
@@ -151,6 +155,48 @@ public class MerchantPackageOrderServiceImpl implements MerchantPackageOrderServ
         resp.setPackageName(pkg.getName());
         resp.setVideoCount(pkg.getVideoCount());
         return resp;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void markPaidExternal(Long orderId, int paidAmountFen, String source) {
+        MerchantPackageOrderDO order = packageOrderMapper.selectById(orderId);
+        if (order == null) {
+            throw exception(PACKAGE_ORDER_NOT_FOUND);
+        }
+        // 1. 金额校验：通联回调上报的金额必须等于业务订单价格
+        Integer expected = safeToIntPrice(order.getPrice());
+        if (!expected.equals(paidAmountFen)) {
+            log.warn("[markPaidExternal] 金额不一致 orderId={} expected={} actual={} source={}",
+                    orderId, expected, paidAmountFen, source);
+            throw exception(PACKAGE_ORDER_PAY_NOT_SUCCESS);
+        }
+        // 2. CAS 翻状态 WAITING→PAID（并发幂等）
+        int affected = packageOrderMapper.update(null,
+                new LambdaUpdateWrapper<MerchantPackageOrderDO>()
+                        .set(MerchantPackageOrderDO::getPayStatus, MerchantPackageOrderDO.PAY_STATUS_PAID)
+                        .set(MerchantPackageOrderDO::getPayTime, LocalDateTime.now())
+                        .eq(MerchantPackageOrderDO::getId, orderId)
+                        .eq(MerchantPackageOrderDO::getPayStatus, MerchantPackageOrderDO.PAY_STATUS_WAITING));
+        if (affected == 0) {
+            log.info("[markPaidExternal] orderId={} CAS 失败（已处理或非待支付），幂等短路", orderId);
+            return;
+        }
+        // 3. 加配额（uk_biz=PACKAGE_PURCHASE+orderId 防重复）
+        QuotaChangeResult result = merchantService.increaseVideoQuota(
+                order.getMerchantId(),
+                order.getVideoCount(),
+                VideoQuotaBizTypeEnum.PACKAGE_PURCHASE.getCode(),
+                String.valueOf(order.getId()),
+                "购买套餐(" + source + "): " + order.getPackageName());
+
+        packageOrderMapper.update(null,
+                new LambdaUpdateWrapper<MerchantPackageOrderDO>()
+                        .set(MerchantPackageOrderDO::getQuotaLogId, result.getLogId())
+                        .eq(MerchantPackageOrderDO::getId, orderId));
+
+        log.info("[markPaidExternal] orderId={} 标记支付成功 amount={} source={} quotaLogId={}",
+                orderId, paidAmountFen, source, result.getLogId());
     }
 
     @Override
@@ -247,7 +293,10 @@ public class MerchantPackageOrderServiceImpl implements MerchantPackageOrderServ
         if (packageProperties.getPayAppKey() != null && !packageProperties.getPayAppKey().isEmpty()) {
             return packageProperties.getPayAppKey();
         }
-        PayAppDO app = payAppService.getApp(packageProperties.getPayAppId());
+        // CRIT-3：PayApp 是平台级数据，但 PayAppDO extends TenantBaseDO，
+        // 在非默认租户上下文里查会被自动加 tenant_id 过滤返 null。executeIgnore 跨租户取。
+        PayAppDO app = cn.iocoder.yudao.framework.tenant.core.util.TenantUtils.executeIgnore(
+                () -> payAppService.getApp(packageProperties.getPayAppId()));
         if (app == null || app.getAppKey() == null || app.getAppKey().isEmpty()) {
             throw exception(PAY_APP_ID_NOT_CONFIGURED);
         }

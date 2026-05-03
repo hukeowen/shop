@@ -14,6 +14,7 @@
 -- =============================================================================
 
 -- 1. pay_app（支付应用：套餐购买专用）
+-- notify_url 是 yudao pay 模块成功回调的 URL；本路径只在 wx_lite 走（allinpay_h5 跳过 pay_order）
 DELETE FROM `pay_app` WHERE id = 10001;
 INSERT INTO `pay_app`
   (`id`, `name`, `status`, `remark`, `app_key`,
@@ -22,17 +23,13 @@ INSERT INTO `pay_app`
 VALUES
   (10001, 'AI 视频套餐', 0, '平台 AI 视频套餐购买，钱进平台账户',
    'tanxiaer-package',
-   '/admin-api/merchant/admin-api/pay/notify/order',
-   '/admin-api/merchant/admin-api/pay/notify/refund',
-   '/admin-api/merchant/admin-api/pay/notify/transfer',
+   'https://www.doupaidoudian.com/app-api/merchant/mini/video-quota/pay-callback',
+   'https://www.doupaidoudian.com/app-api/merchant/mini/video-quota/pay-callback',
+   'https://www.doupaidoudian.com/app-api/merchant/mini/video-quota/pay-callback',
    'system', NOW(), 'system', NOW(), b'0', 1);
 
--- 2. pay_channel（占位行：让 pay_order 创建有 channel 可挂；
---    通联 H5 收银台不走 yudao 标准 PayClient，参数都在 yaml，code 为 allinpay_h5）
+-- 2. allinpay_h5 不是 yudao PayClient 渠道，不需要 seed pay_channel 行（之前的 config='{}'
+--    被 PayClientConfigTypeHandler 反序列化时会撞 NPE）。pay 模块的 admin 渠道列表页因此
+--    不会列出 allinpay_h5，但完全不影响业务流程 — allinpay_h5 由 AllinpayCashierService
+--    独立桥接，跟 yudao PayClient 体系无关。
 DELETE FROM `pay_channel` WHERE app_id = 10001 AND code = 'allinpay_h5';
-INSERT INTO `pay_channel`
-  (`code`, `status`, `remark`, `fee_rate`, `app_id`,
-   `config`, `creator`, `create_time`, `updater`, `update_time`, `deleted`, `tenant_id`)
-VALUES
-  ('allinpay_h5', 0, '通联收付通 H5 收银台（参数从 yaml 读取，不入库）',
-   0, 10001, '{}', 'system', NOW(), 'system', NOW(), b'0', 1);

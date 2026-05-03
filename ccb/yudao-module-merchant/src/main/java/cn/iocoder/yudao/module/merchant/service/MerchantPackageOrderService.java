@@ -65,4 +65,20 @@ public interface MerchantPackageOrderService {
      */
     void markPaid(Long orderId, LocalDateTime payTime);
 
+    /**
+     * 外部支付渠道回调入口（通联 H5 收银台 / 主动查询轮询）。
+     *
+     * <p>跳过 yudao pay_order 状态校验（通联绕过了 yudao pay 模块）。流程：</p>
+     * <ol>
+     *   <li>校验金额：paidAmountFen 必须等于 merchant_package_order.price</li>
+     *   <li>CAS 翻状态 WAITING → PAID（并发回调幂等短路）</li>
+     *   <li>调 increaseVideoQuota 加配额（uk_biz 防重复）</li>
+     * </ol>
+     *
+     * @param orderId       业务订单 ID
+     * @param paidAmountFen 通联回调 / 主动查询返回的金额
+     * @param source        来源（"ALLINPAY_NOTIFY" / "ALLINPAY_POLL"），写入流水
+     */
+    void markPaidExternal(Long orderId, int paidAmountFen, String source);
+
 }
