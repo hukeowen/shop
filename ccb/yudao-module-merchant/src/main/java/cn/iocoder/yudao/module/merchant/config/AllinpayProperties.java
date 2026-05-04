@@ -58,15 +58,32 @@ public class AllinpayProperties {
     /** 商户号（例：56165105331VE5Z） */
     private String merchantNo = "";
 
-    /** MD5 密钥（异步通知验签 / 部分接口签名用） */
+    /** MD5 密钥（仅 Gateway 网关支付用，收银宝用不到，保留兼容） */
     private String md5Key = "";
 
     /** H5 收银台支付完成回跳前端 URL */
     private String h5CashierReturnUrl = "";
 
+    /**
+     * 签名类型：RSA / SM2。商户号在通联控制台配的是哪种就填哪种。
+     * SM2 模式必须配 sm2PrivateKey + sm2PublicKey；RSA 模式用 platformRsaPrivateKey + allinpayRsaPublicKey。
+     */
+    private String signType = "RSA";
+
+    /** SM2 私钥（PKCS8 PEM 内容；不带 BEGIN/END 头） */
+    private String sm2PrivateKey = "";
+
+    /** 通联 SM2 公钥（X509 PEM）— 异步通知验签用 */
+    private String sm2PublicKey = "";
+
     public boolean isH5Configured() {
-        return appid != null && !appid.isEmpty()
-                && merchantNo != null && !merchantNo.isEmpty()
-                && md5Key != null && !md5Key.isEmpty();
+        if (appid == null || appid.isEmpty()) return false;
+        if (merchantNo == null || merchantNo.isEmpty()) return false;
+        // 看 signType 选哪套密钥
+        if ("SM2".equalsIgnoreCase(signType)) {
+            return sm2PrivateKey != null && !sm2PrivateKey.isEmpty();
+        }
+        // 默认 RSA
+        return platformRsaPrivateKey != null && !platformRsaPrivateKey.isEmpty();
     }
 }

@@ -66,8 +66,17 @@ import java.util.TreeMap;
 @Slf4j
 public class AllinpayCashierService {
 
-    private static final String SIGN_ALG = "SHA1withRSA";
+    private static final String SIGN_ALG_RSA = "SHA1withRSA";
     private static final String CHARSET = "UTF-8";
+
+    static {
+        // SM2 需要 BouncyCastle Provider（hutool SmUtil 也依赖）
+        if (java.security.Security.getProvider("BC") == null) {
+            try {
+                java.security.Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
+            } catch (Throwable ignore) {}
+        }
+    }
     /** 通联约定：trxstatus=2000 表示交易成功 */
     private static final String TRX_STATUS_SUCCESS = "2000";
     /** 通联收银台 H5 下单 endpoint（生产）。测试环境为 https://syb-test.allinpay.com */
@@ -108,6 +117,7 @@ public class AllinpayCashierService {
             throw new IllegalStateException("订单非待支付状态，不可重复唤起收银台");
         }
 
+        String signType = resolveSignType();
         Map<String, String> p = new LinkedHashMap<>();
         p.put("cusid", props.getMerchantNo());
         p.put("appid", props.getAppid());
@@ -118,8 +128,8 @@ public class AllinpayCashierService {
         p.put("body", truncate(order.getPackageName(), 64));
         p.put("returl", props.getH5CashierReturnUrl());
         p.put("notify_url", props.getPayNotifyUrl());
-        p.put("signtype", "RSA");
-        p.put("sign", signRsa(p, props.getPlatformRsaPrivateKey()));
+        p.put("signtype", signType);
+        p.put("sign", signWith(p, signType));
 
         String base = props.getApiBaseUrl();
         if (base == null || base.isEmpty()) {
@@ -152,11 +162,12 @@ public class AllinpayCashierService {
             String trxamtStr = notifyParams.getOrDefault("trxamt", "0");
             String sign = notifyParams.get("sign");
 
-            // 1. RSA 验签
+            // 1. 验签（按通知里的 signtype 字段或 properties 配置选）
+            String notifySignType = notifyParams.getOrDefault("signtype", resolveSignType());
             Map<String, String> verifyParams = new TreeMap<>(notifyParams);
             verifyParams.remove("sign");
-            if (!verifyRsa(verifyParams, sign, props.getAllinpayRsaPublicKey())) {
-                log.warn("[allinpay/notify] RSA 验签失败 reqsn={}", reqsn);
+            if (!verifyWith(verifyParams, sign, notifySignType)) {
+                log.warn("[allinpay/notify] {} 验签失败 reqsn={}", notifySignType, reqsn);
                 return "fail:sign";
             }
 
@@ -206,13 +217,14 @@ public class AllinpayCashierService {
     public QueryResult queryOrder(Long orderId) {
         if (!props.isH5Configured()) return null;
 
+        String signType = resolveSignType();
         Map<String, String> p = new LinkedHashMap<>();
         p.put("cusid", props.getMerchantNo());
         p.put("appid", props.getAppid());
         p.put("reqsn", String.valueOf(orderId));
         p.put("randomstr", randomStr());
-        p.put("signtype", "RSA");
-        p.put("sign", signRsa(p, props.getPlatformRsaPrivateKey()));
+        p.put("signtype", signType);
+        p.put("sign", signWith(p, signType));
 
         String base = props.getApiBaseUrl();
         if (base == null || base.isEmpty()) base = "https://vsp.allinpay.com";
@@ -253,6 +265,106 @@ public class AllinpayCashierService {
     // 签名工具
     // ============================================================
 
+    /** 当前商户号在通联控制台配的签名类型（RSA / SM2） */
+    private String resolveSignType() {
+        String t = props.getSignType();
+        return (t != null && "SM2".equalsIgnoreCase(t)) ? "SM2" : "RSA";
+    }
+
+    /** 按 signType 调对应签名方法（RSA→私钥；SM2→sm2 私钥） */
+    private String signWith(Map<String, String> params, String signType) {
+        if ("SM2".equalsIgnoreCase(signType)) {
+            return signSm2(params, props.getSm2PrivateKey(), props.getAppid());
+        }
+        return signRsa(params, props.getPlatformRsaPrivateKey());
+    }
+
+    /** 按 signType 验签 */
+    private boolean verifyWith(Map<String, String> params, String sign, String signType) {
+        if ("SM2".equalsIgnoreCase(signType)) {
+            return verifySm2(params, sign, props.getSm2PublicKey(), props.getAppid());
+        }
+        return verifyRsa(params, sign, props.getAllinpayRsaPublicKey());
+    }
+
+    /**
+     * 通联收银宝 SM2 签名：sign = Base64(SM3withSM2(privKey, userId=appid, source))
+     *
+     * <p>关键：第二参 userId **必须是商户的 appid**（通联文档示例 SmUtil.signSM3SM2RetBase64
+     * (privkey, appid, ...)）。如果用 SM2 默认 userId "1234567812345678" 会被通联拒签。</p>
+     */
+    public static String signSm2(Map<String, String> params, String pemPrivateKey, String appidUserId) {
+        if (pemPrivateKey == null || pemPrivateKey.isEmpty()) {
+            throw new IllegalStateException("通联 SM2 私钥未配置（merchant.allinpay.sm2-private-key）");
+        }
+        String source = buildSignSource(params);
+        try {
+            byte[] der = Base64.getDecoder().decode(stripPem(pemPrivateKey));
+            // SM2 私钥用 EC 算法 + BC provider 加载 PKCS8
+            java.security.KeyFactory kf = java.security.KeyFactory.getInstance("EC", "BC");
+            java.security.PrivateKey priv = kf.generatePrivate(new PKCS8EncodedKeySpec(der));
+            byte[] privD = ((org.bouncycastle.jce.interfaces.ECPrivateKey) priv).getD().toByteArray();
+            // 处理可能的前导 0
+            if (privD.length > 32) privD = java.util.Arrays.copyOfRange(privD, privD.length - 32, privD.length);
+
+            org.bouncycastle.crypto.signers.SM2Signer signer = new org.bouncycastle.crypto.signers.SM2Signer();
+            org.bouncycastle.crypto.params.ECDomainParameters domain = sm2Domain();
+            org.bouncycastle.crypto.params.ECPrivateKeyParameters privParam =
+                    new org.bouncycastle.crypto.params.ECPrivateKeyParameters(
+                            new java.math.BigInteger(1, privD), domain);
+            org.bouncycastle.crypto.params.ParametersWithID withId =
+                    new org.bouncycastle.crypto.params.ParametersWithID(privParam,
+                            (appidUserId == null ? "" : appidUserId).getBytes(StandardCharsets.UTF_8));
+            signer.init(true, withId);
+            byte[] msg = source.getBytes(StandardCharsets.UTF_8);
+            signer.update(msg, 0, msg.length);
+            return Base64.getEncoder().encodeToString(signer.generateSignature());
+        } catch (Exception e) {
+            throw new IllegalStateException("通联 SM2 签名失败: " + e.getMessage(), e);
+        }
+    }
+
+    public static boolean verifySm2(Map<String, String> params, String sign, String pemPublicKey, String appidUserId) {
+        if (sign == null || sign.isEmpty()) return false;
+        if (pemPublicKey == null || pemPublicKey.isEmpty()) {
+            log.warn("[verifySm2] 通联 SM2 公钥未配置（merchant.allinpay.sm2-public-key），跳过验签");
+            return false;
+        }
+        try {
+            String source = buildSignSource(params);
+            byte[] der = Base64.getDecoder().decode(stripPem(pemPublicKey));
+            java.security.KeyFactory kf = java.security.KeyFactory.getInstance("EC", "BC");
+            java.security.PublicKey pub = kf.generatePublic(new X509EncodedKeySpec(der));
+            org.bouncycastle.jce.interfaces.ECPublicKey ecPub = (org.bouncycastle.jce.interfaces.ECPublicKey) pub;
+
+            org.bouncycastle.crypto.signers.SM2Signer verifier = new org.bouncycastle.crypto.signers.SM2Signer();
+            org.bouncycastle.crypto.params.ECDomainParameters domain = sm2Domain();
+            org.bouncycastle.crypto.params.ECPublicKeyParameters pubParam =
+                    new org.bouncycastle.crypto.params.ECPublicKeyParameters(
+                            domain.getCurve().createPoint(ecPub.getQ().getAffineXCoord().toBigInteger(),
+                                                           ecPub.getQ().getAffineYCoord().toBigInteger()),
+                            domain);
+            org.bouncycastle.crypto.params.ParametersWithID withId =
+                    new org.bouncycastle.crypto.params.ParametersWithID(pubParam,
+                            (appidUserId == null ? "" : appidUserId).getBytes(StandardCharsets.UTF_8));
+            verifier.init(false, withId);
+            byte[] msg = source.getBytes(StandardCharsets.UTF_8);
+            verifier.update(msg, 0, msg.length);
+            return verifier.verifySignature(Base64.getDecoder().decode(sign));
+        } catch (Exception e) {
+            log.warn("[verifySm2] 验签异常: {}", e.getMessage());
+            return false;
+        }
+    }
+
+    /** SM2 推荐曲线 sm2p256v1（与通联约定一致） */
+    private static org.bouncycastle.crypto.params.ECDomainParameters sm2Domain() {
+        org.bouncycastle.asn1.x9.X9ECParameters x9 =
+                org.bouncycastle.asn1.gm.GMNamedCurves.getByName("sm2p256v1");
+        return new org.bouncycastle.crypto.params.ECDomainParameters(
+                x9.getCurve(), x9.getG(), x9.getN(), x9.getH());
+    }
+
     /** ASCII 升序拼 key=value& 拼接（跳过 sign 和空值），SHA1withRSA 私钥签名，Base64。 */
     public static String signRsa(Map<String, String> params, String pemPrivateKey) {
         if (pemPrivateKey == null || pemPrivateKey.isEmpty()) {
@@ -262,7 +374,7 @@ public class AllinpayCashierService {
         try {
             byte[] der = Base64.getDecoder().decode(stripPem(pemPrivateKey));
             PrivateKey pk = KeyFactory.getInstance("RSA").generatePrivate(new PKCS8EncodedKeySpec(der));
-            Signature s = Signature.getInstance(SIGN_ALG);
+            Signature s = Signature.getInstance(SIGN_ALG_RSA);
             s.initSign(pk);
             s.update(source.getBytes(StandardCharsets.UTF_8));
             return Base64.getEncoder().encodeToString(s.sign());
@@ -281,7 +393,7 @@ public class AllinpayCashierService {
         try {
             byte[] der = Base64.getDecoder().decode(stripPem(pemPublicKey));
             PublicKey pk = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(der));
-            Signature s = Signature.getInstance(SIGN_ALG);
+            Signature s = Signature.getInstance(SIGN_ALG_RSA);
             s.initVerify(pk);
             s.update(source.getBytes(StandardCharsets.UTF_8));
             return s.verify(Base64.getDecoder().decode(sign));

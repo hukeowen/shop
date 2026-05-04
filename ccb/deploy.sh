@@ -66,6 +66,9 @@ ALLINPAY_MERCHANT_NO="${ALLINPAY_MERCHANT_NO:-}"
 ALLINPAY_MD5_KEY="${ALLINPAY_MD5_KEY:-}"
 ALLINPAY_RSA_PRIVATE_KEY="${ALLINPAY_RSA_PRIVATE_KEY:-}"
 ALLINPAY_RSA_PUBLIC_KEY="${ALLINPAY_RSA_PUBLIC_KEY:-}"
+ALLINPAY_SIGN_TYPE="${ALLINPAY_SIGN_TYPE:-RSA}"
+ALLINPAY_SM2_PRIVATE_KEY="${ALLINPAY_SM2_PRIVATE_KEY:-}"
+ALLINPAY_SM2_PUBLIC_KEY="${ALLINPAY_SM2_PUBLIC_KEY:-}"
 ALLINPAY_ORG_ID="${ALLINPAY_ORG_ID:-}"
 SERVER_NAME="${SERVER_NAME:-www.doupaidoudian.com}"
 LE_EMAIL="${LE_EMAIL:-admin@${SERVER_NAME}}"
@@ -718,9 +721,14 @@ merchant:
     appid: \${ALLINPAY_APPID:}
     merchant-no: \${ALLINPAY_MERCHANT_NO:}
     md5-key: \${ALLINPAY_MD5_KEY:}
-    # RSA 私钥（PKCS8 PEM base64 内容，单行）—— deploy 通过 .env 注入避免 yaml 转义
+    # 签名类型：RSA / SM2，必须跟通联控制台一致
+    sign-type: \${ALLINPAY_SIGN_TYPE:RSA}
+    # RSA 私钥（PKCS8 PEM base64 内容，单行）— sign-type=RSA 时使用
     platform-rsa-private-key: \${ALLINPAY_RSA_PRIVATE_KEY:}
     allinpay-rsa-public-key: \${ALLINPAY_RSA_PUBLIC_KEY:}
+    # SM2 私钥 / 公钥 — sign-type=SM2 时使用（通联收银宝商户号配 SM2 时必填）
+    sm2-private-key: \${ALLINPAY_SM2_PRIVATE_KEY:}
+    sm2-public-key: \${ALLINPAY_SM2_PUBLIC_KEY:}
     # 回调 URL：必须公网可达
     register-notify-url: https://${SERVER_NAME:-www.doupaidoudian.com}/admin-api/merchant/allinpay/register-notify
     pay-notify-url: https://${SERVER_NAME:-www.doupaidoudian.com}/admin-api/merchant/allinpay/pay-notify
@@ -1288,6 +1296,9 @@ ALLINPAY_MERCHANT_NO=${ALLINPAY_MERCHANT_NO}
 ALLINPAY_MD5_KEY=${ALLINPAY_MD5_KEY}
 ALLINPAY_RSA_PRIVATE_KEY=${ALLINPAY_RSA_PRIVATE_KEY}
 ALLINPAY_RSA_PUBLIC_KEY=${ALLINPAY_RSA_PUBLIC_KEY}
+ALLINPAY_SIGN_TYPE=${ALLINPAY_SIGN_TYPE}
+ALLINPAY_SM2_PRIVATE_KEY=${ALLINPAY_SM2_PRIVATE_KEY}
+ALLINPAY_SM2_PUBLIC_KEY=${ALLINPAY_SM2_PUBLIC_KEY}
 ALLINPAY_ORG_ID=${ALLINPAY_ORG_ID}
 SERVER_NAME=${SERVER_NAME}
 MERCHANT_PACKAGE_PAY_APP_KEY=${MERCHANT_PACKAGE_PAY_APP_KEY}
