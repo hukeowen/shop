@@ -25,6 +25,7 @@
 
 const crypto = require('node:crypto');
 const fs = require('node:fs');
+const https = require('node:https');
 const os = require('node:os');
 const path = require('node:path');
 const { spawn } = require('node:child_process');
@@ -232,64 +233,92 @@ function tosPresignGet(key, ttlSec = 3600) {
 }
 
 // ── 火山豆包 openspeech v3 流式 TTS ────────────────────────────────────
+//
+// 用 Node 内置 https.request 而不是 undici fetch：
+//   undici 5.x 解析这个端点的 chunked transfer-encoding 时会在第一帧后提前 close 流，
+//   导致只拿到 ack `{"code":20000000,"msg":"OK"}` 没有 audio 帧。CentOS 7 glibc 2.17
+//   只能跑 Node 16，没法升 undici 6+。改用内置 https 流稳定。
+//
+// rid 接受的 key 类型：火山引擎控制台「语音技术 → 大模型语音合成 → 鉴权管理」
+// 申请的专用 API Key，**不是** 方舟 ARK_API_KEY 也不是 IAM AK/SK。
 async function getTtsBuffer(text, voice) {
-  const apiKey = process.env.TTS_ACCESS_TOKEN || process.env.VOLCANO_ACCESS_TOKEN;
+  const apiKey = process.env.TTS_ACCESS_TOKEN
+              || process.env.VOLCANO_ACCESS_TOKEN
+              || process.env.ARK_API_KEY;
   const resourceId = process.env.TTS_RESOURCE_ID || 'volc.service_type.10029';
-  if (!apiKey) throw new Error('未配置 TTS_ACCESS_TOKEN / VOLCANO_ACCESS_TOKEN');
+  if (!apiKey) throw new Error('未配置 TTS API Key（TTS_ACCESS_TOKEN / VOLCANO_ACCESS_TOKEN / ARK_API_KEY）');
   const speaker = voice || process.env.TTS_VOICE || 'zh_male_beijingxiaoye_emo_v2_mars_bigtts';
-  const r = await fetch('https://openspeech.bytedance.com/api/v3/tts/unidirectional', {
-    method: 'POST',
-    headers: {
-      'x-api-key': apiKey,
-      'X-Api-Resource-Id': resourceId,
-      'Content-Type': 'application/json',
+  const body = JSON.stringify({
+    req_params: {
+      text,
+      speaker,
+      additions: JSON.stringify({
+        disable_markdown_filter: true,
+        enable_language_detector: true,
+        enable_latex_tn: true,
+        disable_default_bit_rate: true,
+        max_length_to_filter_parenthesis: 0,
+        cache_config: { text_type: 1, use_cache: true },
+      }),
+      audio_params: { format: 'mp3', sample_rate: 24000 },
     },
-    body: JSON.stringify({
-      req_params: {
-        text,
-        speaker,
-        additions: JSON.stringify({
-          disable_markdown_filter: true,
-          enable_language_detector: true,
-          enable_latex_tn: true,
-          disable_default_bit_rate: true,
-          max_length_to_filter_parenthesis: 0,
-          cache_config: { text_type: 1, use_cache: true },
-        }),
-        audio_params: { format: 'mp3', sample_rate: 24000 },
-      },
-    }),
   });
-  if (!r.ok || !r.body) {
-    const errTxt = await r.text();
-    throw new Error(`volc TTS ${r.status}: ${errTxt.slice(0, 300)}`);
-  }
-  const chunks = [];
-  let leftover = '';
-  const reader = r.body.getReader();
-  const decoder = new TextDecoder();
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    leftover += decoder.decode(value, { stream: true });
-    const lines = leftover.split('\n');
-    leftover = lines.pop() || '';
-    for (const line of lines) {
-      const s = line.trim();
-      if (!s) continue;
-      try {
-        const obj = JSON.parse(s);
-        if (obj.code !== 0 && obj.code !== 20000000 && obj.code != null) {
-          throw new Error(`volc code ${obj.code}: ${obj.message || ''}`);
-        }
-        if (obj.data) chunks.push(Buffer.from(obj.data, 'base64'));
-      } catch (e) {
-        if (e.message?.startsWith('volc code')) throw e;
-      }
-    }
-  }
-  if (!chunks.length) throw new Error('volc TTS 无音频数据');
-  return Buffer.concat(chunks);
+
+  return await new Promise((resolve, reject) => {
+    const req = https.request(
+      {
+        method: 'POST',
+        host: 'openspeech.bytedance.com',
+        path: '/api/v3/tts/unidirectional',
+        headers: {
+          'x-api-key': apiKey,
+          'X-Api-Resource-Id': resourceId,
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(body),
+          'Connection': 'close',  // 不用 keep-alive；老 undici/sidecar 长连接复用会被服务器只回 ack
+        },
+        agent: false,  // 强制新连接，绕开 https.globalAgent socket pool
+        timeout: 60_000,
+      },
+      (res) => {
+        const audioChunks = [];
+        let leftover = '';
+        let firstErr = null;
+        const collectErr = []; // 仅在最后无音频时用
+        res.setEncoding('utf8');
+        res.on('data', (str) => {
+          leftover += str;
+          const lines = leftover.split('\n');
+          leftover = lines.pop() || '';
+          for (const line of lines) {
+            const s = line.trim();
+            if (!s) continue;
+            try {
+              const obj = JSON.parse(s);
+              const code = obj.header?.code ?? obj.code;
+              if (code != null && code !== 0 && code !== 20000000 && code !== 20000001) {
+                if (!firstErr) firstErr = `code=${code} msg=${obj.header?.message || obj.message || ''}`;
+              }
+              const audio = obj.payload?.data || obj.audio_data || obj.data;
+              if (audio) audioChunks.push(Buffer.from(audio, 'base64'));
+            } catch (_) {
+              collectErr.push(s.slice(0, 120));
+            }
+          }
+        });
+        res.on('end', () => {
+          if (audioChunks.length) return resolve(Buffer.concat(audioChunks));
+          if (firstErr) return reject(new Error(`volc TTS ${firstErr}`));
+          reject(new Error(`volc TTS 无音频数据 status=${res.statusCode} ` + collectErr.slice(0, 2).join(' | ')));
+        });
+        res.on('error', reject);
+      },
+    );
+    req.on('error', reject);
+    req.on('timeout', () => req.destroy(new Error('volc TTS timeout')));
+    req.write(body);
+    req.end();
+  });
 }
 
 // ── ffmpeg 工具：找系统中文字体 + 跑命令 + ASS 字幕 ──────────────────────
