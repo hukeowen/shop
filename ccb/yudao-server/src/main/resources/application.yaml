@@ -283,7 +283,8 @@ yudao:
       - /admin-api/merchant/pay/tl-notify-echo # 通联回调健康检查 (debug 用)
       - /admin-api/merchant/allinpay/pay-notify # 通联 H5 收银台支付通知，MD5 验签
       - /admin-api/merchant/allinpay/register-notify
-      - /admin-api/merchant/allinpay/diag # 通联诊断端点（生产排查 sign 验证失败） # 通联进件兼容路径
+      - /admin-api/merchant/allinpay/diag # 通联诊断端点
+      - /admin-api/merchant/allinpay/diag-unionorder # 通联下单实测端点
   api-encrypt:
     enable: true # 是否开启 API 加密
     algorithm: AES # 加密算法，支持 AES、RSA 等
@@ -328,6 +329,7 @@ yudao:
       - /admin-api/merchant/allinpay/pay-notify # 通联 H5 收银台支付通知
       - /admin-api/merchant/allinpay/register-notify
       - /admin-api/merchant/allinpay/diag # 通联诊断端点
+      - /admin-api/merchant/allinpay/diag-unionorder # 通联下单实测端点
     ignore-visit-urls:
       - /admin-api/system/user/profile/**
       - /admin-api/system/auth/**

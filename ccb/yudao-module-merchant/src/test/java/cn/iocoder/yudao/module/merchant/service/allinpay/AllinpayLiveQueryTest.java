@@ -44,6 +44,136 @@ class AllinpayLiveQueryTest {
      * https://syb.allinpay.com/apiweb/h5unionpay/?...</p>
      */
     @Test
+    void liveUnionOrder_chineseBody_with_centerDot() throws Exception {
+        runUnionOrder("中文 body 含中点 ·", "体验装 · 3 条", "https://www.doupaidoudian.com/m/#/pages/ai-video/quota?paid=1");
+    }
+
+    @Test
+    void liveUnionOrder_pureAscii() throws Exception {
+        runUnionOrder("纯 ASCII body", "test", "https://www.doupaidoudian.com/m/");
+    }
+
+    @Test
+    void liveUnionOrder_chineseNoDot() throws Exception {
+        runUnionOrder("中文无中点", "体验装3条", "https://www.doupaidoudian.com/m/");
+    }
+
+    @Test
+    void liveUnionOrder_returlNoHashFragment() throws Exception {
+        runUnionOrder("returl 无 # fragment", "test", "https://www.doupaidoudian.com/m/quota");
+    }
+
+    @Test
+    void liveUnionOrder_realProductionShape() throws Exception {
+        // 完全模拟用户线上 source（reqsn=12 数字短串、trxamt=2990、含中文 body 中点、returl 含 #）
+        runUnionOrderFixedReqsn("用户线上完整 shape", "体验装 · 3 条",
+                "https://www.doupaidoudian.com/m/#/pages/ai-video/quota?paid=1",
+                "12", 2990);
+    }
+
+    @Test
+    void liveUnionOrder_reqsnRepeated() throws Exception {
+        // 通联可能拒绝重复 reqsn（同一个 cusid+reqsn 已下过单）
+        runUnionOrderFixedReqsn("固定 reqsn=12 第二次提交", "test",
+                "https://www.doupaidoudian.com/m/", "12", 100);
+    }
+
+    private void runUnionOrderFixedReqsn(String label, String body, String returl,
+                                          String reqsn, int amount) throws Exception {
+        Map<String, String> p = new LinkedHashMap<>();
+        p.put("cusid", CUSID);
+        p.put("appid", APPID);
+        p.put("version", "12");
+        p.put("trxamt", String.valueOf(amount));
+        p.put("reqsn", reqsn);
+        p.put("randomstr", UUID.randomUUID().toString().replace("-", "").substring(0, 16));
+        p.put("body", body);
+        p.put("returl", returl);
+        p.put("notify_url", "https://www.doupaidoudian.com/admin-api/merchant/allinpay/pay-notify");
+        p.put("signtype", "SM2");
+        String sign = AllinpayCashierService.signSm2(p, SM2_PRIV, APPID);
+        p.put("sign", sign);
+
+        StringBuilder reqBody = new StringBuilder();
+        for (Map.Entry<String, String> e : p.entrySet()) {
+            if (reqBody.length() > 0) reqBody.append('&');
+            reqBody.append(URLEncoder.encode(e.getKey(), "UTF-8")).append('=')
+                   .append(URLEncoder.encode(e.getValue(), "UTF-8"));
+        }
+        HttpURLConnection con = (HttpURLConnection) new URL(UNION_URL).openConnection();
+        con.setRequestMethod("POST");
+        con.setDoOutput(true);
+        con.setInstanceFollowRedirects(false);
+        con.setRequestProperty("Content-Type", "application/x-www-form-urlencoded;charset=UTF-8");
+        con.setRequestProperty("User-Agent",
+                "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148 Safari/604.1");
+        con.setRequestProperty("Referer", "https://www.doupaidoudian.com/m/");
+        con.setConnectTimeout(8_000);
+        con.setReadTimeout(15_000);
+        try (OutputStream os = con.getOutputStream()) {
+            os.write(reqBody.toString().getBytes(StandardCharsets.UTF_8));
+        }
+        int code = con.getResponseCode();
+        String loc = con.getHeaderField("Location");
+        java.io.InputStream is = (code >= 200 && code < 300) ? con.getInputStream() : con.getErrorStream();
+        String resp = is == null ? "" : new String(readAll(is), StandardCharsets.UTF_8);
+        boolean rejected = (loc != null && loc.contains("exception.html"))
+                           || (resp.contains("sign") && resp.contains("失败"));
+        System.out.println("==== " + label + " → " + (rejected ? "❌ REJECTED" : "✅ OK") + " ====");
+        System.out.println("reqsn=" + reqsn + " amount=" + amount);
+        System.out.println("HTTP=" + code + " Location=" + (loc == null ? "<none>" : loc));
+        if (rejected) System.out.println("RESP=" + (resp.length() > 300 ? resp.substring(0, 300) : resp));
+        System.out.println();
+    }
+
+    private void runUnionOrder(String label, String body, String returl) throws Exception {
+        Map<String, String> p = new LinkedHashMap<>();
+        p.put("cusid", CUSID);
+        p.put("appid", APPID);
+        p.put("version", "12");
+        p.put("trxamt", "100");
+        p.put("reqsn", "TEST_" + System.currentTimeMillis());
+        p.put("randomstr", UUID.randomUUID().toString().replace("-", "").substring(0, 16));
+        p.put("body", body);
+        p.put("returl", returl);
+        p.put("notify_url", "https://www.doupaidoudian.com/admin-api/merchant/allinpay/pay-notify");
+        p.put("signtype", "SM2");
+        String sign = AllinpayCashierService.signSm2(p, SM2_PRIV, APPID);
+        p.put("sign", sign);
+
+        StringBuilder reqBody = new StringBuilder();
+        for (Map.Entry<String, String> e : p.entrySet()) {
+            if (reqBody.length() > 0) reqBody.append('&');
+            reqBody.append(URLEncoder.encode(e.getKey(), "UTF-8")).append('=')
+                   .append(URLEncoder.encode(e.getValue(), "UTF-8"));
+        }
+        HttpURLConnection con = (HttpURLConnection) new URL(UNION_URL).openConnection();
+        con.setRequestMethod("POST");
+        con.setDoOutput(true);
+        con.setInstanceFollowRedirects(false);
+        con.setRequestProperty("Content-Type", "application/x-www-form-urlencoded;charset=UTF-8");
+        con.setRequestProperty("User-Agent",
+                "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148 Safari/604.1");
+        con.setRequestProperty("Referer", "https://www.doupaidoudian.com/m/");
+        con.setConnectTimeout(8_000);
+        con.setReadTimeout(15_000);
+        try (OutputStream os = con.getOutputStream()) {
+            os.write(reqBody.toString().getBytes(StandardCharsets.UTF_8));
+        }
+        int code = con.getResponseCode();
+        String loc = con.getHeaderField("Location");
+        java.io.InputStream is = (code >= 200 && code < 300) ? con.getInputStream() : con.getErrorStream();
+        String resp = is == null ? "" : new String(readAll(is), StandardCharsets.UTF_8);
+        boolean rejected = (loc != null && loc.contains("exception.html"))
+                           || (resp.contains("sign") && resp.contains("失败"));
+        System.out.println("==== " + label + " → " + (rejected ? "❌ REJECTED" : "✅ OK") + " ====");
+        System.out.println("body=" + body + " | returl=" + returl);
+        System.out.println("HTTP=" + code + " Location=" + loc);
+        if (rejected) System.out.println("RESP=" + (resp.length() > 200 ? resp.substring(0, 200) : resp));
+        System.out.println();
+    }
+
+    @Test
     void liveUnionOrder_h5Cashier() throws Exception {
         Map<String, String> p = new LinkedHashMap<>();
         p.put("cusid", CUSID);

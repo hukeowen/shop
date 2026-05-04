@@ -155,6 +155,91 @@ public class AllinpayDiagController {
         return result;
     }
 
+    /**
+     * 实测 unionorder 下单（后端模拟浏览器 UA 直接 POST，看通联真实响应）。
+     * <p>用法：<code>GET /admin-api/merchant/allinpay/diag-unionorder?body=test&amount=100</code></p>
+     */
+    @GetMapping("/diag-unionorder")
+    @Operation(summary = "通联下单实测（后端直 POST unionorder，绕开浏览器 form）")
+    @PermitAll
+    public Map<String, Object> diagUnionOrder(
+            @RequestParam(value = "body", defaultValue = "test") String body,
+            @RequestParam(value = "amount", defaultValue = "100") Integer amount) {
+        Map<String, Object> result = new LinkedHashMap<>();
+        Map<String, String> p = new LinkedHashMap<>();
+        p.put("cusid", props.getMerchantNo());
+        p.put("appid", props.getAppid());
+        p.put("version", "12");
+        p.put("trxamt", String.valueOf(amount));
+        p.put("reqsn", "DIAG_" + System.currentTimeMillis());
+        p.put("randomstr", UUID.randomUUID().toString().replace("-", "").substring(0, 16));
+        p.put("body", body);                                // 用户可改 body 看是否中文导致拒签
+        p.put("returl", props.getH5CashierReturnUrl());
+        p.put("notify_url", props.getPayNotifyUrl());
+        p.put("signtype", props.getSignType());
+
+        try {
+            String sign;
+            if ("SM2".equalsIgnoreCase(props.getSignType())) {
+                sign = AllinpayCashierService.signSm2(p, props.getSm2PrivateKey(), props.getAppid());
+            } else {
+                sign = AllinpayCashierService.signRsa(p, props.getPlatformRsaPrivateKey());
+            }
+            result.put("source", invokeBuildSignSource(p));
+            result.put("sign", sign);
+            p.put("sign", sign);
+
+            // 后端打 unionorder（带浏览器 UA + 不跟 302）
+            String base = props.getApiBaseUrl();
+            if (base == null || base.isEmpty()) base = "https://syb.allinpay.com";
+            base = base.replace("vsp.allinpay.com", "syb.allinpay.com");
+            String url = base.replaceAll("/+$", "") + "/apiweb/h5unionpay/unionorder";
+
+            StringBuilder bodyStr = new StringBuilder();
+            for (Map.Entry<String, String> e : p.entrySet()) {
+                if (bodyStr.length() > 0) bodyStr.append('&');
+                bodyStr.append(URLEncoder.encode(e.getKey(), "UTF-8")).append('=')
+                       .append(URLEncoder.encode(e.getValue(), "UTF-8"));
+            }
+            HttpURLConnection con = (HttpURLConnection) new URL(url).openConnection();
+            con.setRequestMethod("POST");
+            con.setDoOutput(true);
+            con.setInstanceFollowRedirects(false);
+            con.setRequestProperty("Content-Type", "application/x-www-form-urlencoded;charset=UTF-8");
+            con.setRequestProperty("User-Agent",
+                    "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1");
+            con.setRequestProperty("Referer", props.getH5CashierReturnUrl());
+            con.setConnectTimeout(8000);
+            con.setReadTimeout(15000);
+            try (OutputStream os = con.getOutputStream()) {
+                os.write(bodyStr.toString().getBytes(StandardCharsets.UTF_8));
+            }
+            int code = con.getResponseCode();
+            String location = con.getHeaderField("Location");
+            java.io.InputStream is = (code >= 200 && code < 300) ? con.getInputStream() : con.getErrorStream();
+            String resp = is == null ? "" : new String(readAll(is), StandardCharsets.UTF_8);
+
+            result.put("url", url);
+            result.put("requestBody", bodyStr.toString());
+            result.put("httpCode", code);
+            result.put("location", location);
+            result.put("responseBody", resp.length() > 800 ? resp.substring(0, 800) + "...(" + resp.length() + " bytes)" : resp);
+            if (location != null && location.contains("exception.html")) {
+                result.put("verdict", "❌ 通联拒签 — Location 跳到 exception.html");
+            } else if (code == 302 && location != null) {
+                result.put("verdict", "✅ 下单成功，Location 是收银台 URL");
+            } else if (resp.contains("sign") && resp.contains("失败")) {
+                result.put("verdict", "❌ 通联拒签 — response body 含 sign 失败");
+            } else {
+                result.put("verdict", "⚠ 未识别响应 — 看 responseBody / location");
+            }
+        } catch (Exception e) {
+            result.put("error", e.getMessage());
+            log.warn("[allinpay/diag-unionorder] 异常", e);
+        }
+        return result;
+    }
+
     private static String invokeBuildSignSource(Map<String, String> params) {
         try {
             java.lang.reflect.Method m = AllinpayCashierService.class

@@ -33,6 +33,29 @@ function readToken() {
   }
 }
 
+/**
+ * 商户端页前缀（识别后未登录跳 /pages/merchant-login/index）。
+ * 不在此列表的页面（user-home / user-me / user-order / shop-home / cart /
+ * checkout / login / index 等 C 端）默认跳 /pages/login/index。
+ */
+const MERCHANT_PAGE_PREFIXES = [
+  'pages/index/',          // 商户工作台 dashboard
+  'pages/me/',             // 商户个人页 / 钱包 / 设置
+  'pages/order/',          // 商户订单管理
+  'pages/ai-video/',       // AI 视频生成
+  'pages/product/',        // 商品管理
+  'pages/member/',         // 会员管理
+  'pages/withdraw/',       // 商户提现
+  'pages/merchant-apply/', // 商户入驻
+  'pages/merchant-login/', // 商户登录（防回跳自身）
+];
+
+function isMerchantPage(route) {
+  if (!route) return false;
+  const r = String(route).replace(/^\/+/, '');
+  return MERCHANT_PAGE_PREFIXES.some((p) => r.startsWith(p));
+}
+
 function clearTokenAndRedirectToLogin() {
   try {
     if (typeof localStorage !== 'undefined') {
@@ -42,24 +65,30 @@ function clearTokenAndRedirectToLogin() {
   try {
     uni.removeStorageSync('token');
   } catch {}
-  // 触发全局登录流程：优先跳登录页（小程序/h5 通用）
+  // 触发全局登录流程：按当前页判定跳商户登录还是用户登录
   try {
     const pages = getCurrentPages ? getCurrentPages() : [];
     const cur = pages && pages.length ? pages[pages.length - 1] : null;
     const curRoute = cur?.route || cur?.$page?.fullPath || '';
-    if (!/pages\/login\/index/.test(curRoute)) {
-      // 把当前路由（含 query）保存为 redirect，登录成功后会跳回
-      try {
-        const optionsStr = cur?.options
-          ? Object.entries(cur.options).map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join('&')
-          : '';
-        const fullRoute = '/' + (curRoute.replace(/^\/+/, '')) + (optionsStr ? '?' + optionsStr : '');
-        if (typeof localStorage !== 'undefined' && curRoute) {
-          localStorage.setItem('redirect:after-login', fullRoute);
-        }
-      } catch {}
-      uni.reLaunch({ url: '/pages/login/index' });
-    }
+
+    // 已在登录页就不重复跳，避免死循环
+    if (/pages\/(login|merchant-login)\/index/.test(curRoute)) return;
+
+    const isMerchant = isMerchantPage(curRoute);
+    const loginPath = isMerchant ? '/pages/merchant-login/index' : '/pages/login/index';
+
+    // 保存当前路由作为 redirect，登录成功后回跳
+    try {
+      const optionsStr = cur?.options
+        ? Object.entries(cur.options).map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join('&')
+        : '';
+      const fullRoute = '/' + (curRoute.replace(/^\/+/, '')) + (optionsStr ? '?' + optionsStr : '');
+      if (typeof localStorage !== 'undefined' && curRoute) {
+        localStorage.setItem('redirect:after-login', fullRoute);
+      }
+    } catch {}
+
+    uni.reLaunch({ url: loginPath });
   } catch {
     // noop
   }

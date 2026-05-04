@@ -127,7 +127,8 @@ function jumpAddProduct() {
 
 onMounted(async () => {
   if (!userStore.loggedIn) {
-    uni.reLaunch({ url: '/pages/login/index' });
+    // 商户工作台 dashboard，未登录跳商户登录页（不是用户登录页）
+    uni.reLaunch({ url: '/pages/merchant-login/index' });
     return;
   }
   // 拉一次最新登录态：老 token（升级前签的）store 里没 nickname/shopName，

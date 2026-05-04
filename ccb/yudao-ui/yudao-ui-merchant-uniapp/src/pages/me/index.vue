@@ -156,7 +156,8 @@ async function onLogout() {
   const r = await uni.showModal({ title: '提示', content: '确认退出登录？' });
   if (r.confirm) {
     await userStore.logout();
-    uni.reLaunch({ url: '/pages/login/index' });
+    // 商户个人页退出，跳商户登录
+    uni.reLaunch({ url: '/pages/merchant-login/index' });
   }
 }
 </script>
