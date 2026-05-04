@@ -806,10 +806,13 @@ app.post('/video/endcard', async (req, res) => {
     const durSec = Math.max(1, Number(duration) || 3);
     const font = findChineseFont();
 
+    // CentOS 7 epel ffmpeg 2.8 不支持 drawbox `t=fill`（把 fill 当表达式变量），
+    // 改用 colorchannelmixer 把 RGB 各通道乘 0.55 实现等价的"半透明 0.45 黑膜"，
+    // 兼容 ffmpeg 2.x+ 所有版本，视觉效果一致。
     const bgChain =
       `[0:v]scale=720:1280:force_original_aspect_ratio=increase,` +
       `crop=720:1280,boxblur=10:1,` +
-      `drawbox=x=0:y=0:w=iw:h=ih:color=black@0.45:t=fill[bg]`;
+      `colorchannelmixer=rr=0.55:gg=0.55:bb=0.55[bg]`;
     const qrChain =
       `[2:v][bg]scale2ref=w='min(main_w\\,main_h)*0.50':h=ow[qr][vbg];` +
       `[vbg][qr]overlay=(W-w)/2:(H-h)/2-H*0.05[v_qr]`;
