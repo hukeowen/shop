@@ -1341,8 +1341,10 @@ ExecStart=${JAVA_BIN} \\
   -jar ${JAR_DEST}
 Restart=always
 RestartSec=10
-StandardOutput=append:${ROOT_DIR}/logs/stdout.log
-StandardError=append:${ROOT_DIR}/logs/stderr.log
+# CentOS 7 systemd 219 不支持 append: → 走 journal（journalctl -u tanxiaer 看日志）
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=tanxiaer
 
 # 沙箱加固
 NoNewPrivileges=true
@@ -1484,8 +1486,11 @@ EnvironmentFile=${SIDECAR_DEST}/.env
 ExecStart=${NODE_BIN} ${SIDECAR_DEST}/index.js
 Restart=always
 RestartSec=5
-StandardOutput=append:${ROOT_DIR}/logs/sidecar.log
-StandardError=append:${ROOT_DIR}/logs/sidecar.err.log
+# CentOS 7 systemd 219 不支持 append: 输出说明符（systemd 240+ 才有），
+# 改用 journal — 用 journalctl -u tanxiaer-sidecar 看日志
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=tanxiaer-sidecar
 
 NoNewPrivileges=true
 PrivateTmp=true
