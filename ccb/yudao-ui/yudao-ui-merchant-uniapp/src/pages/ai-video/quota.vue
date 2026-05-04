@@ -104,15 +104,27 @@ async function onBuyAllinpay() {
   paying.value = true;
   try {
     const resp = await purchasePackageAllinpay(selectedPkg.value.id);
-    if (!resp || !resp.cashierUrl || !resp.params) {
+    if (!resp) {
       uni.showToast({ title: '收银台参数获取失败', icon: 'none' });
       return;
     }
-    // 构造 form 自动 POST 跳转通联收银台
+    // 优先 redirect 模式：后端已经打通联拿到 302 Location，前端直接跳
+    // 避开浏览器 form POST 时 Content-Type 不带 charset=UTF-8 导致中文字段
+    // 解码不一致 → sign 验证失败 的坑
+    if (resp.redirect && resp.redirectUrl) {
+      window.location.href = resp.redirectUrl;
+      return;
+    }
+    // Fallback：后端拿不到 302（防爬 / 网络异常）→ 前端 form POST 兜底
+    if (!resp.cashierUrl || !resp.params) {
+      uni.showToast({ title: '收银台参数获取失败', icon: 'none' });
+      return;
+    }
     const form = document.createElement('form');
     form.method = 'POST';
     form.action = resp.cashierUrl;
     form.acceptCharset = 'UTF-8';
+    form.enctype = 'application/x-www-form-urlencoded';
     Object.entries(resp.params).forEach(([k, v]) => {
       const input = document.createElement('input');
       input.type = 'hidden';
@@ -122,7 +134,6 @@ async function onBuyAllinpay() {
     });
     document.body.appendChild(form);
     form.submit();
-    // submit 后浏览器跳走，paying 不需要 reset
   } catch (err) {
     paying.value = false;
     uni.showToast({ title: err?.message || '通联购买失败', icon: 'none' });

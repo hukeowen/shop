@@ -178,10 +178,57 @@ public class AllinpayCashierService {
         if (!java.util.Objects.equals(baseRaw, base)) {
             log.info("[allinpay/cashier] base URL 自动纠正 {} → {}", baseRaw, base);
         }
-        log.info("[allinpay/cashier] ───── DONE orderId={} cashierUrl={} cost={}ms ─────",
-                order.getId(), cashierUrl, System.currentTimeMillis() - t0);
-        log.info("[allinpay/cashier] 注意：浏览器 form POST 后通联返 302 跳真实收银台页；后端 curl 无浏览器 UA 会被通联防爬返空 HTML，前端 form POST 才正常");
+        // 关键：后端直接 POST 通联拿 302 Location，避开浏览器 form 编码差异
+        // 之前用前端 form POST + body 含中文（"体验装 · 3 条"）→ 浏览器 Content-Type 不带
+        // charset=UTF-8 → 通联 server 解码差异 → sign 验证失败。
+        // 后端用 URLEncoder.encode + UTF-8 + Content-Type 显式声明 charset，跟我们签
+        // 时用的字符串完全一致 → 通联接受，返 302 跳真实收银台。
+        try {
+            StringBuilder bodyStr = new StringBuilder();
+            for (Map.Entry<String, String> e : p.entrySet()) {
+                if (bodyStr.length() > 0) bodyStr.append('&');
+                bodyStr.append(java.net.URLEncoder.encode(e.getKey(), "UTF-8")).append('=')
+                       .append(java.net.URLEncoder.encode(e.getValue(), "UTF-8"));
+            }
+            java.net.HttpURLConnection con = (java.net.HttpURLConnection) new java.net.URL(cashierUrl).openConnection();
+            con.setRequestMethod("POST");
+            con.setDoOutput(true);
+            con.setInstanceFollowRedirects(false);
+            con.setRequestProperty("Content-Type", "application/x-www-form-urlencoded;charset=UTF-8");
+            con.setRequestProperty("User-Agent",
+                    "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148 Safari/604.1");
+            con.setRequestProperty("Referer", props.getH5CashierReturnUrl());
+            con.setConnectTimeout(8_000);
+            con.setReadTimeout(15_000);
+            try (java.io.OutputStream os = con.getOutputStream()) {
+                os.write(bodyStr.toString().getBytes(StandardCharsets.UTF_8));
+            }
+            int httpCode = con.getResponseCode();
+            String location = con.getHeaderField("Location");
+            log.info("[allinpay/cashier] 通联响应 HTTP={} Location={}", httpCode, location);
 
+            if (httpCode >= 300 && httpCode < 400 && location != null && !location.isEmpty()) {
+                if (location.contains("exception.html")) {
+                    log.error("[allinpay/cashier] 通联拒签 location={}", location);
+                    throw new IllegalStateException("通联拒签：" + location);
+                }
+                log.info("[allinpay/cashier] ───── DONE orderId={} redirectUrl={} cost={}ms ─────",
+                        order.getId(), location, System.currentTimeMillis() - t0);
+                CashierForm res = new CashierForm(location, java.util.Collections.emptyMap());
+                res.setRedirect(true);
+                res.setRedirectUrl(location);
+                return res;
+            }
+            // 非 302：fallback 回原 form POST
+            log.warn("[allinpay/cashier] 通联非 302（fallback 前端 form POST）HTTP={}", httpCode);
+        } catch (IllegalStateException ise) {
+            throw ise;
+        } catch (Exception ex) {
+            log.warn("[allinpay/cashier] 后端打通联失败 fallback 前端 form: {}", ex.getMessage());
+        }
+
+        log.info("[allinpay/cashier] ───── DONE orderId={} (fallback form) cashierUrl={} cost={}ms ─────",
+                order.getId(), cashierUrl, System.currentTimeMillis() - t0);
         return new CashierForm(cashierUrl, p);
     }
 
@@ -482,6 +529,13 @@ public class AllinpayCashierService {
     public static class CashierForm {
         private String cashierUrl;
         private Map<String, String> params;
+        /** redirect=true 时前端用 redirectUrl 直接 location.href 跳；false 时用 form POST */
+        private boolean redirect;
+        private String redirectUrl;
+
+        public CashierForm(String cashierUrl, Map<String, String> params) {
+            this(cashierUrl, params, false, null);
+        }
     }
 
     @lombok.Data
