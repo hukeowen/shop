@@ -98,45 +98,51 @@ async function loadPackages() {
   }
 }
 
-// 通联 H5 收银台购买：拿到 cashierUrl + form params → 自动 POST 跳转
+// 通联 H5 收银台购买。
+//
+// M2 修复：mp-weixin（微信小程序）没有 window/document，直接用 uni.navigateTo 兜底；
+//        H5 浏览器才能 location.href 跳通联。
+// M6 修复：用 finally 兜底重置 paying；redirect 走前用 setTimeout 30s 看门狗
+//        防止 location.href 失败（弹窗拦截 / iframe 限制）卡死。
 async function onBuyAllinpay() {
   if (!selectedPkg.value || paying.value) return;
   paying.value = true;
+  // 30s 看门狗：redirect 失败 / 异常未走 catch 时强制解锁 UI
+  const watchdog = setTimeout(() => { paying.value = false; }, 30_000);
   try {
+    // #ifdef MP-WEIXIN
+    uni.showModal({
+      title: '请用浏览器打开',
+      content: '通联收银台支付暂不支持小程序内购买，请在浏览器中打开本页面后重试',
+      showCancel: false,
+    });
+    return;
+    // #endif
+
     const resp = await purchasePackageAllinpay(selectedPkg.value.id);
     if (!resp) {
       uni.showToast({ title: '收银台参数获取失败', icon: 'none' });
       return;
     }
     // 优先 redirect 模式：后端已经打通联拿到 302 Location，前端直接跳
-    // 避开浏览器 form POST 时 Content-Type 不带 charset=UTF-8 导致中文字段
-    // 解码不一致 → sign 验证失败 的坑
     if (resp.redirect && resp.redirectUrl) {
+      // #ifdef H5
       window.location.href = resp.redirectUrl;
+      // #endif
+      // #ifndef H5
+      uni.showToast({ title: '请在浏览器中打开本页面', icon: 'none' });
+      // #endif
       return;
     }
-    // Fallback：后端拿不到 302（防爬 / 网络异常）→ 前端 form POST 兜底
-    if (!resp.cashierUrl || !resp.params) {
-      uni.showToast({ title: '收银台参数获取失败', icon: 'none' });
-      return;
-    }
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = resp.cashierUrl;
-    form.acceptCharset = 'UTF-8';
-    form.enctype = 'application/x-www-form-urlencoded';
-    Object.entries(resp.params).forEach(([k, v]) => {
-      const input = document.createElement('input');
-      input.type = 'hidden';
-      input.name = k;
-      input.value = v == null ? '' : String(v);
-      form.appendChild(input);
-    });
-    document.body.appendChild(form);
-    form.submit();
+    // 后端无 redirectUrl 视为下单失败（M1：不再前端 form POST 兜底，已知 sign 错）
+    uni.showToast({ title: '通联收银台获取失败，请稍后重试', icon: 'none' });
   } catch (err) {
-    paying.value = false;
     uni.showToast({ title: err?.message || '通联购买失败', icon: 'none' });
+  } finally {
+    clearTimeout(watchdog);
+    // redirect 成功的情况下浏览器已经跳走，paying 状态丢失无所谓；
+    // 只有未跳走才会真正执行到这里，重置状态让用户能重试
+    paying.value = false;
   }
 }
 

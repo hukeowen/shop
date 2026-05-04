@@ -28,12 +28,19 @@ import java.util.UUID;
 @EnabledIfEnvironmentVariable(named = "ALLINPAY_LIVE_TEST", matches = "1")
 class AllinpayLiveQueryTest {
 
-    private static final String SM2_PRIV =
-            "MIGTAgEAMBMGByqGSM49AgEGCCqBHM9VAYItBHkwdwIBAQQgHyKo17p2KF0U6cj6GlQcorXoqCi72WMtbhEPZyy7Zwig" +
-            "CgYIKoEcz1UBgi2hRANCAAT4f9rjq/efa14G66MhDe48RpEXXEeXP0hJce4tCHtra31ocFAsRDWNK8qMmISPFrdOlH+v" +
-            "EdMW2e22xz+ir71X";
-    private static final String APPID = "00240592";
-    private static final String CUSID = "56165105331VE5Z";
+    // M4 修复：从 ENV 读私钥/商户号，不再 hardcode
+    // 跑前须 export ALLINPAY_SM2_PRIVATE_KEY=... + ALLINPAY_APPID=... + ALLINPAY_MERCHANT_NO=...
+    private static final String SM2_PRIV = envOrSkip("ALLINPAY_SM2_PRIVATE_KEY");
+    private static final String APPID = envOrSkip("ALLINPAY_APPID");
+    private static final String CUSID = envOrSkip("ALLINPAY_MERCHANT_NO");
+
+    private static String envOrSkip(String name) {
+        String v = System.getenv(name);
+        if (v == null || v.isEmpty()) {
+            throw new org.opentest4j.TestAbortedException("ENV 未设：" + name);
+        }
+        return v;
+    }
     private static final String QUERY_URL = "https://vsp.allinpay.com/apiweb/tranx/query";
     private static final String UNION_URL = "https://syb.allinpay.com/apiweb/h5unionpay/unionorder";
     private static final String ONEPAY_URL = "https://syb.allinpay.com/apiweb/h5unionpay/onepay";

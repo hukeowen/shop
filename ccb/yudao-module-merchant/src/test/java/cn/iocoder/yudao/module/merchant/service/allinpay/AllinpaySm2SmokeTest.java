@@ -1,44 +1,60 @@
 package cn.iocoder.yudao.module.merchant.service.allinpay;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.TreeMap;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * 本地用通联给的 SM2 测试参数验证签名/验签链路自洽性。
+ * 离线 SM2 签名链路自洽性测试 — 不联通联，不依赖生产密钥。
  *
- * <p>不连通联网络；只验证：</p>
+ * <p>M4 修复：用运行时生成的临时 SM2 keypair 做自签自验，
+ * 不再 hardcode 生产私钥到代码里。</p>
+ *
+ * <p>验证三件事：</p>
  * <ol>
- *   <li>用通联给的 PKCS8 SM2 私钥能否正确解析</li>
- *   <li>signSm2 + verifySm2 自签自验通过（说明 hutool SmUtil + ID + DER 编码都对齐）</li>
- *   <li>buildSignSource 字段排序符合通联示例</li>
+ *   <li>签名 + 验签自洽（算法层正确，PLAIN 编码 + userId 进 SM3 哈希）</li>
+ *   <li>userId 错配 → 验签失败（证明 userId 真的进了哈希）</li>
+ *   <li>buildSignSource 字段排序与通联文档示例一致</li>
  * </ol>
  */
 class AllinpaySm2SmokeTest {
 
-    /** docs/测试参数.txt 里通联给的 SM2 PKCS8 私钥（单行 base64） */
-    private static final String SM2_PRIV =
-            "MIGTAgEAMBMGByqGSM49AgEGCCqBHM9VAYItBHkwdwIBAQQgHyKo17p2KF0U6cj6GlQcorXoqCi72WMtbhEPZyy7Zwig" +
-            "CgYIKoEcz1UBgi2hRANCAAT4f9rjq/efa14G66MhDe48RpEXXEeXP0hJce4tCHtra31ocFAsRDWNK8qMmISPFrdOlH+v" +
-            "EdMW2e22xz+ir71X";
+    private static String SM2_PRIV;
+    private static String SM2_PUB;
+    private static final String APPID = "TESTAPPID";
+    private static final String CUSID = "TESTCUSID";
 
-    /** 通联给的 SM2 X509 公钥（这份其实是商户**自己的**公钥，用于通联那边验我们的签——所以自签自验也用它） */
-    private static final String SM2_PUB =
-            "MFkwEwYHKoZIzj0CAQYIKoEcz1UBgi0DQgAE+H/a46v3n2teBuujIQ3uPEaRF1xHlz9ISXHuLQh7a2t9aHBQLEQ1jSvK" +
-            "jJiEjxa3TpR/rxHTFtnttsc/oq+9Vw==";
-
-    private static final String APPID = "00240592";
-    private static final String CUSID = "56165105331VE5Z";
+    @BeforeAll
+    static void genKeypair() {
+        // 静态块加载 BC provider（AllinpayCashierService 静态块也加载）
+        if (java.security.Security.getProvider("BC") == null) {
+            java.security.Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
+        }
+        try {
+            java.security.KeyPairGenerator kpg = java.security.KeyPairGenerator.getInstance("EC", "BC");
+            org.bouncycastle.jce.spec.ECParameterSpec sm2Spec =
+                    new org.bouncycastle.jce.spec.ECParameterSpec(
+                            org.bouncycastle.asn1.gm.GMNamedCurves.getByName("sm2p256v1").getCurve(),
+                            org.bouncycastle.asn1.gm.GMNamedCurves.getByName("sm2p256v1").getG(),
+                            org.bouncycastle.asn1.gm.GMNamedCurves.getByName("sm2p256v1").getN(),
+                            org.bouncycastle.asn1.gm.GMNamedCurves.getByName("sm2p256v1").getH());
+            kpg.initialize(sm2Spec);
+            java.security.KeyPair kp = kpg.generateKeyPair();
+            SM2_PRIV = Base64.getEncoder().encodeToString(kp.getPrivate().getEncoded());
+            SM2_PUB  = Base64.getEncoder().encodeToString(kp.getPublic().getEncoded());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     @Test
     void signSm2_andSelfVerify_shouldPass() {
-        // 1. 模拟收银台请求字段
         Map<String, String> p = new LinkedHashMap<>();
         p.put("cusid", CUSID);
         p.put("appid", APPID);
@@ -49,23 +65,18 @@ class AllinpaySm2SmokeTest {
         p.put("body", "AI视频套餐3条");
         p.put("signtype", "SM2");
 
-        // 2. 签名
         String sign = AllinpayCashierService.signSm2(p, SM2_PRIV, APPID);
-        System.out.println("[signSm2] sign(Base64) = " + sign);
-        assertNotNull(sign, "签名结果不应为 null");
-        assertFalse(sign.isEmpty(), "签名结果不应为空");
-        // 验证 base64 合法性
+        assertNotNull(sign);
+        assertFalse(sign.isEmpty());
         byte[] sigBytes = Base64.getDecoder().decode(sign);
-        assertTrue(sigBytes.length >= 32, "DER 签名长度异常: " + sigBytes.length);
+        assertTrue(sigBytes.length >= 32, "PLAIN R||S 64 字节，DER 略大");
 
-        // 3. 自验签：用同一组参数 + 同一份公钥应该 verify=true
         boolean ok = AllinpayCashierService.verifySm2(p, sign, SM2_PUB, APPID);
-        assertTrue(ok, "自签自验失败 — 私钥 / 公钥 / userId 配对不上");
+        assertTrue(ok, "自签自验失败 — 私钥/公钥/userId 不匹配");
     }
 
     @Test
-    void signSm2_userIdMustBeAppidNotDefault() {
-        // 验证 userId=appid 与 userId=默认值 签出的结果**不一样**（确保 userId 真的进入了 SM3 哈希）
+    void signSm2_userIdMustMatchOnVerify() {
         Map<String, String> p = new LinkedHashMap<>();
         p.put("cusid", CUSID);
         p.put("appid", APPID);
@@ -73,13 +84,11 @@ class AllinpaySm2SmokeTest {
         p.put("reqsn", "TEST");
         p.put("signtype", "SM2");
 
-        String s1 = AllinpayCashierService.signSm2(p, SM2_PRIV, APPID);
-        String s2 = AllinpayCashierService.signSm2(p, SM2_PRIV, "1234567812345678");
-        // 因为 SM2 签名带随机数 k，每次签名结果都不同，相同 userId 也会不同 —— 但能验证才是关键
-        boolean v1 = AllinpayCashierService.verifySm2(p, s1, SM2_PUB, APPID);
-        boolean v2_wrongUserId = AllinpayCashierService.verifySm2(p, s1, SM2_PUB, "1234567812345678");
-        assertTrue(v1, "appid 当 userId 时自验应通过");
-        assertFalse(v2_wrongUserId, "用错 userId 验签应该失败");
+        String sign = AllinpayCashierService.signSm2(p, SM2_PRIV, APPID);
+        assertTrue(AllinpayCashierService.verifySm2(p, sign, SM2_PUB, APPID),
+                "appid 当 userId 时自验应通过");
+        assertFalse(AllinpayCashierService.verifySm2(p, sign, SM2_PUB, "WRONG"),
+                "用错 userId 验签应该失败 — userId 必须真的参与 SM3");
     }
 
     @Test

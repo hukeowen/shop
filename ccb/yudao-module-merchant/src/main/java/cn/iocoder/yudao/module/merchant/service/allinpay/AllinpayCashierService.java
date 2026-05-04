@@ -209,6 +209,7 @@ public class AllinpayCashierService {
         // charset=UTF-8 → 通联 server 解码差异 → sign 验证失败。
         // 后端用 URLEncoder.encode + UTF-8 + Content-Type 显式声明 charset，跟我们签
         // 时用的字符串完全一致 → 通联接受，返 302 跳真实收银台。
+        java.net.HttpURLConnection con = null;
         try {
             StringBuilder bodyStr = new StringBuilder();
             for (Map.Entry<String, String> e : p.entrySet()) {
@@ -216,7 +217,7 @@ public class AllinpayCashierService {
                 bodyStr.append(java.net.URLEncoder.encode(e.getKey(), "UTF-8")).append('=')
                        .append(java.net.URLEncoder.encode(e.getValue(), "UTF-8"));
             }
-            java.net.HttpURLConnection con = (java.net.HttpURLConnection) new java.net.URL(cashierUrl).openConnection();
+            con = (java.net.HttpURLConnection) new java.net.URL(cashierUrl).openConnection();
             con.setRequestMethod("POST");
             con.setDoOutput(true);
             con.setInstanceFollowRedirects(false);
@@ -239,6 +240,7 @@ public class AllinpayCashierService {
             log.info("[allinpay/cashier] 通联响应 HTTP={} Location={}", httpCode, location);
 
             if (httpCode >= 300 && httpCode < 400 && location != null && !location.isEmpty()) {
+                drainAndClose(con);
                 if (location.contains("exception.html")) {
                     log.error("[allinpay/cashier] 通联拒签 location={}", location);
                     throw new IllegalStateException("通联拒签：" + location);
@@ -250,17 +252,49 @@ public class AllinpayCashierService {
                 res.setRedirectUrl(location);
                 return res;
             }
-            // 非 302：fallback 回原 form POST
-            log.warn("[allinpay/cashier] 通联非 302（fallback 前端 form POST）HTTP={}", httpCode);
+            // 非 302：通联出错（防爬 / 服务异常）— 不再 fallback 回前端 form POST
+            // commit 9e0ad98 已证实前端 form POST 必 sign 错，回退路径反而把用户送进死路
+            String errBody = readAndClose(con);
+            log.error("[allinpay/cashier] 通联非 302 异常 HTTP={} body={}",
+                    httpCode, errBody.length() > 200 ? errBody.substring(0, 200) : errBody);
+            throw new IllegalStateException("通联响应异常 HTTP=" + httpCode);
         } catch (IllegalStateException ise) {
             throw ise;
         } catch (Exception ex) {
-            log.warn("[allinpay/cashier] 后端打通联失败 fallback 前端 form: {}", ex.getMessage());
+            log.error("[allinpay/cashier] 后端打通联失败 orderId={}", order.getId(), ex);
+            if (con != null) drainAndClose(con);
+            throw new IllegalStateException("通联请求失败：" + ex.getMessage(), ex);
         }
+    }
 
-        log.info("[allinpay/cashier] ───── DONE orderId={} (fallback form) cashierUrl={} cost={}ms ─────",
-                order.getId(), cashierUrl, System.currentTimeMillis() - t0);
-        return new CashierForm(cashierUrl, p);
+    /** 排空 stream + disconnect 防 socket 泄漏（M3 修复）。 */
+    private static void drainAndClose(java.net.HttpURLConnection con) {
+        try {
+            java.io.InputStream is = con.getInputStream();
+            if (is != null) { byte[] buf = new byte[2048]; while (is.read(buf) >= 0) {} is.close(); }
+        } catch (Exception ignore) {}
+        try {
+            java.io.InputStream es = con.getErrorStream();
+            if (es != null) { byte[] buf = new byte[2048]; while (es.read(buf) >= 0) {} es.close(); }
+        } catch (Exception ignore) {}
+        try { con.disconnect(); } catch (Exception ignore) {}
+    }
+
+    /** 读 errorStream 内容（容错）+ disconnect。 */
+    private static String readAndClose(java.net.HttpURLConnection con) {
+        StringBuilder sb = new StringBuilder();
+        try {
+            java.io.InputStream is = con.getErrorStream();
+            if (is == null) is = con.getInputStream();
+            if (is != null) {
+                byte[] buf = new byte[2048];
+                int n;
+                while ((n = is.read(buf)) >= 0) sb.append(new String(buf, 0, n, StandardCharsets.UTF_8));
+                is.close();
+            }
+        } catch (Exception ignore) {}
+        try { con.disconnect(); } catch (Exception ignore) {}
+        return sb.toString();
     }
 
     // ============================================================

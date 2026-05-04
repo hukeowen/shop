@@ -19,7 +19,6 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -52,6 +51,20 @@ public class AllinpayDiagController {
     @Resource
     private AllinpayCashierService cashierService;
 
+    /** 诊断访问 token（来自 ENV ALLINPAY_DIAG_TOKEN）。空则禁用诊断端点。 */
+    @org.springframework.beans.factory.annotation.Value("${merchant.allinpay.diag-token:}")
+    private String diagToken;
+
+    /** C1 修复：诊断端点必须带 token，否则 403。token 在 .env 里随机生成，公网不知。 */
+    private void checkAuth(String token) {
+        if (diagToken == null || diagToken.isEmpty()) {
+            throw new RuntimeException("通联诊断端点未配置 token（merchant.allinpay.diag-token），已禁用");
+        }
+        if (token == null || !diagToken.equals(token)) {
+            throw new RuntimeException("无效 token");
+        }
+    }
+
     /**
      * 诊断签名链路。返 JSON：config + sign 上下文 + 通联实测响应。
      *
@@ -59,9 +72,11 @@ public class AllinpayDiagController {
      * 或通过 nginx 限 IP；本接口仅泄漏私钥指纹（SHA1 前 8 hex）不泄漏私钥本身，相对安全。</p>
      */
     @GetMapping("/diag")
-    @Operation(summary = "通联签名诊断（生产排查 sign 验证失败专用）")
+    @Operation(summary = "通联签名诊断（生产排查 sign 验证失败专用 — 需 token）")
     @PermitAll
-    public Map<String, Object> diag(@RequestParam(value = "live", defaultValue = "false") boolean live) {
+    public Map<String, Object> diag(@RequestParam(value = "live", defaultValue = "false") boolean live,
+                                    @RequestParam(value = "token", required = false) String token) {
+        checkAuth(token);
         Map<String, Object> result = new LinkedHashMap<>();
 
         // 1. 配置摘要
@@ -160,13 +175,15 @@ public class AllinpayDiagController {
      * <p>用法：<code>GET /admin-api/merchant/allinpay/diag-unionorder?body=test&amount=100</code></p>
      */
     @GetMapping("/diag-unionorder")
-    @Operation(summary = "通联下单实测（后端直 POST unionorder，绕开浏览器 form）")
+    @Operation(summary = "通联下单实测（后端直 POST unionorder/onepay — 需 token）")
     @PermitAll
     public Map<String, Object> diagUnionOrder(
             @RequestParam(value = "body", defaultValue = "test") String body,
             @RequestParam(value = "amount", defaultValue = "100") Integer amount,
             @RequestParam(value = "ua", required = false) String ua,
+            @RequestParam(value = "token", required = false) String token,
             javax.servlet.http.HttpServletRequest httpReq) {
+        checkAuth(token);
         Map<String, Object> result = new LinkedHashMap<>();
         Map<String, String> p = new LinkedHashMap<>();
         p.put("cusid", props.getMerchantNo());
@@ -176,8 +193,15 @@ public class AllinpayDiagController {
         p.put("reqsn", "DIAG_" + System.currentTimeMillis());
         p.put("randomstr", UUID.randomUUID().toString().replace("-", "").substring(0, 16));
         p.put("body", body);
-        // onepay 聚合收银台用 front_url（不是 returl）
-        p.put("front_url", props.getH5CashierReturnUrl());
+        boolean useOnepay = props.isUseOnepay();
+        if (useOnepay) {
+            p.put("front_url", props.getH5CashierReturnUrl());
+            // onepay 必填 expiretime（C2 修复：之前忘了加导致 diag 端点必报"订单超时时间不能为空"）
+            p.put("expiretime", new java.text.SimpleDateFormat("yyyyMMddHHmmss")
+                    .format(new java.util.Date(System.currentTimeMillis() + 2 * 3600_000L)));
+        } else {
+            p.put("returl", props.getH5CashierReturnUrl());
+        }
         p.put("notify_url", props.getPayNotifyUrl());
         p.put("signtype", props.getSignType());
 
@@ -196,7 +220,8 @@ public class AllinpayDiagController {
             String base = props.getApiBaseUrl();
             if (base == null || base.isEmpty()) base = "https://syb.allinpay.com";
             base = base.replace("vsp.allinpay.com", "syb.allinpay.com");
-            String url = base.replaceAll("/+$", "") + "/apiweb/h5unionpay/onepay";
+            String url = base.replaceAll("/+$", "")
+                    + (useOnepay ? "/apiweb/h5unionpay/onepay" : "/apiweb/h5unionpay/unionorder");
 
             StringBuilder bodyStr = new StringBuilder();
             for (Map.Entry<String, String> e : p.entrySet()) {

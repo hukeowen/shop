@@ -71,6 +71,7 @@ ALLINPAY_SM2_PRIVATE_KEY="${ALLINPAY_SM2_PRIVATE_KEY:-}"
 ALLINPAY_SM2_PUBLIC_KEY="${ALLINPAY_SM2_PUBLIC_KEY:-}"
 ALLINPAY_ORG_ID="${ALLINPAY_ORG_ID:-}"
 ALLINPAY_USE_ONEPAY="${ALLINPAY_USE_ONEPAY:-false}"
+ALLINPAY_DIAG_TOKEN="${ALLINPAY_DIAG_TOKEN:-}"
 SERVER_NAME="${SERVER_NAME:-www.doupaidoudian.com}"
 LE_EMAIL="${LE_EMAIL:-admin@${SERVER_NAME}}"
 MERCHANT_PACKAGE_PAY_APP_KEY="${MERCHANT_PACKAGE_PAY_APP_KEY:-tanxiaer-package}"
@@ -733,6 +734,8 @@ merchant:
     # 是否启用聚合收银台 onepay（true=用户主选 微信/支付宝/云闪付/快捷；
     # false=按浏览器 UA 推单一通道）。切 true 前需在通联控制台开通 onepay 产品权限
     use-onepay: \${ALLINPAY_USE_ONEPAY:false}
+    # 诊断端点 token：保护 /diag + /diag-unionorder 不被公网滥用；空则禁用
+    diag-token: \${ALLINPAY_DIAG_TOKEN:}
     # 回调 URL：必须公网可达
     register-notify-url: https://${SERVER_NAME:-www.doupaidoudian.com}/admin-api/merchant/allinpay/register-notify
     pay-notify-url: https://${SERVER_NAME:-www.doupaidoudian.com}/admin-api/merchant/allinpay/pay-notify
@@ -1305,6 +1308,7 @@ ALLINPAY_SM2_PRIVATE_KEY=${ALLINPAY_SM2_PRIVATE_KEY}
 ALLINPAY_SM2_PUBLIC_KEY=${ALLINPAY_SM2_PUBLIC_KEY}
 ALLINPAY_ORG_ID=${ALLINPAY_ORG_ID}
 ALLINPAY_USE_ONEPAY=${ALLINPAY_USE_ONEPAY}
+ALLINPAY_DIAG_TOKEN=${ALLINPAY_DIAG_TOKEN}
 SERVER_NAME=${SERVER_NAME}
 MERCHANT_PACKAGE_PAY_APP_KEY=${MERCHANT_PACKAGE_PAY_APP_KEY}
 MERCHANT_PACKAGE_PAY_APP_ID=${MERCHANT_PACKAGE_PAY_APP_ID}
