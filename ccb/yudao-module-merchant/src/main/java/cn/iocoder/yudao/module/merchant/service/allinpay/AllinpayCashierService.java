@@ -103,17 +103,41 @@ public class AllinpayCashierService {
     // 1. 收银台下单：构造 form 给前端跳通联
     // ============================================================
 
+    /** 私钥指纹（SHA1 前 8 hex），用于跨环境对比是否同一份私钥（不泄漏私钥本身）。 */
+    public static String keyFingerprint(String pemKey) {
+        if (pemKey == null || pemKey.isEmpty()) return "<empty>";
+        String stripped = stripPem(pemKey);
+        try {
+            java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-1");
+            byte[] dig = md.digest(stripped.getBytes(StandardCharsets.UTF_8));
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < 4 && i < dig.length; i++) sb.append(String.format("%02x", dig[i]));
+            return sb + "(" + stripped.length() + "chars)";
+        } catch (Exception e) { return "<err>"; }
+    }
+
     /** 构造通联收银台请求参数 — 前端 form POST 跳转。 */
     public CashierForm buildCashierForm(Long orderId) {
+        long t0 = System.currentTimeMillis();
+        log.info("[allinpay/cashier] ───── buildCashierForm START orderId={} ─────", orderId);
         if (!props.isH5Configured()) {
-            throw new IllegalStateException("通联收银台未配置（appid / merchant-no / rsa private key）");
+            log.error("[allinpay/cashier] 配置未就绪 signType={} appid={} merchantNo={} rsaPrivLen={} sm2PrivLen={}",
+                    props.getSignType(), props.getAppid(), props.getMerchantNo(),
+                    props.getPlatformRsaPrivateKey() == null ? 0 : props.getPlatformRsaPrivateKey().length(),
+                    props.getSm2PrivateKey() == null ? 0 : props.getSm2PrivateKey().length());
+            throw new IllegalStateException("通联收银台未配置（appid / merchant-no / 私钥）");
         }
         MerchantPackageOrderDO order = TenantUtils.executeIgnore(() -> packageOrderMapper.selectById(orderId));
         if (order == null) {
+            log.error("[allinpay/cashier] 订单不存在 orderId={}", orderId);
             throw new IllegalStateException("订单不存在: " + orderId);
         }
+        log.info("[allinpay/cashier] 订单加载 orderId={} merchantId={} packageName={} priceFen={} payStatus={}",
+                order.getId(), order.getMerchantId(), order.getPackageName(),
+                order.getPrice(), order.getPayStatus());
         if (order.getPayStatus() != null
                 && order.getPayStatus() != MerchantPackageOrderDO.PAY_STATUS_WAITING) {
+            log.error("[allinpay/cashier] 订单非待支付 orderId={} payStatus={}", orderId, order.getPayStatus());
             throw new IllegalStateException("订单非待支付状态，不可重复唤起收银台");
         }
 
@@ -129,20 +153,34 @@ public class AllinpayCashierService {
         p.put("returl", props.getH5CashierReturnUrl());
         p.put("notify_url", props.getPayNotifyUrl());
         p.put("signtype", signType);
-        p.put("sign", signWith(p, signType));
+
+        String source = buildSignSource(p);
+        String privFp = "SM2".equalsIgnoreCase(signType)
+                ? keyFingerprint(props.getSm2PrivateKey())
+                : keyFingerprint(props.getPlatformRsaPrivateKey());
+        log.info("[allinpay/cashier] 签名 signType={} userId(=appid)={} privKeyFingerprint={} source={}",
+                signType, props.getAppid(), privFp, source);
+        String sign = signWith(p, signType);
+        p.put("sign", sign);
+        log.info("[allinpay/cashier] 签名结果 sign={} ({} chars，PLAIN=88 / DER≈96)",
+                sign, sign.length());
 
         String base = props.getApiBaseUrl();
+        String baseRaw = base;
         if (base == null || base.isEmpty()) {
             base = "https://syb.allinpay.com";
         } else {
-            // 兼容：用户配的是 vsp 域名时纠正为 syb（H5 下单只走 syb）
+            // H5 下单接口在 syb 域名；用户若配 vsp 自动纠正
             base = base.replace("vsp.allinpay.com", "syb.allinpay.com")
                        .replace("test-vsp.allinpay.com", "syb-test.allinpay.com");
         }
         String cashierUrl = base.replaceAll("/+$", "") + H5_UNIONORDER_PATH;
-
-        log.info("[buildCashierForm] orderId={} cusid={} trxamt={} cashierUrl={}",
-                order.getId(), props.getMerchantNo(), order.getPrice(), cashierUrl);
+        if (!java.util.Objects.equals(baseRaw, base)) {
+            log.info("[allinpay/cashier] base URL 自动纠正 {} → {}", baseRaw, base);
+        }
+        log.info("[allinpay/cashier] ───── DONE orderId={} cashierUrl={} cost={}ms ─────",
+                order.getId(), cashierUrl, System.currentTimeMillis() - t0);
+        log.info("[allinpay/cashier] 注意：浏览器 form POST 后通联返 302 跳真实收银台页；后端 curl 无浏览器 UA 会被通联防爬返空 HTML，前端 form POST 才正常");
 
         return new CashierForm(cashierUrl, p);
     }
@@ -153,27 +191,48 @@ public class AllinpayCashierService {
 
     @TenantIgnore  // 通联回调没有 tenant-id header；内部按订单反查 tenant 后切上下文
     public String handlePayNotify(Map<String, String> notifyParams) {
+        long t0 = System.currentTimeMillis();
+        log.info("[allinpay/notify] ───── 收到通联异步通知 keys={} ─────",
+                notifyParams == null ? null : notifyParams.keySet());
         if (notifyParams == null || notifyParams.isEmpty()) {
+            log.warn("[allinpay/notify] 空参数，拒绝");
             return "fail:empty";
         }
+        // 完整 dump 通联 form 字段（除 sign 外打全值，sign 截短防日志爆炸）
+        notifyParams.forEach((k, v) -> {
+            if ("sign".equalsIgnoreCase(k)) {
+                log.info("[allinpay/notify] field {}={}（{} chars）", k,
+                        v == null || v.length() < 20 ? v : v.substring(0, 16) + "...",
+                        v == null ? 0 : v.length());
+            } else {
+                log.info("[allinpay/notify] field {}={}", k, v);
+            }
+        });
         try {
             String reqsn = notifyParams.getOrDefault("cusorderid", notifyParams.get("reqsn"));
             String trxstatus = notifyParams.getOrDefault("trxstatus", "");
             String trxamtStr = notifyParams.getOrDefault("trxamt", "0");
             String sign = notifyParams.get("sign");
-
-            // 1. 验签（按通知里的 signtype 字段或 properties 配置选）
             String notifySignType = notifyParams.getOrDefault("signtype", resolveSignType());
+
+            // 1. 验签
             Map<String, String> verifyParams = new TreeMap<>(notifyParams);
             verifyParams.remove("sign");
-            if (!verifyWith(verifyParams, sign, notifySignType)) {
-                log.warn("[allinpay/notify] {} 验签失败 reqsn={}", notifySignType, reqsn);
+            String source = buildSignSource(verifyParams);
+            log.info("[allinpay/notify] 验签 signType={} userId(=appid)={} source={}",
+                    notifySignType, props.getAppid(), source);
+            boolean ok = verifyWith(verifyParams, sign, notifySignType);
+            log.info("[allinpay/notify] 验签结果={} reqsn={}", ok, reqsn);
+            if (!ok) {
+                log.warn("[allinpay/notify] {} 验签失败 reqsn={} sign={}",
+                        notifySignType, reqsn, sign);
                 return "fail:sign";
             }
 
-            // 2. 不是成功状态：通联仍要回 success 阻止重发
+            // 2. 非成功状态：通联仍要回 success
             if (!TRX_STATUS_SUCCESS.equals(trxstatus)) {
-                log.info("[allinpay/notify] reqsn={} trxstatus={}（非成功，已收单不重发）", reqsn, trxstatus);
+                log.info("[allinpay/notify] reqsn={} trxstatus={}（非 2000 非成功，回 success 不重发）",
+                        reqsn, trxstatus);
                 return "success";
             }
 
@@ -191,16 +250,17 @@ public class AllinpayCashierService {
                 return "fail:bad_amount";
             }
 
-            // 4. 调外部回调专用 markPaid（不走 yudao pay_order 反查）
+            // 4. markPaidExternal（不走 yudao pay_order）
+            log.info("[allinpay/notify] 调 markPaidExternal orderId={} amount={}", oid, trxamtFen);
             packageOrderService.markPaidExternal(oid, trxamtFen, "ALLINPAY_NOTIFY");
-            log.info("[allinpay/notify] reqsn={} 标记支付成功 amount={}", oid, trxamtFen);
+            log.info("[allinpay/notify] ───── DONE reqsn={} amount={} cost={}ms ─────",
+                    oid, trxamtFen, System.currentTimeMillis() - t0);
             return "success";
         } catch (cn.iocoder.yudao.framework.common.exception.ServiceException se) {
-            // 业务异常（金额不一致 / 订单不存在）— 已 log，回 fail 让通联重试不一定有用，记录即可
             log.warn("[allinpay/notify] 业务异常 code={} msg={}", se.getCode(), se.getMessage());
             return "fail:" + se.getCode();
         } catch (Exception e) {
-            log.error("[allinpay/notify] 处理失败 params={}", notifyParams, e);
+            log.error("[allinpay/notify] 处理失败", e);
             return "fail";
         }
     }
@@ -215,8 +275,11 @@ public class AllinpayCashierService {
      * @return trxstatus，2000 = 成功；其它 = 未成功；null = 通信失败 / 查无此单
      */
     public QueryResult queryOrder(Long orderId) {
-        if (!props.isH5Configured()) return null;
-
+        if (!props.isH5Configured()) {
+            log.debug("[allinpay/query] 配置未就绪，跳过 orderId={}", orderId);
+            return null;
+        }
+        long t0 = System.currentTimeMillis();
         String signType = resolveSignType();
         Map<String, String> p = new LinkedHashMap<>();
         p.put("cusid", props.getMerchantNo());
@@ -224,13 +287,15 @@ public class AllinpayCashierService {
         p.put("reqsn", String.valueOf(orderId));
         p.put("randomstr", randomStr());
         p.put("signtype", signType);
+        log.info("[allinpay/query] orderId={} signType={} userId(=appid)={} source={}",
+                orderId, signType, props.getAppid(), buildSignSource(p));
         p.put("sign", signWith(p, signType));
 
         String base = props.getApiBaseUrl();
         if (base == null || base.isEmpty()) base = "https://vsp.allinpay.com";
         else {
             base = base.replace("syb.allinpay.com", "vsp.allinpay.com")
-                       .replace("syb-test.allinpay.com", "syb-test.allinpay.com"); // 测试环境查询也走 syb-test
+                       .replace("syb-test.allinpay.com", "syb-test.allinpay.com");
         }
         String url = base.replaceAll("/+$", "") + QUERY_TRX_PATH;
 
@@ -243,20 +308,24 @@ public class AllinpayCashierService {
 
             @SuppressWarnings("unchecked")
             Map<String, Object> resp = restTemplate.postForObject(url, req, Map.class);
+            log.info("[allinpay/query] orderId={} url={} resp={} cost={}ms",
+                    orderId, url, resp, System.currentTimeMillis() - t0);
             if (resp == null) return null;
             String retcode = String.valueOf(resp.getOrDefault("retcode", ""));
             if (!"SUCCESS".equals(retcode)) {
-                log.info("[allinpay/query] reqsn={} retcode={} retmsg={}",
-                        orderId, retcode, resp.get("retmsg"));
+                log.warn("[allinpay/query] orderId={} retcode={} retmsg={} errmsg={}",
+                        orderId, retcode, resp.get("retmsg"), resp.get("errmsg"));
                 return null;
             }
             String trxstatus = String.valueOf(resp.getOrDefault("trxstatus", ""));
             String trxamt = String.valueOf(resp.getOrDefault("trxamt", "0"));
             int amt = 0;
             try { amt = Integer.parseInt(trxamt); } catch (Exception ignore) {}
+            log.info("[allinpay/query] orderId={} trxstatus={} trxamt={}（2000=成功 / 1001=无此交易 / 其它=进行中）",
+                    orderId, trxstatus, amt);
             return new QueryResult(trxstatus, amt);
         } catch (Exception e) {
-            log.warn("[allinpay/query] reqsn={} 查询异常: {}", orderId, e.getMessage());
+            log.warn("[allinpay/query] orderId={} url={} 查询异常: {}", orderId, url, e.getMessage(), e);
             return null;
         }
     }
