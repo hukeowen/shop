@@ -35,6 +35,60 @@ class AllinpayLiveQueryTest {
     private static final String APPID = "00240592";
     private static final String CUSID = "56165105331VE5Z";
     private static final String QUERY_URL = "https://vsp.allinpay.com/apiweb/tranx/query";
+    private static final String UNION_URL = "https://syb.allinpay.com/apiweb/h5unionpay/unionorder";
+
+    /**
+     * 实际打通联 H5 收银台 unionorder 下单接口（用 appid 作 SM2 userId + PLAIN 编码）。
+     *
+     * <p>预期：retcode=SUCCESS + payinfo（H5 收银台跳转 URL）；payinfo 长这样
+     * https://syb.allinpay.com/apiweb/h5unionpay/?...</p>
+     */
+    @Test
+    void liveUnionOrder_h5Cashier() throws Exception {
+        Map<String, String> p = new LinkedHashMap<>();
+        p.put("cusid", CUSID);
+        p.put("appid", APPID);
+        p.put("version", "12");
+        p.put("trxamt", "100"); // 1 元 = 100 分
+        p.put("reqsn", "TEST_" + System.currentTimeMillis());
+        p.put("randomstr", UUID.randomUUID().toString().replace("-", "").substring(0, 16));
+        p.put("body", "AI视频套餐测试");
+        p.put("returl", "https://www.doupaidoudian.com/m/#/pages/ai-video/quota?paid=1");
+        p.put("notify_url", "https://www.doupaidoudian.com/admin-api/merchant/allinpay/pay-notify");
+        p.put("signtype", "SM2");
+        String sign = AllinpayCashierService.signSm2(p, SM2_PRIV, APPID);
+        p.put("sign", sign);
+
+        StringBuilder body = new StringBuilder();
+        for (Map.Entry<String, String> e : p.entrySet()) {
+            if (body.length() > 0) body.append('&');
+            body.append(URLEncoder.encode(e.getKey(), "UTF-8")).append('=')
+                .append(URLEncoder.encode(e.getValue(), "UTF-8"));
+        }
+        HttpURLConnection con = (HttpURLConnection) new URL(UNION_URL).openConnection();
+        con.setRequestMethod("POST");
+        con.setDoOutput(true);
+        con.setInstanceFollowRedirects(false);  // 不自动跟 302，让我们看到真实跳转 URL
+        con.setRequestProperty("Content-Type", "application/x-www-form-urlencoded;charset=UTF-8");
+        con.setRequestProperty("User-Agent",
+                "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1");
+        con.setRequestProperty("Referer", "https://www.doupaidoudian.com/m/");
+        con.setRequestProperty("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9");
+        con.setConnectTimeout(8_000);
+        con.setReadTimeout(15_000);
+        try (OutputStream os = con.getOutputStream()) {
+            os.write(body.toString().getBytes(StandardCharsets.UTF_8));
+        }
+        int code = con.getResponseCode();
+        java.io.InputStream is = (code >= 200 && code < 300) ? con.getInputStream() : con.getErrorStream();
+        String resp = is == null ? "" : new String(readAll(is), StandardCharsets.UTF_8);
+        String location = con.getHeaderField("Location");
+        System.out.println("==== H5 unionorder (browser UA + 1 元) ====");
+        System.out.println("REQUEST  body=" + body);
+        System.out.println("RESPONSE HTTP=" + code + (location == null ? "" : " Location=" + location));
+        System.out.println("RESPONSE body(前500字)=" + (resp.length() > 500 ? resp.substring(0, 500) + "...(" + resp.length() + " bytes)" : resp));
+        System.out.println();
+    }
 
     @Test
     void liveQuery_withAppidAsUserId() throws Exception {
