@@ -18,7 +18,7 @@
 
 import { request } from './request.js';
 
-const FIXED_CTA = '立即扫码下单';
+const FIXED_CTA = '微信扫码下单';
 const BFF_MULTI_SCENE = '/app-api/merchant/mini/ai-video/bff/script/multi-scene';
 const BFF_CHAT = '/app-api/merchant/mini/ai-video/bff/ark/chat';
 
@@ -147,12 +147,12 @@ export async function generateHighlight(imageBase64sOrUrls) {
  *   1. 识别图片中能看到的具体内容（颜色、状态、容器、配料、烹饪/加工方式…）
  *   2. 围绕老板原话扩写（保留原话核心卖点，不编造没说过的产地/年份/数字）
  *   3. 60-100 字短视频解说基稿
- *   4. 结尾必须以「立即扫码下单」收口
+ *   4. 结尾必须以「微信扫码下单」收口
  *
  * @param {string} rawDesc 老板口水话描述（用户在表单里写的）
  * @param {string} [shopName=''] 店铺名（让润色后稍带店家身份感）
  * @param {string[]} [imageUrls=[]] 商品图 OSS URL；走视觉模型识图后扩写
- * @returns {Promise<string>} 润色后的解说稿（一段，不分幕，结尾"立即扫码下单"）
+ * @returns {Promise<string>} 润色后的解说稿（一段，不分幕，结尾"微信扫码下单"）
  */
 export async function polishDescription(rawDesc, shopName = '', imageUrls = []) {
   const text = (rawDesc || '').trim();
@@ -169,7 +169,7 @@ export async function polishDescription(rawDesc, shopName = '', imageUrls = []) 
     '4. 用第三人称叙述，不要"我家""老板"等自称',
     '5. 总长 60-100 字，能在 30 秒短视频里念完一遍',
     '6. 禁止吆喝词："秒杀/限时/全网最低/赔本/老板疯了/大减价/今日特惠/必买"等',
-    '7. 结尾必须独立成句，写「立即扫码下单」六个字（一字不差），不加感叹号、不加句号',
+    '7. 结尾必须独立成句，写「微信扫码下单」六个字（一字不差），不加感叹号、不加句号',
     '8. 不要标题、不要分点、不要 emoji、不要引号、不要解释；只输出正文一段',
   ].join('\n');
 
@@ -177,7 +177,7 @@ export async function polishDescription(rawDesc, shopName = '', imageUrls = []) 
   const imgs = (imageUrls || []).slice(0, 3).filter(Boolean);
   const userTextHead = (shopName ? `店家：${shopName}\n` : '') +
     `老板原始描述：${text}\n\n` +
-    '请先识别图片中能看到的具体内容，再围绕老板这段话扩写成短视频解说基稿（60-100 字，结尾"立即扫码下单"）：';
+    '请先识别图片中能看到的具体内容，再围绕老板这段话扩写成短视频解说基稿（60-100 字，结尾"微信扫码下单"）：';
 
   const userContent = imgs.length
     ? [
@@ -204,8 +204,8 @@ export async function polishDescription(rawDesc, shopName = '', imageUrls = []) 
     // 防御：模型偶尔会带"润色后："这种前缀
     out = out.replace(/^[\s\S]*?[:：]\s*/m, (m) => (m.length < 12 ? '' : m));
     // 兜底：模型如果忘了 CTA，强制补上
-    if (out && !/立即扫码下单/.test(out)) {
-      out = out.replace(/[。！!.\s]+$/g, '') + '。立即扫码下单';
+    if (out && !/微信扫码下单/.test(out)) {
+      out = out.replace(/[。！!.\s]+$/g, '') + '。微信扫码下单';
     }
     if (!out || out.length < 5) return text; // 润色失败回退原文
     return out;

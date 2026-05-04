@@ -52,8 +52,8 @@ public class CopywritingServiceImpl implements CopywritingService {
     private static final int MULTI_MAX_SCENES = 3;
     /** 多幕单幕 narration 最长字数 */
     private static final int MULTI_NARRATION_MAX_CHARS = 36;
-    /** 最后一幕固定的扫码引导文案（前端 scriptLlm.js 里的 FIXED_CTA） */
-    private static final String FIXED_CTA = "扫码进店领优惠";
+    /** 最后一幕结尾必须以这 6 个字收口（前端 scriptLlm.js 里的 FIXED_CTA 同步） */
+    private static final String FIXED_CTA = "微信扫码下单";
     /** 兜底通用 visual prompt（含运镜+风格词，避免 LLM 缺值时 Seedance 拿空字符串） */
     private static final String FALLBACK_VISUAL_PROMPT =
             "Cinematic vertical product shot, push-in macro lens, food photography, golden hour lighting, film grain, soft natural color";
@@ -368,7 +368,7 @@ public class CopywritingServiceImpl implements CopywritingService {
                 + "6) 全文严禁吆喝/违规词：老板/赔本/大减价/限时/秒杀/小黄车/购物车/点击链接；\n"
                 + "7) 严禁广告法极限词：最/第一/全网/绝对/独家；\n"
                 + "8) 第 1 幕用画面感钩子（不要痛点喊话/数字冲击）；\n"
-                + "9) 最后一幕 narration 固定为「" + FIXED_CTA + "」，前面几幕不要提扫码/二维码/下单引导；\n"
+                + "9) 最后一幕 narration 必须是完整对白（描述这最后一张图的画面/情绪）+ 末尾 6 字「" + FIXED_CTA + "」收口；前面几幕不要提扫码/二维码/下单引导；\n"
                 + "10) 同时输出全局 bgmStyle，从下面 6 选 1：\n"
                 + "    street_food_yelling / cozy_explore / asmr_macro / elegant_tea / trendy_pop / emotional_story；\n"
                 + "11) 严格仅按下面 JSON 返回，不要 Markdown 代码块、不要额外文字：\n"
@@ -391,7 +391,7 @@ public class CopywritingServiceImpl implements CopywritingService {
         sb.append("共 ").append(imgCount).append(" 张图，请输出 ").append(n)
                 .append(" 幕脚本（每幕 ").append(dur).append(" 秒，共 ")
                 .append(n * dur).append(" 秒）。\n");
-        sb.append("注意：最后一幕 narration 必须是「").append(FIXED_CTA).append("」。");
+        sb.append("注意：最后一幕 narration 必须包含画面对白 + 结尾 6 字「").append(FIXED_CTA).append("」收口（一字不差）。");
         return sb.toString();
     }
 
@@ -457,9 +457,10 @@ public class CopywritingServiceImpl implements CopywritingService {
             }
         }
 
-        // ④ 最后一幕 narration 强制 = FIXED_CTA（覆盖 LLM 不听话的情况）
+        // ④ 最后一幕 narration 兜底：保留 LLM 生成的对白，仅在末尾缺 CTA 时追加（不覆盖前面）
         if (!rawScenes.isEmpty()) {
-            rawScenes.get(rawScenes.size() - 1).narration = FIXED_CTA;
+            RawScene last = rawScenes.get(rawScenes.size() - 1);
+            last.narration = ensureCtaSuffix(last.narration);
         }
 
         // ⑤ build DTO
@@ -519,6 +520,21 @@ public class CopywritingServiceImpl implements CopywritingService {
     }
 
     /**
+     * 最后一幕兜底：narration 末尾如果不是 FIXED_CTA 则追加。
+     * <p>保留 LLM 给的完整对白；只在结尾缺 CTA 时补，不覆盖前面内容。
+     * 末尾标点（。！.!）若挨着 CTA 会先剥掉，避免 "美味。微信扫码下单" 变成 "美味。。微信扫码下单"。</p>
+     */
+    private String ensureCtaSuffix(String narration) {
+        String s = narration == null ? "" : narration.trim();
+        if (s.endsWith(FIXED_CTA)) {
+            return s;
+        }
+        // 已包含 CTA 但不在结尾（比如中间出现），不动它，仅在末尾追加
+        s = s.replaceFirst("[。！!.\\s]+$", "");
+        return s.isEmpty() ? FIXED_CTA : s + "，" + FIXED_CTA;
+    }
+
+    /**
      * 中文文本清洗：去序号前缀（"1. "/"第一句："）、屏蔽词替换为""、最长 maxChars 截断。
      */
     private String sanitizeChinese(String s, int maxChars) {
@@ -539,7 +555,7 @@ public class CopywritingServiceImpl implements CopywritingService {
     private AiVideoMultiSceneScriptDTO fallbackMultiSceneScript(int n, int dur) {
         List<AiVideoMultiSceneScriptDTO.Scene> scenes = new ArrayList<>(n);
         for (int i = 0; i < n; i++) {
-            String narr = (i == n - 1) ? FIXED_CTA : "现拍现做，新鲜出炉";
+            String narr = (i == n - 1) ? "现拍现做，新鲜出炉，" + FIXED_CTA : "现拍现做，新鲜出炉";
             scenes.add(AiVideoMultiSceneScriptDTO.Scene.builder()
                     .imgIdx(i)
                     .imageSummary("")

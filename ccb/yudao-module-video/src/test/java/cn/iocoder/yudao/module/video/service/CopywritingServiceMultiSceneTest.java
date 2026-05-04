@@ -31,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class CopywritingServiceMultiSceneTest {
 
-    private static final String FIXED_CTA = "扫码进店领优惠";
+    private static final String FIXED_CTA = "微信扫码下单";
     private CopywritingServiceImpl service;
 
     @BeforeEach
@@ -50,7 +50,7 @@ class CopywritingServiceMultiSceneTest {
                 "  \"scenes\":[\n" +
                 "    {\"imgIdx\":0,\"imageSummary\":\"流糖心\",\"narration\":\"现烤蜜薯流糖心\",\"visualPrompt\":\"Hand brushing chili oil on grilling skewers, push-in macro lens, cinematic golden hour\"},\n" +
                 "    {\"imgIdx\":1,\"imageSummary\":\"金黄外皮\",\"narration\":\"外皮金黄香气扑鼻\",\"visualPrompt\":\"Slow motion close-up of golden potato skin cracking, food photography, film grain\"},\n" +
-                "    {\"imgIdx\":2,\"imageSummary\":\"扫码二维码\",\"narration\":\"扫码进店领优惠\",\"visualPrompt\":\"Static QR code shot, warm lighting, vlog style\"}\n" +
+                "    {\"imgIdx\":2,\"imageSummary\":\"扫码二维码\",\"narration\":\"微信扫码下单\",\"visualPrompt\":\"Static QR code shot, warm lighting, vlog style\"}\n" +
                 "  ]\n" +
                 "}";
         AiVideoMultiSceneScriptDTO dto = service.postProcessMultiScene(raw, 3, 3, 10);
@@ -73,7 +73,7 @@ class CopywritingServiceMultiSceneTest {
                 "  \"scenes\":[\n" +
                 "    {\"imgIdx\":0,\"narration\":\"句一\",\"visualPrompt\":\"prompt one push-in macro cinematic\"},\n" +
                 "    {\"imgIdx\":0,\"narration\":\"句二\",\"visualPrompt\":\"prompt two pan slow motion film grain\"},\n" +
-                "    {\"imgIdx\":0,\"narration\":\"扫码进店领优惠\",\"visualPrompt\":\"prompt three tilt-up vlog\"}\n" +
+                "    {\"imgIdx\":0,\"narration\":\"微信扫码下单\",\"visualPrompt\":\"prompt three tilt-up vlog\"}\n" +
                 "  ]\n" +
                 "}";
         AiVideoMultiSceneScriptDTO dto = service.postProcessMultiScene(raw, 3, 3, 10);
@@ -88,7 +88,7 @@ class CopywritingServiceMultiSceneTest {
                 "  \"scenes\":[\n" +
                 "    {\"imgIdx\":99,\"narration\":\"句一\",\"visualPrompt\":\"prompt one push-in macro cinematic\"},\n" +
                 "    {\"imgIdx\":-3,\"narration\":\"句二\",\"visualPrompt\":\"prompt two pan slow motion film grain\"},\n" +
-                "    {\"imgIdx\":1,\"narration\":\"扫码进店领优惠\",\"visualPrompt\":\"prompt three tilt-up vlog\"}\n" +
+                "    {\"imgIdx\":1,\"narration\":\"微信扫码下单\",\"visualPrompt\":\"prompt three tilt-up vlog\"}\n" +
                 "  ]\n" +
                 "}";
         AiVideoMultiSceneScriptDTO dto = service.postProcessMultiScene(raw, 3, 3, 10);
@@ -96,22 +96,43 @@ class CopywritingServiceMultiSceneTest {
     }
 
     @Test
-    void postProcess_lastNarrationForcedToCTA_evenIfLLMIgnoresIt() {
-        // LLM 不听话最后一幕没用 CTA，后处理必须强制覆盖
+    void postProcess_lastNarrationKeepsLLMCopy_appendsCtaIfMissing() {
+        // LLM 给的最后一幕只有对白没结尾 CTA → 兜底追加，不替换前面
         String raw = "{\n" +
                 "  \"title\":\"测试\",\n" +
                 "  \"bgmStyle\":\"cozy_explore\",\n" +
                 "  \"scenes\":[\n" +
                 "    {\"imgIdx\":0,\"narration\":\"句一\",\"visualPrompt\":\"push-in macro cinematic\"},\n" +
                 "    {\"imgIdx\":1,\"narration\":\"句二\",\"visualPrompt\":\"pan slow motion film grain\"},\n" +
-                "    {\"imgIdx\":2,\"narration\":\"快下单啊喂\",\"visualPrompt\":\"tilt-up vlog\"}\n" +
+                "    {\"imgIdx\":2,\"narration\":\"出锅热腾腾\",\"visualPrompt\":\"tilt-up vlog\"}\n" +
                 "  ]\n" +
                 "}";
         AiVideoMultiSceneScriptDTO dto = service.postProcessMultiScene(raw, 3, 3, 10);
-        assertEquals(FIXED_CTA, dto.getScenes().get(2).getNarration());
+        // 最后一幕 = 原对白 + ， + CTA（不再覆盖丢前面对白）
+        assertEquals("出锅热腾腾，" + FIXED_CTA, dto.getScenes().get(2).getNarration());
         // 前面两幕保留
         assertEquals("句一", dto.getScenes().get(0).getNarration());
         assertEquals("句二", dto.getScenes().get(1).getNarration());
+    }
+
+    @Test
+    void postProcess_lastNarrationAlreadyHasCta_isNotDuplicated() {
+        // LLM 已经按 prompt 末尾收口 → 不重复追加
+        String raw = "{\n" +
+                "  \"title\":\"测试\",\n" +
+                "  \"bgmStyle\":\"cozy_explore\",\n" +
+                "  \"scenes\":[\n" +
+                "    {\"imgIdx\":0,\"narration\":\"句一\",\"visualPrompt\":\"push-in macro cinematic\"},\n" +
+                "    {\"imgIdx\":1,\"narration\":\"句二\",\"visualPrompt\":\"pan slow motion film grain\"},\n" +
+                "    {\"imgIdx\":2,\"narration\":\"现拍现做新鲜出炉，" + FIXED_CTA + "\",\"visualPrompt\":\"tilt-up vlog\"}\n" +
+                "  ]\n" +
+                "}";
+        AiVideoMultiSceneScriptDTO dto = service.postProcessMultiScene(raw, 3, 3, 10);
+        String last = dto.getScenes().get(2).getNarration();
+        assertTrue(last.endsWith(FIXED_CTA));
+        // 不应重复出现两次 CTA
+        int firstIdx = last.indexOf(FIXED_CTA);
+        assertEquals(firstIdx, last.lastIndexOf(FIXED_CTA), "CTA 不应重复");
     }
 
     @Test
@@ -123,7 +144,7 @@ class CopywritingServiceMultiSceneTest {
                 "  \"scenes\":[\n" +
                 "    {\"imgIdx\":0,\"narration\":\"老板赔本秒杀\",\"visualPrompt\":\"push-in macro cinematic\"},\n" +
                 "    {\"imgIdx\":1,\"narration\":\"全网最低限时购买\",\"visualPrompt\":\"pan slow motion film grain\"},\n" +
-                "    {\"imgIdx\":2,\"narration\":\"扫码进店领优惠\",\"visualPrompt\":\"tilt-up vlog\"}\n" +
+                "    {\"imgIdx\":2,\"narration\":\"微信扫码下单\",\"visualPrompt\":\"tilt-up vlog\"}\n" +
                 "  ]\n" +
                 "}";
         AiVideoMultiSceneScriptDTO dto = service.postProcessMultiScene(raw, 3, 3, 10);
@@ -149,7 +170,7 @@ class CopywritingServiceMultiSceneTest {
                 "  \"bgmStyle\":\"cozy_explore\",\n" +
                 "  \"scenes\":[\n" +
                 "    {\"imgIdx\":0,\"narration\":\"" + longNarr + "\",\"visualPrompt\":\"push-in macro cinematic\"},\n" +
-                "    {\"imgIdx\":1,\"narration\":\"扫码进店领优惠\",\"visualPrompt\":\"pan film grain\"}\n" +
+                "    {\"imgIdx\":1,\"narration\":\"微信扫码下单\",\"visualPrompt\":\"pan film grain\"}\n" +
                 "  ]\n" +
                 "}";
         AiVideoMultiSceneScriptDTO dto = service.postProcessMultiScene(raw, 2, 2, 10);
@@ -163,7 +184,7 @@ class CopywritingServiceMultiSceneTest {
                 "  \"bgmStyle\":\"cozy_explore\",\n" +
                 "  \"scenes\":[\n" +
                 "    {\"imgIdx\":0,\"narration\":\"句一\",\"visualPrompt\":\"\"},\n" +
-                "    {\"imgIdx\":1,\"narration\":\"扫码进店领优惠\"}\n" +
+                "    {\"imgIdx\":1,\"narration\":\"微信扫码下单\"}\n" +
                 "  ]\n" +
                 "}";
         AiVideoMultiSceneScriptDTO dto = service.postProcessMultiScene(raw, 2, 2, 10);
@@ -180,7 +201,7 @@ class CopywritingServiceMultiSceneTest {
                 "  \"title\":\"t\",\n" +
                 "  \"bgmStyle\":\"random_unknown_style\",\n" +
                 "  \"scenes\":[\n" +
-                "    {\"imgIdx\":0,\"narration\":\"扫码进店领优惠\",\"visualPrompt\":\"push-in macro cinematic\"}\n" +
+                "    {\"imgIdx\":0,\"narration\":\"微信扫码下单\",\"visualPrompt\":\"push-in macro cinematic\"}\n" +
                 "  ]\n" +
                 "}";
         AiVideoMultiSceneScriptDTO dto = service.postProcessMultiScene(raw, 1, 1, 10);
@@ -192,7 +213,7 @@ class CopywritingServiceMultiSceneTest {
         for (String style : Arrays.asList("street_food_yelling", "cozy_explore", "asmr_macro",
                 "elegant_tea", "trendy_pop", "emotional_story")) {
             String raw = "{\"title\":\"t\",\"bgmStyle\":\"" + style + "\",\"scenes\":[" +
-                    "{\"imgIdx\":0,\"narration\":\"扫码进店领优惠\",\"visualPrompt\":\"push-in macro cinematic\"}]}";
+                    "{\"imgIdx\":0,\"narration\":\"微信扫码下单\",\"visualPrompt\":\"push-in macro cinematic\"}]}";
             AiVideoMultiSceneScriptDTO dto = service.postProcessMultiScene(raw, 1, 1, 10);
             assertEquals(style, dto.getBgmStyle(), "合法风格应保留: " + style);
         }
@@ -237,7 +258,7 @@ class CopywritingServiceMultiSceneTest {
     @Test
     void postProcess_markdownCodeFence_isStripped() {
         String raw = "```json\n{\"title\":\"t\",\"bgmStyle\":\"cozy_explore\",\"scenes\":[" +
-                "{\"imgIdx\":0,\"narration\":\"扫码进店领优惠\",\"visualPrompt\":\"push-in macro\"}" +
+                "{\"imgIdx\":0,\"narration\":\"微信扫码下单\",\"visualPrompt\":\"push-in macro\"}" +
                 "]}\n```";
         AiVideoMultiSceneScriptDTO dto = service.postProcessMultiScene(raw, 1, 1, 10);
         assertEquals(1, dto.getScenes().size());
@@ -254,7 +275,10 @@ class CopywritingServiceMultiSceneTest {
         assertNotNull(dto);
         assertEquals(3, dto.getScenes().size());
         assertImgIdxComplete(dto.getScenes(), 3);
-        assertEquals(FIXED_CTA, dto.getScenes().get(2).getNarration());
+        // 兜底末幕也保留对白前缀 + CTA 收口（不再仅光秃 6 字）
+        String last = dto.getScenes().get(2).getNarration();
+        assertTrue(last.endsWith(FIXED_CTA), "末幕应以 CTA 收口：" + last);
+        assertTrue(last.length() > FIXED_CTA.length(), "末幕应含对白前缀：" + last);
         // 兜底 BGM = cozy_explore
         assertEquals("cozy_explore", dto.getBgmStyle());
     }

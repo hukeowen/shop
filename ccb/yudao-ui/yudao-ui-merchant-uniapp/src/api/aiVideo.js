@@ -331,7 +331,7 @@ export async function generatePoster({ shopName, slogan }) {
   const res = await fetch('/jimeng/poster', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ shopName, slogan: slogan || '立即扫码下单' }),
+    body: JSON.stringify({ shopName, slogan: slogan || '微信扫码下单' }),
   });
   if (!res.ok) {
     const txt = await res.text().catch(() => '');
@@ -454,7 +454,7 @@ export async function createTask({ imageBase64s, imageUrls, userDescription, voi
     task.coverUrl = task.imageUrls[0];
 
     // ②.0 文案润色：老板写的是口水话（"地瓜很甜"），先让视觉模型同时看图 + 读老板原话，
-    //      扩写成 60-100 字、有画面感的短视频解说基稿（结尾"立即扫码下单"），
+    //      扩写成 60-100 字、有画面感的短视频解说基稿（结尾"微信扫码下单"），
     //      再喂给后续视觉拆镜。失败回退原文，不阻塞主流程。
     emit({ phase: 'polishing' });
     let polishedDescription = userDescription;
@@ -778,20 +778,23 @@ async function runClip(task, scene, startImageUrl) {
       scene.status = 'endcard_building';
       pushSceneToDB(task, scene, { status: 'endcard_building' });
       const v = findVoice(task.voiceKey);
-      // 端卡 TTS = 图片描述 + 解说/CTA：避免老板看到只剩"立即扫码下单"显得突兀；
-      // image_summary 是该幕对应图片的客观描述，narration 是 LLM 生成的解说稿
-      // （最后一幕通常已经收尾到"立即扫码下单"），用「，」拼起来念
-      const endText = [scene.image_summary, scene.narration]
-        .map((s) => (s || '').trim())
-        .filter(Boolean)
-        .join('，');
+      // 端卡 TTS = LLM 给最后一幕生成的完整对白（结尾已被后端 ensureCtaSuffix
+      // 兜底追加「微信扫码下单」），保证既有画面对白又有 CTA 收口。
+      // 前端再加一道兜底：万一 narration 没 CTA（LLM 失败 + 兜底脚本路径），
+      // 末尾补上，避免老板拿到没扫码引导的端卡。
+      let endText = (scene.narration || '').trim();
+      if (!endText) {
+        endText = '微信扫码下单';
+      } else if (!endText.endsWith('微信扫码下单')) {
+        endText = endText.replace(/[。！!.\s]+$/, '') + '，微信扫码下单';
+      }
       const endRes = await fetch('/video/endcard', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           imageUrl: startImageUrl,
           shopName: task.shopName || '',
-          text: endText || scene.narration || '立即扫码下单',
+          text: endText,
           voice: v.ark,
           duration: scene.duration || 3,
         }),
