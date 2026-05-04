@@ -288,10 +288,15 @@ public class AllinpayCashierService {
     }
 
     /**
-     * 通联收银宝 SM2 签名：sign = Base64(SM3withSM2(privKey, userId=appid, source))
+     * 通联收银宝 SM2 签名：sign = Base64(SM3withSM2_PLAIN(privKey, userId=appid, source))
      *
-     * <p>关键：第二参 userId **必须是商户的 appid**（通联文档示例 SmUtil.signSM3SM2RetBase64
-     * (privkey, appid, ...)）。如果用 SM2 默认 userId "1234567812345678" 会被通联拒签。</p>
+     * <p><b>实测验证</b>（against https://vsp.allinpay.com/apiweb/tranx/query）：</p>
+     * <ul>
+     *   <li><b>encoding = PLAIN</b>（R||S 各 32 byte 直接拼成 64 byte 后 Base64；不是 DER asn1）</li>
+     *   <li><b>userId = appid</b>（不是 cusid，也不是 SM2 默认 1234567812345678）</li>
+     * </ul>
+     * <p>用 DER 编码 + 任何 userId，通联都返 "sign验证失败,请检查密钥配置"；
+     * 切到 PLAIN + appid 后通联返 retcode=SUCCESS 通过签名验证。</p>
      */
     public static String signSm2(Map<String, String> params, String pemPrivateKey, String appidUserId) {
         if (pemPrivateKey == null || pemPrivateKey.isEmpty()) {
@@ -299,26 +304,13 @@ public class AllinpayCashierService {
         }
         String source = buildSignSource(params);
         try {
-            byte[] der = Base64.getDecoder().decode(stripPem(pemPrivateKey));
-            // SM2 私钥用 EC 算法 + BC provider 加载 PKCS8
-            java.security.KeyFactory kf = java.security.KeyFactory.getInstance("EC", "BC");
-            java.security.PrivateKey priv = kf.generatePrivate(new PKCS8EncodedKeySpec(der));
-            byte[] privD = ((org.bouncycastle.jce.interfaces.ECPrivateKey) priv).getD().toByteArray();
-            // 处理可能的前导 0
-            if (privD.length > 32) privD = java.util.Arrays.copyOfRange(privD, privD.length - 32, privD.length);
-
-            org.bouncycastle.crypto.signers.SM2Signer signer = new org.bouncycastle.crypto.signers.SM2Signer();
-            org.bouncycastle.crypto.params.ECDomainParameters domain = sm2Domain();
-            org.bouncycastle.crypto.params.ECPrivateKeyParameters privParam =
-                    new org.bouncycastle.crypto.params.ECPrivateKeyParameters(
-                            new java.math.BigInteger(1, privD), domain);
-            org.bouncycastle.crypto.params.ParametersWithID withId =
-                    new org.bouncycastle.crypto.params.ParametersWithID(privParam,
-                            (appidUserId == null ? "" : appidUserId).getBytes(StandardCharsets.UTF_8));
-            signer.init(true, withId);
-            byte[] msg = source.getBytes(StandardCharsets.UTF_8);
-            signer.update(msg, 0, msg.length);
-            return Base64.getEncoder().encodeToString(signer.generateSignature());
+            cn.hutool.crypto.asymmetric.SM2 sm2 =
+                    cn.hutool.crypto.SmUtil.sm2(stripPem(pemPrivateKey), null);
+            sm2.usePlainEncoding();   // ← 关键：通联收银宝实测要 PLAIN (R||S)
+            byte[] sig = sm2.sign(
+                    source.getBytes(StandardCharsets.UTF_8),
+                    (appidUserId == null ? "" : appidUserId).getBytes(StandardCharsets.UTF_8));
+            return Base64.getEncoder().encodeToString(sig);
         } catch (Exception e) {
             throw new IllegalStateException("通联 SM2 签名失败: " + e.getMessage(), e);
         }
@@ -332,37 +324,17 @@ public class AllinpayCashierService {
         }
         try {
             String source = buildSignSource(params);
-            byte[] der = Base64.getDecoder().decode(stripPem(pemPublicKey));
-            java.security.KeyFactory kf = java.security.KeyFactory.getInstance("EC", "BC");
-            java.security.PublicKey pub = kf.generatePublic(new X509EncodedKeySpec(der));
-            org.bouncycastle.jce.interfaces.ECPublicKey ecPub = (org.bouncycastle.jce.interfaces.ECPublicKey) pub;
-
-            org.bouncycastle.crypto.signers.SM2Signer verifier = new org.bouncycastle.crypto.signers.SM2Signer();
-            org.bouncycastle.crypto.params.ECDomainParameters domain = sm2Domain();
-            org.bouncycastle.crypto.params.ECPublicKeyParameters pubParam =
-                    new org.bouncycastle.crypto.params.ECPublicKeyParameters(
-                            domain.getCurve().createPoint(ecPub.getQ().getAffineXCoord().toBigInteger(),
-                                                           ecPub.getQ().getAffineYCoord().toBigInteger()),
-                            domain);
-            org.bouncycastle.crypto.params.ParametersWithID withId =
-                    new org.bouncycastle.crypto.params.ParametersWithID(pubParam,
-                            (appidUserId == null ? "" : appidUserId).getBytes(StandardCharsets.UTF_8));
-            verifier.init(false, withId);
-            byte[] msg = source.getBytes(StandardCharsets.UTF_8);
-            verifier.update(msg, 0, msg.length);
-            return verifier.verifySignature(Base64.getDecoder().decode(sign));
+            cn.hutool.crypto.asymmetric.SM2 sm2 =
+                    cn.hutool.crypto.SmUtil.sm2(null, stripPem(pemPublicKey));
+            sm2.usePlainEncoding();   // 同样 PLAIN 模式
+            return sm2.verify(
+                    source.getBytes(StandardCharsets.UTF_8),
+                    Base64.getDecoder().decode(sign),
+                    (appidUserId == null ? "" : appidUserId).getBytes(StandardCharsets.UTF_8));
         } catch (Exception e) {
             log.warn("[verifySm2] 验签异常: {}", e.getMessage());
             return false;
         }
-    }
-
-    /** SM2 推荐曲线 sm2p256v1（与通联约定一致） */
-    private static org.bouncycastle.crypto.params.ECDomainParameters sm2Domain() {
-        org.bouncycastle.asn1.x9.X9ECParameters x9 =
-                org.bouncycastle.asn1.gm.GMNamedCurves.getByName("sm2p256v1");
-        return new org.bouncycastle.crypto.params.ECDomainParameters(
-                x9.getCurve(), x9.getG(), x9.getN(), x9.getH());
     }
 
     /** ASCII 升序拼 key=value& 拼接（跳过 sign 和空值），SHA1withRSA 私钥签名，Base64。 */
