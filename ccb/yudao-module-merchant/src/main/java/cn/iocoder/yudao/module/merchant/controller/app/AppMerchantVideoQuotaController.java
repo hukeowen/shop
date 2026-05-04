@@ -144,7 +144,8 @@ public class AppMerchantVideoQuotaController {
     @Operation(summary = "购买套餐（通联 H5 收银台）")
     @Parameter(name = "packageId", description = "套餐 ID", required = true)
     public CommonResult<cn.iocoder.yudao.module.merchant.service.allinpay.AllinpayCashierService.CashierForm>
-            purchaseAllinpay(@PathVariable("packageId") Long packageId) {
+            purchaseAllinpay(@PathVariable("packageId") Long packageId,
+                             javax.servlet.http.HttpServletRequest httpReq) {
         MerchantDO merchant = getMerchantOrThrow();
         Long loginUserId = SecurityFrameworkUtils.getLoginUserId();
         // 复用 createOrder 创业务订单（channelCode 用 allinpay_h5；service 已经放行了）
@@ -152,8 +153,9 @@ public class AppMerchantVideoQuotaController {
                 merchant.getId(), loginUserId, packageId, "allinpay_h5", getClientIP());
         // 主动查询轮询：异步通知漏发兜底（5/15/25/35/60/120s）
         allinpayPollingService.schedulePolling(base.getPackageOrderId());
-        // 拼通联收银台 form
-        return success(allinpayCashierService.buildCashierForm(base.getPackageOrderId()));
+        // 透传前端真实 UA → 通联按用户浏览器推荐支付方式（避免硬编码 iOS 推 Apple Pay）
+        String clientUa = httpReq == null ? null : httpReq.getHeader("User-Agent");
+        return success(allinpayCashierService.buildCashierForm(base.getPackageOrderId(), clientUa));
     }
 
     /**

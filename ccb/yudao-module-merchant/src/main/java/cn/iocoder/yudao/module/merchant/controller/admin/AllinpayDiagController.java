@@ -164,7 +164,9 @@ public class AllinpayDiagController {
     @PermitAll
     public Map<String, Object> diagUnionOrder(
             @RequestParam(value = "body", defaultValue = "test") String body,
-            @RequestParam(value = "amount", defaultValue = "100") Integer amount) {
+            @RequestParam(value = "amount", defaultValue = "100") Integer amount,
+            @RequestParam(value = "ua", required = false) String ua,
+            javax.servlet.http.HttpServletRequest httpReq) {
         Map<String, Object> result = new LinkedHashMap<>();
         Map<String, String> p = new LinkedHashMap<>();
         p.put("cusid", props.getMerchantNo());
@@ -206,9 +208,17 @@ public class AllinpayDiagController {
             con.setDoOutput(true);
             con.setInstanceFollowRedirects(false);
             con.setRequestProperty("Content-Type", "application/x-www-form-urlencoded;charset=UTF-8");
-            con.setRequestProperty("User-Agent",
-                    "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1");
+            // UA 优先级：?ua= 显式参数 > 当前 HTTP 请求的 UA > 默认 Android Chrome
+            String forwardUa = ua;
+            if ((forwardUa == null || forwardUa.isEmpty()) && httpReq != null) {
+                forwardUa = httpReq.getHeader("User-Agent");
+            }
+            if (forwardUa == null || forwardUa.isEmpty()) {
+                forwardUa = "Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 Chrome/100.0.0.0 Mobile Safari/537.36";
+            }
+            con.setRequestProperty("User-Agent", forwardUa);
             con.setRequestProperty("Referer", props.getH5CashierReturnUrl());
+            result.put("forwardUa", forwardUa);
             con.setConnectTimeout(8000);
             con.setReadTimeout(15000);
             try (OutputStream os = con.getOutputStream()) {

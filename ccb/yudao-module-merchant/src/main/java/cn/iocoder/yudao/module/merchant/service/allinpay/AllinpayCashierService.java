@@ -116,8 +116,20 @@ public class AllinpayCashierService {
         } catch (Exception e) { return "<err>"; }
     }
 
-    /** 构造通联收银台请求参数 — 前端 form POST 跳转。 */
+    /** 构造通联收银台请求参数 — 前端 form POST 跳转（用默认 iPhone Safari UA）。 */
     public CashierForm buildCashierForm(Long orderId) {
+        return buildCashierForm(orderId, null);
+    }
+
+    /**
+     * 构造通联收银台 — 可指定客户端 UA。
+     *
+     * <p>通联根据 UA 决定推荐支付通道：iPhone Safari → Apple Pay；
+     * 微信内置浏览器 → 微信支付；Android Chrome → 银联/聚合。
+     * controller 应把 HttpServletRequest.getHeader("User-Agent") 透传过来，
+     * 让通联按用户真实浏览器推支付方式。</p>
+     */
+    public CashierForm buildCashierForm(Long orderId, String clientUserAgent) {
         long t0 = System.currentTimeMillis();
         log.info("[allinpay/cashier] ───── buildCashierForm START orderId={} ─────", orderId);
         if (!props.isH5Configured()) {
@@ -195,9 +207,14 @@ public class AllinpayCashierService {
             con.setDoOutput(true);
             con.setInstanceFollowRedirects(false);
             con.setRequestProperty("Content-Type", "application/x-www-form-urlencoded;charset=UTF-8");
-            con.setRequestProperty("User-Agent",
-                    "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148 Safari/604.1");
+            // 透传客户端真实 UA → 通联按用户实际浏览器推支付方式（微信/支付宝/银联等）
+            // 没传时 fallback 通用 Android Chrome（避免 iPhone UA 默认推 Apple Pay）
+            String ua = (clientUserAgent != null && !clientUserAgent.isEmpty())
+                    ? clientUserAgent
+                    : "Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.0.0 Mobile Safari/537.36";
+            con.setRequestProperty("User-Agent", ua);
             con.setRequestProperty("Referer", props.getH5CashierReturnUrl());
+            log.info("[allinpay/cashier] forward UA={}", ua);
             con.setConnectTimeout(8_000);
             con.setReadTimeout(15_000);
             try (java.io.OutputStream os = con.getOutputStream()) {
