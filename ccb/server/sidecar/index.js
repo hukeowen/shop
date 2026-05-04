@@ -74,11 +74,14 @@ const {
 } = require('undici');
 
 // ── 加载 .env（独立服务也需要环境变量）─────────────────────────────────────
-//   优先 server/sidecar/.env > 同目录上层 .env > process.env
+//   生产部署目录：/opt/tanxiaer/sidecar  →  根 .env 在 ../.env（一级，不是两级）
+//   仓库源码目录：ccb/server/sidecar     →  根 .env 在 ../../.env
+//   两者都尝试。process.env 已设置的不覆盖。
 function loadDotEnv() {
   const candidates = [
     path.join(__dirname, '.env'),
-    path.join(__dirname, '..', '..', '.env'),
+    path.join(__dirname, '..', '.env'),         // 生产：/opt/tanxiaer/.env
+    path.join(__dirname, '..', '..', '.env'),   // 源码仓：ccb/.env
   ];
   for (const f of candidates) {
     if (!fs.existsSync(f)) continue;
