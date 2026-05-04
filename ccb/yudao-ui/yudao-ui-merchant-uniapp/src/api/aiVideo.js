@@ -730,15 +730,29 @@ export async function confirmTask({ taskId, scenes, bgmStyle }) {
         console.warn('[confirmTask] syncScenesAndMetaToDB 异常:', e?.message));
   }
 
-  // 后台跑：每幕独立生成（幕 i 起始帧 = 图 i），所有幕并行
-  // TTS 在 runClip 内部与视频生成串行，视频就绪后立即合流
+  // 后台跑：每幕独立生成（幕 i 起始帧 = 图 i），**串行**跑
+  //
+  // 火山即梦免费/低配额账号同时进行的视频任务并发上限 = 1：实测
+  //   5 个并发 submit → 1 OK / 3 个 429 code=50430 / 1 OK
+  //   即使串行 submit，前一任务 generating 期间下一个也会被拒
+  //   （这就是用户报"几张图就 401"的真因，BFF 把 429 包装成异常）
+  //
+  // 改成串行跑整条 runClip：每幕「submit→轮询→合配音」全跑完才下一幕，
+  // 保证同时只有 1 个即梦任务。代价：N 张图 ≈ N×30s（vs 并发理论 30s），
+  // 但当前并发实际 0 成功，串行肯定能成。
+  // 端卡（最后一幕）不走即梦，仍可与最后一个真镜头串完之后立刻跑。
+  // TTS 在 runClip 内部与视频生成串行，视频就绪后立即合流。
   (async () => {
-    // 每幕错开 4 秒提交，避免同时撞即梦AI 并发限制；runClip 内部也有退避重试兜底
-    const clipTasks = t.scenes.map((scene, i) => {
+    for (let i = 0; i < t.scenes.length; i++) {
+      const scene = t.scenes[i];
       const selfImg = t.imageUrls[scene.img_idx] || t.imageUrls[i] || t.imageUrls[0];
-      return new Promise((r) => setTimeout(r, i * 4000)).then(() => runClip(t, scene, selfImg));
-    });
-    await Promise.all(clipTasks);
+      try {
+        await runClip(t, scene, selfImg);
+      } catch (e) {
+        console.warn(`[runClip ${i}] 失败但继续后续幕:`, e?.message);
+        // runClip 内部已经把错误写到 scene.error，这里不抛，让其他幕能继续跑
+      }
+    }
 
     const okClips = t.scenes.filter((s) => s.clipUrl).length;
     if (okClips === 0) {
