@@ -36,6 +36,58 @@ class AllinpayLiveQueryTest {
     private static final String CUSID = "56165105331VE5Z";
     private static final String QUERY_URL = "https://vsp.allinpay.com/apiweb/tranx/query";
     private static final String UNION_URL = "https://syb.allinpay.com/apiweb/h5unionpay/unionorder";
+    private static final String ONEPAY_URL = "https://syb.allinpay.com/apiweb/h5unionpay/onepay";
+
+    /** 实测聚合收银台 onepay：用户在通联页面选择 微信/支付宝/云闪付/快捷 */
+    @Test
+    void liveOnepay_aggregateCashier() throws Exception {
+        Map<String, String> p = new LinkedHashMap<>();
+        p.put("cusid", CUSID);
+        p.put("appid", APPID);
+        p.put("version", "12");
+        p.put("trxamt", "100");
+        p.put("reqsn", "ONEPAY_" + System.currentTimeMillis());
+        p.put("randomstr", UUID.randomUUID().toString().replace("-", "").substring(0, 16));
+        p.put("body", "AI视频套餐测试");
+        p.put("front_url", "https://www.doupaidoudian.com/m/quota?paid=1");
+        p.put("notify_url", "https://www.doupaidoudian.com/admin-api/merchant/allinpay/pay-notify");
+        // onepay 必填：订单超时时间（绝对时间 yyyyMMddHHmmss，2h 后过期）
+        p.put("expiretime", new java.text.SimpleDateFormat("yyyyMMddHHmmss")
+                .format(new java.util.Date(System.currentTimeMillis() + 2 * 3600_000L)));
+        p.put("signtype", "SM2");
+        String sign = AllinpayCashierService.signSm2(p, SM2_PRIV, APPID);
+        p.put("sign", sign);
+
+        StringBuilder body = new StringBuilder();
+        for (Map.Entry<String, String> e : p.entrySet()) {
+            if (body.length() > 0) body.append('&');
+            body.append(URLEncoder.encode(e.getKey(), "UTF-8")).append('=')
+                .append(URLEncoder.encode(e.getValue(), "UTF-8"));
+        }
+        HttpURLConnection con = (HttpURLConnection) new URL(ONEPAY_URL).openConnection();
+        con.setRequestMethod("POST");
+        con.setDoOutput(true);
+        con.setInstanceFollowRedirects(false);
+        con.setRequestProperty("Content-Type", "application/x-www-form-urlencoded;charset=UTF-8");
+        con.setRequestProperty("User-Agent",
+                "Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 Chrome/120 Mobile Safari/537.36");
+        con.setRequestProperty("Referer", "https://www.doupaidoudian.com/m/");
+        con.setConnectTimeout(8_000);
+        con.setReadTimeout(15_000);
+        try (OutputStream os = con.getOutputStream()) {
+            os.write(body.toString().getBytes(StandardCharsets.UTF_8));
+        }
+        int code = con.getResponseCode();
+        String loc = con.getHeaderField("Location");
+        java.io.InputStream is = (code >= 200 && code < 300) ? con.getInputStream() : con.getErrorStream();
+        String resp = is == null ? "" : new String(readAll(is), StandardCharsets.UTF_8);
+        boolean rejected = (loc != null && loc.contains("exception.html"))
+                          || (resp.contains("sign") && resp.contains("失败"));
+        System.out.println("==== onepay 聚合收银台 (Android UA) → " + (rejected ? "❌ REJECTED" : "✅ OK") + " ====");
+        System.out.println("HTTP=" + code);
+        System.out.println("Location=" + loc);
+        if (resp.length() > 0) System.out.println("RESP=" + (resp.length() > 400 ? resp.substring(0, 400) + "..." : resp));
+    }
 
     /**
      * 实际打通联 H5 收银台 unionorder 下单接口（用 appid 作 SM2 userId + PLAIN 编码）。

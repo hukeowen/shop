@@ -175,8 +175,9 @@ public class AllinpayDiagController {
         p.put("trxamt", String.valueOf(amount));
         p.put("reqsn", "DIAG_" + System.currentTimeMillis());
         p.put("randomstr", UUID.randomUUID().toString().replace("-", "").substring(0, 16));
-        p.put("body", body);                                // 用户可改 body 看是否中文导致拒签
-        p.put("returl", props.getH5CashierReturnUrl());
+        p.put("body", body);
+        // onepay 聚合收银台用 front_url（不是 returl）
+        p.put("front_url", props.getH5CashierReturnUrl());
         p.put("notify_url", props.getPayNotifyUrl());
         p.put("signtype", props.getSignType());
 
@@ -195,7 +196,7 @@ public class AllinpayDiagController {
             String base = props.getApiBaseUrl();
             if (base == null || base.isEmpty()) base = "https://syb.allinpay.com";
             base = base.replace("vsp.allinpay.com", "syb.allinpay.com");
-            String url = base.replaceAll("/+$", "") + "/apiweb/h5unionpay/unionorder";
+            String url = base.replaceAll("/+$", "") + "/apiweb/h5unionpay/onepay";
 
             StringBuilder bodyStr = new StringBuilder();
             for (Map.Entry<String, String> e : p.entrySet()) {

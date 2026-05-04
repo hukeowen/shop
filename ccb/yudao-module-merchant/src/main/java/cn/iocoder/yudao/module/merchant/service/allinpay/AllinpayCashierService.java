@@ -38,7 +38,8 @@ import java.util.TreeMap;
  *
  * <p>对接产品：通联「H5 收银台 - 银联 H5」 cashier。文档：
  * <ul>
- *   <li>H5 下单：{@code POST https://syb.allinpay.com/apiweb/h5unionpay/unionorder}</li>
+ *   <li>H5 下单（聚合收银台，用户在页面选 微信/支付宝/云闪付/快捷支付）：
+ *       {@code POST https://syb.allinpay.com/apiweb/h5unionpay/onepay}</li>
  *   <li>交易查询：{@code POST https://vsp.allinpay.com/apiweb/tranx/query}</li>
  *   <li>异步通知：通联 POST 到 {@code merchant.allinpay.pay-notify-url}</li>
  *   <li>同步回跳：通联 GET 到 {@code merchant.allinpay.h5-cashier-return-url}</li>
@@ -80,7 +81,9 @@ public class AllinpayCashierService {
     /** 通联约定：trxstatus=2000 表示交易成功 */
     private static final String TRX_STATUS_SUCCESS = "2000";
     /** 通联收银台 H5 下单 endpoint（生产）。测试环境为 https://syb-test.allinpay.com */
-    private static final String H5_UNIONORDER_PATH = "/apiweb/h5unionpay/unionorder";
+    /** 聚合 H5 收银台（用户选支付方式：微信/支付宝/云闪付/快捷支付）。
+     *  之前用 unionorder 是 Apple Pay 专属，已弃用换成 onepay。 */
+    private static final String H5_ONEPAY_PATH = "/apiweb/h5unionpay/onepay";
     /** 通联交易查询 endpoint（生产 vsp.allinpay.com / 测试 syb-test.allinpay.com） */
     private static final String QUERY_TRX_PATH = "/apiweb/tranx/query";
 
@@ -162,8 +165,12 @@ public class AllinpayCashierService {
         p.put("reqsn", String.valueOf(order.getId()));
         p.put("randomstr", randomStr());
         p.put("body", truncate(order.getPackageName(), 64));
-        p.put("returl", props.getH5CashierReturnUrl());
+        // onepay 聚合收银台用 front_url 替代 returl
+        p.put("front_url", props.getH5CashierReturnUrl());
         p.put("notify_url", props.getPayNotifyUrl());
+        // onepay 必填：订单绝对超时时间（yyyyMMddHHmmss），默认 2 小时
+        p.put("expiretime", new java.text.SimpleDateFormat("yyyyMMddHHmmss")
+                .format(new java.util.Date(System.currentTimeMillis() + 2 * 3600_000L)));
         p.put("signtype", signType);
 
         String source = buildSignSource(p);
@@ -186,7 +193,7 @@ public class AllinpayCashierService {
             base = base.replace("vsp.allinpay.com", "syb.allinpay.com")
                        .replace("test-vsp.allinpay.com", "syb-test.allinpay.com");
         }
-        String cashierUrl = base.replaceAll("/+$", "") + H5_UNIONORDER_PATH;
+        String cashierUrl = base.replaceAll("/+$", "") + H5_ONEPAY_PATH;
         if (!java.util.Objects.equals(baseRaw, base)) {
             log.info("[allinpay/cashier] base URL 自动纠正 {} → {}", baseRaw, base);
         }
