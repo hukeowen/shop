@@ -31,7 +31,6 @@
 <script setup>
 import { ref } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
-import QRCode from 'qrcode';
 import { request } from '../../api/request.js';
 import { useUserStore } from '../../store/user.js';
 
@@ -66,12 +65,11 @@ function buildShareUrl(tenantId) {
   return `${origin}/m/shop-home${params.length ? '?' + params.join('&') : ''}`;
 }
 
-async function generateLocalQr(text) {
-  try {
-    return await QRCode.toDataURL(text, { width: 480, margin: 1, errorCorrectionLevel: 'M' });
-  } catch {
-    return '';
-  }
+// 二维码改走 sidecar GET /qr 出图：避免引入 npm 包 `qrcode`（其依赖 `dijkstrajs`
+// H5 build 后浏览器报"Failed to resolve module specifier 'dijkstrajs'"）
+function buildQrUrl(text) {
+  if (!text) return '';
+  return `/qr?text=${encodeURIComponent(text)}&w=480&m=1`;
 }
 
 function onCopyUrl() {
@@ -97,7 +95,7 @@ onLoad(async () => {
       // tenantId 取 shopInfo.tenantId（商户的真实租户），用 userStore.userId 作 inviter
       const tenantId = shopRes?.tenantId;
       shareUrl.value = buildShareUrl(tenantId);
-      qrUrl.value = await generateLocalQr(shareUrl.value);
+      qrUrl.value = buildQrUrl(shareUrl.value);
     }
   } catch {}
   loading.value = false;

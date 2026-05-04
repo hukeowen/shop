@@ -133,7 +133,6 @@
 <script setup>
 import { ref, computed, reactive } from 'vue';
 import { onLoad, onShow } from '@dcloudio/uni-app';
-import QRCode from 'qrcode';
 import { request } from '../../api/request.js';
 import { fen2yuan } from '../../utils/format.js';
 import { savePendingReferrer, flushPendingReferrer } from '../../utils/referral.js';
@@ -321,9 +320,8 @@ async function onShare() {
     return;
   }
   myShareUrl.value = buildMyShareUrl();
-  try {
-    myShareQr.value = await QRCode.toDataURL(myShareUrl.value, { width: 480, margin: 1, errorCorrectionLevel: 'M' });
-  } catch { myShareQr.value = ''; }
+  // sidecar /qr 出图，避开 npm `qrcode` + `dijkstrajs` 的 H5 build 兼容问题
+  myShareQr.value = `/qr?text=${encodeURIComponent(myShareUrl.value)}&w=480&m=1`;
   showShare.value = true;
 }
 function onCopyShare() {

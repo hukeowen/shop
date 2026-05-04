@@ -498,6 +498,31 @@ app.get('/oss/sign', (req, res) => {
   }
 });
 
+// ── /qr ─ 二维码出图（PNG）─────────────────────────────────────────────
+//
+// 前端原本用 npm 包 `qrcode` 在浏览器跑，它的依赖 `dijkstrajs` 是 CommonJS、
+// 且 H5 build 后浏览器报 `Failed to resolve module specifier "dijkstrajs"`。
+// 改成 sidecar 出图：浏览器 <image :src="/qr?text=..."> 直接拿 PNG，
+// 商户/用户端 H5 + 微信小程序通用，bundle 也少一个 npm 包。
+app.get('/qr', async (req, res) => {
+  try {
+    const text = String(req.query.text || '').trim();
+    if (!text) return res.status(400).json({ error: 'text 为空' });
+    const width = Math.min(2000, Math.max(64, Number(req.query.w) || 480));
+    const margin = Math.min(8, Math.max(0, Number(req.query.m) || 1));
+    const buf = await QRCode.toBuffer(text, {
+      errorCorrectionLevel: 'M',
+      width, margin,
+      color: { dark: '#000000', light: '#FFFFFFFF' },
+    });
+    res.setHeader('Content-Type', 'image/png');
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    res.end(buf);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // ── /tts/volc ─ 真火山 openspeech v3 TTS ──────────────────────────
 app.post('/tts/volc', async (req, res) => {
   try {

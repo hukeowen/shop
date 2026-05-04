@@ -13,10 +13,10 @@
         >
           <view class="pic-del" @click="removePic(i)">×</view>
         </view>
-        <view v-if="images.length < 3" class="pic add" @click="pickImage">
+        <view v-if="images.length < 6" class="pic add" @click="pickImage">
           <text class="plus">＋</text>
           <text class="add-text">{{ images.length ? '继续加' : '拍 / 选图' }}</text>
-          <text class="add-count">{{ images.length }}/3</text>
+          <text class="add-count">{{ images.length }}/6</text>
         </view>
       </view>
     </view>
@@ -144,8 +144,8 @@ const canSubmit = computed(
 async function triggerAutoFill() {
   if (!images.value.length || autoFilling.value) return;
   // 仅在 OSS url 都已就绪时才发 generateHighlight（避免 base64 撞"请求体过大"）
-  const urls = images.value.slice(0, 3).map((x) => x.url).filter(Boolean);
-  if (urls.length !== Math.min(3, images.value.length)) {
+  const urls = images.value.slice(0, 6).map((x) => x.url).filter(Boolean);
+  if (urls.length !== Math.min(6, images.value.length)) {
     // 还有图片没上传完，等 pickImage 的上传完成后由它自己 trigger
     return;
   }
@@ -166,7 +166,7 @@ async function triggerAutoFill() {
 
 function pickImage() {
   uni.chooseImage({
-    count: 3 - images.value.length,
+    count: 6 - images.value.length,
     sizeType: ['compressed'],
     sourceType: ['camera', 'album'],
     success: async (r) => {
@@ -185,7 +185,7 @@ function pickImage() {
             console.warn('[pickImage] OSS 上传失败，等提交时重试:', e?.message);
           }
           images.value.push({ preview: p, base64, url });
-          if (images.value.length >= 3) break;
+          if (images.value.length >= 6) break;
         }
       } catch (e) {
         uni.showToast({ title: '图片读取失败：' + e.message, icon: 'none' });

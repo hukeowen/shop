@@ -1189,6 +1189,11 @@ NGINX_EOF
         client_max_body_size 200m;
         proxy_read_timeout 600s;
     }
+    location /qr {
+        proxy_pass http://127.0.0.1:8081;
+        proxy_set_header Host \$host;
+        proxy_read_timeout 30s;
+    }
 
     # WebSocket
     location /ws {

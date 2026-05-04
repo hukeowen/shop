@@ -43,7 +43,6 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import QRCode from 'qrcode';
 import { useUserStore } from '../../store/user.js';
 
 const userStore = useUserStore();
@@ -80,20 +79,15 @@ const shareUrl = computed(() => {
 const qrDataUrl = ref('');
 const qrLoading = ref(true);
 
-async function generateQr() {
+function generateQr() {
+  // sidecar /qr 出图：避开 npm `qrcode` 在 H5 build 后的 dijkstrajs 报错
   qrLoading.value = true;
-  try {
-    if (!shareUrl.value) return;
-    qrDataUrl.value = await QRCode.toDataURL(shareUrl.value, {
-      width: 480,
-      margin: 1,
-      errorCorrectionLevel: 'M',
-    });
-  } catch {
+  if (shareUrl.value) {
+    qrDataUrl.value = `/qr?text=${encodeURIComponent(shareUrl.value)}&w=480&m=1`;
+  } else {
     qrDataUrl.value = '';
-  } finally {
-    qrLoading.value = false;
   }
+  qrLoading.value = false;
 }
 
 function onCopy() {

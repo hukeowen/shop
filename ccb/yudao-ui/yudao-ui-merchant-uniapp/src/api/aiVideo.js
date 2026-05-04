@@ -21,7 +21,7 @@ import { generateScript, polishDescription } from './scriptLlm.js';
 import { createClipTask, waitClip } from './jimeng.js';
 import { findVoice } from './voice.js';
 
-const MAX_SCENES = 3;
+const MAX_SCENES = 6;
 const MAX_TOTAL_SEC = 30;
 
 // ============ 后端 thin wrappers（B 改造 Step 4.1）============
@@ -130,11 +130,11 @@ export async function patchTaskMetaToDB(id, patch) {
   }
 }
 
-// 幕数 = 图片数（cap 3，避免老板上传太多图费流量+ 加重 enhance/seedance 配额）
+// 幕数 = 图片数（cap MAX_SCENES=6，避免老板上传太多图费流量+ 加重 enhance/seedance 配额）
 function sceneCountFor(imageCount) {
   return Math.max(1, Math.min(MAX_SCENES, imageCount || 1));
 }
-// 每幕时长：≤3 图用 10s，≥4 图降到 5s，保证总长 ≤ 30s
+// 每幕时长：≤3 图用 10s（保留单幕沉浸），4-6 图降到 5s 保证总长 ≤ 30s
 function sceneDurationFor(imageCount) {
   return imageCount <= 3 ? 10 : 5;
 }
@@ -778,13 +778,20 @@ async function runClip(task, scene, startImageUrl) {
       scene.status = 'endcard_building';
       pushSceneToDB(task, scene, { status: 'endcard_building' });
       const v = findVoice(task.voiceKey);
+      // 端卡 TTS = 图片描述 + 解说/CTA：避免老板看到只剩"立即扫码下单"显得突兀；
+      // image_summary 是该幕对应图片的客观描述，narration 是 LLM 生成的解说稿
+      // （最后一幕通常已经收尾到"立即扫码下单"），用「，」拼起来念
+      const endText = [scene.image_summary, scene.narration]
+        .map((s) => (s || '').trim())
+        .filter(Boolean)
+        .join('，');
       const endRes = await fetch('/video/endcard', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           imageUrl: startImageUrl,
           shopName: task.shopName || '',
-          text: scene.narration,
+          text: endText || scene.narration || '立即扫码下单',
           voice: v.ark,
           duration: scene.duration || 3,
         }),

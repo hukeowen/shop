@@ -33,13 +33,14 @@ export default defineConfig(({ mode }) => {
         // 业务后端：管理域 / 商户用户端
         '/admin-api': { target: 'http://localhost:48080', changeOrigin: true },
         '/app-api':   { target: 'http://localhost:48080', changeOrigin: true },
-        // sidecar：OSS 上传 / TTS / 视频后处理 / 抖音发布 / 视频反代
+        // sidecar：OSS 上传 / TTS / 视频后处理 / 抖音发布 / 视频反代 / 二维码出图
         '/oss':    { target: SIDECAR_URL, changeOrigin: true },
         '/tts':    { target: SIDECAR_URL, changeOrigin: true },
         '/video':  { target: SIDECAR_URL, changeOrigin: true },
         '/vproxy': { target: SIDECAR_URL, changeOrigin: true },
         '/jimeng': { target: SIDECAR_URL, changeOrigin: true },
         '/douyin': { target: SIDECAR_URL, changeOrigin: true },
+        '/qr':     { target: SIDECAR_URL, changeOrigin: true },
       },
     },
   };
