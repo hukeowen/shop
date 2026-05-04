@@ -292,12 +292,12 @@ class CopywritingServiceMultiSceneTest {
     }
 
     @Test
-    void generateMultiSceneScript_clampsSceneCountToMaxThree() {
+    void generateMultiSceneScript_clampsSceneCountToMaxSix() {
         AiVideoMultiSceneScriptDTO dto = service.generateMultiSceneScript(
                 "店", "desc",
                 Arrays.asList("a", "b", "c", "d", "e", "f", "g", "h", "i", "j"), // 10 张图
-                10, 10); // 请求 10 幕
-        assertTrue(dto.getScenes().size() <= 3, "幕数应 cap 3 (业务约束：≤3 张图)");
+                10, 5); // 请求 10 幕
+        assertTrue(dto.getScenes().size() <= 6, "幕数应 cap 6 (业务约束：≤6 张图)");
     }
 
     @Test

@@ -505,14 +505,17 @@ export async function createTask({ imageBase64s, imageUrls, userDescription, voi
     task.title = title;
     task.scenes = scenes.map((s, i) => {
       const isEndCard = i === scenes.length - 1;
+      // 时长来源（导演视角）：
+      //   - 端卡：2s 静止 + 二维码 + CTA TTS（不走即梦；前 3s 流量最贵，端卡再长用户已划走）
+      //   - 其余：以 LLM 给的 s.duration 为准（5/10），缺失才退回任务级默认
+      const dur = isEndCard ? 2 : (s.duration === 5 || s.duration === 10 ? s.duration : perSceneDuration);
       return {
         index: i,
         img_idx: s.img_idx,
         image_summary: s.image_summary || '',
         narration: s.narration,
         visual_prompt: s.visual_prompt,
-        // 最后一幕是端卡：3s 静止图 + 大二维码 + 店名，跳过即梦AI 生成
-        duration: isEndCard ? 3 : perSceneDuration,
+        duration: dur,
         isEndCard,
         status: 'pending',
         clipTaskId: null,
@@ -666,13 +669,14 @@ export async function regenerateScript(taskId) {
     t.title = title;
     t.scenes = scenes.map((s, i) => {
       const isEndCard = i === scenes.length - 1;
+      const dur = isEndCard ? 2 : (s.duration === 5 || s.duration === 10 ? s.duration : perSceneDuration);
       return {
         index: i,
         img_idx: s.img_idx,
         image_summary: s.image_summary || '',
         narration: s.narration,
         visual_prompt: s.visual_prompt,
-        duration: isEndCard ? 3 : perSceneDuration,
+        duration: dur,
         isEndCard,
         status: 'pending',
         clipTaskId: null,
@@ -796,7 +800,7 @@ async function runClip(task, scene, startImageUrl) {
           shopName: task.shopName || '',
           text: endText,
           voice: v.ark,
-          duration: scene.duration || 3,
+          duration: scene.duration || 2,
         }),
       });
       const endData = endRes.ok ? await endRes.json() : { ok: false, error: `HTTP ${endRes.status}` };

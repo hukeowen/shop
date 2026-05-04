@@ -81,7 +81,7 @@ export async function generateScript({ imageCount, imageUrls, userDescription, s
     throw new Error('后端返回脚本格式不合法');
   }
 
-  // 后端 DTO 字段：imgIdx/visualPrompt/imageSummary（驼峰）
+  // 后端 DTO 字段：imgIdx/visualPrompt/imageSummary/duration（驼峰）
   // 前端代码历史用 img_idx/visual_prompt/image_summary（下划线）
   // 这里做字段名映射，让 aiVideo.js 调用方零改动
   const scenes = data.scenes.map((s) => ({
@@ -89,6 +89,8 @@ export async function generateScript({ imageCount, imageUrls, userDescription, s
     image_summary: s.imageSummary || '',
     narration: s.narration || '',
     visual_prompt: s.visualPrompt || '',
+    // 导演决定的每幕时长（5 或 10 秒）；缺失/非法兜底 5
+    duration: (s.duration === 5 || s.duration === 10) ? s.duration : 5,
   }));
 
   return {

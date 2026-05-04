@@ -48,10 +48,17 @@ public class CopywritingServiceImpl implements CopywritingService {
 
     /** 多幕的最少幕数（前端 imageCount cap 1） */
     private static final int MULTI_MIN_SCENES = 1;
-    /** 多幕的最多幕数（业务约束：老板上传 ≤ 3 张避免流量浪费 + 加重 enhance/seedance 配额） */
-    private static final int MULTI_MAX_SCENES = 3;
-    /** 多幕单幕 narration 最长字数 */
+    /** 多幕的最多幕数（≤ 6 张图，再多浪费 enhance/seedance 配额） */
+    private static final int MULTI_MAX_SCENES = 6;
+    /** 单幕 narration 最长字数（10s 幕用上限；5s 幕在 prompt 里限到一半） */
     private static final int MULTI_NARRATION_MAX_CHARS = 36;
+    /** 视频总时长上限（秒）— 抖音算法对 ≤30s 短视频流量更友好 */
+    private static final int MULTI_MAX_TOTAL_SEC = 30;
+    /** 即梦 i2v_first_v30 仅支持的两档 duration */
+    private static final Set<Integer> ALLOWED_DURATIONS =
+            Collections.unmodifiableSet(new HashSet<>(Arrays.asList(5, 10)));
+    /** duration 缺失/非法时的默认值 */
+    private static final int DEFAULT_SCENE_DURATION = 5;
     /** 最后一幕结尾必须以这 6 个字收口（前端 scriptLlm.js 里的 FIXED_CTA 同步） */
     private static final String FIXED_CTA = "微信扫码下单";
     /** 兜底通用 visual prompt（含运镜+风格词，避免 LLM 缺值时 Seedance 拿空字符串） */
@@ -355,28 +362,29 @@ public class CopywritingServiceImpl implements CopywritingService {
     }
 
     private String buildMultiSceneSystemPrompt(int n, int dur) {
-        return "你是会讲故事的店主+短视频编剧，擅长抖音爆款竖屏短视频脚本。\n"
-                + "我会给你 N 张商品/店铺照片，请你看图后写一段 N 幕的视频脚本：每张图独立 1 幕。\n\n"
-                + "【硬规则】严格遵守，违反算失败：\n"
-                + "1) 每幕一个对象 {imgIdx, imageSummary, narration, visualPrompt}；\n"
-                + "2) imgIdx 取值 0..N-1，每张图必须用上且只用一次（不要重复也不要遗漏）；\n"
-                + "3) narration 自然口语，最长 " + (dur >= 10 ? "36" : "18") + " 中文字；\n"
-                + "4) visualPrompt 必须英文，1 句话内 ≤ 80 词，结构 [主体]+[动作]+[环境]+[运镜]+[风格]；\n"
-                + "   必含运镜词（push-in/pull-out/pan/tilt-up/dolly/macro shot/slow motion 任选）；\n"
-                + "   必含风格词（cinematic/food photography/vlog/asmr/golden hour/film grain 任选）；\n"
-                + "5) imageSummary 中文一句（≤ 20 字），描述这张图最动人的细节；\n"
-                + "6) 全文严禁吆喝/违规词：老板/赔本/大减价/限时/秒杀/小黄车/购物车/点击链接；\n"
-                + "7) 严禁广告法极限词：最/第一/全网/绝对/独家；\n"
-                + "8) 第 1 幕用画面感钩子（不要痛点喊话/数字冲击）；\n"
-                + "9) 最后一幕 narration 必须是完整对白（描述这最后一张图的画面/情绪）+ 末尾 6 字「" + FIXED_CTA + "」收口；前面几幕不要提扫码/二维码/下单引导；\n"
-                + "10) 同时输出全局 bgmStyle，从下面 6 选 1：\n"
-                + "    street_food_yelling / cozy_explore / asmr_macro / elegant_tea / trendy_pop / emotional_story；\n"
-                + "11) 严格仅按下面 JSON 返回，不要 Markdown 代码块、不要额外文字：\n"
+        return "你是抖音爆款短视频导演，专为线下小店老板拍摄帮助门店转化的竖屏小广告。\n"
+                + "我会给你 " + n + " 张店铺/商品照片。你的工作：站在导演视角整体看完所有图，"
+                + "**自由决定播放顺序、自由分配每幕时长（5 或 10 秒）、自由写台词、自由写运镜**，目标是 15 秒内抓住人。\n\n"
+                + "【硬规则】违反算失败：\n"
+                + "1) 输出 N 幕（N = 图片数 = " + n + "），每幕一个对象 {imgIdx, imageSummary, narration, visualPrompt, duration}；\n"
+                + "2) imgIdx 取值 0.." + (n - 1) + "，**每张图必须用上且只用一次**（顺序由你决定，不一定按上传顺序；从最有视觉冲击的开篇）；\n"
+                + "3) duration 仅可取 5 或 10（即梦 i2v_first_v30 仅支持这两档）；**全部幕时长之和必须 ≤ " + MULTI_MAX_TOTAL_SEC + " 秒**；信息密度高的镜头给 5s 紧凑，需要慢节奏铺氛围给 10s；\n"
+                + "4) narration 中文自然口语，**用每幕 duration ×3 作为字数上限**（5s≤15 字、10s≤30 字），不要书面体；\n"
+                + "5) visualPrompt 英文 1 句 ≤ 80 词，导演自由组合：[主体]+[动作动词，让画面真的动起来]+[环境]+[运镜，自由发挥]+[镜头/光线/质感]；\n"
+                + "   **画面必须有动作**：蒸汽腾起 / 油花飞溅 / 拉丝爆汁 / 切刀落下 / 推车进店 / 风吹布幔 / 招牌点亮 / 顾客入座，避免只「轻轻摇晃」的死镜头；\n"
+                + "   **运镜由你决定**：推/拉/摇/移/跟/升降/手持/特写微距/变焦切换；不限模板，你是导演；\n"
+                + "6) imageSummary 中文一句（≤ 20 字），描述该幕图片最动人的细节；\n"
+                + "7) 全文严禁：老板/赔本/大减价/限时/秒杀/小黄车/购物车/点击链接；\n"
+                + "8) 严禁广告法极限词：最/第一/全网/绝对/独家；\n"
+                + "9) **第 1 幕必须是 3 秒强钩子**（视觉冲击/反差/特写/数字/情绪），不要平铺直叙；\n"
+                + "10) 最后一幕：narration = 完整对白（呼应画面/收束情绪）+ 末尾 6 字「" + FIXED_CTA + "」收口（一字不差）；前面几幕不要提扫码/二维码/下单；\n"
+                + "11) 输出全局 bgmStyle，6 选 1：street_food_yelling / cozy_explore / asmr_macro / elegant_tea / trendy_pop / emotional_story；\n"
+                + "12) **严格仅按下面 JSON 返回**，不要 Markdown 代码块、不要额外文字：\n"
                 + "{\n"
-                + "  \"title\": \"视频标题（8-16字）\",\n"
+                + "  \"title\": \"视频标题（8-16字，画面感/情绪）\",\n"
                 + "  \"bgmStyle\": \"cozy_explore\",\n"
                 + "  \"scenes\": [\n"
-                + "    {\"imgIdx\": 0, \"imageSummary\": \"...\", \"narration\": \"...\", \"visualPrompt\": \"...\"},\n"
+                + "    {\"imgIdx\": 0, \"imageSummary\": \"...\", \"narration\": \"...\", \"visualPrompt\": \"...\", \"duration\": 5},\n"
                 + "    ...\n"
                 + "  ]\n"
                 + "}\n";
@@ -434,7 +442,9 @@ public class CopywritingServiceImpl implements CopywritingService {
                     String summary = s.path("imageSummary").asText("").trim();
                     String narration = s.path("narration").asText("").trim();
                     String vp = s.path("visualPrompt").asText("").trim();
-                    rawScenes.add(new RawScene(idx, summary, narration, vp));
+                    int durSec = s.path("duration").asInt(DEFAULT_SCENE_DURATION);
+                    if (!ALLOWED_DURATIONS.contains(durSec)) durSec = DEFAULT_SCENE_DURATION;
+                    rawScenes.add(new RawScene(idx, summary, narration, vp, durSec));
                 }
             }
         } catch (Exception e) {
@@ -442,7 +452,7 @@ public class CopywritingServiceImpl implements CopywritingService {
         }
 
         // ① 数量不足 → 用空 scene 补；超出 → 截断
-        while (rawScenes.size() < n) rawScenes.add(new RawScene(-1, "", "", ""));
+        while (rawScenes.size() < n) rawScenes.add(new RawScene(-1, "", "", "", DEFAULT_SCENE_DURATION));
         if (rawScenes.size() > n) rawScenes = new ArrayList<>(rawScenes.subList(0, n));
 
         // ② imgIdx 修正：去重 + 越界回收 + 缺失补位
@@ -457,13 +467,16 @@ public class CopywritingServiceImpl implements CopywritingService {
             }
         }
 
-        // ④ 最后一幕 narration 兜底：保留 LLM 生成的对白，仅在末尾缺 CTA 时追加（不覆盖前面）
+        // ④ 总时长校验：sum(duration) > 30s 时把最后几幕从 10 → 5 倒着压，直到 ≤ 30
+        capTotalDuration(rawScenes);
+
+        // ⑤ 最后一幕 narration 兜底：保留 LLM 生成的对白，仅在末尾缺 CTA 时追加（不覆盖前面）
         if (!rawScenes.isEmpty()) {
             RawScene last = rawScenes.get(rawScenes.size() - 1);
             last.narration = ensureCtaSuffix(last.narration);
         }
 
-        // ⑤ build DTO
+        // ⑥ build DTO
         List<AiVideoMultiSceneScriptDTO.Scene> scenes = new ArrayList<>(rawScenes.size());
         for (RawScene r : rawScenes) {
             scenes.add(AiVideoMultiSceneScriptDTO.Scene.builder()
@@ -471,6 +484,7 @@ public class CopywritingServiceImpl implements CopywritingService {
                     .imageSummary(r.imageSummary)
                     .narration(r.narration)
                     .visualPrompt(r.visualPrompt)
+                    .duration(r.duration)
                     .build());
         }
         return AiVideoMultiSceneScriptDTO.builder()
@@ -553,6 +567,8 @@ public class CopywritingServiceImpl implements CopywritingService {
 
     /** Ark Key 缺失 / LLM 整体失败时，返一份合法兜底脚本，前端不崩。 */
     private AiVideoMultiSceneScriptDTO fallbackMultiSceneScript(int n, int dur) {
+        // 兜底：总时长按 30s 内平均，每幕统一 5s（最稳）；如果 dur 入参指定了 10s 且 n*10 ≤30 也允许
+        int perScene = (dur == 10 && n * 10 <= MULTI_MAX_TOTAL_SEC) ? 10 : DEFAULT_SCENE_DURATION;
         List<AiVideoMultiSceneScriptDTO.Scene> scenes = new ArrayList<>(n);
         for (int i = 0; i < n; i++) {
             String narr = (i == n - 1) ? "现拍现做，新鲜出炉，" + FIXED_CTA : "现拍现做，新鲜出炉";
@@ -561,6 +577,7 @@ public class CopywritingServiceImpl implements CopywritingService {
                     .imageSummary("")
                     .narration(narr)
                     .visualPrompt(FALLBACK_VISUAL_PROMPT)
+                    .duration(perScene)
                     .build());
         }
         return AiVideoMultiSceneScriptDTO.builder()
@@ -576,17 +593,36 @@ public class CopywritingServiceImpl implements CopywritingService {
         return v;
     }
 
-    /** 内部可变持有 imgIdx / 文本字段，方便 reassignImgIdx 修改 */
+    /** 内部可变持有 imgIdx / 文本字段 / duration，方便 reassignImgIdx 与 capTotalDuration 修改 */
     private static class RawScene {
         int imgIdx;
         String imageSummary;
         String narration;
         String visualPrompt;
-        RawScene(int imgIdx, String imageSummary, String narration, String visualPrompt) {
+        int duration;
+        RawScene(int imgIdx, String imageSummary, String narration, String visualPrompt, int duration) {
             this.imgIdx = imgIdx;
             this.imageSummary = imageSummary == null ? "" : imageSummary;
             this.narration = narration == null ? "" : narration;
             this.visualPrompt = visualPrompt == null ? "" : visualPrompt;
+            this.duration = ALLOWED_DURATIONS.contains(duration) ? duration : DEFAULT_SCENE_DURATION;
+        }
+    }
+
+    /**
+     * 总时长上限：sum(scenes.duration) > MULTI_MAX_TOTAL_SEC 时倒序把 10s 的幕降成 5s。
+     * <p>从最后一幕往前压（开篇钩子优先保留时长），直到 ≤ 30s 为止。
+     * 全是 5s 仍超（n &gt; 6）的极端情况已被 MULTI_MAX_SCENES 上限拦掉。</p>
+     */
+    private void capTotalDuration(List<RawScene> scenes) {
+        int total = 0;
+        for (RawScene s : scenes) total += s.duration;
+        if (total <= MULTI_MAX_TOTAL_SEC) return;
+        for (int i = scenes.size() - 1; i >= 0 && total > MULTI_MAX_TOTAL_SEC; i--) {
+            if (scenes.get(i).duration > 5) {
+                total -= (scenes.get(i).duration - 5);
+                scenes.get(i).duration = 5;
+            }
         }
     }
 

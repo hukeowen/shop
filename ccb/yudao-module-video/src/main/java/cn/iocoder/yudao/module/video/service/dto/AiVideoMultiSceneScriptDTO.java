@@ -37,16 +37,19 @@ public class AiVideoMultiSceneScriptDTO {
     @AllArgsConstructor
     public static class Scene {
 
-        /** 该幕用第几张图（从 0 开始）；前端按 imageUrls[imgIdx] 取图 */
+        /** 该幕用第几张图（从 0 开始）；导演自由排序，不一定按上传顺序 */
         private Integer imgIdx;
 
         /** 一句话亮点（中文，描述这张图最动人的瞬间，给用户编辑参考） */
         private String imageSummary;
 
-        /** 口播台词（TTS 念，自然口语，最后一幕固定为扫码引导文案） */
+        /** 口播台词（TTS 念，自然口语；末幕含「微信扫码下单」收口） */
         private String narration;
 
-        /** Seedance 视觉镜头 prompt（英文，含运镜+风格 token） */
+        /** 即梦视觉镜头 prompt（英文，导演自由写运镜+焦距+光线+情绪，不限模板） */
         private String visualPrompt;
+
+        /** 该幕时长（秒）：即梦 i2v_first_v30 仅支持 5 或 10；导演决定每幕快慢节奏 */
+        private Integer duration;
     }
 }
