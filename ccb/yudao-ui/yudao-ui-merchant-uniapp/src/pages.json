@@ -96,6 +96,13 @@
       }
     },
     {
+      "path": "pages/ai-video/package-orders",
+      "style": {
+        "navigationBarTitleText": "配额订单",
+        "navigationStyle": "custom"
+      }
+    },
+    {
       "path": "pages/product/list",
       "style": {
         "navigationBarTitleText": "商品管理",

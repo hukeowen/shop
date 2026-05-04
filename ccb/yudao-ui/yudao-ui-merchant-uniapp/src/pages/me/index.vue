@@ -60,6 +60,10 @@
         <text>AI 视频配额</text>
         <text class="arrow">›</text>
       </view>
+      <view class="menu-item" @click="goPackageOrders">
+        <text>配额订单</text>
+        <text class="arrow">›</text>
+      </view>
       <view class="menu-item" @click="goMembers">
         <text>会员消费排行</text>
         <text class="arrow">›</text>
@@ -110,6 +114,10 @@ function goHelp() {
 
 function goAbout() {
   uni.navigateTo({ url: '/pages/me/about' });
+}
+
+function goPackageOrders() {
+  uni.navigateTo({ url: '/pages/ai-video/package-orders' });
 }
 
 function goQuota() {

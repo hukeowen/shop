@@ -799,8 +799,15 @@ app.post('/video/endcard', async (req, res) => {
     console.log(`[endcard] 完成 ${(outBuf.length / 1024 / 1024).toFixed(1)} MB → ${key}`);
     res.json({ ok: true, url });
   } catch (e) {
-    console.error('[video/endcard]', e.message);
-    res.status(500).json({ ok: false, error: e.message });
+    // 详细日志：stack + 关键入参，方便定位是 ffmpeg / 字体 / TTS / OSS 哪步挂
+    console.error('[video/endcard] 失败:', e && e.stack ? e.stack : e);
+    console.error('[video/endcard] 入参 imageUrl=%s shopName=%s textLen=%s voice=%s qrUrl=%s',
+        (req.body && req.body.imageUrl) || '<none>',
+        (req.body && req.body.shopName) || '<none>',
+        (req.body && req.body.text) ? String(req.body.text).length : 0,
+        (req.body && req.body.voice) || '<none>',
+        (req.body && req.body.qrUrl) || '<none>');
+    res.status(500).json({ ok: false, error: e.message, stage: e.stage || 'unknown' });
   } finally {
     if (workDir) {
       try { fs.rmSync(workDir, { recursive: true, force: true }); } catch {}

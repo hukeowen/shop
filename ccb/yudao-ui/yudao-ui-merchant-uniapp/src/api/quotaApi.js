@@ -52,3 +52,10 @@ export function purchasePackageAllinpay(packageId) {
     data: {},
   });
 }
+
+/** 商户购买套餐订单列表（分页倒序） */
+export function listMyPackageOrders(pageNo = 1, pageSize = 20) {
+  return request({
+    url: `${BASE}/package-orders?pageNo=${pageNo}&pageSize=${pageSize}`,
+  });
+}

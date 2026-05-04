@@ -49,6 +49,7 @@ public class MerchantVideoQuotaLogServiceImpl implements MerchantVideoQuotaLogSe
     }
 
     @Override
+    @cn.iocoder.yudao.framework.tenant.core.aop.TenantIgnore  // @Scheduled 跑无 tenant 上下文
     public List<MerchantVideoQuotaLogDO> findOrphanDebits(Date start, Date end) {
         return logMapper.findOrphanDebits(start, end);
     }

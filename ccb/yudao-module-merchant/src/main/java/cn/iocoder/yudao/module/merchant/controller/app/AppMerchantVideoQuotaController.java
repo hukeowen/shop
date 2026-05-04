@@ -158,6 +158,24 @@ public class AppMerchantVideoQuotaController {
         return success(allinpayCashierService.buildCashierForm(base.getPackageOrderId(), clientUa));
     }
 
+    @Resource
+    private cn.iocoder.yudao.module.merchant.dal.mysql.MerchantPackageOrderMapper packageOrderMapper;
+
+    /**
+     * 商户视频配额订单列表（含 WAITING / PAID / 历史所有）。
+     *
+     * <p>路径：{@code GET /app-api/merchant/mini/video-quota/package-orders?pageNo=1&pageSize=20}</p>
+     * <p>权限：商户登录态（按当前 merchantId 强过滤防越权，不读 reqVO 里的 merchantId）</p>
+     */
+    @GetMapping("/package-orders")
+    @Operation(summary = "商户购买套餐订单列表（按时间倒序）")
+    public CommonResult<PageResult<cn.iocoder.yudao.module.merchant.dal.dataobject.MerchantPackageOrderDO>>
+            listMyPackageOrders(@Valid cn.iocoder.yudao.framework.common.pojo.PageParam pageParam) {
+        MerchantDO merchant = getMerchantOrThrow();
+        return success(packageOrderMapper.selectPageByMerchantIdOrderByCreateTime(
+                merchant.getId(), pageParam));
+    }
+
     /**
      * 支付成功回调 - 由 yudao-module-pay 的 PayNotifyService 在收到支付渠道成功回调后，
      * 按 {@code PayAppDO.orderNotifyUrl}（管理员在 admin-api/pay/app 配置）HTTP POST 到这里。

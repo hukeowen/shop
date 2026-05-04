@@ -739,7 +739,7 @@ merchant:
     # 回调 URL：必须公网可达
     register-notify-url: https://${SERVER_NAME:-www.doupaidoudian.com}/admin-api/merchant/allinpay/register-notify
     pay-notify-url: https://${SERVER_NAME:-www.doupaidoudian.com}/admin-api/merchant/allinpay/pay-notify
-    h5-cashier-return-url: https://${SERVER_NAME:-www.doupaidoudian.com}/m/#/pages/ai-video/quota?paid=1
+    h5-cashier-return-url: https://${SERVER_NAME:-www.doupaidoudian.com}/m/#/pages/index/index?paid=1
 YAML_EOF
   chmod 600 "${RESOURCES}/application-prod.yaml"
   umask 022
