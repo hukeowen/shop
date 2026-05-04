@@ -264,6 +264,14 @@ async function getTtsBuffer(text, voice) {
     },
   });
 
+  // key 指纹：日志看哪个 fallback 命中、key 是否被截断；不打全量
+  const keyFp = apiKey.length >= 12
+    ? `${apiKey.slice(0, 4)}…${apiKey.slice(-4)}/len=${apiKey.length}`
+    : `<short:len=${apiKey.length}>`;
+  const keySrc = process.env.TTS_ACCESS_TOKEN
+    ? 'TTS_ACCESS_TOKEN'
+    : (process.env.VOLCANO_ACCESS_TOKEN ? 'VOLCANO_ACCESS_TOKEN' : 'ARK_API_KEY');
+
   return await new Promise((resolve, reject) => {
     const req = https.request(
       {
@@ -284,9 +292,12 @@ async function getTtsBuffer(text, voice) {
         const audioChunks = [];
         let leftover = '';
         let firstErr = null;
-        const collectErr = []; // 仅在最后无音频时用
+        const rawBuf = []; // 非 200 时回放整个 body 给运维看
         res.setEncoding('utf8');
         res.on('data', (str) => {
+          rawBuf.push(str);
+          // 仅 200 时尝试按 ndjson 解析；非 200 直接整体当错误体在 end 处理
+          if (res.statusCode !== 200) return;
           leftover += str;
           const lines = leftover.split('\n');
           leftover = lines.pop() || '';
@@ -302,14 +313,19 @@ async function getTtsBuffer(text, voice) {
               const audio = obj.payload?.data || obj.audio_data || obj.data;
               if (audio) audioChunks.push(Buffer.from(audio, 'base64'));
             } catch (_) {
-              collectErr.push(s.slice(0, 120));
+              /* ndjson 中间断开的非完整行，忽略 */
             }
           }
         });
         res.on('end', () => {
           if (audioChunks.length) return resolve(Buffer.concat(audioChunks));
-          if (firstErr) return reject(new Error(`volc TTS ${firstErr}`));
-          reject(new Error(`volc TTS 无音频数据 status=${res.statusCode} ` + collectErr.slice(0, 2).join(' | ')));
+          const raw = rawBuf.join('').slice(0, 400).replace(/\s+/g, ' ');
+          if (res.statusCode !== 200) {
+            return reject(new Error(
+              `volc TTS upstream HTTP ${res.statusCode} keySrc=${keySrc} fp=${keyFp} body=${raw}`));
+          }
+          if (firstErr) return reject(new Error(`volc TTS ${firstErr} keySrc=${keySrc} fp=${keyFp}`));
+          reject(new Error(`volc TTS 无音频数据 status=${res.statusCode} keySrc=${keySrc} fp=${keyFp} raw=${raw}`));
         });
         res.on('error', reject);
       },
