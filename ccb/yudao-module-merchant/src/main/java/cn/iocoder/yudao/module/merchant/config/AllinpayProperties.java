@@ -65,6 +65,15 @@ public class AllinpayProperties {
     private String h5CashierReturnUrl = "";
 
     /**
+     * 是否启用聚合收银台 onepay（用户在通联页面选择微信/支付宝/云闪付/快捷支付）。
+     * <p>false（默认）走 unionorder：通联按浏览器 UA 推单一通道
+     * （iOS Safari → Apple Pay；微信内 → 微信支付；Android Chrome → 银联）。</p>
+     * <p>true 走 onepay：但 cusid 需在通联控制台开通 onepay 产品权限，否则通联返
+     * "api 角色权限不足"。开通后把 .env 里 ALLINPAY_USE_ONEPAY=true。</p>
+     */
+    private boolean useOnepay = false;
+
+    /**
      * 签名类型：RSA / SM2。商户号在通联控制台配的是哪种就填哪种。
      * SM2 模式必须配 sm2PrivateKey + sm2PublicKey；RSA 模式用 platformRsaPrivateKey + allinpayRsaPublicKey。
      */
