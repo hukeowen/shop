@@ -75,10 +75,13 @@ public class JimengBffClient {
         if (ak == null || ak.isEmpty() || sk == null || sk.isEmpty()) {
             throw exception(JIMENG_CALL_FAILED, "JIMENG_AK / JIMENG_SK 未配置（props 和 OS env 都空）");
         }
-        String endpoint = props.getJimengEndpoint();
-        String version = props.getJimengVersion();
-        String region = props.getJimengRegion();
-        String service = props.getJimengService();
+        // 火山即梦固定值（region=cn-north-1 / service=cv / version=2022-08-31）：
+        // props 为空（Spring placeholder 没解析）时硬编码兜底，不能让 region 空字符串
+        // 偷偷参与签名（"shortDate//cv/request" 这种就 100% Sign 401）。
+        String endpoint = nonBlank(props.getJimengEndpoint(), "https://visual.volcengineapi.com");
+        String version  = nonBlank(props.getJimengVersion(),  "2022-08-31");
+        String region   = nonBlank(props.getJimengRegion(),   "cn-north-1");
+        String service  = nonBlank(props.getJimengService(),  "cv");
 
         String xDate = X_DATE_FORMATTER.format(Instant.now());
         String shortDate = xDate.substring(0, 8);
@@ -129,9 +132,9 @@ public class JimengBffClient {
                 ? "props" : "env";
         String skMd5 = sha256First8(sk);
         int skLen = sk == null ? 0 : sk.length();
-        log.info("[bff/jimeng] action={} akPrefix={}*** akLen={} skMd5={}... skLen={} skSrc={} region={} service={} bodyBytes={}",
+        log.info("[bff/jimeng] action={} akPrefix={}*** akLen={} skMd5={}... skLen={} skSrc={} region='{}' service='{}' version='{}' endpoint='{}' bodyBytes={}",
                 action, safePrefix(ak), ak == null ? 0 : ak.length(),
-                skMd5, skLen, skSrc, region, service, bodyBytes);
+                skMd5, skLen, skSrc, region, service, version, endpoint, bodyBytes);
 
         Request request = new Request.Builder()
                 .url(url)
@@ -184,6 +187,11 @@ public class JimengBffClient {
             sb.append(String.format(Locale.ROOT, "%02x", b & 0xff));
         }
         return sb.toString();
+    }
+
+    /** props 取值若 null 或空字符串则返默认值。 */
+    private static String nonBlank(String v, String def) {
+        return (v == null || v.isEmpty()) ? def : v;
     }
 
     private static String safePrefix(String key) {
