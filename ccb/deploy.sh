@@ -764,10 +764,18 @@ build_backend() {
   export MAVEN_OPTS="${MAVEN_OPTS:--Xms256m -Xmx1536m}"
 
   cd "${PROJECT_DIR}"
-  # 完整日志落盘，控制台只保留尾部；build 失败时请查看 /tmp/maven-build.log
   info "完整构建日志：/tmp/maven-build.log"
-  /opt/maven/bin/mvn clean package -DskipTests \
-    --batch-mode -T 1C 2>&1 | tee /tmp/maven-build.log | tail -80
+  # set -o pipefail：mvn 失败必须立即 abort 整个 deploy（之前是 tee 吞掉退出码静默成功）
+  # 这是「跑完 deploy 但 jar 还是旧的」最常见根因
+  set -o pipefail
+  if ! /opt/maven/bin/mvn clean package -DskipTests \
+       --batch-mode -T 1C 2>&1 | tee /tmp/maven-build.log | tail -80; then
+    set +o pipefail
+    err "Maven 构建失败！jar 未更新。完整日志：/tmp/maven-build.log"
+    err "查看：tail -100 /tmp/maven-build.log"
+    exit 1
+  fi
+  set +o pipefail
 
   log "后端编译完成: $(ls yudao-server/target/yudao-server.jar)"
 }
@@ -1378,7 +1386,18 @@ UNIT_EOF
 
   systemctl daemon-reload
   systemctl enable tanxiaer
-  systemctl start tanxiaer
+  # 强制 restart（不是 start）— 即使服务在跑也用新 jar 替换；
+  # restart 之后 wait 30s 让 Spring Boot 起来，看进程 PID 确认是新的
+  systemctl restart tanxiaer
+  sleep 5
+  if systemctl is-active --quiet tanxiaer; then
+    local PID
+    PID=$(systemctl show -p MainPID tanxiaer | cut -d= -f2)
+    info "tanxiaer 已 restart，PID=${PID}"
+  else
+    err "tanxiaer 启动失败！查看日志：journalctl -u tanxiaer -n 80 --no-pager"
+    exit 1
+  fi
   log "服务已启动（运行用户: ${SERVICE_USER}），等待就绪（最多 90 秒）..."
 
   local i=0
@@ -1669,6 +1688,59 @@ main() {
          --mysql-pass "${MYSQL_ROOT_PASS}" \
          --project-dir "${PROJECT_DIR}" || warn "自检发现问题，详见上方清单"
   fi
+
+  # 火山即梦签名自检：用 runtime.env 真实 SK 直打火山 SubmitTask，
+  # 确认凭据/签名/网络/字符编码全链路 OK。失败则大字红色警告（但不阻塞 deploy 完成）
+  verify_jimeng_sign || true
+}
+
+# 火山即梦签名活性检测：跟 BFF JimengBffClient.java 的 SigV4 完全等价
+verify_jimeng_sign() {
+  local ENV_FILE="${ROOT_DIR}/app/runtime.env"
+  [[ -f "${ENV_FILE}" ]] || return 0
+  local AK SK
+  AK=$(grep '^JIMENG_AK=' "${ENV_FILE}" | cut -d= -f2-)
+  SK=$(grep '^JIMENG_SK=' "${ENV_FILE}" | cut -d= -f2-)
+  [[ -z "${AK}" || -z "${SK}" ]] && return 0
+
+  step "火山即梦凭据活性检测（直打 visual.volcengineapi.com）"
+  local XDATE SDATE BODY BODY_HASH CANON CANON_HASH STS KEY SIG HTTP RESP
+  XDATE=$(date -u +%Y%m%dT%H%M%SZ)
+  SDATE=${XDATE:0:8}
+  BODY='{"req_key":"jimeng_i2v_first_v30","image_urls":["https://tanxiaoer.tos-s3-cn-beijing.volces.com/tanxiaoer/1777902996951-75rvoo.jpg"],"prompt":"deploy verify","seed":-1,"frames":121}'
+  BODY_HASH=$(echo -n "$BODY" | sha256sum | awk '{print $1}')
+  CANON=$(printf "POST\n/\nAction=CVSync2AsyncSubmitTask&Version=2022-08-31\ncontent-type:application/json\nx-date:%s\n\ncontent-type;x-date\n%s" "$XDATE" "$BODY_HASH")
+  CANON_HASH=$(echo -n "$CANON" | sha256sum | awk '{print $1}')
+  STS=$(printf "HMAC-SHA256\n%s\n%s/cn-north-1/cv/request\n%s" "$XDATE" "$SDATE" "$CANON_HASH")
+  KEY=$(echo -n "$SK" | xxd -p | tr -d '\n')
+  for SEED in "$SDATE" "cn-north-1" "cv" "request"; do
+    KEY=$(echo -n "$SEED" | openssl dgst -sha256 -mac HMAC -macopt hexkey:"$KEY" 2>/dev/null | awk '{print $NF}')
+  done
+  SIG=$(echo -n "$STS" | openssl dgst -sha256 -mac HMAC -macopt hexkey:"$KEY" 2>/dev/null | awk '{print $NF}')
+
+  RESP=$(curl -s -m 15 -o /tmp/_jimeng_verify.json -w "%{http_code}" \
+    -X POST "https://visual.volcengineapi.com/?Action=CVSync2AsyncSubmitTask&Version=2022-08-31" \
+    -H "Content-Type: application/json" -H "X-Date: ${XDATE}" \
+    -H "Authorization: HMAC-SHA256 Credential=${AK}/${SDATE}/cn-north-1/cv/request, SignedHeaders=content-type;x-date, Signature=${SIG}" \
+    -d "$BODY" 2>/dev/null)
+  HTTP="$RESP"
+  local CODE
+  CODE=$(grep -oP '"code"\s*:\s*\K[0-9]+' /tmp/_jimeng_verify.json 2>/dev/null | head -1)
+  if [[ "${HTTP}" == "200" && "${CODE}" == "10000" ]]; then
+    log "火山即梦签名活性 ✓ HTTP=${HTTP} code=${CODE}（生产 401 真因不在 deploy 链路）"
+    rm -f /tmp/_jimeng_verify.json
+    return 0
+  fi
+  echo ""
+  echo -e "${RED}╔══════════════════════════════════════════════════════════╗${NC}"
+  echo -e "${RED}║   ⚠ 火山即梦签名活性检测未通过！                       ║${NC}"
+  echo -e "${RED}║   HTTP=${HTTP}                                          ║${NC}"
+  echo -e "${RED}║   响应（前 300 字符）：                                ║${NC}"
+  echo -e "${RED}╚══════════════════════════════════════════════════════════╝${NC}"
+  cat /tmp/_jimeng_verify.json 2>/dev/null | head -c 300
+  echo ""
+  warn "可能原因：(1) IAM 子账号没视觉智能 CV 权限 (2) AK 已禁用 (3) 火山服务侧抽风"
+  rm -f /tmp/_jimeng_verify.json
 
   PUBLIC_IP=$(curl -s --max-time 5 https://ipinfo.io/ip 2>/dev/null || curl -s --max-time 5 ifconfig.me 2>/dev/null || echo "YOUR_SERVER_IP")
   echo ""
