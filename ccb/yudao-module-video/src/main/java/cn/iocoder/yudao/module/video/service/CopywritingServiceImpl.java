@@ -61,9 +61,39 @@ public class CopywritingServiceImpl implements CopywritingService {
     private static final int DEFAULT_SCENE_DURATION = 5;
     /** 最后一幕结尾必须以这 6 个字收口（前端 scriptLlm.js 里的 FIXED_CTA 同步） */
     private static final String FIXED_CTA = "微信扫码下单";
-    /** 兜底通用 visual prompt（含运镜+风格词，避免 LLM 缺值时 Seedance 拿空字符串） */
-    private static final String FALLBACK_VISUAL_PROMPT =
-            "Cinematic vertical product shot, push-in macro lens, food photography, golden hour lighting, film grain, soft natural color";
+    /**
+     * 6 个差异化兜底 visual prompt（每幕风格不同，避免同质化）。
+     * <p>覆盖：开篇炸弹 / 慢动作特写 / 拉远展现 / 手部互动 / 拉丝/液体 / 收尾余韵。
+     * 每个都含 6 维度（主体+物理动作+运镜+镜头+光线+风格），喂即梦能出大片感。</p>
+     */
+    private static final String[] FALLBACK_VISUAL_PROMPT_POOL = {
+            // 0: 开篇视觉炸弹
+            "Extreme macro shot of the hero product as steam billows up and oil splashes in slow motion 120fps, "
+                    + "push-in dolly with rack focus, shallow depth of field with creamy bokeh, "
+                    + "hard rim backlight cutting through smoke, cinematic food photography, 35mm film grain",
+            // 1: 慢动作特写质感
+            "Slow motion 120fps close-up of glistening texture, sauce drizzling down in golden strands, "
+                    + "85mm portrait lens with shallow depth of field, warm tungsten glow, "
+                    + "rack focus pull, cinematic commercial product shot, hyperreal detail",
+            // 2: 拉远场景气氛
+            "Slow pull-back parallax slider revealing the full product display, ambient steam rolling across the frame, "
+                    + "wide angle 35mm lens, soft window light with moody chiaroscuro, "
+                    + "vlog handheld feel, cinematic food photography, 35mm film grain",
+            // 3: 手部互动
+            "Overhead top-down shot as a hand reaches in to pick up the item, fingers brushing across the texture, "
+                    + "tilt down crane move with rack focus, shallow depth of field with creamy bokeh, "
+                    + "warm tungsten side light, cinematic vlog style, slow motion 120fps",
+            // 4: 拉丝/液体爆破
+            "Macro shot of cheese stretching in golden strands, condensation dripping down, bubbles rising slowly, "
+                    + "orbit around the subject with rack focus, 85mm lens shallow depth of field, "
+                    + "neon backlight bleed, hyperreal cinematic food photography, slow motion 120fps",
+            // 5: 收尾余韵
+            "Slow tilt-up reveal of the finished display, gentle smoke curling and lights flickering on one by one, "
+                    + "extreme close-up macro lens with creamy bokeh background, "
+                    + "golden hour rim light, cinematic food photography, 35mm film grain, hyperreal",
+    };
+    /** 默认 FALLBACK（单值兜底场景用，比如 LLM 完全没吐 visualPrompt 的极端） */
+    private static final String FALLBACK_VISUAL_PROMPT = FALLBACK_VISUAL_PROMPT_POOL[0];
     /** 多幕分镜默认视觉模型（豆包 vision pro） */
     private static final String VISION_MODEL = "doubao-1-5-vision-pro-32k-250115";
     /** 多幕分镜默认 BGM 风格（LLM 没返时兜底） */
@@ -362,26 +392,50 @@ public class CopywritingServiceImpl implements CopywritingService {
     }
 
     private String buildMultiSceneSystemPrompt(int n, int dur) {
-        return "你是抖音爆款短视频导演，专为线下小店老板拍摄帮助门店转化的竖屏小广告。\n"
-                + "我会给你 " + n + " 张店铺/商品照片。你的工作：站在导演视角整体看完所有图，"
-                + "**自由决定播放顺序、自由分配每幕时长（5 或 10 秒）、自由写台词、自由写运镜**，目标是 15 秒内抓住人。\n\n"
+        return "你是抖音爆款短视频导演，专为线下小店老板拍 30 秒竖屏带货大片。\n"
+                + "我给你 " + n + " 张店铺/商品照片。你站在导演视角整体看完所有图，自由决定播放顺序、自由分配每幕时长（5 或 10 秒）、自由写台词、自由写运镜。\n"
+                + "**目标：让平淡的商品照动起来变成大片**——不是简单拉扯原图，要有食欲爆破/质感涌动/光影流动/物理动作的电影级镜头。\n\n"
                 + "【硬规则】违反算失败：\n"
-                + "1) 输出 N 幕（N = 图片数 = " + n + "），每幕一个对象 {imgIdx, imageSummary, narration, visualPrompt, duration}；\n"
-                + "2) imgIdx 取值 0.." + (n - 1) + "，**每张图必须用上且只用一次**（顺序由你决定，不一定按上传顺序；从最有视觉冲击的开篇）；\n"
-                + "3) duration 仅可取 5 或 10（即梦 i2v_first_v30 仅支持这两档）；**全部幕时长之和必须 ≤ " + MULTI_MAX_TOTAL_SEC + " 秒**；信息密度高的镜头给 5s 紧凑，需要慢节奏铺氛围给 10s；\n"
-                + "4) narration 中文自然口语，**用每幕 duration ×3 作为字数上限**（5s≤15 字、10s≤30 字），不要书面体；\n"
-                + "5) visualPrompt 英文 1 句 ≤ 80 词，导演自由组合：[主体]+[动作动词，让画面真的动起来]+[环境]+[运镜，自由发挥]+[镜头/光线/质感]；\n"
-                + "   **画面必须有动作**：蒸汽腾起 / 油花飞溅 / 拉丝爆汁 / 切刀落下 / 推车进店 / 风吹布幔 / 招牌点亮 / 顾客入座，避免只「轻轻摇晃」的死镜头；\n"
-                + "   **运镜由你决定**：推/拉/摇/移/跟/升降/手持/特写微距/变焦切换；不限模板，你是导演；\n"
-                + "6) imageSummary 中文一句（≤ 20 字），描述该幕图片最动人的细节；\n"
+                + "1) 输出 N 幕（N=" + n + "），每幕 {imgIdx, imageSummary, narration, visualPrompt, duration}；\n"
+                + "2) imgIdx 取值 0.." + (n - 1) + "，**每张图用且只用一次**，顺序由你定（最有视觉冲击力的开篇）；\n"
+                + "3) duration 仅 5 或 10；总和 ≤ " + MULTI_MAX_TOTAL_SEC + " 秒；信息密度高的给 5s，需要节奏铺氛围给 10s；\n"
+                + "4) narration 中文口语 ≤ duration×3 字（5s≤15、10s≤30），不书面；\n"
+                + "5) **visualPrompt 是大片关键**——必须是 1 句流畅自然的英文（≤ 100 词），**全句不能出现任何英文冒号 ':' 也不能出现分号 ';'，只能用逗号 ',' 分隔短语**；像在描述一个真实拍摄的镜头，融入下面 6 个要素：\n"
+                + "   ① 主体特征（写商品/店铺/手部/食客的具体形象）\n"
+                + "   ② **真实物理动作**（最关键，必须有可见的运动；严禁写 'None'/'static'/'no motion'/'subtle camera movement'/'gentle'/'slight'）：\n"
+                + "      食饮可选词：sizzling oil splashing, steam billowing up, cheese stretching, sauce drizzling slowly,\n"
+                + "         batter pouring into pan, fries crackling, ice cubes clinking into glass, soup bubbling,\n"
+                + "         knife slicing through, hand brushing chili oil onto skewers, smoke curling around food,\n"
+                + "         flames flaring up from grill, dough being kneaded, sugar pulled into golden strands,\n"
+                + "         bubbles rising in drink, condensation dripping down bottle\n"
+                + "      非食饮：silk fabric flowing in breeze, neon lights flickering on one by one, hands arranging items,\n"
+                + "         customers walking in through door, pages turning, water dripping in slow motion,\n"
+                + "         petals slowly falling, mist rolling across, products being unboxed\n"
+                + "   ③ 运镜（必须 ≥1 个具体运镜）：push-in dolly / slow pull-back / rack focus shift / orbit around subject /\n"
+                + "      tilt up reveal / crane down / handheld vlog shake / whip pan transition / parallax slider /\n"
+                + "      overhead top-down drop\n"
+                + "   ④ 镜头规格：extreme macro shot / 35mm prime / 85mm portrait / shallow depth of field with creamy bokeh\n"
+                + "   ⑤ 光线：golden hour rim light / warm tungsten glow / neon backlight bleed / hard side light /\n"
+                + "      soft window light / moody chiaroscuro / volumetric god rays through smoke\n"
+                + "   ⑥ 风格：cinematic food photography / slow motion 120fps / 35mm film grain / vlog handheld feel /\n"
+                + "      commercial product shot / hyperreal detail / Wes Anderson symmetry\n"
+                + "   合格示例（直接照这个句式，**只用逗号分隔，不要冒号不要分号**）：\n"
+                + "     'Extreme macro shot of a golden grilled skewer, sizzling oil splashing in slow motion 120fps,\n"
+                + "      smoke curling up around the charred meat as a hand brushes glossy chili oil across it,\n"
+                + "      push-in dolly with rack focus, warm tungsten backlight rim, shallow depth of field with creamy\n"
+                + "      bokeh, cinematic food photography, 35mm film grain'\n"
+                + "     'Slow pull-back from a stretching cheese pull on hot pizza, golden cheese strands dripping,\n"
+                + "      steam billowing up around the crust, 85mm portrait lens, shallow depth of field, warm tungsten\n"
+                + "      glow, cinematic food photography, slow motion 120fps, 35mm film grain'\n"
+                + "6) imageSummary 中文 ≤ 20 字；\n"
                 + "7) 全文严禁：老板/赔本/大减价/限时/秒杀/小黄车/购物车/点击链接；\n"
-                + "8) 严禁广告法极限词：最/第一/全网/绝对/独家；\n"
-                + "9) **第 1 幕必须是 3 秒强钩子**（视觉冲击/反差/特写/数字/情绪），不要平铺直叙；\n"
-                + "10) 最后一幕：narration = 完整对白（呼应画面/收束情绪）+ 末尾 6 字「" + FIXED_CTA + "」收口（一字不差）；前面几幕不要提扫码/二维码/下单；\n"
-                + "11) 输出全局 bgmStyle，6 选 1：street_food_yelling / cozy_explore / asmr_macro / elegant_tea / trendy_pop / emotional_story；\n"
-                + "12) **严格仅按下面 JSON 返回**，不要 Markdown 代码块、不要额外文字：\n"
+                + "8) 严禁极限词：最/第一/全网/绝对/独家；\n"
+                + "9) **第 1 幕必须 3 秒视觉炸弹**：极端特写 + 强物理动作 + 高对比光线（油花飞溅 / 拉丝瞬间 / 蒸汽爆发 / 切刀落下 / 招牌点亮）；不要平铺直叙、不要远景介绍；\n"
+                + "10) 末幕：narration = 画面对白 + 末尾 6 字「" + FIXED_CTA + "」收口；前几幕不提扫码/二维码/下单；\n"
+                + "11) bgmStyle 6 选 1：street_food_yelling / cozy_explore / asmr_macro / elegant_tea / trendy_pop / emotional_story；\n"
+                + "12) **严格仅 JSON**，不要 Markdown 代码块、不要额外文字：\n"
                 + "{\n"
-                + "  \"title\": \"视频标题（8-16字，画面感/情绪）\",\n"
+                + "  \"title\": \"标题 8-16 字\",\n"
                 + "  \"bgmStyle\": \"cozy_explore\",\n"
                 + "  \"scenes\": [\n"
                 + "    {\"imgIdx\": 0, \"imageSummary\": \"...\", \"narration\": \"...\", \"visualPrompt\": \"...\", \"duration\": 5},\n"
@@ -465,13 +519,13 @@ public class CopywritingServiceImpl implements CopywritingService {
         // ② imgIdx 修正：去重 + 越界回收 + 缺失补位
         rawScenes = reassignImgIdx(rawScenes, imgCount);
 
-        // ③ 文本规整：narration 限字 + 屏蔽词、visualPrompt 缺失兜底、imageSummary 限字
-        for (RawScene s : rawScenes) {
+        // ③ 文本规整：narration 限字 + 屏蔽词、visualPrompt 健康检查、imageSummary 限字
+        for (int i = 0; i < rawScenes.size(); i++) {
+            RawScene s = rawScenes.get(i);
             s.narration = sanitizeChinese(s.narration, MULTI_NARRATION_MAX_CHARS);
             s.imageSummary = sanitizeChinese(s.imageSummary, 20);
-            if (StrUtil.isBlank(s.visualPrompt) || s.visualPrompt.length() < 10) {
-                s.visualPrompt = FALLBACK_VISUAL_PROMPT;
-            }
+            // 按幕 index 取差异化 FALLBACK，避免兜底全用同一句导致 6 幕同质化
+            s.visualPrompt = sanitizeVisualPrompt(s.visualPrompt, i);
         }
 
         // ④ 总时长校验：sum(duration) > 30s 时把最后几幕从 10 → 5 倒着压，直到 ≤ 30
@@ -538,6 +592,28 @@ public class CopywritingServiceImpl implements CopywritingService {
             used.add(idx);
         }
         return scenes;
+    }
+
+    /**
+     * visualPrompt 健康检查：拒绝 key:value 列表 / "None"/"static" / 太短，
+     * 这些喂给即梦只会得到"原图轻微拉扯"的废镜头，强制替成 6 维度 FALLBACK。
+     * <p>按 sceneIndex 从 FALLBACK_VISUAL_PROMPT_POOL 轮换取，避免多幕用同一句兜底
+     * 导致画面同质化（开篇炸弹 / 慢动作 / 拉远 / 手部 / 拉丝 / 收尾余韵 6 种风格）。</p>
+     */
+    private String sanitizeVisualPrompt(String vp, int sceneIndex) {
+        String fallback = FALLBACK_VISUAL_PROMPT_POOL[Math.floorMod(sceneIndex, FALLBACK_VISUAL_PROMPT_POOL.length)];
+        if (StrUtil.isBlank(vp)) return fallback;
+        String trimmed = vp.trim();
+        boolean isKeyValueFormat = trimmed.matches("(?is).*\\b(subject|physical\\s*action|camera\\s*move|lens|lighting|texture|style|focal)\\s*:.*");
+        boolean noAction = trimmed.toLowerCase().matches(".*(physical action[^,;]*?:?\\s*(none|no motion|static)|: ?none).*");
+        boolean tooShort = trimmed.length() < 40;
+        if (isKeyValueFormat || noAction || tooShort) {
+            log.warn("[visualPrompt] 幕{} 不合格被替换：keyValue={} noAction={} tooShort={} raw={}",
+                    sceneIndex, isKeyValueFormat, noAction, tooShort,
+                    trimmed.substring(0, Math.min(120, trimmed.length())));
+            return fallback;
+        }
+        return trimmed;
     }
 
     /**
