@@ -21,14 +21,14 @@ public class BffMultiSceneScriptReqVO {
     @Size(min = 0, max = 500, message = "描述最多 500 字")
     private String userDescription;
 
-    @Schema(description = "图片公网 URL 列表（1-3 张，每张 ≤ 1024 字符）")
+    @Schema(description = "图片公网 URL 列表（1-6 张，每张 ≤ 1024 字符）")
     @NotEmpty(message = "imageUrls 不能为空")
-    @Size(min = 1, max = 3, message = "图片数量需 1-3 张")
+    @Size(min = 1, max = 6, message = "图片数量需 1-6 张")
     private List<@Size(max = 1024) String> imageUrls;
 
-    @Schema(description = "期望幕数（一般 = imageUrls.size()，cap 1-3）")
+    @Schema(description = "期望幕数（一般 = imageUrls.size()，cap 1-6）")
     @Min(value = 1, message = "sceneCount 至少 1")
-    @Max(value = 3, message = "sceneCount 至多 3")
+    @Max(value = 6, message = "sceneCount 至多 6")
     private Integer sceneCount;
 
     @Schema(description = "每幕时长（秒），影响 narration 字数提示")
