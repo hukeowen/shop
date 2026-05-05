@@ -503,12 +503,10 @@ export async function createTask({ imageBase64s, imageUrls, userDescription, voi
       });
     }
     task.title = title;
+    // 所有幕（含最后一张图）都走即梦生成动态视频；端卡作为独立尾缀片段在 N 个分镜
+    // 串完后再追加，逻辑见 runClip 后面的 t.scenes.push 端卡 + merge 顺序
     task.scenes = scenes.map((s, i) => {
-      const isEndCard = i === scenes.length - 1;
-      // 时长来源（导演视角）：
-      //   - 端卡：2s 静止 + 二维码 + CTA TTS（不走即梦；前 3s 流量最贵，端卡再长用户已划走）
-      //   - 其余：以 LLM 给的 s.duration 为准（5/10），缺失才退回任务级默认
-      const dur = isEndCard ? 2 : (s.duration === 5 || s.duration === 10 ? s.duration : perSceneDuration);
+      const dur = (s.duration === 5 || s.duration === 10) ? s.duration : perSceneDuration;
       return {
         index: i,
         img_idx: s.img_idx,
@@ -516,7 +514,7 @@ export async function createTask({ imageBase64s, imageUrls, userDescription, voi
         narration: s.narration,
         visual_prompt: s.visual_prompt,
         duration: dur,
-        isEndCard,
+        isEndCard: false, // 不再让最后一张图当端卡 — 端卡是独立追加的尾缀
         status: 'pending',
         clipTaskId: null,
         clipUrl: null,
@@ -524,6 +522,23 @@ export async function createTask({ imageBase64s, imageUrls, userDescription, voi
         audioSource: null,
         error: null,
       };
+    });
+    // 追加独立端卡尾缀：用封面图（最后一张或 LLM 选的）+ 2s 静图 + 二维码 + CTA TTS
+    // 这一幕走 sidecar /video/endcard 不走即梦，保留 2s 紧凑收尾
+    task.scenes.push({
+      index: task.scenes.length,
+      img_idx: scenes.length - 1, // 用最后一张图当端卡背景（也可换成 0=封面图）
+      image_summary: '',
+      narration: '微信扫码下单',
+      visual_prompt: '',
+      duration: 2,
+      isEndCard: true,
+      status: 'pending',
+      clipTaskId: null,
+      clipUrl: null,
+      audioUrl: null,
+      audioSource: null,
+      error: null,
     });
     task.status = 2;
     // 图片已上传 → 落库
@@ -667,9 +682,9 @@ export async function regenerateScript(taskId) {
       sceneDuration: perSceneDuration,
     });
     t.title = title;
+    // 同 confirmTask：N 张图全走即梦，端卡作为独立尾缀片段追加
     t.scenes = scenes.map((s, i) => {
-      const isEndCard = i === scenes.length - 1;
-      const dur = isEndCard ? 2 : (s.duration === 5 || s.duration === 10 ? s.duration : perSceneDuration);
+      const dur = (s.duration === 5 || s.duration === 10) ? s.duration : perSceneDuration;
       return {
         index: i,
         img_idx: s.img_idx,
@@ -677,7 +692,7 @@ export async function regenerateScript(taskId) {
         narration: s.narration,
         visual_prompt: s.visual_prompt,
         duration: dur,
-        isEndCard,
+        isEndCard: false,
         status: 'pending',
         clipTaskId: null,
         clipUrl: null,
@@ -685,6 +700,21 @@ export async function regenerateScript(taskId) {
         audioSource: null,
         error: null,
       };
+    });
+    t.scenes.push({
+      index: t.scenes.length,
+      img_idx: scenes.length - 1,
+      image_summary: '',
+      narration: '微信扫码下单',
+      visual_prompt: '',
+      duration: 2,
+      isEndCard: true,
+      status: 'pending',
+      clipTaskId: null,
+      clipUrl: null,
+      audioUrl: null,
+      audioSource: null,
+      error: null,
     });
     t.status = 2;
   } catch (e) {
