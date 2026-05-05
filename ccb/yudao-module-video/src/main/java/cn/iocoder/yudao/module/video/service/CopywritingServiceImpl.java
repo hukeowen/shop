@@ -431,11 +431,18 @@ public class CopywritingServiceImpl implements CopywritingService {
 
         try {
             JsonNode root = JsonUtils.parseTree(trimmed);
-            String t = root.path("title").asText("").trim();
-            if (!t.isEmpty()) title = sanitizeChinese(t, 30);
-            String b = root.path("bgmStyle").asText("").trim();
-            if (VALID_BGM_STYLES.contains(b)) bgmStyle = b;
-            JsonNode sceneArr = root.get("scenes");
+            // LLM 偶尔不严格遵守 schema，直接返 [...] 数组（无 title/bgmStyle 包裹）
+            // 兼容：root 是 array → 直接当 scenes，title/bgmStyle 走默认
+            JsonNode sceneArr;
+            if (root.isArray()) {
+                sceneArr = root;
+            } else {
+                String t = root.path("title").asText("").trim();
+                if (!t.isEmpty()) title = sanitizeChinese(t, 30);
+                String b = root.path("bgmStyle").asText("").trim();
+                if (VALID_BGM_STYLES.contains(b)) bgmStyle = b;
+                sceneArr = root.get("scenes");
+            }
             if (sceneArr != null && sceneArr.isArray()) {
                 for (JsonNode s : sceneArr) {
                     int idx = s.path("imgIdx").asInt(-1);

@@ -80,10 +80,14 @@ const qrDataUrl = ref('');
 const qrLoading = ref(true);
 
 function generateQr() {
-  // sidecar /qr 出图：避开 npm `qrcode` 在 H5 build 后的 dijkstrajs 报错
+  // sidecar /qr 出图：center=店铺名 让中心叠店铺名（高容错 H 不影响扫描）
   qrLoading.value = true;
   if (shareUrl.value) {
-    qrDataUrl.value = `/qr?text=${encodeURIComponent(shareUrl.value)}&w=480&m=1`;
+    let qr = `/qr?text=${encodeURIComponent(shareUrl.value)}&w=480&m=1`;
+    let shopName = '';
+    try { shopName = uni.getStorageSync('lastShopName') || ''; } catch {}
+    if (shopName) qr += `&center=${encodeURIComponent(shopName)}`;
+    qrDataUrl.value = qr;
   } else {
     qrDataUrl.value = '';
   }

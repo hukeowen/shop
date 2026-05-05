@@ -67,9 +67,12 @@ function buildShareUrl(tenantId) {
 
 // 二维码改走 sidecar GET /qr 出图：避免引入 npm 包 `qrcode`（其依赖 `dijkstrajs`
 // H5 build 后浏览器报"Failed to resolve module specifier 'dijkstrajs'"）
-function buildQrUrl(text) {
+// 带 center=店铺名 时返 SVG，中心叠白底圆 + 店铺名（高容错 H 不影响扫描）
+function buildQrUrl(text, center) {
   if (!text) return '';
-  return `/qr?text=${encodeURIComponent(text)}&w=480&m=1`;
+  let url = `/qr?text=${encodeURIComponent(text)}&w=480&m=1`;
+  if (center) url += `&center=${encodeURIComponent(center)}`;
+  return url;
 }
 
 function onCopyUrl() {
@@ -88,15 +91,12 @@ onLoad(async () => {
       request({ url: '/app-api/merchant/mini/shop/qrcode' }).catch(() => null),
     ]);
     shopName.value = shopRes?.shopName || '';
-    if (qrRes?.qrCodeUrl) {
-      qrUrl.value = qrRes.qrCodeUrl;
-    } else {
-      // 后端未配置二维码 → 本地生成 /m/shop-home 链接兜底
-      // tenantId 取 shopInfo.tenantId（商户的真实租户），用 userStore.userId 作 inviter
-      const tenantId = shopRes?.tenantId;
-      shareUrl.value = buildShareUrl(tenantId);
-      qrUrl.value = buildQrUrl(shareUrl.value);
-    }
+    // 总是走 sidecar /qr 自生成（中心带店铺名）：
+    //   后端老字段 miniAppQrCodeUrl 是 `/qrcode/xxx.png` 相对路径，nginx 没反代
+    //   导致用户看到的是裂图（"只有链接没二维码"）；自生成保证一定显示
+    const tenantId = shopRes?.tenantId;
+    shareUrl.value = buildShareUrl(tenantId);
+    qrUrl.value = buildQrUrl(shareUrl.value, shopName.value);
   } catch {}
   loading.value = false;
 });

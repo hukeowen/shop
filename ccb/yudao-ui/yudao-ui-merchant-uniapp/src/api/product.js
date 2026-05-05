@@ -116,6 +116,9 @@ export function createSpu(form) {
       introduction: form.introduction || '',
       giveIntegral: form.giveIntegral ?? 0,
       deliveryTypes: form.deliveryTypes ?? [2],
+      // brand：AI 识别能给具体品牌就传具体值（可口可乐/旺仔/老干妈），否则
+      // 传通用类目（小吃/水果/零食/饮品/烟酒/烘焙），后端 findOrCreate 兜底
+      brand: form.brand || '',
     },
   });
 }

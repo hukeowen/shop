@@ -48,6 +48,9 @@ public class AppMerchantProductController {
     @Resource
     private ProductSkuService productSkuService;
 
+    @Resource
+    private cn.iocoder.yudao.module.product.service.brand.ProductBrandService productBrandService;
+
     // ==================== #16 极简商品发布 ====================
 
     @PostMapping("/simple-create")
@@ -110,7 +113,13 @@ public class AppMerchantProductController {
         spu.setIntroduction(reqVO.getIntroduction() != null ? reqVO.getIntroduction() : reqVO.getName());
         spu.setDescription(reqVO.getName()); // 详情默认=名称
         spu.setCategoryId(reqVO.getCategoryId() != null ? reqVO.getCategoryId() : DEFAULT_CATEGORY_ID);
-        spu.setBrandId(null); // 无品牌，跳过品牌校验
+        // brandId 必填（yudao ProductSpuSaveReqVO @NotNull + service validateProductBrand）：
+        // - 前端 AI 识别能给出 brand（可口可乐/旺仔）→ findOrCreate 那个品牌
+        // - 识别不到（地摊/水果摊）→ 前端传通用类目（小吃/水果/零食/饮品）作为 brand 字符串
+        // - 全空 → 兜底「通用」一个保底品牌（findOrCreate 复用第一次创建的）
+        String brandName = reqVO.getBrand() != null && !reqVO.getBrand().trim().isEmpty()
+                ? reqVO.getBrand().trim() : "通用";
+        spu.setBrandId(productBrandService.findOrCreateBrand(brandName));
         spu.setPicUrl(reqVO.getPicUrl());
         spu.setSliderPicUrls(Collections.singletonList(reqVO.getPicUrl()));
         spu.setSort(0);

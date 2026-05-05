@@ -207,6 +207,11 @@ async function loadShopInfo() {
     shopInfo.value = await request({
       url: `/app-api/merchant/shop/public/info?tenantId=${tenantId.value}`,
     });
+    // 缓存店铺名，user-me/invite 二维码中心叠这个名字用
+    const sn = shopInfo.value?.shopName || shopInfo.value?.name;
+    if (sn) {
+      try { uni.setStorageSync('lastShopName', sn); } catch {}
+    }
   } catch {}
 }
 async function loadProducts() {
@@ -320,8 +325,11 @@ async function onShare() {
     return;
   }
   myShareUrl.value = buildMyShareUrl();
-  // sidecar /qr 出图，避开 npm `qrcode` + `dijkstrajs` 的 H5 build 兼容问题
-  myShareQr.value = `/qr?text=${encodeURIComponent(myShareUrl.value)}&w=480&m=1`;
+  // sidecar /qr 出图：center=店铺名 让二维码中心叠店铺名（高容错 H 不影响扫描）
+  const shopCenter = shopInfo.value?.shopName || shopInfo.value?.name || '';
+  let qr = `/qr?text=${encodeURIComponent(myShareUrl.value)}&w=480&m=1`;
+  if (shopCenter) qr += `&center=${encodeURIComponent(shopCenter)}`;
+  myShareQr.value = qr;
   showShare.value = true;
 }
 function onCopyShare() {
@@ -345,6 +353,7 @@ onLoad((query) => {
 
   if (tenantId.value) {
     uni.setStorageSync('lastShopTenantId', tenantId.value);
+    // 注：lastShopName 在 loadShopInfo 加载完成后写入（onLoad 时机 shopInfo 还没拉到）
     request({
       url: `/app-api/merchant/mini/member-rel/visit?tenantId=${tenantId.value}${referrerUserId ? `&referrerUserId=${referrerUserId}` : ''}`,
       method: 'POST',

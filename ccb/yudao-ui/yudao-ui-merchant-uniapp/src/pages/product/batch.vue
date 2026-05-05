@@ -220,6 +220,8 @@ async function onSubmit() {
         categoryId: it.categoryId,
         stock: null,
         introduction: it.introduction?.trim() || '',
+        // brand：AI 识别给的具体品牌；缺则用类目兜底；为空后端会用「通用」
+        brand: it.brand || it.brandName || '',
         brokerageEnabled: true,
         pushBackEnabled: false,
       });

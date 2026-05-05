@@ -44,4 +44,14 @@ public class AppSimpleSpuCreateReqVO {
     @Schema(description = "商品简介", example = "好吃的烤面筋")
     private String introduction;
 
+    /**
+     * 品牌名（前端 AI 识别图片后自动填）：
+     * - 能识别到具体品牌（例：可口可乐 / 旺仔 / 老干妈）→ 用具体品牌名
+     * - 识别不到（地摊 / 自家做的 / 散装）→ 用通用类目名（例：小吃 / 水果 / 零食 / 饮品 / 通用）
+     * - 完全为空 → 后端兜底创建/复用名为「通用」的品牌
+     * 后端 findOrCreateBrand 自动 selectByName，没有就 insert 一个 enabled 品牌。
+     */
+    @Schema(description = "品牌名（AI 识别填，留空则兜底「通用」）", example = "可口可乐")
+    private String brand;
+
 }

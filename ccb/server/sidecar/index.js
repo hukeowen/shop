@@ -498,25 +498,57 @@ app.get('/oss/sign', (req, res) => {
   }
 });
 
-// ── /qr ─ 二维码出图（PNG）─────────────────────────────────────────────
+// ── /qr ─ 二维码出图 ───────────────────────────────────────────────────
 //
-// 前端原本用 npm 包 `qrcode` 在浏览器跑，它的依赖 `dijkstrajs` 是 CommonJS、
-// 且 H5 build 后浏览器报 `Failed to resolve module specifier "dijkstrajs"`。
-// 改成 sidecar 出图：浏览器 <image :src="/qr?text=..."> 直接拿 PNG，
-// 商户/用户端 H5 + 微信小程序通用，bundle 也少一个 npm 包。
+// 前端原本用 npm 包 `qrcode` 在浏览器跑，它的依赖 `dijkstrajs` H5 build 后
+// 浏览器报 `Failed to resolve module specifier "dijkstrajs"`。
+// 改成 sidecar 出图：浏览器 `<image :src="/qr?text=...">` 直接拿。
+//
+// 输出格式：
+//   - 默认 PNG（兼容 H5 + 微信小程序）
+//   - 带 ?center=店铺名 时返 SVG，中心叠白底圆 + 店铺名文字
+//     （errorCorrectionLevel='H' 提到 30% 容错，中心遮挡不影响扫描）
+//     SVG 在 H5 浏览器 `<image>` 完美渲染，矢量任意缩放清晰
 app.get('/qr', async (req, res) => {
   try {
     const text = String(req.query.text || '').trim();
     if (!text) return res.status(400).json({ error: 'text 为空' });
     const width = Math.min(2000, Math.max(64, Number(req.query.w) || 480));
     const margin = Math.min(8, Math.max(0, Number(req.query.m) || 1));
+    const center = String(req.query.center || '').trim().slice(0, 8); // 中心字最多 8 字（再多挡太满）
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+
+    if (center) {
+      // SVG 路径：高容错 + 中心 logo
+      const svg = await QRCode.toString(text, {
+        type: 'svg', errorCorrectionLevel: 'H', width, margin,
+        color: { dark: '#000000', light: '#FFFFFF' },
+      });
+      const cx = width / 2, cy = width / 2;
+      const r = Math.min(width * 0.13, 64);                // 中心圆半径
+      const fontSize = center.length > 4
+        ? Math.min(width * 0.05, 22)
+        : Math.min(width * 0.07, 32);
+      const yOffset = fontSize * 0.34;                     // text baseline 微调
+      const escaped = center
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+      const overlay =
+        `<circle cx="${cx}" cy="${cy}" r="${r + 6}" fill="#fff" stroke="#fff" stroke-width="6"/>` +
+        `<text x="${cx}" y="${cy + yOffset}" text-anchor="middle" ` +
+        `font-size="${fontSize}" font-weight="700" fill="#222" ` +
+        `font-family="PingFang SC,Microsoft YaHei,Hiragino Sans GB,sans-serif">${escaped}</text>`;
+      const out = svg.replace('</svg>', overlay + '</svg>');
+      res.setHeader('Content-Type', 'image/svg+xml; charset=utf-8');
+      return res.end(out);
+    }
+
     const buf = await QRCode.toBuffer(text, {
       errorCorrectionLevel: 'M',
       width, margin,
       color: { dark: '#000000', light: '#FFFFFFFF' },
     });
     res.setHeader('Content-Type', 'image/png');
-    res.setHeader('Cache-Control', 'public, max-age=86400');
     res.end(buf);
   } catch (e) {
     res.status(500).json({ error: e.message });
