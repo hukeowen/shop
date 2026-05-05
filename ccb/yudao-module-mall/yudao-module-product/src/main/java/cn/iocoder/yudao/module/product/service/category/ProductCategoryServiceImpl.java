@@ -194,9 +194,18 @@ public class ProductCategoryServiceImpl implements ProductCategoryService {
         cate.setParentId(0L); // 顶级分类
         cate.setStatus(CommonStatusEnum.ENABLE.getStatus());
         cate.setSort(0);
-        cate.setPicUrl("https://www.iocoder.cn/img/logo.png");
-        productCategoryMapper.insert(cate);
-        return cate.getId();
+        // picUrl 用空字符串占位（yudao DDL 默认 ''，不强制非空），不挂外部 logo
+        cate.setPicUrl("");
+        try {
+            productCategoryMapper.insert(cate);
+            return cate.getId();
+        } catch (org.springframework.dao.DuplicateKeyException dup) {
+            // 并发时两个线程都过了 selectByName == null 检查，第二个 insert 撞 unique 索引
+            // → 直接重读那个名字拿先到者的 id 返回（保证幂等不创建重复行）
+            ProductCategoryDO winner = productCategoryMapper.selectByName(trimmed);
+            if (winner != null) return winner.getId();
+            throw dup; // 真撞了别的 unique 约束（罕见），抛出去不静默
+        }
     }
 
 }

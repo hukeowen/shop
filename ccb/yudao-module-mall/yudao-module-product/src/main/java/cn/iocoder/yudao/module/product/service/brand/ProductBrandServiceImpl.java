@@ -127,14 +127,22 @@ public class ProductBrandServiceImpl implements ProductBrandService {
         if (trimmed.length() > 30) trimmed = trimmed.substring(0, 30);
         ProductBrandDO existed = brandMapper.selectByName(trimmed);
         if (existed != null) return existed.getId();
-        // 不存在 → 自动建一个 enabled 品牌（picUrl 用占位，yudao 不强制非空）
+        // 不存在 → 自动建一个 enabled 品牌；picUrl 留空（yudao DDL default ''）
         ProductBrandDO brand = new ProductBrandDO();
         brand.setName(trimmed);
         brand.setStatus(CommonStatusEnum.ENABLE.getStatus());
         brand.setSort(0);
-        brand.setPicUrl("https://www.iocoder.cn/img/logo.png");
-        brandMapper.insert(brand);
-        return brand.getId();
+        brand.setPicUrl("");
+        try {
+            brandMapper.insert(brand);
+            return brand.getId();
+        } catch (org.springframework.dao.DuplicateKeyException dup) {
+            // 并发同名 findOrCreate：两个线程都过 selectByName=null 后 insert，
+            // 第二个撞 unique 索引 → 重读拿先到者的 id（保证幂等不创建重复行）
+            ProductBrandDO winner = brandMapper.selectByName(trimmed);
+            if (winner != null) return winner.getId();
+            throw dup;
+        }
     }
 
 }
