@@ -1489,20 +1489,22 @@ SIDECAR_ENV_EOF
       warn "wqy-zenhei-fonts 安装失败，端卡字幕可能无法烧录中文（视频仍可生成，仅是无字幕降级）"
   fi
 
-  # BGM 素材：sidecar /video/mux 按 bgmStyle 从此目录挑选混入。空目录时降级"仅 TTS"
-  # 自动跑 download-bgm.sh 下 18 首（公共 CDN，CC0 协议）；总超时 3 分钟避免阻塞部署
-  # （Pixabay CDN 偶尔抽风某 URL 超时，整体 timeout 兜底；已下的 mp3 重部署不重复下）
-  if [[ -f "${SIDECAR_DEST}/bgm/download-bgm.sh" ]]; then
+  # BGM 素材（可选）：sidecar /video/mux 按 bgmStyle 从此目录挑选混入。
+  # 空目录时降级"仅 TTS"，不影响视频生成主流程。
+  #
+  # 注：download-bgm.sh 里的 Pixabay CDN URL 会随时间失效（CDN hash 改）；
+  # 不再自动跑下载（避免一键部署被卡），改成在部署完毕后给运维一次明确指引。
+  # 想要 BGM 的运维：cd ${SIDECAR_DEST}/bgm && bash download-bgm.sh
+  # （或者把任何 mp3 重命名成 <style>_<n>.mp3 直接放进去，命名见 bgm/README.md）
+  if [[ -d "${SIDECAR_DEST}/bgm" ]]; then
     local bgm_count
     bgm_count=$(ls "${SIDECAR_DEST}/bgm"/*.mp3 2>/dev/null | wc -l)
-    if [[ "${bgm_count}" -lt 6 ]]; then
-      info "BGM 素材库 (${bgm_count} 首) 不足，跑 download-bgm.sh（总超时 180s，超时不阻塞主部署）..."
-      timeout 180 bash -c "cd '${SIDECAR_DEST}/bgm' && bash download-bgm.sh 2>&1 | tail -20" || \
-        warn "BGM 下载超时/失败（CDN 抽风）— 视频生成仍可（无 BGM 降级），后续可手动 cd ${SIDECAR_DEST}/bgm && bash download-bgm.sh 重跑"
-      bgm_count=$(ls "${SIDECAR_DEST}/bgm"/*.mp3 2>/dev/null | wc -l)
-      info "BGM 实际下到 ${bgm_count} 首"
+    if [[ "${bgm_count}" -lt 1 ]]; then
+      info "BGM 目录暂为空 — 视频会自动降级'仅 TTS'（不影响主流程）"
+      info "  想要 BGM 请手动跑：cd ${SIDECAR_DEST}/bgm && bash download-bgm.sh"
+      info "  或自备 mp3 重命名为 <style>_<n>.mp3 放入此目录，style 见 bgm/README.md"
     else
-      info "BGM 素材库已有 ${bgm_count} 首 mp3，跳过下载"
+      info "BGM 素材库 ${bgm_count} 首 mp3 已就绪"
     fi
   fi
 
