@@ -118,8 +118,13 @@ public class JimengBffClient {
         }
 
         int bodyBytes = bodyStr.getBytes(StandardCharsets.UTF_8).length;
-        log.info("[bff/jimeng] action={} akPrefix={}*** region={} service={} bodyBytes={}",
-                action, safePrefix(ak), region, service, bodyBytes);
+        // 打 SK md5（不打全量，只 hash 用于跟本地标准值对比）+ skLen，
+        // 帮助定位 jar 进程加载的 SK 是否跟 .env 字面量一致
+        String skMd5 = sha256First8(sk);
+        int skLen = sk == null ? 0 : sk.length();
+        log.info("[bff/jimeng] action={} akPrefix={}*** akLen={} skMd5={}... skLen={} region={} service={} bodyBytes={}",
+                action, safePrefix(ak), ak == null ? 0 : ak.length(),
+                skMd5, skLen, region, service, bodyBytes);
 
         Request request = new Request.Builder()
                 .url(url)
@@ -179,6 +184,20 @@ public class JimengBffClient {
             return "";
         }
         return key.length() <= 4 ? key.substring(0, Math.min(2, key.length())) : key.substring(0, 4);
+    }
+
+    /** 取 SHA-256 hex 前 8 位作为 SK 指纹（绝对不暴露 SK）。 */
+    private static String sha256First8(String s) {
+        if (s == null) return "null";
+        try {
+            byte[] h = MessageDigest.getInstance("SHA-256")
+                    .digest(s.getBytes(StandardCharsets.UTF_8));
+            StringBuilder sb = new StringBuilder(8);
+            for (int i = 0; i < 4; i++) sb.append(String.format("%02x", h[i] & 0xff));
+            return sb.toString();
+        } catch (Exception e) {
+            return "err";
+        }
     }
 
     private static String clip(String s, int max) {

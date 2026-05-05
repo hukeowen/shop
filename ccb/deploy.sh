@@ -1726,8 +1726,30 @@ verify_jimeng_sign() {
   HTTP="$RESP"
   local CODE
   CODE=$(grep -oP '"code"\s*:\s*\K[0-9]+' /tmp/_jimeng_verify.json 2>/dev/null | head -1)
+
+  # 同时检查 yudao-server jar 进程实际加载的 SK 是否跟 runtime.env 字面量一致
+  # （之前所有"shell 200 但 jar 401"的诡异 case 都是 jar 进程 env 跟文件不同）
+  local JVM_PID JVM_SK FILE_SK_MD5 JVM_SK_MD5 STD_MD5
+  JVM_PID=$(systemctl show -p MainPID tanxiaer 2>/dev/null | cut -d= -f2)
+  if [[ -n "${JVM_PID}" && "${JVM_PID}" != "0" && -r "/proc/${JVM_PID}/environ" ]]; then
+    JVM_SK=$(tr '\0' '\n' < "/proc/${JVM_PID}/environ" | grep '^JIMENG_SK=' | cut -d= -f2-)
+    JVM_SK_MD5=$(echo -n "${JVM_SK}" | md5sum | cut -d' ' -f1)
+    FILE_SK_MD5=$(echo -n "${SK}" | md5sum | cut -d' ' -f1)
+    STD_MD5=$(echo -n 'TnpVNE9HSXdOMlprTXpVNE5HSTFabUpqT1daaE9URmtaR00wTWpOalpETQ==' | md5sum | cut -d' ' -f1)
+    info "JVM 进程 PID=${JVM_PID} JIMENG_SK 长度=${#JVM_SK} md5=${JVM_SK_MD5:0:8}…"
+    info "runtime.env  JIMENG_SK 长度=${#SK} md5=${FILE_SK_MD5:0:8}…"
+    info "标准值       JIMENG_SK md5=${STD_MD5:0:8}… (本地实测 200 OK 用的是这个)"
+    if [[ "${JVM_SK_MD5}" != "${FILE_SK_MD5}" ]]; then
+      err "⚠ JVM 进程加载的 SK 跟 runtime.env 文件不一致！这就是 jar 401 真因"
+      err "  → systemctl restart tanxiaer 强制让 JVM 重读 EnvironmentFile"
+    elif [[ "${JVM_SK_MD5}" != "${STD_MD5}" ]]; then
+      err "⚠ JVM 进程的 SK 跟标准值不一致！.env 字符可能被污染"
+      err "  → 检查 .env：sed -i 's/[^[:print:]]//g' /opt/tanxiaer/.env  然后重跑 deploy.sh"
+    fi
+  fi
+
   if [[ "${HTTP}" == "200" && "${CODE}" == "10000" ]]; then
-    log "火山即梦签名活性 ✓ HTTP=${HTTP} code=${CODE}（生产 401 真因不在 deploy 链路）"
+    log "火山即梦签名活性 ✓ HTTP=${HTTP} code=${CODE}（直打火山）"
     rm -f /tmp/_jimeng_verify.json
     return 0
   fi
