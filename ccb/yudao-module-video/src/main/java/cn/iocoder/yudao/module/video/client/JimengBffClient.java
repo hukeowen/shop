@@ -135,11 +135,20 @@ public class JimengBffClient {
         log.info("[bff/jimeng] action={} akPrefix={}*** akLen={} skMd5={}... skLen={} skSrc={} region='{}' service='{}' version='{}' endpoint='{}' bodyBytes={}",
                 action, safePrefix(ak), ak == null ? 0 : ak.length(),
                 skMd5, skLen, skSrc, region, service, version, endpoint, bodyBytes);
+        // 关键调试：把整个 canonicalRequest 和 stringToSign 打出来
+        // 出 401 时跟本地脚本输出一字节一字节对比，找到真正错位的字段
+        log.info("[bff/jimeng/debug] xDate={} bodyHash={} canonicalRequest=<<<{}>>> stringToSign=<<<{}>>> signature={}",
+                xDate, bodyHash, canonicalRequest, stringToSign, signature);
 
+        // 关键：用 byte[] 版 RequestBody.create，OkHttp 不会自动附加 ; charset=utf-8
+        // String 版（OkHttp 4.x）会把 application/json 改成 application/json; charset=utf-8，
+        // 实际发送的 Content-Type 跟签名里的 'content-type:application/json' 不一致
+        // → 火山服务端 canonical 算出来跟客户端不同 → SignatureDoesNotMatch 401
+        // 这是「本地 Node.js 200 但 Java BFF jar 401」的真正根因。
+        byte[] bodyBytes2 = bodyStr.getBytes(StandardCharsets.UTF_8);
         Request request = new Request.Builder()
                 .url(url)
-                .post(RequestBody.create(bodyStr, JSON_MEDIA_TYPE))
-                .addHeader("Content-Type", "application/json")
+                .post(RequestBody.create(bodyBytes2, JSON_MEDIA_TYPE))
                 .addHeader("X-Date", xDate)
                 .addHeader("Authorization", authorization)
                 .build();
