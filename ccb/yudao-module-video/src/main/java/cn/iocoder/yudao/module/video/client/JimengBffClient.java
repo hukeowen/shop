@@ -64,10 +64,16 @@ public class JimengBffClient {
      * @return 响应体 JSON 字符串
      */
     public String callAction(String action, String bodyJson) {
+        // 优先读 Spring props（从 yaml ${JIMENG_AK:} 占位符派生）；
+        // props 为空时降级直接读 OS env（绕开 Spring placeholder 解析链路）
+        // —— 实测 deploy.sh 自检 SK md5 三方一致 + 直打火山 200，但 BFF jar 仍
+        // 401 的诡异 case，根因是 Spring placeholder 在某些 profile 下没解析。
         String ak = props.getJimengAccessKey();
         String sk = props.getJimengSecretKey();
+        if (ak == null || ak.isEmpty()) ak = System.getenv("JIMENG_AK");
+        if (sk == null || sk.isEmpty()) sk = System.getenv("JIMENG_SK");
         if (ak == null || ak.isEmpty() || sk == null || sk.isEmpty()) {
-            throw exception(JIMENG_CALL_FAILED, "JIMENG_AK / JIMENG_SK 未配置");
+            throw exception(JIMENG_CALL_FAILED, "JIMENG_AK / JIMENG_SK 未配置（props 和 OS env 都空）");
         }
         String endpoint = props.getJimengEndpoint();
         String version = props.getJimengVersion();
@@ -118,13 +124,14 @@ public class JimengBffClient {
         }
 
         int bodyBytes = bodyStr.getBytes(StandardCharsets.UTF_8).length;
-        // 打 SK md5（不打全量，只 hash 用于跟本地标准值对比）+ skLen，
-        // 帮助定位 jar 进程加载的 SK 是否跟 .env 字面量一致
+        // 打 SK md5 + 来源（props/env）+ skLen，跟 deploy.sh 自检的标准 md5 对比
+        String skSrc = (props.getJimengSecretKey() != null && !props.getJimengSecretKey().isEmpty())
+                ? "props" : "env";
         String skMd5 = sha256First8(sk);
         int skLen = sk == null ? 0 : sk.length();
-        log.info("[bff/jimeng] action={} akPrefix={}*** akLen={} skMd5={}... skLen={} region={} service={} bodyBytes={}",
+        log.info("[bff/jimeng] action={} akPrefix={}*** akLen={} skMd5={}... skLen={} skSrc={} region={} service={} bodyBytes={}",
                 action, safePrefix(ak), ak == null ? 0 : ak.length(),
-                skMd5, skLen, region, service, bodyBytes);
+                skMd5, skLen, skSrc, region, service, bodyBytes);
 
         Request request = new Request.Builder()
                 .url(url)
