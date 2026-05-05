@@ -59,6 +59,7 @@ declare -A URLS=(
 )
 
 # 下载 + 截取前 30 秒 + 添加淡入淡出 (沙化 BGM 不会覆盖人声)
+# 单首超时 25s（CDN 抽风快速放弃，不堵整体）；--connect-timeout 5 保证连不上立即跳过
 DL_OK=0
 DL_FAIL=0
 for name in "${!URLS[@]}"; do
@@ -70,8 +71,8 @@ for name in "${!URLS[@]}"; do
   fi
   echo "↓ ${name} ..."
   tmp="/tmp/${name}_raw.mp3"
-  if ! curl -sL --max-time 60 -o "$tmp" "$url"; then
-    err "$name 下载失败 ($url)"
+  if ! curl -sL --connect-timeout 5 --max-time 25 -o "$tmp" "$url"; then
+    err "$name 下载失败 (CDN 超时)"
     DL_FAIL=$((DL_FAIL+1))
     rm -f "$tmp"
     continue
