@@ -400,33 +400,21 @@ public class CopywritingServiceImpl implements CopywritingService {
                 + "2) imgIdx 取值 0.." + (n - 1) + "，**每张图用且只用一次**，顺序由你定（最有视觉冲击力的开篇）；\n"
                 + "3) duration 仅 5 或 10；总和 ≤ " + MULTI_MAX_TOTAL_SEC + " 秒；信息密度高的给 5s，需要节奏铺氛围给 10s；\n"
                 + "4) narration 中文口语 ≤ duration×3 字（5s≤15、10s≤30），不书面；\n"
-                + "5) **visualPrompt 是大片关键**——必须是 1 句流畅自然的英文（≤ 100 词），**全句不能出现任何英文冒号 ':' 也不能出现分号 ';'，只能用逗号 ',' 分隔短语**；像在描述一个真实拍摄的镜头，融入下面 6 个要素：\n"
-                + "   ① 主体特征（写商品/店铺/手部/食客的具体形象）\n"
-                + "   ② **真实物理动作**（最关键，必须有可见的运动；严禁写 'None'/'static'/'no motion'/'subtle camera movement'/'gentle'/'slight'）：\n"
-                + "      食饮可选词：sizzling oil splashing, steam billowing up, cheese stretching, sauce drizzling slowly,\n"
-                + "         batter pouring into pan, fries crackling, ice cubes clinking into glass, soup bubbling,\n"
-                + "         knife slicing through, hand brushing chili oil onto skewers, smoke curling around food,\n"
-                + "         flames flaring up from grill, dough being kneaded, sugar pulled into golden strands,\n"
-                + "         bubbles rising in drink, condensation dripping down bottle\n"
-                + "      非食饮：silk fabric flowing in breeze, neon lights flickering on one by one, hands arranging items,\n"
-                + "         customers walking in through door, pages turning, water dripping in slow motion,\n"
-                + "         petals slowly falling, mist rolling across, products being unboxed\n"
-                + "   ③ 运镜（必须 ≥1 个具体运镜）：push-in dolly / slow pull-back / rack focus shift / orbit around subject /\n"
-                + "      tilt up reveal / crane down / handheld vlog shake / whip pan transition / parallax slider /\n"
-                + "      overhead top-down drop\n"
-                + "   ④ 镜头规格：extreme macro shot / 35mm prime / 85mm portrait / shallow depth of field with creamy bokeh\n"
-                + "   ⑤ 光线：golden hour rim light / warm tungsten glow / neon backlight bleed / hard side light /\n"
-                + "      soft window light / moody chiaroscuro / volumetric god rays through smoke\n"
-                + "   ⑥ 风格：cinematic food photography / slow motion 120fps / 35mm film grain / vlog handheld feel /\n"
-                + "      commercial product shot / hyperreal detail / Wes Anderson symmetry\n"
-                + "   合格示例（直接照这个句式，**只用逗号分隔，不要冒号不要分号**）：\n"
-                + "     'Extreme macro shot of a golden grilled skewer, sizzling oil splashing in slow motion 120fps,\n"
-                + "      smoke curling up around the charred meat as a hand brushes glossy chili oil across it,\n"
-                + "      push-in dolly with rack focus, warm tungsten backlight rim, shallow depth of field with creamy\n"
-                + "      bokeh, cinematic food photography, 35mm film grain'\n"
-                + "     'Slow pull-back from a stretching cheese pull on hot pizza, golden cheese strands dripping,\n"
-                + "      steam billowing up around the crust, 85mm portrait lens, shallow depth of field, warm tungsten\n"
-                + "      glow, cinematic food photography, slow motion 120fps, 35mm film grain'\n"
+                + "5) **visualPrompt 写法（最重要——必须基于这张图的具体内容定制）**：\n"
+                + "   - 写一句**自然流畅的英文**（≤ 100 词），就像跟摄影师交代怎么拍这一个镜头。\n"
+                + "   - **全句只用逗号 ',' 分隔，不能用冒号 ':' 也不能用分号 ';'**——绝对禁止 'Subject: xxx, Camera: yyy' 这种填表格写法。\n"
+                + "   - 句子要做到 4 件事：\n"
+                + "     ① **点出图里看到的具体东西**：用具体名词（lamb skewer / iced milk tea / flaky pastry / instant noodle cup / neon shop sign），**不要用 'product' 这种空泛词**；\n"
+                + "     ② **让画面真的动起来**：基于图片内容选 1 个真实物理动作 —— 烤串可以 sizzling oil splashing/smoke curling，奶茶可以 condensation dripping/cheese foam pouring，货架可以 hand grabbing/lights flickering on，酥饼可以 hands tearing/sugar scattering，招牌可以 neon lights flickering on，布幔可以 fabric flowing in breeze；**严禁** 'subtle/gentle/slight/no motion/static'；\n"
+                + "     ③ **一个具体运镜**：push-in dolly / orbit around / rack focus / parallax slider / overhead crane drop / tilt up reveal / handheld vlog shake；\n"
+                + "     ④ **电影感**：cinematic / slow motion 120fps / shallow depth of field / golden hour rim light / 35mm film grain / hyperreal。\n"
+                + "   - **每幕都要根据当前图片的具体内容写**——千万不要 6 幕用差不多的句式。\n\n"
+                + "   不同品类示例（直接照句式，每张图按内容改名词和动作）：\n"
+                + "     烧烤特写: 'Extreme macro of a charred lamb skewer dripping fat onto glowing coals, sizzling oil bursts in slow motion 120fps, smoke curling around the meat, push-in dolly with rack focus, warm tungsten rim light, shallow depth of field, cinematic food photography, 35mm film grain'\n"
+                + "     奶茶拉丝: 'Slow motion 120fps of caramel cheese foam pouring onto iced milk tea, golden strands dripping into amber liquid, condensation rolling down the cup, parallax slider push-in, soft window light with creamy bokeh, hyperreal commercial product shot'\n"
+                + "     货架陈列: 'Slow tilt-up reveal of colorful instant noodle cups stacked on the shelf as a hand quickly grabs one, neon backlight bleed flickering across packaging, 35mm wide angle, vlog handheld feel, cinematic film grain'\n"
+                + "     手作酥饼: 'Overhead top-down crane drop onto golden flaky pastries being torn open by hands, buttery layers cracking apart with sugar crystals scattering, soft window light, 85mm shallow depth of field, slow motion 120fps, hyperreal'\n"
+                + "     店铺招牌: 'Low angle dolly-in toward a neon shop sign at dusk flickering on one by one, warm steam rolling out from the kitchen window, 35mm anamorphic lens flare, golden hour backlight, cinematic film grain, vlog handheld'\n"
                 + "6) imageSummary 中文 ≤ 20 字；\n"
                 + "7) 全文严禁：老板/赔本/大减价/限时/秒杀/小黄车/购物车/点击链接；\n"
                 + "8) 严禁极限词：最/第一/全网/绝对/独家；\n"
@@ -450,10 +438,11 @@ public class CopywritingServiceImpl implements CopywritingService {
             sb.append("店铺名称：").append(shopName).append("\n");
         }
         sb.append("商品/店铺背景：").append(StrUtil.nullToEmpty(userDescription)).append("\n");
-        sb.append("共 ").append(imgCount).append(" 张图，请输出 ").append(n)
-                .append(" 幕脚本（每幕 ").append(dur).append(" 秒，共 ")
-                .append(n * dur).append(" 秒）。\n");
-        sb.append("注意：最后一幕 narration 必须包含画面对白 + 结尾 6 字「").append(FIXED_CTA).append("」收口（一字不差）。");
+        sb.append("共 ").append(imgCount).append(" 张图。**请逐张仔细观察图片**，识别每张图里的具体内容（菜名/物品名/场景/颜色/动作/光线），然后为每张图量身定做：\n");
+        sb.append("- imageSummary 用具体名词描述这张图的核心元素\n");
+        sb.append("- visualPrompt 围绕这张图的实际内容写自然英文句子（具体食物/物品名 + 适合这个内容的物理动作 + 运镜 + 电影感词）；\n");
+        sb.append("- **6 幕之间 visualPrompt 的句式、运镜、动作必须有差异，绝对不能千篇一律**\n");
+        sb.append("\n输出 ").append(n).append(" 幕。最后一幕 narration 必须包含画面对白 + 结尾 6 字「").append(FIXED_CTA).append("」收口（一字不差）。");
         return sb.toString();
     }
 
