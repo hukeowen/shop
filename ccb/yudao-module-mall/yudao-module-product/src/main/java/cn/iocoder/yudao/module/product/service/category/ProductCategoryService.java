@@ -93,4 +93,14 @@ public interface ProductCategoryService {
      */
     void validateCategoryList(Collection<Long> ids);
 
+    /**
+     * 按分类名查找；不存在时自动创建一个 enabled 顶级分类并返回 ID。
+     * <p>用于 AI 上架商品时兜底分类（避免「商品分类不存在」），跟 brand findOrCreate
+     * 同思路：地摊/水果摊/小吃这种业态没有正经分类树，让前端传通用类目名后端自动建。</p>
+     *
+     * @param name 分类名（≤ 30 字，trim）；为空返 null
+     * @return 分类 ID；name 为空返 null
+     */
+    Long findOrCreateCategory(String name);
+
 }

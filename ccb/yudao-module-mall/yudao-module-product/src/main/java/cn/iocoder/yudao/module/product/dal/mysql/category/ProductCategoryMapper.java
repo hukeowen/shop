@@ -40,4 +40,8 @@ public interface ProductCategoryMapper extends BaseMapperX<ProductCategoryDO> {
                 .eq(ProductCategoryDO::getStatus, status));
     }
 
+    default ProductCategoryDO selectByName(String name) {
+        return selectOne(ProductCategoryDO::getName, name);
+    }
+
 }

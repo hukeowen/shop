@@ -181,4 +181,22 @@ public class ProductCategoryServiceImpl implements ProductCategoryService {
         return productCategoryMapper.selectListByIdAndStatus(ids, CommonStatusEnum.ENABLE.getStatus());
     }
 
+    @Override
+    public Long findOrCreateCategory(String name) {
+        if (name == null) return null;
+        String trimmed = name.trim();
+        if (trimmed.isEmpty()) return null;
+        if (trimmed.length() > 30) trimmed = trimmed.substring(0, 30);
+        ProductCategoryDO existed = productCategoryMapper.selectByName(trimmed);
+        if (existed != null) return existed.getId();
+        ProductCategoryDO cate = new ProductCategoryDO();
+        cate.setName(trimmed);
+        cate.setParentId(0L); // 顶级分类
+        cate.setStatus(CommonStatusEnum.ENABLE.getStatus());
+        cate.setSort(0);
+        cate.setPicUrl("https://www.iocoder.cn/img/logo.png");
+        productCategoryMapper.insert(cate);
+        return cate.getId();
+    }
+
 }

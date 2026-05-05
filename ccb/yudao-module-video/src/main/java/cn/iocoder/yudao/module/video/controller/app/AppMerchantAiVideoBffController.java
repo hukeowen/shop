@@ -45,6 +45,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantLock;
 
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
 import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
@@ -76,6 +78,13 @@ public class AppMerchantAiVideoBffController {
 
     /** 复用 Jackson 解析/序列化 Ark chat 透传 body（sanitize 用）。 */
     private static final ObjectMapper ARK_BODY_MAPPER = new ObjectMapper();
+
+    /**
+     * 商户级串行锁：火山即梦免费/低配额账号同时进行的视频生成任务并发上限 = 1。
+     * 即使前端 H5 没重 build（仍跑老 Promise.all 并发版本），后端这道锁兜底
+     * 让同一 merchant 的 jimeng/submit 严格串行 → 避免撞 50430/Sign 401。
+     */
+    private static final ConcurrentHashMap<Long, ReentrantLock> SUBMIT_LOCKS = new ConcurrentHashMap<>();
 
     @Resource
     private ArkBffClient arkBffClient;
@@ -211,6 +220,32 @@ public class AppMerchantAiVideoBffController {
                     "frames 仅支持 121 或 241");
         }
 
+        // 单商户串行锁：避免前端并发提交多张图触发火山 50430/Sign 401
+        // （前端已改串行，但 H5 未重 build 的旧浏览器仍可能并发）
+        // 持锁期间真正调火山，下一请求等前一个返回再发。最多等 5 分钟，超时报忙。
+        ReentrantLock lock = SUBMIT_LOCKS.computeIfAbsent(merchant.getId(), k -> new ReentrantLock(true));
+        boolean locked;
+        try {
+            locked = lock.tryLock(5, java.util.concurrent.TimeUnit.MINUTES);
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            throw exception(
+                    cn.iocoder.yudao.module.merchant.enums.MerchantErrorCodeConstants.JIMENG_CALL_FAILED,
+                    "请求被中断，请重试");
+        }
+        if (!locked) {
+            throw exception(
+                    cn.iocoder.yudao.module.merchant.enums.MerchantErrorCodeConstants.JIMENG_CALL_FAILED,
+                    "您有视频正在生成中，请稍后再提交");
+        }
+        try {
+            return jimengSubmitInternal(merchant, req);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    private CommonResult<Object> jimengSubmitInternal(MerchantDO merchant, BffJimengSubmitReqVO req) {
         // 1) 预扣 1 条（quota 不足→抛 VIDEO_QUOTA_INSUFFICIENT）
         // bizId 暂用临时 UUID；真正的即梦 taskId 在下游返回后可由业务回执补登
         // Phase 0.3.3：decreaseVideoQuota 返回类型由 int 改成 QuotaChangeResult，这里只用余额,

@@ -51,6 +51,9 @@ public class AppMerchantProductController {
     @Resource
     private cn.iocoder.yudao.module.product.service.brand.ProductBrandService productBrandService;
 
+    @Resource
+    private cn.iocoder.yudao.module.product.service.category.ProductCategoryService productCategoryService;
+
     // ==================== #16 极简商品发布 ====================
 
     @PostMapping("/simple-create")
@@ -112,7 +115,16 @@ public class AppMerchantProductController {
         spu.setKeyword(reqVO.getName()); // 关键字默认=名称
         spu.setIntroduction(reqVO.getIntroduction() != null ? reqVO.getIntroduction() : reqVO.getName());
         spu.setDescription(reqVO.getName()); // 详情默认=名称
-        spu.setCategoryId(reqVO.getCategoryId() != null ? reqVO.getCategoryId() : DEFAULT_CATEGORY_ID);
+        // 分类：如果前端传了 categoryId 用它；否则用 brand 字符串当分类名 findOrCreate；
+        // 都没有 → 兜底创建/复用「通用」分类（避免 BRAND 同款的「分类不存在」报错）
+        Long categoryId = reqVO.getCategoryId();
+        if (categoryId == null) {
+            String catName = (reqVO.getBrand() != null && !reqVO.getBrand().trim().isEmpty())
+                    ? reqVO.getBrand().trim() : "通用";
+            categoryId = productCategoryService.findOrCreateCategory(catName);
+            if (categoryId == null) categoryId = DEFAULT_CATEGORY_ID;
+        }
+        spu.setCategoryId(categoryId);
         // brandId 必填（yudao ProductSpuSaveReqVO @NotNull + service validateProductBrand）：
         // - 前端 AI 识别能给出 brand（可口可乐/旺仔）→ findOrCreate 那个品牌
         // - 识别不到（地摊/水果摊）→ 前端传通用类目（小吃/水果/零食/饮品）作为 brand 字符串
