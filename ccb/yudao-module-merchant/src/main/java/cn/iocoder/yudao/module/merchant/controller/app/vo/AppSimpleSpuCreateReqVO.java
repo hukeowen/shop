@@ -32,8 +32,17 @@ public class AppSimpleSpuCreateReqVO {
     @Schema(description = "库存数量（默认9999）", example = "100")
     private Integer stock;
 
-    @Schema(description = "商品分类ID（默认使用商户经营类目）", example = "1")
+    @Schema(description = "商品分类ID（前端给具体 ID 时直接用；优先级低于 categoryName）", example = "1")
     private Long categoryId;
+
+    /**
+     * 商品分类名（推荐前端 AI 识别后传这个，比传 ID 更符合实际）：
+     * - AI 识别出的分类（小吃 / 水果 / 零食 / 饮品 / 烟酒 / 烘焙 / 服装 ...）
+     * - 后端 findOrCreateCategory(categoryName)：没有就自动建顶级分类
+     * 优先级：categoryName 非空 > categoryId 有效 > brand 字符串 > 「通用」兜底
+     */
+    @Schema(description = "商品分类名（推荐 AI 识别后传中文名）", example = "小吃")
+    private String categoryName;
 
     @Schema(description = "赠送积分（默认0）", example = "10")
     private Integer giveIntegral;

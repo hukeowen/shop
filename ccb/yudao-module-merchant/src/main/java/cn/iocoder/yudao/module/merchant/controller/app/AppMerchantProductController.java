@@ -115,15 +115,26 @@ public class AppMerchantProductController {
         spu.setKeyword(reqVO.getName()); // 关键字默认=名称
         spu.setIntroduction(reqVO.getIntroduction() != null ? reqVO.getIntroduction() : reqVO.getName());
         spu.setDescription(reqVO.getName()); // 详情默认=名称
-        // 分类：如果前端传了 categoryId 用它；否则用 brand 字符串当分类名 findOrCreate；
-        // 都没有 → 兜底创建/复用「通用」分类（避免 BRAND 同款的「分类不存在」报错）
-        Long categoryId = reqVO.getCategoryId();
-        if (categoryId == null) {
-            String catName = (reqVO.getBrand() != null && !reqVO.getBrand().trim().isEmpty())
-                    ? reqVO.getBrand().trim() : "通用";
-            categoryId = productCategoryService.findOrCreateCategory(catName);
-            if (categoryId == null) categoryId = DEFAULT_CATEGORY_ID;
+        // 分类兜底链（按优先级）：
+        //   1) categoryName 非空 → findOrCreate(categoryName) — 推荐路径，AI 识别出中文名
+        //   2) categoryId 非空且 DB 真存在 → 直接用（兼容老前端传 ID 的场景）
+        //   3) brand 字符串非空 → findOrCreate(brand) — 没正经分类时用类目兜底
+        //   4) 全空 → findOrCreate「通用」
+        Long categoryId = null;
+        String catName = reqVO.getCategoryName();
+        if (catName != null && !catName.trim().isEmpty()) {
+            categoryId = productCategoryService.findOrCreateCategory(catName.trim());
         }
+        if (categoryId == null && reqVO.getCategoryId() != null
+                && productCategoryService.getCategory(reqVO.getCategoryId()) != null) {
+            categoryId = reqVO.getCategoryId();
+        }
+        if (categoryId == null) {
+            String fallback = (reqVO.getBrand() != null && !reqVO.getBrand().trim().isEmpty())
+                    ? reqVO.getBrand().trim() : "通用";
+            categoryId = productCategoryService.findOrCreateCategory(fallback);
+        }
+        if (categoryId == null) categoryId = productCategoryService.findOrCreateCategory("通用");
         spu.setCategoryId(categoryId);
         // brandId 必填（yudao ProductSpuSaveReqVO @NotNull + service validateProductBrand）：
         // - 前端 AI 识别能给出 brand（可口可乐/旺仔）→ findOrCreate 那个品牌

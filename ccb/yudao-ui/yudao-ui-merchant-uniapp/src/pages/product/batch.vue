@@ -217,6 +217,8 @@ async function onSubmit() {
         picUrl,
         name: it.name.trim(),
         price: it.price,
+        // 推荐 AI 识别给 categoryName（中文）；categoryId 留兼容
+        categoryName: it.categoryName || it.category || '',
         categoryId: it.categoryId,
         stock: null,
         introduction: it.introduction?.trim() || '',

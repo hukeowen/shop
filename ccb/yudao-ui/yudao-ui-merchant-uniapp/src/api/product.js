@@ -112,7 +112,10 @@ export function createSpu(form) {
       price: form.price,
       picUrl: form.picUrl,
       stock: form.stock || 9999,
-      categoryId: form.categoryId || DEFAULT_CATEGORY_ID,
+      // 推荐传 categoryName（AI 识别中文名，后端 findOrCreate 自动建分类）
+      // categoryId 仅作老接口兼容；后端按 name → id → brand → 通用 优先级兜底
+      categoryName: form.categoryName || '',
+      categoryId: form.categoryId || null,
       introduction: form.introduction || '',
       giveIntegral: form.giveIntegral ?? 0,
       deliveryTypes: form.deliveryTypes ?? [2],
