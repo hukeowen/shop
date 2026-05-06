@@ -207,8 +207,9 @@
       </view>
     </view>
 
-    <!-- 底部 tabbar：分享落地直进 shop-home 时也能切回首页/订单/我的 -->
-    <RoleTabBar current="/pages/shop-home/index" />
+    <!-- 底部 tabbar：分享落地直进 shop-home 时也能切回首页/订单/我的
+         force-role="member" 防商户账号登录后被解析成商户 tab，C 端进店一律走用户 tab -->
+    <RoleTabBar current="/pages/shop-home/index" force-role="member" />
   </view>
 </template>
 

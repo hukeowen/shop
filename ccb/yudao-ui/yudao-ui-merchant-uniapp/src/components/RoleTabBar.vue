@@ -27,6 +27,9 @@ import { useUserStore } from '../store/user.js';
 const props = defineProps({
   current: { type: String, required: true }, // 当前页面 path（用于高亮）
   bg: { type: String, default: '#FFFFFF' },
+  // 强制角色：'member' / 'merchant'。不传则按 userStore.activeRole 自适应。
+  // shop-home（C 端进店页）应传 'member' 即使商户账号登录也走用户 tab。
+  forceRole: { type: String, default: '' },
 });
 
 const userStore = useUserStore();
@@ -44,7 +47,7 @@ const userTabs = [
 ];
 
 const tabs = computed(() => {
-  const role = userStore.activeRole;
+  const role = props.forceRole || userStore.activeRole;
   const list = role === 'merchant' ? merchantTabs : userTabs;
   return list.map((t) => ({
     ...t,
