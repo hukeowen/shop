@@ -224,6 +224,24 @@ const PUBLIC_BASE_URL =
   (typeof import.meta !== 'undefined' && import.meta.env?.VITE_PUBLIC_BASE_URL) ||
   'http://www.doupaidoudian.com';
 
+// 模块级缓存：进多家店铺只拉一次 /product/category/list（id → name）
+// 注意是 module-scope let（不是 ref）—— shop-home 每次进入是新的组件实例，
+// 但模块级变量在 SPA 整个生命周期内只初始化一次。
+let categoryNameCache = null;
+async function ensureCategoryNameMap() {
+  if (categoryNameCache) return categoryNameCache;
+  try {
+    const all = await request({ url: '/app-api/product/category/list' });
+    const list = Array.isArray(all) ? all : (all?.list || []);
+    const map = {};
+    list.forEach((c) => { map[c.id] = c.name; });
+    categoryNameCache = map;
+  } catch {
+    categoryNameCache = {};
+  }
+  return categoryNameCache;
+}
+
 const userStore = useUserStore();
 const tenantId = ref(null);
 const shopInfo = ref(null);
@@ -242,8 +260,6 @@ const coupons = ref([]);
 //   - 其余按该店出现过的 categoryId 去重 + 拉名称
 const cats = ref([{ id: 0, name: '全部' }]);
 const currentCatId = ref(0);
-// 全平台分类名映射 id → name（一次性拉，避免每个商品重复请求）
-const categoryNameMap = ref({});
 
 // 按销量降序的商品列表（用于招牌商品 + 全部 grid）
 const sortedProducts = computed(() => {
@@ -381,6 +397,10 @@ async function loadShopInfo() {
     shopInfo.value = await request({
       url: `/app-api/merchant/shop/public/info?tenantId=${tenantId.value}${geoQuery}`,
     });
+    // visitorCount30d 异步拉（独立接口；失败不影响主路径）
+    request({ url: `/app-api/merchant/shop/public/info/visitor?tenantId=${tenantId.value}` })
+      .then((r) => { if (r && r.visitorCount30d) shopInfo.value = { ...shopInfo.value, visitorCount30d: r.visitorCount30d }; })
+      .catch(() => {});
     // 缓存店铺名，user-me/invite 二维码中心叠这个名字用
     const sn = shopInfo.value?.shopName || shopInfo.value?.name;
     if (sn) {
@@ -403,31 +423,22 @@ async function loadProducts() {
     loadCats();
   } catch { products.value = []; }
 }
-// 商品分类 tab：先一次性拉全平台 category 拿 id→name 映射，再按 products
-// 出现过的 categoryId 去重渲染。仅在该店有 ≥ 2 个不同分类时才显示 tab。
+// 商品分类 tab：用模块级 ensureCategoryNameMap 缓存 id→name，多次进店不重复拉。
+// 仅在该店有 ≥ 2 个不同分类时才显示 tab。
 async function loadCats() {
   if (!products.value.length) {
     cats.value = [{ id: 0, name: '全部' }];
     return;
   }
-  // 拉一次全平台分类列表（@TenantIgnore，跨租户公开）
-  if (!Object.keys(categoryNameMap.value).length) {
-    try {
-      const all = await request({ url: '/app-api/product/category/list' });
-      const list = Array.isArray(all) ? all : (all?.list || []);
-      const map = {};
-      list.forEach((c) => { map[c.id] = c.name; });
-      categoryNameMap.value = map;
-    } catch { categoryNameMap.value = {}; }
-  }
-  // 该店出现过的 categoryId 去重，按 sort/id 升序
+  const nameMap = await ensureCategoryNameMap();
+  // 该店出现过的 categoryId 去重
   const seen = new Set();
   const ordered = [];
   products.value.forEach((p) => {
     const cid = p.categoryId;
     if (cid && !seen.has(cid)) {
       seen.add(cid);
-      ordered.push({ id: cid, name: categoryNameMap.value[cid] || `分类${cid}` });
+      ordered.push({ id: cid, name: nameMap[cid] || `分类${cid}` });
     }
   });
   cats.value = [{ id: 0, name: '全部' }, ...ordered];

@@ -382,11 +382,12 @@ async function onSave() {
     poolSettleCron: form.value.poolSettleCron || '0 0 0 1 * ?',
     poolLotteryRatio: parseFloat(form.value.poolLotteryRatio) || 0,
     poolSettleMode: form.value.poolSettleMode || 'FULL',
-    // 满减：两项都填了才传，否则传 null（不启用）
+    // 满减：两项都填了才视为启用，否则传 0（约定 0=不启用）。
+    // 不能传 null —— 后端 saveConfig 用 ignoreNullValue copy，传 null 会保留旧值清不掉。
     fullCutThreshold: parseFloat(form.value.fullCutThresholdYuan) > 0
-      ? Math.round(parseFloat(form.value.fullCutThresholdYuan) * 100) : null,
+      ? Math.round(parseFloat(form.value.fullCutThresholdYuan) * 100) : 0,
     fullCutAmount: parseFloat(form.value.fullCutAmountYuan) > 0
-      ? Math.round(parseFloat(form.value.fullCutAmountYuan) * 100) : null,
+      ? Math.round(parseFloat(form.value.fullCutAmountYuan) * 100) : 0,
   };
 
   saving.value = true;

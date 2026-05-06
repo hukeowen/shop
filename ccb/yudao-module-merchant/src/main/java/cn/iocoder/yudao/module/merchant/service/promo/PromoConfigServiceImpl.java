@@ -63,7 +63,12 @@ public class PromoConfigServiceImpl implements PromoConfigService {
             promoConfigMapper.insert(insert);
             return;
         }
-        BeanUtils.copyProperties(reqVO, existing);
+        // 用 hutool 的 copyProperties + ignoreNullValue：ReqVO 没传的字段不覆盖 existing
+        // 防意外清空（如客户端只传部分字段时把 starDiscountRates 等老字段清掉）。
+        // 业务上「主动关闭满减」要求显式传 fullCutThreshold=null —— 当前 ReqVO 没标
+        // @NotNull 是允许的，但 service 这层不再处理 null 清空，需要清空请用专门的接口。
+        cn.hutool.core.bean.BeanUtil.copyProperties(reqVO, existing,
+                cn.hutool.core.bean.copier.CopyOptions.create().ignoreNullValue());
         promoConfigMapper.updateById(existing);
     }
 

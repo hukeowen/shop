@@ -5,6 +5,7 @@ import cn.iocoder.yudao.framework.common.pojo.PageParam;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.tenant.core.aop.TenantIgnore;
 import cn.iocoder.yudao.framework.tenant.core.util.TenantUtils;
+import cn.iocoder.yudao.module.merchant.controller.app.vo.shop.AppShopPublicInfoRespVO;
 import cn.iocoder.yudao.module.merchant.dal.dataobject.ShopBrokerageConfigDO;
 import cn.iocoder.yudao.module.merchant.dal.dataobject.ShopInfoDO;
 import cn.iocoder.yudao.module.merchant.dal.dataobject.MemberShopRelDO;
@@ -72,7 +73,7 @@ public class AppShopPublicController {
     @Parameter(name = "userLat", description = "用户当前纬度（可选）")
     @PermitAll
     @TenantIgnore
-    public CommonResult<Map<String, Object>> getShopInfo(
+    public CommonResult<AppShopPublicInfoRespVO> getShopInfo(
             @RequestParam(value = "tenantId", required = false) Long tenantId,
             @RequestParam(value = "shopId", required = false) Long shopId,
             @RequestParam(value = "userLng", required = false) java.math.BigDecimal userLng,
@@ -86,46 +87,66 @@ public class AppShopPublicController {
         if (shop == null) {
             return success(null);
         }
-        // 构造 map 返回，多带一个 distanceMeter（用户传了经纬度且店铺有经纬度时才有值）
-        Map<String, Object> resp = cn.hutool.core.bean.BeanUtil.beanToMap(shop, false, true);
+        AppShopPublicInfoRespVO resp = new AppShopPublicInfoRespVO();
+        resp.setId(shop.getId());
+        resp.setTenantId(shop.getTenantId());
+        resp.setShopName(shop.getShopName());
+        resp.setCategoryId(shop.getCategoryId());
+        resp.setCoverUrl(shop.getCoverUrl());
+        resp.setDescription(shop.getDescription());
+        resp.setNotice(shop.getNotice());
+        resp.setFeatureTags(shop.getFeatureTags());
+        resp.setLongitude(shop.getLongitude());
+        resp.setLatitude(shop.getLatitude());
+        resp.setAddress(shop.getAddress());
+        resp.setBusinessHours(shop.getBusinessHours());
+        resp.setStatus(shop.getStatus());
+        resp.setSales30d(shop.getSales30d());
+        resp.setAvgRating(shop.getAvgRating());
+
+        // 距离（用户和店铺都有合法经纬度才算）
         if (userLng != null && userLat != null
                 && shop.getLongitude() != null && shop.getLatitude() != null
                 && shop.getLongitude().signum() != 0 && shop.getLatitude().signum() != 0) {
-            int meter = haversineMeter(
+            resp.setDistanceMeter(haversineMeter(
                     userLng.doubleValue(), userLat.doubleValue(),
-                    shop.getLongitude().doubleValue(), shop.getLatitude().doubleValue());
-            resp.put("distanceMeter", meter);
+                    shop.getLongitude().doubleValue(), shop.getLatitude().doubleValue()));
         }
-        // 取该商户的星级折扣比例（仅文案展示用，C 端 shop-home「3 星会员享 9 折」）。
-        // PromoConfigDO 是 TenantBaseDO，必须在该 tenant ctx 内查。
+
+        // 星级折扣 + 满减（同 tenant ctx 内查）
         Long promoTenantId = shop.getTenantId();
         if (promoTenantId != null) {
             PromoConfigDO promo = TenantUtils.execute(promoTenantId,
                     () -> promoConfigMapper.selectCurrent());
             if (promo != null) {
-                if (promo.getStarDiscountRates() != null) {
-                    resp.put("starDiscountRates", promo.getStarDiscountRates());
-                }
-                // 满减规则（同时设了门槛和减免才视为启用），原型 ④ 底部「满 30 立减 5」
+                resp.setStarDiscountRates(promo.getStarDiscountRates());
                 if (promo.getFullCutThreshold() != null && promo.getFullCutThreshold() > 0
                         && promo.getFullCutAmount() != null && promo.getFullCutAmount() > 0) {
-                    resp.put("fullCutThreshold", promo.getFullCutThreshold());
-                    resp.put("fullCutAmount", promo.getFullCutAmount());
+                    resp.setFullCutThreshold(promo.getFullCutThreshold());
+                    resp.setFullCutAmount(promo.getFullCutAmount());
                 }
             }
-            // 社交证明：近 30 天该店访客数（distinct user_id from member_shop_rel where lastVisitAt > 30d）
-            // 仅做文案展示用，不返回具体用户列表（隐私保护）。
-            int visitorCount = TenantUtils.execute(promoTenantId, () -> {
-                java.time.LocalDateTime since = java.time.LocalDateTime.now().minusDays(30);
-                Long c = memberShopRelMapper.selectCount(
-                        new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<MemberShopRelDO>()
-                                .ge(MemberShopRelDO::getLastVisitAt, since));
-                return c == null ? 0 : c.intValue();
-            });
-            if (visitorCount > 0) {
-                resp.put("visitorCount30d", visitorCount);
-            }
         }
+        // visitorCount30d 抽到独立接口 /info/visitor，前端非阻塞拉，避免主路径多 1 次 SQL
+        return success(resp);
+    }
+
+    @GetMapping("/info/visitor")
+    @Operation(summary = "C 端：获取近 30 天访客数（独立接口，前端可异步拉避免阻塞 shop-home 首屏）")
+    @Parameter(name = "tenantId", description = "店铺所属租户 ID", required = true)
+    @PermitAll
+    @TenantIgnore
+    public CommonResult<Map<String, Object>> getVisitorCount(@RequestParam("tenantId") Long tenantId) {
+        // 隐私保护：仅返数字，不返用户列表
+        int visitorCount = TenantUtils.execute(tenantId, () -> {
+            java.time.LocalDateTime since = java.time.LocalDateTime.now().minusDays(30);
+            Long c = memberShopRelMapper.selectCount(
+                    new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<MemberShopRelDO>()
+                            .ge(MemberShopRelDO::getLastVisitAt, since));
+            return c == null ? 0 : c.intValue();
+        });
+        Map<String, Object> resp = new HashMap<>();
+        resp.put("visitorCount30d", visitorCount);
         return success(resp);
     }
 
