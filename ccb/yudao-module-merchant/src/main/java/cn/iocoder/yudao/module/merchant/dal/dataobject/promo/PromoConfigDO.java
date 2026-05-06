@@ -35,6 +35,9 @@ public class PromoConfigDO extends TenantBaseDO {
     private String commissionRates;
     /** 升星门槛 JSON 数组，每星一组：[{"directCount":2,"teamSales":3}, ...] */
     private String starUpgradeRules;
+    /** 星级折扣比例 JSON 数组（百分制，100=原价），索引 = star。仅做文案展示。
+     *  例：[100, 95, 92, 90, 88, 85] = 0 星 不打折 / 1 星 9.5 折 / ... 原型 ④ 用。 */
+    private String starDiscountRates;
 
     // ========== 推广积分 提现 / 转换 ==========
     /** 推广积分→消费积分 转换比例（默认 1:1） */

@@ -37,8 +37,13 @@
             <text class="label">团队销售额（元）</text>
             <input class="input" type="number" v-model="s.teamSales" />
           </view>
+          <view class="field">
+            <text class="label">会员折扣（折，10=原价）</text>
+            <input class="input" type="digit" v-model="s.discount" placeholder="如 9.5（不打折留空）" />
+          </view>
         </view>
       </view>
+      <view class="hint">「会员折扣」仅在店铺详情页文案展示，不参与结算。</view>
     </view>
 
     <!-- ============ 推广积分 ============ -->
@@ -245,7 +250,7 @@ function ensureStarRows(n) {
   const target = Math.max(1, Math.min(10, parseInt(n) || 5));
   // 截断或补齐
   while (starList.value.length < target) {
-    starList.value.push({ rate: '0', directCount: '0', teamSales: '0' });
+    starList.value.push({ rate: '0', directCount: '0', teamSales: '0', discount: '' });
   }
   if (starList.value.length > target) starList.value.length = target;
   // 修剪 poolStars
@@ -291,13 +296,17 @@ async function load() {
 
     const rates = safeJsonArr(data.commissionRates, [1, 2, 3, 4, 5]);
     const rules = safeJsonArr(data.starUpgradeRules, []);
+    // 折扣率：百分制；前端显示成「折」（90 → '9'，95 → '9.5'）。索引 0 = 0 星不显示，所以从 1 开始
+    const discRates = safeJsonArr(data.starDiscountRates, []);
 
     starList.value = [];
     for (let i = 0; i < count; i++) {
+      const dPct = Number(discRates[i + 1]); // i+1 因为 0 索引留给"非会员"
       starList.value.push({
         rate: String(rates[i] ?? 0),
         directCount: String(rules[i]?.directCount ?? 0),
         teamSales: String(rules[i]?.teamSales ?? 0),
+        discount: Number.isFinite(dPct) && dPct > 0 && dPct < 100 ? String(dPct / 10) : '',
       });
     }
     poolStars.value = safeJsonArr(data.poolEligibleStars, []).map(Number);
@@ -325,6 +334,14 @@ async function onSave() {
       teamSales: parseInt(s.teamSales) || 0,
     }))
   );
+  // 折扣率序列化：长度 = count + 1，索引 0 = 100（非会员不打折），索引 i+1 = i 星折扣
+  // 用户填的是「折」（9.5），存的是「百分制」（95）；空/无效 → 100（不打折）
+  const starDiscountArr = [100];
+  for (let i = 0; i < count; i++) {
+    const z = parseFloat(starList.value[i]?.discount);
+    starDiscountArr.push(Number.isFinite(z) && z > 0 && z < 10 ? Math.round(z * 10) : 100);
+  }
+  const starDiscountRates = JSON.stringify(starDiscountArr);
   const poolEligibleStars = JSON.stringify(poolStars.value);
 
   const conv = parseFloat(form.value.pointConversionRatio);
@@ -337,6 +354,7 @@ async function onSave() {
     starLevelCount: count,
     commissionRates,
     starUpgradeRules,
+    starDiscountRates,
     pointConversionRatio: conv,
     withdrawThreshold: Math.round((parseFloat(form.value.withdrawThresholdYuan) || 0) * 100),
     poolEnabled: !!form.value.poolEnabled,

@@ -40,8 +40,8 @@
           <view class="lbl">我已赚</view>
         </view>
         <view v-if="myRel?.star" class="my-star">
-          ⭐ {{ myRel.star }} 星会员<br>
-          <text style="font-size:18rpx;font-weight:400;">享 {{ memberDiscount }} 折</text>
+          ⭐ {{ myRel.star }} 星会员
+          <text v-if="memberDiscount"><br><text style="font-size:18rpx;font-weight:400;">享 {{ memberDiscount }} 折</text></text>
         </view>
       </view>
       <!-- 店铺特色 chips（商户在 me/shop-edit 自填，无值整段不显示） -->
@@ -68,7 +68,8 @@
       <view class="vip-icon">🎁</view>
       <view class="vip-info">
         <view class="vip-title">
-          <text v-if="myRel?.star">你是 <text class="b">{{ myRel.star }} 星会员</text>，享 <text class="b">{{ memberDiscount }} 折</text></text>
+          <text v-if="myRel?.star && memberDiscount">你是 <text class="b">{{ myRel.star }} 星会员</text>，享 <text class="b">{{ memberDiscount }} 折</text></text>
+          <text v-else-if="myRel?.star">你是 <text class="b">{{ myRel.star }} 星会员</text></text>
           <text v-else>邀请好友赚返奖</text>
         </view>
         <view class="vip-sub">
@@ -237,11 +238,22 @@ const featureChips = computed(() => {
   return raw.split(/[,，]/).map((s) => s.trim()).filter(Boolean).slice(0, 6);
 });
 
+// 折扣文案：从 shop_promo_config.star_discount_rates 读（百分制，100=原价）
+//   - 商户没配 starDiscountRates → 返空，模板对应 v-if 隐藏整段折扣展示
+//   - 配了但当前星级对应值是 100/无效 → 也返空（不打折就别显示）
+//   - 配了 90 → 返 '9'（即 9 折）
 const memberDiscount = computed(() => {
-  // 简单映射：1 星 9.5 折，2 星 9.2 折，3 星 9 折，4 星 8.8 折，5 星 8.5 折
+  const raw = shopInfo.value?.starDiscountRates;
+  if (!raw) return '';
+  let arr = null;
+  try { arr = typeof raw === 'string' ? JSON.parse(raw) : raw; } catch { return ''; }
+  if (!Array.isArray(arr) || arr.length === 0) return '';
   const s = myRel.value?.star || 0;
-  if (s <= 0) return '10';
-  return ['10', '9.5', '9.2', '9', '8.8', '8.5'][Math.min(s, 5)];
+  const idx = Math.max(0, Math.min(s, arr.length - 1));
+  const pct = Number(arr[idx]);
+  if (!Number.isFinite(pct) || pct <= 0 || pct >= 100) return '';
+  // 90 → 9; 95 → 9.5; 88 → 8.8
+  return (pct / 10).toString();
 });
 const coverStyle = computed(() => {
   const palette = ['#ffd1ba,#ff9a4a,#ff6b35', '#c9e0ff,#6196f0,#3a78d8', '#d3f4d3,#6fcf6f,#3aa83a', '#ffd0dc,#ee5a8b,#cc3d6d'];

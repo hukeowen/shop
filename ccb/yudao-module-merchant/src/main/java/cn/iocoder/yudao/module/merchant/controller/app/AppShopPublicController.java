@@ -7,8 +7,10 @@ import cn.iocoder.yudao.framework.tenant.core.aop.TenantIgnore;
 import cn.iocoder.yudao.framework.tenant.core.util.TenantUtils;
 import cn.iocoder.yudao.module.merchant.dal.dataobject.ShopBrokerageConfigDO;
 import cn.iocoder.yudao.module.merchant.dal.dataobject.ShopInfoDO;
+import cn.iocoder.yudao.module.merchant.dal.dataobject.promo.PromoConfigDO;
 import cn.iocoder.yudao.module.merchant.dal.mysql.ShopBrokerageConfigMapper;
 import cn.iocoder.yudao.module.merchant.dal.mysql.ShopInfoMapper;
+import cn.iocoder.yudao.module.merchant.dal.mysql.promo.PromoConfigMapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -39,6 +41,8 @@ public class AppShopPublicController {
     private ShopInfoMapper shopInfoMapper;
     @Resource
     private ShopBrokerageConfigMapper shopBrokerageConfigMapper;
+    @Resource
+    private PromoConfigMapper promoConfigMapper;
 
     @GetMapping("/list")
     @Operation(summary = "分页查询店铺列表（仅返回正常营业的店铺）")
@@ -87,6 +91,16 @@ public class AppShopPublicController {
                     userLng.doubleValue(), userLat.doubleValue(),
                     shop.getLongitude().doubleValue(), shop.getLatitude().doubleValue());
             resp.put("distanceMeter", meter);
+        }
+        // 取该商户的星级折扣比例（仅文案展示用，C 端 shop-home「3 星会员享 9 折」）。
+        // PromoConfigDO 是 TenantBaseDO，必须在该 tenant ctx 内查。
+        Long promoTenantId = shop.getTenantId();
+        if (promoTenantId != null) {
+            PromoConfigDO promo = TenantUtils.execute(promoTenantId,
+                    () -> promoConfigMapper.selectCurrent());
+            if (promo != null && promo.getStarDiscountRates() != null) {
+                resp.put("starDiscountRates", promo.getStarDiscountRates());
+            }
         }
         return success(resp);
     }

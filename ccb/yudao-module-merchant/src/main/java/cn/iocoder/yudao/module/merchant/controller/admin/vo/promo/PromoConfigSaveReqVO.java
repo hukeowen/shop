@@ -26,6 +26,10 @@ public class PromoConfigSaveReqVO {
     @NotNull
     private String starUpgradeRules;
 
+    @Schema(description = "星级折扣比例 JSON 数组，索引=star（百分制 100=原价）",
+            example = "[100,95,92,90,88,85]")
+    private String starDiscountRates;
+
     @Schema(description = "推广积分→消费积分 转换比例", example = "1.00")
     @NotNull
     @DecimalMin("0.01")
