@@ -7,10 +7,12 @@ import cn.iocoder.yudao.framework.tenant.core.aop.TenantIgnore;
 import cn.iocoder.yudao.framework.tenant.core.context.TenantContextHolder;
 import cn.iocoder.yudao.framework.tenant.core.util.TenantUtils;
 import cn.iocoder.yudao.module.merchant.controller.app.vo.coupon.AppShopCouponSaveReqVO;
+import cn.iocoder.yudao.module.merchant.dal.dataobject.MerchantDO;
 import cn.iocoder.yudao.module.merchant.dal.dataobject.coupon.ShopCouponDO;
 import cn.iocoder.yudao.module.merchant.dal.dataobject.coupon.ShopCouponUserDO;
 import cn.iocoder.yudao.module.merchant.dal.mysql.coupon.ShopCouponMapper;
 import cn.iocoder.yudao.module.merchant.dal.mysql.coupon.ShopCouponUserMapper;
+import cn.iocoder.yudao.module.merchant.service.MerchantService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -44,24 +46,62 @@ public class AppMerchantCouponController {
     private ShopCouponMapper couponMapper;
     @Resource
     private ShopCouponUserMapper couponUserMapper;
+    @Resource
+    private MerchantService merchantService;
+
+    /**
+     * 商户身份门：未登录或非商户角色一律抛 401。
+     * 同时返当前商户实体，供后续写入操作做 tenantId 比对（防越权改别人租户的券）。
+     */
+    private MerchantDO getMerchantOrThrow() {
+        Long userId = SecurityFrameworkUtils.getLoginUserId();
+        if (userId == null) {
+            throw new ServiceException(401, "请先登录");
+        }
+        MerchantDO merchant = merchantService.getMerchantByUserId(userId);
+        if (merchant == null) {
+            throw new ServiceException(403, "当前账号未开通商户");
+        }
+        return merchant;
+    }
+
+    /**
+     * 商户写入操作前的「资源属主校验」：确认 coupon 属于当前商户租户。
+     * 即使 token 切到别的租户，也挡得住越权改他人券。
+     */
+    private ShopCouponDO loadOwnCouponOrThrow(Long couponId, MerchantDO merchant) {
+        if (couponId == null) {
+            throw new ServiceException(404, "券模板不存在");
+        }
+        ShopCouponDO row = couponMapper.selectById(couponId);
+        if (row == null) {
+            throw new ServiceException(404, "券模板不存在");
+        }
+        if (!java.util.Objects.equals(row.getTenantId(), merchant.getTenantId())) {
+            log.warn("[coupon] 越权操作 couponId={} 属租户={} 当前商户={} userId={}",
+                    couponId, row.getTenantId(), merchant.getTenantId(), merchant.getUserId());
+            throw new ServiceException(403, "无权操作该券");
+        }
+        return row;
+    }
 
     // ==================== 商户端：自建模板（token 租户隔离） ====================
 
     @GetMapping("/app-api/merchant/mini/coupon/list")
     @Operation(summary = "商户：列出本店所有券模板（含已下架）")
     public CommonResult<List<ShopCouponDO>> merchantList() {
+        getMerchantOrThrow();
         return success(couponMapper.selectAllByMerchant());
     }
 
     @PostMapping("/app-api/merchant/mini/coupon/save")
     @Operation(summary = "商户：新建/编辑券模板（带 id=编辑）")
     public CommonResult<Long> merchantSave(@Valid @RequestBody AppShopCouponSaveReqVO reqVO) {
+        MerchantDO merchant = getMerchantOrThrow();
         ShopCouponDO row;
         if (reqVO.getId() != null) {
-            row = couponMapper.selectById(reqVO.getId());
-            if (row == null) {
-                throw new ServiceException(404, "券模板不存在");
-            }
+            // 编辑：必须属于当前商户租户
+            row = loadOwnCouponOrThrow(reqVO.getId(), merchant);
         } else {
             row = ShopCouponDO.builder()
                     .takenCount(0)
@@ -77,6 +117,7 @@ public class AppMerchantCouponController {
         if (reqVO.getId() != null) {
             couponMapper.updateById(row);
         } else {
+            // 新建：tenantId 由 TenantBaseDO 自动注入（merchant 登录态下已是其租户）
             couponMapper.insert(row);
         }
         return success(row.getId());
@@ -86,10 +127,8 @@ public class AppMerchantCouponController {
     @Operation(summary = "商户：上/下架券模板")
     public CommonResult<Boolean> merchantUpdateStatus(@PathVariable("id") Long id,
                                                       @RequestParam("status") Integer status) {
-        ShopCouponDO row = couponMapper.selectById(id);
-        if (row == null) {
-            throw new ServiceException(404, "券模板不存在");
-        }
+        MerchantDO merchant = getMerchantOrThrow();
+        ShopCouponDO row = loadOwnCouponOrThrow(id, merchant);
         row.setStatus(status);
         couponMapper.updateById(row);
         return success(true);
@@ -98,6 +137,8 @@ public class AppMerchantCouponController {
     @DeleteMapping("/app-api/merchant/mini/coupon/{id}")
     @Operation(summary = "商户：删除券模板（软删）")
     public CommonResult<Boolean> merchantDelete(@PathVariable("id") Long id) {
+        MerchantDO merchant = getMerchantOrThrow();
+        loadOwnCouponOrThrow(id, merchant);  // 仅校验属主，让 deleteById 走标准软删
         couponMapper.deleteById(id);
         return success(true);
     }
@@ -152,15 +193,17 @@ public class AppMerchantCouponController {
             if (coupon == null || coupon.getStatus() == null || coupon.getStatus() != 0) {
                 throw new ServiceException(404, "券不存在或已下架");
             }
-            // 库存检查
-            if (coupon.getTotalCount() != null && coupon.getTotalCount() > 0
-                    && (coupon.getTakenCount() != null && coupon.getTakenCount() >= coupon.getTotalCount())) {
-                throw new ServiceException(400, "已领完");
-            }
             // 幂等：同一用户同一券限领一张（DB UNIQUE 兜底）
             ShopCouponUserDO existed = couponUserMapper.selectByUserIdAndCouponId(userId, couponId);
             if (existed != null) {
                 return success(existed.getId());
+            }
+            // 关键：原子递增 taken_count（防 grab 并发超发）。
+            //   atomicIncrTaken 内置 WHERE total_count=0 OR taken_count<total_count，
+            //   返回 0 = 已领完 / 已下架；返回 1 = 占住一张库存。
+            int updated = couponMapper.atomicIncrTaken(couponId);
+            if (updated == 0) {
+                throw new ServiceException(400, "已领完");
             }
             LocalDateTime now = LocalDateTime.now();
             ShopCouponUserDO row = ShopCouponUserDO.builder()
@@ -172,10 +215,13 @@ public class AppMerchantCouponController {
                     .expireTime(now.plusDays(coupon.getValidDays() == null ? 30 : coupon.getValidDays()))
                     .status(0)
                     .build();
-            couponUserMapper.insert(row);
-            // 已领数 +1
-            coupon.setTakenCount((coupon.getTakenCount() == null ? 0 : coupon.getTakenCount()) + 1);
-            couponMapper.updateById(coupon);
+            try {
+                couponUserMapper.insert(row);
+            } catch (org.springframework.dao.DuplicateKeyException dup) {
+                // UNIQUE 兜底：极小概率两个并发都过了「已领」检查同时写入
+                // 此时 taken_count 已被多扣一张，事务回滚由 @Transactional 保证整体一致
+                throw new ServiceException(400, "已领过该券");
+            }
             return success(row.getId());
         } finally {
             TenantContextHolder.setTenantId(prevTenant);
