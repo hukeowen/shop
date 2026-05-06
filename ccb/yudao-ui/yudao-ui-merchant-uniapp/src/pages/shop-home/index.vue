@@ -127,6 +127,9 @@
         </view>
       </view>
     </view>
+
+    <!-- 底部 tabbar：分享落地直进 shop-home 时也能切回首页/订单/我的 -->
+    <RoleTabBar current="/pages/shop-home/index" />
   </view>
 </template>
 
@@ -217,19 +220,21 @@ async function loadShopInfo() {
 async function loadProducts() {
   if (!tenantId.value) return;
   try {
-    const res = await request({
-      url: '/app-api/product/spu/page?pageNo=1&pageSize=20',
-      tenantId: tenantId.value,
-    });
+    // C 端用户访问商户店铺：不传 header tenant-id（与用户自身 token tenant 冲突会被
+     // TenantSecurityWebFilter 401「您无权访问该租户的数据」），后端公开接口已 @TenantIgnore
+     // 并按 query.tenantId 自取数据。
+     const res = await request({
+       url: `/app-api/product/spu/page?pageNo=1&pageSize=20&tenantId=${tenantId.value}`,
+     });
     products.value = (res && res.list) ? res.list : (Array.isArray(res) ? res : []);
   } catch { products.value = []; }
 }
 async function loadCart() {
   if (!tenantId.value) return;
   try {
+    // 购物车按用户自己 token tenant 走，不传商户 tenantId 头（避免越权 401）
     const res = await request({
       url: '/app-api/trade/cart/list',
-      tenantId: tenantId.value,
     });
     const list = (res && res.validList) || (res && res.list) || (Array.isArray(res) ? res : []);
     cartCount.value = list.reduce((s, c) => s + (c.count || 0), 0);
@@ -294,7 +299,6 @@ async function addCart(spu) {
     await request({
       url: '/app-api/trade/cart/add',
       method: 'POST',
-      tenantId: tenantId.value,
       data: { skuId, count: 1 },
     });
     uni.showToast({ title: '已加入购物车', icon: 'success' });
@@ -344,7 +348,8 @@ function onCopyShare() {
 
 function goDetail(spu) { uni.navigateTo({ url: `/pages/product/detail?spuId=${spu.id}&tenantId=${tenantId.value}` }); }
 function goCart() { uni.navigateTo({ url: `/pages/cart/index?tenantId=${tenantId.value}` }); }
-function goBack() { uni.navigateBack({ fail: () => uni.switchTab({ url: '/pages/user-home/index' }) }); }
+// switchTab 在没全局 tabBar 时静默失败，分享落地直进 shop-home 时 navigateBack 也无前一页 → reLaunch
+function goBack() { uni.navigateBack({ fail: () => uni.reLaunch({ url: '/pages/user-home/index' }) }); }
 
 onLoad((query) => {
   tenantId.value = query.tenantId ? Number(query.tenantId) : null;
@@ -358,7 +363,6 @@ onLoad((query) => {
     request({
       url: `/app-api/merchant/mini/member-rel/visit?tenantId=${tenantId.value}${referrerUserId ? `&referrerUserId=${referrerUserId}` : ''}`,
       method: 'POST',
-      tenantId: tenantId.value,
     }).catch(() => {});
   }
   if (referrerUserId) savePendingReferrer(referrerUserId);
