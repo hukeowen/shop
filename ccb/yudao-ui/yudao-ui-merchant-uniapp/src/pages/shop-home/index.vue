@@ -136,19 +136,26 @@
     <view v-if="products.length" class="sh-section-title">
       <view class="sh-section-h3">全部商品</view>
     </view>
-    <view class="cat-tab">
-      <view class="it active">全部</view>
+    <view v-if="cats.length > 1" class="cat-tab">
+      <view
+        v-for="c in cats"
+        :key="c.id"
+        class="it"
+        :class="{ active: currentCatId === c.id }"
+        @click="currentCatId = c.id"
+      >{{ c.name }}</view>
     </view>
     <view v-if="loading && !products.length" class="empty-tip">加载中...</view>
     <view v-else-if="!products.length" class="empty-tip">暂无商品</view>
+    <view v-else-if="!displayProducts.length" class="empty-tip">该分类下暂无商品</view>
     <view v-else class="product-grid">
       <view
-        v-for="(spu, i) in products"
+        v-for="(spu, i) in displayProducts"
         :key="spu.id"
         class="pcard"
         @click="goDetail(spu)"
       >
-        <view v-if="i === 0" class="corner-tag">🔥 热销</view>
+        <view v-if="i === 0 && currentCatId === 0" class="corner-tag">🔥 热销</view>
         <view class="pic" :style="picStyle(spu, i)">{{ pickEmoji(spu) }}</view>
         <view class="body">
           <view class="name">{{ spu.name }}</view>
@@ -224,9 +231,33 @@ const inviterCount = ref(0);
 const signaturePromo = ref(null);
 // 该店可领的优惠券模板（C 端只展示 status=0；taken=true 表示当前用户已领过）
 const coupons = ref([]);
+// 商品分类 tab：用户在 shop-home 可按分类过滤商品（user-h5 ④ line 2674-2679）
+//   - cats[0] 永远是「全部」(id=0)
+//   - 其余按该店出现过的 categoryId 去重 + 拉名称
+const cats = ref([{ id: 0, name: '全部' }]);
+const currentCatId = ref(0);
+// 全平台分类名映射 id → name（一次性拉，避免每个商品重复请求）
+const categoryNameMap = ref({});
 
-// 招牌商品 = products 第一个（暂按当前排序；后续 M7 接销量排序）
-const signatureSpu = computed(() => products.value && products.value[0] ? products.value[0] : null);
+// 按销量降序的商品列表（用于招牌商品 + 全部 grid）
+const sortedProducts = computed(() => {
+  const list = [...(products.value || [])];
+  list.sort((a, b) => (b.salesCount || 0) - (a.salesCount || 0));
+  return list;
+});
+// 招牌商品 = 该店销量 #1
+const signatureSpu = computed(() => sortedProducts.value[0] || null);
+
+// 当前分类下的商品（cat=0 全部；否则按 categoryId 过滤；招牌商品已在卡片单独展示，
+// 全部 grid 排除掉招牌避免重复）
+const displayProducts = computed(() => {
+  const sigId = signatureSpu.value?.id;
+  let list = sortedProducts.value;
+  if (currentCatId.value > 0) {
+    list = list.filter((p) => p.categoryId === currentCatId.value);
+  }
+  return list.filter((p) => p.id !== sigId);
+});
 // 「推 N 反 1」标，仅在该商品启用了推荐返佣时显示
 const signatureTuijian = computed(() => {
   const p = signaturePromo.value;
@@ -361,9 +392,39 @@ async function loadProducts() {
        url: `/app-api/product/spu/page?pageNo=1&pageSize=20&tenantId=${tenantId.value}`,
      });
     products.value = (res && res.list) ? res.list : (Array.isArray(res) ? res : []);
-    // 加载完商品后异步拉招牌商品的「推 N 反 1」配置（products[0] 作招牌）
+    // 加载完商品后异步：① 招牌商品「推 N 反 1」配置；② 该店分类 tab
     loadSignaturePromo();
+    loadCats();
   } catch { products.value = []; }
+}
+// 商品分类 tab：先一次性拉全平台 category 拿 id→name 映射，再按 products
+// 出现过的 categoryId 去重渲染。仅在该店有 ≥ 2 个不同分类时才显示 tab。
+async function loadCats() {
+  if (!products.value.length) {
+    cats.value = [{ id: 0, name: '全部' }];
+    return;
+  }
+  // 拉一次全平台分类列表（@TenantIgnore，跨租户公开）
+  if (!Object.keys(categoryNameMap.value).length) {
+    try {
+      const all = await request({ url: '/app-api/product/category/list' });
+      const list = Array.isArray(all) ? all : (all?.list || []);
+      const map = {};
+      list.forEach((c) => { map[c.id] = c.name; });
+      categoryNameMap.value = map;
+    } catch { categoryNameMap.value = {}; }
+  }
+  // 该店出现过的 categoryId 去重，按 sort/id 升序
+  const seen = new Set();
+  const ordered = [];
+  products.value.forEach((p) => {
+    const cid = p.categoryId;
+    if (cid && !seen.has(cid)) {
+      seen.add(cid);
+      ordered.push({ id: cid, name: categoryNameMap.value[cid] || `分类${cid}` });
+    }
+  });
+  cats.value = [{ id: 0, name: '全部' }, ...ordered];
 }
 // 优惠券：C 端拉某店可领券列表；shop-home 横向 strip 渲染
 async function loadCoupons() {
