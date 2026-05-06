@@ -1,6 +1,7 @@
 package cn.iocoder.yudao.module.merchant.dal.dataobject;
 
 import cn.iocoder.yudao.framework.mybatis.core.dataobject.BaseDO;
+import cn.iocoder.yudao.framework.tenant.core.aop.TenantIgnore;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.AllArgsConstructor;
@@ -17,6 +18,10 @@ import lombok.ToString;
  * SQL 表 {@code tenant_id NOT NULL DEFAULT 0} 靠 DDL 默认值兜底，避免 MP 租户拦截器追加
  * {@code tenant_id = ?} 把不同租户的 admin 屏蔽掉。</p>
  */
+// 平台级套餐（tenant_id=0），所有商户租户共享。
+// yudao TenantDatabaseInterceptor 的逻辑是「BaseDO 子类 + 无 @TenantIgnore → 仍加 WHERE tenant_id=ctx」，
+// 所以必须显式标 @TenantIgnore，否则商户登录后查这个表只会看到 tenant_id=新租户 的（空）。
+@TenantIgnore
 @TableName("ai_video_package")
 @Data
 @EqualsAndHashCode(callSuper = true)
