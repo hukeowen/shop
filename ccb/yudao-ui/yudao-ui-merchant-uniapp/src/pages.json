@@ -66,6 +66,13 @@
       }
     },
     {
+      "path": "pages/order/pay-done",
+      "style": {
+        "navigationBarTitleText": "支付完成",
+        "navigationStyle": "custom"
+      }
+    },
+    {
       "path": "pages/ai-video/create",
       "style": {
         "navigationBarTitleText": "创建 AI 视频"
@@ -324,28 +331,10 @@
     "navigationBarBackgroundColor": "#FFFFFF",
     "backgroundColor": "#F6F7F9"
   },
-  "tabBar": {
-    "color": "#8A8F99",
-    "selectedColor": "#FF6B35",
-    "backgroundColor": "#FFFFFF",
-    "borderStyle": "white",
-    "list": [
-      {
-        "pagePath": "pages/index/index",
-        "text": "首页"
-      },
-      {
-        "pagePath": "pages/ai-video/index",
-        "text": "成片"
-      },
-      {
-        "pagePath": "pages/order/list",
-        "text": "订单"
-      },
-      {
-        "pagePath": "pages/me/index",
-        "text": "我的"
-      }
-    ]
+  "easycom": {
+    "autoscan": true,
+    "custom": {
+      "RoleTabBar": "@/components/RoleTabBar.vue"
+    }
   }
 }

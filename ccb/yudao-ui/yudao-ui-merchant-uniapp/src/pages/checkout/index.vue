@@ -316,13 +316,16 @@ async function submitOrder() {
       uni.showModal({ title: '下单失败', content: '未拿到订单号', showCancel: false });
       return;
     }
+    const tid = tenantId.value || uni.getStorageSync('lastShopTenantId') || '';
     if (finalPayPrice > 0) {
       // MAJ-7 修复：还需线上支付 → 跳订单列表（用户在那里点"去支付"），不显示"创建成功"误导文案
       uni.showToast({ title: `还需线上支付 ¥${(finalPayPrice / 100).toFixed(2)}`, icon: 'none', duration: 1500 });
       setTimeout(() => uni.redirectTo({ url: '/pages/user-order/list' }), 1200);
     } else {
-      uni.showToast({ title: '已支付', icon: 'success' });
-      setTimeout(() => uni.redirectTo({ url: '/pages/user-order/list' }), 800);
+      // 余额抵扣全额或余额+积分付清 → 跳「支付完成」页（原型 ⑧ 推 N 反 1 引流）
+      setTimeout(() => uni.redirectTo({
+        url: `/pages/order/pay-done?orderId=${orderId}${tid ? `&tenantId=${tid}` : ''}`,
+      }), 600);
     }
   } catch (e) {
     uni.hideLoading();
