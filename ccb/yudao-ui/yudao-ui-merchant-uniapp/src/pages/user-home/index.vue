@@ -11,7 +11,7 @@
       </view>
     </view>
 
-    <!-- 4 个快捷入口 -->
+    <!-- 3 个快捷入口（去掉扫码） -->
     <view class="home-quick">
       <view class="qk" @click="goNearby">
         <view class="qk-icon i1">📍</view>
@@ -24,10 +24,6 @@
       <view class="qk" @click="goCoupons">
         <view class="qk-icon i3">🎁</view>
         <text class="qk-text">优惠</text>
-      </view>
-      <view class="qk" @click="goScan">
-        <view class="qk-icon i4">📜</view>
-        <text class="qk-text">扫码</text>
       </view>
     </view>
 
@@ -230,21 +226,10 @@ function goShop(tenantId) {
   uni.navigateTo({ url: `/pages/shop-home/index?tenantId=${tenantId}` });
 }
 function goNearby() { uni.navigateTo({ url: '/pages/nearby/index' }); }
-function goCategories() { uni.showToast({ title: '分类页开发中', icon: 'none' }); }
-function goCoupons() { uni.showToast({ title: '优惠券中心开发中', icon: 'none' }); }
-function goScan() {
-  uni.scanCode?.({
-    onlyFromCamera: false,
-    success: (r) => {
-      if (r.result) {
-        // 解析二维码 URL 中的 tenantId
-        const m = r.result.match(/tenantId=(\d+)/);
-        if (m) goShop(m[1]);
-        else uni.showToast({ title: '不是有效店铺二维码', icon: 'none' });
-      }
-    },
-  });
-}
+// 分类 = 跳到附近店铺页（暂时只看附近店铺；后续 nearby 页内可加 category 切换）
+function goCategories() { uni.navigateTo({ url: '/pages/nearby/index' }); }
+// 优惠 = 跳到「我的优惠券」聚合页（跨店看所有领过的券）
+function goCoupons() { uni.navigateTo({ url: '/pages/user-me/coupons' }); }
 function goAiVideos() { uni.showToast({ title: 'AI 短视频聚合页开发中', icon: 'none' }); }
 function goMyShops() { uni.navigateTo({ url: '/pages/user-me/index' }); }
 // 用户端三大 tab 切换：pages.json 已无全局 tabBar，switchTab 在 H5 静默失败
@@ -303,7 +288,7 @@ onPullDownRefresh(async () => {
   background: $bg-card;
   border-radius: $radius-lg;
   box-shadow: 0 4rpx 20rpx rgba(15,23,42,.04);
-  display: grid; grid-template-columns: repeat(4, 1fr);
+  display: grid; grid-template-columns: repeat(3, 1fr);
   position: relative; z-index: 2;
 }
 .qk { text-align: center; padding: 12rpx 0; }

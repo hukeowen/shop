@@ -295,6 +295,13 @@
       }
     },
     {
+      "path": "pages/user-me/coupons",
+      "style": {
+        "navigationBarTitleText": "我的优惠券",
+        "navigationStyle": "custom"
+      }
+    },
+    {
       "path": "pages/nearby/index",
       "style": {
         "navigationBarTitleText": "附近店铺"
