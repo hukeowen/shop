@@ -98,21 +98,7 @@
 
     <view class="bottom-space" />
 
-    <!-- 底部 Tab Bar -->
-    <view class="tab-bar safe-bottom">
-      <view class="tab-item active">
-        <text class="ic">🏠</text>
-        <text class="lbl">首页</text>
-      </view>
-      <view class="tab-item" @click="goOrder">
-        <text class="ic">📋</text>
-        <text class="lbl">订单</text>
-      </view>
-      <view class="tab-item" @click="goMe">
-        <text class="ic">👤</text>
-        <text class="lbl">我的</text>
-      </view>
-    </view>
+    <RoleTabBar current="/pages/user-home/index" force-role="member" />
   </view>
 </template>
 

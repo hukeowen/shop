@@ -70,21 +70,8 @@
     <view v-if="hasMore && !loading" class="load-more" @click="loadMore">加载更多</view>
     <view class="bottom-space"></view>
 
-    <!-- Tab Bar -->
-    <view class="tab-bar safe-bottom">
-      <view class="tab-item" @click="goHome">
-        <text class="ic">🏠</text>
-        <text class="lbl">首页</text>
-      </view>
-      <view class="tab-item active">
-        <text class="ic">📋</text>
-        <text class="lbl">订单</text>
-      </view>
-      <view class="tab-item" @click="goMe">
-        <text class="ic">👤</text>
-        <text class="lbl">我的</text>
-      </view>
-    </view>
+    <!-- 底部 tab：force-role="member" 防商户账号下被解析成商户 tab -->
+    <RoleTabBar current="/pages/user-order/list" force-role="member" />
   </view>
 </template>
 
