@@ -7,9 +7,11 @@ import cn.iocoder.yudao.framework.tenant.core.aop.TenantIgnore;
 import cn.iocoder.yudao.framework.tenant.core.util.TenantUtils;
 import cn.iocoder.yudao.module.merchant.dal.dataobject.ShopBrokerageConfigDO;
 import cn.iocoder.yudao.module.merchant.dal.dataobject.ShopInfoDO;
+import cn.iocoder.yudao.module.merchant.dal.dataobject.MemberShopRelDO;
 import cn.iocoder.yudao.module.merchant.dal.dataobject.promo.PromoConfigDO;
 import cn.iocoder.yudao.module.merchant.dal.mysql.ShopBrokerageConfigMapper;
 import cn.iocoder.yudao.module.merchant.dal.mysql.ShopInfoMapper;
+import cn.iocoder.yudao.module.merchant.dal.mysql.MemberShopRelMapper;
 import cn.iocoder.yudao.module.merchant.dal.mysql.promo.PromoConfigMapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import io.swagger.v3.oas.annotations.Operation;
@@ -43,6 +45,8 @@ public class AppShopPublicController {
     private ShopBrokerageConfigMapper shopBrokerageConfigMapper;
     @Resource
     private PromoConfigMapper promoConfigMapper;
+    @Resource
+    private MemberShopRelMapper memberShopRelMapper;
 
     @GetMapping("/list")
     @Operation(summary = "分页查询店铺列表（仅返回正常营业的店铺）")
@@ -108,6 +112,18 @@ public class AppShopPublicController {
                     resp.put("fullCutThreshold", promo.getFullCutThreshold());
                     resp.put("fullCutAmount", promo.getFullCutAmount());
                 }
+            }
+            // 社交证明：近 30 天该店访客数（distinct user_id from member_shop_rel where lastVisitAt > 30d）
+            // 仅做文案展示用，不返回具体用户列表（隐私保护）。
+            int visitorCount = TenantUtils.execute(promoTenantId, () -> {
+                java.time.LocalDateTime since = java.time.LocalDateTime.now().minusDays(30);
+                Long c = memberShopRelMapper.selectCount(
+                        new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<MemberShopRelDO>()
+                                .ge(MemberShopRelDO::getLastVisitAt, since));
+                return c == null ? 0 : c.intValue();
+            });
+            if (visitorCount > 0) {
+                resp.put("visitorCount30d", visitorCount);
             }
         }
         return success(resp);

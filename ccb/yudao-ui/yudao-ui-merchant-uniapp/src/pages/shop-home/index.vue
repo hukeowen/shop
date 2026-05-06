@@ -80,6 +80,12 @@
       <view class="vip-cta">邀请赚奖 ›</view>
     </view>
 
+    <!-- 社交证明：近 30 天访客数（仅文案展示，无名单/无头像，避免假数据） -->
+    <view v-if="shopInfo?.visitorCount30d > 0" class="social-proof">
+      <text class="ic">👥</text>
+      <text class="text"><text class="num">{{ shopInfo.visitorCount30d }}</text> 位邻居近 30 天来过这家店</text>
+    </view>
+
     <!-- 优惠券领取条（横向滚动；商户在 me/coupon 自建；无券则整段不显示） -->
     <scroll-view v-if="coupons.length" scroll-x="true" class="coupon-strip">
       <view
@@ -798,6 +804,22 @@ onShow(() => loadCart());
   align-items: center;
   gap: 12rpx;
   .ic { color: $brand-primary; font-size: 32rpx; }
+}
+
+// 社交证明（无 mock 头像；仅返真实近 30 天访客数）
+.social-proof {
+  margin: 20rpx 32rpx;
+  padding: 18rpx 28rpx;
+  background: $bg-card;
+  border-radius: $radius-md;
+  box-shadow: $shadow-card;
+  display: flex; align-items: center; gap: 16rpx;
+  .ic { font-size: 32rpx; }
+  .text {
+    flex: 1; font-size: 22rpx; color: $text-secondary;
+    line-height: 1.4;
+    .num { color: $brand-primary; font-weight: 700; }
+  }
 }
 
 // 优惠券领取条（原型 line 873-918）
