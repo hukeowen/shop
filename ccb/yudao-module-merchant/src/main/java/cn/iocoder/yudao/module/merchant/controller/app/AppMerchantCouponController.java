@@ -35,6 +35,12 @@ import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
  * <p>商户端走 {@code /app-api/merchant/mini/coupon/*}（按 token 租户隔离），
  * C 端拉某店可领券走 {@code /app-api/merchant/shop/public/coupons?tenantId=X}（跨租户）。</p>
  */
+/**
+ * 注意：本 controller 在 {@code controller.app} 包下，yudao 框架（YudaoWebAutoConfiguration）
+ * 会自动给整个类加 {@code /app-api} 前缀（见 RequestMappingHandlerMapping.setPathPrefixes）。
+ * 所以方法 path **不能**再写 {@code /app-api/...}，否则实际命中路径变成
+ * {@code /app-api/app-api/...} 直接 404。
+ */
 @Tag(name = "用户/商户端 - 优惠券")
 @RestController
 @RequestMapping
@@ -87,14 +93,14 @@ public class AppMerchantCouponController {
 
     // ==================== 商户端：自建模板（token 租户隔离） ====================
 
-    @GetMapping("/app-api/merchant/mini/coupon/list")
+    @GetMapping("/merchant/mini/coupon/list")
     @Operation(summary = "商户：列出本店所有券模板（含已下架）")
     public CommonResult<List<ShopCouponDO>> merchantList() {
         getMerchantOrThrow();
         return success(shopCouponMapper.selectAllByMerchant());
     }
 
-    @PostMapping("/app-api/merchant/mini/coupon/save")
+    @PostMapping("/merchant/mini/coupon/save")
     @Operation(summary = "商户：新建/编辑券模板（带 id=编辑）")
     public CommonResult<Long> merchantSave(@Valid @RequestBody AppShopCouponSaveReqVO reqVO) {
         MerchantDO merchant = getMerchantOrThrow();
@@ -123,7 +129,7 @@ public class AppMerchantCouponController {
         return success(row.getId());
     }
 
-    @PutMapping("/app-api/merchant/mini/coupon/{id}/status")
+    @PutMapping("/merchant/mini/coupon/{id}/status")
     @Operation(summary = "商户：上/下架券模板")
     public CommonResult<Boolean> merchantUpdateStatus(@PathVariable("id") Long id,
                                                       @RequestParam("status") Integer status) {
@@ -134,7 +140,7 @@ public class AppMerchantCouponController {
         return success(true);
     }
 
-    @DeleteMapping("/app-api/merchant/mini/coupon/{id}")
+    @DeleteMapping("/merchant/mini/coupon/{id}")
     @Operation(summary = "商户：删除券模板（软删）")
     public CommonResult<Boolean> merchantDelete(@PathVariable("id") Long id) {
         MerchantDO merchant = getMerchantOrThrow();
@@ -145,7 +151,7 @@ public class AppMerchantCouponController {
 
     // ==================== C 端：拉某店可领券 + 领取 ====================
 
-    @GetMapping("/app-api/merchant/shop/public/coupons")
+    @GetMapping("/merchant/shop/public/coupons")
     @Operation(summary = "C 端：拉某店可领券列表（按 tenantId）")
     @Parameter(name = "tenantId", description = "店铺所属租户 ID", required = true)
     @PermitAll
@@ -173,7 +179,7 @@ public class AppMerchantCouponController {
         return success(resp);
     }
 
-    @PostMapping("/app-api/merchant/mini/coupon/grab")
+    @PostMapping("/merchant/mini/coupon/grab")
     @Operation(summary = "C 端：领取某店的某张券")
     @TenantIgnore // 跨租户：用户 token tenant ≠ 商户 tenant，需手工切租户后写入
     @Transactional(rollbackFor = Exception.class)
@@ -245,7 +251,7 @@ public class AppMerchantCouponController {
         }
     }
 
-    @GetMapping("/app-api/merchant/mini/coupon/my-list")
+    @GetMapping("/merchant/mini/coupon/my-list")
     @Operation(summary = "C 端：我领过的券（按 tenantId 过滤）")
     @TenantIgnore
     public CommonResult<List<ShopCouponUserDO>> myList(
