@@ -43,9 +43,9 @@ import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
 public class AppMerchantCouponController {
 
     @Resource
-    private ShopCouponMapper couponMapper;
+    private ShopCouponMapper shopCouponMapper;
     @Resource
-    private ShopCouponUserMapper couponUserMapper;
+    private ShopCouponUserMapper shopCouponUserMapper;
     @Resource
     private MerchantService merchantService;
 
@@ -73,7 +73,7 @@ public class AppMerchantCouponController {
         if (couponId == null) {
             throw new ServiceException(404, "券模板不存在");
         }
-        ShopCouponDO row = couponMapper.selectById(couponId);
+        ShopCouponDO row = shopCouponMapper.selectById(couponId);
         if (row == null) {
             throw new ServiceException(404, "券模板不存在");
         }
@@ -91,7 +91,7 @@ public class AppMerchantCouponController {
     @Operation(summary = "商户：列出本店所有券模板（含已下架）")
     public CommonResult<List<ShopCouponDO>> merchantList() {
         getMerchantOrThrow();
-        return success(couponMapper.selectAllByMerchant());
+        return success(shopCouponMapper.selectAllByMerchant());
     }
 
     @PostMapping("/app-api/merchant/mini/coupon/save")
@@ -115,10 +115,10 @@ public class AppMerchantCouponController {
         row.setTotalCount(reqVO.getTotalCount());
         row.setValidDays(reqVO.getValidDays());
         if (reqVO.getId() != null) {
-            couponMapper.updateById(row);
+            shopCouponMapper.updateById(row);
         } else {
             // 新建：tenantId 由 TenantBaseDO 自动注入（merchant 登录态下已是其租户）
-            couponMapper.insert(row);
+            shopCouponMapper.insert(row);
         }
         return success(row.getId());
     }
@@ -130,7 +130,7 @@ public class AppMerchantCouponController {
         MerchantDO merchant = getMerchantOrThrow();
         ShopCouponDO row = loadOwnCouponOrThrow(id, merchant);
         row.setStatus(status);
-        couponMapper.updateById(row);
+        shopCouponMapper.updateById(row);
         return success(true);
     }
 
@@ -139,7 +139,7 @@ public class AppMerchantCouponController {
     public CommonResult<Boolean> merchantDelete(@PathVariable("id") Long id) {
         MerchantDO merchant = getMerchantOrThrow();
         loadOwnCouponOrThrow(id, merchant);  // 仅校验属主，让 deleteById 走标准软删
-        couponMapper.deleteById(id);
+        shopCouponMapper.deleteById(id);
         return success(true);
     }
 
@@ -153,12 +153,12 @@ public class AppMerchantCouponController {
     public CommonResult<List<Map<String, Object>>> publicListByTenant(
             @RequestParam("tenantId") Long tenantId) {
         List<ShopCouponDO> list = TenantUtils.execute(tenantId,
-                () -> couponMapper.selectEnabledByTenant());
+                () -> shopCouponMapper.selectEnabledByTenant());
         // 用户已领过的标 taken；未登录则全 false
         Long userId = SecurityFrameworkUtils.getLoginUserId();
         Set<Long> takenIds = userId == null
                 ? Collections.emptySet()
-                : TenantUtils.execute(tenantId, () -> couponUserMapper.selectTakenCouponIds(userId));
+                : TenantUtils.execute(tenantId, () -> shopCouponUserMapper.selectTakenCouponIds(userId));
         List<Map<String, Object>> resp = new ArrayList<>(list.size());
         for (ShopCouponDO c : list) {
             Map<String, Object> m = cn.hutool.core.bean.BeanUtil.beanToMap(c, false, true);
@@ -189,12 +189,12 @@ public class AppMerchantCouponController {
             TenantContextHolder.setIgnore(false);
             TenantContextHolder.setTenantId(tenantId);
 
-            ShopCouponDO coupon = couponMapper.selectById(couponId);
+            ShopCouponDO coupon = shopCouponMapper.selectById(couponId);
             if (coupon == null || coupon.getStatus() == null || coupon.getStatus() != 0) {
                 throw new ServiceException(404, "券不存在或已下架");
             }
             // 幂等：同一用户同一券限领一张（DB UNIQUE 兜底）
-            ShopCouponUserDO existed = couponUserMapper.selectByUserIdAndCouponId(userId, couponId);
+            ShopCouponUserDO existed = shopCouponUserMapper.selectByUserIdAndCouponId(userId, couponId);
             if (existed != null) {
                 return success(existed.getId());
             }
@@ -203,7 +203,7 @@ public class AppMerchantCouponController {
             //   atomicIncrTaken 内置 WHERE total_count=0 OR taken_count<total_count，
             //   返回 0 = 已领完 / 已下架；返回 1 = 占住一张库存。
             //   update_time 显式传 LocalDateTime.now() 以保证应用层时区一致（避免 NOW() 走 DB 时区）。
-            int updated = couponMapper.atomicIncrTaken(couponId, now);
+            int updated = shopCouponMapper.atomicIncrTaken(couponId, now);
             if (updated == 0) {
                 throw new ServiceException(400, "已领完");
             }
@@ -217,7 +217,7 @@ public class AppMerchantCouponController {
                     .status(0)
                     .build();
             try {
-                couponUserMapper.insert(row);
+                shopCouponUserMapper.insert(row);
             } catch (org.springframework.dao.DuplicateKeyException dup) {
                 // UNIQUE 兜底场景：P1/P2 两个并发请求同时通过了「已领」幂等检查并都 atomicIncrTaken
                 // 成功（taken_count 被两次 +1），但 INSERT 时 (user_id, coupon_id) UNIQUE 拦下一条。
@@ -230,8 +230,8 @@ public class AppMerchantCouponController {
                 //
                 // 这样 P1/P2 都返同一张券记录的 id，taken_count = 实际发出张数（不超发）。
                 log.warn("[grab] duplicate key user_id={} coupon_id={}, 重发幂等返已领 id", userId, couponId);
-                couponMapper.atomicDecrTaken(couponId, now);
-                ShopCouponUserDO again = couponUserMapper.selectByUserIdAndCouponId(userId, couponId);
+                shopCouponMapper.atomicDecrTaken(couponId, now);
+                ShopCouponUserDO again = shopCouponUserMapper.selectByUserIdAndCouponId(userId, couponId);
                 if (again != null) {
                     return success(again.getId());
                 }
@@ -254,11 +254,11 @@ public class AppMerchantCouponController {
         if (userId == null) return success(Collections.emptyList());
         if (tenantId == null) {
             // 不指定租户 → 跨租户拉全部
-            return success(couponUserMapper.selectList(
+            return success(shopCouponUserMapper.selectList(
                     new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<ShopCouponUserDO>()
                             .eq(ShopCouponUserDO::getUserId, userId)));
         }
-        return success(TenantUtils.execute(tenantId, () -> couponUserMapper.selectList(
+        return success(TenantUtils.execute(tenantId, () -> shopCouponUserMapper.selectList(
                 new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<ShopCouponUserDO>()
                         .eq(ShopCouponUserDO::getUserId, userId))));
     }
