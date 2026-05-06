@@ -114,7 +114,7 @@ function goBack() {
   if (pages.length > 1) {
     uni.navigateBack();
   } else {
-    uni.switchTab({ url: '/pages/me/index' });
+    uni.reLaunch({ url: '/pages/me/index' });
   }
 }
 

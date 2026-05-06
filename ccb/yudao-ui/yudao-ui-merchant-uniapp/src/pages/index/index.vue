@@ -113,14 +113,17 @@ function barHeight(v) {
   return max ? Math.max(8, (v / max) * 100) : 0;
 }
 
+// 注：早先 pages.json 全局 tabBar 已删（改用自渲染的 RoleTabBar），
+// switchTab 只能跳 pages.json 里 tabBar 配置过的页面，现在调用会静默失败。
+// 主页 4 个快捷入口统一改 reLaunch（与 RoleTabBar 内 onTap 行为一致）。
 function jumpAi() {
-  uni.switchTab({ url: '/pages/ai-video/index' });
+  uni.reLaunch({ url: '/pages/ai-video/index' });
 }
 function jumpOrders() {
-  uni.switchTab({ url: '/pages/order/list' });
+  uni.reLaunch({ url: '/pages/order/list' });
 }
 function jumpVerify() {
-  uni.switchTab({ url: '/pages/order/list' });
+  uni.reLaunch({ url: '/pages/order/list' });
 }
 function jumpAddProduct() {
   // 主页快捷入口走 AI 识别上架（batch），手动 edit 仍保留在商品管理列表里
