@@ -305,7 +305,7 @@ function removeAddr(addr) {
   });
 }
 
-function goBack() { uni.navigateBack({ fail: () => uni.switchTab({ url: '/pages/user-me/index' }) }); }
+function goBack() { uni.navigateBack({ fail: () => uni.reLaunch({ url: '/pages/user-me/index' }) }); }
 
 onMounted(load);
 </script>

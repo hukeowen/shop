@@ -194,7 +194,7 @@ function toggleHistory() {
     loadList();
   }
 }
-function goBack() { uni.navigateBack({ fail: () => uni.switchTab({ url: '/pages/user-me/index' }) }); }
+function goBack() { uni.navigateBack({ fail: () => uni.reLaunch({ url: '/pages/user-me/index' }) }); }
 
 // MIN-1：scope 切换时若在历史 tab，立即刷新
 watch(scope, () => {

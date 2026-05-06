@@ -182,7 +182,7 @@ function switchShop(tid) {
   loadConfig();
   loadAccount();
 }
-function goBack() { uni.navigateBack({ fail: () => uni.switchTab({ url: '/pages/user-me/index' }) }); }
+function goBack() { uni.navigateBack({ fail: () => uni.reLaunch({ url: '/pages/user-me/index' }) }); }
 
 onMounted(async () => {
   await loadShops();

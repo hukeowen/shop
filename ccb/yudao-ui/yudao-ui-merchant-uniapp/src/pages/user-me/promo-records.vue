@@ -119,7 +119,7 @@ function switchShop(tid) {
   loadRecords();
 }
 function goConvert() { uni.showToast({ title: '兑换页开发中', icon: 'none' }); }
-function goBack() { uni.navigateBack({ fail: () => uni.switchTab({ url: '/pages/user-me/index' }) }); }
+function goBack() { uni.navigateBack({ fail: () => uni.reLaunch({ url: '/pages/user-me/index' }) }); }
 
 onMounted(async () => {
   await loadShops();

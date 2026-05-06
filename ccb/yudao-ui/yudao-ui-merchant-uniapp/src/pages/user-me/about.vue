@@ -88,7 +88,7 @@ function contactSupport() {
     showCancel: false,
   });
 }
-function goBack() { uni.navigateBack({ fail: () => uni.switchTab({ url: '/pages/user-me/index' }) }); }
+function goBack() { uni.navigateBack({ fail: () => uni.reLaunch({ url: '/pages/user-me/index' }) }); }
 
 onMounted(() => {
   // 注入 vite 构建变量（uniapp 环境会注入 import.meta.env）

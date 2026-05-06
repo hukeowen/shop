@@ -86,7 +86,7 @@ async function toggleFavorite(s) {
 
 function goShop(tid) { uni.navigateTo({ url: `/pages/shop-home/index?tenantId=${tid}` }); }
 function goBack() { uni.navigateBack({ fail: () => goHome() }); }
-function goHome() { uni.switchTab?.({ url: '/pages/user-home/index' }) || uni.reLaunch({ url: '/pages/user-home/index' }); }
+function goHome() { uni.reLaunch({ url: '/pages/user-home/index' }); }
 
 onMounted(load);
 </script>

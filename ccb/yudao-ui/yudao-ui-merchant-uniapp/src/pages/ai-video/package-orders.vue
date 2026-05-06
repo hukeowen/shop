@@ -114,7 +114,7 @@ function loadMore() {
   pageNo.value += 1;
   load(false);
 }
-function goBack() { uni.navigateBack({ fail: () => uni.switchTab({ url: '/pages/index/index' }) }); }
+function goBack() { uni.navigateBack({ fail: () => uni.reLaunch({ url: '/pages/index/index' }) }); }
 
 onMounted(() => load(true));
 onShow(() => {

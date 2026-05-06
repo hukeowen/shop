@@ -93,7 +93,7 @@ function showRules() {
 }
 
 function goBack() { uni.navigateBack({ fail: () => goHome() }); }
-function goHome() { uni.switchTab?.({ url: '/pages/user-home/index' }) || uni.reLaunch({ url: '/pages/user-home/index' }); }
+function goHome() { uni.reLaunch({ url: '/pages/user-home/index' }); }
 
 onMounted(load);
 onShow(load);

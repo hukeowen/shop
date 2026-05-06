@@ -58,7 +58,7 @@ try {
 } catch {}
 
 function goNearby() {
-  uni.switchTab({ url: '/pages/nearby/index' });
+  uni.reLaunch({ url: '/pages/nearby/index' });
 }
 
 const shareUrl = computed(() => {
