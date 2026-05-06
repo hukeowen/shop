@@ -247,8 +247,11 @@ function goScan() {
 }
 function goAiVideos() { uni.showToast({ title: 'AI 短视频聚合页开发中', icon: 'none' }); }
 function goMyShops() { uni.navigateTo({ url: '/pages/user-me/index' }); }
-function goOrder() { uni.switchTab?.({ url: '/pages/user-order/list' }) || uni.navigateTo({ url: '/pages/user-order/list' }); }
-function goMe() { uni.switchTab?.({ url: '/pages/user-me/index' }) || uni.navigateTo({ url: '/pages/user-me/index' }); }
+// 用户端三大 tab 切换：pages.json 已无全局 tabBar，switchTab 在 H5 静默失败
+// （即使 ?. 调用也是异步返 undefined，|| 短路到 navigateTo 但 H5 hash 路由
+// 某些场景下 navigateTo 也不响应）。直接用 reLaunch 重置到目标页最稳。
+function goOrder() { uni.reLaunch({ url: '/pages/user-order/list' }); }
+function goMe() { uni.reLaunch({ url: '/pages/user-me/index' }); }
 
 onMounted(() => {
   if (userStore.userId) flushPendingReferrer(userStore.userId);

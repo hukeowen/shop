@@ -238,8 +238,9 @@ function goAbout() { uni.navigateTo({ url: '/pages/user-me/about' }); }
 function goManage() { goFavoriteShops(); }
 function goSettings() { goAbout(); }
 
-function goHome() { uni.switchTab?.({ url: '/pages/user-home/index' }) || uni.navigateTo({ url: '/pages/user-home/index' }); }
-function goOrder() { uni.switchTab?.({ url: '/pages/user-order/list' }) || uni.navigateTo({ url: '/pages/user-order/list' }); }
+// pages.json 已无全局 tabBar，统一 reLaunch
+function goHome() { uni.reLaunch({ url: '/pages/user-home/index' }); }
+function goOrder() { uni.reLaunch({ url: '/pages/user-order/list' }); }
 
 function onLogout() {
   uni.showModal({

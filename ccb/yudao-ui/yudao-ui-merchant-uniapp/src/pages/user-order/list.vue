@@ -216,8 +216,9 @@ function onConfirm(o) {
 }
 function onRebuy(o) { goShop(o.tenantId); }
 function onComment(o) { uni.showToast({ title: '评价页开发中', icon: 'none' }); }
-function goHome() { uni.switchTab?.({ url: '/pages/user-home/index' }) || uni.navigateTo({ url: '/pages/user-home/index' }); }
-function goMe() { uni.switchTab?.({ url: '/pages/user-me/index' }) || uni.navigateTo({ url: '/pages/user-me/index' }); }
+// pages.json 已无全局 tabBar，统一 reLaunch（H5 hash 路由下 switchTab/navigateTo 不可靠）
+function goHome() { uni.reLaunch({ url: '/pages/user-home/index' }); }
+function goMe() { uni.reLaunch({ url: '/pages/user-me/index' }); }
 
 onMounted(() => load(true));
 onShow(() => load(true));
