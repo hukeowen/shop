@@ -1,0 +1,16 @@
+{
+  "name": "tanxiaer-e2e",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "playwright test",
+    "test:merchant": "playwright test --project=merchant --project=setup-merchant",
+    "test:user": "playwright test --project=user --project=setup-user",
+    "test:headed": "playwright test --headed",
+    "report": "playwright show-report report"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.59.1"
+  }
+}

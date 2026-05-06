@@ -1027,17 +1027,16 @@ function dbTaskToLocal(t) {
 }
 
 export async function getTaskPage() {
-  // 本地任务（in-progress, 非DB）
-  const localTasks = store.tasks.filter((t) => !t.dbId || t.status === 1 || t.status === 2 || t.status === 3);
-
   try {
     const resp = await request({ url: `${TASK_BASE}/my-page` });
     const dbList = Array.isArray(resp) ? resp : (resp?.list || []);
     const dbTasks = dbList.map(dbTaskToLocal);
-    // 合并：local优先（local任务的dbId可能与DB中条目重叠，用dbId去重）
-    const dbIds = new Set(store.tasks.filter((t) => t.dbId).map((t) => t.dbId));
-    const filteredDb = dbTasks.filter((t) => !dbIds.has(t.dbId));
-    const merged = [...store.tasks, ...filteredDb];
+    // 列表以接口数据为准，不再合并 store.tasks 本地缓存（避免显示其他设备/历史/已删数据）
+    // 例外：本地刚创建还没落库（dbId=null）且 in-progress 的任务并入列表，
+    // 让用户能看到自己当前正在生成的进度；这些任务一旦 registerTaskToDB 就会从 DB 拉回。
+    const inProgressLocal = store.tasks.filter(
+            (t) => !t.dbId && (t.status === 1 || t.status === 2 || t.status === 3));
+    const merged = [...inProgressLocal, ...dbTasks];
     return { total: merged.length, list: merged };
   } catch {
     // 降级：只返回本地
