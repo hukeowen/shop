@@ -56,50 +56,62 @@ public class AllinpayPollingService {
 
     /** createOrder 后立即调用：按 6 段退避排程查询。 */
     public void schedulePolling(Long orderId) {
-        if (orderId == null) return;
-        if (!inflight.add(orderId)) return; // 已在轮询
+        if (orderId == null) {
+            log.warn("[allinpay/poll] schedulePolling 收到 null orderId，忽略");
+            return;
+        }
+        if (!inflight.add(orderId)) {
+            log.info("[allinpay/poll] orderId={} 已在 inflight 集合，跳过重复排程", orderId);
+            return;
+        }
         long elapsed = 0;
         for (int i = 0; i < DELAYS_SEC.length; i++) {
             elapsed += DELAYS_SEC[i];
             final int round = i + 1;
-            scheduler.schedule(() -> tickQuery(orderId, round), elapsed, TimeUnit.SECONDS);
+            final long delay = elapsed;
+            scheduler.schedule(() -> tickQuery(orderId, round), delay, TimeUnit.SECONDS);
         }
-        log.info("[allinpay/poll] orderId={} 已排程 6 段查询，总时长 {}s",
+        log.info("[allinpay/poll] orderId={} ✅ 已排程 6 段查询，节奏=[5s,15s,25s,35s,60s,120s]，总时长 {}s",
                 orderId, java.util.Arrays.stream(DELAYS_SEC).sum());
     }
 
     private void tickQuery(Long orderId, int round) {
+        log.info("[allinpay/poll] orderId={} round={} ▶ 开始查询", orderId, round);
         try {
             // 重新读订单：可能已被异步通知或前一轮查询标记为 PAID
             MerchantPackageOrderDO order = TenantUtils.executeIgnore(() -> packageOrderMapper.selectById(orderId));
             if (order == null) {
                 inflight.remove(orderId);
+                log.warn("[allinpay/poll] orderId={} round={} 订单不存在，停止轮询", orderId, round);
                 return;
             }
             if (order.getPayStatus() != null
                     && order.getPayStatus() != MerchantPackageOrderDO.PAY_STATUS_WAITING) {
                 inflight.remove(orderId);
-                log.debug("[allinpay/poll] orderId={} round={} 已 PAID 或非待支付，停止轮询",
-                        orderId, round);
+                log.info("[allinpay/poll] orderId={} round={} 状态={} 已非 WAITING，停止轮询",
+                        orderId, round, order.getPayStatus());
                 return;
             }
 
             AllinpayCashierService.QueryResult r = cashierService.queryOrder(orderId);
             if (r == null) {
-                log.debug("[allinpay/poll] orderId={} round={} 通信失败，等下一轮", orderId, round);
+                log.warn("[allinpay/poll] orderId={} round={} 通联返空（通信失败），等下一轮", orderId, round);
                 return;
             }
             if (!r.isSuccess()) {
-                log.debug("[allinpay/poll] orderId={} round={} trxstatus={}", orderId, round, r.getTrxstatus());
+                log.info("[allinpay/poll] orderId={} round={} 通联返 trxstatus={} trxamt={}（未支付），等下一轮",
+                        orderId, round, r.getTrxstatus(), r.getTrxamt());
                 return;
             }
 
             // 命中支付成功 → markPaidExternal
+            log.info("[allinpay/poll] orderId={} round={} 命中 trxstatus=2000 trxamt={}，开始 markPaidExternal",
+                    orderId, round, r.getTrxamt());
             packageOrderService.markPaidExternal(orderId, r.getTrxamt(), "ALLINPAY_POLL");
             inflight.remove(orderId);
-            log.info("[allinpay/poll] orderId={} round={} 主动查询命中支付成功，已加配额", orderId, round);
+            log.info("[allinpay/poll] orderId={} round={} ✅ 主动查询命中支付成功，已加配额", orderId, round);
         } catch (Exception e) {
-            log.warn("[allinpay/poll] orderId={} round={} 查询异常: {}", orderId, round, e.getMessage());
+            log.error("[allinpay/poll] orderId={} round={} 查询异常", orderId, round, e);
         }
     }
 
@@ -113,6 +125,7 @@ public class AllinpayPollingService {
     @Async
     @TenantIgnore
     public void scanWaitingOrders() {
+        log.info("[allinpay/poll/scan] ▶ 定时扫 WAITING 订单（每 2 分钟）inflight 当前 {} 单", inflight.size());
         try {
             List<MerchantPackageOrderDO> waiting = TenantUtils.executeIgnore(
                     () -> packageOrderMapper.selectList(new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<MerchantPackageOrderDO>()
@@ -122,14 +135,23 @@ public class AllinpayPollingService {
                             .gt(MerchantPackageOrderDO::getCreateTime,
                                     java.time.LocalDateTime.now().minusHours(2)) // 2h 之前的不再追，认为放弃支付
                     ));
-            if (waiting == null || waiting.isEmpty()) return;
-            log.info("[allinpay/poll/scan] 发现 {} 个 WAITING 订单需轮询", waiting.size());
-            for (MerchantPackageOrderDO o : waiting) {
-                if (inflight.contains(o.getId())) continue;
-                schedulePolling(o.getId());
+            if (waiting == null || waiting.isEmpty()) {
+                log.info("[allinpay/poll/scan] DB 无 WAITING 订单（30s~2h 范围）");
+                return;
             }
+            log.info("[allinpay/poll/scan] DB 找到 {} 个 WAITING 订单，开始检查 inflight 排程", waiting.size());
+            int scheduled = 0;
+            for (MerchantPackageOrderDO o : waiting) {
+                if (inflight.contains(o.getId())) {
+                    log.debug("[allinpay/poll/scan] orderId={} 已在 inflight，跳过", o.getId());
+                    continue;
+                }
+                schedulePolling(o.getId());
+                scheduled++;
+            }
+            log.info("[allinpay/poll/scan] ✅ 本轮新排程 {} 单（其余在 inflight）", scheduled);
         } catch (Exception e) {
-            log.warn("[allinpay/poll/scan] 扫描异常: {}", e.getMessage());
+            log.error("[allinpay/poll/scan] 扫描异常", e);
         }
     }
 }

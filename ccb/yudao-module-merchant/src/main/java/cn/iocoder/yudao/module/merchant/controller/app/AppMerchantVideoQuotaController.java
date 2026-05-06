@@ -177,6 +177,67 @@ public class AppMerchantVideoQuotaController {
     }
 
     /**
+     * 商户「主动同步」按钮：用户支付完成但回调未触发时手动触发查询。
+     *
+     * <p>流程：
+     * <ol>
+     *   <li>校验订单属于当前商户</li>
+     *   <li>若订单已 PAID 直接返成功</li>
+     *   <li>WAITING 状态 → 调通联查询接口 → 命中 SUCCESS 则 markPaidExternal（CAS + 加配额）</li>
+     * </ol></p>
+     *
+     * <p>路径：{@code POST /app-api/merchant/mini/video-quota/orders/{orderId}/sync}</p>
+     */
+    @PostMapping("/orders/{orderId}/sync")
+    @Operation(summary = "商户主动同步订单状态（支付完成但回调未到时手动触发）")
+    public CommonResult<java.util.Map<String, Object>> syncOrder(
+            @org.springframework.web.bind.annotation.PathVariable("orderId") Long orderId) {
+        MerchantDO merchant = getMerchantOrThrow();
+        cn.iocoder.yudao.module.merchant.dal.dataobject.MerchantPackageOrderDO order =
+                packageOrderMapper.selectById(orderId);
+        if (order == null) {
+            throw exception(AI_VIDEO_MERCHANT_NOT_FOUND);
+        }
+        // 防越权：必须是当前商户的订单
+        if (!java.util.Objects.equals(order.getMerchantId(), merchant.getId())) {
+            return CommonResult.error(403, "无权同步该订单");
+        }
+        java.util.Map<String, Object> resp = new java.util.HashMap<>();
+        // 已支付 → 直接返
+        if (order.getPayStatus() != null
+                && order.getPayStatus() == cn.iocoder.yudao.module.merchant.dal.dataobject
+                        .MerchantPackageOrderDO.PAY_STATUS_PAID) {
+            resp.put("status", "PAID");
+            resp.put("message", "订单已是支付成功状态");
+            return success(resp);
+        }
+        // WAITING → 主动调通联查询
+        try {
+            cn.iocoder.yudao.module.merchant.service.allinpay.AllinpayCashierService.QueryResult r =
+                    allinpayCashierService.queryOrder(orderId);
+            if (r == null) {
+                resp.put("status", "WAITING");
+                resp.put("message", "通联返回空，请稍后再试");
+                return success(resp);
+            }
+            if (!r.isSuccess()) {
+                resp.put("status", "WAITING");
+                resp.put("trxstatus", r.getTrxstatus());
+                resp.put("message", "通联返回未支付：trxstatus=" + r.getTrxstatus());
+                return success(resp);
+            }
+            // 命中支付成功 → 标记 + 加配额（markPaidExternal 含 CAS + 金额校验 + uk_biz 幂等）
+            packageOrderService.markPaidExternal(orderId, r.getTrxamt(), "MANUAL_SYNC");
+            resp.put("status", "PAID");
+            resp.put("message", "已确认支付成功，配额已到账");
+            return success(resp);
+        } catch (Exception e) {
+            log.error("[syncOrder] 查询失败 orderId={}", orderId, e);
+            return CommonResult.error(500, "同步失败：" + e.getMessage());
+        }
+    }
+
+    /**
      * 支付成功回调 - 由 yudao-module-pay 的 PayNotifyService 在收到支付渠道成功回调后，
      * 按 {@code PayAppDO.orderNotifyUrl}（管理员在 admin-api/pay/app 配置）HTTP POST 到这里。
      *

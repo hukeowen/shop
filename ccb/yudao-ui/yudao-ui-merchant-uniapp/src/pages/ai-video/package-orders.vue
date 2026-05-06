@@ -24,6 +24,12 @@
         <view class="row"><text class="lbl">实付金额</text><text class="v price">¥{{ (o.price / 100).toFixed(2) }}</text></view>
         <view class="row"><text class="lbl">创建时间</text><text class="v">{{ formatTime(o.createTime) }}</text></view>
         <view v-if="o.payTime" class="row"><text class="lbl">支付时间</text><text class="v">{{ formatTime(o.payTime) }}</text></view>
+        <!-- 待支付状态显示「同步状态」按钮：手动触发查询通联 + 加配额 -->
+        <view v-if="o.payStatus === 0" class="actions">
+          <button class="sync-btn" :disabled="syncing === o.id" @click="onSync(o)">
+            {{ syncing === o.id ? '同步中…' : '已支付？同步状态' }}
+          </button>
+        </view>
       </view>
     </view>
 
@@ -37,6 +43,7 @@
 import { ref, onMounted } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
 import { listMyPackageOrders } from '../../api/quotaApi.js';
+import { request } from '../../api/request.js';
 
 const list = ref([]);
 const total = ref(0);
@@ -45,6 +52,28 @@ const pageSize = 20;
 const loading = ref(false);
 const loadingMore = ref(false);
 const hasMore = ref(true);
+const syncing = ref(null);  // 当前正在同步的 orderId，禁用按钮防双击
+
+async function onSync(order) {
+  if (syncing.value === order.id) return;
+  syncing.value = order.id;
+  try {
+    const r = await request({
+      url: `/app-api/merchant/mini/video-quota/orders/${order.id}/sync`,
+      method: 'POST',
+    });
+    if (r?.status === 'PAID') {
+      uni.showToast({ title: r.message || '配额已到账', icon: 'success' });
+      await load(true);  // 刷新列表
+    } else {
+      uni.showToast({ title: r?.message || '通联返回未支付', icon: 'none' });
+    }
+  } catch (e) {
+    uni.showToast({ title: e?.message || '同步失败', icon: 'none' });
+  } finally {
+    syncing.value = null;
+  }
+}
 
 function statusLabel(s) {
   return ({ 0: '待支付', 10: '已支付', 20: '已关闭', 30: '已退款' })[s] || '待支付';
@@ -123,6 +152,17 @@ onShow(() => {
 .row .lbl { width: 140rpx; color: $text-secondary; }
 .row .v { flex: 1; color: $text-primary; font-variant-numeric: tabular-nums; }
 .row .v.price { color: $brand-primary; font-weight: 700; font-size: 28rpx; }
+
+.actions { margin-top: 16rpx; display: flex; justify-content: flex-end; }
+.sync-btn {
+  background: $brand-primary; color: #fff;
+  font-size: 24rpx; font-weight: 700;
+  padding: 12rpx 28rpx;
+  border-radius: 999rpx;
+  border: none;
+  &::after { border: none; }
+  &[disabled] { background: $text-placeholder; }
+}
 
 .load-more { margin: 32rpx; padding: 24rpx; text-align: center; background: $bg-card; border-radius: $radius-md; color: $brand-primary; font-size: 26rpx; }
 .end-text { text-align: center; margin: 32rpx; color: $text-placeholder; font-size: 22rpx; }
