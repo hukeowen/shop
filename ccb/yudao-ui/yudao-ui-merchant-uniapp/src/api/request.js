@@ -98,7 +98,8 @@ function getHeader(urlPath) {
   const token = readToken();
   const tenantId = uni.getStorageSync('tenantId') || 1;
   const header = {};
-  // /admin-api 保留 tenant-id；/app-api 不需要（按 JWT 里的商户维度解析）
+  // /admin-api 保留 tenant-id；/app-api 后端从 JWT token 解析商户租户，无需 header
+  // （yudao.tenant.ignore-urls 配置 /app-api/** 跳过 TenantInterceptor 强校验）
   if (!urlPath.startsWith('/app-api')) {
     header['tenant-id'] = tenantId;
   }

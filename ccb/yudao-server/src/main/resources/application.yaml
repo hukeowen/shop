@@ -330,6 +330,9 @@ yudao:
       - /admin-api/merchant/allinpay/register-notify
       - /admin-api/merchant/allinpay/diag # 通联诊断端点
       - /admin-api/merchant/allinpay/diag-unionorder # 通联下单实测端点
+      # C 端 /app-api 入口由 JWT 解析商户/租户，不强制 tenant-id header；
+      # 前端 request.js 也对 /app-api 不传 tenant-id（线上长期实测可用）
+      - /app-api/**
     ignore-visit-urls:
       - /admin-api/system/user/profile/**
       - /admin-api/system/auth/**
