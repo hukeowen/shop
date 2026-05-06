@@ -163,7 +163,14 @@ export function request({ url, method = 'GET', data, header, responseType, raw =
           resolve(body.data);
         } else {
           const msg = body.msg || body.message || '请求失败';
-          uni.showToast({ title: msg, icon: 'none' });
+          // yudao 未登录业务码：body.code = 401（GlobalErrorCodeConstants.UNAUTHORIZED）
+          // HTTP 状态可能是 200，前端必须按 code 判断，不然只 toast 不跳登录页
+          if (body.code === 401 || /未登录/.test(msg) || /token.*失效/i.test(msg)) {
+            uni.showToast({ title: '登录已失效，请重新登录', icon: 'none' });
+            clearTokenAndRedirectToLogin();
+          } else {
+            uni.showToast({ title: msg, icon: 'none' });
+          }
           reject(new Error(msg));
         }
       },
