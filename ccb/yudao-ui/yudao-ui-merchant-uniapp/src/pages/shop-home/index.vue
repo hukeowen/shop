@@ -44,6 +44,15 @@
           <text style="font-size:18rpx;font-weight:400;">享 {{ memberDiscount }} 折</text>
         </view>
       </view>
+      <!-- 店铺特色 chips（商户在 me/shop-edit 自填，无值整段不显示） -->
+      <view v-if="featureChips.length" class="feature-chips">
+        <text
+          v-for="(c, i) in featureChips"
+          :key="c"
+          class="chip"
+          :class="{ hot: i === 0 }"
+        >{{ i === 0 ? '🔥 ' : '' }}{{ c }}</text>
+      </view>
       <view class="quick-meta">
         <text class="pt" v-if="shopInfo?.address">📍 {{ shopInfo.address }}</text>
         <text class="dot" v-if="shopInfo?.address && shopInfo?.businessHours"></text>
@@ -212,6 +221,13 @@ const bizTag = computed(() => {
 const slogan = computed(() => {
   return shopInfo.value?.description || '欢迎光临';
 });
+// 店铺特色 chips（来自 shop_info.feature_tags，CSV）
+const featureChips = computed(() => {
+  const raw = shopInfo.value?.featureTags;
+  if (!raw || typeof raw !== 'string') return [];
+  return raw.split(/[,，]/).map((s) => s.trim()).filter(Boolean).slice(0, 6);
+});
+
 const memberDiscount = computed(() => {
   // 简单映射：1 星 9.5 折，2 星 9.2 折，3 星 9 折，4 星 8.8 折，5 星 8.5 折
   const s = myRel.value?.star || 0;
@@ -532,6 +548,27 @@ onShow(() => loadCart());
   font-size: 22rpx; font-weight: 700; color: $brand-primary;
   text-align: center; line-height: 1.2;
 }
+// 店铺特色 chips（user-h5 line 791-806）
+.sh-info-card .feature-chips {
+  margin-top: 20rpx;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+}
+.sh-info-card .feature-chips .chip {
+  background: $bg-page;
+  color: $text-regular;
+  font-size: 22rpx;
+  padding: 8rpx 20rpx;
+  border-radius: 999rpx;
+  font-weight: 500;
+}
+.sh-info-card .feature-chips .chip.hot {
+  background: $brand-light;
+  color: $brand-primary;
+  font-weight: 600;
+}
+
 .sh-info-card .quick-meta {
   margin-top: 20rpx; display: flex; align-items: center; gap: 16rpx;
   font-size: 22rpx; color: $text-secondary;

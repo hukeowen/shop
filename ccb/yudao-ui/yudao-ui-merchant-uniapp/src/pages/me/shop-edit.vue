@@ -27,6 +27,16 @@
           <text class="label">店铺公告</text>
           <textarea class="textarea" v-model="form.notice" placeholder="请输入店铺公告" />
         </view>
+        <view class="field">
+          <text class="label">特色标签</text>
+          <input
+            class="input"
+            v-model="form.featureTags"
+            placeholder="逗号分隔，最多 6 个，如：炭火现烤,现做现卖,不赶时间"
+            maxlength="64"
+          />
+          <text class="hint">用户进店时显示在店铺信息卡上（第 1 个会高亮带 🔥）</text>
+        </view>
       </view>
 
       <view class="bottom-bar safe-bottom">
@@ -49,6 +59,7 @@ const form = ref({
   address: '',
   description: '',
   notice: '',
+  featureTags: '',
 });
 
 onLoad(async () => {
@@ -61,6 +72,7 @@ onLoad(async () => {
       form.value.address = res.address || '';
       form.value.description = res.description || '';
       form.value.notice = res.notice || '';
+      form.value.featureTags = res.featureTags || '';
     }
   } catch {}
   loading.value = false;
@@ -139,6 +151,14 @@ async function save() {
   color: $text-primary;
   min-height: 120rpx;
   line-height: 1.6;
+}
+
+.hint {
+  display: block;
+  margin-top: 8rpx;
+  font-size: 22rpx;
+  color: $text-secondary;
+  line-height: 1.4;
 }
 
 .bottom-bar {

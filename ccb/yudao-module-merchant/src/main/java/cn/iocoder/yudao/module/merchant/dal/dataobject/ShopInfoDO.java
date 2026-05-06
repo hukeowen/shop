@@ -40,6 +40,9 @@ public class ShopInfoDO extends BaseDO {
     private String description;
     /** 店铺公告 */
     private String notice;
+    /** 店铺特色标签 CSV，如「炭火现烤,现做现卖,不赶时间」最多 6 个，单个 ≤ 8 字。
+     *  原型 ④ feature-chips（user-h5.html line 2572-2577）。 */
+    private String featureTags;
 
     // ========== 位置 ==========
     /** 经度 */
