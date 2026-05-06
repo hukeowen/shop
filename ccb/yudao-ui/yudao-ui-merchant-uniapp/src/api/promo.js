@@ -72,12 +72,13 @@ export function listMyQueues() {
 
 // ==================== 推荐链 ====================
 
-/** 绑定上级（首次有效）。 */
+/** 绑定上级（首次有效）。后端用 @RequestParam，必须用 query 而不是 body。 */
 export function bindReferral(inviterUserId, orderId) {
+  const q = `inviterUserId=${encodeURIComponent(inviterUserId)}` +
+            (orderId ? `&orderId=${encodeURIComponent(orderId)}` : '');
   return request({
-    url: '/app-api/merchant/mini/promo/referral/bind',
+    url: `/app-api/merchant/mini/promo/referral/bind?${q}`,
     method: 'POST',
-    data: { inviterUserId, orderId },
   });
 }
 
