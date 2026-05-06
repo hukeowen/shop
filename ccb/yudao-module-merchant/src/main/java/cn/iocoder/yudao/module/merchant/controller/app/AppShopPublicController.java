@@ -98,8 +98,16 @@ public class AppShopPublicController {
         if (promoTenantId != null) {
             PromoConfigDO promo = TenantUtils.execute(promoTenantId,
                     () -> promoConfigMapper.selectCurrent());
-            if (promo != null && promo.getStarDiscountRates() != null) {
-                resp.put("starDiscountRates", promo.getStarDiscountRates());
+            if (promo != null) {
+                if (promo.getStarDiscountRates() != null) {
+                    resp.put("starDiscountRates", promo.getStarDiscountRates());
+                }
+                // 满减规则（同时设了门槛和减免才视为启用），原型 ④ 底部「满 30 立减 5」
+                if (promo.getFullCutThreshold() != null && promo.getFullCutThreshold() > 0
+                        && promo.getFullCutAmount() != null && promo.getFullCutAmount() > 0) {
+                    resp.put("fullCutThreshold", promo.getFullCutThreshold());
+                    resp.put("fullCutAmount", promo.getFullCutAmount());
+                }
             }
         }
         return success(resp);

@@ -170,7 +170,7 @@
       </view>
       <view class="total">
         <view class="price">¥{{ fen2yuan(cartTotal) }}</view>
-        <view class="delivery">满 30 立减 5</view>
+        <view v-if="fullCutText" class="delivery">{{ fullCutText }}</view>
       </view>
       <view class="pay-btn" @click="goCart">去结算</view>
     </view>
@@ -247,6 +247,21 @@ const bizTag = computed(() => {
 const slogan = computed(() => {
   return shopInfo.value?.description || '欢迎光临';
 });
+// 满减文案：商户配了 fullCutThreshold/Amount 才显示
+//   - 当前购物车 ≥ 门槛 → 「满 X 立减 Y · 已达门槛」
+//   - 不到门槛 → 「满 X 立减 Y · 还差 ¥N」
+//   - 商户没配 → ''（模板 v-if 隐藏整段）
+const fullCutText = computed(() => {
+  const t = shopInfo.value?.fullCutThreshold;
+  const a = shopInfo.value?.fullCutAmount;
+  if (!t || !a || t <= 0 || a <= 0) return '';
+  const tYuan = (t / 100).toFixed(0);
+  const aYuan = (a / 100).toFixed(0);
+  const diff = t - cartTotal.value;
+  if (diff <= 0) return `满 ${tYuan} 立减 ${aYuan} · 已达门槛`;
+  return `满 ${tYuan} 立减 ${aYuan} · 还差 ¥${(diff / 100).toFixed(2)}`;
+});
+
 // 距离文本：< 1 km 显示米，否则 km 一位小数（user-h5 ④ "0.3km · 三里屯"）
 const distanceText = computed(() => {
   const m = shopInfo.value?.distanceMeter;

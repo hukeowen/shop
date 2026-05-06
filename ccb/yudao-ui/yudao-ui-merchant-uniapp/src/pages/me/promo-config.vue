@@ -72,6 +72,20 @@
       </view>
     </view>
 
+    <!-- ============ 满减规则（仅文案展示，不参与结算） ============ -->
+    <view class="card">
+      <view class="section-title">满减规则</view>
+      <view class="hint">商户在店铺详情页底部购物车展示「满 X 立减 Y · 还差 ¥N」。两项同时填才生效；不启用请留空。</view>
+      <view class="field">
+        <text class="label">满减门槛（元）</text>
+        <input class="input" type="digit" v-model="form.fullCutThresholdYuan" placeholder="如 30（不启用留空）" />
+      </view>
+      <view class="field">
+        <text class="label">减免金额（元）</text>
+        <input class="input" type="digit" v-model="form.fullCutAmountYuan" placeholder="如 5" />
+      </view>
+    </view>
+
     <!-- ============ 星级积分池 ============ -->
     <view class="card">
       <view class="section-title">星级积分池</view>
@@ -239,6 +253,8 @@ const form = ref({
   poolSettleCron: '0 0 0 1 * ?',
   poolLotteryRatio: '5.00',
   poolSettleMode: 'FULL',
+  fullCutThresholdYuan: '',
+  fullCutAmountYuan: '',
 });
 
 // 星级行展开（rate%, directCount, teamSales）
@@ -293,6 +309,8 @@ async function load() {
     form.value.poolSettleCron = data.poolSettleCron || '0 0 0 1 * ?';
     form.value.poolLotteryRatio = String(data.poolLotteryRatio ?? '0.00');
     form.value.poolSettleMode = data.poolSettleMode || 'FULL';
+    form.value.fullCutThresholdYuan = data.fullCutThreshold ? String(data.fullCutThreshold / 100) : '';
+    form.value.fullCutAmountYuan = data.fullCutAmount ? String(data.fullCutAmount / 100) : '';
 
     const rates = safeJsonArr(data.commissionRates, [1, 2, 3, 4, 5]);
     const rules = safeJsonArr(data.starUpgradeRules, []);
@@ -364,6 +382,11 @@ async function onSave() {
     poolSettleCron: form.value.poolSettleCron || '0 0 0 1 * ?',
     poolLotteryRatio: parseFloat(form.value.poolLotteryRatio) || 0,
     poolSettleMode: form.value.poolSettleMode || 'FULL',
+    // 满减：两项都填了才传，否则传 null（不启用）
+    fullCutThreshold: parseFloat(form.value.fullCutThresholdYuan) > 0
+      ? Math.round(parseFloat(form.value.fullCutThresholdYuan) * 100) : null,
+    fullCutAmount: parseFloat(form.value.fullCutAmountYuan) > 0
+      ? Math.round(parseFloat(form.value.fullCutAmountYuan) * 100) : null,
   };
 
   saving.value = true;

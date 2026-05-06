@@ -39,6 +39,11 @@ public class PromoConfigDO extends TenantBaseDO {
      *  例：[100, 95, 92, 90, 88, 85] = 0 星 不打折 / 1 星 9.5 折 / ... 原型 ④ 用。 */
     private String starDiscountRates;
 
+    /** 满减门槛（分），NULL=不启用。原型 ④ 底部「满 30 立减 5」 */
+    private Integer fullCutThreshold;
+    /** 减免金额（分），与 fullCutThreshold 同时存在才有效 */
+    private Integer fullCutAmount;
+
     // ========== 推广积分 提现 / 转换 ==========
     /** 推广积分→消费积分 转换比例（默认 1:1） */
     private BigDecimal pointConversionRatio;
