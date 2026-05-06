@@ -3,7 +3,7 @@
     <view class="brand">
       <view class="logo">摊</view>
       <view class="name">摊小二</view>
-      <view class="slogan">一个人的摊，也能做出一家店</view>
+      <view class="slogan">小摊主的生意伙伴</view>
     </view>
 
     <!-- 被邀请落地引导：同时展示邀请人 + 店铺（onLoad 解析 redirect 中 inviter+tenantId） -->
@@ -26,6 +26,32 @@
         <view class="welcome-sub">登录后即可下单 · 自动成为店铺会员</view>
       </view>
     </view>
+
+    <!-- 3 大价值主张（未登录时展示） -->
+    <view v-if="!hasToken" class="value-prop">
+      <view class="vp">
+        <view class="vp-ic">🎯</view>
+        <view class="vp-body">
+          <view class="vp-ttl">边吃边赚 · 邀请最高 <text class="vp-em">返 100%</text> 商品价</view>
+          <view class="vp-desc">推 N 个朋友买同款，每位都给你返推广积分</view>
+        </view>
+      </view>
+      <view class="vp">
+        <view class="vp-ic">🏪</view>
+        <view class="vp-body">
+          <view class="vp-ttl">本地小店 一键直达</view>
+          <view class="vp-desc">附近的烧烤、水果、早点摊，扫码进店即时下单</view>
+        </view>
+      </view>
+      <view class="vp">
+        <view class="vp-ic">⭐</view>
+        <view class="vp-body">
+          <view class="vp-ttl">多店独立会员 · 长期复购更赚</view>
+          <view class="vp-desc">每家店独立星级 + 余额 + 推广积分</view>
+        </view>
+      </view>
+    </view>
+
 
     <!-- H5（非小程序）环境：手机号+密码登录（演示用，首次输入即注册） -->
     <view v-if="isH5 && !hasToken" class="card">
@@ -709,6 +735,103 @@ onLoad((query) => {
       margin-top: 6rpx;
       font-size: 22rpx;
       color: $text-secondary;
+    }
+  }
+}
+
+// 3 大价值主张
+.value-prop {
+  margin-bottom: 24rpx;
+  padding: 8rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+
+  .vp {
+    display: flex;
+    align-items: flex-start;
+    gap: 20rpx;
+    padding: 22rpx 24rpx;
+    background: $bg-card;
+    border-radius: $radius-lg;
+    box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
+    margin-bottom: 12rpx;
+    &:last-child { margin-bottom: 0; }
+  }
+
+  .vp-ic {
+    width: 56rpx;
+    height: 56rpx;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36rpx;
+    background: linear-gradient(135deg, #fff3ec, #ffd9bf);
+    border-radius: 16rpx;
+  }
+
+  .vp-body { flex: 1; min-width: 0; }
+
+  .vp-ttl {
+    font-size: 28rpx;
+    font-weight: 700;
+    color: $text-primary;
+    line-height: 1.45;
+  }
+  .vp-em {
+    color: $brand-primary;
+  }
+  .vp-desc {
+    margin-top: 6rpx;
+    font-size: 22rpx;
+    color: $text-secondary;
+    line-height: 1.5;
+  }
+}
+
+// 社交证明（5 个头像 + 用户数）
+.social-strip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16rpx;
+  margin-bottom: 32rpx;
+  padding: 18rpx 24rpx;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 999rpx;
+  border: 1rpx solid rgba(255, 107, 53, 0.12);
+
+  .avatars {
+    display: flex;
+    align-items: center;
+    .av {
+      width: 44rpx;
+      height: 44rpx;
+      border-radius: 50%;
+      color: #fff;
+      font-size: 22rpx;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2rpx solid #fff;
+      margin-left: -10rpx;
+      &:first-child { margin-left: 0; }
+    }
+    .av1 { background: linear-gradient(135deg, #ff9a4a, #FF6B35); }
+    .av2 { background: linear-gradient(135deg, #c9e0ff, #6196f0); }
+    .av3 { background: linear-gradient(135deg, #d3f4d3, #4cb84c); }
+    .av4 { background: linear-gradient(135deg, #ffd0dc, #ee5a8b); }
+    .av5 { background: linear-gradient(135deg, #e0d4ff, #9170dd); }
+  }
+
+  .social-text {
+    font-size: 22rpx;
+    color: $text-secondary;
+    .num {
+      color: $text-primary;
+      font-weight: 700;
     }
   }
 }

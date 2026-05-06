@@ -337,6 +337,8 @@ yudao:
       - /admin-api/system/user/profile/**
       - /admin-api/system/auth/**
     ignore-tables:
+      # 平台级套餐：商户登录后能看到 admin 配的套餐（tenant_id=0），不走租户过滤
+      - ai_video_package
     ignore-caches:
       - user_role_ids
       - permission_menu_ids
