@@ -26,6 +26,26 @@ function captureRedirect() {
     const route = location.hash && location.hash.startsWith('#/')
       ? location.hash.slice(1)
       : '';
+
+    // 特殊场景：商户分享 URL 形如 /m/shop-home?tenantId=171&inviter=11#/pages/login/index
+    //   - hash 是 /pages/login/index（被 login 白名单过滤掉）
+    //   - 但 location.search 里有 tenantId — 普通用户登录后应跳到 shop-home（沉浸式店铺详情）
+    // 处理：检查顶层 ?tenantId=...，有则构造 redirect 到 shop-home 而不是默认 user-home
+    if (typeof location !== 'undefined' && location.search && /[?&]tenantId=/.test(location.search)) {
+      const sp = new URLSearchParams(location.search);
+      const tenantId = sp.get('tenantId');
+      const inviter = sp.get('inviter') || sp.get('referrerUserId') || '';
+      if (tenantId) {
+        const params = [`tenantId=${encodeURIComponent(tenantId)}`];
+        if (inviter) params.push(`inviter=${encodeURIComponent(inviter)}`);
+        const shopHomeRoute = `/pages/shop-home/index?${params.join('&')}`;
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem('redirect:after-login', shopHomeRoute);
+        }
+        return shopHomeRoute;
+      }
+    }
+
     if (!route) return '';
     if (route.startsWith('/pages/login/')) return '';
     if (route.startsWith('/pages/index/')) return '';

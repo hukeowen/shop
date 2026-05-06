@@ -65,12 +65,14 @@ function buildShareUrl(tenantId) {
   return `${origin}/m/shop-home${params.length ? '?' + params.join('&') : ''}`;
 }
 
-// 二维码改走 sidecar GET /qr 出图：避免引入 npm 包 `qrcode`（其依赖 `dijkstrajs`
-// H5 build 后浏览器报"Failed to resolve module specifier 'dijkstrajs'"）
-// 带 center=店铺名 时返 SVG，中心叠白底圆 + 店铺名（高容错 H 不影响扫描）
+// 二维码走 sidecar GET /qr 出图（带 center=店铺名 返 SVG 中心叠店铺名）。
+// **必须用 location.origin 拼绝对 URL** —— uniapp H5 把 src="/qr?.." 解析成
+// 相对当前 base path（/m/qr?...），nginx 没匹配，fallback 到 H5 SPA index.html
+// 返 200 text/html 但浏览器当图片加载 → 裂图（用户报"二维码不显示"真因）
 function buildQrUrl(text, center) {
   if (!text) return '';
-  let url = `/qr?text=${encodeURIComponent(text)}&w=480&m=1`;
+  const base = (typeof location !== 'undefined' && location.origin) ? location.origin : '';
+  let url = `${base}/qr?text=${encodeURIComponent(text)}&w=480&m=1`;
   if (center) url += `&center=${encodeURIComponent(center)}`;
   return url;
 }

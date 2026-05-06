@@ -325,9 +325,10 @@ async function onShare() {
     return;
   }
   myShareUrl.value = buildMyShareUrl();
-  // sidecar /qr 出图：center=店铺名 让二维码中心叠店铺名（高容错 H 不影响扫描）
+  // sidecar /qr 出图：必须用 location.origin 绝对 URL（H5 base path 会把 /qr 改成 /m/qr 导致 404）
   const shopCenter = shopInfo.value?.shopName || shopInfo.value?.name || '';
-  let qr = `/qr?text=${encodeURIComponent(myShareUrl.value)}&w=480&m=1`;
+  const base = (typeof location !== 'undefined' && location.origin) ? location.origin : '';
+  let qr = `${base}/qr?text=${encodeURIComponent(myShareUrl.value)}&w=480&m=1`;
   if (shopCenter) qr += `&center=${encodeURIComponent(shopCenter)}`;
   myShareQr.value = qr;
   showShare.value = true;

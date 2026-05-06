@@ -241,8 +241,10 @@ function routeByRole() {
     return;
   }
   if (active === 'member' || (roles.length === 1 && roles[0] === 'member')) {
-    // 用户端首页暂未独立开发，先复用当前首页（Phase 2 会拆分）
-    uni.reLaunch({ url: '/pages/index/index' });
+    // 普通用户登录 → C 端首页 user-home（不是商户工作台 /pages/index/index）
+    // 注：从 shop-home 分享链接进的登录已经在上面 consumeRedirect 优先返回了，
+    // 走到这里说明是直接打开 /pages/login/index 登录的纯用户场景
+    uni.reLaunch({ url: '/pages/user-home/index' });
     return;
   }
   if (roles.length >= 2 && !active) {
