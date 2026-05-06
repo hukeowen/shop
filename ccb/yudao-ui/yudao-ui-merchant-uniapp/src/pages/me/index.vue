@@ -36,6 +36,10 @@
         <text>营销配置（v6）</text>
         <text class="arrow">›</text>
       </view>
+      <view class="menu-item" @click="goCoupon">
+        <text>优惠券管理</text>
+        <text class="arrow">›</text>
+      </view>
       <view class="menu-item" @click="goWithdrawApprove">
         <text>提现审批</text>
         <text class="arrow">›</text>
@@ -136,6 +140,9 @@ function goBrokerage() {
 
 function goPromoConfig() {
   uni.navigateTo({ url: '/pages/me/promo-config' });
+}
+function goCoupon() {
+  uni.navigateTo({ url: '/pages/me/coupon' });
 }
 
 function goWithdrawApprove() {

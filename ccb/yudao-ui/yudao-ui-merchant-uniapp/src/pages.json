@@ -313,6 +313,13 @@
       }
     },
     {
+      "path": "pages/me/coupon",
+      "style": {
+        "navigationBarTitleText": "优惠券",
+        "navigationStyle": "custom"
+      }
+    },
+    {
       "path": "pages/me/help",
       "style": {
         "navigationBarTitleText": "帮助与反馈"

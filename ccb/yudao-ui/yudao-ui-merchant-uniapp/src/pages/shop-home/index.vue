@@ -80,6 +80,28 @@
       <view class="vip-cta">邀请赚奖 ›</view>
     </view>
 
+    <!-- 优惠券领取条（横向滚动；商户在 me/coupon 自建；无券则整段不显示） -->
+    <scroll-view v-if="coupons.length" scroll-x="true" class="coupon-strip">
+      <view
+        v-for="c in coupons"
+        :key="c.id"
+        class="coupon-card"
+        :class="{ taken: c.taken, sold: c.remain === 0 && !c.taken }"
+        @click="onGrabCoupon(c)"
+      >
+        <view class="amt-block" v-if="c.tag !== 'NEW'">
+          <view class="amt"><text class="cny">¥</text>{{ fen2yuan(c.discountAmount) }}</view>
+        </view>
+        <view class="amt-block tag-new" v-else>
+          <view class="tag-text">新人<br>专享</view>
+        </view>
+        <view class="info">
+          <view class="cond">{{ c.minAmount > 0 ? `满 ${fen2yuan(c.minAmount)} 可用` : '无门槛' }}</view>
+          <view class="grab">{{ c.taken ? '已领取' : (c.remain === 0 ? '已领完' : '领取') }}</view>
+        </view>
+      </view>
+    </scroll-view>
+
     <!-- 招牌商品大卡（products 第一个；推 N 反 1 标仅在该商品启用 tuijian 时显示） -->
     <view v-if="signatureSpu" class="sh-section-title">
       <view class="sh-section-h3">
@@ -200,6 +222,8 @@ const myRel = ref(null); // 含 favorite/star/balance/points
 const inviterCount = ref(0);
 // 招牌商品（products 第一项 + 它的 promo 配置——含「推 N 反 1」N 值）
 const signaturePromo = ref(null);
+// 该店可领的优惠券模板（C 端只展示 status=0；taken=true 表示当前用户已领过）
+const coupons = ref([]);
 
 // 招牌商品 = products 第一个（暂按当前排序；后续 M7 接销量排序）
 const signatureSpu = computed(() => products.value && products.value[0] ? products.value[0] : null);
@@ -326,6 +350,39 @@ async function loadProducts() {
     loadSignaturePromo();
   } catch { products.value = []; }
 }
+// 优惠券：C 端拉某店可领券列表；shop-home 横向 strip 渲染
+async function loadCoupons() {
+  if (!tenantId.value) return;
+  try {
+    const list = await request({
+      url: `/app-api/merchant/shop/public/coupons?tenantId=${tenantId.value}`,
+    });
+    coupons.value = Array.isArray(list) ? list : [];
+  } catch { coupons.value = []; }
+}
+async function onGrabCoupon(c) {
+  if (c.taken) {
+    uni.showToast({ title: '已领过', icon: 'none' }); return;
+  }
+  if (c.remain === 0) {
+    uni.showToast({ title: '已领完', icon: 'none' }); return;
+  }
+  if (!userStore.token) {
+    uni.showToast({ title: '请先登录再领取', icon: 'none' });
+    return;
+  }
+  try {
+    await request({
+      url: `/app-api/merchant/mini/coupon/grab?tenantId=${tenantId.value}&couponId=${c.id}`,
+      method: 'POST',
+    });
+    uni.showToast({ title: '领取成功', icon: 'success' });
+    await loadCoupons();
+  } catch (e) {
+    uni.showToast({ title: e?.message || '领取失败', icon: 'none' });
+  }
+}
+
 // 招牌商品的 promo 配置（产生「推 4 反 1」标）
 async function loadSignaturePromo() {
   signaturePromo.value = null;
@@ -370,7 +427,7 @@ async function loadMyRel() {
 async function loadAll() {
   loading.value = true;
   try {
-    await Promise.all([loadShopInfo(), loadProducts(), loadCart(), loadMyRel()]);
+    await Promise.all([loadShopInfo(), loadProducts(), loadCart(), loadMyRel(), loadCoupons()]);
   } finally { loading.value = false; }
 }
 
@@ -666,6 +723,58 @@ onShow(() => loadCart());
   gap: 12rpx;
   .ic { color: $brand-primary; font-size: 32rpx; }
 }
+
+// 优惠券领取条（原型 line 873-918）
+.coupon-strip {
+  margin: 24rpx 32rpx;
+  white-space: nowrap;
+}
+.coupon-card {
+  display: inline-flex;
+  align-items: center;
+  gap: 20rpx;
+  min-width: 336rpx;
+  margin-right: 16rpx;
+  padding: 20rpx 24rpx;
+  background: linear-gradient(135deg, #fff 0%, #fff5ef 100%);
+  border: 2rpx dashed $brand-primary;
+  border-radius: $radius-md;
+  position: relative;
+  vertical-align: top;
+}
+.coupon-card.taken { border-style: solid; opacity: 0.65; }
+.coupon-card.sold { border-color: $border-color; opacity: 0.5; }
+.coupon-card .amt-block { flex-shrink: 0; }
+.coupon-card .amt {
+  font-size: 44rpx; font-weight: 800; color: $brand-primary;
+  font-variant-numeric: tabular-nums; line-height: 1;
+  .cny { font-size: 24rpx; }
+}
+.coupon-card .tag-new {
+  background: $brand-primary;
+  color: #fff;
+  border-radius: $radius-sm;
+  padding: 8rpx 12rpx;
+  .tag-text { font-size: 22rpx; font-weight: 700; line-height: 1.3; text-align: center; }
+}
+.coupon-card .info {
+  flex: 1; min-width: 0;
+  display: flex; flex-direction: column; gap: 6rpx;
+}
+.coupon-card .cond {
+  font-size: 22rpx; color: $text-secondary;
+  white-space: normal;
+  line-height: 1.3;
+}
+.coupon-card .grab {
+  align-self: flex-start;
+  background: $brand-primary; color: #fff;
+  font-size: 20rpx; font-weight: 700;
+  padding: 4rpx 16rpx;
+  border-radius: 999rpx;
+}
+.coupon-card.taken .grab { background: $success; }
+.coupon-card.sold .grab { background: $text-placeholder; }
 
 // 招牌商品大卡（原型 line 961-1034）
 .signature-card {
