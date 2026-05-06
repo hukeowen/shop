@@ -57,21 +57,53 @@ public class AppShopPublicController {
     }
 
     @GetMapping("/info")
-    @Operation(summary = "获取店铺详情（通过 tenantId 或 shopId，至少传一个）")
+    @Operation(summary = "获取店铺详情（通过 tenantId 或 shopId，至少传一个）；可选 userLng/userLat 计算距离")
     @Parameter(name = "tenantId", description = "租户ID（与 shopId 二选一）")
     @Parameter(name = "shopId", description = "店铺ID（与 tenantId 二选一）")
+    @Parameter(name = "userLng", description = "用户当前经度（可选，传则返 distanceMeter 字段）")
+    @Parameter(name = "userLat", description = "用户当前纬度（可选）")
     @PermitAll
     @TenantIgnore
-    public CommonResult<ShopInfoDO> getShopInfo(
+    public CommonResult<Map<String, Object>> getShopInfo(
             @RequestParam(value = "tenantId", required = false) Long tenantId,
-            @RequestParam(value = "shopId", required = false) Long shopId) {
+            @RequestParam(value = "shopId", required = false) Long shopId,
+            @RequestParam(value = "userLng", required = false) java.math.BigDecimal userLng,
+            @RequestParam(value = "userLat", required = false) java.math.BigDecimal userLat) {
         if (tenantId == null && shopId == null) {
             return CommonResult.error(400, "tenantId 或 shopId 至少传一个");
         }
         ShopInfoDO shop = tenantId != null
                 ? shopInfoMapper.selectByTenantId(tenantId)
                 : shopInfoMapper.selectById(shopId);
-        return success(shop);
+        if (shop == null) {
+            return success(null);
+        }
+        // 构造 map 返回，多带一个 distanceMeter（用户传了经纬度且店铺有经纬度时才有值）
+        Map<String, Object> resp = cn.hutool.core.bean.BeanUtil.beanToMap(shop, false, true);
+        if (userLng != null && userLat != null
+                && shop.getLongitude() != null && shop.getLatitude() != null
+                && shop.getLongitude().signum() != 0 && shop.getLatitude().signum() != 0) {
+            int meter = haversineMeter(
+                    userLng.doubleValue(), userLat.doubleValue(),
+                    shop.getLongitude().doubleValue(), shop.getLatitude().doubleValue());
+            resp.put("distanceMeter", meter);
+        }
+        return success(resp);
+    }
+
+    /**
+     * Haversine 距离公式：球面两点之间的大圆距离（米）。
+     * 精度对城市级（&lt; 50 km）足够；地球按平均半径 6371 km 算。
+     */
+    private static int haversineMeter(double lng1, double lat1, double lng2, double lat2) {
+        final double R = 6_371_000d;
+        double dLat = Math.toRadians(lat2 - lat1);
+        double dLng = Math.toRadians(lng2 - lng1);
+        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
+                * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return (int) Math.round(R * c);
     }
 
     @GetMapping("/config")

@@ -54,8 +54,9 @@
         >{{ i === 0 ? '🔥 ' : '' }}{{ c }}</text>
       </view>
       <view class="quick-meta">
-        <text class="pt" v-if="shopInfo?.address">📍 {{ shopInfo.address }}</text>
-        <text class="dot" v-if="shopInfo?.address && shopInfo?.businessHours"></text>
+        <text class="pt" v-if="distanceText">📍 {{ distanceText }}<text v-if="shopInfo?.address"> · {{ shopInfo.address }}</text></text>
+        <text class="pt" v-else-if="shopInfo?.address">📍 {{ shopInfo.address }}</text>
+        <text class="dot" v-if="(distanceText || shopInfo?.address) && shopInfo?.businessHours"></text>
         <text class="pt" v-if="shopInfo?.businessHours">
           <text class="open-now">● 营业中</text> {{ shopInfo.businessHours }}
         </text>
@@ -221,6 +222,14 @@ const bizTag = computed(() => {
 const slogan = computed(() => {
   return shopInfo.value?.description || '欢迎光临';
 });
+// 距离文本：< 1 km 显示米，否则 km 一位小数（user-h5 ④ "0.3km · 三里屯"）
+const distanceText = computed(() => {
+  const m = shopInfo.value?.distanceMeter;
+  if (m == null || m < 0) return '';
+  if (m < 1000) return `${m} m`;
+  return `${(m / 1000).toFixed(1)} km`;
+});
+
 // 店铺特色 chips（来自 shop_info.feature_tags，CSV）
 const featureChips = computed(() => {
   const raw = shopInfo.value?.featureTags;
@@ -266,9 +275,23 @@ function formatRating(r) {
 
 async function loadShopInfo() {
   if (!tenantId.value) return;
+  // 顺便取一下 GPS（拿不到也不阻塞流程，distance 段会 v-if 隐藏）
+  let geoQuery = '';
+  try {
+    const loc = await new Promise((res) => {
+      uni.getLocation({
+        type: 'wgs84',
+        success: (r) => res(r),
+        fail: () => res(null),
+      });
+    });
+    if (loc && loc.longitude && loc.latitude) {
+      geoQuery = `&userLng=${loc.longitude}&userLat=${loc.latitude}`;
+    }
+  } catch {}
   try {
     shopInfo.value = await request({
-      url: `/app-api/merchant/shop/public/info?tenantId=${tenantId.value}`,
+      url: `/app-api/merchant/shop/public/info?tenantId=${tenantId.value}${geoQuery}`,
     });
     // 缓存店铺名，user-me/invite 二维码中心叠这个名字用
     const sn = shopInfo.value?.shopName || shopInfo.value?.name;
