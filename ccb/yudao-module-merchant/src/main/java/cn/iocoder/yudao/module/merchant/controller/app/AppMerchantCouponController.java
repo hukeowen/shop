@@ -198,14 +198,15 @@ public class AppMerchantCouponController {
             if (existed != null) {
                 return success(existed.getId());
             }
+            LocalDateTime now = LocalDateTime.now();
             // 关键：原子递增 taken_count（防 grab 并发超发）。
             //   atomicIncrTaken 内置 WHERE total_count=0 OR taken_count<total_count，
             //   返回 0 = 已领完 / 已下架；返回 1 = 占住一张库存。
-            int updated = couponMapper.atomicIncrTaken(couponId);
+            //   update_time 显式传 LocalDateTime.now() 以保证应用层时区一致（避免 NOW() 走 DB 时区）。
+            int updated = couponMapper.atomicIncrTaken(couponId, now);
             if (updated == 0) {
                 throw new ServiceException(400, "已领完");
             }
-            LocalDateTime now = LocalDateTime.now();
             ShopCouponUserDO row = ShopCouponUserDO.builder()
                     .couponId(couponId)
                     .userId(userId)
@@ -218,9 +219,24 @@ public class AppMerchantCouponController {
             try {
                 couponUserMapper.insert(row);
             } catch (org.springframework.dao.DuplicateKeyException dup) {
-                // UNIQUE 兜底：极小概率两个并发都过了「已领」检查同时写入
-                // 此时 taken_count 已被多扣一张，事务回滚由 @Transactional 保证整体一致
-                throw new ServiceException(400, "已领过该券");
+                // UNIQUE 兜底场景：P1/P2 两个并发请求同时通过了「已领」幂等检查并都 atomicIncrTaken
+                // 成功（taken_count 被两次 +1），但 INSERT 时 (user_id, coupon_id) UNIQUE 拦下一条。
+                //
+                // 友好且账本正确的处理：
+                //   1. 显式补偿性 -1（atomicDecrTaken），抵消本线程多扣的库存名额。注意必须用
+                //      atomicDecrTaken 而不是依赖事务回滚 —— 我们要保留下面 SELECT existed
+                //      的成功路径，不能 throw 让事务回滚。
+                //   2. 重查 existed 返同样的 id —— 用户网络重发或并发都拿一致结果（200 OK 含同 id）。
+                //
+                // 这样 P1/P2 都返同一张券记录的 id，taken_count = 实际发出张数（不超发）。
+                log.warn("[grab] duplicate key user_id={} coupon_id={}, 重发幂等返已领 id", userId, couponId);
+                couponMapper.atomicDecrTaken(couponId, now);
+                ShopCouponUserDO again = couponUserMapper.selectByUserIdAndCouponId(userId, couponId);
+                if (again != null) {
+                    return success(again.getId());
+                }
+                // 极端情况：DupKey 但 select 又找不到（理论上几乎不可能，除非另一并发刚回滚）
+                throw new ServiceException(500, "领券失败，请重试");
             }
             return success(row.getId());
         } finally {

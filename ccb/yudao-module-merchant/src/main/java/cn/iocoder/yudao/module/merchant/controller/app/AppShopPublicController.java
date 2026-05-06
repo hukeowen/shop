@@ -3,6 +3,8 @@ package cn.iocoder.yudao.module.merchant.controller.app;
 import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.common.pojo.PageParam;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
+import cn.iocoder.yudao.framework.ratelimiter.core.annotation.RateLimiter;
+import cn.iocoder.yudao.framework.ratelimiter.core.keyresolver.impl.ClientIpRateLimiterKeyResolver;
 import cn.iocoder.yudao.framework.tenant.core.aop.TenantIgnore;
 import cn.iocoder.yudao.framework.tenant.core.util.TenantUtils;
 import cn.iocoder.yudao.module.merchant.controller.app.vo.shop.AppShopPublicInfoRespVO;
@@ -131,13 +133,32 @@ public class AppShopPublicController {
         return success(resp);
     }
 
+    /**
+     * visitorCount30d 内存 cache（5 分钟）。
+     *
+     * <p>近 30 天访客数变化缓慢，且 SELECT COUNT(*) 在 member_shop_rel 数据多时较重，
+     * 加 5 分钟 cache 大幅减压且对用户体验无感。Map<tenantId, [count, expireMs]>。</p>
+     */
+    private static final java.util.concurrent.ConcurrentHashMap<Long, long[]> VISITOR_CACHE =
+            new java.util.concurrent.ConcurrentHashMap<>();
+    private static final long VISITOR_CACHE_TTL_MS = 5 * 60 * 1000L;
+
     @GetMapping("/info/visitor")
     @Operation(summary = "C 端：获取近 30 天访客数（独立接口，前端可异步拉避免阻塞 shop-home 首屏）")
     @Parameter(name = "tenantId", description = "店铺所属租户 ID", required = true)
     @PermitAll
     @TenantIgnore
+    @RateLimiter(time = 60, count = 30, keyResolver = ClientIpRateLimiterKeyResolver.class,
+                 message = "操作过于频繁，请稍后再试")
     public CommonResult<Map<String, Object>> getVisitorCount(@RequestParam("tenantId") Long tenantId) {
-        // 隐私保护：仅返数字，不返用户列表
+        Map<String, Object> resp = new HashMap<>();
+        long now = System.currentTimeMillis();
+        long[] cached = VISITOR_CACHE.get(tenantId);
+        if (cached != null && cached[1] > now) {
+            resp.put("visitorCount30d", (int) cached[0]);
+            return success(resp);
+        }
+        // miss：重新算（隐私保护：仅返数字，不返用户列表）
         int visitorCount = TenantUtils.execute(tenantId, () -> {
             java.time.LocalDateTime since = java.time.LocalDateTime.now().minusDays(30);
             Long c = memberShopRelMapper.selectCount(
@@ -145,7 +166,7 @@ public class AppShopPublicController {
                             .ge(MemberShopRelDO::getLastVisitAt, since));
             return c == null ? 0 : c.intValue();
         });
-        Map<String, Object> resp = new HashMap<>();
+        VISITOR_CACHE.put(tenantId, new long[]{visitorCount, now + VISITOR_CACHE_TTL_MS});
         resp.put("visitorCount30d", visitorCount);
         return success(resp);
     }

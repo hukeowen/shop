@@ -33,10 +33,19 @@ public interface ShopCouponMapper extends BaseMapperX<ShopCouponDO> {
      *
      * <p>与 status=0 (上架) 一并校验避免下架后还能被抢。</p>
      */
-    @Update("UPDATE shop_coupon SET taken_count = taken_count + 1, update_time = NOW() " +
+    @Update("UPDATE shop_coupon SET taken_count = taken_count + 1, update_time = #{now} " +
             "WHERE id = #{id} " +
             "  AND deleted = b'0' " +
             "  AND status = 0 " +
             "  AND (total_count = 0 OR taken_count < total_count)")
-    int atomicIncrTaken(@Param("id") Long id);
+    int atomicIncrTaken(@Param("id") Long id, @Param("now") java.time.LocalDateTime now);
+
+    /**
+     * 补偿性递减 taken_count（用于 grab 流程 INSERT 抛 DuplicateKeyException 时撤回多扣的 +1）。
+     *
+     * <p>仅在 taken_count > 0 时减 1，避免出现负值。</p>
+     */
+    @Update("UPDATE shop_coupon SET taken_count = taken_count - 1, update_time = #{now} " +
+            "WHERE id = #{id} AND deleted = b'0' AND taken_count > 0")
+    int atomicDecrTaken(@Param("id") Long id, @Param("now") java.time.LocalDateTime now);
 }

@@ -30,10 +30,12 @@ public class PromoConfigSaveReqVO {
             example = "[100,95,92,90,88,85]")
     private String starDiscountRates;
 
-    @Schema(description = "满减门槛（分），不启用传 null", example = "3000")
+    @Schema(description = "满减门槛（分）。约定：0 = 关闭满减；> 0 = 启用；null = 保留旧值不更新（service 层用 ignoreNullValue 复制）",
+            example = "3000")
     private Integer fullCutThreshold;
 
-    @Schema(description = "减免金额（分）", example = "500")
+    @Schema(description = "减免金额（分）。约定：0 = 关闭；> 0 = 启用；null = 保留旧值。需与 fullCutThreshold 同时 > 0 才视为启用满减。",
+            example = "500")
     private Integer fullCutAmount;
 
     @Schema(description = "推广积分→消费积分 转换比例", example = "1.00")

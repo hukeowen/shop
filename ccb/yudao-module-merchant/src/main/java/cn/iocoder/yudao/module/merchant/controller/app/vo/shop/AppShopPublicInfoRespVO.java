@@ -66,4 +66,7 @@ public class AppShopPublicInfoRespVO {
     private Integer fullCutThreshold;
     @Schema(description = "满减减免（分），不启用为 null")
     private Integer fullCutAmount;
+
+    @Schema(description = "近 30 天访客数。主接口（/info）不返此字段（性能考量），由独立接口 /info/visitor 异步填充；前端拿到主信息后非阻塞补这个字段")
+    private Integer visitorCount30d;
 }
