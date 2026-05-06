@@ -82,6 +82,8 @@
     </view>
 
     <button class="logout" @click="onLogout">退出登录</button>
+
+    <RoleTabBar current="/pages/me/index" />
   </view>
 </template>
 

@@ -38,12 +38,10 @@ export default defineConfig({
       dependencies: ['setup-merchant'],
     },
 
-    // 用户端测试（依赖 setup-user）
+    // 用户端测试（不依赖 setup-user — A-auth 要测真实登录跳转，全新 session）
     {
       name: 'user',
       testDir: './specs/user',
-      use: { storageState: '.auth/user.json' },
-      dependencies: ['setup-user'],
     },
   ],
 });

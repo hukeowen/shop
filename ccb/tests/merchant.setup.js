@@ -1,7 +1,7 @@
 // 商户登录 setup：跑一次 password-login 拿 token + 落 storageState
 import { test as setup, expect } from '@playwright/test';
 
-const MERCHANT_PHONE = process.env.MERCHANT_PHONE || '18888888888';
+const MERCHANT_PHONE = process.env.MERCHANT_PHONE || '19999999999';
 const MERCHANT_PASSWORD = process.env.MERCHANT_PASSWORD || '888888';
 
 setup('商户登录拿 token', async ({ page, request }) => {

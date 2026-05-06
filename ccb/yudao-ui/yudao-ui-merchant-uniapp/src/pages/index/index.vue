@@ -89,6 +89,8 @@
     </view>
 
     <view class="bottom-space" />
+
+    <RoleTabBar current="/pages/index/index" />
   </view>
 </template>
 

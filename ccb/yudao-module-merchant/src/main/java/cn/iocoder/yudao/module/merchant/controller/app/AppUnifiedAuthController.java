@@ -130,7 +130,10 @@ public class AppUnifiedAuthController {
         String activeRole = decideActiveRole(member.getId(), roles);
         activeRoleCache.set(member.getId(), activeRole);
 
-        OAuth2AccessTokenRespDTO token = issueToken(member.getId());
+        // 商户登录必须在 merchant.tenantId 上下文内签 token，否则 oauth2_access_token.tenant_id
+        // 落空导致后续所有 /app-api/** 跨租户。详见 issueTokenForMerchant Javadoc。
+        OAuth2AccessTokenRespDTO token = issueTokenForMerchant(
+                member.getId(), merchant == null ? null : merchant.getTenantId());
         return success(buildLoginResp(token, member, merchant, roles, activeRole, session.getOpenid()));
     }
 
@@ -218,7 +221,10 @@ public class AppUnifiedAuthController {
         String activeRole = decideActiveRole(member.getId(), roles);
         activeRoleCache.set(member.getId(), activeRole);
 
-        OAuth2AccessTokenRespDTO token = issueToken(member.getId());
+        // 商户登录必须在 merchant.tenantId 上下文内签 token，否则 oauth2_access_token.tenant_id
+        // 落空导致后续所有 /app-api/** 跨租户。详见 issueTokenForMerchant Javadoc。
+        OAuth2AccessTokenRespDTO token = issueTokenForMerchant(
+                member.getId(), merchant == null ? null : merchant.getTenantId());
         return success(buildLoginResp(token, member, merchant, roles, activeRole, member.getMiniAppOpenId()));
     }
 
@@ -257,7 +263,9 @@ public class AppUnifiedAuthController {
 
         List<String> roles = buildRoles(merchant);
         String activeRole = decideActiveRole(userId, roles);
-        OAuth2AccessTokenRespDTO token = issueToken(userId);
+        // 商户登录必须在 merchant.tenantId 上下文内签 token，详见 issueTokenForMerchant Javadoc。
+        OAuth2AccessTokenRespDTO token = issueTokenForMerchant(
+                userId, merchant == null ? null : merchant.getTenantId());
         return success(buildLoginResp(token, member, merchant, roles, activeRole, member.getMiniAppOpenId()));
     }
 
@@ -297,12 +305,17 @@ public class AppUnifiedAuthController {
 
         Long merchantId = merchantService.createMerchantFromMember(
                 userId, openid, null, phone, inviteCode.getId());
-        MerchantDO merchant = merchantService.getMerchant(merchantId);
+        // createMerchantFromMember 内部 tenant_id 是 TenantBaseDO 自动注入的，
+        // 但 controller 这层是 @TenantIgnore 的，要 ignore 跨租户取回 merchant 拿真 tenantId。
+        final Long mid2 = merchantId;
+        MerchantDO merchant = TenantUtils.executeIgnore(() -> merchantService.getMerchant(mid2));
         List<String> roles = buildRoles(merchant);
         String activeRole = ActiveRoleCache.ROLE_MERCHANT;
         activeRoleCache.set(userId, activeRole);
 
-        OAuth2AccessTokenRespDTO token = issueToken(userId);
+        // 商户登录必须在 merchant.tenantId 上下文内签 token，详见 issueTokenForMerchant Javadoc。
+        OAuth2AccessTokenRespDTO token = issueTokenForMerchant(
+                userId, merchant == null ? null : merchant.getTenantId());
         return success(buildLoginResp(token, member, merchant, roles, activeRole, openid));
     }
 
@@ -413,7 +426,8 @@ public class AppUnifiedAuthController {
             List<String> roles = buildRoles(existed);
             String activeRole = ActiveRoleCache.ROLE_MERCHANT;
             activeRoleCache.set(member.getId(), activeRole);
-            OAuth2AccessTokenRespDTO token = issueToken(member.getId());
+            // 幂等返登录态时也必须在 merchant.tenantId 上下文里签 token，否则 token.tenant_id 为空 → 跨租户。
+            OAuth2AccessTokenRespDTO token = issueTokenForMerchant(member.getId(), existed.getTenantId());
             return success(buildLoginResp(token, member, existed, roles, activeRole, member.getMiniAppOpenId()));
         }
 
@@ -571,7 +585,10 @@ public class AppUnifiedAuthController {
             throw exception(ROLE_NOT_GRANTED);
         }
         activeRoleCache.set(userId, reqVO.getRole());
-        OAuth2AccessTokenRespDTO token = issueToken(userId);
+        // 切到商户角色时必须在 merchant.tenantId 上下文内签新 token；切回 member 时 fallback 全局。
+        Long tenantForToken = (ActiveRoleCache.ROLE_MERCHANT.equals(reqVO.getRole()) && merchant != null)
+                ? merchant.getTenantId() : null;
+        OAuth2AccessTokenRespDTO token = issueTokenForMerchant(userId, tenantForToken);
         return success(buildLoginResp(token, member, merchant, roles, reqVO.getRole(), member.getMiniAppOpenId()));
     }
 
@@ -636,6 +653,30 @@ public class AppUnifiedAuthController {
                 .setClientId(OAuth2ClientConstants.CLIENT_ID_DEFAULT));
     }
 
+    /**
+     * 在商户租户上下文中签 token。所有 /app-api/** 请求依赖 token 里的 tenantId
+     * 做租户隔离（TenantSecurityWebFilter 解析 oauth2_access_token.tenant_id）。
+     *
+     * <p>登录入口（wx-mini-login / password-login / apply-merchant / bind-phone /
+     * switch-role）方法上挂 @TenantIgnore，进来时 TenantContextHolder 是 ignore 状态。
+     * 此时直接 issueToken 会让 oauth2_access_token.tenant_id 落成 null 或 admin tenant=1，
+     * 后续所有商户接口查询都走错租户 → 跨租户数据泄漏。</p>
+     *
+     * <p>本方法在 merchantTenantId 上下文内调 issueToken，token 写入正确的 tenant_id，
+     * TenantSecurityWebFilter 解析后即可命中本商户租户。</p>
+     *
+     * @param userId           会员 userId
+     * @param merchantTenantId 关联商户租户 id；null/0 表示纯 C 端会员（无商户身份），按全局 token 处理
+     */
+    private OAuth2AccessTokenRespDTO issueTokenForMerchant(Long userId, Long merchantTenantId) {
+        if (merchantTenantId == null || merchantTenantId <= 0) {
+            return issueToken(userId);
+        }
+        final OAuth2AccessTokenRespDTO[] holder = new OAuth2AccessTokenRespDTO[1];
+        TenantUtils.execute(merchantTenantId, () -> holder[0] = issueToken(userId));
+        return holder[0];
+    }
+
     private List<String> buildRoles(MerchantDO merchant) {
         List<String> roles = new ArrayList<>();
         roles.add(ActiveRoleCache.ROLE_MEMBER);
@@ -670,6 +711,7 @@ public class AppUnifiedAuthController {
         vo.setActiveRole(activeRole);
         vo.setOpenid(openid);
         vo.setMerchantId(merchant == null ? null : merchant.getId());
+        vo.setTenantId(merchant == null ? null : merchant.getTenantId());
         vo.setNickname(member.getNickname());
         fillShopFields(vo, merchant);
         return vo;

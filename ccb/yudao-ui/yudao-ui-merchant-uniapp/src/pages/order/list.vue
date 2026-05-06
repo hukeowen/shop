@@ -99,6 +99,8 @@
         <view class="sheet-close" @click="showVerify = false">关闭</view>
       </view>
     </view>
+
+    <RoleTabBar current="/pages/order/list" />
   </view>
 </template>
 

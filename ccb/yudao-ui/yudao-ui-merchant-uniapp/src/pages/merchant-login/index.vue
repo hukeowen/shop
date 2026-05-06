@@ -102,6 +102,10 @@ async function submit() {
     userStore.refreshToken = resp.refreshToken || '';
     userStore.userId = resp.userId || 0;
     userStore.merchantId = resp.merchantId || 0;
+    // 一个商户=一个租户：登录拿到真 tenantId 存 storage，后续所有请求带这个 header
+    if (resp.tenantId) {
+      try { uni.setStorageSync('tenantId', resp.tenantId); } catch {}
+    }
     userStore.phone = resp.phone || form.mobile;
     userStore.openid = resp.openid || '';
     userStore.roles = Array.isArray(resp.roles) ? resp.roles : [];

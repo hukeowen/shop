@@ -89,6 +89,8 @@
     </view>
 
     <view class="bottom-space" />
+
+    <RoleTabBar current="/pages/ai-video/index" />
   </view>
 </template>
 

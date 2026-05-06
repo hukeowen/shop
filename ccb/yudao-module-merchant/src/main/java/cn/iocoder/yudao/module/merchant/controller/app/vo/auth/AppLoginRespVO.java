@@ -40,6 +40,9 @@ public class AppLoginRespVO {
     @Schema(description = "关联商户 ID，未开通商户时为 null")
     private Long merchantId;
 
+    @Schema(description = "关联租户 ID（一个商户=一个租户）；普通用户/未开通商户时返 null，前端默认走 tenant=1")
+    private Long tenantId;
+
     @Schema(description = "用户昵称，未设置时为空，前端兜底用 phone 末四位")
     private String nickname;
 
