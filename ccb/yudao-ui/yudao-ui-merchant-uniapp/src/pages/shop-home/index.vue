@@ -69,7 +69,40 @@
       <view class="vip-cta">邀请赚奖 ›</view>
     </view>
 
-    <!-- 商品 grid -->
+    <!-- 招牌商品大卡（products 第一个；推 N 反 1 标仅在该商品启用 tuijian 时显示） -->
+    <view v-if="signatureSpu" class="sh-section-title">
+      <view class="sh-section-h3">
+        <text class="ic">🏆</text>本店招牌
+      </view>
+    </view>
+    <view v-if="signatureSpu" class="signature-card" @click="goDetail(signatureSpu)">
+      <view class="crown-tag">👑 招牌 No.1</view>
+      <view class="signature-card-inner">
+        <view class="pic" :style="picStyle(signatureSpu, 0)">{{ pickEmoji(signatureSpu) }}</view>
+        <view class="info">
+          <view class="pname">{{ signatureSpu.name }}</view>
+          <view class="ptag">{{ signatureSpu.introduction || '本店招牌 · 现做现卖' }}</view>
+          <view class="stats">
+            <text v-if="signatureSpu.salesCount">已售 <text class="em">{{ signatureSpu.salesCount }}</text></text>
+            <text v-if="shopInfo?.avgRating">★ <text class="em">{{ formatRating(shopInfo.avgRating) }}</text></text>
+            <text v-if="signatureTuijian" class="brand-em">{{ signatureTuijian }}</text>
+          </view>
+          <view class="price-row">
+            <view class="price">
+              <text class="cny">¥</text>{{ fen2yuan(getSpuPrice(signatureSpu)) }}
+              <text v-if="signatureSpu.marketPrice && signatureSpu.marketPrice > getSpuPrice(signatureSpu)"
+                    class="original">¥{{ fen2yuan(signatureSpu.marketPrice) }}</text>
+            </view>
+            <view class="add-big" @click.stop="addCart(signatureSpu)">+ 加入</view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 全部商品 -->
+    <view v-if="products.length" class="sh-section-title">
+      <view class="sh-section-h3">全部商品</view>
+    </view>
     <view class="cat-tab">
       <view class="it active">全部</view>
     </view>
@@ -154,6 +187,17 @@ const cartTotal = ref(0);
 const loading = ref(false);
 const myRel = ref(null); // 含 favorite/star/balance/points
 const inviterCount = ref(0);
+// 招牌商品（products 第一项 + 它的 promo 配置——含「推 N 反 1」N 值）
+const signaturePromo = ref(null);
+
+// 招牌商品 = products 第一个（暂按当前排序；后续 M7 接销量排序）
+const signatureSpu = computed(() => products.value && products.value[0] ? products.value[0] : null);
+// 「推 N 反 1」标，仅在该商品启用了推荐返佣时显示
+const signatureTuijian = computed(() => {
+  const p = signaturePromo.value;
+  if (!p || !p.tuijianEnabled || !p.tuijianN || p.tuijianN < 1) return '';
+  return `推 ${p.tuijianN} 反 1`;
+});
 
 const showShare = ref(false);
 const myShareUrl = ref('');
@@ -227,7 +271,21 @@ async function loadProducts() {
        url: `/app-api/product/spu/page?pageNo=1&pageSize=20&tenantId=${tenantId.value}`,
      });
     products.value = (res && res.list) ? res.list : (Array.isArray(res) ? res : []);
+    // 加载完商品后异步拉招牌商品的「推 N 反 1」配置（products[0] 作招牌）
+    loadSignaturePromo();
   } catch { products.value = []; }
+}
+// 招牌商品的 promo 配置（产生「推 4 反 1」标）
+async function loadSignaturePromo() {
+  signaturePromo.value = null;
+  const spu = signatureSpu.value;
+  if (!spu || !spu.id) return;
+  try {
+    const cfg = await request({
+      url: `/app-api/merchant/mini/promo/product-config?spuId=${spu.id}`,
+    });
+    signaturePromo.value = cfg || null;
+  } catch { signaturePromo.value = null; }
 }
 async function loadCart() {
   if (!tenantId.value) return;
@@ -518,6 +576,114 @@ onShow(() => loadCart());
   padding: 12rpx 24rpx; border-radius: 999rpx;
   box-shadow: 0 4rpx 16rpx rgba(255,107,53,.30);
   z-index: 1;
+}
+
+// shop section title
+.sh-section-title {
+  margin: 32rpx 32rpx 16rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.sh-section-h3 {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: $text-primary;
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  .ic { color: $brand-primary; font-size: 32rpx; }
+}
+
+// 招牌商品大卡（原型 line 961-1034）
+.signature-card {
+  position: relative;
+  margin: 0 32rpx 24rpx;
+  background: linear-gradient(135deg, #fff 0%, #fff5ef 50%, #fff 100%);
+  border: 4rpx solid $brand-light-2;
+  border-radius: $radius-lg;
+  overflow: hidden;
+  box-shadow: 0 8rpx 32rpx rgba(255, 107, 53, 0.10);
+}
+.signature-card .crown-tag {
+  position: absolute;
+  top: 0; left: 0;
+  background: linear-gradient(135deg, $brand-primary, $brand-primary-dark);
+  color: #fff;
+  font-size: 22rpx; font-weight: 800;
+  padding: 6rpx 28rpx 6rpx 20rpx;
+  border-radius: $radius-lg 0 999rpx 0;
+  z-index: 2;
+  box-shadow: 0 4rpx 16rpx rgba(255, 107, 53, 0.40);
+}
+.signature-card-inner {
+  display: flex;
+  gap: 24rpx;
+  padding: 32rpx;
+}
+.signature-card .pic {
+  width: 200rpx; height: 200rpx;
+  border-radius: $radius-md;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 112rpx;
+  flex-shrink: 0;
+  box-shadow: 0 8rpx 24rpx rgba(255, 107, 53, 0.20);
+}
+.signature-card .info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.signature-card .pname {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: $text-primary;
+}
+.signature-card .ptag {
+  margin-top: 8rpx;
+  font-size: 22rpx;
+  color: $text-secondary;
+}
+.signature-card .stats {
+  margin-top: auto;
+  display: flex; gap: 20rpx;
+  align-items: center;
+  font-size: 22rpx; color: $text-secondary;
+  flex-wrap: wrap;
+  .em { color: $brand-primary; font-weight: 700; }
+  .brand-em { color: $brand-primary; font-weight: 700; }
+}
+.signature-card .price-row {
+  margin-top: 16rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.signature-card .price {
+  color: $brand-primary;
+  font-weight: 800;
+  font-size: 44rpx;
+  line-height: 1;
+  .cny { font-size: 24rpx; }
+  .original {
+    color: $text-secondary;
+    font-size: 22rpx;
+    font-weight: 400;
+    text-decoration: line-through;
+    margin-left: 12rpx;
+  }
+}
+.signature-card .add-big {
+  background: linear-gradient(135deg, $brand-primary, $brand-primary-dark);
+  color: #fff;
+  height: 64rpx;
+  padding: 0 32rpx;
+  border-radius: 999rpx;
+  font-size: 26rpx;
+  font-weight: 700;
+  line-height: 64rpx;
+  box-shadow: 0 8rpx 24rpx rgba(255, 107, 53, 0.30);
 }
 
 .cat-tab {

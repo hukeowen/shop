@@ -4,23 +4,28 @@
  * - 辅色：墨黑 / 炭灰 / 纸白
  */
 
+// 严格对齐 docs/prototype/user-h5.html 设计 token（line 8-18）
 $brand-primary: #ff6b35;
-$brand-primary-light: #ffe4d6;
-$brand-primary-dark: #d8562a;
+$brand-primary-light: #ffe4d6;       // 旧别名保留
+$brand-primary-dark: #e25316;        // 对齐 --brand-d
+$brand-light: rgba(255, 107, 53, 0.10);   // 对齐 --brand-light
+$brand-light-2: rgba(255, 107, 53, 0.18); // 对齐 --brand-light-2
 
-$text-primary: #1c1f23;
-$text-regular: #4a5058;
-$text-secondary: #8a8f99;
+$text-primary: #1b1f23;              // 对齐 --t1
+$text-regular: #5a6577;              // 对齐 --t2
+$text-secondary: #6f7785;            // 对齐 --t3（WCAG AA 4.62:1）
 $text-placeholder: #b8bdc7;
 
-$bg-page: #f6f7f9;
-$bg-card: #ffffff;
-$border-color: #eceff4;
+$bg-page: #f6f7f9;                   // 对齐 --bg
+$bg-card: #ffffff;                   // 对齐 --card
+$border-color: #eef0f4;              // 对齐 --line
 
 $success: #10b981;
 $warning: #f59e0b;
-$danger: #ef4444;
+$danger: #e63946;                    // 对齐 --danger
 $info: #3b82f6;
+
+$shadow-card: 0 4rpx 24rpx rgba(15, 23, 42, 0.04);  // 对齐 --shadow-card
 
 $space-xs: 8rpx;
 $space-sm: 16rpx;
