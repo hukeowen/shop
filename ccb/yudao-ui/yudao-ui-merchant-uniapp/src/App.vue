@@ -19,6 +19,8 @@ function captureLandingInviter() {
 // 把当前 H5 URL（含 query）保存为登录后的 redirect 目标，
 // 并返回该目标 route（caller 用来决定要不要让页面自己加载）。
 // 仅当落地是"非默认页"（不是 login / index / user-home）时返回。
+// 特殊返回 'shop-share' 表示「顶层带 tenantId 的店铺分享场景」，
+// 由 onLaunch 在 hydrate 后按是否登录决定 reLaunch 目标。
 function captureRedirect() {
   try {
     if (typeof location === 'undefined') return '';
@@ -27,11 +29,13 @@ function captureRedirect() {
       ? location.hash.slice(1)
       : '';
 
-    // 特殊场景：商户分享 URL 形如 /m/shop-home?tenantId=171&inviter=11#/pages/login/index
-    //   - hash 是 /pages/login/index（被 login 白名单过滤掉）
-    //   - 但 location.search 里有 tenantId — 普通用户登录后应跳到 shop-home（沉浸式店铺详情）
-    // 处理：检查顶层 ?tenantId=...，有则构造 redirect 到 shop-home 而不是默认 user-home
-    if (typeof location !== 'undefined' && location.search && /[?&]tenantId=/.test(location.search)) {
+    // 特殊场景：商户分享 URL 形如 /m/shop-home?tenantId=171&inviter=11#/pages/me/qrcode
+    //   - 顶层 ?tenantId= 表示「这是分享落地」，访问者预期是 C 端用户
+    //   - hash 部分（如 /pages/me/qrcode 或 /pages/login/index）一律不能直接落地，
+    //     否则用户会被带到商户端 me/qrcode → 跳商户登录 → 跟期望背离
+    // 处理：把 redirect:after-login 设到 shop-home，并返回 'shop-share' 标记，
+    // 由 onLaunch 按登录态决定跳 shop-home（已登录）或 user-login（未登录）
+    if (location.search && /[?&]tenantId=/.test(location.search)) {
       const sp = new URLSearchParams(location.search);
       const tenantId = sp.get('tenantId');
       const inviter = sp.get('inviter') || sp.get('referrerUserId') || '';
@@ -42,7 +46,7 @@ function captureRedirect() {
         if (typeof localStorage !== 'undefined') {
           localStorage.setItem('redirect:after-login', shopHomeRoute);
         }
-        return shopHomeRoute;
+        return 'shop-share';
       }
     }
 
@@ -74,7 +78,26 @@ export default {
       'hasToken=', !!userStore.token, 'landing=', landingRoute || '(default)'
     );
 
-    // ⭐ 关键：落地在非默认页（如 shop-home?inviter=1）时绝不强跳，让该页自己加载。
+    // ⭐ 店铺分享场景：顶层带 ?tenantId=...，访问者一定是 C 端用户
+    //   - 已登录 → reLaunch shop-home（消费 redirect:after-login）
+    //   - 未登录 → reLaunch user-login，把 redirect 当 query 传过去，登录页据 tenantId 拉店铺名
+    if (landingRoute === 'shop-share') {
+      const target = (typeof localStorage !== 'undefined'
+        ? localStorage.getItem('redirect:after-login') : '') || '/pages/user-home/index';
+      try {
+        if (userStore.token) {
+          if (typeof localStorage !== 'undefined') localStorage.removeItem('redirect:after-login');
+          uni.reLaunch({ url: target });
+        } else {
+          uni.reLaunch({
+            url: `/pages/login/index?redirect=${encodeURIComponent(target)}`,
+          });
+        }
+      } catch {}
+      return;
+    }
+
+    // 落地在非默认页（如 shop-home?inviter=1）时绝不强跳，让该页自己加载。
     // 未登录时由该页的拦截 / 首个需登录请求触发跳转 login（带 redirect）。
     if (landingRoute) {
       return;
