@@ -181,30 +181,70 @@ public class ProductCategoryServiceImpl implements ProductCategoryService {
         return productCategoryMapper.selectListByIdAndStatus(ids, CommonStatusEnum.ENABLE.getStatus());
     }
 
+    /** AI 上架时自动建分类挂这个顶级父分类下，保证 SPU 用的分类 level=2 ≥ CATEGORY_LEVEL=2 */
+    private static final String AI_UPLOAD_ROOT_NAME = "AI 上架";
+
     @Override
     public Long findOrCreateCategory(String name) {
         if (name == null) return null;
         String trimmed = name.trim();
         if (trimmed.isEmpty()) return null;
         if (trimmed.length() > 30) trimmed = trimmed.substring(0, 30);
+        // 已存在同名 level≥2 分类（parentId != 0）→ 直接复用
         ProductCategoryDO existed = productCategoryMapper.selectByName(trimmed);
-        if (existed != null) return existed.getId();
+        if (existed != null && !Objects.equals(existed.getParentId(), 0L)) {
+            return existed.getId();
+        }
+        // 顶级父分类「AI 上架」（level=1，parentId=0）— SPU 不能直接挂这里
+        Long rootId = findOrCreateRootCategory(AI_UPLOAD_ROOT_NAME);
+        // 在该根下找/建同名 level=2 分类
+        ProductCategoryDO existedChild = productCategoryMapper.selectOne(
+                new cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX<ProductCategoryDO>()
+                        .eq(ProductCategoryDO::getName, trimmed)
+                        .eq(ProductCategoryDO::getParentId, rootId));
+        if (existedChild != null) return existedChild.getId();
         ProductCategoryDO cate = new ProductCategoryDO();
         cate.setName(trimmed);
-        cate.setParentId(0L); // 顶级分类
+        cate.setParentId(rootId);  // ← 关键：parentId=rootId，level=2
         cate.setStatus(CommonStatusEnum.ENABLE.getStatus());
         cate.setSort(0);
-        // picUrl 用空字符串占位（yudao DDL 默认 ''，不强制非空），不挂外部 logo
         cate.setPicUrl("");
         try {
             productCategoryMapper.insert(cate);
             return cate.getId();
         } catch (org.springframework.dao.DuplicateKeyException dup) {
-            // 并发时两个线程都过了 selectByName == null 检查，第二个 insert 撞 unique 索引
-            // → 直接重读那个名字拿先到者的 id 返回（保证幂等不创建重复行）
-            ProductCategoryDO winner = productCategoryMapper.selectByName(trimmed);
+            ProductCategoryDO winner = productCategoryMapper.selectOne(
+                    new cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX<ProductCategoryDO>()
+                            .eq(ProductCategoryDO::getName, trimmed)
+                            .eq(ProductCategoryDO::getParentId, rootId));
             if (winner != null) return winner.getId();
-            throw dup; // 真撞了别的 unique 约束（罕见），抛出去不静默
+            throw dup;
+        }
+    }
+
+    /** 找/建顶级父分类（parentId=0L）— 仅 findOrCreateCategory 内部用 */
+    private Long findOrCreateRootCategory(String rootName) {
+        ProductCategoryDO existed = productCategoryMapper.selectOne(
+                new cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX<ProductCategoryDO>()
+                        .eq(ProductCategoryDO::getName, rootName)
+                        .eq(ProductCategoryDO::getParentId, 0L));
+        if (existed != null) return existed.getId();
+        ProductCategoryDO root = new ProductCategoryDO();
+        root.setName(rootName);
+        root.setParentId(0L);
+        root.setStatus(CommonStatusEnum.ENABLE.getStatus());
+        root.setSort(0);
+        root.setPicUrl("");
+        try {
+            productCategoryMapper.insert(root);
+            return root.getId();
+        } catch (org.springframework.dao.DuplicateKeyException dup) {
+            ProductCategoryDO winner = productCategoryMapper.selectOne(
+                    new cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX<ProductCategoryDO>()
+                            .eq(ProductCategoryDO::getName, rootName)
+                            .eq(ProductCategoryDO::getParentId, 0L));
+            if (winner != null) return winner.getId();
+            throw dup;
         }
     }
 
