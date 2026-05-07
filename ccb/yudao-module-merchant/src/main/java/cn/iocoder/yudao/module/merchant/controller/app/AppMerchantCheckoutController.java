@@ -57,16 +57,21 @@ public class AppMerchantCheckoutController {
     @PostMapping("/submit")
     @Operation(summary = "提交订单（支持店铺余额抵扣）")
     @Transactional(rollbackFor = Exception.class)
-    @cn.iocoder.yudao.framework.tenant.core.aop.TenantIgnore  // MAJ-4：C 端跨店下单需 ignore
+    @cn.iocoder.yudao.framework.tenant.core.aop.TenantIgnore  // C 端跨店下单：先 ignore，再按 body.tenantId 切 ctx
     public CommonResult<SubmitRespVO> submit(@Valid @RequestBody SubmitReqVO req) {
         Long userId = SecurityFrameworkUtils.getLoginUserId();
-        Long tenantId = TenantContextHolder.getTenantId();
         if (userId == null || userId <= 0) {
             throw ServiceExceptionUtil.exception0(1_031_001_010, "请先登录");
         }
+        // 关键：C 端用户 token tenant ≠ 商户租户。
+        // 前端不能传 header 'tenant-id' 商户租户（会被 TenantSecurityWebFilter 拦 403）。
+        // 这里按 body.tenantId 切 ctx，让 trade.createOrder 把订单写到商户租户。
+        Long tenantId = req.getTenantId();
         if (tenantId == null || tenantId <= 0) {
             throw ServiceExceptionUtil.exception0(1_031_001_011, "未识别店铺");
         }
+        TenantContextHolder.setTenantId(tenantId);
+        TenantContextHolder.setIgnore(false);
         boolean useBalance = Boolean.TRUE.equals(req.getUseShopBalance());
         int balanceFen = req.getBalanceFen() == null ? 0 : req.getBalanceFen();
 
@@ -118,6 +123,16 @@ public class AppMerchantCheckoutController {
     @Data
     @EqualsAndHashCode(callSuper = false)
     public static class SubmitReqVO {
+
+        /**
+         * 目标商户租户 ID（必填）。
+         *
+         * <p>C 端用户跨店下单时由前端从 URL query 读 tenantId 显式传过来；
+         * 后端按 body 切 TenantContextHolder 写订单，避免 header 'tenant-id'
+         * 与 token user.tenantId 不一致触发 TenantSecurityWebFilter 403。</p>
+         */
+        @javax.validation.constraints.NotNull(message = "tenantId 不能为空")
+        private Long tenantId;
 
         @Valid
         @javax.validation.constraints.NotNull(message = "订单数据不能为空")

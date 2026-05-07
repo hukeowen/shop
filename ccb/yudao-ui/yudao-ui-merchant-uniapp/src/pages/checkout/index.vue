@@ -296,9 +296,12 @@ async function submitOrder() {
     }));
     // 单事务下单接口：trade/order/create + 余额扣减 + 改价 一把梭
     const reqData = {
+      // 关键：tenantId 放 body，不放 header。header 设商户 tenantId 会被
+      // TenantSecurityWebFilter 拦 403（user.tenantId ≠ ctx.tenantId）。
+      // 后端 submit 按 body.tenantId 切 TenantContextHolder 写订单到商户租户。
+      tenantId: tenantId.value,
       order: {
         items: settleItems,
-        // pointStatus 暂时禁用：见上方 MAJ-6 注释，shop_rel.points 与 trade member.point 不通
         pointStatus: false,
         deliveryType: deliveryType.value,
         addressId: addressId.value || undefined,
@@ -309,12 +312,10 @@ async function submitOrder() {
       useShopBalance: useBalance.value,
       balanceFen: useBalance.value ? safeBalanceFen : 0,
     };
-    // checkout/submit 是商户端接口，写入订单到商户租户：
-    // 仍需要 header tenantId 指向目标商户（后端 controller 按 tenant ctx 写订单）
+    // 不传 header tenantId — 用户 token 的 tenant 跟商户 tenant 不一样会冲突
     const res = await request({
       url: '/app-api/merchant/mini/checkout/submit',
       method: 'POST',
-      tenantId: tenantId.value,
       data: reqData,
     });
     uni.hideLoading();
