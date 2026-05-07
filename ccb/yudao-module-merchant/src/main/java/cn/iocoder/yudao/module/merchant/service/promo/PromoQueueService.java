@@ -34,6 +34,24 @@ public interface PromoQueueService {
                          long paidAmount, Long orderId);
 
     /**
+     * v7 推荐重载：传入 unitPaid（单件实付价 = 行实付总额 / 件数）。
+     *
+     * <p>v7 规则：</p>
+     * <ul>
+     *   <li>IN_PROGRESS 期返奖按「单件实付价 × (1/N)」（按"次"不按"量"）</li>
+     *   <li>COMPLETED 终态返奖按「订单中该商品行 paidAmount 总额 × directCommissionRatio%」</li>
+     * </ul>
+     *
+     * @param paidAmount 订单中该商品行实付总额（分）
+     * @param unitPaid   单件实付价（分）= paidAmount / item.count
+     */
+    default void handleOrderPaid(ProductPromoConfigDO config, Long buyerUserId, Long spuId,
+                                 long paidAmount, long unitPaid, Long orderId) {
+        // 默认实现 fallback 到旧签名（兼容历史 caller）
+        handleOrderPaid(config, buyerUserId, spuId, paidAmount, orderId);
+    }
+
+    /**
      * 列出某用户当前所有 QUEUEING 状态的队列位置（"我的队列"页用）。
      * 已 EXITED 的不返；按 A 层先 / 同层内按晋升时间 / 入队时间升序。
      * 每行附上商品配置的 N（前端可显示进度 "已累计 2/3 次"）。

@@ -114,9 +114,11 @@ public class MerchantPromoOrderHandler implements TradeOrderHandler {
             }
         }
 
-        // 2. 直推 / 队列 / 自然推
+        // 2. v7 推 N 反 1 状态机（替代 v6 三机制；自然推开关保留兜底）
+        // 单件实付价 = 行总额 / 件数（按"次"不按"量"返奖原则）
         if (config != null) {
-            promoQueueService.handleOrderPaid(config, buyerId, spuId, paidAmount, orderId);
+            long unitPaid = qty > 0 ? paidAmount / qty : paidAmount;
+            promoQueueService.handleOrderPaid(config, buyerId, spuId, paidAmount, unitPaid, orderId);
         }
 
         // （3 团队极差移到 afterPayOrder 末尾按订单总额触发一次）

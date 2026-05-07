@@ -80,4 +80,15 @@ public class PromoConfigSaveReqVO {
     @NotNull
     private String poolSettleMode;
 
+    // ========== v7 推 N 反 1 ==========
+    @Schema(description = "v7 间推百分比（如 10 = 10%），完成推 N 反 1 后自购 / 下级首单返奖比例。null = 保留旧值",
+            example = "10")
+    @DecimalMin(value = "0.00", message = "间推百分比不能为负")
+    @DecimalMax(value = "100.00", message = "间推百分比不能超过 100")
+    private BigDecimal directCommissionRatio;
+
+    @Schema(description = "v7 自然推开关：false=吞奖；true=保留旧 A/B 层队列。仅对真自然用户订单生效",
+            example = "false")
+    private Boolean naturalPushEnabled;
+
 }

@@ -44,6 +44,13 @@ public class PromoConfigDO extends TenantBaseDO {
     /** 减免金额（分），与 fullCutThreshold 同时存在才有效 */
     private Integer fullCutAmount;
 
+    // ========== v7 推 N 反 1 ==========
+    /** 间推百分比（如 10 = 10%），完成推 N 反 1 后自购 / 下级首单的返奖比例 */
+    private BigDecimal directCommissionRatio;
+    /** 自然推开关：仅作用于真自然用户（无 parent）订单。
+     *  OFF（默认）= 吞奖；ON = 保留旧 A/B 层队列三机制（自然推/插队/自然出队）。 */
+    private Boolean naturalPushEnabled;
+
     // ========== 推广积分 提现 / 转换 ==========
     /** 推广积分→消费积分 转换比例（默认 1:1） */
     private BigDecimal pointConversionRatio;

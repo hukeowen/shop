@@ -48,7 +48,18 @@ public class ShopQueuePositionDO extends TenantBaseDO {
 
     private LocalDateTime exitedAt;
 
-    /** QUEUEING / EXITED */
+    /** QUEUEING / EXITED（v6 旧字段保留，新代码读 state） */
     private String status;
+
+    /**
+     * v7 状态机：IN_PROGRESS / COMPLETED。
+     *
+     * <p>v6 用 status + layer 表达；v7 简化为：
+     * <ul>
+     *   <li>IN_PROGRESS：已激活，cumulated &lt; N，自购 + 下级首单都触发 cumulated++</li>
+     *   <li>COMPLETED：cumulated == N，永久终态，返「订单实付总额 × 间推比%」</li>
+     * </ul></p>
+     */
+    private String state;
 
 }
