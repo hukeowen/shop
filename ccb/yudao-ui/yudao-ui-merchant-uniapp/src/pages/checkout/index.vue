@@ -232,15 +232,16 @@ async function loadShopAndItems() {
     shopName.value = shop?.shopName || `店铺 #${tenantId.value}`;
     onlinePayEnabled.value = !!shop?.onlinePayEnabled;
     if (!onlinePayEnabled.value) payType.value = 'offline';
-    // 2. 拉用户在该店的资产（积分 / 余额）
+    // 2. 拉用户在该店的资产（按 query.tenantId 跨租户找用户在该店的 member-rel 记录）
+    //    去掉 header tenantId，避免与用户 token tenant 冲突触发 401
     try {
-      const rel = await request({ url: '/app-api/merchant/mini/member-rel/my', tenantId: tenantId.value });
+      const rel = await request({ url: `/app-api/merchant/mini/member-rel/my?tenantId=${tenantId.value}` });
       userBalance.value = rel?.balance || 0;
       userPoints.value = rel?.points || 0;
     } catch {}
-    // 3. 拉商品（按 cartIds 或 skuId）
+    // 3. 拉商品（按 cartIds 或 skuId）— 购物车按用户自身 tenant 走
     if (cartIds.value.length) {
-      const res = await request({ url: '/app-api/trade/cart/list', tenantId: tenantId.value });
+      const res = await request({ url: '/app-api/trade/cart/list' });
       const all = (res && res.validList) || (res && res.list) || (Array.isArray(res) ? res : []);
       items.value = all.filter(i => cartIds.value.includes(i.id));
     } else if (skuId.value) {
@@ -303,6 +304,8 @@ async function submitOrder() {
       useShopBalance: useBalance.value,
       balanceFen: useBalance.value ? safeBalanceFen : 0,
     };
+    // checkout/submit 是商户端接口，写入订单到商户租户：
+    // 仍需要 header tenantId 指向目标商户（后端 controller 按 tenant ctx 写订单）
     const res = await request({
       url: '/app-api/merchant/mini/checkout/submit',
       method: 'POST',

@@ -124,9 +124,10 @@ async function loadProduct() {
   if (!spuId.value) return;
   loading.value = true;
   try {
+    // 不传 header tenantId（与用户 token tenant 冲突会被 TenantSecurityWebFilter 拦 401）；
+    // mall spu 主键全局唯一，不需要 tenant 参数
     product.value = await request({
       url: `/app-api/product/spu/get-detail?id=${spuId.value}`,
-      tenantId: tenantId.value,
     });
     if (product.value?.skus?.length) {
       selectedSkuId.value = product.value.skus[0].id;
@@ -138,17 +139,17 @@ async function loadProduct() {
 async function loadPromoConfig() {
   if (!spuId.value || !tenantId.value) return;
   try {
+    // promo product-config 已 @TenantIgnore 按 spuId 查；不传 header 避免越权
     promoConfig.value = await request({
       url: `/app-api/merchant/mini/promo/product-config?spuId=${spuId.value}`,
-      tenantId: tenantId.value,
     });
   } catch { promoConfig.value = null; }
 }
 
 async function loadCartCount() {
-  if (!tenantId.value) return;
   try {
-    const r = await request({ url: '/app-api/trade/cart/get-count', tenantId: tenantId.value });
+    // 购物车按用户自身 token tenant 走，不传商户 tenantId 头
+    const r = await request({ url: '/app-api/trade/cart/get-count' });
     cartCount.value = typeof r === 'number' ? r : (r?.count || 0);
   } catch { cartCount.value = 0; }
 }
@@ -163,10 +164,10 @@ async function addToCart() {
     return;
   }
   try {
+    // 加购按用户 token tenant 走，不传商户 tenantId 头
     await request({
       url: '/app-api/trade/cart/add',
       method: 'POST',
-      tenantId: tenantId.value,
       data: { skuId: selectedSkuId.value, count: 1 },
     });
     uni.showToast({ title: '已加入购物车', icon: 'success' });
