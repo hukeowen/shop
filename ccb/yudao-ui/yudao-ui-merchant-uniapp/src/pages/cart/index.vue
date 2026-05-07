@@ -33,10 +33,11 @@
           class="cart-row"
         >
           <view class="check on">✓</view>
-          <view class="pic-item" :style="itemPicStyle(item)">{{ pickEmoji(item) }}</view>
+          <image v-if="item.picUrl" class="pic-item-img" :src="item.picUrl" mode="aspectFill" />
+          <view v-else class="pic-item" :style="itemPicStyle(item)">{{ pickEmoji(item) }}</view>
           <view class="info">
-            <view class="iname">{{ item.spuName || item.name || '商品' }}</view>
-            <view class="spec" v-if="item.skuName || itemSpec(item)">{{ item.skuName || itemSpec(item) }}</view>
+            <view class="iname">{{ item.spuName || '商品' }}</view>
+            <view class="spec" v-if="item.skuName">{{ item.skuName }}</view>
             <view class="row">
               <view class="price">¥{{ fen2yuan(item.price) }}</view>
               <view class="qty">
@@ -68,9 +69,10 @@
           :key="item.id"
           class="cart-row off"
         >
-          <view class="pic-item" :style="itemPicStyle(item)">{{ pickEmoji(item) }}</view>
+          <image v-if="item.picUrl" class="pic-item-img" :src="item.picUrl" mode="aspectFill" />
+          <view v-else class="pic-item" :style="itemPicStyle(item)">{{ pickEmoji(item) }}</view>
           <view class="info">
-            <view class="iname">{{ item.spuName || item.name }}</view>
+            <view class="iname">{{ item.spuName || '商品' }}</view>
             <view class="row">
               <view class="price">¥{{ fen2yuan(item.price) }}</view>
               <view class="off-qty">x {{ item.count }}</view>
@@ -158,12 +160,17 @@ async function load() {
     // 前端循环各店调用合并
     const res = await request({ url: '/app-api/trade/cart/list' });
     let list = (res && res.validList) || (res && res.list) || (Array.isArray(res) ? res : []);
-    // 兼容：嵌套 spu 把 tenantId 挂上去
+    // trade/cart/list 返结构 { id, count, selected, spu: {...}, sku: {...} }
+    // 把嵌套字段拍到顶层方便模板用
     list = list.map(it => ({
       ...it,
       tenantId: it.tenantId || it.spu?.tenantId,
-      price: it.price || it.spu?.price || (it.sku && it.sku.price) || 0,
-      shopName: it.shopName || it.spu?.shopName || it.spu?.tenantName,
+      spuName: it.spuName || it.spu?.name,
+      picUrl: it.picUrl || it.sku?.picUrl || it.spu?.picUrl,
+      // 优先 sku 价（多规格）然后 spu 价
+      price: it.price || it.sku?.price || it.spu?.price || 0,
+      skuName: it.skuName || it.sku?.properties?.map(p => p.valueName).join(' / '),
+      shopName: undefined, // 让 loadShopNames 异步填
     }));
     items.value = list;
     // 默认选中"最近一次访问的店铺"或第一组
@@ -332,6 +339,11 @@ onShow(load);
   color: #fff; font-size: 56rpx;
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
+}
+.cart-row .pic-item-img {
+  width: 128rpx; height: 128rpx; border-radius: $radius-md;
+  flex-shrink: 0;
+  background: $bg-page;
 }
 .cart-row .info { flex: 1; min-width: 0; }
 .cart-row .iname { font-size: 26rpx; color: $text-primary; font-weight: 500; }

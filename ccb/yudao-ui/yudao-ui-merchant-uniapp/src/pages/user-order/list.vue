@@ -44,7 +44,8 @@
             <text class="order-status" :class="statusClass(order.status)">{{ statusLabel(order.status) }}</text>
           </view>
           <view class="order-items">
-            <view class="order-pic">{{ pickEmoji(order) }}</view>
+            <image v-if="firstItemPic(order)" class="order-pic-img" :src="firstItemPic(order)" mode="aspectFill" />
+            <view v-else class="order-pic">{{ pickEmoji(order) }}</view>
             <view class="order-info">
               <view class="order-pname">{{ firstItemName(order) }}</view>
               <view class="order-spec">{{ itemsSummary(order) }}</view>
@@ -149,6 +150,10 @@ function statusClass(s) {
 function firstItemName(order) {
   const items = order.items || order.orderItems || [];
   return items[0]?.spuName || items[0]?.name || '商品';
+}
+function firstItemPic(order) {
+  const items = order.items || order.orderItems || [];
+  return items[0]?.picUrl || items[0]?.spu?.picUrl || '';
 }
 function itemsSummary(order) {
   const items = order.items || order.orderItems || [];
@@ -310,6 +315,11 @@ onPullDownRefresh(async () => {
   color: #fff; font-size: 44rpx;
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
+}
+.order-pic-img {
+  width: 96rpx; height: 96rpx; border-radius: $radius-md;
+  flex-shrink: 0;
+  background: $bg-page;
 }
 .order-info { flex: 1; min-width: 0; }
 .order-pname {
