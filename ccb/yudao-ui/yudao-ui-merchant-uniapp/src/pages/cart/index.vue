@@ -83,7 +83,7 @@
       <view class="bottom-space"></view>
     </view>
 
-    <view v-if="items.length" class="cart-bottom safe-bottom">
+    <view v-if="items.length" class="cart-bottom">
       <view class="check-all on">✓</view>
       <text class="label-all">全选本店</text>
       <view class="total">
@@ -92,6 +92,8 @@
       </view>
       <view class="checkout-btn" @click="goCheckout">结算（{{ currentGroup?.items?.length || 0 }}）</view>
     </view>
+
+    <RoleTabBar current="/pages/cart/index" force-role="member" />
   </view>
 </template>
 
@@ -171,11 +173,30 @@ async function load() {
     } else {
       currentTenantId.value = groups.value[0]?.tenantId || null;
     }
+    // 异步拉每个 tenantId 的店铺名（不阻塞主路径，拿到后 reactive 更新）
+    loadShopNames();
   } catch {
     items.value = [];
   } finally {
     loading.value = false;
   }
+}
+
+// 拉每个 tenantId 对应的 shopName（去重 + 并发）
+async function loadShopNames() {
+  const tids = Array.from(new Set(items.value.map(it => it.tenantId).filter(Boolean)));
+  if (!tids.length) return;
+  const results = await Promise.all(
+    tids.map(tid =>
+      request({ url: `/app-api/merchant/shop/public/info?tenantId=${tid}` })
+        .then(s => ({ tid, name: s?.shopName || `店铺 #${tid}` }))
+        .catch(() => ({ tid, name: `店铺 #${tid}` }))
+    )
+  );
+  const map = {};
+  results.forEach(({ tid, name }) => { map[tid] = name; });
+  // 反写到 items（响应式更新 groups computed）
+  items.value = items.value.map(it => ({ ...it, shopName: map[it.tenantId] || it.shopName }));
 }
 
 async function changeQty(item, delta) {
@@ -187,10 +208,10 @@ async function changeQty(item, delta) {
       success: async (r) => {
         if (!r.confirm) return;
         try {
+          // 用户购物车按 token tenant 走，不传商户 tenantId 头
           await request({
             url: '/app-api/trade/cart/delete',
             method: 'DELETE',
-            tenantId: item.tenantId,
             data: { ids: item.id },
           });
           load();
@@ -203,7 +224,6 @@ async function changeQty(item, delta) {
     await request({
       url: '/app-api/trade/cart/update-count',
       method: 'PUT',
-      tenantId: item.tenantId,
       data: { id: item.id, count: next },
     });
     item.count = next;

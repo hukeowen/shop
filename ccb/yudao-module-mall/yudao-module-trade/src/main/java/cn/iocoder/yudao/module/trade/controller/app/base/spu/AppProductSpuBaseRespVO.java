@@ -29,4 +29,7 @@ public class AppProductSpuBaseRespVO {
     @Schema(description = "商品状态", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
     private Integer status;
 
+    @Schema(description = "店铺/租户 ID（按店分组购物车用）", example = "162")
+    private Long tenantId;
+
 }

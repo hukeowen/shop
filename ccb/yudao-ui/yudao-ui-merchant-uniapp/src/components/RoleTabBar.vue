@@ -41,9 +41,10 @@ const merchantTabs = [
   { path: '/pages/me/index',        label: '我的',   icon: '👤' },
 ];
 const userTabs = [
-  { path: '/pages/user-home/index', label: '首页', icon: '🏠' },
-  { path: '/pages/user-order/list', label: '订单', icon: '📋' },
-  { path: '/pages/user-me/index',   label: '我的', icon: '👤' },
+  { path: '/pages/user-home/index', label: '首页',   icon: '🏠' },
+  { path: '/pages/user-order/list', label: '订单',   icon: '📋' },
+  { path: '/pages/cart/index',      label: '购物车', icon: '🛒' },
+  { path: '/pages/user-me/index',   label: '我的',   icon: '👤' },
 ];
 
 const tabs = computed(() => {
