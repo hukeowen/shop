@@ -50,6 +50,10 @@ public class AppShopPublicController {
     private PromoConfigMapper promoConfigMapper;
     @Resource
     private MemberShopRelMapper memberShopRelMapper;
+    @Resource
+    private cn.iocoder.yudao.module.product.service.spu.ProductSpuService productSpuService;
+    @Resource
+    private cn.iocoder.yudao.module.product.service.sku.ProductSkuService productSkuService;
 
     @GetMapping("/list")
     @Operation(summary = "分页查询店铺列表（仅返回正常营业的店铺）")
@@ -142,6 +146,26 @@ public class AppShopPublicController {
     private static final java.util.concurrent.ConcurrentHashMap<Long, long[]> VISITOR_CACHE =
             new java.util.concurrent.ConcurrentHashMap<>();
     private static final long VISITOR_CACHE_TTL_MS = 5 * 60 * 1000L;
+
+    @GetMapping("/products")
+    @Operation(summary = "C 端：拉某店上架商品列表（按 tenantId 跨租户）")
+    @Parameter(name = "tenantId", description = "店铺所属租户 ID", required = true)
+    @PermitAll
+    @TenantIgnore
+    public CommonResult<PageResult<cn.iocoder.yudao.module.product.dal.dataobject.spu.ProductSpuDO>>
+            listShopProducts(@RequestParam("tenantId") Long tenantId,
+                             @RequestParam(value = "pageNo", defaultValue = "1") Integer pageNo,
+                             @RequestParam(value = "pageSize", defaultValue = "20") Integer pageSize) {
+        cn.iocoder.yudao.module.product.controller.admin.spu.vo.ProductSpuPageReqVO reqVO =
+                new cn.iocoder.yudao.module.product.controller.admin.spu.vo.ProductSpuPageReqVO();
+        reqVO.setPageNo(pageNo);
+        reqVO.setPageSize(pageSize);
+        // 仅查上架商品（status=1），TenantUtils.execute 切到目标租户 ctx 让 mp 自动加 WHERE tenant_id=
+        reqVO.setTabType(cn.iocoder.yudao.module.product.controller.admin.spu.vo.ProductSpuPageReqVO.FOR_SALE);
+        PageResult<cn.iocoder.yudao.module.product.dal.dataobject.spu.ProductSpuDO> page =
+                TenantUtils.execute(tenantId, () -> productSpuService.getSpuPage(reqVO));
+        return success(page);
+    }
 
     @GetMapping("/info/visitor")
     @Operation(summary = "C 端：获取近 30 天访客数（独立接口，前端可异步拉避免阻塞 shop-home 首屏）")

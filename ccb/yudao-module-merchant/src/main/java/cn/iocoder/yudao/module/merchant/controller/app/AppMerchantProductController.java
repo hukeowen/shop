@@ -57,10 +57,17 @@ public class AppMerchantProductController {
     // ==================== #16 极简商品发布 ====================
 
     @PostMapping("/simple-create")
-    @Operation(summary = "极简商品发布（拍照+名称+价格）")
+    @Operation(summary = "极简商品发布（拍照+名称+价格，默认立即上架）")
     public CommonResult<Long> simpleCreate(@Valid @RequestBody AppSimpleSpuCreateReqVO reqVO) {
         ProductSpuSaveReqVO spuReqVO = buildSpuSaveReqVO(reqVO);
         Long spuId = productSpuService.createSpu(spuReqVO);
+        // 简易发布立即上架（mall ProductSpuStatusEnum.ENABLE=1）：
+        // yudao mall createSpu 默认 status=0 (DISABLE)，C 端 /app-api/product/spu/page
+        // 和 shop-home 公开接口都按 status=1 过滤，不上架则商品在 C 端不可见。
+        ProductSpuUpdateStatusReqVO statusReq = new ProductSpuUpdateStatusReqVO();
+        statusReq.setId(spuId);
+        statusReq.setStatus(1);
+        productSpuService.updateSpuStatus(statusReq);
         return success(spuId);
     }
 

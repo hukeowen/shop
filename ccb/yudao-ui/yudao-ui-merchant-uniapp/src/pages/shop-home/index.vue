@@ -412,12 +412,12 @@ async function loadShopInfo() {
 async function loadProducts() {
   if (!tenantId.value) return;
   try {
-    // C 端用户访问商户店铺：不传 header tenant-id（与用户自身 token tenant 冲突会被
-     // TenantSecurityWebFilter 401「您无权访问该租户的数据」），后端公开接口已 @TenantIgnore
-     // 并按 query.tenantId 自取数据。
-     const res = await request({
-       url: `/app-api/product/spu/page?pageNo=1&pageSize=20&tenantId=${tenantId.value}`,
-     });
+    // C 端用户访问商户店铺：用商户公开接口跨租户拉该店上架商品。
+    // 之前用 mall 的 /app-api/product/spu/page 不支持 tenantId 过滤，会查到平台所有
+    // 商家的商品（且未登录时全部可见，已登录时按 token tenant 过滤）。
+    const res = await request({
+      url: `/app-api/merchant/shop/public/products?tenantId=${tenantId.value}&pageNo=1&pageSize=20`,
+    });
     products.value = (res && res.list) ? res.list : (Array.isArray(res) ? res : []);
     // 加载完商品后异步：① 招牌商品「推 N 反 1」配置；② 该店分类 tab
     loadSignaturePromo();
