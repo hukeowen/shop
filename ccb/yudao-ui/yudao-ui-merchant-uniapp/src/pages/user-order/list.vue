@@ -95,7 +95,8 @@ const loading = ref(false);
 const pageNo = ref(1);
 const hasMore = ref(true);
 
-// 按 tenantId / shopName 分组
+// 按 tenantId 分组：trade/order/page 返的订单不含 shopName，前端用 shopNameMap 异步映射
+const shopNameMap = ref({});
 const groups = computed(() => {
   const map = new Map();
   for (const o of orders.value) {
@@ -103,7 +104,7 @@ const groups = computed(() => {
     if (!map.has(tid)) {
       map.set(tid, {
         tenantId: tid,
-        shopName: o.shopName || o.merchantName || `店铺 #${tid}`,
+        shopName: shopNameMap.value[tid] || o.shopName || o.merchantName || '加载中...',
         orders: [],
       });
     }
@@ -111,6 +112,23 @@ const groups = computed(() => {
   }
   return Array.from(map.values());
 });
+
+// 按订单出现的 tenantId 去重，并发拉店铺名（去重避免重复请求）
+async function loadShopNames() {
+  const tids = Array.from(new Set(orders.value.map(o => o.tenantId).filter(Boolean)));
+  const need = tids.filter(tid => !shopNameMap.value[tid]);
+  if (!need.length) return;
+  const results = await Promise.all(
+    need.map(tid =>
+      request({ url: `/app-api/merchant/shop/public/info?tenantId=${tid}` })
+        .then(s => ({ tid, name: s?.shopName || `店铺 #${tid}` }))
+        .catch(() => ({ tid, name: `店铺 #${tid}` }))
+    )
+  );
+  const next = { ...shopNameMap.value };
+  results.forEach(({ tid, name }) => { next[tid] = name; });
+  shopNameMap.value = next;
+}
 
 const initial = (grp) => (grp.shopName || '店')[0];
 const picStyle = (grp) => {
@@ -178,6 +196,8 @@ async function load(reset = false) {
     const list = res?.list || [];
     orders.value = pageNo.value === 1 ? list : orders.value.concat(list);
     hasMore.value = list.length >= 10;
+    // 异步拉店铺名（不阻塞列表渲染）
+    loadShopNames();
   } catch {
     if (pageNo.value === 1) orders.value = [];
   } finally {
