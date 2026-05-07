@@ -3,8 +3,8 @@
     <view class="profile safe-top">
       <view class="avatar">{{ avatarText }}</view>
       <view class="info">
-        <view class="nickname">{{ userStore.user?.nickname || '未登录' }}</view>
-        <view class="mobile">{{ userStore.user?.mobile || '' }}</view>
+        <view class="nickname">{{ displayName }}</view>
+        <view class="mobile">{{ userStore.phone || '' }}</view>
       </view>
     </view>
 
@@ -97,8 +97,19 @@ import { useUserStore } from '../../store/user.js';
 
 const userStore = useUserStore();
 
+// 显示名优先级：nickname（店铺名）→ phone 末四位 → 「未登录」
+const displayName = computed(() => {
+  if (userStore.user?.nickname) return userStore.user.nickname;
+  if (userStore.phone) {
+    const p = userStore.phone;
+    return p.length === 11 ? `${p.slice(0, 3)}****${p.slice(7)}` : p;
+  }
+  if (!userStore.token) return '未登录';
+  return '商户用户';
+});
+
 const avatarText = computed(() => {
-  const n = userStore.user?.nickname || '摊';
+  const n = userStore.user?.nickname || userStore.phone || '摊';
   return n.slice(0, 1);
 });
 

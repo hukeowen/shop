@@ -94,6 +94,8 @@
       </view>
       <view class="checkout-btn" @click="goCheckout">结算（{{ currentGroup?.items?.length || 0 }}）</view>
     </view>
+
+    <RoleTabBar current="/pages/cart/index" force-role="member" />
   </view>
 </template>
 
@@ -260,7 +262,9 @@ onShow(load);
 @import '../../uni.scss';
 
 .page {
-  min-height: 100vh; background: $bg-page; padding-bottom: 200rpx;
+  // 底部留出 RoleTabBar(100rpx) + 结算条(~120rpx) + safe-area 高度，避免商品被遮
+  min-height: 100vh; background: $bg-page;
+  padding-bottom: calc(240rpx + env(safe-area-inset-bottom));
 }
 .safe-top { padding-top: calc(env(safe-area-inset-top) + 16rpx); }
 .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
@@ -376,11 +380,13 @@ onShow(load);
 .bottom-space { height: 40rpx; }
 
 .cart-bottom {
-  position: fixed; bottom: 0; left: 0; right: 0;
+  // 让结算条堆在 RoleTabBar 上面（RoleTabBar 高 100rpx + safe-area-inset-bottom）
+  position: fixed;
+  bottom: calc(100rpx + env(safe-area-inset-bottom));
+  left: 0; right: 0;
   background: $bg-card; padding: 24rpx 32rpx;
-  padding-bottom: calc(env(safe-area-inset-bottom) + 24rpx);
   box-shadow: 0 -4rpx 32rpx rgba(0,0,0,.06);
-  display: flex; align-items: center; gap: 20rpx; z-index: 50;
+  display: flex; align-items: center; gap: 20rpx; z-index: 60;
 }
 .check-all { flex-shrink: 0; }
 .label-all { font-size: 24rpx; color: $text-secondary; flex-shrink: 0; }
