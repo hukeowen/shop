@@ -41,13 +41,14 @@
           <text class="name">{{ shopName }}</text>
         </view>
         <view v-for="(it, i) in items" :key="i" class="ck-row">
-          <view class="ck-pic" :style="itemPicStyle(it)">{{ pickEmoji(it) }}</view>
+          <image v-if="itemPic(it)" class="ck-pic-img" :src="itemPic(it)" mode="aspectFill" />
+          <view v-else class="ck-pic" :style="itemPicStyle(it)">{{ pickEmoji(it) }}</view>
           <view class="info">
-            <view class="iname">{{ it.spuName || it.name || '商品' }}</view>
-            <view class="spec" v-if="it.skuName">{{ it.skuName }}</view>
+            <view class="iname">{{ itemName(it) }}</view>
+            <view class="spec" v-if="it.skuName || it.sku?.properties?.length">{{ it.skuName || it.sku?.properties?.map(p => p.valueName).join(' / ') }}</view>
           </view>
           <view class="right">
-            <view class="price">¥{{ fen2yuan(it.price || 0) }}</view>
+            <view class="price">¥{{ fen2yuan(itemPrice(it)) }}</view>
             <view class="qty">x {{ it.count || 1 }}</view>
           </view>
         </view>
@@ -194,7 +195,7 @@ const itemPicStyle = (it) => {
   return `background: linear-gradient(135deg, ${palette[idx]});`;
 };
 function pickEmoji(it) {
-  const n = it.spuName || it.name || '';
+  const n = itemName(it);
   if (/(地瓜|薯)/.test(n)) return '🍠';
   if (/(玉米)/.test(n)) return '🌽';
   if (/(茶|奶茶)/.test(n)) return '🍵';
@@ -203,8 +204,12 @@ function pickEmoji(it) {
   if (/(咖啡)/.test(n)) return '☕';
   return '🛍';
 }
+// 兼容 trade/cart/list 嵌套 spu/sku 结构
+function itemName(it) { return it.spuName || it.spu?.name || it.name || '商品'; }
+function itemPic(it) { return it.picUrl || it.sku?.picUrl || it.spu?.picUrl || ''; }
+function itemPrice(it) { return it.price || it.sku?.price || it.spu?.price || 0; }
 
-const itemsFen = computed(() => items.value.reduce((s, i) => s + (i.price || 0) * (i.count || 1), 0));
+const itemsFen = computed(() => items.value.reduce((s, i) => s + itemPrice(i) * (i.count || 1), 0));
 const deliveryFen = computed(() => deliveryType.value === 1 ? 300 : 0); // 简化：快递固定 ¥3，正式接后端 freight
 const grossFen = computed(() => itemsFen.value + deliveryFen.value);
 const maxPointDeductFen = computed(() => {
@@ -415,6 +420,11 @@ onLoad((q) => {
   color: #fff; font-size: 48rpx;
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
+}
+.ck-row .ck-pic-img {
+  width: 112rpx; height: 112rpx; border-radius: $radius-md;
+  flex-shrink: 0;
+  background: $bg-page;
 }
 .ck-row .info { flex: 1; min-width: 0; }
 .ck-row .iname { font-size: 26rpx; color: $text-primary; }
