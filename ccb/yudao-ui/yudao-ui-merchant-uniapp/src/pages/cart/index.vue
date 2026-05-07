@@ -94,8 +94,6 @@
       </view>
       <view class="checkout-btn" @click="goCheckout">结算（{{ currentGroup?.items?.length || 0 }}）</view>
     </view>
-
-    <RoleTabBar current="/pages/cart/index" force-role="member" />
   </view>
 </template>
 
