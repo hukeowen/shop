@@ -2,6 +2,20 @@ import { request } from './request.js';
 
 const BASE = '/app-api/merchant/mini/order';
 
+/** createTime 兼容三种后端返回：number(timestamp) / ISO string / null */
+function formatCreateTime(ct) {
+  if (!ct) return '';
+  if (typeof ct === 'number') {
+    const d = new Date(ct);
+    const pad = (n) => (n < 10 ? '0' + n : n);
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+  if (typeof ct === 'string') {
+    return ct.replace('T', ' ').substring(0, 16);
+  }
+  return '';
+}
+
 /** TradeOrderDO → UI所需字段 */
 function normalizeOrder(o) {
   if (!o) return null;
@@ -17,7 +31,7 @@ function normalizeOrder(o) {
     remark: o.userRemark || '',
     deliveryType: o.deliveryType === 1 ? 'express' : 'pickup',
     verifyCode: o.pickUpVerifyCode || '',
-    createdAt: o.createTime ? o.createTime.replace('T', ' ').substring(0, 16) : '',
+    createdAt: formatCreateTime(o.createTime),
     payStatus: o.payStatus,
     items: (o.items || []).map((it) => ({
       spuName: it.spuName,

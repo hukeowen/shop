@@ -154,12 +154,15 @@ public class AppMerchantOrderController {
         if (Boolean.TRUE.equals(order.getPayStatus())) {
             throw exception0(400, "订单已支付，请勿重复确认");
         }
-        // 更新 payStatus=true、payTime=now、status=10 (UNDELIVERED 待发货 / 自提待核销)
+        // "到店付款" = 用户到店现场付款 + 现场取货，一步完成；不走 trade.pickUpOrder
+        // （该接口要求 deliveryPickUpStore.verifyUserIds 包含 admin，对小商户不实用）
+        // 直接设 status=30 (COMPLETED) + payStatus=true，afterPayOrder 触发推 N 反 1
         TradeOrderDO update = new TradeOrderDO();
         update.setId(id);
-        update.setStatus(10);
+        update.setStatus(30);
         update.setPayStatus(Boolean.TRUE);
         update.setPayTime(LocalDateTime.now());
+        update.setReceiveTime(LocalDateTime.now());
         tradeOrderMapper.updateById(update);
         // 发布到店收款确认事件
         // 用 order.tenantId 而不是 TenantContextHolder.getTenantId()：

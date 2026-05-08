@@ -194,7 +194,7 @@ async function loadMyShops() {
 async function loadAggregates() {
   if (!userStore.token) return;
   try {
-    const r = await request({ url: '/app-api/trade/order/count' }).catch(() => null);
+    const r = await request({ url: '/app-api/trade/order/get-count' }).catch(() => null);
     totalOrders.value = r?.allCount ?? r?.total ?? 0;
   } catch { totalOrders.value = 0; }
   try {

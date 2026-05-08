@@ -54,6 +54,8 @@ public class MerchantDashboardServiceImpl implements MerchantDashboardService {
     private ProductSpuMapper productSpuMapper;
     @Resource
     private MemberUserMapper memberUserMapper;
+    @Resource
+    private cn.iocoder.yudao.module.merchant.dal.mysql.MemberShopRelMapper memberShopRelMapper;
 
     private static final DateTimeFormatter LABEL_FMT = DateTimeFormatter.ofPattern("MM-dd");
 
@@ -178,8 +180,11 @@ public class MerchantDashboardServiceImpl implements MerchantDashboardService {
     }
 
     private Long countTodayNewMembers(LocalDateTime start, LocalDateTime end) {
-        return memberUserMapper.selectCount(new LambdaQueryWrapper<cn.iocoder.yudao.module.member.dal.dataobject.user.MemberUserDO>()
-                .between(cn.iocoder.yudao.module.member.dal.dataobject.user.MemberUserDO::getCreateTime, start, end));
+        // 按当前 tenant 的 member_shop_rel 统计；member_user 已加 ignore-tables 不再 tenant 过滤，
+        // 用 member_shop_rel(TenantBaseDO) 才是"该商户今日新会员"的语义
+        return memberShopRelMapper.selectCount(
+                new LambdaQueryWrapper<cn.iocoder.yudao.module.merchant.dal.dataobject.MemberShopRelDO>()
+                        .between(cn.iocoder.yudao.module.merchant.dal.dataobject.MemberShopRelDO::getCreateTime, start, end));
     }
 
     private Long countPendingShipment() {
@@ -205,10 +210,10 @@ public class MerchantDashboardServiceImpl implements MerchantDashboardService {
     }
 
     private Long countTotalMembers() {
-        // 显式指定泛型，便于 MP 解析目标表；MemberUserDO 继承自 TenantBaseDO，
-        // 会自动附加 tenant_id 过滤，返回当前租户下的会员数
-        return memberUserMapper.selectCount(
-                new LambdaQueryWrapper<cn.iocoder.yudao.module.member.dal.dataobject.user.MemberUserDO>());
+        // 按 member_shop_rel(TenantBaseDO) 统计当前 tenant 的会员数；
+        // member_user 是平台级表（已加 ignore-tables），跨 tenant 不能直接 count
+        return memberShopRelMapper.selectCount(
+                new LambdaQueryWrapper<cn.iocoder.yudao.module.merchant.dal.dataobject.MemberShopRelDO>());
     }
 
 }
