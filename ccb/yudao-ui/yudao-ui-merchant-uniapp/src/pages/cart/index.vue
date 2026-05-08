@@ -22,7 +22,7 @@
       <!-- 当前结算店铺组（高亮） -->
       <view v-if="currentGroup" class="cart-shop-grp current">
         <view class="gh">
-          <view class="check on">✓</view>
+          <view :class="['check', isAllSelected ? 'on' : 'off']" @click.stop="toggleAll">{{ isAllSelected ? '✓' : '○' }}</view>
           <view class="pic" :style="picStyle(currentGroup)">{{ initial(currentGroup) }}</view>
           <text class="name">{{ currentGroup.shopName }}</text>
           <text class="tag">本次结算</text>
@@ -32,7 +32,7 @@
           :key="item.id"
           class="cart-row"
         >
-          <view class="check on">✓</view>
+          <view :class="['check', selected.has(item.id) ? 'on' : 'off']" @click.stop="toggleItem(item.id)">{{ selected.has(item.id) ? '✓' : '○' }}</view>
           <image v-if="item.picUrl" class="pic-item-img" :src="item.picUrl" mode="aspectFill" />
           <view v-else class="pic-item" :style="itemPicStyle(item)">{{ pickEmoji(item) }}</view>
           <view class="info">
@@ -86,13 +86,13 @@
     </view>
 
     <view v-if="items.length" class="cart-bottom">
-      <view class="check-all on">✓</view>
+      <view :class="['check-all', isAllSelected ? 'on' : 'off']" @click="toggleAll">{{ isAllSelected ? '✓' : '○' }}</view>
       <text class="label-all">全选本店</text>
       <view class="total">
         <text class="label">{{ currentGroup?.shopName || '' }}</text>
-        <text class="price">¥{{ fen2yuan(currentTotal) }}</text>
+        <text class="price">¥{{ fen2yuan(selectedTotal) }}</text>
       </view>
-      <view class="checkout-btn" @click="goCheckout">结算（{{ currentGroup?.items?.length || 0 }}）</view>
+      <view class="checkout-btn" @click="goCheckout">结算（{{ selected.size }}）</view>
     </view>
 
     <RoleTabBar current="/pages/cart/index" force-role="member" />
@@ -100,7 +100,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
 import { request } from '../../api/request.js';
 import { fen2yuan } from '../../utils/format.js';
@@ -109,6 +109,8 @@ const items = ref([]); // 所有店铺购物车项扁平
 const loading = ref(false);
 const editMode = ref(false);
 const currentTenantId = ref(null);
+// 选中的 cart id 集合（仅本店生效；切店时重置为本店全选）
+const selected = ref(new Set());
 
 // 按 tenantId 分组（前端聚合，后端 cart/list 返带 tenantId）
 const groups = computed(() => {
@@ -126,6 +128,39 @@ const currentGroup = computed(() => groups.value.find(g => g.tenantId === curren
 const otherGroups = computed(() => groups.value.filter(g => g.tenantId !== currentGroup.value?.tenantId));
 const totalCount = computed(() => items.value.reduce((s, i) => s + (i.count || 0), 0));
 const currentTotal = computed(() => (currentGroup.value?.items || []).reduce((s, i) => s + (i.count || 0) * (i.price || 0), 0));
+const selectedTotal = computed(() => (currentGroup.value?.items || [])
+    .filter(i => selected.value.has(i.id))
+    .reduce((s, i) => s + (i.count || 0) * (i.price || 0), 0));
+const isAllSelected = computed(() => {
+  const list = currentGroup.value?.items || [];
+  return list.length > 0 && list.every(i => selected.value.has(i.id));
+});
+
+// 切换商品勾选
+function toggleItem(id) {
+  const next = new Set(selected.value);
+  if (next.has(id)) next.delete(id); else next.add(id);
+  selected.value = next;
+}
+// 全选/取消本店所有商品
+function toggleAll() {
+  const list = currentGroup.value?.items || [];
+  const next = new Set(selected.value);
+  // 先把本店所有都从集合移除
+  for (const i of list) next.delete(i.id);
+  // 如果之前不是全选，则把本店所有加回去
+  if (!isAllSelected.value) {
+    for (const i of list) next.add(i.id);
+  }
+  selected.value = next;
+}
+// 切店或加载新数据时，默认全选本店
+watch([() => currentGroup.value?.tenantId, () => currentGroup.value?.items?.length], () => {
+  const list = currentGroup.value?.items || [];
+  const next = new Set();
+  for (const i of list) next.add(i.id);
+  selected.value = next;
+});
 
 const initial = (g) => (g.shopName || '店')[0];
 const picStyle = (g) => {
@@ -244,9 +279,14 @@ function switchCurrent(tid) {
 
 function goCheckout() {
   if (!currentGroup.value) return;
-  const cartIds = currentGroup.value.items.map(i => i.id).join(',');
+  // 只结算本店勾选的商品
+  const ids = currentGroup.value.items.filter(i => selected.value.has(i.id)).map(i => i.id);
+  if (!ids.length) {
+    uni.showToast({ title: '请勾选要结算的商品', icon: 'none' });
+    return;
+  }
   uni.navigateTo({
-    url: `/pages/checkout/index?tenantId=${currentGroup.value.tenantId}&cartIds=${cartIds}`,
+    url: `/pages/checkout/index?tenantId=${currentGroup.value.tenantId}&cartIds=${ids.join(',')}`,
   });
 }
 

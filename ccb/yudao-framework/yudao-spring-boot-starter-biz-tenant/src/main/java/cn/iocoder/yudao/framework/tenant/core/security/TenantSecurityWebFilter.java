@@ -107,9 +107,18 @@ public class TenantSecurityWebFilter extends ApiRequestFilter {
                 ServletUtils.writeJSON(response, result);
                 return;
             }
-        } else { // 如果是允许忽略租户的 URL，若未传递租户编号，则默认忽略租户编号，避免报错
+        } else { // 如果是允许忽略租户的 URL，若未传递租户编号
             if (tenantId == null) {
-                TenantContextHolder.setIgnore(true);
+                // 关键：登录用户有 tenantId 时优先用，避免商户访问 /app-api/** 时
+                // 因为 setIgnore(true) 让 mybatis 跳过 where tenant_id 而跨租户拉到所有商户的数据
+                Long userTenantId = user != null ? user.getTenantId() : null;
+                if (userTenantId != null && userTenantId != 0L) {
+                    TenantContextHolder.setTenantId(userTenantId);
+                } else {
+                    // 真平台用户（未登录或 user.tenantId==0/null）才走 ignore；
+                    // 业务代码（visit / checkout / promo-records 等跨店接口）自行 TenantUtils.execute 切租户
+                    TenantContextHolder.setIgnore(true);
+                }
             }
         }
 
