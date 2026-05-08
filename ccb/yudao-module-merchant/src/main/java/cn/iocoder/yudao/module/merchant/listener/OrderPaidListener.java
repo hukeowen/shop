@@ -9,12 +9,17 @@ import cn.iocoder.yudao.module.merchant.dal.mysql.ShopBrokerageConfigMapper;
 import cn.iocoder.yudao.module.merchant.dal.mysql.ShopInfoMapper;
 import cn.iocoder.yudao.module.merchant.event.OrderOfflineConfirmedEvent;
 import cn.iocoder.yudao.module.merchant.service.MemberShopRelService;
+import cn.iocoder.yudao.module.merchant.service.promo.handler.MerchantPromoOrderHandler;
+import cn.iocoder.yudao.module.trade.dal.dataobject.order.TradeOrderDO;
+import cn.iocoder.yudao.module.trade.dal.dataobject.order.TradeOrderItemDO;
+import cn.iocoder.yudao.module.trade.service.order.TradeOrderQueryService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
+import java.util.List;
 
 /**
  * 订单付款统一事件监听器
@@ -46,6 +51,12 @@ public class OrderPaidListener {
     @Resource
     private ShopInfoMapper shopInfoMapper;
 
+    @Resource
+    private MerchantPromoOrderHandler merchantPromoOrderHandler;
+
+    @Resource
+    private TradeOrderQueryService tradeOrderQueryService;
+
     /**
      * 监听商户手动确认到店付款事件。
      */
@@ -56,11 +67,26 @@ public class OrderPaidListener {
         Long tenantId = event.getTenantId();
         Long buyerUserId = event.getUserId();
         int payPrice = event.getPayPrice();
+        Long orderId = event.getOrderId();
 
         log.info("[OrderPaidListener] 收到到店付款事件 orderId={} tenantId={} buyerUserId={} payPrice={}",
-                event.getOrderId(), tenantId, buyerUserId, payPrice);
+                orderId, tenantId, buyerUserId, payPrice);
 
         processOrderPaid(tenantId, buyerUserId, payPrice);
+
+        // v7：到店付款 = "已支付"，需触发推 N 反 1 / 消费积分 / 入池 / 星级 等营销引擎
+        // trade 模块标准流程是支付成功后调 TradeOrderHandler.afterPayOrder；
+        // 但到店付款没走 trade.payOrder，只发 OrderOfflineConfirmedEvent，所以在此手动触发
+        try {
+            TradeOrderDO order = TenantUtils.execute(tenantId, () -> tradeOrderQueryService.getOrder(orderId));
+            List<TradeOrderItemDO> items = TenantUtils.execute(tenantId,
+                    () -> tradeOrderQueryService.getOrderItemListByOrderId(orderId));
+            if (order != null && items != null && !items.isEmpty()) {
+                TenantUtils.execute(tenantId, () -> merchantPromoOrderHandler.afterPayOrder(order, items));
+            }
+        } catch (Exception e) {
+            log.error("[OrderPaidListener] 触发推 N 反 1 引擎失败 orderId={}", orderId, e);
+        }
     }
 
     // ----------------------------------------------------------------

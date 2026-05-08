@@ -210,22 +210,18 @@ public class AppMemberShopRelController {
         if (existing == null) {
             // ===== 首次进店 =====
             memberShopRelService.getOrCreateWithReferrer(userId, tenantId, referrerUserId);
-            // 同步写营销引擎用的 shop_user_referral，使 v6 推 N 反 1 / 团队极差能识别上下级
+            // 同步写营销引擎用的 shop_user_referral，使 v7 推 N 反 1 / 团队极差能识别上下级
+            // 用 TenantUtils.execute 而不是手动 setTenantId — 后者不取消 @TenantIgnore 留下的 setIgnore(true)，
+            // 会导致内部 selectOne 跨租户查到多条 (e.g. PromoConfigMapper.selectCurrent)
             if (referrerUserId != null && referrerUserId > 0 && !referrerUserId.equals(userId)) {
-                Long previousTenant = TenantContextHolder.getTenantId();
-                try {
-                    TenantContextHolder.setTenantId(tenantId);
-                    boolean newlyBound = referralService.bindParent(userId, referrerUserId, null);
+                final Long bindUserId = userId;
+                final Long bindReferrerUserId = referrerUserId;
+                TenantUtils.execute(tenantId, () -> {
+                    boolean newlyBound = referralService.bindParent(bindUserId, bindReferrerUserId, null);
                     if (newlyBound) {
-                        starService.handleReferralBound(referrerUserId);
+                        starService.handleReferralBound(bindReferrerUserId);
                     }
-                } finally {
-                    if (previousTenant != null) {
-                        TenantContextHolder.setTenantId(previousTenant);
-                    } else {
-                        TenantContextHolder.clear();
-                    }
-                }
+                });
             }
         } else {
             // ===== 已访问过：v6 不再补绑，仅更新最近进店时间 =====

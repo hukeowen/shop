@@ -2,7 +2,7 @@
   <view class="page">
     <!-- Banner -->
     <view class="banner">
-      <text class="title">营销配置（v6）</text>
+      <text class="title">营销配置（v7）</text>
       <text class="sub">双积分 · 极差递减 · 推 N 反 1 · 星级积分池</text>
     </view>
 

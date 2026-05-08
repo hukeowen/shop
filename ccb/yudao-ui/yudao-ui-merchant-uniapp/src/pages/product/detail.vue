@@ -28,7 +28,7 @@
         </view>
       </view>
 
-      <!-- v6 推 N 反 1 高亮 -->
+      <!-- v7 推 N 反 1 高亮 -->
       <view class="promo-banner" v-if="promoConfig?.tuijianEnabled">
         <view class="ic">🎯</view>
         <view class="txt">

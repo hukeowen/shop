@@ -33,7 +33,7 @@
         <text class="arrow">›</text>
       </view>
       <view class="menu-item" @click="goPromoConfig">
-        <text>营销配置（v6）</text>
+        <text>营销配置（v7）</text>
         <text class="arrow">›</text>
       </view>
       <view class="menu-item" @click="goCoupon">

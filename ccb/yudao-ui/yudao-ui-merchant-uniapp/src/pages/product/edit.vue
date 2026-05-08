@@ -58,10 +58,10 @@
       </view>
     </view>
 
-    <!-- 营销配置（v6 双积分 / 推N反1 / 入池） — 仅编辑态可用 -->
+    <!-- 营销配置（v7 双积分 / 推N反1 / 入池） — 仅编辑态可用 -->
     <view v-if="isEdit" class="card promo">
       <view class="promo-head">
-        <text class="promo-title">营销配置（v6）</text>
+        <text class="promo-title">营销配置（v7）</text>
         <text class="promo-sub">{{ promoLoaded ? '已配置' : '加载中…' }}</text>
       </view>
 
@@ -77,7 +77,7 @@
 
       <view class="switch-row">
         <view class="switch-body">
-          <view class="switch-title">参与推 N 反 1（v6）</view>
+          <view class="switch-title">参与推 N 反 1（v7）</view>
           <view class="switch-desc">链上前 N 位推荐人按比例瓜分该商品的 1 笔订单返佣</view>
         </view>
         <switch
@@ -223,7 +223,7 @@ const form = reactive({
   pushBackEnabled: false,
 });
 
-// v6 商品级营销配置（独立于 SPU 主表）
+// v7 商品级营销配置（独立于 SPU 主表）
 const promoLoaded = ref(false);
 const promoSaving = ref(false);
 const promo = reactive({
@@ -279,7 +279,7 @@ async function onSavePromo() {
     uni.showToast({ title: '推 N 反 1 启用时 N 必须 > 0', icon: 'none' });
     return;
   }
-  // v6 文档：N 个比例加总不能超过 100%（会把商品价超额返出去）
+  // v7 文档：N 个比例加总不能超过 100%（会把商品价超额返出去）
   if (promo.tuijianEnabled && ratiosSum.value > 100) {
     uni.showToast({
       title: `N 个比例加总 ${ratiosSum.value.toFixed(1)}% > 100%，请调整`,

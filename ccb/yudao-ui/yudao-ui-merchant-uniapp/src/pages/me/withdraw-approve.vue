@@ -16,7 +16,7 @@
       <view v-if="!records.length && !loading" class="empty">暂无申请</view>
       <view v-for="r in records" :key="r.id" class="card">
         <view class="row1">
-          <text class="amt">{{ r.amount }} 分</text>
+          <text class="amt">¥{{ (r.amount / 100).toFixed(2) }}</text>
           <text :class="['st', r.status.toLowerCase()]">{{ statusLabel(r.status) }}</text>
         </view>
         <view class="row2">
@@ -137,7 +137,7 @@ async function promptRemark(title) {
 }
 
 async function onApprove(r) {
-  const remark = await promptRemark(`通过 #${r.id} ${r.amount} 分？`);
+  const remark = await promptRemark(`通过 #${r.id} ¥${(r.amount/100).toFixed(2)}？`);
   if (remark === null) return;
   try {
     await approveWithdraw(r.id, remark);

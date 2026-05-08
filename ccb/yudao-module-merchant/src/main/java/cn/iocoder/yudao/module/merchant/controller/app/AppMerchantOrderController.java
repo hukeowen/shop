@@ -147,22 +147,30 @@ public class AppMerchantOrderController {
         if (order == null) {
             throw exception0(400, "订单不存在");
         }
-        if (!Integer.valueOf(10).equals(order.getStatus())) {
-            throw exception0(400, "订单状态不是待发货，无法确认收款");
+        // 到店付款订单允许 status=0（待支付）或 status=10（待发货）
+        if (!Integer.valueOf(10).equals(order.getStatus()) && !Integer.valueOf(0).equals(order.getStatus())) {
+            throw exception0(400, "订单状态不是待发货/待支付，无法确认收款");
         }
         if (Boolean.TRUE.equals(order.getPayStatus())) {
             throw exception0(400, "订单已支付，请勿重复确认");
         }
-        // 更新 payStatus=true、payTime=now
+        // 更新 payStatus=true、payTime=now、status=10 (UNDELIVERED 待发货 / 自提待核销)
         TradeOrderDO update = new TradeOrderDO();
         update.setId(id);
+        update.setStatus(10);
         update.setPayStatus(Boolean.TRUE);
         update.setPayTime(LocalDateTime.now());
         tradeOrderMapper.updateById(update);
         // 发布到店收款确认事件
+        // 用 order.tenantId 而不是 TenantContextHolder.getTenantId()：
+        // 后者依赖请求 ctx，@TenantIgnore 时为 null；前者是订单写入时落库的真实租户
+        Long tenantId = order.getTenantId();
+        if (tenantId == null) {
+            tenantId = TenantContextHolder.getTenantId();
+        }
         eventPublisher.publishEvent(new OrderOfflineConfirmedEvent(
                 this, id,
-                TenantContextHolder.getTenantId(),
+                tenantId,
                 order.getUserId(),
                 order.getPayPrice()));
         return success(true);
