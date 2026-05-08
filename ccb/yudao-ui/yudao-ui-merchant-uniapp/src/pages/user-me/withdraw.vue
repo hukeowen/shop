@@ -3,18 +3,17 @@
     <!-- 余额头部 -->
     <view class="hero">
       <text class="label">推广积分余额</text>
-      <text class="amt">{{ promoBalance }}</text>
-      <text class="unit">分（≈ {{ (promoBalance / 100).toFixed(2) }} 元）</text>
+      <text class="amt">¥{{ (promoBalance / 100).toFixed(2) }}</text>
     </view>
 
     <!-- 申请表单 -->
     <view class="card">
       <view class="card-title">提现申请</view>
       <view class="field">
-        <text class="label">提现金额</text>
-        <input class="input" type="number" v-model="amount" placeholder="单位：分" />
+        <text class="label">提现金额（元）</text>
+        <input class="input" type="number" v-model="amount" placeholder="单位：元" />
       </view>
-      <view class="hint">最低提现门槛：{{ threshold }} 分（{{ (threshold / 100).toFixed(2) }} 元）</view>
+      <view class="hint">最低提现门槛：¥{{ (threshold / 100).toFixed(2) }}</view>
       <button class="btn primary" :disabled="submitting" @click="onApply">
         {{ submitting ? '提交中…' : '提交申请' }}
       </button>
@@ -29,7 +28,7 @@
       <view v-if="!records.length && !loading" class="empty">暂无申请</view>
       <view v-for="r in records" :key="r.id" class="row">
         <view class="row1">
-          <text class="amt">{{ r.amount }} 分</text>
+          <text class="amt">¥{{ (r.amount / 100).toFixed(2) }}</text>
           <text :class="['st', r.status.toLowerCase()]">{{ statusLabel(r.status) }}</text>
         </view>
         <view class="row2">
@@ -89,13 +88,15 @@ async function loadAll() {
 }
 
 async function onApply() {
-  const amt = parseInt(amount.value);
-  if (!(amt > 0)) {
+  // 输入元 → 转分提交
+  const yuan = parseFloat(amount.value);
+  if (!(yuan > 0)) {
     uni.showToast({ title: '请输入有效金额', icon: 'none' });
     return;
   }
+  const amt = Math.round(yuan * 100);
   if (amt < threshold.value) {
-    uni.showToast({ title: `低于提现门槛 ${threshold.value} 分`, icon: 'none' });
+    uni.showToast({ title: `低于提现门槛 ¥${(threshold.value / 100).toFixed(2)}`, icon: 'none' });
     return;
   }
   if (amt > promoBalance.value) {

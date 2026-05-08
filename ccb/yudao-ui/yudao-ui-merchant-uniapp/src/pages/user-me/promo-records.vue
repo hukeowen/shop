@@ -8,8 +8,8 @@
 
     <view v-if="myShops.length" class="hero" :style="heroStyle">
       <view class="label">{{ currentShop?.shopName || '请选店铺' }} · 推广积分</view>
-      <view class="num">{{ currentShop?.points || 0 }}<text class="unit"> 分</text></view>
-      <view class="hint">💡 1 推广积分 = 1 消费积分（可兑换） · 满 100 分可提现到该店余额</view>
+      <view class="num">{{ ((currentShop?.points || 0) / 100).toFixed(2) }}<text class="unit"> 元</text></view>
+      <view class="hint">💡 1 推广积分 = 1 消费积分（可兑换） · 满 ¥100 可提现到该店余额</view>
     </view>
 
     <!-- 店铺切换 tab -->
@@ -44,7 +44,7 @@
           <view class="name">{{ flowName(r) }}</view>
           <view class="meta">{{ formatTime(r.createTime) }}{{ r.remark ? ' · ' + r.remark : '' }}</view>
         </view>
-        <view class="amt">{{ r.amount >= 0 ? '+' : '' }}{{ r.amount }}</view>
+        <view class="amt">{{ r.amount >= 0 ? '+' : '' }}¥{{ (r.amount / 100).toFixed(2) }}</view>
       </view>
     </view>
     <view class="bottom-space"></view>

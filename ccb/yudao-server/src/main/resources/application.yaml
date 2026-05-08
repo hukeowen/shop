@@ -341,6 +341,9 @@ yudao:
     ignore-tables:
       # 平台级 AI 视频套餐，tenant_id=0 共享给所有商户，需绕过租户过滤
       - ai_video_package
+      # member_user 是平台级表（一个手机号全局唯一一个 user，跨店做会员通过
+      # member_shop_rel + shop_user_referral 关联）；让 mybatis 不再自动 where tenant_id
+      - member_user
     ignore-caches:
       - user_role_ids
       - permission_menu_ids

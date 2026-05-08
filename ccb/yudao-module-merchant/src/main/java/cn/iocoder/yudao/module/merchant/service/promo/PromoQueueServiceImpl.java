@@ -173,12 +173,12 @@ public class PromoQueueServiceImpl implements PromoQueueService {
         if (parentId != null && parentId > 0) {
             handleParentReward(config, n, ratios, parentId, buyerUserId, spuId, paidAmount, unitPaid, orderId);
         } else if (Boolean.TRUE.equals(loadNaturalPushEnabled())) {
-            // 真自然用户（无 parent）+ 商户开了自然推开关 → 走旧 A/B 队列三机制（兼容 v6）
+            // 真自然用户（无 parent）+ 商户开了自然推开关 → 给队首返奖（v6 兼容）
+            // 仅"奖励分配"那部分用 legacy；buyer 自己的状态机继续走下面的 v7 主流程
             handleNaturalPushLegacy(buyerPos, n, ratios, buyerUserId, spuId, paidAmount, orderId);
-            // legacy 路径里已经处理了 buyer 自己进队的逻辑，下面直接 return 不再重复处理 buyer 自购
-            return;
         }
         // 自然用户 + 开关 OFF：奖励吞掉（不发给任何人），buyer 自己照常激活下面继续
+        // 自然用户 + 开关 ON：队首拿奖（上面已处理），buyer 自己也继续走 v7 状态机
 
         // ========== 3. 处理 buyer 自己 ==========
         if (buyerPos == null) {
@@ -354,43 +354,16 @@ public class PromoQueueServiceImpl implements PromoQueueService {
 
     /**
      * v6 旧 A/B 层自然推机制（仅在 naturalPushEnabled=true + 真自然用户时启用）。
-     * 保留旧实现：自然推队首拿奖 + buyer 进 B 层尾。
+     * v7 改造：仅处理"队首拿奖"那部分；buyer 自己进队/状态机推进交给 v7 主流程。
      */
     private void handleNaturalPushLegacy(ShopQueuePositionDO buyerPos, int n, List<BigDecimal> ratios,
                                          Long buyerUserId, Long spuId, long paidAmount, Long orderId) {
-        // 已 EXITED/COMPLETED 不复入
-        if (buyerPos != null && (LEGACY_STATUS_EXITED.equals(buyerPos.getStatus())
-                || STATE_COMPLETED.equals(buyerPos.getState()))) {
-            return;
-        }
-        boolean buyerInQueueing = buyerPos != null && LEGACY_STATUS_QUEUEING.equals(buyerPos.getStatus());
-
-        if (buyerInQueueing) {
-            // SELF_PURCHASE 旧机制：自购升 A 层 + cumulated++
-            applyProgressAward(buyerPos, n, ratios, buyerUserId, spuId, paidAmount, orderId,
-                    "SELF_PURCHASE", buyerUserId);
-        } else {
-            // 自然推：找队首返奖；buyer 进 B 层尾
+        // buyer 还不在队列（首单激活前）→ 找队首返奖；buyer 自己进队由下面 v7 主流程处理
+        if (buyerPos == null) {
             ShopQueuePositionDO head = queueMapper.selectQueueHead(spuId);
             if (head != null && !head.getUserId().equals(buyerUserId)) {
                 applyProgressAward(head, n, ratios, head.getUserId(), spuId, paidAmount, orderId,
                         "QUEUE", buyerUserId);
-            }
-            if (buyerPos == null) {
-                ShopQueuePositionDO newPos = ShopQueuePositionDO.builder()
-                        .spuId(spuId)
-                        .userId(buyerUserId)
-                        .accumulatedCount(0)
-                        .accumulatedAmount(0L)
-                        .joinedAt(LocalDateTime.now())
-                        .state(STATE_IN_PROGRESS)
-                        // 旧机制兼容字段
-                        .status(LEGACY_STATUS_QUEUEING)
-                        .layer("B")
-                        .build();
-                try {
-                    queueMapper.insert(newPos);
-                } catch (DuplicateKeyException ignored) {}
             }
         }
     }

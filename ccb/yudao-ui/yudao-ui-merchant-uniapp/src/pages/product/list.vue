@@ -45,10 +45,10 @@
         <view class="actions">
           <button
             class="act"
-            :class="s.status === 0 ? 'down' : 'up'"
+            :class="s.status === 1 ? 'down' : 'up'"
             @click="onToggleStatus(s)"
           >
-            {{ s.status === 0 ? '下架' : '上架' }}
+            {{ s.status === 1 ? '下架' : '上架' }}
           </button>
           <button class="act edit" @click="goEdit(s.id)">编辑</button>
           <button class="act del" @click="onDelete(s)">删除</button>
@@ -76,8 +76,8 @@ const current = ref(-1);
 
 const tabs = computed(() => [
   { label: '全部', value: -1, count: all.value.length },
-  { label: '在售', value: 0, count: all.value.filter((s) => s.status === 0).length },
-  { label: '已下架', value: 1, count: all.value.filter((s) => s.status === 1).length },
+  { label: '在售', value: 1, count: all.value.filter((s) => s.status === 1).length },
+  { label: '已下架', value: 0, count: all.value.filter((s) => s.status === 0).length },
 ]);
 
 const list = computed(() => {
@@ -119,15 +119,15 @@ function goBack() {
 }
 
 async function onToggleStatus(s) {
-  const next = s.status === 0 ? 1 : 0;
+  const next = s.status === 1 ? 0 : 1;
   const r = await uni.showModal({
     title: '提示',
-    content: next === 1 ? `确认下架"${s.name}"？` : `确认上架"${s.name}"？`,
+    content: next === 0 ? `确认下架"${s.name}"？` : `确认上架"${s.name}"？`,
   });
   if (!r.confirm) return;
   await updateStatus({ id: s.id, status: next });
   s.status = next;
-  uni.showToast({ title: next === 1 ? '已下架' : '已上架', icon: 'success' });
+  uni.showToast({ title: next === 0 ? '已下架' : '已上架', icon: 'success' });
 }
 
 async function onDelete(s) {

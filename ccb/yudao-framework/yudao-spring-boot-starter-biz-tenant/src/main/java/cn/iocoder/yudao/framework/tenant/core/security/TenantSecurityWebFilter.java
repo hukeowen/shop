@@ -65,17 +65,24 @@ public class TenantSecurityWebFilter extends ApiRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
         Long tenantId = TenantContextHolder.getTenantId();
+        boolean ignoreUrl = isIgnoreUrl(request);
         // 1. 登陆的用户，校验是否有权限访问该租户，避免越权问题。
+        //   - ignore-urls 命中时跳过越权校验：member 用户跨店访问 /app-api/** 是合法场景
+        //     （token.tenantId 来自登录时上下文；URL 上的 tenant 由 query/header 切换）
+        //   - member 平台用户（user.tenantId == 0/null）也跳过：与某具体 tenant 不绑死
         LoginUser user = SecurityFrameworkUtils.getLoginUser();
-        if (user != null) {
+        if (user != null && !ignoreUrl) {
+            Long userTenantId = user.getTenantId();
+            boolean platformUser = userTenantId == null || userTenantId == 0L;
             // 如果获取不到租户编号，则尝试使用登陆用户的租户编号
             if (tenantId == null) {
-                tenantId = user.getTenantId();
+                tenantId = userTenantId;
                 TenantContextHolder.setTenantId(tenantId);
             // 如果传递了租户编号，则进行比对租户编号，避免越权问题
-            } else if (!Objects.equals(user.getTenantId(), TenantContextHolder.getTenantId())) {
+            //   平台用户（tenant=0/null）允许访问任意 tenant
+            } else if (!platformUser && !Objects.equals(userTenantId, TenantContextHolder.getTenantId())) {
                 log.error("[doFilterInternal][租户({}) User({}/{}) 越权访问租户({}) URL({}/{})]",
-                        user.getTenantId(), user.getId(), user.getUserType(),
+                        userTenantId, user.getId(), user.getUserType(),
                         TenantContextHolder.getTenantId(), request.getRequestURI(), request.getMethod());
                 ServletUtils.writeJSON(response, CommonResult.error(GlobalErrorCodeConstants.FORBIDDEN.getCode(),
                         "您无权访问该租户的数据"));
@@ -84,7 +91,7 @@ public class TenantSecurityWebFilter extends ApiRequestFilter {
         }
 
         // 如果非允许忽略租户的 URL，则校验租户是否合法
-        if (!isIgnoreUrl(request)) {
+        if (!ignoreUrl) {
             // 2. 如果请求未带租户的编号，不允许访问。
             if (tenantId == null) {
                 log.error("[doFilterInternal][URL({}/{}) 未传递租户编号]", request.getRequestURI(), request.getMethod());

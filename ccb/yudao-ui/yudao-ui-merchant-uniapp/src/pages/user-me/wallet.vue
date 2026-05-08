@@ -5,13 +5,13 @@
       <view class="balances">
         <view class="bal">
           <view class="label">推广积分</view>
-          <view class="value">{{ promoBalance }}</view>
-          <view class="unit">分（{{ (promoBalance / 100).toFixed(2) }} 元）</view>
+          <view class="value">{{ (promoBalance / 100).toFixed(2) }}</view>
+          <view class="unit">元</view>
         </view>
         <view class="bal">
           <view class="label">消费积分</view>
-          <view class="value">{{ consumeBalance }}</view>
-          <view class="unit">分</view>
+          <view class="value">{{ (consumeBalance / 100).toFixed(2) }}</view>
+          <view class="unit">元</view>
         </view>
       </view>
       <view class="star">
@@ -26,7 +26,7 @@
     <view class="card">
       <view class="card-title">推广 → 消费 转换</view>
       <view class="conv-row">
-        <input class="input" type="number" v-model="convertAmount" placeholder="推广积分(分)" />
+        <input class="input" type="number" v-model="convertAmount" placeholder="推广积分（元）" />
         <button class="btn ghost" :disabled="converting" @click="onConvert">
           {{ converting ? '转换中…' : '确认转换' }}
         </button>
@@ -69,12 +69,12 @@
         <view class="row1">
           <text class="src">{{ sourceLabel(r.sourceType) }}</text>
           <text :class="['amt', r.amount > 0 ? 'plus' : 'minus']">
-            {{ r.amount > 0 ? '+' : '' }}{{ r.amount }}
+            {{ r.amount > 0 ? '+' : '' }}¥{{ (r.amount / 100).toFixed(2) }}
           </text>
         </view>
         <view class="row2">
           <text class="remark">{{ r.remark || '-' }}</text>
-          <text class="bal">余额 {{ r.balanceAfter }}</text>
+          <text class="bal">余额 ¥{{ ((r.balanceAfter || 0) / 100).toFixed(2) }}</text>
         </view>
         <view class="row3">{{ formatTime(r.createTime) }}</view>
       </view>
@@ -183,11 +183,13 @@ function loadMore() {
 }
 
 async function onConvert() {
-  const amt = parseInt(convertAmount.value);
-  if (!(amt > 0)) {
+  // 输入元，转换为分（最小单位）提交后端
+  const yuan = parseFloat(convertAmount.value);
+  if (!(yuan > 0)) {
     uni.showToast({ title: '请输入有效的转换金额', icon: 'none' });
     return;
   }
+  const amt = Math.round(yuan * 100);
   if (amt > promoBalance.value) {
     uni.showToast({ title: '推广积分余额不足', icon: 'none' });
     return;
