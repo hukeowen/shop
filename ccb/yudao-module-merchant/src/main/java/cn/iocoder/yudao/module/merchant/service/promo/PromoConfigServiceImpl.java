@@ -3,6 +3,7 @@ package cn.iocoder.yudao.module.merchant.service.promo;
 import cn.iocoder.yudao.module.merchant.controller.admin.vo.promo.PromoConfigSaveReqVO;
 import cn.iocoder.yudao.module.merchant.dal.dataobject.promo.PromoConfigDO;
 import cn.iocoder.yudao.module.merchant.dal.mysql.promo.PromoConfigMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
@@ -15,6 +16,7 @@ import java.math.BigDecimal;
  */
 @Service
 @Validated
+@Slf4j
 public class PromoConfigServiceImpl implements PromoConfigService {
 
     /** 默认极差比例：1星=1%, 2星=2%, ..., 5星=5% */
@@ -56,19 +58,30 @@ public class PromoConfigServiceImpl implements PromoConfigService {
 
     @Override
     public void saveConfig(PromoConfigSaveReqVO reqVO) {
+        log.info("[saveConfig] reqVO directCommissionRatio={} naturalPushEnabled={}",
+                reqVO.getDirectCommissionRatio(), reqVO.getNaturalPushEnabled());
         PromoConfigDO existing = promoConfigMapper.selectCurrent();
         if (existing == null) {
             PromoConfigDO insert = new PromoConfigDO();
             BeanUtils.copyProperties(reqVO, insert);
+            // 显式 set v7 字段（Spring BeanUtils 在某些版本对包装类有问题，主动兜底）
+            insert.setDirectCommissionRatio(reqVO.getDirectCommissionRatio());
+            insert.setNaturalPushEnabled(reqVO.getNaturalPushEnabled());
             promoConfigMapper.insert(insert);
             return;
         }
-        // 用 hutool 的 copyProperties + ignoreNullValue：ReqVO 没传的字段不覆盖 existing
-        // 防意外清空（如客户端只传部分字段时把 starDiscountRates 等老字段清掉）。
-        // 业务上「主动关闭满减」要求显式传 fullCutThreshold=null —— 当前 ReqVO 没标
-        // @NotNull 是允许的，但 service 这层不再处理 null 清空，需要清空请用专门的接口。
         cn.hutool.core.bean.BeanUtil.copyProperties(reqVO, existing,
                 cn.hutool.core.bean.copier.CopyOptions.create().ignoreNullValue());
+        // 显式 set v7 字段，绕过 hutool/Spring BeanUtils 对 Boolean / BigDecimal 包装类
+        // 在某些 JDK / 反射场景下不写入的 corner case
+        if (reqVO.getDirectCommissionRatio() != null) {
+            existing.setDirectCommissionRatio(reqVO.getDirectCommissionRatio());
+        }
+        if (reqVO.getNaturalPushEnabled() != null) {
+            existing.setNaturalPushEnabled(reqVO.getNaturalPushEnabled());
+        }
+        log.info("[saveConfig] after copy: directCommissionRatio={} naturalPushEnabled={}",
+                existing.getDirectCommissionRatio(), existing.getNaturalPushEnabled());
         promoConfigMapper.updateById(existing);
     }
 

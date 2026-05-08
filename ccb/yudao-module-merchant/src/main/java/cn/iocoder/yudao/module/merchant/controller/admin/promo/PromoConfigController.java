@@ -37,6 +37,9 @@ public class PromoConfigController {
         PromoConfigDO config = promoConfigService.getConfig();
         PromoConfigRespVO resp = new PromoConfigRespVO();
         BeanUtils.copyProperties(config, resp);
+        // Spring BeanUtils 在某些 JDK 反射场景下不拷 BigDecimal/Boolean 包装类，主动兜底
+        resp.setDirectCommissionRatio(config.getDirectCommissionRatio());
+        resp.setNaturalPushEnabled(config.getNaturalPushEnabled());
         return success(resp);
     }
 

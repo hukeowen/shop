@@ -64,3 +64,9 @@ CREATE TABLE IF NOT EXISTS `shop_referral_contribution` (
     COMMENT '同一对(上级,下级)在同一商品上仅允许 1 条贡献记录',
   KEY `idx_tenant_parent` (`tenant_id`, `parent_user_id`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT = 'v7 推 N 反 1：下级首贡献记录（防同一对重复触发）';
+
+-- ========== 4. 扩相关列长度 ==========
+-- v7 新事件 REFERRAL_COMMISSION (19) / REFERRAL_PROGRESS (17) / SELF_COMMISSION (15) 超过原 varchar(16)
+ALTER TABLE `shop_promo_record` MODIFY COLUMN `source_type` VARCHAR(32) NOT NULL COMMENT '来源类型枚举值';
+ALTER TABLE `shop_consume_point_record` MODIFY COLUMN `source_type` VARCHAR(32) NOT NULL COMMENT '来源类型枚举值';
+ALTER TABLE `shop_queue_event` MODIFY COLUMN `event_type` VARCHAR(32) NOT NULL COMMENT '事件类型枚举值';

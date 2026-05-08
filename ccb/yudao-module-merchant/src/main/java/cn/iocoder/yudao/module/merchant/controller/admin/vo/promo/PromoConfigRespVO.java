@@ -48,4 +48,11 @@ public class PromoConfigRespVO {
     @Schema(description = "cron 自动结算模式 FULL/LOTTERY")
     private String poolSettleMode;
 
+    // ========== v7 推 N 反 1 ==========
+    @Schema(description = "v7 间推百分比（%）")
+    private BigDecimal directCommissionRatio;
+
+    @Schema(description = "v7 自然推开关")
+    private Boolean naturalPushEnabled;
+
 }
