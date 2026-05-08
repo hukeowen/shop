@@ -72,6 +72,29 @@
       </view>
     </view>
 
+    <!-- ============ v7 推 N 反 1 全局配置 ============ -->
+    <view class="card">
+      <view class="section-title">推广奖励（推 N 反 1 v7）</view>
+      <view class="hint">用户必须先自购该商品才有资格享受推 N 反 1，完成 N 次累计后进入「终态」。</view>
+
+      <view class="field">
+        <text class="label">间推百分比（%）</text>
+        <input class="input" type="digit" v-model="form.directCommissionRatio"
+               placeholder="如 10（用户完成推 N 反 1 后，自购或下级首单返此 % 推广积分）" />
+        <text class="hint inline">完成推 N 反 1 后，自购或下级首单都按订单实付总额 × 此 % 返推广积分。</text>
+      </view>
+
+      <view class="field row-switch">
+        <text class="label">自然推开关</text>
+        <switch
+          :checked="form.naturalPushEnabled"
+          @change="(e) => (form.naturalPushEnabled = e.detail.value)"
+          color="#FF6B35"
+        />
+        <text class="hint inline">仅作用于「无上级的真自然用户」订单：开 = 走旧 A/B 队列分配；关 = 奖励吞掉。</text>
+      </view>
+    </view>
+
     <!-- ============ 满减规则（仅文案展示，不参与结算） ============ -->
     <view class="card">
       <view class="section-title">满减规则</view>
@@ -255,6 +278,9 @@ const form = ref({
   poolSettleMode: 'FULL',
   fullCutThresholdYuan: '',
   fullCutAmountYuan: '',
+  // v7 推 N 反 1
+  directCommissionRatio: '',
+  naturalPushEnabled: false,
 });
 
 // 星级行展开（rate%, directCount, teamSales）
@@ -311,6 +337,10 @@ async function load() {
     form.value.poolSettleMode = data.poolSettleMode || 'FULL';
     form.value.fullCutThresholdYuan = data.fullCutThreshold ? String(data.fullCutThreshold / 100) : '';
     form.value.fullCutAmountYuan = data.fullCutAmount ? String(data.fullCutAmount / 100) : '';
+    // v7
+    form.value.directCommissionRatio = data.directCommissionRatio != null
+      ? String(data.directCommissionRatio) : '';
+    form.value.naturalPushEnabled = !!data.naturalPushEnabled;
 
     const rates = safeJsonArr(data.commissionRates, [1, 2, 3, 4, 5]);
     const rules = safeJsonArr(data.starUpgradeRules, []);
@@ -388,6 +418,10 @@ async function onSave() {
       ? Math.round(parseFloat(form.value.fullCutThresholdYuan) * 100) : 0,
     fullCutAmount: parseFloat(form.value.fullCutAmountYuan) > 0
       ? Math.round(parseFloat(form.value.fullCutAmountYuan) * 100) : 0,
+    // v7：直接百分制（10 = 10%）；空 = 0
+    directCommissionRatio: parseFloat(form.value.directCommissionRatio) > 0
+      ? parseFloat(form.value.directCommissionRatio) : 0,
+    naturalPushEnabled: !!form.value.naturalPushEnabled,
   };
 
   saving.value = true;

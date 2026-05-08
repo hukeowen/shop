@@ -7,8 +7,9 @@
     </view>
 
     <view class="info-tip">
-      <text class="b">v6 推 N 反 1：</text>
-      你买过的商品会进入队列，朋友通过你或自然进店买同款 → 你按当前位置拿对应比例的推广积分；累计满 N 次出队，共得 100% 商品价。
+      <text class="b">推 N 反 1：</text>
+      自购该商品 → 激活推广资格；自购或下级首单买同款 → 累计 +1，按 1/N 返推广积分；
+      累计满 N 次进入「已完成」，之后自购或下级首单按订单金额 × 间推 % 返推广积分。
     </view>
 
     <view v-if="loading" class="empty-tip">加载中…</view>
@@ -24,7 +25,7 @@
         <view class="hdr">
           <view class="pic-mini" :style="picStyle(row)">{{ initial(row) }}</view>
           <text class="name">{{ row.shopName || '店铺' }} · {{ row.spuName || `商品 #${row.spuId}` }}</text>
-          <text :class="['layer-tag', 'L-' + (row.layer || 'B')]">{{ row.layer || 'B' }} 层</text>
+          <text :class="['state-tag', 'S-' + stateOf(row)]">{{ stateLabel(row) }}</text>
         </view>
         <view class="product">
           推 {{ row.maxN || '?' }} 反 1 ·
@@ -66,6 +67,16 @@ const picStyle = (r) => {
   return `background: linear-gradient(135deg, ${palette[idx]});`;
 };
 
+// v7：后端把 state(IN_PROGRESS / COMPLETED) 通过 layer 字段透传过来
+function stateOf(row) {
+  const v = row.layer || row.state || '';
+  if (v === 'COMPLETED' || v === 'EXITED') return 'COMPLETED';
+  return 'IN_PROGRESS';
+}
+function stateLabel(row) {
+  return stateOf(row) === 'COMPLETED' ? '已完成 ✓' : '推广中';
+}
+
 function segClass(row, i) {
   // i 1-based
   const idx = i - 1;
@@ -86,8 +97,8 @@ async function load() {
 
 function showRules() {
   uni.showModal({
-    title: 'v6 推 N 反 1 规则',
-    content: '· A 层（主动）：自购或推下级成交 → 优先返奖\n· B 层（被动）：自然消费进队 → A 空才轮到\n· 满 N 次出队，累计返 100% 商品价\n· 终生制，不降级',
+    title: '推 N 反 1 规则',
+    content: '1. 必须自购才激活资格（首单不返奖）\n2. 已激活：自购或下级首单累计 +1，按 1/N 返推广积分\n3. 满 N 次后进入"已完成"，之后按订单金额 × 间推% 返推广积分\n4. 每个下级对每个上级在每个商品上只贡献 1 次（首单）\n5. 上级未自购该商品 → 完全跳过，不发奖\n6. 返奖基准 = 用户实际支付金额',
     showCancel: false,
   });
 }
@@ -148,12 +159,13 @@ onShow(load);
   flex: 1; font-size: 26rpx; font-weight: 700; color: $text-primary;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.layer-tag {
+.state-tag {
   font-size: 20rpx; font-weight: 700;
   padding: 4rpx 16rpx; border-radius: 999rpx;
+  flex-shrink: 0;
 }
-.layer-tag.L-A { background: rgba(255,107,53,.18); color: $brand-primary; }
-.layer-tag.L-B { background: rgba(99,102,241,.15); color: #6366F1; }
+.state-tag.S-IN_PROGRESS { background: rgba(255,107,53,.18); color: $brand-primary; }
+.state-tag.S-COMPLETED { background: rgba(16,185,129,.18); color: $success; }
 
 .product { font-size: 22rpx; color: $text-secondary; margin-bottom: 24rpx; }
 
