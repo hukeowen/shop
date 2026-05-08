@@ -96,6 +96,8 @@ public class PromoQueueServiceImpl implements PromoQueueService {
     private PromoConfigService promoConfigService;
     @Resource
     private ProductSpuService productSpuService;
+    @Resource
+    private cn.iocoder.yudao.module.merchant.dal.mysql.ShopInfoMapper shopInfoMapper;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -458,9 +460,20 @@ public class PromoQueueServiceImpl implements PromoQueueService {
             log.warn("[listMyQueueing] 加载 SPU 列表失败 spuIds={}: {}", spuIds, e.getMessage());
         }
         List<AppQueuePositionRespVO> result = new ArrayList<>(positions.size());
+        // 一次拉所有 tenant 的 shopName（shop_info 是 BaseDO 跨租户表）
+        List<Long> tenantIds = positions.stream().map(ShopQueuePositionDO::getTenantId).distinct().collect(Collectors.toList());
+        Map<Long, String> shopNameByTenant = new HashMap<>();
+        for (Long tid : tenantIds) {
+            try {
+                cn.iocoder.yudao.module.merchant.dal.dataobject.ShopInfoDO si =
+                        cn.iocoder.yudao.framework.tenant.core.util.TenantUtils.executeIgnore(() -> shopInfoMapper.selectByTenantId(tid));
+                if (si != null) shopNameByTenant.put(tid, si.getShopName());
+            } catch (Exception ignored) { }
+        }
         for (ShopQueuePositionDO p : positions) {
             AppQueuePositionRespVO vo = new AppQueuePositionRespVO();
             vo.setTenantId(p.getTenantId());
+            vo.setShopName(shopNameByTenant.get(p.getTenantId()));
             vo.setSpuId(p.getSpuId());
             // v7：layer 字段直接传 state 给前端展示进度（前端逻辑改为按 state 渲染）
             vo.setLayer(p.getState() != null ? p.getState() : p.getLayer());

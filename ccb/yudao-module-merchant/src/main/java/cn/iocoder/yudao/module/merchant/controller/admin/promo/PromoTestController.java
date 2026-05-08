@@ -141,6 +141,12 @@ public class PromoTestController {
     @Resource
     private javax.sql.DataSource dataSource;
 
+    @PostMapping("/list-my-queue")
+    public CommonResult<List<cn.iocoder.yudao.module.merchant.controller.app.vo.AppQueuePositionRespVO>> listMyQueue(
+            @RequestParam Long tenantId, @RequestParam Long userId) {
+        return success(TenantUtils.execute(tenantId, () -> promoQueueService.listMyQueueing(userId)));
+    }
+
     @PostMapping("/reset")
     public CommonResult<Map<String, Object>> reset(
             @RequestParam Long tenantId,
