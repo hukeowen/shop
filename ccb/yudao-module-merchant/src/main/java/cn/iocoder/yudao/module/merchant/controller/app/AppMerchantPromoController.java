@@ -99,6 +99,9 @@ public class AppMerchantPromoController {
         PromoConfigDO config = promoConfigService.getConfig();
         PromoConfigRespVO resp = new PromoConfigRespVO();
         BeanUtils.copyProperties(config, resp);
+        // BeanUtils 在 JDK8 反射 corner case 不拷 BigDecimal/Boolean 包装类，主动兜底
+        resp.setDirectCommissionRatio(config.getDirectCommissionRatio());
+        resp.setNaturalPushEnabled(config.getNaturalPushEnabled());
         return success(resp);
     }
 
