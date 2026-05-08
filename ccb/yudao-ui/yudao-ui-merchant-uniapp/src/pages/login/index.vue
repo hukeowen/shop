@@ -286,7 +286,8 @@ async function onChooseRole(role) {
   try {
     await userStore.switchRole(role);
     loading.value = false;
-    uni.reLaunch({ url: '/pages/index/index' });
+    // 按选定的角色跳：merchant → 工作台；member → 用户首页
+    uni.reLaunch({ url: role === 'merchant' ? '/pages/index/index' : '/pages/user-home/index' });
   } catch (e) {
     loading.value = false;
     uni.showToast({ title: '切换失败：' + (e.message || ''), icon: 'none' });
@@ -294,7 +295,8 @@ async function onChooseRole(role) {
 }
 
 function goUserHome() {
-  uni.reLaunch({ url: '/pages/index/index' });
+  // 「开始逛店」是 C 端用户入口，跳用户首页（不是商户工作台 /pages/index/index）
+  uni.reLaunch({ url: '/pages/user-home/index' });
 }
 
 async function onPasswordLogin() {
