@@ -179,8 +179,9 @@ async function addToCart() {
 
 function buyNow() {
   if (!selectedSku.value) { uni.showToast({ title: '请先选择规格', icon: 'none' }); return; }
+  // 多带 spuId 让 checkout 立即购买路径能拉到 sku.price 真实价格
   uni.navigateTo({
-    url: `/pages/checkout/index?tenantId=${tenantId.value}&skuId=${selectedSkuId.value}&count=1`,
+    url: `/pages/checkout/index?tenantId=${tenantId.value}&spuId=${spuId.value}&skuId=${selectedSkuId.value}&count=1`,
   });
 }
 

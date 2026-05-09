@@ -153,6 +153,7 @@ import { fen2yuan } from '../../utils/format.js';
 
 const tenantId = ref(null);
 const cartIds = ref([]);
+const spuId = ref(null);
 const skuId = ref(null);
 const count = ref(1);
 const items = ref([]);
@@ -250,8 +251,20 @@ async function loadShopAndItems() {
       const all = (res && res.validList) || (res && res.list) || (Array.isArray(res) ? res : []);
       items.value = all.filter(i => cartIds.value.includes(i.id));
     } else if (skuId.value) {
-      // 单品立即购买
-      items.value = [{ skuId: skuId.value, count: count.value, name: '商品', price: 0 }];
+      // 单品立即购买：按 spuId 拉详情拿 sku.price / spuName / picUrl
+      let realPrice = 0;
+      let spuName = '商品';
+      let picUrl = '';
+      if (spuId.value) {
+        try {
+          const spuDetail = await request({ url: `/app-api/product/spu/get-detail?id=${spuId.value}` });
+          spuName = spuDetail?.name || '商品';
+          picUrl = spuDetail?.picUrl || '';
+          const sku = (spuDetail?.skus || []).find(s => s.id === skuId.value);
+          realPrice = sku?.price ?? spuDetail?.price ?? 0;
+        } catch {}
+      }
+      items.value = [{ skuId: skuId.value, count: count.value, spuName, name: spuName, picUrl, price: realPrice }];
     }
   } catch (e) {
     uni.showToast({ title: '加载失败', icon: 'none' });
@@ -348,6 +361,7 @@ onLoad((q) => {
   tenantId.value = Number(q.tenantId);
   if (q.cartIds) cartIds.value = String(q.cartIds).split(',').map(Number).filter(Boolean);
   if (q.skuId) { skuId.value = Number(q.skuId); count.value = Number(q.count) || 1; }
+  if (q.spuId) { spuId.value = Number(q.spuId); }
   loadShopAndItems();
 });
 </script>
