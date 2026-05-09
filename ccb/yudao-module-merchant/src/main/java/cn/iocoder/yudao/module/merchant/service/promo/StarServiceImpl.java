@@ -41,7 +41,7 @@ public class StarServiceImpl implements StarService {
             return;
         }
         bumpTeamSales(buyerUserId, qty);
-        for (Long ancestorId : referralService.getAncestors(buyerUserId, 50)) {
+        for (Long ancestorId : referralService.getAncestors(buyerUserId, ReferralService.DEFAULT_MAX_DEPTH)) {
             bumpTeamSales(ancestorId, qty);
         }
     }
@@ -161,7 +161,7 @@ public class StarServiceImpl implements StarService {
         if (rules.isEmpty()) return;
 
         bumpTeamSalesV8(buyerUserId, spuId, qty, paidAmount, rules);
-        for (Long ancestorId : referralService.getAncestors(buyerUserId, 50)) {
+        for (Long ancestorId : referralService.getAncestors(buyerUserId, ReferralService.DEFAULT_MAX_DEPTH)) {
             bumpTeamSalesV8(ancestorId, spuId, qty, paidAmount, rules);
         }
     }

@@ -508,6 +508,59 @@ public class PromoQueueServiceImpl implements PromoQueueService {
     // v8: 多件循环 + 本单抵扣 — 预演 + 真实触发
     // ============================================================
 
+    /**
+     * v8 单件状态机一步推进结果：返多少奖、是否进 COMPLETED、用了什么 ratio、什么 eventType。
+     * preview / applyBuyerLoopV8 共用此函数避免算法漂移。
+     */
+    private static final class V8Step {
+        long award;
+        BigDecimal usedRatio;
+        String eventType;
+        boolean nextCompleted;
+        int nextCumulated;
+    }
+
+    /**
+     * 推进 buyer 自购状态机一件。
+     * <p>state 输入：(cumulated, completed, isFirstItem)；输出 V8Step 含奖额 + 新状态。
+     * 调用方负责把 V8Step.next* 写回 pos / 累加 produced。</p>
+     */
+    private V8Step simulateOneItem(int cumulated, boolean completed, boolean isFirstItem,
+                                   int unitPrice, List<BigDecimal> ratios, BigDecimal directRate, int n) {
+        V8Step step = new V8Step();
+        step.nextCumulated = cumulated;
+        step.nextCompleted = completed;
+        if (isFirstItem) {
+            // 第 1 件 ACTIVATE 不返奖
+            step.award = 0L;
+            step.usedRatio = BigDecimal.ZERO;
+            step.eventType = "ACTIVATE";
+            return step;
+        }
+        if (completed) {
+            step.award = computeRatioAmount(unitPrice, directRate);
+            step.usedRatio = directRate;
+            step.eventType = "SELF_COMMISSION";
+            return step;
+        }
+        if (cumulated >= n) {
+            step.nextCompleted = true;
+            step.award = computeRatioAmount(unitPrice, directRate);
+            step.usedRatio = directRate;
+            step.eventType = "SELF_COMMISSION";
+            return step;
+        }
+        BigDecimal r = ratios.get(cumulated);
+        step.award = computeRatioAmount(unitPrice, r);
+        step.usedRatio = r;
+        step.eventType = "SELF_PROGRESS";
+        step.nextCumulated = cumulated + 1;
+        if (step.nextCumulated >= n) {
+            step.nextCompleted = true;
+        }
+        return step;
+    }
+
     @Override
     public long previewProducedForOrder(ProductPromoConfigDO config, Long buyerUserId, Long spuId,
                                         int unitPrice, int totalCount) {
@@ -533,26 +586,11 @@ public class PromoQueueServiceImpl implements PromoQueueService {
 
         long total = 0L;
         for (int i = 0; i < totalCount; i++) {
-            if (isFirstPurchase && i == 0) {
-                // 第 1 件 ACTIVATE 不返奖
-                continue;
-            }
-            if (completed) {
-                // 完成期：directRate% × 单件价
-                total += computeRatioAmount(unitPrice, directRate);
-            } else {
-                if (cumulated >= n) {
-                    completed = true;
-                    total += computeRatioAmount(unitPrice, directRate);
-                } else {
-                    BigDecimal r = ratios.get(cumulated);
-                    total += computeRatioAmount(unitPrice, r);
-                    cumulated++;
-                    if (cumulated >= n) {
-                        completed = true;
-                    }
-                }
-            }
+            boolean isFirst = isFirstPurchase && i == 0;
+            V8Step step = simulateOneItem(cumulated, completed, isFirst, unitPrice, ratios, directRate, n);
+            total += step.award;
+            cumulated = step.nextCumulated;
+            completed = step.nextCompleted;
         }
         return total;
     }
@@ -698,7 +736,7 @@ public class PromoQueueServiceImpl implements PromoQueueService {
         writeEvent("QUEUE", spuId, head.getUserId(), buyerUserId, orderId, head.getAccumulatedCount(), r, award);
     }
 
-    /** v8: buyer 自购按件循环推进状态机；返本单产生积分总数 */
+    /** v8: buyer 自购按件循环推进状态机；返本单产生积分总数。状态机与 previewProducedForOrder 共用 simulateOneItem。 */
     private long applyBuyerLoopV8(Long buyerUserId, Long spuId, int unitPrice, int totalCount,
                                    List<BigDecimal> ratios, BigDecimal directRate, Long orderId, int n) {
         ShopQueuePositionDO pos = queueMapper.selectByUserAndSpu(buyerUserId, spuId);
@@ -723,38 +761,33 @@ public class PromoQueueServiceImpl implements PromoQueueService {
         }
 
         long produced = 0L;
+        boolean exitedThisCall = false;
         for (int i = 0; i < totalCount; i++) {
-            if (isFirstPurchase && i == 0) {
-                continue;  // 第 1 件 ACTIVATE 不返奖
-            }
             int cumulated = pos.getAccumulatedCount() == null ? 0 : pos.getAccumulatedCount();
-            boolean completed = STATE_COMPLETED.equals(pos.getState()) || cumulated >= n;
-            long award;
-            String eventType;
-            BigDecimal usedRatio;
-            if (completed) {
-                award = computeRatioAmount(unitPrice, directRate);
-                eventType = "SELF_COMMISSION";
-                usedRatio = directRate;
-                // 完成期不再累加 cumulated
-            } else {
-                BigDecimal r = ratios.get(cumulated);
-                award = computeRatioAmount(unitPrice, r);
-                eventType = "SELF_PROGRESS";
-                usedRatio = r;
-                pos.setAccumulatedCount(cumulated + 1);
-                pos.setAccumulatedAmount((pos.getAccumulatedAmount() == null ? 0L : pos.getAccumulatedAmount()) + award);
-                if (pos.getAccumulatedCount() >= n) {
-                    pos.setState(STATE_COMPLETED);
-                    pos.setStatus(LEGACY_STATUS_EXITED);
-                    pos.setExitedAt(LocalDateTime.now());
+            boolean completed = STATE_COMPLETED.equals(pos.getState());
+            boolean isFirst = isFirstPurchase && i == 0;
+            V8Step step = simulateOneItem(cumulated, completed, isFirst, unitPrice, ratios, directRate, n);
+            if (isFirst) {
+                continue; // ACTIVATE 件已在 insert 时写过事件，不返奖也不动 cumulated
+            }
+            produced += step.award;
+            // 仅 IN_PROGRESS 期推进 cumulated；进入 COMPLETED 后不再动
+            if (step.nextCumulated != cumulated) {
+                pos.setAccumulatedCount(step.nextCumulated);
+                pos.setAccumulatedAmount((pos.getAccumulatedAmount() == null ? 0L : pos.getAccumulatedAmount()) + step.award);
+            }
+            if (step.nextCompleted && !STATE_COMPLETED.equals(pos.getState())) {
+                pos.setState(STATE_COMPLETED);
+                pos.setStatus(LEGACY_STATUS_EXITED);
+                pos.setExitedAt(LocalDateTime.now());
+                if (!exitedThisCall) {
                     writeEvent("EXIT", spuId, buyerUserId, buyerUserId, orderId, n, BigDecimal.ZERO, 0L);
+                    exitedThisCall = true;
                 }
             }
-            produced += award;
-            writeEvent(eventType, spuId, buyerUserId, buyerUserId, orderId,
+            writeEvent(step.eventType, spuId, buyerUserId, buyerUserId, orderId,
                     pos.getAccumulatedCount() == null ? 0 : pos.getAccumulatedCount(),
-                    usedRatio, award);
+                    step.usedRatio, step.award);
         }
         // 一次 update 落库（避免每件循环都 update）
         queueMapper.updateById(pos);

@@ -13,6 +13,13 @@ import java.util.List;
 public interface ReferralService {
 
     /**
+     * 推荐链向上溯源的默认深度上限：
+     *  - 业务上中型多级分销 ≤ 20 层已极端
+     *  - 50 层留充足余量同时防御环路造成的栈/循环爆炸
+     */
+    int DEFAULT_MAX_DEPTH = 50;
+
+    /**
      * 首次绑定上级。已绑定 / 自己不能绑自己 / parent 不存在均返 false。
      *
      * @return true = 新绑定 / false = 已存在或非法（不抛异常，便于在订单流程里 fire-and-forget）

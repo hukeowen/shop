@@ -129,8 +129,10 @@ public class AppMerchantCheckoutController {
             for (cn.iocoder.yudao.module.trade.dal.dataobject.order.TradeOrderItemDO item : items) {
                 Long spuId = item.getSpuId();
                 Integer cnt = item.getCount();
-                Integer unitPrice = item.getPayPrice() != null && cnt != null && cnt > 0
-                        ? item.getPayPrice() / cnt : item.getPrice();
+                // unitPrice 必须用商品定价 item.getPrice()，与 MerchantPromoOrderHandler 的取值一致。
+                // 之前曾用 payPrice/cnt（余额抵扣后单价偏小），导致 checkout 与 handler 算出的 K 不一致 →
+                // 抵扣金额与状态机推进件数错配。修正为统一商品定价。
+                Integer unitPrice = item.getPrice();
                 if (spuId == null || unitPrice == null || unitPrice <= 0 || cnt == null || cnt <= 0) continue;
                 cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ProductPromoConfigDO promoCfg =
                         productPromoConfigService.getBySpuId(spuId);

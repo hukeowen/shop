@@ -81,7 +81,7 @@ public class CommissionServiceImpl implements CommissionService {
         }
 
         // 步 2：沿推荐链向上找；星级严格递增才拿（按自己星级整额，非差额）
-        List<Long> ancestors = referralService.getAncestors(buyerUserId, 50);
+        List<Long> ancestors = referralService.getAncestors(buyerUserId, ReferralService.DEFAULT_MAX_DEPTH);
         for (Long ancestorId : ancestors) {
             ShopUserStarDO ast = userStarMapper.selectByUserAndSpu(ancestorId, spuId);
             Integer s = ast == null ? null : ast.getCurrentStar();
