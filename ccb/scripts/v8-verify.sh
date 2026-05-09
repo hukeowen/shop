@@ -10,6 +10,20 @@
 # 用法：
 #   bash scripts/v8-verify.sh
 #
+# 设计原则：
+#   - 不依赖任何业务数据（用保留 spuId=99999 做 PUT/GET 探针）
+#   - 不留垃圾（结束前 DELETE 测试 spu 的配置行）
+#   - 重建数据库后 paste 即跑
+#
+# 重建数据库后的标准 import 顺序（确保 V001..V028 全应用）：
+#   1) sql/mysql/ruoyi-vue-pro.sql            （yudao 上游基础表 + seed）
+#   2) sql/mysql/mall.sql                     （商城核心：trade/product/promotion）
+#   3) sql/mysql/member_pay.sql               （会员支付）
+#   4) sql/mysql/mp.sql                       （公众号）
+#   5) sql/mysql/merchant.sql                 （v6/v7 营销基础：shop_*, product_promo_config）
+#   6) sql/mysql/video.sql                    （AI 视频）
+#   7) sql/mysql/V001..V028 (按版本号顺序)    （增量迁移）
+#
 # 环境变量（默认本地）：
 #   MYSQL_BIN  /c/Program Files/MySQL/MySQL Server 5.7/bin/mysql.exe
 #   MYSQL_DB   ruoyi-vue-pro
@@ -19,7 +33,7 @@
 #   ADMIN_USER admin
 #   ADMIN_PASS admin123
 #   TENANT_ID  1                 系统租户（admin 登录）
-#   TEST_SPU_ID 1                可写入 v8 配置的商品 spuId
+#   TEST_SPU_ID 99999            保留探针 spuId（不存在于业务数据）
 # =============================================================================
 set -uo pipefail
 
@@ -31,7 +45,7 @@ BASE_URL=${BASE_URL:-http://localhost:48080}
 ADMIN_USER=${ADMIN_USER:-admin}
 ADMIN_PASS=${ADMIN_PASS:-admin123}
 TENANT_ID=${TENANT_ID:-1}
-TEST_SPU_ID=${TEST_SPU_ID:-1}
+TEST_SPU_ID=${TEST_SPU_ID:-99999}
 
 PASS=0; FAIL=0; WARN=0
 
@@ -75,21 +89,27 @@ fi
 
 echo ""
 echo "[1.3] shop_user_star 唯一索引 uk_tenant_user_spu (tenant_id, user_id, spu_id, deleted)"
-UK_NEW=$(mysql_q "SELECT COUNT(*) FROM information_schema.statistics
-  WHERE table_schema = '$MYSQL_DB' AND table_name = 'shop_user_star'
-    AND index_name = 'uk_tenant_user_spu';")
-UK_OLD=$(mysql_q "SELECT COUNT(*) FROM information_schema.statistics
-  WHERE table_schema = '$MYSQL_DB' AND table_name = 'shop_user_star'
-    AND index_name = 'uk_user_id';")
-if [[ "$UK_NEW" -ge "4" ]]; then
-  ok "uk_tenant_user_spu 已建（4 列复合）"
+TBL_EXISTS=$(mysql_q "SELECT COUNT(*) FROM information_schema.tables
+  WHERE table_schema = '$MYSQL_DB' AND table_name = 'shop_user_star';")
+if [[ "$TBL_EXISTS" != "1" ]]; then
+  ko "shop_user_star 表本身不存在 — merchant.sql 没 import"
 else
-  ko "uk_tenant_user_spu 不存在或列不足（当前 $UK_NEW 列）"
-fi
-if [[ "$UK_OLD" == "0" ]]; then
-  ok "老 uk_user_id 已移除"
-else
-  note "老 uk_user_id 仍存在（不影响 v8 但建议清理）"
+  UK_NEW=$(mysql_q "SELECT COUNT(*) FROM information_schema.statistics
+    WHERE table_schema = '$MYSQL_DB' AND table_name = 'shop_user_star'
+      AND index_name = 'uk_tenant_user_spu';")
+  UK_OLD=$(mysql_q "SELECT COUNT(*) FROM information_schema.statistics
+    WHERE table_schema = '$MYSQL_DB' AND table_name = 'shop_user_star'
+      AND index_name = 'uk_user_id';")
+  if [[ "$UK_NEW" -ge "4" ]]; then
+    ok "uk_tenant_user_spu 已建（4 列复合）"
+  else
+    ko "uk_tenant_user_spu 不存在或列不足（当前 $UK_NEW 列）"
+  fi
+  if [[ "$UK_OLD" == "0" ]]; then
+    ok "老 uk_user_id 已移除（V028 DROP 成功）"
+  else
+    note "老 uk_user_id 仍存在（不影响 v8 但建议清理）"
+  fi
 fi
 
 echo ""
@@ -261,6 +281,14 @@ echo "[3.2] 单测覆盖（merchant 模块 147 用例）"
 note "已在 commit 0b5bd9b/46f82cb/324984f 中验证 0 失败"
 note "v8 关键算法（previewProducedForOrder + applyBuyerLoopV8 + handleOrderPaidV8）"
 note "由 PromoQueueServiceImplTest 19 case + MerchantPromoOrderHandlerTest 8 case 覆盖"
+
+# -----------------------------------------------------------------------------
+# 清理：删除测试 spu 配置（保持 db 干净）
+# -----------------------------------------------------------------------------
+echo ""
+echo "[clean] 删除探针 spu_id=$TEST_SPU_ID 的 product_promo_config 行"
+mysql_q "DELETE FROM product_promo_config WHERE spu_id = $TEST_SPU_ID;" >/dev/null
+ok "清理完成"
 
 # -----------------------------------------------------------------------------
 # 汇总
