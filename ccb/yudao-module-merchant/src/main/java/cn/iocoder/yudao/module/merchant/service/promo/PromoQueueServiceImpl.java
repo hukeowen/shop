@@ -598,6 +598,8 @@ public class PromoQueueServiceImpl implements PromoQueueService {
         }
 
         // 3. 抵扣流水写入（审计 / 对账）
+        // 注意：流水写失败不能让 buyer 状态机推进事务回滚（推进已经发奖了），
+        //      只能 log error 留痕；监控告警靠 metric / 人工对账修补。
         try {
             cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopPromoDeductionRecordDO rec =
                     cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopPromoDeductionRecordDO.builder()
@@ -612,7 +614,8 @@ public class PromoQueueServiceImpl implements PromoQueueService {
                             .build();
             deductionRecordMapper.insert(rec);
         } catch (Exception e) {
-            log.warn("[handleOrderPaidV8] 写抵扣流水失败 orderId={} spuId={}: {}", orderId, spuId, e.getMessage());
+            log.error("[handleOrderPaidV8 流水缺失] orderId={} spuId={} userId={} produced={} deductCount={} actualPaid={}",
+                    orderId, spuId, buyerUserId, produced, deductCount, paidAmount, e);
         }
     }
 

@@ -157,9 +157,11 @@ public class AppMerchantCheckoutController {
                 }
             }
         } catch (Exception e) {
-            // 抵扣失败不阻塞下单，仅记录
+            // 抵扣失败不阻塞下单（用户会按全额支付，对账时可在 deduction_record 缺失发现）。
+            // log 级别 error + 完整 stacktrace + 关键字段，便于监控告警与人工补偿
             org.slf4j.LoggerFactory.getLogger(getClass())
-                    .warn("[checkout v8 抵扣] orderId={} 失败，跳过抵扣: {}", orderId, e.getMessage());
+                    .error("[checkout v8 抵扣失败] orderId={} userId={} tenantId={} grossPay={} balanceFen={}",
+                            orderId, userId, tenantId, order.getPayPrice(), finalDeductFen, e);
         }
 
         SubmitRespVO resp = new SubmitRespVO();

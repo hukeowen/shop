@@ -144,4 +144,77 @@ class ProductPromoConfigServiceImplTest {
         return req;
     }
 
+    // ============ v8 校验 ============
+
+    @Test
+    void save_rejects_whenRatiosLengthMismatch() {
+        when(mapper.selectBySpuId(7L)).thenReturn(null);
+        ProductPromoConfigSaveReqVO req = buildReq(7L);
+        req.setTuijianRatios("[25,25,25]"); // 长度 3 ≠ N=4
+
+        Exception ex = assertThrows(Exception.class, () -> service.save(req));
+        assertTrue(ex.getMessage().contains("tuijianRatios"));
+        verify(mapper, never()).insert(any(ProductPromoConfigDO.class));
+    }
+
+    @Test
+    void save_rejects_whenRatiosSumOver100() {
+        when(mapper.selectBySpuId(7L)).thenReturn(null);
+        ProductPromoConfigSaveReqVO req = buildReq(7L);
+        req.setTuijianRatios("[30,30,30,30]"); // 加总 120
+
+        Exception ex = assertThrows(Exception.class, () -> service.save(req));
+        assertTrue(ex.getMessage().contains("100"));
+    }
+
+    @Test
+    void save_rejects_whenStarRatiosLengthMismatch() {
+        when(mapper.selectBySpuId(7L)).thenReturn(null);
+        ProductPromoConfigSaveReqVO req = buildReq(7L);
+        req.setStarCount(3);
+        req.setStarRatios("[1,2]"); // 长度 2 ≠ starCount=3
+        req.setStarUpgradeRules("[{\"directCount\":1,\"teamSales\":100},{\"directCount\":2,\"teamSales\":200},{\"directCount\":3,\"teamSales\":300}]");
+
+        Exception ex = assertThrows(Exception.class, () -> service.save(req));
+        assertTrue(ex.getMessage().contains("starRatios"));
+    }
+
+    @Test
+    void save_rejects_whenStarUpgradeRulesLengthMismatch() {
+        when(mapper.selectBySpuId(7L)).thenReturn(null);
+        ProductPromoConfigSaveReqVO req = buildReq(7L);
+        req.setStarCount(3);
+        req.setStarRatios("[1,2,3]");
+        req.setStarUpgradeRules("[{\"directCount\":1,\"teamSales\":100}]"); // 长度 1 ≠ 3
+
+        Exception ex = assertThrows(Exception.class, () -> service.save(req));
+        assertTrue(ex.getMessage().contains("starUpgradeRules"));
+    }
+
+    @Test
+    void save_passes_whenStarConfigComplete() {
+        when(mapper.selectBySpuId(7L)).thenReturn(null);
+        ProductPromoConfigSaveReqVO req = buildReq(7L);
+        req.setStarCount(2);
+        req.setStarRatios("[1,2]");
+        req.setStarUpgradeRules("[{\"directCount\":1,\"teamSales\":100},{\"directCount\":2,\"teamSales\":200}]");
+
+        service.save(req);
+
+        verify(mapper).insert(any(ProductPromoConfigDO.class));
+    }
+
+    @Test
+    void save_skipsValidation_whenTuijianDisabledAndStarCountZero() {
+        when(mapper.selectBySpuId(7L)).thenReturn(null);
+        ProductPromoConfigSaveReqVO req = buildReq(7L);
+        req.setTuijianEnabled(false);
+        req.setTuijianN(0);
+        req.setTuijianRatios("[]"); // 关闭时无校验
+        req.setStarCount(0);
+
+        service.save(req); // 不抛
+        verify(mapper).insert(any(ProductPromoConfigDO.class));
+    }
+
 }
