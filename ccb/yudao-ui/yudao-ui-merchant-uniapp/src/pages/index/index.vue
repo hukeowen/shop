@@ -131,14 +131,27 @@ function jumpAddProduct() {
 }
 
 onMounted(async () => {
+  // pages/index/index 是 H5 默认入口（pages.json 第一个），
+  // 但本页是【商户】工作台 dashboard，普通用户不应进。按 role 分流：
   if (!userStore.loggedIn) {
-    // 商户工作台 dashboard，未登录跳商户登录页（不是用户登录页）
-    uni.reLaunch({ url: '/pages/merchant-login/index' });
+    // 未登录 → 跳通用登录页（页内有"我是顾客"和"商户登录"两个分支），
+    // 不要直接推商户登录页（普通用户进来会被弹"尚未开通商户"误导）
+    uni.reLaunch({ url: '/pages/login/index' });
+    return;
+  }
+  if (userStore.activeRole && userStore.activeRole !== 'merchant') {
+    // 已登录但不是商户角色（如 member）→ 跳普通用户首页
+    uni.reLaunch({ url: '/pages/user-home/index' });
     return;
   }
   // 拉一次最新登录态：老 token（升级前签的）store 里没 nickname/shopName，
   // 必须 refreshMe 把店铺名填上，否则一直显示"未关联店铺"
   try { await userStore.refreshMe(); } catch (e) { /* 忽略，不阻塞看板 */ }
+  // refreshMe 后 role 可能修正（如登录态过期 fallback 成 member），再判一次
+  if (userStore.activeRole && userStore.activeRole !== 'merchant') {
+    uni.reLaunch({ url: '/pages/user-home/index' });
+    return;
+  }
   load();
 });
 

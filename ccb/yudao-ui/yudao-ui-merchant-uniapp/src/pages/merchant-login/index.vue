@@ -97,12 +97,14 @@ async function submit() {
       uni.showToast({ title: '登录响应缺少 token', icon: 'none' });
       throw new Error('无 token');
     }
-    // 走 userStore 持久化（含 nickname/shopName），保证 me 页 / 商户首页能读到店铺名
+    // 串号防御：先清旧身份（避免上一个用户的 tenantId/shop 残留），再写新身份
+    userStore._resetIdentity();
     userStore.token = token;
     userStore.refreshToken = resp.refreshToken || '';
     userStore.userId = resp.userId || 0;
     userStore.merchantId = resp.merchantId || 0;
     // 一个商户=一个租户：登录拿到真 tenantId 存 storage，后续所有请求带这个 header
+    userStore.tenantId = resp.tenantId || 0;
     if (resp.tenantId) {
       try { uni.setStorageSync('tenantId', resp.tenantId); } catch {}
     }

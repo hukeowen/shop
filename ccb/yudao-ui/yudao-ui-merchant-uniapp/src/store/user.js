@@ -84,6 +84,26 @@ export const useUserStore = defineStore('user', {
     },
 
     /**
+     * 串号防御：每次登录入口先重置所有身份残留，避免"先登 A 再登 B"时
+     * 上一个用户的 tenantId / shop / nickname / merchantId 漏到下一个用户头上。
+     */
+    _resetIdentity() {
+      this.token = '';
+      this.refreshToken = '';
+      this.openid = '';
+      this.userId = 0;
+      this.merchantId = 0;
+      this.phone = '';
+      this.roles = [];
+      this.activeRole = '';
+      this.tenantId = 0;
+      this.user = null;
+      this.shop = null;
+      try { uni.removeStorageSync('tenantId'); } catch {}
+      try { uni.removeStorageSync('token'); } catch {}
+    },
+
+    /**
      * H5 / 演示用 — 手机号 + 密码登录（不发短信）。
      * 服务端首次输入即注册，已有则校验密码；返回字段与 wxMiniLogin 一致。
      */
@@ -93,6 +113,8 @@ export const useUserStore = defineStore('user', {
         method: 'POST',
         data: { mobile, password },
       });
+      // 先清旧身份残留，再写新身份 — 防"先登 A 再登 B"串号
+      this._resetIdentity();
       this.token = resp.token || '';
       this.refreshToken = resp.refreshToken || '';
       this.openid = resp.openid || '';
@@ -101,6 +123,12 @@ export const useUserStore = defineStore('user', {
       this.phone = resp.phone || mobile;
       this.roles = Array.isArray(resp.roles) ? resp.roles : [];
       this.activeRole = resp.activeRole || (this.roles[0] || '');
+      this.tenantId = resp.tenantId || 0;
+      try {
+        if (resp.tenantId) {
+          uni.setStorageSync('tenantId', resp.tenantId);
+        }
+      } catch {}
       this._writeProfile(resp);
       this.persist();
       return resp;
@@ -144,6 +172,8 @@ export const useUserStore = defineStore('user', {
         method: 'POST',
         data: { code },
       });
+      // 先清旧身份残留，再写新身份 — 防"先登 A 再登 B"串号
+      this._resetIdentity();
       this.token = resp.token || '';
       this.refreshToken = resp.refreshToken || '';
       this.openid = resp.openid || '';
@@ -152,6 +182,12 @@ export const useUserStore = defineStore('user', {
       this.phone = resp.phone || '';
       this.roles = Array.isArray(resp.roles) ? resp.roles : [];
       this.activeRole = resp.activeRole || (this.roles[0] || '');
+      this.tenantId = resp.tenantId || 0;
+      try {
+        if (resp.tenantId) {
+          uni.setStorageSync('tenantId', resp.tenantId);
+        }
+      } catch {}
       this._writeProfile(resp);
       this.persist();
       return resp;
