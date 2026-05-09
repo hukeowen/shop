@@ -128,21 +128,24 @@ public class AppMemberShopRelController {
                             rel.getTenantId(), e.getMessage());
                 }
             }
-            // shop_user_star 是 TenantBaseDO，要切租户查
+            // shop_user_star 是 TenantBaseDO，要切租户查（同时拿 currentStar + promoPointBalance）
             try {
                 Long tid = rel.getTenantId();
                 TenantUtils.execute(tid, () -> {
                     ShopUserStarDO star = shopUserStarMapper.selectByUserId(userId);
-                    if (star != null && star.getCurrentStar() != null) {
-                        vo.setStar(star.getCurrentStar());
+                    if (star != null) {
+                        vo.setStar(star.getCurrentStar() != null ? star.getCurrentStar() : 0);
+                        vo.setPromoPoints(star.getPromoPointBalance() != null ? star.getPromoPointBalance() : 0L);
                     } else {
                         vo.setStar(0);
+                        vo.setPromoPoints(0L);
                     }
                 });
             } catch (Exception e) {
                 log.warn("[listMyShopsEnriched] 查 shop_user_star 失败 tenantId={}: {}",
                         rel.getTenantId(), e.getMessage());
                 vo.setStar(0);
+                vo.setPromoPoints(0L);
             }
             out.add(vo);
         }
