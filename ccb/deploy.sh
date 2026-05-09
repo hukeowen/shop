@@ -112,7 +112,12 @@ password=${MYSQL_ROOT_PASS}
 EOF
   trap 'rm -f "${MYSQL_DEFAULTS_FILE}"' EXIT
 }
-mysql_safe() { mysql --defaults-extra-file="${MYSQL_DEFAULTS_FILE}" "$@"; }
+mysql_safe() {
+  # --default-character-set=utf8mb4 防止 mysql client 默认 charset (latin1)
+  # 解析 SQL 文件中的中文（COMMENT / procedure 字符串参数）时报
+  # "Incorrect string value '\x89'..."。所有 V*.sql 都依赖此 charset。
+  mysql --defaults-extra-file="${MYSQL_DEFAULTS_FILE}" --default-character-set=utf8mb4 "$@";
+}
 
 # ── 命令行参数 ────────────────────────────────────────────────────────────────
 SKIP_INSTALL=false
@@ -1687,6 +1692,16 @@ main() {
          --base-url "http://localhost" \
          --mysql-pass "${MYSQL_ROOT_PASS}" \
          --project-dir "${PROJECT_DIR}" || warn "自检发现问题，详见上方清单"
+  fi
+
+  # v8 营销改造专项验证（schema + admin API 长度校验 + 配置回读）
+  if [[ -x "${PROJECT_DIR}/scripts/v8-verify.sh" ]]; then
+    info "跑 v8 营销改造专项验证..."
+    MYSQL_DB="${DB_NAME}" \
+    MYSQL_USER=root \
+    MYSQL_PASS="${MYSQL_ROOT_PASS}" \
+    BASE_URL="http://localhost:${SERVER_PORT}" \
+      bash "${PROJECT_DIR}/scripts/v8-verify.sh" || warn "v8 验证发现问题，请按清单排查"
   fi
 
   # 火山即梦签名自检：用 runtime.env 真实 SK 直打火山 SubmitTask，

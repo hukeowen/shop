@@ -37,7 +37,20 @@
 # =============================================================================
 set -uo pipefail
 
-MYSQL_BIN=${MYSQL_BIN:-"/c/Program Files/MySQL/MySQL Server 5.7/bin/mysql.exe"}
+# 自适应 mysql 客户端路径：Linux 用 PATH 里的 mysql；Windows 默认 5.7 安装路径
+detect_mysql_bin() {
+  if command -v mysql >/dev/null 2>&1; then
+    echo "mysql"
+  elif [[ -x "/c/Program Files/MySQL/MySQL Server 5.7/bin/mysql.exe" ]]; then
+    echo "/c/Program Files/MySQL/MySQL Server 5.7/bin/mysql.exe"
+  elif [[ -x "/c/Program Files/MySQL/MySQL Server 8.0/bin/mysql.exe" ]]; then
+    echo "/c/Program Files/MySQL/MySQL Server 8.0/bin/mysql.exe"
+  else
+    echo ""
+  fi
+}
+
+MYSQL_BIN=${MYSQL_BIN:-$(detect_mysql_bin)}
 MYSQL_DB=${MYSQL_DB:-"ruoyi-vue-pro"}
 MYSQL_USER=${MYSQL_USER:-root}
 MYSQL_PASS=${MYSQL_PASS:-root}
@@ -46,6 +59,10 @@ ADMIN_USER=${ADMIN_USER:-admin}
 ADMIN_PASS=${ADMIN_PASS:-admin123}
 TENANT_ID=${TENANT_ID:-1}
 TEST_SPU_ID=${TEST_SPU_ID:-99999}
+
+if [[ -z "$MYSQL_BIN" ]]; then
+  echo "✗ 没找到 mysql 客户端（PATH 也无 / Windows 默认路径也无）— 跳 Layer 1 schema 检查"
+fi
 
 PASS=0; FAIL=0; WARN=0
 
@@ -97,18 +114,27 @@ else
   UK_NEW=$(mysql_q "SELECT COUNT(*) FROM information_schema.statistics
     WHERE table_schema = '$MYSQL_DB' AND table_name = 'shop_user_star'
       AND index_name = 'uk_tenant_user_spu';")
-  UK_OLD=$(mysql_q "SELECT COUNT(*) FROM information_schema.statistics
+  UK_OLD1=$(mysql_q "SELECT COUNT(*) FROM information_schema.statistics
     WHERE table_schema = '$MYSQL_DB' AND table_name = 'shop_user_star'
       AND index_name = 'uk_user_id';")
+  UK_OLD2=$(mysql_q "SELECT COUNT(*) FROM information_schema.statistics
+    WHERE table_schema = '$MYSQL_DB' AND table_name = 'shop_user_star'
+      AND index_name = 'uk_tenant_user';")
   if [[ "$UK_NEW" -ge "4" ]]; then
     ok "uk_tenant_user_spu 已建（4 列复合）"
   else
     ko "uk_tenant_user_spu 不存在或列不足（当前 $UK_NEW 列）"
   fi
-  if [[ "$UK_OLD" == "0" ]]; then
-    ok "老 uk_user_id 已移除（V028 DROP 成功）"
+  # 这两个老唯一键如果存在会挡 v8 的 (user, spu>0) 多行 INSERT，必须 DROP
+  if [[ "$UK_OLD1" == "0" ]]; then
+    ok "老 uk_user_id 已移除"
   else
-    note "老 uk_user_id 仍存在（不影响 v8 但建议清理）"
+    ko "老 uk_user_id 仍存在 — 会挡 v8 多行 INSERT"
+  fi
+  if [[ "$UK_OLD2" == "0" ]]; then
+    ok "老 uk_tenant_user 已移除"
+  else
+    ko "老 uk_tenant_user 仍存在 — 会挡 v8 多行 INSERT"
   fi
 fi
 

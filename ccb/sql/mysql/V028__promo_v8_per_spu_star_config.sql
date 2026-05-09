@@ -10,42 +10,72 @@
 --   6. 星级奖池按商品独立累池
 -- =============================================================================
 
--- 1. product_promo_config 加商品级星级配置 + 池子
-ALTER TABLE `product_promo_config`
-  ADD COLUMN `direct_rate` DECIMAL(5, 2) DEFAULT 0.00
-    COMMENT '直推/间推奖比例（%）；buyer 完成推 N 反 1 后，每件按此比例返奖；parent 首贡献也按此比例'
-    AFTER `tuijian_ratios`,
-  ADD COLUMN `star_count` INT NOT NULL DEFAULT 0
-    COMMENT '该商品的星级数量（0=不启用团队极差奖）'
-    AFTER `direct_rate`,
-  ADD COLUMN `star_ratios` VARCHAR(255) DEFAULT NULL
-    COMMENT '各星级团队极差返奖比例 JSON 数组（%），长度=star_count，例：[1,2,3]'
-    AFTER `star_count`,
-  ADD COLUMN `star_upgrade_rules` TEXT DEFAULT NULL
-    COMMENT '升星规则 JSON：[{"star":1,"directCount":2,"teamSales":30000},{"star":2,"directCount":3,"teamSales":90000},...] (teamSales 单位:分)'
-    AFTER `star_ratios`,
-  ADD COLUMN `pool_ratio` DECIMAL(5, 2) DEFAULT 0.00
-    COMMENT '星级奖池入池比例（%），订单 spu 行实付 × 此比例 入 spu_star_pool'
-    AFTER `star_upgrade_rules`;
+-- 幂等约定：deploy.sh 不带 --reset 时会重复跑全部 V*.sql，
+-- 所有 ALTER TABLE ADD COLUMN 必须用 INFORMATION_SCHEMA + PREPARE 包装，
+-- 否则第二次跑会报 Duplicate column。
 
--- 2. shop_user_star 改为 (user, spu) 维度
--- 之前唯一键 uk_user_id (user_id) 改为 uk_user_spu (user_id, spu_id, deleted)
-ALTER TABLE `shop_user_star`
-  ADD COLUMN `spu_id` BIGINT NOT NULL DEFAULT 0
-    COMMENT '商品 SPU ID（v8：每个用户在每个商品上独立星级 / 直推数 / 团队链路销售；0=v7 老数据兼容）'
-    AFTER `user_id`;
+-- 强制 utf8mb4：deploy.sh mysql_safe 的默认连接 charset 可能是 latin1，
+-- procedure 字符串参数（含中文 COMMENT）会按连接 charset 解析 → 报
+-- "Incorrect string value '\x89'..."。在 V028 顶部统一 SET NAMES。
+SET NAMES utf8mb4;
 
-ALTER TABLE `shop_user_star`
-  ADD COLUMN `team_sales_amount` BIGINT NOT NULL DEFAULT 0
-    COMMENT '团队链路在该商品上的销售实付累计（分）；之前 team_sales_count 是件数语义'
-    AFTER `team_sales_count`;
+-- 通用列存在性检查工具：用 procedure 简化重复 PREPARE
+DROP PROCEDURE IF EXISTS v028_add_column;
+DELIMITER //
+CREATE PROCEDURE v028_add_column(
+  IN p_table VARCHAR(64) CHARACTER SET utf8mb4,
+  IN p_column VARCHAR(64) CHARACTER SET utf8mb4,
+  IN p_def TEXT CHARACTER SET utf8mb4
+)
+BEGIN
+  DECLARE col_count INT DEFAULT 0;
+  SELECT COUNT(*) INTO col_count
+    FROM INFORMATION_SCHEMA.COLUMNS
+   WHERE TABLE_SCHEMA = DATABASE()
+     AND TABLE_NAME = p_table
+     AND COLUMN_NAME = p_column;
+  IF col_count = 0 THEN
+    SET @ddl := CONCAT('ALTER TABLE `', p_table, '` ADD COLUMN ', p_def);
+    PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+  END IF;
+END//
+DELIMITER ;
+
+-- 1. product_promo_config 加商品级星级配置 + 池子（5 列幂等）
+CALL v028_add_column('product_promo_config', 'direct_rate',
+  '`direct_rate` DECIMAL(5, 2) DEFAULT 0.00 COMMENT ''直推/间推奖比例（%）'' AFTER `tuijian_ratios`');
+CALL v028_add_column('product_promo_config', 'star_count',
+  '`star_count` INT NOT NULL DEFAULT 0 COMMENT ''该商品的星级数量（0=不启用团队极差奖）'' AFTER `direct_rate`');
+CALL v028_add_column('product_promo_config', 'star_ratios',
+  '`star_ratios` VARCHAR(255) DEFAULT NULL COMMENT ''各星级团队极差返奖比例 JSON 数组(%)'' AFTER `star_count`');
+CALL v028_add_column('product_promo_config', 'star_upgrade_rules',
+  '`star_upgrade_rules` TEXT DEFAULT NULL COMMENT ''升星规则 JSON [{star,directCount,teamSales(分)}]'' AFTER `star_ratios`');
+CALL v028_add_column('product_promo_config', 'pool_ratio',
+  '`pool_ratio` DECIMAL(5, 2) DEFAULT 0.00 COMMENT ''星级奖池入池比例(%)'' AFTER `star_upgrade_rules`');
+
+-- 2. shop_user_star 改为 (user, spu) 维度（2 列幂等）
+CALL v028_add_column('shop_user_star', 'spu_id',
+  '`spu_id` BIGINT NOT NULL DEFAULT 0 COMMENT ''商品 SPU ID（v8: 0=v7 老数据兼容）'' AFTER `user_id`');
+CALL v028_add_column('shop_user_star', 'team_sales_amount',
+  '`team_sales_amount` BIGINT NOT NULL DEFAULT 0 COMMENT ''团队链路在该商品上的销售实付累计(分)'' AFTER `team_sales_count`');
+
+DROP PROCEDURE IF EXISTS v028_add_column;
 
 -- 老索引可能挡 (user, spu) 双键 INSERT，先丢老索引（如有）
--- 老唯一键 uk_user_id 是按 user 单维度，跟 (user, spu) 改造冲突
+-- 老唯一键有两种历史形式：
+--   - uk_user_id (user_id)              — 早期 single-tenant 版本
+--   - uk_tenant_user (tenant_id, user_id) — marketing.sql 全新部署版本
+-- 都跟 (tenant_id, user_id, spu_id) 改造冲突 → 必须全部 DROP 后再建新唯一键
 SET @x := (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS
            WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'shop_user_star'
              AND INDEX_NAME = 'uk_user_id');
 SET @s := IF(@x > 0, 'ALTER TABLE shop_user_star DROP INDEX uk_user_id', 'SELECT 1');
+PREPARE stmt FROM @s; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @x := (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS
+           WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'shop_user_star'
+             AND INDEX_NAME = 'uk_tenant_user');
+SET @s := IF(@x > 0, 'ALTER TABLE shop_user_star DROP INDEX uk_tenant_user', 'SELECT 1');
 PREPARE stmt FROM @s; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 -- 加 (tenant, user, spu) 唯一索引（v8）
