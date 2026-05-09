@@ -16,12 +16,20 @@ package cn.iocoder.yudao.module.merchant.service.promo;
 public interface CommissionService {
 
     /**
-     * 处理一笔订单的团队极差递减分润。
-     *
-     * @param buyerUserId 买家
-     * @param paidAmount  实付金额(分)
-     * @param orderId     订单 ID（流水 sourceId / 防重）
+     * v6/v7 老接口：商户级共用极差。已废弃，仅保留向后兼容；新代码用 handleOrderPaidV8。
      */
     void handleOrderPaid(Long buyerUserId, long paidAmount, Long orderId);
+
+    /**
+     * v8: 商品级团队极差奖。沿 buyer 上链就近递增算法，按商品 starRatios 计算。
+     *
+     * @param config       商品配置（含 star_count, star_ratios）
+     * @param buyerUserId  买家
+     * @param spuId        商品 SPU
+     * @param paidAmount   订单 spu 行实付金额（抵扣后，分）
+     * @param orderId      订单 ID
+     */
+    void handleOrderPaidV8(cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ProductPromoConfigDO config,
+                           Long buyerUserId, Long spuId, long paidAmount, Long orderId);
 
 }

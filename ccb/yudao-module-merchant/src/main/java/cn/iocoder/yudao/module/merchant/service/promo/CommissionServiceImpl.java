@@ -1,7 +1,7 @@
 package cn.iocoder.yudao.module.merchant.service.promo;
 
 import cn.iocoder.yudao.framework.common.util.json.JsonUtils;
-import cn.iocoder.yudao.module.merchant.dal.dataobject.promo.PromoConfigDO;
+import cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ProductPromoConfigDO;
 import cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopUserStarDO;
 import cn.iocoder.yudao.module.merchant.dal.mysql.promo.ShopUserStarMapper;
 import lombok.extern.slf4j.Slf4j;
@@ -16,7 +16,16 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * 团队极差递减实现。
+ * 团队极差奖（v8 改造）。
+ *
+ * <p>v8 规则（详见 docs/design/marketing-system-v8.md 第 3.3 节）：</p>
+ * <ul>
+ *   <li>商品级配置 starRatios（星级返奖比例数组）</li>
+ *   <li>用户星级按 (user, spu) 独立（shop_user_star.spu_id 维度）</li>
+ *   <li>沿 buyer 上链就近递增算法：星级严格递增才能拿，按自己星级整额拿（不是差额）</li>
+ *   <li>触发基数：订单 spu 行 paidAmount（抵扣后实付）</li>
+ *   <li>无 UNIQUE 限制：每订单都触发</li>
+ * </ul>
  */
 @Service
 @Slf4j
@@ -25,67 +34,67 @@ public class CommissionServiceImpl implements CommissionService {
     @Resource
     private ShopUserStarMapper userStarMapper;
     @Resource
-    private PromoConfigService promoConfigService;
-    @Resource
     private ReferralService referralService;
     @Resource
     private PromoPointService promoPointService;
 
+    /** v6/v7 老接口：商户级共用极差。已废弃，仅保留向后兼容；新代码用 handleOrderPaidV8。 */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void handleOrderPaid(Long buyerUserId, long paidAmount, Long orderId) {
-        if (buyerUserId == null || paidAmount <= 0 || orderId == null) {
-            return;
-        }
-        PromoConfigDO config = promoConfigService.getConfig();
-        List<BigDecimal> rates = parseRates(config.getCommissionRates());
-        if (rates.isEmpty()) {
-            return;
-        }
-
-        int issuedStar = 0;                      // 已发星级（0 = 未发）
-        BigDecimal issuedRate = BigDecimal.ZERO; // 已发累计 %
-
-        // 步 1：买家自己（如有星级）
-        Integer buyerStar = readStar(buyerUserId);
-        if (buyerStar != null && buyerStar > 0 && buyerStar <= rates.size()) {
-            BigDecimal rate = rates.get(buyerStar - 1);
-            long amount = computeAmount(paidAmount, rate);
-            if (amount > 0) {
-                promoPointService.addPromoPoint(buyerUserId, amount, "COMMISSION", orderId,
-                        "团队极差 自身 star=" + buyerStar);
-            }
-            issuedStar = buyerStar;
-            issuedRate = rate;
-        }
-
-        // 步 2：沿推荐链向上递减分润
-        List<Long> ancestors = referralService.getAncestors(buyerUserId, 50);
-        for (Long ancestorId : ancestors) {
-            Integer star = readStar(ancestorId);
-            if (star == null || star <= 0 || star > rates.size()) {
-                continue;
-            }
-            if (star <= issuedStar) {
-                continue; // 不高于已发星级 → 跳过
-            }
-            BigDecimal myRate = rates.get(star - 1);
-            BigDecimal diff = myRate.subtract(issuedRate);
-            if (diff.compareTo(BigDecimal.ZERO) > 0) {
-                long amount = computeAmount(paidAmount, diff);
-                if (amount > 0) {
-                    promoPointService.addPromoPoint(ancestorId, amount, "COMMISSION", orderId,
-                            "团队极差 star=" + star + " diff=" + diff + "%");
-                }
-            }
-            issuedStar = star;
-            issuedRate = myRate;
-        }
+        // v8: 没有 spuId 信息无法走商品级极差；保留空实现兼容旧 caller 即可
+        log.debug("[CommissionService] v6/v7 老接口被调用 buyer={} paidAmount={} order={}，v8 已废弃",
+                buyerUserId, paidAmount, orderId);
     }
 
-    private Integer readStar(Long userId) {
-        ShopUserStarDO star = userStarMapper.selectByUserId(userId);
-        return star == null ? null : star.getCurrentStar();
+    /**
+     * v8: 商品级团队极差奖触发。
+     *
+     * @param config       商品配置（含 star_count, star_ratios）
+     * @param buyerUserId  买家
+     * @param spuId        商品
+     * @param paidAmount   订单 spu 行实付（抵扣后，分）
+     * @param orderId      订单 ID（用于 promo_record 幂等）
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public void handleOrderPaidV8(ProductPromoConfigDO config, Long buyerUserId, Long spuId,
+                                  long paidAmount, Long orderId) {
+        if (config == null || buyerUserId == null || paidAmount <= 0 || orderId == null) return;
+        Integer starCount = config.getStarCount();
+        if (starCount == null || starCount <= 0) return;
+        List<BigDecimal> ratios = parseRates(config.getStarRatios());
+        if (ratios.isEmpty()) return;
+
+        // 沿链就近递增：lastStar=0，每往上一个 parent 必须严格 > lastStar 才能拿
+        int lastStar = 0;
+        // 步 1：buyer 自己（如有星级也参与）
+        ShopUserStarDO buyerStar = userStarMapper.selectByUserAndSpu(buyerUserId, spuId);
+        Integer bs = buyerStar == null ? null : buyerStar.getCurrentStar();
+        if (bs != null && bs > 0 && bs <= ratios.size()) {
+            BigDecimal rate = ratios.get(bs - 1);
+            long award = computeAmount(paidAmount, rate);
+            if (award > 0) {
+                promoPointService.addPromoPoint(buyerUserId, award, "COMMISSION", orderId,
+                        "v8 团队极差 自身 star=" + bs + " spu=" + spuId);
+            }
+            lastStar = bs;
+        }
+
+        // 步 2：沿推荐链向上找；星级严格递增才拿（按自己星级整额，非差额）
+        List<Long> ancestors = referralService.getAncestors(buyerUserId, 50);
+        for (Long ancestorId : ancestors) {
+            ShopUserStarDO ast = userStarMapper.selectByUserAndSpu(ancestorId, spuId);
+            Integer s = ast == null ? null : ast.getCurrentStar();
+            if (s == null || s <= 0 || s > ratios.size()) continue;
+            if (s <= lastStar) continue;  // 不大于 lastStar → 跳过该 parent，继续上溯
+            BigDecimal rate = ratios.get(s - 1);
+            long award = computeAmount(paidAmount, rate);
+            if (award > 0) {
+                promoPointService.addPromoPoint(ancestorId, award, "COMMISSION", orderId,
+                        "v8 团队极差 star=" + s + " spu=" + spuId + " by=" + buyerUserId);
+            }
+            lastStar = s;
+        }
     }
 
     private long computeAmount(long paidAmount, BigDecimal ratePercent) {

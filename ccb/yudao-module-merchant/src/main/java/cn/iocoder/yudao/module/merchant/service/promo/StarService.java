@@ -39,4 +39,32 @@ public interface StarService {
      */
     int recompute(Long userId);
 
+    // ============================================================
+    // v8: 升星按 (user, spu) 维度
+    // ============================================================
+
+    /**
+     * v8: 一笔订单 spu 行成交后：buyer + 整条上链 在该商品上的 team_sales_count++ / team_sales_amount += paidAmount，
+     * 并按商品级 starUpgradeRules 尝试升星。
+     *
+     * @param config      商品配置（含 starUpgradeRules）
+     * @param buyerUserId 买家
+     * @param spuId       商品 SPU
+     * @param qty         本单该商品的件数
+     * @param paidAmount  本单该商品行实付（抵扣后，分）
+     */
+    void handleOrderPaidV8(cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ProductPromoConfigDO config,
+                           Long buyerUserId, Long spuId, int qty, long paidAmount);
+
+    /**
+     * v8: 推荐链绑定后：parent 在指定 spu 上的 directCount++ + 尝试升星。
+     * 仅在 child 在该商品上首次激活（首单触发）时调用。
+     *
+     * @param config         商品配置（含 starUpgradeRules）
+     * @param parentUserId   上级
+     * @param spuId          商品 SPU
+     */
+    void handleReferralBoundV8(cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ProductPromoConfigDO config,
+                               Long parentUserId, Long spuId);
+
 }

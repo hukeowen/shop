@@ -61,29 +61,13 @@ public class MerchantPromoOrderHandler implements TradeOrderHandler {
             return;
         }
 
-        // 1~2、4~5：消费积分 / 队列三机制 / 入池 / 星级 — 都是按 SPU 行触发，因此放进循环
-        long totalPaidAmount = 0L;
+        // v8: 按 SPU 行循环触发 — 推 N 反 1 / 极差 / 升星 / 入池都按 SPU 独立
         for (TradeOrderItemDO item : orderItems) {
             try {
                 processOneItem(buyerId, orderId, item);
-                if (item.getPayPrice() != null && item.getPayPrice() > 0) {
-                    totalPaidAmount += item.getPayPrice();
-                }
             } catch (Exception e) {
-                // 单 item 异常不阻断同单其它 item 的引擎处理；订单状态已标 PAID
                 log.error("[afterPayOrder] order={} spu={} 引擎处理失败，跳过本行",
                         orderId, item.getSpuId(), e);
-            }
-        }
-
-        // 3、团队极差：v6 文档明确"每笔订单触发一次"——必须用订单总额、且与 item 循环外调用，
-        //    否则同一 (userId, COMMISSION, orderId) 幂等键会让后续 item 静默 skip，
-        //    结果只算了第 1 个 item 的金额（已知 bug 已修）。
-        if (totalPaidAmount > 0) {
-            try {
-                commissionService.handleOrderPaid(buyerId, totalPaidAmount, orderId);
-            } catch (Exception e) {
-                log.error("[afterPayOrder] order={} 团队极差结算失败", orderId, e);
             }
         }
     }
@@ -115,8 +99,6 @@ public class MerchantPromoOrderHandler implements TradeOrderHandler {
         }
 
         // 2. v8 推 N 反 1 状态机（按件循环）+ parent 首贡献按 1 件价 + 自然推队首
-        // 单件价用 item.price（原单价）；buyer 自购按"件循环"逐件触发
-        // checkout 阶段已 preview 算了抵扣件数 K 并调整 payPrice，这里再 preview 一次同样结果
         if (config != null && Boolean.TRUE.equals(config.getTuijianEnabled())) {
             int unitPrice = item.getPrice() == null ? 0 : item.getPrice();
             if (unitPrice > 0 && qty > 0) {
@@ -127,14 +109,32 @@ public class MerchantPromoOrderHandler implements TradeOrderHandler {
             }
         }
 
-        // （3 团队极差移到 afterPayOrder 末尾按订单总额触发一次）
+        // 3. v8 团队极差奖（按 SPU 独立 + 沿链就近递增）
+        if (config != null) {
+            try {
+                commissionService.handleOrderPaidV8(config, buyerId, spuId, paidAmount, orderId);
+            } catch (Exception e) {
+                log.error("[afterPayOrder v8] 极差奖失败 order={} spu={}", orderId, spuId, e);
+            }
+        }
 
-        // 4. 入池（商品 + 商户都 enabled 才进）
-        promoPoolService.depositIfEnabled(config, paidAmount, orderId);
+        // 4. v8 入池（按商品级 pool_ratio）
+        if (config != null) {
+            try {
+                promoPoolService.depositIfEnabledV8(config, spuId, paidAmount, orderId);
+            } catch (Exception e) {
+                log.error("[afterPayOrder v8] 入池失败 order={} spu={}", orderId, spuId, e);
+            }
+        }
 
-        // 5. 星级回算（仅参与推 N 反 1 商品份数计入团队链路销售份数）
-        boolean countable = config != null && Boolean.TRUE.equals(config.getTuijianEnabled());
-        starService.handleOrderPaid(buyerId, qty, countable);
+        // 5. v8 升星（按 SPU 独立累加 directCount / teamSalesAmount + attemptUpgrade）
+        if (config != null && Boolean.TRUE.equals(config.getTuijianEnabled())) {
+            try {
+                starService.handleOrderPaidV8(config, buyerId, spuId, qty, paidAmount);
+            } catch (Exception e) {
+                log.error("[afterPayOrder v8] 升星失败 order={} spu={}", orderId, spuId, e);
+            }
+        }
     }
 
 }

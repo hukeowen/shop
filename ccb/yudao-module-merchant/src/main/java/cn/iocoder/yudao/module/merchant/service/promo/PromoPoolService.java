@@ -21,4 +21,14 @@ public interface PromoPoolService {
      */
     void depositIfEnabled(ProductPromoConfigDO productConfig, long paidAmount, Long orderId);
 
+    /**
+     * v8: 按商品级 pool_ratio 入 spu_star_pool（每商品独立累池，不走老的商户级 promo_pool）。
+     *
+     * @param productConfig 商品配置（含 poolRatio）
+     * @param spuId         商品 SPU
+     * @param paidAmount    订单 spu 行实付（抵扣后，分）
+     * @param orderId       订单 ID
+     */
+    void depositIfEnabledV8(ProductPromoConfigDO productConfig, Long spuId, long paidAmount, Long orderId);
+
 }

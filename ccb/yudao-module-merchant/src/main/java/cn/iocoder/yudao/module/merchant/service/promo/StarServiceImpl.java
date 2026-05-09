@@ -146,4 +146,103 @@ public class StarServiceImpl implements StarService {
         private int teamSales;
     }
 
+    // ============================================================
+    // v8: 商品级升星 — (user, spu) 维度
+    // ============================================================
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void handleOrderPaidV8(cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ProductPromoConfigDO config,
+                                  Long buyerUserId, Long spuId, int qty, long paidAmount) {
+        if (config == null || buyerUserId == null || spuId == null || qty <= 0) return;
+        Integer starCount = config.getStarCount();
+        if (starCount == null || starCount <= 0) return;
+        List<RuleV8> rules = parseRulesV8(config.getStarUpgradeRules());
+        if (rules.isEmpty()) return;
+
+        bumpTeamSalesV8(buyerUserId, spuId, qty, paidAmount, rules);
+        for (Long ancestorId : referralService.getAncestors(buyerUserId, 50)) {
+            bumpTeamSalesV8(ancestorId, spuId, qty, paidAmount, rules);
+        }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void handleReferralBoundV8(cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ProductPromoConfigDO config,
+                                       Long parentUserId, Long spuId) {
+        if (config == null || parentUserId == null || parentUserId <= 0 || spuId == null) return;
+        Integer starCount = config.getStarCount();
+        if (starCount == null || starCount <= 0) return;
+        List<RuleV8> rules = parseRulesV8(config.getStarUpgradeRules());
+        if (rules.isEmpty()) return;
+
+        getOrCreateBySpu(parentUserId, spuId);
+        userStarMapper.addDirectCountBySpu(parentUserId, spuId, 1);
+        attemptUpgradeV8(parentUserId, spuId, rules);
+    }
+
+    private void bumpTeamSalesV8(Long userId, Long spuId, int qty, long paidAmount, List<RuleV8> rules) {
+        getOrCreateBySpu(userId, spuId);
+        userStarMapper.addTeamSalesBySpu(userId, spuId, qty, paidAmount);
+        attemptUpgradeV8(userId, spuId, rules);
+    }
+
+    private void attemptUpgradeV8(Long userId, Long spuId, List<RuleV8> rules) {
+        ShopUserStarDO acct = userStarMapper.selectByUserAndSpu(userId, spuId);
+        if (acct == null) return;
+        int target = acct.getCurrentStar() == null ? 0 : acct.getCurrentStar();
+        int directCount = acct.getDirectCount() == null ? 0 : acct.getDirectCount();
+        long teamSalesAmount = acct.getTeamSalesAmount() == null ? 0L : acct.getTeamSalesAmount();
+        while (target < rules.size()) {
+            RuleV8 r = rules.get(target);
+            if (directCount >= r.getDirectCount() && teamSalesAmount >= r.getTeamSales()) {
+                target++;
+            } else {
+                break;
+            }
+        }
+        int curr = acct.getCurrentStar() == null ? 0 : acct.getCurrentStar();
+        if (target > curr) {
+            userStarMapper.upgradeStarIfHigherBySpu(userId, spuId, target);
+        }
+    }
+
+    private ShopUserStarDO getOrCreateBySpu(Long userId, Long spuId) {
+        ShopUserStarDO existing = userStarMapper.selectByUserAndSpu(userId, spuId);
+        if (existing != null) return existing;
+        ShopUserStarDO created = ShopUserStarDO.builder()
+                .userId(userId).spuId(spuId)
+                .directCount(0).teamSalesCount(0).teamSalesAmount(0L)
+                .currentStar(0)
+                .promoPointBalance(0L).consumePointBalance(0L)
+                .build();
+        try {
+            userStarMapper.insert(created);
+            return created;
+        } catch (DuplicateKeyException e) {
+            ShopUserStarDO concurrent = userStarMapper.selectByUserAndSpu(userId, spuId);
+            if (concurrent != null) return concurrent;
+            throw e;
+        }
+    }
+
+    private List<RuleV8> parseRulesV8(String json) {
+        if (json == null || json.isEmpty()) return Collections.emptyList();
+        try {
+            List<RuleV8> rules = JsonUtils.parseArray(json, RuleV8.class);
+            return rules == null ? Collections.emptyList() : rules;
+        } catch (Exception e) {
+            log.warn("[parseRulesV8] 解析失败 {}: {}", json, e.getMessage());
+            return Collections.emptyList();
+        }
+    }
+
+    @Data
+    @NoArgsConstructor
+    public static class RuleV8 {
+        /** 升此星需要的直推下级数（在该商品上） */
+        private int directCount;
+        /** 升此星需要的团队链路销售实付（分） */
+        private long teamSales;
+    }
 }

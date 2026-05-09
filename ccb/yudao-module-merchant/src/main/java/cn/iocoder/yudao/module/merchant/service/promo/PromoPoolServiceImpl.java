@@ -110,4 +110,53 @@ public class PromoPoolServiceImpl implements PromoPoolService {
         log.debug("[depositIfEnabled] order={} spu={} += {} 分", orderId, spuId, deposit);
     }
 
+    @Resource
+    private cn.iocoder.yudao.module.merchant.dal.mysql.promo.SpuStarPoolMapper spuStarPoolMapper;
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void depositIfEnabledV8(ProductPromoConfigDO productConfig, Long spuId, long paidAmount, Long orderId) {
+        if (productConfig == null || spuId == null || orderId == null || paidAmount <= 0) return;
+        BigDecimal ratio = productConfig.getPoolRatio();
+        if (ratio == null || ratio.compareTo(BigDecimal.ZERO) <= 0) return;
+
+        // 幂等：同 (orderId, spuId, SYSTEM_BENEFICIARY, POOL_DEPOSIT_V8) 已入过 → 跳过
+        if (eventMapper.existsByOrderAndBeneficiary(orderId, spuId, SYSTEM_BENEFICIARY, "POOL_DEPOSIT_V8")) {
+            log.debug("[depositIfEnabledV8] 幂等命中 order={} spu={}", orderId, spuId);
+            return;
+        }
+
+        long deposit = BigDecimal.valueOf(paidAmount)
+                .multiply(ratio)
+                .divide(BigDecimal.valueOf(100), 0, RoundingMode.DOWN)
+                .longValueExact();
+        if (deposit <= 0) return;
+
+        // 累入 spu_star_pool（原子 UPDATE）；不存在则先 INSERT
+        cn.iocoder.yudao.module.merchant.dal.dataobject.promo.SpuStarPoolDO existing =
+                spuStarPoolMapper.selectBySpuId(spuId);
+        if (existing == null) {
+            cn.iocoder.yudao.module.merchant.dal.dataobject.promo.SpuStarPoolDO created =
+                    cn.iocoder.yudao.module.merchant.dal.dataobject.promo.SpuStarPoolDO.builder()
+                            .spuId(spuId).poolBalance(deposit).totalIn(deposit).totalOut(0L).build();
+            try {
+                spuStarPoolMapper.insert(created);
+            } catch (DuplicateKeyException e) {
+                int rows = spuStarPoolMapper.incrementPool(spuId, deposit);
+                if (rows != 1) throw new IllegalStateException("spu_star_pool incrementPool fail spu=" + spuId);
+            }
+        } else {
+            int rows = spuStarPoolMapper.incrementPool(spuId, deposit);
+            if (rows != 1) throw new IllegalStateException("spu_star_pool incrementPool fail spu=" + spuId);
+        }
+
+        // 幂等事件
+        eventMapper.insert(ShopQueueEventDO.builder()
+                .spuId(spuId).eventType("POOL_DEPOSIT_V8")
+                .beneficiaryUserId(SYSTEM_BENEFICIARY).sourceUserId(SYSTEM_BENEFICIARY)
+                .sourceOrderId(orderId).positionIndex(0)
+                .ratioPercent(ratio).amount(deposit).build());
+        log.info("[depositIfEnabledV8] order={} spu={} += {} 分（v8 商品级池）", orderId, spuId, deposit);
+    }
+
 }

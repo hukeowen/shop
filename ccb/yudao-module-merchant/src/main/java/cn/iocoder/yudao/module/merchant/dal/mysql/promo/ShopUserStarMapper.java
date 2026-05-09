@@ -97,4 +97,25 @@ public interface ShopUserStarMapper extends BaseMapperX<ShopUserStarDO> {
             + "WHERE user_id = #{userId} AND deleted = b'0' AND current_star < #{newStar}")
     int upgradeStarIfHigher(@Param("userId") Long userId, @Param("newStar") int newStar);
 
+    // ============================================================
+    // v8: 按 (user, spu) 维度的原子操作（升星按商品独立）
+    // ============================================================
+
+    @Update("UPDATE shop_user_star "
+            + "SET direct_count = direct_count + #{delta}, update_time = NOW() "
+            + "WHERE user_id = #{userId} AND spu_id = #{spuId} AND deleted = b'0'")
+    int addDirectCountBySpu(@Param("userId") Long userId, @Param("spuId") Long spuId, @Param("delta") int delta);
+
+    @Update("UPDATE shop_user_star "
+            + "SET team_sales_count = team_sales_count + #{cntDelta}, "
+            + "    team_sales_amount = team_sales_amount + #{amtDelta}, update_time = NOW() "
+            + "WHERE user_id = #{userId} AND spu_id = #{spuId} AND deleted = b'0'")
+    int addTeamSalesBySpu(@Param("userId") Long userId, @Param("spuId") Long spuId,
+                          @Param("cntDelta") int cntDelta, @Param("amtDelta") long amtDelta);
+
+    @Update("UPDATE shop_user_star "
+            + "SET current_star = #{newStar}, upgraded_at = NOW(), update_time = NOW() "
+            + "WHERE user_id = #{userId} AND spu_id = #{spuId} AND deleted = b'0' AND current_star < #{newStar}")
+    int upgradeStarIfHigherBySpu(@Param("userId") Long userId, @Param("spuId") Long spuId, @Param("newStar") int newStar);
+
 }
