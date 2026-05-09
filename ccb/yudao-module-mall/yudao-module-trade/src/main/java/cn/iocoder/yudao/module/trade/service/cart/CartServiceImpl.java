@@ -55,11 +55,22 @@ public class CartServiceImpl implements CartService {
             cartMapper.updateById(new CartDO().setId(cart.getId()).setSelected(true)
                     .setCount(cart.getCount() + count));
             return cart.getId();
-        // 情况二：不存在，则进行插入
-        } else {
-            cart = new CartDO().setUserId(userId).setSelected(true)
-                    .setSpuId(sku.getSpuId()).setSkuId(sku.getId()).setCount(count);
+        }
+        // 情况二：不存在，则进行插入；并发兜底 — 两个并发请求都走到 INSERT 分支会撞
+        // V029 加的 UNIQUE (tenant_id, user_id, sku_id, deleted)，捕到 DuplicateKey
+        // 后重读一次走 UPDATE 路径，保证同 sku 始终只有一行
+        cart = new CartDO().setUserId(userId).setSelected(true)
+                .setSpuId(sku.getSpuId()).setSkuId(sku.getId()).setCount(count);
+        try {
             cartMapper.insert(cart);
+        } catch (org.springframework.dao.DuplicateKeyException dup) {
+            CartDO existing = cartMapper.selectByUserIdAndSkuId(userId, addReqVO.getSkuId());
+            if (existing == null) {
+                throw dup;
+            }
+            cartMapper.updateById(new CartDO().setId(existing.getId()).setSelected(true)
+                    .setCount(existing.getCount() + count));
+            return existing.getId();
         }
         return cart.getId();
     }
