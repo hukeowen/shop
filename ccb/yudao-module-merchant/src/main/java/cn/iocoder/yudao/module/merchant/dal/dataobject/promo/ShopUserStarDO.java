@@ -29,11 +29,17 @@ public class ShopUserStarDO extends TenantBaseDO {
 
     private Long userId;
 
+    /** v8: 商品 SPU ID（每个用户在每个商品上独立星级 / 直推数 / 团队链路销售）；0 = v7 老数据兼容 */
+    private Long spuId;
+
     /** 直推下级数（直接推荐人 = 自己 的人数） */
     private Integer directCount;
 
     /** 团队链路销售份数（自己 + 全部下级累计销售"参与推 N 反 1"商品份数） */
     private Integer teamSalesCount;
+
+    /** v8: 团队链路在该商品上的销售实付累计（分）— 用于按金额阈值升星 */
+    private Long teamSalesAmount;
 
     /** 当前星级，0 = 未达任何星级 */
     private Integer currentStar;

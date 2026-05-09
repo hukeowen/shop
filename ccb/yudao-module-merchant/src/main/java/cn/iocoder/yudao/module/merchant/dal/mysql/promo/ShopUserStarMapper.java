@@ -14,16 +14,29 @@ import java.util.List;
 @Mapper
 public interface ShopUserStarMapper extends BaseMapperX<ShopUserStarDO> {
 
+    /**
+     * v8: 按 (user, spu) 维度查；spu_id=0 是 v7 老数据兼容（账户余额维度），新代码尽量用 selectByUserAndSpu。
+     * 兼容性：保留 selectByUserId 是因为推广积分余额仍然按 user 全局维度（spu_id=0 那条）。
+     */
     default ShopUserStarDO selectByUserId(Long userId) {
         return selectOne(new LambdaQueryWrapperX<ShopUserStarDO>()
-                .eq(ShopUserStarDO::getUserId, userId));
+                .eq(ShopUserStarDO::getUserId, userId)
+                .eq(ShopUserStarDO::getSpuId, 0L));
+    }
+
+    /** v8: 按 (user, spu) 维度查 — 该用户在该商品上的星级 / 直推数 / 团队链路销售。 */
+    default ShopUserStarDO selectByUserAndSpu(Long userId, Long spuId) {
+        return selectOne(new LambdaQueryWrapperX<ShopUserStarDO>()
+                .eq(ShopUserStarDO::getUserId, userId)
+                .eq(ShopUserStarDO::getSpuId, spuId));
     }
 
     /**
      * 行锁读取：必须在 @Transactional 内调用，用于"读旧余额 + 原子写 + 计算新余额"流程，
      * 让 balanceAfter 严格等于本次写后的余额（防并发交叉）。
+     * v8: 仍按 user 全局账户（spu_id=0）维度锁；推广积分余额跨商品共享。
      */
-    @Select("SELECT * FROM shop_user_star WHERE user_id = #{userId} AND deleted = b'0' FOR UPDATE")
+    @Select("SELECT * FROM shop_user_star WHERE user_id = #{userId} AND spu_id = 0 AND deleted = b'0' FOR UPDATE")
     ShopUserStarDO selectByUserIdForUpdate(@Param("userId") Long userId);
 
     /** 列出某商户内所有"current_star >= ?"的用户（积分池可参与瓜分用户名单） */

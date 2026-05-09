@@ -46,8 +46,24 @@ public class ProductPromoConfigDO extends TenantBaseDO {
     /** N 个返佣比例 JSON 数组(%)，长度 = tuijianN，例：[25,25,25,25] */
     private String tuijianRatios;
 
+    // ========== v8 直推奖（自购 / parent 首贡献的 COMPLETED 期奖比例）==========
+    /** 直推/间推奖比例 (%)；buyer 完成推 N 反 1 后每件按此比例返；parent COMPLETED 期 1 件价 × 此比例 */
+    private BigDecimal directRate;
+
+    // ========== v8 团队极差奖（按商品独立配置） ==========
+    /** 星级数量 (0 = 不启用团队极差奖) */
+    private Integer starCount;
+    /** 各星级团队极差返奖比例 JSON 数组(%)，长度 = starCount，例：[1,2,3] */
+    private String starRatios;
+    /** 升星规则 JSON：[{"star":1,"directCount":2,"teamSales":30000},...] (teamSales 单位：分) */
+    private String starUpgradeRules;
+
+    // ========== v8 星级奖池（每商品独立累池） ==========
+    /** 星级奖池入池比例 (%)；订单 spu 行实付 × 此比例 入 spu_star_pool */
+    private BigDecimal poolRatio;
+
     // ========== 积分池 ==========
-    /** 是否参与星级积分池 */
+    /** 是否参与星级积分池（v6 兼容字段；v8 用 poolRatio>0 判定）*/
     private Boolean poolEnabled;
 
 }
