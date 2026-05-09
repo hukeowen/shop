@@ -39,18 +39,20 @@ public interface ShopUserStarMapper extends BaseMapperX<ShopUserStarDO> {
     @Select("SELECT * FROM shop_user_star WHERE user_id = #{userId} AND spu_id = 0 AND deleted = b'0' FOR UPDATE")
     ShopUserStarDO selectByUserIdForUpdate(@Param("userId") Long userId);
 
-    /** 列出某商户内所有"current_star >= ?"的用户（积分池可参与瓜分用户名单） */
+    /** 列出某商户内所有"current_star >= ?"的用户（积分池可参与瓜分用户名单）。v8: 限定 spu_id=0 全局星级。 */
     default List<ShopUserStarDO> selectListByCurrentStarGe(int starInclusive) {
         return selectList(new LambdaQueryWrapperX<ShopUserStarDO>()
+                .eq(ShopUserStarDO::getSpuId, 0L)
                 .ge(ShopUserStarDO::getCurrentStar, starInclusive));
     }
 
-    /** 按星级集合查（积分池白名单） */
+    /** 按星级集合查（积分池白名单）。v8: 限定 spu_id=0 全局星级，避免一个用户在多商品上被重复计入。 */
     default List<ShopUserStarDO> selectListByCurrentStarIn(Collection<Integer> stars) {
         if (stars == null || stars.isEmpty()) {
             return java.util.Collections.emptyList();
         }
         return selectList(new LambdaQueryWrapperX<ShopUserStarDO>()
+                .eq(ShopUserStarDO::getSpuId, 0L)
                 .in(ShopUserStarDO::getCurrentStar, stars));
     }
 
@@ -63,38 +65,40 @@ public interface ShopUserStarMapper extends BaseMapperX<ShopUserStarDO> {
 
     /**
      * 原子调整推广积分余额。delta 为正 = 入账；为负 = 扣减（要求 余额 + delta ≥ 0）。
+     * v8: 必须限定 spu_id=0（全局账户行），否则会撞上 v8 的 (user, spu>0) 行导致 rows>1 抛错。
      */
     @Update("UPDATE shop_user_star "
             + "SET promo_point_balance = promo_point_balance + #{delta}, update_time = NOW() "
-            + "WHERE user_id = #{userId} AND deleted = b'0' "
+            + "WHERE user_id = #{userId} AND spu_id = 0 AND deleted = b'0' "
             + "  AND promo_point_balance + #{delta} >= 0")
     int addPromoPointBalance(@Param("userId") Long userId, @Param("delta") long delta);
 
-    /** 原子调整消费积分余额。 */
+    /** 原子调整消费积分余额。v8: 限定 spu_id=0。 */
     @Update("UPDATE shop_user_star "
             + "SET consume_point_balance = consume_point_balance + #{delta}, update_time = NOW() "
-            + "WHERE user_id = #{userId} AND deleted = b'0' "
+            + "WHERE user_id = #{userId} AND spu_id = 0 AND deleted = b'0' "
             + "  AND consume_point_balance + #{delta} >= 0")
     int addConsumePointBalance(@Param("userId") Long userId, @Param("delta") long delta);
 
-    /** 原子累加 直推下级数。 */
+    /** 原子累加 直推下级数。v8: 限定 spu_id=0（v7 老路径全局账户）。 */
     @Update("UPDATE shop_user_star "
             + "SET direct_count = direct_count + #{delta}, update_time = NOW() "
-            + "WHERE user_id = #{userId} AND deleted = b'0'")
+            + "WHERE user_id = #{userId} AND spu_id = 0 AND deleted = b'0'")
     int addDirectCount(@Param("userId") Long userId, @Param("delta") int delta);
 
-    /** 原子累加 团队链路销售份数。 */
+    /** 原子累加 团队链路销售份数。v8: 限定 spu_id=0（v7 老路径全局账户）。 */
     @Update("UPDATE shop_user_star "
             + "SET team_sales_count = team_sales_count + #{delta}, update_time = NOW() "
-            + "WHERE user_id = #{userId} AND deleted = b'0'")
+            + "WHERE user_id = #{userId} AND spu_id = 0 AND deleted = b'0'")
     int addTeamSalesCount(@Param("userId") Long userId, @Param("delta") int delta);
 
     /**
      * 升星更新（终生制：仅在 newStar > 当前星级时落库）。
+     * v8: 限定 spu_id=0（v7 老路径全局账户）。
      */
     @Update("UPDATE shop_user_star "
             + "SET current_star = #{newStar}, upgraded_at = NOW(), update_time = NOW() "
-            + "WHERE user_id = #{userId} AND deleted = b'0' AND current_star < #{newStar}")
+            + "WHERE user_id = #{userId} AND spu_id = 0 AND deleted = b'0' AND current_star < #{newStar}")
     int upgradeStarIfHigher(@Param("userId") Long userId, @Param("newStar") int newStar);
 
     // ============================================================
