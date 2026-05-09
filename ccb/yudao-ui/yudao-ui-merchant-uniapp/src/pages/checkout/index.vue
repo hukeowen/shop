@@ -131,6 +131,7 @@
       <view class="form-tip">
         <text class="b">支付明细：</text><br>
         · 店铺余额抵扣：<text class="hl">{{ useBalance ? `-¥${fen2yuan(balanceDeductFen)}` : '未启用' }}</text><br>
+        · 推广积分抵扣：<text class="hl">下单时自动按商品独立抵扣（满 1 件即抵）</text><br>
         · 在线支付：<text class="hl">¥{{ fen2yuan(remainFen) }}</text>
       </view>
 
@@ -334,9 +335,18 @@ async function submitOrder() {
     uni.hideLoading();
     const orderId = res?.orderId;
     const finalPayPrice = res?.payPrice ?? remainFen.value;
+    const promoDeductFen = res?.promoDeductFen || 0;
+    const promoDeductCount = res?.promoDeductCount || 0;
     if (!orderId) {
       uni.showModal({ title: '下单失败', content: '未拿到订单号', showCancel: false });
       return;
+    }
+    if (promoDeductFen > 0) {
+      uni.showToast({
+        title: `推广积分抵扣 ${promoDeductCount} 件，少付 ¥${(promoDeductFen / 100).toFixed(2)}`,
+        icon: 'none',
+        duration: 2500,
+      });
     }
     const tid = tenantId.value || uni.getStorageSync('lastShopTenantId') || '';
     if (finalPayPrice > 0) {

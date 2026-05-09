@@ -27,4 +27,21 @@ public class ProductPromoConfigRespVO {
     @Schema(description = "是否参与星级积分池")
     private Boolean poolEnabled;
 
+    // ============ v8 商品级新字段 ============
+
+    @Schema(description = "v8 直推奖比例(%)")
+    private BigDecimal directRate;
+
+    @Schema(description = "v8 星级数量（0=不启用极差奖）")
+    private Integer starCount;
+
+    @Schema(description = "v8 各星级返奖比例 JSON 数组")
+    private String starRatios;
+
+    @Schema(description = "v8 升星规则 JSON")
+    private String starUpgradeRules;
+
+    @Schema(description = "v8 入池比例(%)")
+    private BigDecimal poolRatio;
+
 }

@@ -114,10 +114,56 @@
         </view>
       </template>
 
+      <!-- v8: 直推奖比例（推 N 反 1 完成后每件按此比例返） -->
+      <view class="field">
+        <text class="label">直推/间推奖比例（%）</text>
+        <input class="input compact" type="digit" v-model="promo.directRate" placeholder="例 10（buyer 完成 N 后自购按此返；parent 首贡献 1 件价 × 此）" />
+      </view>
+
+      <!-- v8: 团队极差奖（按商品独立） -->
+      <view class="field">
+        <text class="label">团队极差 - 星级数（0=不启用）</text>
+        <input class="input compact" type="number" v-model="promo.starCount" @blur="syncStarCount" />
+      </view>
+      <template v-if="(parseInt(promo.starCount)||0) > 0">
+        <view class="field">
+          <text class="label">各星级返奖比例 % （1星 → 高星）</text>
+          <view class="ratios-row">
+            <input
+              v-for="(r, i) in promo.starRatios"
+              :key="i"
+              class="input ratio"
+              type="digit"
+              :value="r"
+              @input="(e) => (promo.starRatios[i] = e.detail.value)"
+            />
+          </view>
+          <text class="hint inline">如 1,2,3 表示 1 星拿 1%、2 星拿 2%、3 星拿 3%</text>
+        </view>
+        <view class="field">
+          <text class="label">升星规则（每星：直推数 + 团队链路销售元）</text>
+          <view v-for="(rule, i) in promo.starUpgradeRules" :key="i" class="upgrade-row">
+            <text class="upgrade-label">{{ i + 1 }}星</text>
+            <input class="input upgrade-input" type="number" :value="rule.directCount"
+              @input="(e) => (promo.starUpgradeRules[i].directCount = e.detail.value)"
+              placeholder="直推数" />
+            <input class="input upgrade-input" type="number" :value="rule.teamSalesYuan"
+              @input="(e) => (promo.starUpgradeRules[i].teamSalesYuan = e.detail.value)"
+              placeholder="团队销售（元）" />
+          </view>
+        </view>
+      </template>
+
+      <!-- v8: 商品级奖池入池比例 -->
+      <view class="field">
+        <text class="label">星级奖池入池比例（%）</text>
+        <input class="input compact" type="digit" v-model="promo.poolRatio" placeholder="例 1（每订单实付 × 此入池）" />
+      </view>
+
       <view class="switch-row">
         <view class="switch-body">
-          <view class="switch-title">参与星级积分池</view>
-          <view class="switch-desc">该商品的销售额按商户配置的入池比例 → 月度按星级瓜分</view>
+          <view class="switch-title">参与星级积分池（v6 兼容）</view>
+          <view class="switch-desc">老开关；v8 仅看入池比例 > 0 即生效</view>
         </view>
         <switch
           :checked="promo.poolEnabled"
@@ -231,6 +277,12 @@ const promo = reactive({
   tuijianEnabled: false,
   tuijianN: '4',
   tuijianRatios: ['25', '25', '25', '25'],
+  // v8: 商品级直推奖 / 团队极差 / 入池
+  directRate: '10',
+  starCount: '0',
+  starRatios: [],
+  starUpgradeRules: [],   // [{directCount, teamSalesYuan}]，提交时 ×100 转分
+  poolRatio: '0',
   poolEnabled: false,
 });
 
@@ -239,6 +291,15 @@ function syncTuijianN() {
   promo.tuijianN = String(target);
   while (promo.tuijianRatios.length < target) promo.tuijianRatios.push('0');
   if (promo.tuijianRatios.length > target) promo.tuijianRatios.length = target;
+}
+
+function syncStarCount() {
+  const target = Math.max(0, Math.min(10, parseInt(promo.starCount) || 0));
+  promo.starCount = String(target);
+  while (promo.starRatios.length < target) promo.starRatios.push('0');
+  if (promo.starRatios.length > target) promo.starRatios.length = target;
+  while (promo.starUpgradeRules.length < target) promo.starUpgradeRules.push({ directCount: '0', teamSalesYuan: '0' });
+  if (promo.starUpgradeRules.length > target) promo.starUpgradeRules.length = target;
 }
 
 async function loadPromo(spuId) {
@@ -255,6 +316,28 @@ async function loadPromo(spuId) {
       promo.tuijianRatios = [];
     }
     syncTuijianN();
+    // v8: 直推奖 / 团队极差 / 入池
+    promo.directRate = String(data.directRate ?? '10');
+    promo.starCount = String(data.starCount ?? 0);
+    try {
+      const arr = JSON.parse(data.starRatios || '[]');
+      promo.starRatios = Array.isArray(arr) ? arr.map(String) : [];
+    } catch {
+      promo.starRatios = [];
+    }
+    try {
+      const arr = JSON.parse(data.starUpgradeRules || '[]');
+      promo.starUpgradeRules = Array.isArray(arr)
+        ? arr.map(r => ({
+            directCount: String(r.directCount ?? '0'),
+            teamSalesYuan: String(((r.teamSales ?? 0) / 100).toFixed(2)),
+          }))
+        : [];
+    } catch {
+      promo.starUpgradeRules = [];
+    }
+    syncStarCount();
+    promo.poolRatio = String(data.poolRatio ?? '0');
     promo.poolEnabled = !!data.poolEnabled;
   } finally {
     promoLoaded.value = true;
@@ -290,12 +373,24 @@ async function onSavePromo() {
   }
   promoSaving.value = true;
   try {
+    syncStarCount();
+    const sc = parseInt(promo.starCount) || 0;
     await saveProductPromoConfig({
       spuId: editingId.value,
       consumePointRatio: parseFloat(promo.consumePointRatio) || 0,
       tuijianEnabled: !!promo.tuijianEnabled,
       tuijianN: n,
       tuijianRatios: JSON.stringify(promo.tuijianRatios.map((r) => Number(r) || 0)),
+      // v8 字段
+      directRate: parseFloat(promo.directRate) || 0,
+      starCount: sc,
+      starRatios: sc > 0 ? JSON.stringify(promo.starRatios.slice(0, sc).map(r => Number(r) || 0)) : '[]',
+      starUpgradeRules: sc > 0 ? JSON.stringify(promo.starUpgradeRules.slice(0, sc).map((r, i) => ({
+        star: i + 1,
+        directCount: parseInt(r.directCount) || 0,
+        teamSales: Math.round((parseFloat(r.teamSalesYuan) || 0) * 100),  // 元 → 分
+      }))) : '[]',
+      poolRatio: parseFloat(promo.poolRatio) || 0,
       poolEnabled: !!promo.poolEnabled,
     });
     uni.showToast({ title: '营销配置已保存', icon: 'success' });

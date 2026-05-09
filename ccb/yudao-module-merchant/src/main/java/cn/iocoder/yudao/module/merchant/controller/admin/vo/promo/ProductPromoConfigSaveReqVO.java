@@ -38,4 +38,24 @@ public class ProductPromoConfigSaveReqVO {
     @NotNull
     private Boolean poolEnabled;
 
+    // ============ v8 商品级新字段 ============
+
+    @Schema(description = "v8 直推奖比例(%)", example = "10")
+    @DecimalMin("0.00")
+    private BigDecimal directRate;
+
+    @Schema(description = "v8 星级数量（0=不启用极差奖）", example = "3")
+    @Min(0)
+    private Integer starCount;
+
+    @Schema(description = "v8 各星级返奖比例 JSON 数组(%)", example = "[1,2,3]")
+    private String starRatios;
+
+    @Schema(description = "v8 升星规则 JSON：[{star,directCount,teamSales}]，teamSales 单位:分")
+    private String starUpgradeRules;
+
+    @Schema(description = "v8 入池比例(%)", example = "1")
+    @DecimalMin("0.00")
+    private BigDecimal poolRatio;
+
 }
