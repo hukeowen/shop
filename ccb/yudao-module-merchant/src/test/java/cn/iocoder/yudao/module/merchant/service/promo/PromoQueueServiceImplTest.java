@@ -357,4 +357,88 @@ class PromoQueueServiceImplTest {
         // parent 1 拿 7500 × 25% = 1875 分
         assertEquals(1875L, reward(1L));
     }
+
+    // ========================= v8: previewProducedForOrder =========================
+
+    private static final ProductPromoConfigDO V8_CONFIG = ProductPromoConfigDO.builder()
+            .spuId(SPU)
+            .tuijianEnabled(true)
+            .tuijianN(4)
+            .tuijianRatios("[25,25,25,25]")
+            .directRate(new BigDecimal("10"))
+            .build();
+
+    @Test
+    @DisplayName("[v8-preview-1] 全新 buyer 买 1 件：第 1 件 ACTIVATE，produced=0")
+    void v8preview01_brandNewBuyer_singleItem_produces0() {
+        long produced = service.previewProducedForOrder(V8_CONFIG, 99L, SPU, 10000, 1);
+        assertEquals(0L, produced);
+    }
+
+    @Test
+    @DisplayName("[v8-preview-2] 全新 buyer 买 4 件：第 1 件 ACTIVATE + 后 3 件 25% × 10000 = 7500")
+    void v8preview02_brandNewBuyer_4items_produces7500() {
+        long produced = service.previewProducedForOrder(V8_CONFIG, 99L, SPU, 10000, 4);
+        // i1 ACTIVATE 不算；i2 ratios[0]=25%×10000=2500；i3 ratios[1]=2500；i4 ratios[2]=2500
+        assertEquals(7500L, produced);
+    }
+
+    @Test
+    @DisplayName("[v8-preview-3] 全新 buyer 买 6 件：1 ACTIVATE + 4 ratios + 1 directRate")
+    void v8preview03_brandNewBuyer_6items_completesAndDirect() {
+        long produced = service.previewProducedForOrder(V8_CONFIG, 99L, SPU, 10000, 6);
+        // i1 ACTIVATE=0；i2..i5 ratios[0..3]=25%×10000=2500 ×4=10000（第 5 件后 cumulated 达 N）；
+        // i6 走 directRate 10%×10000=1000
+        // 总计：10000 + 1000 = 11000
+        assertEquals(11000L, produced);
+    }
+
+    @Test
+    @DisplayName("[v8-preview-4] buyer 已 IN_PROGRESS（cumulated=2）买 3 件：紧接 ratios[2..]")
+    void v8preview04_inProgressBuyer_continues_fromCumulated() {
+        // 预置：buyer 99 在 SPU 已激活，cumulated=2
+        ShopQueuePositionDO existing = ShopQueuePositionDO.builder()
+                .id(autoId.getAndIncrement()).userId(99L).spuId(SPU)
+                .status("QUEUEING").layer("A").joinedAt(LocalDateTime.now())
+                .state("IN_PROGRESS").accumulatedCount(2).accumulatedAmount(0L)
+                .build();
+        queueByUserSpu.put(99L + "_" + SPU, existing);
+
+        long produced = service.previewProducedForOrder(V8_CONFIG, 99L, SPU, 10000, 3);
+        // 不需要 ACTIVATE。i1 ratios[2]=25%=2500；i2 ratios[3]=25%=2500（cumulated 4 → 第 4 件结束 COMPLETED）
+        // i3 directRate 10% × 10000 = 1000
+        // 总计：2500 + 2500 + 1000 = 6000
+        assertEquals(6000L, produced);
+    }
+
+    @Test
+    @DisplayName("[v8-preview-5] buyer COMPLETED 买 3 件：每件直推 10%")
+    void v8preview05_completedBuyer_3items_allDirect() {
+        ShopQueuePositionDO existing = ShopQueuePositionDO.builder()
+                .id(autoId.getAndIncrement()).userId(99L).spuId(SPU)
+                .status("EXITED").state("COMPLETED")
+                .accumulatedCount(4).accumulatedAmount(0L).build();
+        queueByUserSpu.put(99L + "_" + SPU, existing);
+
+        long produced = service.previewProducedForOrder(V8_CONFIG, 99L, SPU, 10000, 3);
+        // 3 × 10% × 10000 = 3000
+        assertEquals(3000L, produced);
+    }
+
+    @Test
+    @DisplayName("[v8-preview-6] tuijianEnabled=false：produced=0")
+    void v8preview06_tuijianDisabled_returns0() {
+        ProductPromoConfigDO disabled = ProductPromoConfigDO.builder()
+                .spuId(SPU).tuijianEnabled(false).tuijianN(4).tuijianRatios("[25,25,25,25]").build();
+        long produced = service.previewProducedForOrder(disabled, 99L, SPU, 10000, 5);
+        assertEquals(0L, produced);
+    }
+
+    @Test
+    @DisplayName("[v8-preview-7] unitPrice ≤ 0 / count ≤ 0：produced=0")
+    void v8preview07_invalidArgs_returns0() {
+        assertEquals(0L, service.previewProducedForOrder(V8_CONFIG, 99L, SPU, 0, 3));
+        assertEquals(0L, service.previewProducedForOrder(V8_CONFIG, 99L, SPU, 10000, 0));
+        assertEquals(0L, service.previewProducedForOrder(null, 99L, SPU, 10000, 3));
+    }
 }
