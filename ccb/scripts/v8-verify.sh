@@ -50,10 +50,28 @@ detect_mysql_bin() {
   fi
 }
 
+# 没传 MYSQL_PASS 时自动从 deploy.sh 的 .env 读 MYSQL_ROOT_PASS — 用户手动跑不必显式传
+auto_load_mysql_pass() {
+  if [[ -n "${MYSQL_PASS:-}" ]]; then return; fi
+  local script_dir env_file p
+  script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  for env_file in "${script_dir}/../.env" /opt/tanxiaer/repo/ccb/.env /opt/tanxiaer/.env; do
+    if [[ -f "$env_file" ]]; then
+      p=$(grep -E '^MYSQL_ROOT_PASS=' "$env_file" 2>/dev/null | head -1 | cut -d= -f2-)
+      if [[ -n "$p" ]]; then
+        MYSQL_PASS="$p"
+        echo "[info] 从 $env_file 自动读取 MYSQL_ROOT_PASS"
+        return
+      fi
+    fi
+  done
+  MYSQL_PASS="root"
+}
+
 MYSQL_BIN=${MYSQL_BIN:-$(detect_mysql_bin)}
 MYSQL_DB=${MYSQL_DB:-"ruoyi-vue-pro"}
 MYSQL_USER=${MYSQL_USER:-root}
-MYSQL_PASS=${MYSQL_PASS:-root}
+auto_load_mysql_pass
 BASE_URL=${BASE_URL:-http://localhost:48080}
 ADMIN_USER=${ADMIN_USER:-admin}
 ADMIN_PASS=${ADMIN_PASS:-admin123}
@@ -64,14 +82,32 @@ if [[ -z "$MYSQL_BIN" ]]; then
   echo "✗ 没找到 mysql 客户端（PATH 也无 / Windows 默认路径也无）— 跳 Layer 1 schema 检查"
 fi
 
+# 启动时做一次 mysql ping 验证密码 — 连不上 fail-fast，避免之前
+# mysql_q 把错误 2>/dev/null 吞掉、所有比较都按空字符串误报 ✗ 一片
+if [[ -n "$MYSQL_BIN" ]]; then
+  PING_OUT=$("$MYSQL_BIN" -u"$MYSQL_USER" -p"$MYSQL_PASS" "$MYSQL_DB" -N -B -e "SELECT 1" 2>&1)
+  PING_RC=$?
+  if [[ $PING_RC -ne 0 ]] || [[ "$PING_OUT" == *"Access denied"* ]] || [[ "$PING_OUT" == *"ERROR"* ]]; then
+    echo ""
+    echo "✗ mysql 连不上：user=$MYSQL_USER db=$MYSQL_DB"
+    echo "  原始错误：$PING_OUT"
+    echo ""
+    echo "  ► 解决：显式传密码再跑"
+    echo "      MYSQL_PASS=\"\$(grep ^MYSQL_ROOT_PASS= /opt/tanxiaer/repo/ccb/.env | cut -d= -f2-)\" \\"
+    echo "        bash $(basename "$0")"
+    exit 2
+  fi
+fi
+
 PASS=0; FAIL=0; WARN=0
 
 ok()    { echo "  ✓ $*";  PASS=$((PASS+1)); }
 ko()    { echo "  ✗ $*";  FAIL=$((FAIL+1)); }
 note()  { echo "  ⚠ $*";  WARN=$((WARN+1)); }
 
+# 注意：原版 2>/dev/null 静默吞错，密码错时返空 → 所有比较 ✗ 一片误报
 mysql_q() {
-  "$MYSQL_BIN" -u"$MYSQL_USER" -p"$MYSQL_PASS" "$MYSQL_DB" -N -B -e "$1" 2>/dev/null
+  "$MYSQL_BIN" -u"$MYSQL_USER" -p"$MYSQL_PASS" "$MYSQL_DB" -N -B -e "$1" 2>&1
 }
 
 # -----------------------------------------------------------------------------
