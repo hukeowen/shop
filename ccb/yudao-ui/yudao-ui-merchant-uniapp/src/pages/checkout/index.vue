@@ -127,19 +127,45 @@
         </view>
       </view>
 
+      <!-- v8 推广积分抵扣预演（仅在有可抵扣商品时展示） -->
+      <view class="promo-deduct-card" v-if="promoPreview && promoPreview.deductFen > 0">
+        <view class="pd-head">
+          <text class="pd-title">🎁 推 N 反 1 抵扣</text>
+          <text class="pd-tag">少付 ¥{{ fen2yuan(promoPreview.deductFen) }}</text>
+        </view>
+        <view class="pd-row" v-for="(line, i) in promoPreview.items.filter(x => x.deductCount > 0)" :key="i">
+          <text class="pd-line">商品 #{{ line.spuId }}：买 {{ line.count }} 件 → 抵扣 <text class="pd-em">{{ line.deductCount }}</text> 件</text>
+          <text class="pd-line-sub">单价 ¥{{ fen2yuan(line.unitPrice) }} × 抵扣 {{ line.deductCount }} 件 = -¥{{ fen2yuan(line.deductFen) }}</text>
+        </view>
+        <view class="pd-totals">
+          <view class="pd-total-row">
+            <text>抵扣前</text>
+            <text class="pd-old">¥{{ fen2yuan(promoPreview.originalPay) }}</text>
+          </view>
+          <view class="pd-total-row pd-final">
+            <text>抵扣后</text>
+            <text class="pd-new">¥{{ fen2yuan(promoPreview.finalPay) }}</text>
+          </view>
+        </view>
+      </view>
+
       <!-- 组合明细 -->
       <view class="form-tip">
         <text class="b">支付明细：</text><br>
         · 店铺余额抵扣：<text class="hl">{{ useBalance ? `-¥${fen2yuan(balanceDeductFen)}` : '未启用' }}</text><br>
-        · 推广积分抵扣：<text class="hl">下单时自动按商品独立抵扣（满 1 件即抵）</text><br>
-        · 在线支付：<text class="hl">¥{{ fen2yuan(remainFen) }}</text>
+        · 推广积分抵扣：<text class="hl">{{ promoPreview && promoPreview.deductFen > 0 ? `-¥${fen2yuan(promoPreview.deductFen)}（${promoPreview.deductCount} 件）` : '当前无可抵扣商品' }}</text><br>
+        · 在线支付：<text class="hl">¥{{ fen2yuan(finalRemainFen) }}</text>
       </view>
 
       <view class="bottom-space"></view>
 
       <!-- 底部 CTA -->
       <view class="ck-bottom safe-bottom">
-        <view class="total">合计 ¥{{ fen2yuan(grossFen) }} · 实付 <text class="b">¥{{ fen2yuan(remainFen) }}</text></view>
+        <view class="total">
+          合计 ¥{{ fen2yuan(grossFen) }} ·
+          实付 <text class="b">¥{{ fen2yuan(finalRemainFen) }}</text>
+          <text v-if="promoPreview && promoPreview.deductFen > 0" class="save-tag">省 ¥{{ fen2yuan(promoPreview.deductFen) }}</text>
+        </view>
         <view class="pay-btn" @click="submitOrder">提交订单</view>
       </view>
     </template>
@@ -167,6 +193,8 @@ const receiverMobile = ref('');
 const receiverAddress = ref('');
 const onlinePayEnabled = ref(true);
 const payType = ref('wx');
+// v8 推广积分抵扣预演结果（onMounted 后由 loadPromoPreview 填）
+const promoPreview = ref(null);
 const shopName = ref('');
 const usePoints = ref(false);
 const useBalance = ref(false);
@@ -230,6 +258,12 @@ const balanceDeductCap = computed(() => {
 });
 const balanceDeductFen = computed(() => useBalance.value && balanceEnabled.value ? balanceDeductCap.value : 0);
 const remainFen = computed(() => Math.max(0, grossFen.value - pointDeductFen.value - balanceDeductFen.value));
+// v8: 在 remainFen 基础上再减"推广积分预演抵扣"，得到底部展示的最终实付
+const finalRemainFen = computed(() => {
+  const base = remainFen.value;
+  const promoDeduct = (promoPreview.value && promoPreview.value.deductFen) || 0;
+  return Math.max(0, base - promoDeduct);
+});
 
 async function loadShopAndItems() {
   loading.value = true;
@@ -267,10 +301,41 @@ async function loadShopAndItems() {
       }
       items.value = [{ skuId: skuId.value, count: count.value, spuName, name: spuName, picUrl, price: realPrice }];
     }
+    // 4. v8 预演推广积分抵扣（仅在拉到 items 后调一次）— 不影响主流程，失败仅静默
+    await loadPromoPreview();
   } catch (e) {
     uni.showToast({ title: '加载失败', icon: 'none' });
   } finally {
     loading.value = false;
+  }
+}
+
+/**
+ * v8 抵扣预演：把当前 items 提交给后端 preview-deduction 接口算每个 SPU 的可抵扣件数。
+ * 接口纯只读、不改库；只要 items.value 一变（数量/规格切换）就重算。
+ */
+async function loadPromoPreview() {
+  if (!items.value.length || !tenantId.value) {
+    promoPreview.value = null;
+    return;
+  }
+  const payload = {
+    tenantId: tenantId.value,
+    items: items.value.map(it => ({
+      skuId: it.skuId || it.sku?.id,
+      count: it.count || 1,
+    })).filter(x => x.skuId),
+  };
+  if (!payload.items.length) { promoPreview.value = null; return; }
+  try {
+    const res = await request({
+      url: '/app-api/merchant/mini/checkout/preview-deduction',
+      method: 'POST',
+      data: payload,
+    });
+    promoPreview.value = res || null;
+  } catch (e) {
+    promoPreview.value = null;
   }
 }
 
@@ -586,5 +651,62 @@ onLoad((q) => {
   height: 88rpx; padding: 0 56rpx;
   border-radius: 44rpx; line-height: 88rpx;
   font-size: 30rpx; font-weight: 700;
+}
+
+/* v8 推广积分抵扣展示卡 */
+.promo-deduct-card {
+  margin: 24rpx 0;
+  padding: 24rpx;
+  background: linear-gradient(135deg, #fff5e6, #ffe8d4);
+  border-radius: 16rpx;
+  border: 1rpx solid #ffae74;
+  .pd-head {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 16rpx;
+  }
+  .pd-title {
+    font-size: 30rpx; font-weight: 700; color: #d97706;
+  }
+  .pd-tag {
+    font-size: 26rpx; font-weight: 700;
+    color: #fff; background: $brand-primary;
+    padding: 4rpx 16rpx; border-radius: 8rpx;
+  }
+  .pd-row {
+    margin-bottom: 12rpx; padding: 12rpx;
+    background: rgba(255, 255, 255, 0.6); border-radius: 8rpx;
+  }
+  .pd-line {
+    display: block; font-size: 26rpx; color: $text-primary;
+  }
+  .pd-em {
+    color: $brand-primary; font-weight: 700; font-size: 30rpx;
+  }
+  .pd-line-sub {
+    display: block; font-size: 22rpx; color: $text-secondary;
+    margin-top: 4rpx;
+  }
+  .pd-totals {
+    margin-top: 16rpx; padding-top: 16rpx;
+    border-top: 1rpx dashed #ffae74;
+  }
+  .pd-total-row {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 26rpx; padding: 4rpx 0;
+  }
+  .pd-old {
+    text-decoration: line-through; color: $text-secondary;
+  }
+  .pd-final .pd-new {
+    color: $brand-primary; font-size: 36rpx; font-weight: 800;
+  }
+}
+
+/* 底部"省 ¥X"标签 */
+.ck-bottom .total .save-tag {
+  margin-left: 12rpx;
+  font-size: 22rpx; color: #fff;
+  background: #f56c6c;
+  padding: 2rpx 12rpx; border-radius: 8rpx;
 }
 </style>

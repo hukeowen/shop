@@ -59,6 +59,8 @@ public class AppMerchantCheckoutController {
     private cn.iocoder.yudao.module.merchant.service.promo.PromoQueueService promoQueueService;
     @Resource
     private cn.iocoder.yudao.module.trade.service.order.TradeOrderQueryService tradeOrderQueryService;
+    @Resource
+    private cn.iocoder.yudao.module.product.service.sku.ProductSkuService productSkuService;
 
     @PostMapping("/submit")
     @Operation(summary = "提交订单（支持店铺余额抵扣）")
@@ -174,6 +176,138 @@ public class AppMerchantCheckoutController {
         resp.setPromoDeductCount(totalPromoDeductCount);
         resp.setPayPrice(finalPayPrice);
         return success(resp);
+    }
+
+    /**
+     * v8 抵扣预演：checkout 进入时调用，让 UI 展示"抵扣前 / 抵扣 K 件 / 抵扣后"。
+     * 不写库、不创建订单，纯只读计算。
+     */
+    @PostMapping("/preview-deduction")
+    @Operation(summary = "v8 推广积分抵扣预演")
+    @cn.iocoder.yudao.framework.tenant.core.aop.TenantIgnore
+    public CommonResult<PreviewDeductionRespVO> previewDeduction(@Valid @RequestBody PreviewDeductionReqVO req) {
+        Long userId = SecurityFrameworkUtils.getLoginUserId();
+        if (userId == null || userId <= 0) {
+            throw ServiceExceptionUtil.exception0(1_031_001_010, "请先登录");
+        }
+        Long tenantId = req.getTenantId();
+        if (tenantId == null || tenantId <= 0) {
+            throw ServiceExceptionUtil.exception0(1_031_001_011, "未识别店铺");
+        }
+        TenantContextHolder.setTenantId(tenantId);
+        TenantContextHolder.setIgnore(false);
+
+        PreviewDeductionRespVO resp = new PreviewDeductionRespVO();
+        java.util.List<PreviewDeductionRespVO.ItemDeduction> itemList = new java.util.ArrayList<>();
+        long originalPay = 0;
+        long deductFen = 0;
+        int deductCount = 0;
+        if (req.getItems() == null || req.getItems().isEmpty()) {
+            resp.setOriginalPay(0); resp.setDeductFen(0); resp.setFinalPay(0); resp.setDeductCount(0);
+            resp.setItems(itemList);
+            return success(resp);
+        }
+        // 拉一次性 sku 拿 spuId / price
+        java.util.Set<Long> skuIds = new java.util.HashSet<>();
+        for (PreviewDeductionReqVO.Item it : req.getItems()) {
+            if (it.getSkuId() != null) skuIds.add(it.getSkuId());
+        }
+        java.util.List<cn.iocoder.yudao.module.product.dal.dataobject.sku.ProductSkuDO> skus =
+                skuIds.isEmpty() ? java.util.Collections.emptyList() : productSkuService.getSkuList(skuIds);
+        java.util.Map<Long, cn.iocoder.yudao.module.product.dal.dataobject.sku.ProductSkuDO> skuMap = new java.util.HashMap<>();
+        for (cn.iocoder.yudao.module.product.dal.dataobject.sku.ProductSkuDO s : skus) skuMap.put(s.getId(), s);
+
+        // 按 SPU 聚合（同 SPU 多 SKU 算一行 — preview 用商品级 unit price 行平均）
+        java.util.Map<Long, int[]> spuAgg = new java.util.LinkedHashMap<>();  // spuId → [count, sumPrice]
+        for (PreviewDeductionReqVO.Item it : req.getItems()) {
+            cn.iocoder.yudao.module.product.dal.dataobject.sku.ProductSkuDO sku = skuMap.get(it.getSkuId());
+            if (sku == null || sku.getSpuId() == null || sku.getPrice() == null) continue;
+            int cnt = it.getCount() == null ? 1 : it.getCount();
+            int price = sku.getPrice();
+            originalPay += (long) price * cnt;
+            spuAgg.merge(sku.getSpuId(), new int[]{cnt, price * cnt},
+                    (a, b) -> new int[]{a[0] + b[0], a[1] + b[1]});
+        }
+
+        for (java.util.Map.Entry<Long, int[]> e : spuAgg.entrySet()) {
+            Long spuId = e.getKey();
+            int cnt = e.getValue()[0];
+            int totalPrice = e.getValue()[1];
+            int unitPrice = cnt > 0 ? totalPrice / cnt : 0;
+            cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ProductPromoConfigDO cfg =
+                    productPromoConfigService.getBySpuId(spuId);
+            PreviewDeductionRespVO.ItemDeduction line = new PreviewDeductionRespVO.ItemDeduction();
+            line.setSpuId(spuId);
+            line.setCount(cnt);
+            line.setUnitPrice(unitPrice);
+            line.setProducedAmount(0L);
+            line.setDeductCount(0);
+            line.setDeductFen(0);
+            line.setTuijianEnabled(cfg != null && Boolean.TRUE.equals(cfg.getTuijianEnabled()));
+            if (line.isTuijianEnabled() && unitPrice > 0 && cnt > 0) {
+                long produced = promoQueueService.previewProducedForOrder(cfg, userId, spuId, unitPrice, cnt);
+                int k = unitPrice > 0 ? (int) (produced / unitPrice) : 0;
+                if (k > cnt) k = cnt;
+                line.setProducedAmount(produced);
+                line.setDeductCount(k);
+                line.setDeductFen(k * unitPrice);
+                deductCount += k;
+                deductFen += (long) k * unitPrice;
+            }
+            itemList.add(line);
+        }
+        resp.setOriginalPay((int) Math.min(originalPay, Integer.MAX_VALUE));
+        resp.setDeductFen((int) Math.min(deductFen, Integer.MAX_VALUE));
+        resp.setFinalPay((int) Math.max(0, originalPay - deductFen));
+        resp.setDeductCount(deductCount);
+        resp.setItems(itemList);
+        return success(resp);
+    }
+
+    @Data
+    public static class PreviewDeductionReqVO {
+        @javax.validation.constraints.NotNull(message = "tenantId 不能为空")
+        private Long tenantId;
+        @javax.validation.constraints.NotNull(message = "items 不能为空")
+        private java.util.List<Item> items;
+
+        @Data
+        public static class Item {
+            @javax.validation.constraints.NotNull
+            private Long skuId;
+            @javax.validation.constraints.NotNull
+            @javax.validation.constraints.Min(1)
+            private Integer count;
+        }
+    }
+
+    @Data
+    public static class PreviewDeductionRespVO {
+        /** 抵扣前应付（分）= sum(unitPrice × count) */
+        private Integer originalPay;
+        /** 推广积分抵扣金额（分）*/
+        private Integer deductFen;
+        /** 抵扣后应付（分）*/
+        private Integer finalPay;
+        /** 抵扣件数（按 SPU 累加）*/
+        private Integer deductCount;
+        /** 每个 SPU 行的预演明细 */
+        private java.util.List<ItemDeduction> items;
+
+        @Data
+        public static class ItemDeduction {
+            private Long spuId;
+            private Integer count;
+            private Integer unitPrice;
+            /** 推 N 反 1 是否启用（前端据此决定显不显示抵扣行）*/
+            private boolean tuijianEnabled;
+            /** 本单买 count 件预计产生积分（分）*/
+            private Long producedAmount;
+            /** 抵扣件数 K = floor(produced / unitPrice) */
+            private Integer deductCount;
+            /** 抵扣金额（分）= K × unitPrice */
+            private Integer deductFen;
+        }
     }
 
     @Data
