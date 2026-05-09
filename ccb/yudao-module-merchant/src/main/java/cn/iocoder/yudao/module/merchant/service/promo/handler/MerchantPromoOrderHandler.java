@@ -114,11 +114,17 @@ public class MerchantPromoOrderHandler implements TradeOrderHandler {
             }
         }
 
-        // 2. v7 推 N 反 1 状态机（替代 v6 三机制；自然推开关保留兜底）
-        // 单件实付价 = 行总额 / 件数（按"次"不按"量"返奖原则）
-        if (config != null) {
-            long unitPaid = qty > 0 ? paidAmount / qty : paidAmount;
-            promoQueueService.handleOrderPaid(config, buyerId, spuId, paidAmount, unitPaid, orderId);
+        // 2. v8 推 N 反 1 状态机（按件循环）+ parent 首贡献按 1 件价 + 自然推队首
+        // 单件价用 item.price（原单价）；buyer 自购按"件循环"逐件触发
+        // checkout 阶段已 preview 算了抵扣件数 K 并调整 payPrice，这里再 preview 一次同样结果
+        if (config != null && Boolean.TRUE.equals(config.getTuijianEnabled())) {
+            int unitPrice = item.getPrice() == null ? 0 : item.getPrice();
+            if (unitPrice > 0 && qty > 0) {
+                long produced = promoQueueService.previewProducedForOrder(config, buyerId, spuId, unitPrice, qty);
+                int k = (int) (produced / unitPrice);
+                if (k > qty) k = qty;
+                promoQueueService.handleOrderPaidV8(config, buyerId, spuId, unitPrice, qty, k, orderId);
+            }
         }
 
         // （3 团队极差移到 afterPayOrder 末尾按订单总额触发一次）

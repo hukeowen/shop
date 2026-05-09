@@ -504,4 +504,261 @@ public class PromoQueueServiceImpl implements PromoQueueService {
         return result;
     }
 
+    // ============================================================
+    // v8: 多件循环 + 本单抵扣 — 预演 + 真实触发
+    // ============================================================
+
+    @Override
+    public long previewProducedForOrder(ProductPromoConfigDO config, Long buyerUserId, Long spuId,
+                                        int unitPrice, int totalCount) {
+        if (config == null || !Boolean.TRUE.equals(config.getTuijianEnabled())) return 0L;
+        if (buyerUserId == null || buyerUserId <= 0 || unitPrice <= 0 || totalCount <= 0) return 0L;
+        Integer nObj = config.getTuijianN();
+        if (nObj == null || nObj <= 0) return 0L;
+        int n = nObj;
+        List<BigDecimal> ratios = parseRatios(config.getTuijianRatios(), n);
+        if (ratios.isEmpty()) return 0L;
+
+        // 优先用商品级 directRate；缺省回退商户级（兼容老配置）
+        BigDecimal directRate = config.getDirectRate();
+        if (directRate == null || directRate.signum() <= 0) {
+            directRate = loadDirectCommissionRatio();
+        }
+
+        // 读 buyer 当前状态机
+        ShopQueuePositionDO buyerPos = queueMapper.selectByUserAndSpu(buyerUserId, spuId);
+        boolean isFirstPurchase = (buyerPos == null);
+        int cumulated = buyerPos == null ? 0 : (buyerPos.getAccumulatedCount() == null ? 0 : buyerPos.getAccumulatedCount());
+        boolean completed = buyerPos != null && STATE_COMPLETED.equals(buyerPos.getState());
+
+        long total = 0L;
+        for (int i = 0; i < totalCount; i++) {
+            if (isFirstPurchase && i == 0) {
+                // 第 1 件 ACTIVATE 不返奖
+                continue;
+            }
+            if (completed) {
+                // 完成期：directRate% × 单件价
+                total += computeRatioAmount(unitPrice, directRate);
+            } else {
+                if (cumulated >= n) {
+                    completed = true;
+                    total += computeRatioAmount(unitPrice, directRate);
+                } else {
+                    BigDecimal r = ratios.get(cumulated);
+                    total += computeRatioAmount(unitPrice, r);
+                    cumulated++;
+                    if (cumulated >= n) {
+                        completed = true;
+                    }
+                }
+            }
+        }
+        return total;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void handleOrderPaidV8(ProductPromoConfigDO config, Long buyerUserId, Long spuId,
+                                  int unitPrice, int totalCount, int deductCount, Long orderId) {
+        if (config == null || !Boolean.TRUE.equals(config.getTuijianEnabled())) return;
+        if (buyerUserId == null || buyerUserId <= 0 || unitPrice <= 0 || totalCount <= 0 || orderId == null) return;
+        Integer nObj = config.getTuijianN();
+        if (nObj == null || nObj <= 0) return;
+        int n = nObj;
+        List<BigDecimal> ratios = parseRatios(config.getTuijianRatios(), n);
+        if (ratios.isEmpty()) return;
+
+        BigDecimal directRate = config.getDirectRate();
+        if (directRate == null || directRate.signum() <= 0) {
+            directRate = loadDirectCommissionRatio();
+        }
+        long unitPriceLong = unitPrice;
+        long paidAmount = (long) (totalCount - deductCount) * unitPriceLong;  // 实付总额（抵扣后）
+
+        // 1. parent 维度：buyer 首单触发一次首贡献奖（v8: 1 件价封顶）
+        Long parentId = referralService.getDirectParent(buyerUserId);
+        if (parentId != null && parentId > 0) {
+            handleParentRewardV8(parentId, buyerUserId, spuId, unitPrice, ratios, directRate, orderId);
+        } else if (Boolean.TRUE.equals(loadNaturalPushEnabled())) {
+            // 自然推队首：仅在 buyer 首件触发（buyerPos 之前不存在）
+            ShopQueuePositionDO existing = queueMapper.selectByUserAndSpu(buyerUserId, spuId);
+            if (existing == null) {
+                handleNaturalPushV8(buyerUserId, spuId, unitPrice, ratios, orderId);
+            }
+        }
+
+        // 2. buyer 自购：按件循环推进状态机；产生积分**全部**入余额，
+        //    抵扣的 K 件价款已在 checkout 阶段从 payPrice 中扣除（用户少付）
+        long produced = applyBuyerLoopV8(buyerUserId, spuId, unitPrice, totalCount, ratios, directRate, orderId, n);
+
+        if (produced > 0) {
+            promoPointService.addPromoPoint(buyerUserId, produced, "SELF_BATCH", orderId,
+                    "v8 多件订单产生积分 spu=" + spuId + " count=" + totalCount + " deduct=" + deductCount);
+        }
+
+        // 3. 抵扣流水写入（审计 / 对账）
+        try {
+            cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopPromoDeductionRecordDO rec =
+                    cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopPromoDeductionRecordDO.builder()
+                            .orderId(orderId)
+                            .userId(buyerUserId)
+                            .spuId(spuId)
+                            .unitPrice(unitPrice)
+                            .totalCount(totalCount)
+                            .producedAmount(produced)
+                            .deductCount(deductCount)
+                            .actualPaid((int) paidAmount)
+                            .build();
+            deductionRecordMapper.insert(rec);
+        } catch (Exception e) {
+            log.warn("[handleOrderPaidV8] 写抵扣流水失败 orderId={} spuId={}: {}", orderId, spuId, e.getMessage());
+        }
+    }
+
+    /** v8: parent 首贡献按 1 件价封顶 */
+    private void handleParentRewardV8(Long parentId, Long childId, Long spuId, int unitPrice,
+                                       List<BigDecimal> ratios, BigDecimal directRate, Long orderId) {
+        ShopQueuePositionDO parentPos = queueMapper.selectByUserAndSpu(parentId, spuId);
+        if (parentPos == null) {
+            log.debug("[v8 parentReward] parent {} 未激活 spu {}，跳过", parentId, spuId);
+            return;
+        }
+        if (contributionMapper.exists(parentId, childId, spuId)) {
+            log.debug("[v8 parentReward] (parent={}, child={}, spu={}) 已贡献过，跳过", parentId, childId, spuId);
+            return;
+        }
+        long award;
+        String eventType;
+        BigDecimal usedRatio;
+        if (STATE_COMPLETED.equals(parentPos.getState())) {
+            award = computeRatioAmount(unitPrice, directRate);
+            usedRatio = directRate;
+            eventType = "REFERRAL_COMMISSION";
+        } else {
+            int idx = parentPos.getAccumulatedCount() == null ? 0 : parentPos.getAccumulatedCount();
+            if (idx >= ratios.size()) idx = ratios.size() - 1;
+            BigDecimal r = ratios.get(idx);
+            award = computeRatioAmount(unitPrice, r);
+            usedRatio = r;
+            eventType = "REFERRAL_PROGRESS";
+            // parent IN_PROGRESS 拿奖时也累加 cumulated（首贡献推进 parent 状态机）
+            parentPos.setAccumulatedCount(idx + 1);
+            parentPos.setAccumulatedAmount((parentPos.getAccumulatedAmount() == null ? 0L : parentPos.getAccumulatedAmount()) + award);
+            if (parentPos.getAccumulatedCount() >= ratios.size()) {
+                parentPos.setState(STATE_COMPLETED);
+                parentPos.setStatus(LEGACY_STATUS_EXITED);
+                parentPos.setExitedAt(LocalDateTime.now());
+            }
+            queueMapper.updateById(parentPos);
+        }
+        if (award > 0) {
+            promoPointService.addPromoPoint(parentId, award, eventType, orderId,
+                    "v8 下级首贡献 child=" + childId + " spu=" + spuId);
+        }
+        try {
+            cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopReferralContributionDO contrib =
+                    cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopReferralContributionDO.builder()
+                            .parentUserId(parentId).childUserId(childId).spuId(spuId)
+                            .parentStateAt(parentPos.getState()).awardAmount(award).sourceOrderId(orderId)
+                            .build();
+            contributionMapper.insert(contrib);
+        } catch (org.springframework.dao.DuplicateKeyException ignored) {
+            log.warn("[v8 parentReward] DB UNIQUE 兜底拦截重复贡献 parent={} child={} spu={}", parentId, childId, spuId);
+        }
+        writeEvent(eventType, spuId, parentId, childId, orderId,
+                parentPos.getAccumulatedCount() == null ? 0 : parentPos.getAccumulatedCount(),
+                usedRatio, award);
+    }
+
+    /** v8: 自然推队首拿 1 件价 × ratios[head.cumulated] */
+    private void handleNaturalPushV8(Long buyerUserId, Long spuId, int unitPrice,
+                                      List<BigDecimal> ratios, Long orderId) {
+        ShopQueuePositionDO head = queueMapper.selectQueueHead(spuId);
+        if (head == null || head.getUserId().equals(buyerUserId)) return;
+        int idx = head.getAccumulatedCount() == null ? 0 : head.getAccumulatedCount();
+        if (idx >= ratios.size()) return;  // head 已超 N
+        BigDecimal r = ratios.get(idx);
+        long award = computeRatioAmount(unitPrice, r);
+        if (award > 0) {
+            promoPointService.addPromoPoint(head.getUserId(), award, "QUEUE", orderId,
+                    "v8 自然推队首奖 spu=" + spuId + " by=" + buyerUserId);
+        }
+        head.setAccumulatedCount(idx + 1);
+        head.setAccumulatedAmount((head.getAccumulatedAmount() == null ? 0L : head.getAccumulatedAmount()) + award);
+        if (head.getAccumulatedCount() >= ratios.size()) {
+            head.setState(STATE_COMPLETED);
+            head.setStatus(LEGACY_STATUS_EXITED);
+            head.setExitedAt(LocalDateTime.now());
+        }
+        queueMapper.updateById(head);
+        writeEvent("QUEUE", spuId, head.getUserId(), buyerUserId, orderId, head.getAccumulatedCount(), r, award);
+    }
+
+    /** v8: buyer 自购按件循环推进状态机；返本单产生积分总数 */
+    private long applyBuyerLoopV8(Long buyerUserId, Long spuId, int unitPrice, int totalCount,
+                                   List<BigDecimal> ratios, BigDecimal directRate, Long orderId, int n) {
+        ShopQueuePositionDO pos = queueMapper.selectByUserAndSpu(buyerUserId, spuId);
+        boolean isFirstPurchase = (pos == null);
+        if (isFirstPurchase) {
+            pos = ShopQueuePositionDO.builder()
+                    .spuId(spuId).userId(buyerUserId)
+                    .accumulatedCount(0).accumulatedAmount(0L)
+                    .joinedAt(LocalDateTime.now())
+                    .state(STATE_IN_PROGRESS)
+                    .status(LEGACY_STATUS_QUEUEING)
+                    .layer(LEGACY_LAYER_A)
+                    .promotedAt(LocalDateTime.now())
+                    .build();
+            try {
+                queueMapper.insert(pos);
+            } catch (org.springframework.dao.DuplicateKeyException dup) {
+                pos = queueMapper.selectByUserAndSpu(buyerUserId, spuId);
+                isFirstPurchase = false;
+            }
+            writeEvent("ACTIVATE", spuId, buyerUserId, buyerUserId, orderId, 0, BigDecimal.ZERO, 0L);
+        }
+
+        long produced = 0L;
+        for (int i = 0; i < totalCount; i++) {
+            if (isFirstPurchase && i == 0) {
+                continue;  // 第 1 件 ACTIVATE 不返奖
+            }
+            int cumulated = pos.getAccumulatedCount() == null ? 0 : pos.getAccumulatedCount();
+            boolean completed = STATE_COMPLETED.equals(pos.getState()) || cumulated >= n;
+            long award;
+            String eventType;
+            BigDecimal usedRatio;
+            if (completed) {
+                award = computeRatioAmount(unitPrice, directRate);
+                eventType = "SELF_COMMISSION";
+                usedRatio = directRate;
+                // 完成期不再累加 cumulated
+            } else {
+                BigDecimal r = ratios.get(cumulated);
+                award = computeRatioAmount(unitPrice, r);
+                eventType = "SELF_PROGRESS";
+                usedRatio = r;
+                pos.setAccumulatedCount(cumulated + 1);
+                pos.setAccumulatedAmount((pos.getAccumulatedAmount() == null ? 0L : pos.getAccumulatedAmount()) + award);
+                if (pos.getAccumulatedCount() >= n) {
+                    pos.setState(STATE_COMPLETED);
+                    pos.setStatus(LEGACY_STATUS_EXITED);
+                    pos.setExitedAt(LocalDateTime.now());
+                    writeEvent("EXIT", spuId, buyerUserId, buyerUserId, orderId, n, BigDecimal.ZERO, 0L);
+                }
+            }
+            produced += award;
+            writeEvent(eventType, spuId, buyerUserId, buyerUserId, orderId,
+                    pos.getAccumulatedCount() == null ? 0 : pos.getAccumulatedCount(),
+                    usedRatio, award);
+        }
+        // 一次 update 落库（避免每件循环都 update）
+        queueMapper.updateById(pos);
+        return produced;
+    }
+
+    @Resource
+    private cn.iocoder.yudao.module.merchant.dal.mysql.promo.ShopPromoDeductionRecordMapper deductionRecordMapper;
+
 }

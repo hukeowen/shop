@@ -53,6 +53,12 @@ public class AppMerchantCheckoutController {
     private TradeOrderUpdateService tradeOrderUpdateService;
     @Resource
     private MemberShopRelService memberShopRelService;
+    @Resource
+    private cn.iocoder.yudao.module.merchant.service.promo.ProductPromoConfigService productPromoConfigService;
+    @Resource
+    private cn.iocoder.yudao.module.merchant.service.promo.PromoQueueService promoQueueService;
+    @Resource
+    private cn.iocoder.yudao.module.trade.service.order.TradeOrderQueryService tradeOrderQueryService;
 
     @PostMapping("/submit")
     @Operation(summary = "提交订单（支持店铺余额抵扣）")
@@ -112,10 +118,56 @@ public class AppMerchantCheckoutController {
             }
         }
 
+        // 4. v8: 推 N 反 1 / 直推奖 本单立即抵扣
+        //    按订单中每个 spu 行预演产生积分 → K = floor(produced / unitPrice) → 调订单价格
+        int finalPromoDeductFen = 0;
+        int totalPromoDeductCount = 0;
+        try {
+            java.util.List<cn.iocoder.yudao.module.trade.dal.dataobject.order.TradeOrderItemDO> items =
+                    tradeOrderQueryService.getOrderItemListByOrderId(orderId);
+            int totalDeductFen = 0;
+            for (cn.iocoder.yudao.module.trade.dal.dataobject.order.TradeOrderItemDO item : items) {
+                Long spuId = item.getSpuId();
+                Integer cnt = item.getCount();
+                Integer unitPrice = item.getPayPrice() != null && cnt != null && cnt > 0
+                        ? item.getPayPrice() / cnt : item.getPrice();
+                if (spuId == null || unitPrice == null || unitPrice <= 0 || cnt == null || cnt <= 0) continue;
+                cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ProductPromoConfigDO promoCfg =
+                        productPromoConfigService.getBySpuId(spuId);
+                if (promoCfg == null || !Boolean.TRUE.equals(promoCfg.getTuijianEnabled())) continue;
+                long produced = promoQueueService.previewProducedForOrder(promoCfg, userId, spuId, unitPrice, cnt);
+                if (produced <= 0) continue;
+                int k = (int) (produced / unitPrice);
+                if (k <= 0) continue;
+                if (k >= cnt) k = cnt;  // 不超过总件数
+                totalPromoDeductCount += k;
+                totalDeductFen += k * unitPrice;
+            }
+            // 抵扣后 payPrice 必须 ≥ 1 分（trade 限制）
+            if (totalDeductFen > 0) {
+                int maxAllowed = Math.max(0, finalPayPrice - 1);
+                int actualDeduct = Math.min(totalDeductFen, maxAllowed);
+                if (actualDeduct > 0) {
+                    TradeOrderUpdatePriceReqVO priceReq = new TradeOrderUpdatePriceReqVO();
+                    priceReq.setId(orderId);
+                    priceReq.setAdjustPrice(-actualDeduct);
+                    tradeOrderUpdateService.updateOrderPrice(priceReq);
+                    finalPayPrice -= actualDeduct;
+                    finalPromoDeductFen = actualDeduct;
+                }
+            }
+        } catch (Exception e) {
+            // 抵扣失败不阻塞下单，仅记录
+            org.slf4j.LoggerFactory.getLogger(getClass())
+                    .warn("[checkout v8 抵扣] orderId={} 失败，跳过抵扣: {}", orderId, e.getMessage());
+        }
+
         SubmitRespVO resp = new SubmitRespVO();
         resp.setOrderId(orderId);
         resp.setPayOrderId(order.getPayOrderId());
         resp.setBalanceDeductFen(finalDeductFen);
+        resp.setPromoDeductFen(finalPromoDeductFen);
+        resp.setPromoDeductCount(totalPromoDeductCount);
         resp.setPayPrice(finalPayPrice);
         return success(resp);
     }
@@ -153,6 +205,10 @@ public class AppMerchantCheckoutController {
         private Long payOrderId;
         /** 实际抵扣的余额（分） */
         private Integer balanceDeductFen;
+        /** v8: 推 N 反 1 / 直推奖 抵扣金额（分） */
+        private Integer promoDeductFen;
+        /** v8: 推 N 反 1 / 直推奖 抵扣件数（按 SPU 累加） */
+        private Integer promoDeductCount;
         /** 抵扣后还需线上支付的金额（分） */
         private Integer payPrice;
     }

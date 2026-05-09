@@ -64,4 +64,52 @@ public interface PromoQueueService {
      */
     List<AppQueuePositionRespVO> listMyQueueing(Long userId);
 
+    // ============================================================
+    // v8: checkout 阶段预演 + 多件循环触发
+    // ============================================================
+
+    /**
+     * v8: 预演 buyer 在某 spu 上买 totalCount 件会产生多少积分（不写库）。
+     *
+     * <p>用于 checkout/submit 阶段计算抵扣件数：
+     * <pre>
+     *   K = floor(produced / unitPrice)
+     *   实付 = (totalCount - K) × unitPrice
+     * </pre></p>
+     *
+     * <p>规则（v8）：</p>
+     * <ul>
+     *   <li>buyer 之前没买过该 spu（buyerPos == null）→ 第 1 件 ACTIVATE 不返奖</li>
+     *   <li>IN_PROGRESS 期：每件按 ratios[cumulated] × unitPrice 累加，每件 cumulated++</li>
+     *   <li>cumulated 达 N → COMPLETED；后续每件按 directRate% × unitPrice</li>
+     * </ul>
+     *
+     * @param config       商品配置（含 tuijianN, tuijianRatios, directRate）
+     * @param buyerUserId  买家 userId
+     * @param spuId        商品 SPU
+     * @param unitPrice    单件价（分）
+     * @param totalCount   订单件数
+     * @return 本单 buyer 自购预计产生积分总额（分）
+     */
+    long previewProducedForOrder(ProductPromoConfigDO config, Long buyerUserId, Long spuId,
+                                  int unitPrice, int totalCount);
+
+    /**
+     * v8: 真实触发 buyer 自购的多件循环 + parent 首贡献 + 自然推队首 + 极差奖 + 入池。
+     *
+     * <p>跟 v7 单件 handleOrderPaid 的区别：</p>
+     * <ul>
+     *   <li>buyer 自购按 totalCount 件循环推进 N 次状态机（之前一单 1 步）</li>
+     *   <li>buyer 自购产生积分 P 已经在 checkout 阶段抵扣 K 件，
+     *       这里只把 净到余额 = P - K×unitPrice 加到 buyer.余额</li>
+     *   <li>parent 首贡献按 1 件价封顶（不论 buyer 多少件）</li>
+     *   <li>极差奖按 buyer 上链就近递增 + 商品 starRatios 计算</li>
+     *   <li>poolRatio 入池</li>
+     * </ul>
+     *
+     * @param deductCount 抵扣件数 K（已在 checkout 算好）；0 = 没抵扣
+     */
+    void handleOrderPaidV8(ProductPromoConfigDO config, Long buyerUserId, Long spuId,
+                           int unitPrice, int totalCount, int deductCount, Long orderId);
+
 }
