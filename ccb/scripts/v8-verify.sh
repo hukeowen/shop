@@ -84,8 +84,9 @@ fi
 
 # 启动时做一次 mysql ping 验证密码 — 连不上 fail-fast，避免之前
 # mysql_q 把错误 2>/dev/null 吞掉、所有比较都按空字符串误报 ✗ 一片
+# 用 MYSQL_PWD 环境变量传密码，mysql 不打 "[Warning] Using a password..." 污染 stdout
 if [[ -n "$MYSQL_BIN" ]]; then
-  PING_OUT=$("$MYSQL_BIN" -u"$MYSQL_USER" -p"$MYSQL_PASS" "$MYSQL_DB" -N -B -e "SELECT 1" 2>&1)
+  PING_OUT=$(MYSQL_PWD="$MYSQL_PASS" "$MYSQL_BIN" -u"$MYSQL_USER" "$MYSQL_DB" -N -B -e "SELECT 1" 2>&1)
   PING_RC=$?
   if [[ $PING_RC -ne 0 ]] || [[ "$PING_OUT" == *"Access denied"* ]] || [[ "$PING_OUT" == *"ERROR"* ]]; then
     echo ""
@@ -105,9 +106,11 @@ ok()    { echo "  ✓ $*";  PASS=$((PASS+1)); }
 ko()    { echo "  ✗ $*";  FAIL=$((FAIL+1)); }
 note()  { echo "  ⚠ $*";  WARN=$((WARN+1)); }
 
-# 注意：原版 2>/dev/null 静默吞错，密码错时返空 → 所有比较 ✗ 一片误报
+# 用 MYSQL_PWD 环境变量传密码避免命令行 -p 触发的 [Warning] 污染 stdout
+# 这是关键：之前 -p"$pass" 让 mysql 在 stderr 打 "[Warning] Using a password..."，
+# 配合 2>&1 后混进 stdout → COL_COUNT 含警告行 → "$COL_COUNT" == "5" 永假
 mysql_q() {
-  "$MYSQL_BIN" -u"$MYSQL_USER" -p"$MYSQL_PASS" "$MYSQL_DB" -N -B -e "$1" 2>&1
+  MYSQL_PWD="$MYSQL_PASS" "$MYSQL_BIN" -u"$MYSQL_USER" "$MYSQL_DB" -N -B -e "$1" 2>&1
 }
 
 # -----------------------------------------------------------------------------
