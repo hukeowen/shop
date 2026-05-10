@@ -111,11 +111,11 @@ export function listPoolRounds({ pageNo = 1, pageSize = 20 } = {}) {
 // ==================== 提现 ====================
 
 /** 用户申请提现。 */
-export function applyWithdraw(amount) {
+export function applyWithdraw(amount, tenantId) {
   return request({
     url: '/app-api/merchant/mini/withdraw/apply',
     method: 'POST',
-    data: { amount },
+    data: { amount, tenantId },
   });
 }
 
@@ -124,17 +124,17 @@ export function listMyWithdraws() {
   return request({ url: '/app-api/merchant/mini/withdraw/my-list' });
 }
 
-/** 商户审批端：分页查申请。 */
+/** 商户审批端：分页查申请（mini 端点，按商户号 tenant 过滤）。 */
 export function pageWithdrawAdmin({ status, pageNo = 1, pageSize = 20 } = {}) {
   return request({
-    url: '/admin-api/merchant/promo/withdraw/page',
+    url: '/app-api/merchant/mini/withdraw/page',
     data: { status, pageNo, pageSize },
   });
 }
 
 export function approveWithdraw(id, remark) {
   return request({
-    url: '/admin-api/merchant/promo/withdraw/approve',
+    url: '/app-api/merchant/mini/withdraw/approve',
     method: 'POST',
     data: { id, remark },
   });
@@ -142,7 +142,7 @@ export function approveWithdraw(id, remark) {
 
 export function rejectWithdraw(id, remark) {
   return request({
-    url: '/admin-api/merchant/promo/withdraw/reject',
+    url: '/app-api/merchant/mini/withdraw/reject',
     method: 'POST',
     data: { id, remark },
   });
@@ -150,7 +150,7 @@ export function rejectWithdraw(id, remark) {
 
 export function markPaidWithdraw(id, remark) {
   return request({
-    url: '/admin-api/merchant/promo/withdraw/mark-paid',
+    url: '/app-api/merchant/mini/withdraw/mark-paid',
     method: 'POST',
     data: { id, remark },
   });

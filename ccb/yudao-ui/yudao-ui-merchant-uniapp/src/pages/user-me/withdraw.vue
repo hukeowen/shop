@@ -103,9 +103,16 @@ async function onApply() {
     uni.showToast({ title: '余额不足', icon: 'none' });
     return;
   }
+  // v8: 提现按店隔离审批，必须传 tenantId（来自当前店铺上下文）
+  let tid = null;
+  try { tid = uni.getStorageSync('lastShopTenantId'); } catch {}
+  if (!tid) {
+    uni.showToast({ title: '请先进入店铺再申请提现', icon: 'none' });
+    return;
+  }
   submitting.value = true;
   try {
-    await applyWithdraw(amt);
+    await applyWithdraw(amt, Number(tid));
     uni.showToast({ title: '申请已提交', icon: 'success' });
     amount.value = '';
     await loadAll();

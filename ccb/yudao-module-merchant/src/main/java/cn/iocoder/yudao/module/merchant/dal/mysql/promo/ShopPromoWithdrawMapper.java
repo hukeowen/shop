@@ -20,6 +20,14 @@ public interface ShopPromoWithdrawMapper extends BaseMapperX<ShopPromoWithdrawDO
                 .orderByDesc(ShopPromoWithdrawDO::getApplyAt));
     }
 
+    /** 商户审批端：仅当前 tenant 下的申请（status 可选）。*/
+    default PageResult<ShopPromoWithdrawDO> selectPageByTenantAndStatus(Long tenantId, String status, PageParam pageParam) {
+        return selectPage(pageParam, new LambdaQueryWrapperX<ShopPromoWithdrawDO>()
+                .eq(ShopPromoWithdrawDO::getTenantId, tenantId)
+                .eqIfPresent(ShopPromoWithdrawDO::getStatus, status)
+                .orderByDesc(ShopPromoWithdrawDO::getApplyAt));
+    }
+
     /** 用户的提现申请列表（按申请时间倒序） */
     default List<ShopPromoWithdrawDO> selectListByUserId(Long userId) {
         return selectList(new LambdaQueryWrapperX<ShopPromoWithdrawDO>()

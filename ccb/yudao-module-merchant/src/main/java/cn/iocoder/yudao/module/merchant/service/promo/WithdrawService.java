@@ -41,7 +41,13 @@ public interface WithdrawService {
     /** 当前用户的提现申请列表（倒序）。 */
     List<ShopPromoWithdrawDO> listByUserId(Long userId);
 
+    /** v8 多店：用户在某店申请提现（按店隔离审批通道，但积分仍从全局账户扣）。*/
+    ShopPromoWithdrawDO apply(Long userId, long amount, Long tenantId);
+
     /** 商户审批端列表分页（status 可选过滤）。 */
     PageResult<ShopPromoWithdrawDO> page(String status, PageParam pageParam);
+
+    /** 商户小程序审批：仅返回当前 tenant 下的申请（status 可选过滤）。*/
+    PageResult<ShopPromoWithdrawDO> pageByTenant(Long tenantId, String status, PageParam pageParam);
 
 }

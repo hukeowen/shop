@@ -78,6 +78,23 @@ public class WithdrawServiceImpl implements WithdrawService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
+    public ShopPromoWithdrawDO apply(Long userId, long amount, Long tenantId) {
+        // 委托原 apply 走完所有校验 + 扣减，再补 tenantId
+        ShopPromoWithdrawDO record = apply(userId, amount);
+        if (tenantId != null && tenantId > 0 && !tenantId.equals(record.getTenantId())) {
+            // 用户 token tenant=0 时 mybatis-plus 自动注入 0，需修正为前端传入的店铺 tenant
+            ShopPromoWithdrawDO patch = new ShopPromoWithdrawDO();
+            patch.setId(record.getId());
+            patch.setTenantId(tenantId);
+            cn.iocoder.yudao.framework.tenant.core.util.TenantUtils.executeIgnore(
+                    () -> withdrawMapper.updateById(patch));
+            record.setTenantId(tenantId);
+        }
+        return record;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
     @LogRecord(type = SHOP_WITHDRAW_TYPE, subType = SHOP_WITHDRAW_AUDIT_SUB_TYPE,
             bizNo = "{{#applyId}}", success = SHOP_WITHDRAW_APPROVE_SUCCESS)
     public void approve(Long applyId, Long processorId, String remark) {
@@ -124,6 +141,11 @@ public class WithdrawServiceImpl implements WithdrawService {
     @Override
     public PageResult<ShopPromoWithdrawDO> page(String status, PageParam pageParam) {
         return withdrawMapper.selectPageByStatus(status, pageParam);
+    }
+
+    @Override
+    public PageResult<ShopPromoWithdrawDO> pageByTenant(Long tenantId, String status, PageParam pageParam) {
+        return withdrawMapper.selectPageByTenantAndStatus(tenantId, status, pageParam);
     }
 
     private ShopPromoWithdrawDO mustGet(Long applyId) {
