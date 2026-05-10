@@ -90,6 +90,8 @@ public class AppMerchantPromoController {
     private cn.iocoder.yudao.module.merchant.service.MemberShopRelService memberShopRelService;
     @Resource
     private cn.iocoder.yudao.module.merchant.dal.mysql.ShopInfoMapper shopInfoMapper;
+    @Resource
+    private cn.iocoder.yudao.module.merchant.dal.mysql.promo.ShopUserStarMapper userStarMapper;
 
     // ==================== 商户级营销配置 ====================
 
@@ -211,10 +213,39 @@ public class AppMerchantPromoController {
     // ==================== 用户钱包（双积分账户） ====================
 
     @GetMapping("/account")
-    @Operation(summary = "当前用户星级 / 双积分余额")
+    @Operation(summary = "当前用户星级 / 双积分余额（v8: star/direct/team 按 SPU 聚合最高 + 累计）")
     public CommonResult<ShopUserStarDO> getMyAccount() {
         Long userId = SecurityFrameworkUtils.getLoginUserId();
-        return success(promoPointService.getOrCreateAccount(userId));
+        ShopUserStarDO base = promoPointService.getOrCreateAccount(userId);
+        // v8 升星都写在 spu_id>0 行（商品级账户），全局账户 spu_id=0 永远是 0
+        // → UI 看到 currentStar=0 困惑。聚合：max(star) + sum(direct/team) 覆盖回 base。
+        // 余额（promoPointBalance/consumePointBalance）不动，仍是全局共享。
+        try {
+            java.util.List<cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopUserStarDO> all =
+                    userStarMapper.selectList(
+                            new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopUserStarDO>()
+                                    .eq(cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopUserStarDO::getUserId, userId)
+                                    .gt(cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopUserStarDO::getSpuId, 0L));
+            if (all != null && !all.isEmpty()) {
+                int maxStar = 0;
+                long sumDirect = 0;
+                long sumTeam = 0;
+                long sumTeamAmt = 0;
+                for (cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopUserStarDO row : all) {
+                    if (row.getCurrentStar() != null && row.getCurrentStar() > maxStar) maxStar = row.getCurrentStar();
+                    if (row.getDirectCount() != null) sumDirect += row.getDirectCount();
+                    if (row.getTeamSalesCount() != null) sumTeam += row.getTeamSalesCount();
+                    if (row.getTeamSalesAmount() != null) sumTeamAmt += row.getTeamSalesAmount();
+                }
+                base.setCurrentStar(maxStar);
+                base.setDirectCount((int) sumDirect);
+                base.setTeamSalesCount((int) sumTeam);
+                base.setTeamSalesAmount(sumTeamAmt);
+            }
+        } catch (Exception e) {
+            log.warn("[getMyAccount] SPU 聚合失败 userId={} : {}", userId, e.getMessage());
+        }
+        return success(base);
     }
 
     @GetMapping("/promo-records")
