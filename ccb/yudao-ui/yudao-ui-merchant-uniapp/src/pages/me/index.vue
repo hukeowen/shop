@@ -20,6 +20,18 @@
     </view>
 
     <view class="menu card">
+      <view class="menu-item" @click="goSalesStats">
+        <text>📊 销售统计</text>
+        <text class="arrow">›</text>
+      </view>
+      <view class="menu-item" @click="goProductRank">
+        <text>🛍 商品销售排行</text>
+        <text class="arrow">›</text>
+      </view>
+      <view class="menu-item" @click="goShopMembers">
+        <text>👥 店铺会员</text>
+        <text class="arrow">›</text>
+      </view>
       <view class="menu-item" @click="goProducts">
         <text>商品管理</text>
         <text class="arrow">›</text>
@@ -33,7 +45,7 @@
         <text class="arrow">›</text>
       </view>
       <view class="menu-item" @click="goPromoConfig">
-        <text>营销配置（v7）</text>
+        <text>营销配置（v8）</text>
         <text class="arrow">›</text>
       </view>
       <view class="menu-item" @click="goCoupon">
@@ -162,6 +174,16 @@ function goWithdrawApprove() {
 
 function goMembers() {
   uni.navigateTo({ url: '/pages/member/list' });
+}
+
+function goSalesStats() {
+  uni.navigateTo({ url: '/pages/me/sales-stats' });
+}
+function goProductRank() {
+  uni.navigateTo({ url: '/pages/me/product-rank' });
+}
+function goShopMembers() {
+  uni.navigateTo({ url: '/pages/me/members' });
 }
 
 function goWithdrawApply() {

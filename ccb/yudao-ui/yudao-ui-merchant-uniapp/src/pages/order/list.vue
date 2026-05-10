@@ -33,7 +33,7 @@
         </view>
         <view class="order-items">
           <view v-for="(it, i) in o.items" :key="i" class="item">
-            <text class="item-name">{{ it.spuName }} · {{ it.skuName }}</text>
+            <text class="item-name">{{ it.spuName }}{{ it.skuName && it.skuName !== it.spuName ? ' · ' + it.skuName : '' }}</text>
             <text class="item-count">x{{ it.count }}</text>
           </view>
         </view>
