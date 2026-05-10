@@ -57,6 +57,17 @@ function isMerchantPage(route) {
 }
 
 function clearTokenAndRedirectToLogin() {
+  // 先取 role 再清 storage，否则 isMerchantContext 永远 false
+  let hasMerchantRole = false;
+  try {
+    if (typeof localStorage !== 'undefined') {
+      const raw = localStorage.getItem(USER_STORE_STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed.roles) && parsed.roles.includes('merchant')) hasMerchantRole = true;
+      }
+    }
+  } catch {}
   try {
     if (typeof localStorage !== 'undefined') {
       localStorage.removeItem(USER_STORE_STORAGE_KEY);
@@ -74,8 +85,11 @@ function clearTokenAndRedirectToLogin() {
     // 已在登录页就不重复跳，避免死循环
     if (/pages\/(login|merchant-login)\/index/.test(curRoute)) return;
 
-    const isMerchant = isMerchantPage(curRoute);
-    const loginPath = isMerchant ? '/pages/merchant-login/index' : '/pages/login/index';
+    // 仅当用户已有商户身份（roles 含 merchant）才跳商户登录页；
+    // 否则统一走 /pages/login/index（通用登录有"我是顾客 / 我是商户"两入口）。
+    // 防止"普通用户访问商户页（如 /m/ 默认 pages/index/）被误推到商户登录"
+    const isMerchantContext = isMerchantPage(curRoute) && hasMerchantRole;
+    const loginPath = isMerchantContext ? '/pages/merchant-login/index' : '/pages/login/index';
 
     // 保存当前路由作为 redirect，登录成功后回跳
     try {

@@ -88,6 +88,10 @@
       </button>
 
       <view class="hint">演示环境不发短信，输入手机号 + 密码即可登录</view>
+      <view class="bottom-link">
+        <text>已是商户？</text>
+        <text class="link-text" @click="goMerchantLogin">商户登录 →</text>
+      </view>
     </view>
 
     <!-- 正在登录 -->
@@ -292,6 +296,10 @@ async function onChooseRole(role) {
     loading.value = false;
     uni.showToast({ title: '切换失败：' + (e.message || ''), icon: 'none' });
   }
+}
+
+function goMerchantLogin() {
+  uni.redirectTo({ url: '/pages/merchant-login/index' });
 }
 
 function goUserHome() {
@@ -637,6 +645,16 @@ onLoad((query) => {
   text-align: center;
   font-size: 26rpx;
   color: $brand-primary;
+}
+
+.bottom-link {
+  margin-top: 24rpx;
+  padding-top: 24rpx;
+  border-top: 1rpx solid #f0f0f3;
+  text-align: center;
+  font-size: 26rpx;
+  color: $text-secondary;
+  .link-text { color: $brand-primary; margin-left: 8rpx; }
 }
 
 .footer {
