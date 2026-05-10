@@ -251,9 +251,13 @@ public class TradeOrderUpdateServiceImpl implements TradeOrderUpdateService {
         tradeOrderHandlers.forEach(handler -> handler.afterOrderCreate(order, orderItems));
 
         // 2. 删除购物车商品
+        // 多商户场景：cart 表 tenant_id=0（用户租户），但 checkout/submit 已把 ctx 切到商户租户，
+        // 直接调 deleteCart 会因 LambdaQueryWrapper 自动注入 tenant_id=商户 而查不到行 → 删不掉。
+        // 用 TenantUtils.executeIgnore 跳过 tenant 过滤，按 user_id + cartIds 精确删除。
         Set<Long> cartIds = convertSet(createReqVO.getItems(), AppTradeOrderSettlementReqVO.Item::getCartId);
         if (CollUtil.isNotEmpty(cartIds)) {
-            cartService.deleteCart(order.getUserId(), cartIds);
+            cn.iocoder.yudao.framework.tenant.core.util.TenantUtils.executeIgnore(
+                    () -> cartService.deleteCart(order.getUserId(), cartIds));
         }
 
         // 3. 生成预支付
