@@ -222,7 +222,16 @@ function loadMore() {
 
 function goShop(tid) { uni.navigateTo({ url: `/pages/shop-home/index?tenantId=${tid}` }); }
 function goOrder(o) { uni.navigateTo({ url: `/pages/user-order/list` }); /* 暂用列表，详情页后续单独建 */ }
-function onPay(o) { uni.showToast({ title: '支付页跳转待接入', icon: 'none' }); }
+async function onPay(o) {
+  // H5 浏览器无微信支付 SDK，跳到 pay-done 落地页（payOrderId 由该页拉支付链接 / 唤起 wx）
+  if (!o.payOrderId) {
+    uni.showToast({ title: '订单缺支付单号，无法支付', icon: 'none' });
+    return;
+  }
+  uni.navigateTo({
+    url: `/pages/order/pay-done?orderId=${o.id}&payOrderId=${o.payOrderId}&tenantId=${o.tenantId || ''}&pending=1`,
+  });
+}
 function onConfirm(o) {
   uni.showModal({ title: '确认收货', content: '确认已收到货？', success: (r) => { if (r.confirm) uni.showToast({ title: '已确认', icon: 'success' }); } });
 }

@@ -6,7 +6,14 @@
       <text class="right" @click="onShare">分享</text>
     </view>
 
-    <view class="succ-page">
+    <view v-if="pending" class="succ-page pending">
+      <view class="icon-circle pending">⌛</view>
+      <view class="h2">等待付款</view>
+      <view class="subtitle">点击下方按钮唤起通联收付通完成支付</view>
+      <view class="pay-btn" @click="callPay">立即付款 ¥{{ payPriceYuan }}</view>
+      <view class="pay-tip" v-if="payErr">{{ payErr }}</view>
+    </view>
+    <view v-else class="succ-page">
       <view class="icon-circle">✓</view>
       <view class="h2">支付成功</view>
       <view class="subtitle">订单已通知商家，预计 30 分钟内出餐</view>
@@ -51,6 +58,9 @@ const order = ref(null);
 const shopName = ref('');
 const orderId = ref('');
 const tenantId = ref(null);
+const pending = ref(false);
+const payOrderId = ref(null);
+const payErr = ref('');
 
 const payPriceYuan = computed(() => {
   const fen = order.value?.payPrice ?? order.value?.totalPrice ?? 0;
@@ -66,8 +76,39 @@ const payMethodText = computed(() => {
 onLoad((q) => {
   orderId.value = q?.orderId || q?.id || '';
   tenantId.value = q?.tenantId ? Number(q.tenantId) : null;
+  pending.value = q?.pending === '1';
+  payOrderId.value = q?.payOrderId ? Number(q.payOrderId) : null;
   loadOrder();
 });
+
+async function callPay() {
+  if (!payOrderId.value) {
+    payErr.value = '订单缺支付单号';
+    return;
+  }
+  payErr.value = '';
+  try {
+    const res = await request({
+      url: '/app-api/pay/order/submit',
+      method: 'POST',
+      data: { id: payOrderId.value, channelCode: 'allinpay_qr' },
+      tenantId: tenantId.value || undefined,
+    });
+    // 通联返支付链接 / 二维码 / JSAPI 参数；H5 直接 location.href 跳转
+    const dispCnt = res?.displayContent;
+    if (typeof dispCnt === 'string' && (dispCnt.startsWith('http') || dispCnt.startsWith('weixin:'))) {
+      location.href = dispCnt;
+    } else {
+      uni.showModal({
+        title: '请扫码支付',
+        content: '通联收付通已生成支付链接，请用微信扫一扫\n（生产对接 wx.chooseWXPay 唤起 JSAPI）',
+        showCancel: false,
+      });
+    }
+  } catch (e) {
+    payErr.value = e?.message || '支付下单失败，请稍后重试';
+  }
+}
 
 async function loadOrder() {
   if (!orderId.value) return;
