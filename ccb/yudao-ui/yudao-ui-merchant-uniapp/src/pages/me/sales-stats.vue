@@ -76,10 +76,11 @@
           :key="i"
         >
           <view class="bf" :style="{ height: barH(s, maxSales) + '%' }"></view>
+          <view class="bf bf2" :style="{ height: barH(data.trendActualPay[i] || 0, maxSales) + '%' }"></view>
         </view>
       </view>
       <view class="trend-legend">
-        <view class="lg"><view class="sw brand"></view>销售额</view>
+        <view class="lg"><view class="sw brand"></view>销售额（按定价）</view>
         <view class="lg"><view class="sw success"></view>实付（v8 抵扣后）</view>
       </view>
     </view>
@@ -358,8 +359,9 @@ onShow(loadAll);
 .trend-bigchart {
   display: flex; align-items: flex-end; justify-content: space-between;
   height: 160rpx; margin-top: 8rpx;
-  .b { flex: 1; margin: 0 2rpx; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; }
-  .bf { width: 100%; max-width: 32rpx; background: linear-gradient(180deg, $brand-primary, #ffe1cc); border-radius: 4rpx 4rpx 0 0; }
+  .b { flex: 1; margin: 0 2rpx; display: flex; flex-direction: row; align-items: flex-end; justify-content: center; gap: 1rpx; }
+  .bf { width: 14rpx; background: linear-gradient(180deg, $brand-primary, #ffe1cc); border-radius: 4rpx 4rpx 0 0; }
+  .bf.bf2 { background: linear-gradient(180deg, $success, #d1fae5); }
 }
 .trend-legend {
   display: flex; gap: 24rpx; font-size: 22rpx; color: $text-secondary; margin-top: 12rpx;

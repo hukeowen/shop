@@ -6,12 +6,6 @@
       <view class="hero-sub">含店主 + 顾客；推荐入店 {{ referralCount }} 人</view>
     </view>
 
-    <view class="period-tabs">
-      <view class="pt active">全部</view>
-      <view class="pt">活跃</view>
-      <view class="pt">高消费</view>
-    </view>
-
     <view class="member-row" v-for="m in list" :key="m.userId">
       <view class="avatar" :style="avatarStyle(m)">{{ m.userId }}</view>
       <view class="m-info">
@@ -70,14 +64,6 @@ onMounted(load);
   .hero-l { font-size: 24rpx; opacity: 0.85; }
   .hero-big { font-size: 64rpx; font-weight: 800; margin: 8rpx 0 4rpx; font-variant-numeric: tabular-nums; }
   .hero-sub { font-size: 22rpx; opacity: 0.85; }
-}
-.period-tabs {
-  display: flex; padding: 16rpx 24rpx; gap: 12rpx; background: #fff; border-bottom: 1rpx solid $border-color;
-  .pt {
-    padding: 8rpx 28rpx; border-radius: 999rpx;
-    background: #f0f0f3; font-size: 26rpx;
-    &.active { background: $brand-primary; color: #fff; }
-  }
 }
 .member-row {
   display: flex; align-items: center;

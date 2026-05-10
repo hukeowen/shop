@@ -58,6 +58,16 @@ public class MerchantStatsServiceImpl implements MerchantStatsService {
     private ShopInfoMapper shopInfoMapper;
     @Resource
     private MemberWithdrawApplyMapper memberWithdrawApplyMapper;
+    @Resource
+    private cn.iocoder.yudao.module.member.dal.mysql.user.MemberUserMapper memberUserMapper;
+    @Resource
+    private cn.iocoder.yudao.module.merchant.dal.mysql.promo.ShopUserStarMapper shopUserStarMapper;
+    @Resource
+    private cn.iocoder.yudao.module.merchant.dal.mysql.promo.ShopUserReferralMapper shopUserReferralMapper;
+    @Resource
+    private cn.iocoder.yudao.module.merchant.dal.mysql.promo.ShopQueuePositionMapper shopQueuePositionMapper;
+    @Resource
+    private cn.iocoder.yudao.module.merchant.dal.mysql.promo.ShopReferralContributionMapper shopReferralContributionMapper;
 
     @Override
     public AppMerchantSalesStatsRespVO getSalesStats(String period) {
@@ -210,7 +220,8 @@ public class MerchantStatsServiceImpl implements MerchantStatsService {
             if (rows == null || rows.isEmpty()) return 0L;
             return parseLong(rows.get(0).get("s"));
         } catch (Exception e) {
-            log.debug("[sumWithdrawn] withdraw 表查询失败，返回 0: {}", e.getMessage());
+            // 不静默吞：警告级 log，避免对账数据失真却无察觉
+            log.warn("[sumWithdrawn] member_withdraw_apply 查询失败，返回 0（请人工核对）: {}", e.getMessage(), e);
             return 0L;
         }
     }
@@ -221,6 +232,7 @@ public class MerchantStatsServiceImpl implements MerchantStatsService {
                 new LambdaQueryWrapper<cn.iocoder.yudao.module.merchant.dal.dataobject.MemberWithdrawApplyDO>()
                     .eq(cn.iocoder.yudao.module.merchant.dal.dataobject.MemberWithdrawApplyDO::getStatus, 0));
         } catch (Exception e) {
+            log.warn("[countPendingWithdraw] member_withdraw_apply 查询失败，返回 0: {}", e.getMessage(), e);
             return 0L;
         }
     }
@@ -296,72 +308,73 @@ public class MerchantStatsServiceImpl implements MerchantStatsService {
 
     /**
      * 客户洞察聚合：[newOrderCount, oldOrderCount, totalCustomers, repurchaseCustomers, totalOrders, referralOrders]
-     * 简化算法：
-     *   - 新客订单 = order.user_id 在该周期内首次下单
-     *   - 老客订单 = 老用户重复下单（≥ 2 次）
-     *   - 复购客户数 = 同一周期内下单 ≥ 2 次的用户
-     *   - 推荐订单 = 该用户在 shop_user_referral 有 parent
+     * 严格定义：
+     *   - 新客订单 = order.user_id 在该周期内首次下单（在该周期之前未下过任何已支付订单）
+     *   - 老客订单 = 在该周期之前已下过订单的用户在本周期下的订单
+     *   - 复购客户数 = 同一周期内下单 ≥ 2 次的用户（不再混入"老客"）
+     *   - 推荐订单 = 该用户在 shop_user_referral 有 parent_user_id > 0
+     *
+     * 性能优化：用 SQL GROUP BY user_id + COUNT 直接聚合，不再把所有订单 user_id 拉到内存。
      */
     private long[] customerInsights(LocalDateTime start, LocalDateTime end) {
-        // 拉所有该周期订单的 user_id 列表
+        // 1. SQL 直接 GROUP BY user_id 拿每用户在周期内的下单数（避免内存 group by）
         QueryWrapper<TradeOrderDO> w = new QueryWrapper<>();
-        w.select("user_id");
+        w.select("user_id AS uid", "COUNT(*) AS cnt");
         w.between("create_time", start, end);
         w.gt("status", 0);
+        w.groupBy("user_id");
         List<Map<String, Object>> rows = tradeOrderMapper.selectMaps(w);
-        Map<Long, Integer> userOrderCount = new HashMap<>();
-        if (rows != null) {
-            for (Map<String, Object> r : rows) {
-                Long u = r.get("user_id") == null ? null : Long.parseLong(r.get("user_id").toString());
-                if (u != null) userOrderCount.merge(u, 1, Integer::sum);
-            }
+        if (rows == null || rows.isEmpty()) {
+            return new long[]{0, 0, 0, 0, 0, 0};
         }
-        long newOrders = 0, oldOrders = 0, totalCustomers = userOrderCount.size(), repurchase = 0;
-        long totalOrders = 0, referralOrders = 0;
-        if (!userOrderCount.isEmpty()) {
-            // 老客 = 在该周期之前已经下过订单
-            QueryWrapper<TradeOrderDO> historyW = new QueryWrapper<>();
-            historyW.select("DISTINCT user_id");
-            historyW.lt("create_time", start);
-            historyW.gt("status", 0);
-            historyW.in("user_id", userOrderCount.keySet());
-            List<Map<String, Object>> hRows = tradeOrderMapper.selectMaps(historyW);
-            java.util.Set<Long> historyUsers = new java.util.HashSet<>();
-            if (hRows != null) for (Map<String, Object> r : hRows) {
-                historyUsers.add(Long.parseLong(r.get("user_id").toString()));
-            }
-            for (Map.Entry<Long, Integer> e : userOrderCount.entrySet()) {
-                int c = e.getValue();
-                totalOrders += c;
-                boolean isOld = historyUsers.contains(e.getKey());
-                if (isOld) {
-                    oldOrders += c;
-                } else {
-                    // 第 1 单是新客，剩余是老客
-                    newOrders += 1;
-                    oldOrders += (c - 1);
-                }
-                if (c >= 2 || isOld) repurchase++;
-            }
-            // 推荐订单：拉该周期所有订单 user_id ∈ shop_user_referral 有 parent 的
-            QueryWrapper<cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopUserReferralDO> rw = new QueryWrapper<>();
-            rw.select("user_id");
-            rw.in("user_id", userOrderCount.keySet());
-            rw.gt("parent_user_id", 0);
-            try {
-                cn.iocoder.yudao.module.merchant.dal.mysql.promo.ShopUserReferralMapper rm =
-                    cn.iocoder.yudao.framework.common.util.spring.SpringUtils.getBean(
-                        cn.iocoder.yudao.module.merchant.dal.mysql.promo.ShopUserReferralMapper.class);
-                List<Map<String, Object>> rRows = rm.selectMaps(rw);
-                java.util.Set<Long> referralUsers = new java.util.HashSet<>();
-                if (rRows != null) for (Map<String, Object> r : rRows) {
-                    referralUsers.add(Long.parseLong(r.get("user_id").toString()));
-                }
-                for (Long u : userOrderCount.keySet()) {
-                    if (referralUsers.contains(u)) referralOrders += userOrderCount.get(u);
-                }
-            } catch (Exception ignored) { /* SpringUtils 不可用就跳过 */ }
+        Map<Long, Integer> userOrderCount = new HashMap<>(rows.size() * 2);
+        for (Map<String, Object> r : rows) {
+            userOrderCount.put(parseLong(r.get("uid")), (int) parseLong(r.get("cnt")));
         }
+        long totalCustomers = userOrderCount.size();
+
+        // 2. 老客 = 周期前已下过订单的 user
+        QueryWrapper<TradeOrderDO> historyW = new QueryWrapper<>();
+        historyW.select("DISTINCT user_id");
+        historyW.lt("create_time", start);
+        historyW.gt("status", 0);
+        historyW.in("user_id", userOrderCount.keySet());
+        List<Map<String, Object>> hRows = tradeOrderMapper.selectMaps(historyW);
+        java.util.Set<Long> historyUsers = new java.util.HashSet<>();
+        if (hRows != null) for (Map<String, Object> r : hRows) {
+            historyUsers.add(parseLong(r.get("user_id")));
+        }
+
+        long newOrders = 0, oldOrders = 0, totalOrders = 0, repurchase = 0;
+        for (Map.Entry<Long, Integer> e : userOrderCount.entrySet()) {
+            int c = e.getValue();
+            totalOrders += c;
+            boolean isOld = historyUsers.contains(e.getKey());
+            if (isOld) {
+                oldOrders += c;
+            } else {
+                newOrders += 1;
+                oldOrders += (c - 1);
+            }
+            // 严格复购：仅同周期下单 ≥ 2 次（"老客"是另一个独立指标）
+            if (c >= 2) repurchase++;
+        }
+
+        // 3. 推荐订单：直接 @Resource 注入的 mapper（失败启动期就报错，不再静默吞）
+        QueryWrapper<cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopUserReferralDO> rw = new QueryWrapper<>();
+        rw.select("user_id");
+        rw.in("user_id", userOrderCount.keySet());
+        rw.gt("parent_user_id", 0);
+        List<Map<String, Object>> rRows = shopUserReferralMapper.selectMaps(rw);
+        java.util.Set<Long> referralUsers = new java.util.HashSet<>();
+        if (rRows != null) for (Map<String, Object> r : rRows) {
+            referralUsers.add(parseLong(r.get("user_id")));
+        }
+        long referralOrders = 0;
+        for (Long u : userOrderCount.keySet()) {
+            if (referralUsers.contains(u)) referralOrders += userOrderCount.get(u);
+        }
+
         return new long[]{ newOrders, oldOrders, totalCustomers, repurchase, totalOrders, referralOrders };
     }
 
@@ -445,20 +458,13 @@ public class MerchantStatsServiceImpl implements MerchantStatsService {
         java.util.Set<Long> userIds = new java.util.HashSet<>();
         for (MemberShopRelDO r : rels) userIds.add(r.getUserId());
 
-        // 2. 拉 member_user（取 mobile / nickname）— 使用 SpringUtils
+        // 2. 拉 member_user（取 mobile / nickname）— member_user 是平台级表（@TenantIgnore）
         Map<Long, cn.iocoder.yudao.module.member.dal.dataobject.user.MemberUserDO> userMap = new HashMap<>();
-        try {
-            cn.iocoder.yudao.module.member.dal.mysql.user.MemberUserMapper um =
-                cn.iocoder.yudao.framework.common.util.spring.SpringUtils.getBean(
-                    cn.iocoder.yudao.module.member.dal.mysql.user.MemberUserMapper.class);
-            cn.iocoder.yudao.framework.tenant.core.util.TenantUtils.executeIgnore(() -> {
-                List<cn.iocoder.yudao.module.member.dal.dataobject.user.MemberUserDO> users = um.selectBatchIds(userIds);
-                if (users != null) for (cn.iocoder.yudao.module.member.dal.dataobject.user.MemberUserDO u : users)
-                    userMap.put(u.getId(), u);
-            });
-        } catch (Exception e) {
-            log.warn("[listMembers] 拉 member_user 失败: {}", e.getMessage());
-        }
+        cn.iocoder.yudao.framework.tenant.core.util.TenantUtils.executeIgnore(() -> {
+            List<cn.iocoder.yudao.module.member.dal.dataobject.user.MemberUserDO> users = memberUserMapper.selectBatchIds(userIds);
+            if (users != null) for (cn.iocoder.yudao.module.member.dal.dataobject.user.MemberUserDO u : users)
+                userMap.put(u.getId(), u);
+        });
 
         // 3. 拉每个 user 的下单数 + 总金额
         Map<Long, long[]> orderByUser = new HashMap<>();
@@ -475,42 +481,32 @@ public class MerchantStatsServiceImpl implements MerchantStatsService {
         // 4. 拉 referral 关系
         Map<Long, Long> parentByUser = new HashMap<>();
         Map<Long, Long> invitedCountByUser = new HashMap<>();
-        try {
-            cn.iocoder.yudao.module.merchant.dal.mysql.promo.ShopUserReferralMapper rm =
-                cn.iocoder.yudao.framework.common.util.spring.SpringUtils.getBean(
-                    cn.iocoder.yudao.module.merchant.dal.mysql.promo.ShopUserReferralMapper.class);
-            QueryWrapper<cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopUserReferralDO> rw = new QueryWrapper<>();
-            rw.in("user_id", userIds);
-            List<cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopUserReferralDO> refs = rm.selectList(rw);
-            if (refs != null) for (cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopUserReferralDO ref : refs) {
-                parentByUser.put(ref.getUserId(), ref.getParentUserId());
-            }
-            // 邀请数：parent_user_id ∈ userIds 的行数（本店 referral 表）
-            QueryWrapper<cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopUserReferralDO> iw = new QueryWrapper<>();
-            iw.select("parent_user_id AS pid", "COUNT(*) AS cnt");
-            iw.in("parent_user_id", userIds);
-            iw.gt("parent_user_id", 0);
-            iw.groupBy("parent_user_id");
-            List<Map<String, Object>> iRows = rm.selectMaps(iw);
-            if (iRows != null) for (Map<String, Object> r : iRows) {
-                invitedCountByUser.put(parseLong(r.get("pid")), parseLong(r.get("cnt")));
-            }
-        } catch (Exception ignored) { }
+        QueryWrapper<cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopUserReferralDO> rw = new QueryWrapper<>();
+        rw.in("user_id", userIds);
+        List<cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopUserReferralDO> refs = shopUserReferralMapper.selectList(rw);
+        if (refs != null) for (cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopUserReferralDO ref : refs) {
+            parentByUser.put(ref.getUserId(), ref.getParentUserId());
+        }
+        // 邀请数：parent_user_id ∈ userIds 的行数（本店 referral 表）
+        QueryWrapper<cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopUserReferralDO> iw = new QueryWrapper<>();
+        iw.select("parent_user_id AS pid", "COUNT(*) AS cnt");
+        iw.in("parent_user_id", userIds);
+        iw.gt("parent_user_id", 0);
+        iw.groupBy("parent_user_id");
+        List<Map<String, Object>> iRows = shopUserReferralMapper.selectMaps(iw);
+        if (iRows != null) for (Map<String, Object> r : iRows) {
+            invitedCountByUser.put(parseLong(r.get("pid")), parseLong(r.get("cnt")));
+        }
 
         // 5. 拉 user_star spu_id=0（全局账户）
         Map<Long, cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopUserStarDO> starByUser = new HashMap<>();
-        try {
-            cn.iocoder.yudao.module.merchant.dal.mysql.promo.ShopUserStarMapper sm =
-                cn.iocoder.yudao.framework.common.util.spring.SpringUtils.getBean(
-                    cn.iocoder.yudao.module.merchant.dal.mysql.promo.ShopUserStarMapper.class);
-            QueryWrapper<cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopUserStarDO> sw = new QueryWrapper<>();
-            sw.in("user_id", userIds);
-            sw.eq("spu_id", 0);
-            List<cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopUserStarDO> stars = sm.selectList(sw);
-            if (stars != null) for (cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopUserStarDO s : stars) {
-                starByUser.put(s.getUserId(), s);
-            }
-        } catch (Exception ignored) { }
+        QueryWrapper<cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopUserStarDO> sw = new QueryWrapper<>();
+        sw.in("user_id", userIds);
+        sw.eq("spu_id", 0);
+        List<cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopUserStarDO> stars = shopUserStarMapper.selectList(sw);
+        if (stars != null) for (cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopUserStarDO s : stars) {
+            starByUser.put(s.getUserId(), s);
+        }
 
         // 6. 组装
         List<AppMerchantMemberItemRespVO> result = new ArrayList<>();
@@ -577,27 +573,23 @@ public class MerchantStatsServiceImpl implements MerchantStatsService {
 
     @Override
     public AppMerchantFunnelRespVO getReferralFunnel(Long spuId) {
-        cn.iocoder.yudao.module.merchant.dal.mysql.promo.ShopQueuePositionMapper qm =
-            cn.iocoder.yudao.framework.common.util.spring.SpringUtils.getBean(
-                cn.iocoder.yudao.module.merchant.dal.mysql.promo.ShopQueuePositionMapper.class);
-        cn.iocoder.yudao.module.merchant.dal.mysql.promo.ShopReferralContributionMapper cm =
-            cn.iocoder.yudao.framework.common.util.spring.SpringUtils.getBean(
-                cn.iocoder.yudao.module.merchant.dal.mysql.promo.ShopReferralContributionMapper.class);
-        // 各状态人数
-        LambdaQueryWrapper<cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopQueuePositionDO> base =
-            new LambdaQueryWrapper<>();
-        if (spuId != null) base.eq(cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopQueuePositionDO::getSpuId, spuId);
+        // 用 Supplier 每次构造新 wrapper，避免依赖 mybatis-plus 的 clone() 跨版本不稳定
+        java.util.function.Supplier<LambdaQueryWrapper<cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopQueuePositionDO>> base = () -> {
+            LambdaQueryWrapper<cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopQueuePositionDO> w = new LambdaQueryWrapper<>();
+            if (spuId != null) w.eq(cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopQueuePositionDO::getSpuId, spuId);
+            return w;
+        };
 
-        long activated = qm.selectCount(base.clone());
-        long completed = qm.selectCount(base.clone()
+        long activated = shopQueuePositionMapper.selectCount(base.get());
+        long completed = shopQueuePositionMapper.selectCount(base.get()
             .eq(cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopQueuePositionDO::getState, "COMPLETED"));
-        long inProgress = qm.selectCount(base.clone()
+        long inProgress = shopQueuePositionMapper.selectCount(base.get()
             .eq(cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopQueuePositionDO::getState, "IN_PROGRESS"));
 
         LambdaQueryWrapper<cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopReferralContributionDO> cw =
             new LambdaQueryWrapper<>();
         if (spuId != null) cw.eq(cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopReferralContributionDO::getSpuId, spuId);
-        long contribution = cm.selectCount(cw);
+        long contribution = shopReferralContributionMapper.selectCount(cw);
 
         return AppMerchantFunnelRespVO.builder()
             .spuId(spuId)
