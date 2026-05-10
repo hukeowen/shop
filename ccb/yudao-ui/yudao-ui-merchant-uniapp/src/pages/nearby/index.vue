@@ -111,25 +111,35 @@ function refreshLocation() {
       locating.value = false;
       await loadShops();
     },
-    fail: (e) => {
+    fail: async (e) => {
       locating.value = false;
       locateError.value = e?.errMsg || '未知错误';
+      // H5 浏览器 / 未授权地理 / 无地图 SDK 时，仍把所有营业店铺列出（无距离）
+      await loadShops();
     },
   });
 }
 
 async function loadShops() {
-  if (!lat.value || !lng.value) return;
   loading.value = true;
   try {
-    const list = await request({
-      url: `/app-api/merchant/mini/user-shop/nearby?latitude=${lat.value}&longitude=${lng.value}&limit=30`,
-    });
-    const arr = Array.isArray(list) ? list : list?.list || [];
+    let arr = [];
+    if (lat.value && lng.value) {
+      const list = await request({
+        url: `/app-api/merchant/mini/user-shop/nearby?latitude=${lat.value}&longitude=${lng.value}&limit=30`,
+      });
+      arr = Array.isArray(list) ? list : list?.list || [];
+    } else {
+      // 定位失败兜底：用 public/list（无坐标，按销量/最新排序）
+      const list = await request({
+        url: `/app-api/merchant/shop/public/list?pageNo=1&pageSize=30&sortBy=sales`,
+      });
+      arr = list?.list || (Array.isArray(list) ? list : []);
+    }
     shops.value = arr.map((s) => ({
       ...s,
       _distance:
-        s.latitude && s.longitude
+        lat.value && lng.value && s.latitude && s.longitude
           ? calcDistance(lat.value, lng.value, Number(s.latitude), Number(s.longitude))
           : null,
     }));
