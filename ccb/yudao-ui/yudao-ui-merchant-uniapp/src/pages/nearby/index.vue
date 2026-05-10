@@ -5,6 +5,20 @@
       📵 定位失败：{{ locateError }}（H5 浏览器需 https + 用户授权）
     </view>
 
+    <!-- 搜索栏 -->
+    <view class="search-bar">
+      <text class="ic">🔍</text>
+      <input
+        class="kw"
+        v-model="kw"
+        :placeholder="'搜店铺名'"
+        confirm-type="search"
+        @confirm="onSearch"
+      />
+      <text v-if="kw" class="clear" @click="onClearKw">×</text>
+      <view class="search-btn" @click="onSearch">搜索</view>
+    </view>
+
     <!-- 上半部分：地图 -->
     <view class="map-wrap">
       <map
@@ -67,6 +81,7 @@ const locateError = ref('');
 const loading = ref(false);
 const shops = ref([]);
 const activeId = ref(null);
+const kw = ref('');
 
 const markers = computed(() =>
   shops.value
@@ -124,15 +139,17 @@ async function loadShops() {
   loading.value = true;
   try {
     let arr = [];
-    if (lat.value && lng.value) {
+    const kwParam = kw.value && kw.value.trim() ? `&kw=${encodeURIComponent(kw.value.trim())}` : '';
+    // kw 模式：放弃距离按 shopName 过滤（geo nearby 接口不支持 kw）
+    if (lat.value && lng.value && !kwParam) {
       const list = await request({
         url: `/app-api/merchant/mini/user-shop/nearby?latitude=${lat.value}&longitude=${lng.value}&limit=30`,
       });
       arr = Array.isArray(list) ? list : list?.list || [];
     } else {
-      // 定位失败兜底：用 public/list（无坐标，按销量/最新排序）
+      // 定位失败 / kw 搜索：用 public/list（支持 kw 模糊匹配 shopName）
       const list = await request({
-        url: `/app-api/merchant/shop/public/list?pageNo=1&pageSize=30&sortBy=sales`,
+        url: `/app-api/merchant/shop/public/list?pageNo=1&pageSize=30${kwParam}`,
       });
       arr = list?.list || (Array.isArray(list) ? list : []);
     }
@@ -148,6 +165,14 @@ async function loadShops() {
   } finally {
     loading.value = false;
   }
+}
+
+function onSearch() {
+  loadShops();
+}
+function onClearKw() {
+  kw.value = '';
+  loadShops();
 }
 
 function onMarkerTap(e) {
@@ -170,7 +195,8 @@ function goShop(shop) {
   uni.navigateTo({ url: `/pages/shop-home/index?tenantId=${shop.tenantId}` });
 }
 
-onLoad(() => {
+onLoad((q) => {
+  if (q && q.kw) kw.value = String(q.kw);
   refreshLocation();
 });
 </script>
@@ -194,6 +220,38 @@ onLoad(() => {
   &.error {
     background: #fff3e0;
     color: #c66c00;
+  }
+}
+
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  padding: 16rpx 24rpx;
+  background: #fff;
+  border-bottom: 1rpx solid $border-color;
+  .ic { font-size: 28rpx; color: $text-secondary; }
+  .kw {
+    flex: 1;
+    height: 64rpx;
+    padding: 0 16rpx;
+    background: $bg-page;
+    border-radius: $radius-md;
+    font-size: 28rpx;
+  }
+  .clear {
+    color: $text-placeholder;
+    font-size: 36rpx;
+    padding: 0 8rpx;
+  }
+  .search-btn {
+    padding: 0 24rpx;
+    height: 64rpx;
+    line-height: 64rpx;
+    background: $brand-primary;
+    color: #fff;
+    border-radius: $radius-md;
+    font-size: 28rpx;
   }
 }
 

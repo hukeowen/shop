@@ -56,18 +56,22 @@ public class AppShopPublicController {
     private cn.iocoder.yudao.module.product.service.sku.ProductSkuService productSkuService;
 
     @GetMapping("/list")
-    @Operation(summary = "分页查询店铺列表（仅返回正常营业的店铺）")
+    @Operation(summary = "分页查询店铺列表（仅返回正常营业的店铺，支持 kw 模糊搜店铺名）")
     @PermitAll
     @TenantIgnore
     public CommonResult<PageResult<ShopInfoDO>> listShops(
             @RequestParam(value = "pageNo", defaultValue = "1") Integer pageNo,
-            @RequestParam(value = "pageSize", defaultValue = "10") Integer pageSize) {
+            @RequestParam(value = "pageSize", defaultValue = "10") Integer pageSize,
+            @RequestParam(value = "kw", required = false) String kw) {
         PageParam pageParam = new PageParam();
         pageParam.setPageNo(pageNo);
         pageParam.setPageSize(pageSize);
-        PageResult<ShopInfoDO> page = shopInfoMapper.selectPage(
-                pageParam,
-                new LambdaQueryWrapper<ShopInfoDO>().eq(ShopInfoDO::getStatus, 1));
+        LambdaQueryWrapper<ShopInfoDO> w = new LambdaQueryWrapper<ShopInfoDO>()
+                .eq(ShopInfoDO::getStatus, 1);
+        if (kw != null && !kw.trim().isEmpty()) {
+            w.like(ShopInfoDO::getShopName, kw.trim());
+        }
+        PageResult<ShopInfoDO> page = shopInfoMapper.selectPage(pageParam, w);
         return success(page);
     }
 
