@@ -337,6 +337,24 @@
       "style": {
         "navigationBarTitleText": "关于摊小二"
       }
+    },
+    {
+      "path": "pages/me/sales-stats",
+      "style": {
+        "navigationBarTitleText": "销售统计"
+      }
+    },
+    {
+      "path": "pages/me/product-rank",
+      "style": {
+        "navigationBarTitleText": "商品销售排行"
+      }
+    },
+    {
+      "path": "pages/me/members",
+      "style": {
+        "navigationBarTitleText": "店铺会员"
+      }
     }
   ],
   "globalStyle": {

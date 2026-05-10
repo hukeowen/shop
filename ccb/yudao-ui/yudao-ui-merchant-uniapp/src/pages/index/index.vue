@@ -30,23 +30,52 @@
       </view>
     </view>
 
-    <view class="stat-title">今日概览</view>
+    <view class="stat-title">
+      <text>今日概览</text>
+      <text class="more" @click="jumpSalesStats">查看销售统计 ›</text>
+    </view>
     <view class="stats">
-      <view class="stat card">
-        <view class="stat-label">订单数</view>
+      <view class="stat card clickable" @click="jumpOrderTab('all')">
+        <view class="stat-label">订单数 <text class="arrow">›</text></view>
         <view class="stat-value">{{ data?.today.orderCount ?? '-' }}</view>
       </view>
-      <view class="stat card">
-        <view class="stat-label">销售额</view>
+      <view class="stat card clickable" @click="jumpSalesStats">
+        <view class="stat-label">销售额 <text class="arrow">›</text></view>
         <view class="stat-value">¥{{ fen2yuan(data?.today.salesAmount || 0) }}</view>
       </view>
-      <view class="stat card">
-        <view class="stat-label">新会员</view>
+      <view class="stat card clickable" @click="jumpMembers">
+        <view class="stat-label">新会员 <text class="arrow">›</text></view>
         <view class="stat-value">{{ data?.today.newMembers ?? '-' }}</view>
       </view>
-      <view class="stat card">
-        <view class="stat-label">待处理</view>
+      <view class="stat card clickable" @click="jumpOrderTab('pending')">
+        <view class="stat-label">待处理 <text class="arrow">›</text></view>
         <view class="stat-value warn">{{ data?.today.pendingOrders ?? '-' }}</view>
+      </view>
+    </view>
+
+    <!-- v8 今日推广 -->
+    <view
+      v-if="data?.promo && (data.promo.issued > 0 || data.promo.deducted > 0)"
+      class="promo-today"
+      @click="jumpSalesStats"
+    >
+      <view class="pt-head">
+        <text class="pt-title">🎁 今日推广（v8）</text>
+        <text class="pt-tag">明细 ›</text>
+      </view>
+      <view class="pt-row">
+        <view class="pt-mini">
+          <text class="l">发出推广积分</text>
+          <text class="v">¥{{ fen2yuan(data.promo.issued) }}</text>
+        </view>
+        <view class="pt-mini">
+          <text class="l">抵扣订单</text>
+          <text class="v">¥{{ fen2yuan(data.promo.deducted) }}</text>
+        </view>
+        <view class="pt-mini">
+          <text class="l">极差奖发出</text>
+          <text class="v">¥{{ fen2yuan(data.promo.commission) }}</text>
+        </view>
       </view>
     </view>
 
@@ -71,6 +100,7 @@
     <view class="section card">
       <view class="section-head">
         <text class="title">热销商品 Top 3</text>
+        <text class="more" @click="jumpProductRank">查看完整排行 ›</text>
       </view>
       <view class="rank-list">
         <view
@@ -128,6 +158,19 @@ function jumpVerify() {
 function jumpAddProduct() {
   // 主页快捷入口走 AI 识别上架（batch），手动 edit 仍保留在商品管理列表里
   uni.navigateTo({ url: '/pages/product/batch' });
+}
+
+function jumpSalesStats() {
+  uni.navigateTo({ url: '/pages/me/sales-stats' });
+}
+function jumpOrderTab(tab) {
+  uni.reLaunch({ url: `/pages/order/list?tab=${tab}` });
+}
+function jumpMembers() {
+  uni.navigateTo({ url: '/pages/me/members' });
+}
+function jumpProductRank() {
+  uni.navigateTo({ url: '/pages/me/product-rank' });
 }
 
 onMounted(async () => {
@@ -262,6 +305,14 @@ onPullDownRefresh(async () => {
   font-size: 28rpx;
   color: $text-secondary;
   font-weight: 500;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  .more {
+    color: $brand-primary;
+    font-size: 24rpx;
+    font-weight: 400;
+  }
 }
 
 .stats {
@@ -292,6 +343,42 @@ onPullDownRefresh(async () => {
       color: $warning;
     }
   }
+
+  .clickable {
+    cursor: pointer;
+    transition: transform 0.15s;
+    position: relative;
+    .arrow {
+      color: $brand-primary;
+      font-size: 22rpx;
+      margin-left: 4rpx;
+    }
+    &:active { transform: scale(0.97); }
+  }
+}
+
+/* v8 今日推广 */
+.promo-today {
+  margin: 0 12rpx 24rpx;
+  padding: 24rpx;
+  background: linear-gradient(135deg, #fff5e6, #ffe8d4);
+  border: 2rpx solid #ffae74;
+  border-radius: 16rpx;
+  cursor: pointer;
+  &:active { transform: scale(0.99); }
+  .pt-head {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 16rpx;
+    .pt-title { font-size: 28rpx; font-weight: 700; color: #d97706; }
+    .pt-tag { font-size: 24rpx; color: #fff; background: $brand-primary; padding: 4rpx 16rpx; border-radius: 16rpx; }
+  }
+  .pt-row { display: flex; gap: 12rpx; }
+  .pt-mini {
+    flex: 1; padding: 12rpx;
+    background: rgba(255, 255, 255, 0.6); border-radius: 8rpx;
+    .l { display: block; font-size: 22rpx; color: $text-secondary; }
+    .v { display: block; font-size: 30rpx; font-weight: 700; color: $text-primary; margin-top: 4rpx; }
+  }
 }
 
 .section {
@@ -299,10 +386,17 @@ onPullDownRefresh(async () => {
 
   .section-head {
     margin-bottom: 24rpx;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     .title {
       font-size: 30rpx;
       font-weight: 600;
       color: $text-primary;
+    }
+    .more {
+      color: $brand-primary;
+      font-size: 24rpx;
     }
   }
 }

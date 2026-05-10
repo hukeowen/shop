@@ -37,13 +37,43 @@ export async function getDashboard() {
     },
     topProducts: Array.isArray(r.topProducts)
       ? r.topProducts.map((p) => ({
+          spuId: p.spuId,
           name: p.name || '未命名商品',
           picUrl: p.picUrl || '',
           count: numOr(p.salesCount, 0),
           amount: numOr(p.salesAmount, 0),
         }))
       : [],
+    // v8: 今日推广（dashboard 加的字段）
+    promo: {
+      issued: numOr(r.todayPromoIssued, 0),
+      deducted: numOr(r.todayPromoDeducted, 0),
+      commission: numOr(r.todayPromoCommission, 0),
+      poolDeposit: numOr(r.todayPromoPoolDeposit, 0),
+    },
   };
+}
+
+// ========== 销售统计页 / 排行 / 漏斗 / 热力 / 会员 ==========
+
+export async function getSalesStats(period = 'month') {
+  return request({ url: '/app-api/merchant/mini/stats/sales', method: 'GET', data: { period } });
+}
+
+export async function getProductRank(period = 'month', sort = 'count', limit = 20) {
+  return request({ url: '/app-api/merchant/mini/stats/product-rank', method: 'GET', data: { period, sort, limit } });
+}
+
+export async function listMembers(pageNo = 1, pageSize = 20) {
+  return request({ url: '/app-api/merchant/mini/stats/members', method: 'GET', data: { pageNo, pageSize } });
+}
+
+export async function getHourlyHeatmap(period = 'month') {
+  return request({ url: '/app-api/merchant/mini/stats/hourly-heatmap', method: 'GET', data: { period } });
+}
+
+export async function getReferralFunnel(spuId) {
+  return request({ url: '/app-api/merchant/mini/stats/referral-funnel', method: 'GET', data: spuId ? { spuId } : {} });
 }
 
 function numOr(v, fallback) {
