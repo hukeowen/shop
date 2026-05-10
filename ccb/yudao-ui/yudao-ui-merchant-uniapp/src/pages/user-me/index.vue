@@ -79,7 +79,7 @@
       </view>
       <view class="me-row" @click="goQueue">
         <view class="me-row-icon i2">🎯</view>
-        <text class="me-row-name">我的队列（v7 推 N 反 1）</text>
+        <text class="me-row-name">我的队列（v8 推 N 反 1）</text>
         <text v-if="queueCount" class="me-row-tag">{{ queueCount }} 个排队中</text>
         <text class="me-row-arrow">›</text>
       </view>

@@ -111,11 +111,16 @@ const converting = ref(false);
 const convertAmount = ref('');
 
 const SOURCE_LABELS = {
+  // v8 推 N 反 1 实际写入类型
+  SELF_BATCH: '自购返奖',
+  REFERRAL_PROGRESS: '推广累积',
+  REFERRAL_COMMISSION: '下级首贡献',
+  COMMISSION: '团队极差',
+  POOL: '积分池',
+  // 兼容历史 / 其他来源
   DIRECT: '直推奖',
   QUEUE: '队列返奖',
   SELF_PURCHASE: '自购插队',
-  COMMISSION: '团队极差',
-  POOL: '积分池',
   CONVERT: '转换',
   WITHDRAW: '提现',
   WITHDRAW_REFUND: '提现退还',

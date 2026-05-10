@@ -74,7 +74,7 @@
         </view>
         <view class="vip-sub">
           <text v-if="myRel">已邀请 {{ inviterCount }} 位好友 · 在该店赚 ¥{{ fen2yuan(myRel?.balance || 0) }}</text>
-          <text v-else>每邀 1 位好友购买，按 v7 推 N 反 1 拿返奖</text>
+          <text v-else>每邀 1 位好友购买，按 v8 推 N 反 1 拿返奖</text>
         </view>
       </view>
       <view class="vip-cta">邀请赚奖 ›</view>
@@ -192,7 +192,7 @@
     <view v-if="showShare" class="share-mask" @click.self="showShare = false">
       <view class="share-sheet">
         <view class="share-title">邀请好友进店</view>
-        <view class="share-sub">朋友通过你的链接进店并下单，按 v7 推 N 反 1 自动返奖到你的推广积分</view>
+        <view class="share-sub">朋友通过你的链接进店并下单，按 v8 推 N 反 1 自动返奖到你的推广积分</view>
         <view v-if="myShareQr" class="share-qr-wrap">
           <image :src="myShareQr" class="share-qr" mode="aspectFit" />
           <text class="share-qr-tip">长按图片可保存到相册</text>

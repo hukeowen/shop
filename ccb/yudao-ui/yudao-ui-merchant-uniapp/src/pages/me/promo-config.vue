@@ -72,7 +72,7 @@
       </view>
     </view>
 
-    <!-- ============ v7 推 N 反 1 全局配置 ============ -->
+    <!-- ============ v8 推 N 反 1 全局配置（商户级兜底）============ -->
     <view class="card">
       <view class="section-title">推广奖励（推 N 反 1 · 商户级兜底，商品级配置优先）</view>
       <view class="hint">用户必须先自购该商品才有资格享受推 N 反 1，完成 N 次累计后进入「终态」。</view>
@@ -278,7 +278,7 @@ const form = ref({
   poolSettleMode: 'FULL',
   fullCutThresholdYuan: '',
   fullCutAmountYuan: '',
-  // v7 推 N 反 1
+  // v8 推 N 反 1
   directCommissionRatio: '',
   naturalPushEnabled: false,
 });
