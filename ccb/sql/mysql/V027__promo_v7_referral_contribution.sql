@@ -11,16 +11,29 @@
 -- 兼容性：
 --   - shop_queue_position 旧字段 layer/promoted_at 保留不删，但语义废弃；新代码读 state
 --   - shop_queue_event 新增事件类型 ACTIVATE / DIRECT_COMMISSION（仅枚举值，DDL 不变）
+--
+-- 幂等：deploy.sh 不带 --reset 会重复跑，ALTER ADD COLUMN 必须用 PREPARE 包装。
+-- MODIFY COLUMN 重复跑无副作用（已是目标尺寸 → noop）；UPDATE state 重复跑也无害。
 -- =============================================================================
 
+SET NAMES utf8mb4;
+
 -- ========== 1. shop_promo_config 加 v7 配置字段 ==========
-ALTER TABLE `shop_promo_config`
-  ADD COLUMN `direct_commission_ratio` DECIMAL(5, 2) DEFAULT NULL
-    COMMENT 'v7 间推百分比（如 10 表示 10%），完成推 N 反 1 后自购 / 下级首单的返奖比例'
-    AFTER `full_cut_amount`,
-  ADD COLUMN `natural_push_enabled` BIT(1) NOT NULL DEFAULT b'0'
-    COMMENT 'v7 自然推开关（OFF=吞奖，ON=保留旧 A/B 层队列）；仅对真自然用户生效'
-    AFTER `direct_commission_ratio`;
+SET @x := (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+           WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'shop_promo_config'
+             AND COLUMN_NAME = 'direct_commission_ratio');
+SET @s := IF(@x = 0,
+  "ALTER TABLE `shop_promo_config` ADD COLUMN `direct_commission_ratio` DECIMAL(5, 2) DEFAULT NULL COMMENT 'v7 间推百分比（如 10 表示 10%），完成推 N 反 1 后自购 / 下级首单的返奖比例' AFTER `full_cut_amount`",
+  'SELECT 1');
+PREPARE stmt FROM @s; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @x := (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+           WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'shop_promo_config'
+             AND COLUMN_NAME = 'natural_push_enabled');
+SET @s := IF(@x = 0,
+  "ALTER TABLE `shop_promo_config` ADD COLUMN `natural_push_enabled` BIT(1) NOT NULL DEFAULT b'0' COMMENT 'v7 自然推开关（OFF=吞奖，ON=保留旧 A/B 层队列）；仅对真自然用户生效' AFTER `direct_commission_ratio`",
+  'SELECT 1');
+PREPARE stmt FROM @s; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 -- ========== 2. shop_queue_position 加 v7 状态字段 ==========
 -- v6 的 layer A/B + promoted_at 已不再使用；保留字段不删（避免 DROP 影响 DO 反序列化）。
@@ -28,12 +41,16 @@ ALTER TABLE `shop_promo_config`
 --   NEW：从未自购过该商品（理论上不写到 DB，激活时直接 INSERT IN_PROGRESS）
 --   IN_PROGRESS：已激活，cumulated < N
 --   COMPLETED：cumulated == N，永久终态
-ALTER TABLE `shop_queue_position`
-  ADD COLUMN `state` VARCHAR(16) NOT NULL DEFAULT 'IN_PROGRESS'
-    COMMENT 'v7 状态机：NEW / IN_PROGRESS / COMPLETED'
-    AFTER `accumulated_amount`;
+SET @x := (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+           WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'shop_queue_position'
+             AND COLUMN_NAME = 'state');
+SET @s := IF(@x = 0,
+  "ALTER TABLE `shop_queue_position` ADD COLUMN `state` VARCHAR(16) NOT NULL DEFAULT 'IN_PROGRESS' COMMENT 'v7 状态机：NEW / IN_PROGRESS / COMPLETED' AFTER `accumulated_amount`",
+  'SELECT 1');
+PREPARE stmt FROM @s; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 -- 历史数据迁移：QUEUEING → IN_PROGRESS；EXITED → COMPLETED
+-- 重复跑：state 已经是 IN_PROGRESS / COMPLETED，重新计算还是同值 → 幂等无副作用
 UPDATE `shop_queue_position`
    SET `state` = CASE WHEN `status` = 'EXITED' THEN 'COMPLETED' ELSE 'IN_PROGRESS' END;
 
@@ -67,6 +84,7 @@ CREATE TABLE IF NOT EXISTS `shop_referral_contribution` (
 
 -- ========== 4. 扩相关列长度 ==========
 -- v7 新事件 REFERRAL_COMMISSION (19) / REFERRAL_PROGRESS (17) / SELF_COMMISSION (15) 超过原 varchar(16)
+-- MODIFY 重复跑：列已是 VARCHAR(32) → MySQL 还是发 ALTER 但是 noop，不报错 → 幂等
 ALTER TABLE `shop_promo_record` MODIFY COLUMN `source_type` VARCHAR(32) NOT NULL COMMENT '来源类型枚举值';
 ALTER TABLE `shop_consume_point_record` MODIFY COLUMN `source_type` VARCHAR(32) NOT NULL COMMENT '来源类型枚举值';
 ALTER TABLE `shop_queue_event` MODIFY COLUMN `event_type` VARCHAR(32) NOT NULL COMMENT '事件类型枚举值';

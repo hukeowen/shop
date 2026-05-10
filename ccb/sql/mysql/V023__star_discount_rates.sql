@@ -8,9 +8,16 @@
 --
 -- 仅做文案展示用，不参与结算（C 端用户在 shop-home 页看到「你是 3 星会员，本单
 -- 享 9 折」），不真改 trade order 价格。
+--
+-- 幂等：deploy.sh 不带 --reset 会重复跑，ALTER ADD COLUMN 必须用 PREPARE 包装。
 -- =============================================================================
 
-ALTER TABLE `shop_promo_config`
-  ADD COLUMN `star_discount_rates` VARCHAR(255) DEFAULT NULL
-  COMMENT '星级折扣比例 JSON 数组，索引 = star，值 = 百分制比例（100=原价）。空=不显示折扣'
-  AFTER `star_upgrade_rules`;
+SET NAMES utf8mb4;
+
+SET @x := (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+           WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'shop_promo_config'
+             AND COLUMN_NAME = 'star_discount_rates');
+SET @s := IF(@x = 0,
+  "ALTER TABLE `shop_promo_config` ADD COLUMN `star_discount_rates` VARCHAR(255) DEFAULT NULL COMMENT '星级折扣比例 JSON 数组，索引 = star，值 = 百分制比例（100=原价）。空=不显示折扣' AFTER `star_upgrade_rules`",
+  'SELECT 1');
+PREPARE stmt FROM @s; EXECUTE stmt; DEALLOCATE PREPARE stmt;
