@@ -56,6 +56,12 @@ public class MerchantDashboardServiceImpl implements MerchantDashboardService {
     private MemberUserMapper memberUserMapper;
     @Resource
     private cn.iocoder.yudao.module.merchant.dal.mysql.MemberShopRelMapper memberShopRelMapper;
+    @Resource
+    private cn.iocoder.yudao.module.merchant.dal.mysql.promo.ShopPromoRecordMapper promoRecordMapper;
+    @Resource
+    private cn.iocoder.yudao.module.merchant.dal.mysql.promo.ShopPromoDeductionRecordMapper deductionRecordMapper;
+    @Resource
+    private cn.iocoder.yudao.module.merchant.dal.mysql.promo.ShopQueueEventMapper queueEventMapper;
 
     private static final DateTimeFormatter LABEL_FMT = DateTimeFormatter.ofPattern("MM-dd");
 
@@ -82,6 +88,7 @@ public class MerchantDashboardServiceImpl implements MerchantDashboardService {
             sales.add(row[1]);
         }
 
+        long[] promoToday = queryPromoToday(todayStart, todayEnd);
         return AppMerchantDashboardRespVO.builder()
                 // 今日数据
                 .todayOrderCount(countTodayOrders(todayStart, todayEnd))
@@ -94,6 +101,11 @@ public class MerchantDashboardServiceImpl implements MerchantDashboardService {
                 // 经营概览
                 .activeSpuCount(countActiveSpu())
                 .totalMemberCount(countTotalMembers())
+                // 今日推广（v8）
+                .todayPromoIssued(promoToday[0])
+                .todayPromoDeducted(promoToday[1])
+                .todayPromoCommission(promoToday[2])
+                .todayPromoPoolDeposit(promoToday[3])
                 // 7 天趋势
                 .trendLabels(labels)
                 .trendOrderCounts(orderCounts)
@@ -101,6 +113,51 @@ public class MerchantDashboardServiceImpl implements MerchantDashboardService {
                 // 30 天 Top3
                 .topProducts(queryTopProducts(topStart, todayEnd))
                 .build();
+    }
+
+    /**
+     * 今日 v8 推广数据（4 个数）：
+     *   [0] 发出推广积分总额（含自购/首贡献/极差/自然推队首）
+     *   [1] 抵扣订单总额（用户少付）
+     *   [2] 极差奖发出（COMMISSION 类型）
+     *   [3] 入池累计（POOL_DEPOSIT_V8 事件）
+     */
+    private long[] queryPromoToday(LocalDateTime start, LocalDateTime end) {
+        long issued = sumPromoRecord(start, end, null);
+        long commission = sumPromoRecord(start, end, "COMMISSION");
+        long deducted = sumDeductionRecord(start, end);
+        long pool = sumQueueEvent(start, end, "POOL_DEPOSIT_V8");
+        return new long[]{ issued, deducted, commission, pool };
+    }
+
+    private long sumPromoRecord(LocalDateTime start, LocalDateTime end, String sourceType) {
+        QueryWrapper<cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopPromoRecordDO> w = new QueryWrapper<>();
+        w.select("IFNULL(SUM(amount),0) AS s");
+        w.between("create_time", start, end);
+        w.gt("amount", 0);  // 仅入账（正向）
+        if (sourceType != null) w.eq("source_type", sourceType);
+        List<Map<String, Object>> rows = promoRecordMapper.selectMaps(w);
+        if (rows == null || rows.isEmpty() || rows.get(0).get("s") == null) return 0L;
+        return Long.parseLong(rows.get(0).get("s").toString());
+    }
+
+    private long sumDeductionRecord(LocalDateTime start, LocalDateTime end) {
+        QueryWrapper<cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopPromoDeductionRecordDO> w = new QueryWrapper<>();
+        w.select("IFNULL(SUM(deduct_count * unit_price),0) AS s");
+        w.between("create_time", start, end);
+        List<Map<String, Object>> rows = deductionRecordMapper.selectMaps(w);
+        if (rows == null || rows.isEmpty() || rows.get(0).get("s") == null) return 0L;
+        return Long.parseLong(rows.get(0).get("s").toString());
+    }
+
+    private long sumQueueEvent(LocalDateTime start, LocalDateTime end, String eventType) {
+        QueryWrapper<cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopQueueEventDO> w = new QueryWrapper<>();
+        w.select("IFNULL(SUM(amount),0) AS s");
+        w.between("create_time", start, end);
+        w.eq("event_type", eventType);
+        List<Map<String, Object>> rows = queueEventMapper.selectMaps(w);
+        if (rows == null || rows.isEmpty() || rows.get(0).get("s") == null) return 0L;
+        return Long.parseLong(rows.get(0).get("s").toString());
     }
 
     /**

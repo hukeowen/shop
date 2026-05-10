@@ -42,6 +42,19 @@ public class AppMerchantDashboardRespVO {
     @Schema(description = "累计会员数")
     private Long totalMemberCount;
 
+    // ========== 今日推广（v8 新增）==========
+    @Schema(description = "今日发出推广积分总额（分）= 自购 + 首贡献 + 极差 + 自然推队首")
+    private Long todayPromoIssued;
+
+    @Schema(description = "今日推广积分抵扣订单总额（分）= 用户少付 K × unitPrice")
+    private Long todayPromoDeducted;
+
+    @Schema(description = "今日极差奖发出总额（分）")
+    private Long todayPromoCommission;
+
+    @Schema(description = "今日入池累计（分）")
+    private Long todayPromoPoolDeposit;
+
     // ========== 最近 7 天趋势 ==========
     @Schema(description = "最近 7 天日期标签 MM-DD（含今天，长度 7）")
     private List<String> trendLabels;
