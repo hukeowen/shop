@@ -49,6 +49,10 @@ public class MerchantPromoOrderHandler implements TradeOrderHandler {
     private PromoPoolService promoPoolService;
     @Resource
     private StarService starService;
+    @Resource
+    private cn.iocoder.yudao.module.merchant.service.MemberShopRelService memberShopRelService;
+    @Resource
+    private cn.iocoder.yudao.module.merchant.service.promo.ReferralService referralService;
 
     @Override
     public void afterPayOrder(TradeOrderDO order, List<TradeOrderItemDO> orderItems) {
@@ -57,8 +61,20 @@ public class MerchantPromoOrderHandler implements TradeOrderHandler {
         }
         Long buyerId = order.getUserId();
         Long orderId = order.getId();
+        Long tenantId = order.getTenantId();
         if (buyerId == null || orderId == null) {
             return;
+        }
+
+        // 自动入店：用户首次在该店下单时建立 member_shop_rel，让会员列表 / 资产 / 邀请关系
+        // 三表语义一致；referrer 沿当前推荐链头部（自然用户 / 邀请进入都兼容）
+        if (tenantId != null && tenantId > 0) {
+            try {
+                Long parentId = referralService.getDirectParent(buyerId);
+                memberShopRelService.getOrCreateWithReferrer(buyerId, tenantId, parentId == null || parentId <= 0 ? null : parentId);
+            } catch (Exception e) {
+                log.warn("[afterPayOrder] 自动入店失败 buyer={} tenant={}: {}", buyerId, tenantId, e.getMessage());
+            }
         }
 
         // v8: 按 SPU 行循环触发 — 推 N 反 1 / 极差 / 升星 / 入池都按 SPU 独立

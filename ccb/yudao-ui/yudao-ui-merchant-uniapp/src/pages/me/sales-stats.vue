@@ -357,9 +357,9 @@ onShow(loadAll);
 }
 
 .trend-bigchart {
-  display: flex; align-items: flex-end; justify-content: space-between;
+  display: flex; align-items: stretch; justify-content: space-between;
   height: 160rpx; margin-top: 8rpx;
-  .b { flex: 1; margin: 0 2rpx; display: flex; flex-direction: row; align-items: flex-end; justify-content: center; gap: 1rpx; }
+  .b { flex: 1; margin: 0 2rpx; display: flex; flex-direction: row; align-items: flex-end; justify-content: center; gap: 1rpx; height: 100%; }
   .bf { width: 14rpx; background: linear-gradient(180deg, $brand-primary, #ffe1cc); border-radius: 4rpx 4rpx 0 0; }
   .bf.bf2 { background: linear-gradient(180deg, $success, #d1fae5); }
 }
