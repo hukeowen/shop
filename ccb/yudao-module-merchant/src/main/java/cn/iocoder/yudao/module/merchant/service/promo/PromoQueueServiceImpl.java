@@ -642,6 +642,7 @@ public class PromoQueueServiceImpl implements PromoQueueService {
             cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopPromoDeductionRecordDO rec =
                     cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopPromoDeductionRecordDO.builder()
                             .orderId(orderId)
+                            .orderItemId(0L)
                             .userId(buyerUserId)
                             .spuId(spuId)
                             .unitPrice(unitPrice)

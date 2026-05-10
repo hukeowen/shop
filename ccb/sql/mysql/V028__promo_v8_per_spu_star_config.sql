@@ -109,7 +109,7 @@ CREATE TABLE IF NOT EXISTS `shop_promo_deduction_record` (
   `id`              BIGINT      NOT NULL AUTO_INCREMENT,
   `tenant_id`       BIGINT      NOT NULL,
   `order_id`        BIGINT      NOT NULL,
-  `order_item_id`   BIGINT      NOT NULL,
+  `order_item_id`   BIGINT      NOT NULL DEFAULT 0,
   `user_id`         BIGINT      NOT NULL,
   `spu_id`          BIGINT      NOT NULL,
   `unit_price`      INT         NOT NULL  COMMENT '单件价（分）',
