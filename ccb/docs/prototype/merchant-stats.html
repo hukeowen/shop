@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>摊小二 · 商户销售统计 原型</title>
+<style>
+  :root {
+    --brand: #FF6B35;
+    --brand-2: #FF9A4A;
+    --bg: #f7f7f8;
+    --card: #ffffff;
+    --text-primary: #1a1a1a;
+    --text-secondary: #6b6b75;
+    --text-placeholder: #9ca3af;
+    --success: #10b981;
+    --warn: #f59e0b;
+    --danger: #ef4444;
+    --border: #f0f0f3;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #e9ecef;
+    padding: 32px 16px;
+    color: var(--text-primary);
+  }
+  .header {
+    text-align: center;
+    margin-bottom: 24px;
+  }
+  .header h1 {
+    font-size: 28px;
+    font-weight: 700;
+    color: #2c3e50;
+  }
+  .header p {
+    color: #7f8c8d;
+    margin-top: 8px;
+    font-size: 14px;
+  }
+  .legend {
+    display: inline-block;
+    margin-top: 12px;
+    padding: 8px 16px;
+    background: #fff;
+    border-radius: 999px;
+    font-size: 12px;
+    color: #555;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  }
+  .legend .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; vertical-align: middle; margin-right: 4px; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+    gap: 32px;
+    max-width: 1800px;
+    margin: 0 auto;
+    justify-content: center;
+  }
+
+  .phone {
+    background: #1a1a1a;
+    border-radius: 36px;
+    padding: 12px;
+    box-shadow: 0 16px 48px rgba(0,0,0,0.18);
+    margin: 0 auto;
+    width: 380px;
+  }
+  .phone-screen {
+    background: var(--bg);
+    border-radius: 28px;
+    overflow: hidden;
+    height: 800px;
+    overflow-y: auto;
+    position: relative;
+  }
+  .phone-screen::-webkit-scrollbar { width: 4px; }
+  .phone-screen::-webkit-scrollbar-thumb { background: #ccc; border-radius: 2px; }
+  .phone-label {
+    text-align: center;
+    color: #fff;
+    font-size: 13px;
+    margin-top: 12px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+  }
+  .phone-label small { color: #aaa; font-weight: 400; display: block; margin-top: 2px; font-size: 11px; }
+
+  /* Status bar */
+  .statusbar {
+    height: 36px;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  /* App header */
+  .app-nav {
+    height: 44px;
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .app-nav .back { font-size: 22px; color: #333; cursor: pointer; padding-right: 12px; }
+  .app-nav .title { font-size: 16px; font-weight: 600; flex: 1; text-align: center; margin-right: 22px; }
+  .app-nav .actions { font-size: 13px; color: var(--brand); }
+
+  /* Dashboard styles */
+  .header-block {
+    background: linear-gradient(135deg, var(--brand) 0%, var(--brand-2) 100%);
+    padding: 20px 16px 28px;
+    color: #fff;
+  }
+  .greet { font-size: 14px; opacity: 0.9; }
+  .shop { font-size: 22px; font-weight: 700; margin-top: 4px; }
+  .status-pill {
+    display: inline-block; padding: 3px 10px; border-radius: 999px;
+    background: rgba(255,255,255,0.2);
+    font-size: 12px;
+    margin-top: 8px;
+  }
+
+  .quick-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+    background: var(--card);
+    margin: -16px 12px 12px;
+    padding: 16px 8px;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+    position: relative;
+    z-index: 5;
+  }
+  .quick-item { text-align: center; }
+  .quick-item .q-icon {
+    width: 44px; height: 44px; margin: 0 auto 6px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 20px; font-weight: 600;
+  }
+  .quick-item .q-icon.ai { background: linear-gradient(135deg, #ff6b35, #ff9b5e); }
+  .quick-item .q-icon.add { background: #10b981; }
+  .quick-item .q-icon.scan { background: #3b82f6; }
+  .quick-item .q-icon.order { background: #8b5cf6; }
+  .quick-item span { font-size: 11px; color: var(--text-secondary); }
+
+  .section-title {
+    padding: 16px 16px 8px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .section-title .more { color: var(--brand); font-size: 13px; cursor: pointer; }
+
+  /* Stats cards */
+  .stat-cards {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    padding: 0 12px;
+  }
+  .stat {
+    background: var(--card);
+    border-radius: 10px;
+    padding: 14px 12px;
+    position: relative;
+    cursor: pointer;
+    transition: transform 0.15s;
+    border: 1px solid transparent;
+  }
+  .stat:hover { transform: translateY(-2px); border-color: var(--brand); }
+  .stat .stat-label { font-size: 12px; color: var(--text-secondary); display: flex; align-items: center; justify-content: space-between; }
+  .stat .stat-label .arrow { font-size: 14px; color: var(--brand); }
+  .stat .stat-value { font-size: 24px; font-weight: 700; margin-top: 4px; font-variant-numeric: tabular-nums; }
+  .stat .stat-value.warn { color: var(--warn); }
+
+  /* NEW: 推广收益块 */
+  .promo-block {
+    margin: 8px 12px;
+    padding: 12px;
+    background: linear-gradient(135deg, #fff5e6, #ffe8d4);
+    border: 1px solid #ffae74;
+    border-radius: 10px;
+    cursor: pointer;
+  }
+  .promo-block .promo-h {
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 13px; font-weight: 600; color: #d97706;
+  }
+  .promo-block .promo-row { display: flex; gap: 8px; margin-top: 8px; }
+  .promo-block .promo-mini {
+    flex: 1; background: rgba(255,255,255,0.5); border-radius: 6px; padding: 6px 8px;
+  }
+  .promo-block .promo-mini .l { font-size: 10px; color: var(--text-secondary); }
+  .promo-block .promo-mini .v { font-size: 14px; font-weight: 700; color: var(--text-primary); }
+
+  /* Trend chart */
+  .chart-card {
+    margin: 8px 12px;
+    background: var(--card);
+    border-radius: 10px;
+    padding: 12px;
+  }
+  .chart-card .ch-h { display: flex; justify-content: space-between; font-size: 14px; font-weight: 600; margin-bottom: 12px; }
+  .chart {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    height: 100px;
+  }
+  .chart .bar {
+    flex: 1;
+    margin: 0 2px;
+    display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
+    cursor: pointer;
+  }
+  .chart .bar-fill {
+    width: 100%; max-width: 24px;
+    background: linear-gradient(180deg, var(--brand), #ffb48a);
+    border-radius: 4px 4px 0 0;
+    transition: opacity 0.15s;
+  }
+  .chart .bar:hover .bar-fill { opacity: 0.7; }
+  .chart .bar-label { font-size: 9px; color: var(--text-secondary); margin-top: 4px; }
+
+  /* Rank list */
+  .rank-card {
+    margin: 8px 12px;
+    background: var(--card);
+    border-radius: 10px;
+    padding: 12px;
+  }
+  .rank-row {
+    display: flex; align-items: center; padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+  }
+  .rank-row:last-child { border-bottom: none; }
+  .rank-no {
+    width: 24px; height: 24px; border-radius: 50%;
+    text-align: center; line-height: 24px; font-size: 11px;
+    color: #fff; font-weight: 600; margin-right: 10px;
+    background: var(--text-placeholder);
+  }
+  .rank-no.gold { background: #ffcc00; }
+  .rank-no.silver { background: #c0c5cf; }
+  .rank-no.bronze { background: #d6793a; }
+  .rank-name { flex: 1; font-size: 13px; }
+  .rank-meta { text-align: right; font-size: 11px; color: var(--text-secondary); }
+  .rank-meta .amount { color: var(--brand); font-weight: 600; font-size: 13px; }
+
+  /* Bottom tab */
+  .tabbar {
+    position: sticky; bottom: 0;
+    height: 50px;
+    display: flex; align-items: center; justify-content: space-around;
+    background: #fff;
+    border-top: 1px solid var(--border);
+  }
+  .tab-item { display: flex; flex-direction: column; align-items: center; font-size: 10px; color: var(--text-secondary); }
+  .tab-item.active { color: var(--brand); }
+  .tab-item .ti { font-size: 18px; }
+
+  /* Sales-stats specific */
+  .period-tabs {
+    display: flex;
+    background: #fff;
+    padding: 8px 12px;
+    gap: 6px;
+    border-bottom: 1px solid var(--border);
+  }
+  .period-tabs .pt {
+    padding: 6px 14px; border-radius: 999px;
+    background: #f0f0f3; font-size: 13px; cursor: pointer;
+  }
+  .period-tabs .pt.active { background: var(--brand); color: #fff; }
+
+  .summary-card {
+    margin: 12px;
+    padding: 20px 16px;
+    background: linear-gradient(135deg, var(--brand) 0%, var(--brand-2) 100%);
+    border-radius: 16px;
+    color: #fff;
+  }
+  .summary-card .sc-period { font-size: 13px; opacity: 0.85; }
+  .summary-card .sc-big {
+    font-size: 38px; font-weight: 800; margin: 4px 0 4px;
+    font-variant-numeric: tabular-nums;
+  }
+  .summary-card .sc-label { font-size: 12px; opacity: 0.85; margin-bottom: 16px; }
+  .summary-card .sc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .summary-card .sc-item {
+    background: rgba(255,255,255,0.15);
+    border-radius: 8px;
+    padding: 8px 10px;
+  }
+  .summary-card .sc-item .l { font-size: 11px; opacity: 0.85; }
+  .summary-card .sc-item .v { font-size: 16px; font-weight: 600; margin-top: 2px; font-variant-numeric: tabular-nums; }
+  .summary-card .sc-net {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px dashed rgba(255,255,255,0.3);
+    display: flex; justify-content: space-between; align-items: baseline;
+  }
+  .summary-card .sc-net .l { font-size: 12px; }
+  .summary-card .sc-net .v { font-size: 22px; font-weight: 700; }
+
+  .panel {
+    margin: 8px 12px;
+    background: var(--card);
+    border-radius: 10px;
+    padding: 14px;
+  }
+  .panel h3 {
+    font-size: 14px; font-weight: 600; margin-bottom: 10px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .panel h3 .more { margin-left: auto; font-size: 12px; color: var(--brand); font-weight: 400; cursor: pointer; }
+  .funds-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .funds-item {
+    padding: 10px 12px;
+    background: #f7f7f8;
+    border-radius: 8px;
+  }
+  .funds-item .l { font-size: 11px; color: var(--text-secondary); }
+  .funds-item .v { font-size: 16px; font-weight: 700; margin-top: 2px; }
+  .funds-item .v.warn { color: var(--warn); }
+  .funds-item .v.success { color: var(--success); }
+
+  /* Trend in stats page */
+  .trend-bigchart {
+    height: 140px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-top: 8px;
+  }
+  .trend-bigchart .b { flex: 1; margin: 0 1.5px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; }
+  .trend-bigchart .bf { width: 100%; max-width: 16px; background: linear-gradient(180deg, var(--brand), #ffe1cc); border-radius: 3px 3px 0 0; }
+  .trend-bigchart .bf2 { background: linear-gradient(180deg, #10b981, #d1fae5); }
+  .trend-legend { display: flex; gap: 12px; font-size: 11px; color: var(--text-secondary); margin-top: 8px; }
+  .trend-legend .lg { display: flex; align-items: center; gap: 4px; }
+  .trend-legend .lg .sw { width: 10px; height: 10px; border-radius: 2px; }
+
+  /* Promo reconcile */
+  .reconcile-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; border-bottom: 1px dashed #eee; }
+  .reconcile-row:last-child { border-bottom: none; }
+  .reconcile-row .l { color: var(--text-secondary); }
+  .reconcile-row .v { font-variant-numeric: tabular-nums; font-weight: 500; }
+  .reconcile-row .v.income { color: var(--success); }
+  .reconcile-row .v.outflow { color: var(--danger); }
+
+  /* Heatmap */
+  .heatmap {
+    display: grid;
+    grid-template-columns: repeat(24, 1fr);
+    gap: 2px;
+    margin-top: 8px;
+  }
+  .heatmap .cell {
+    aspect-ratio: 1;
+    border-radius: 2px;
+    background: #f0f0f3;
+  }
+  .heatmap .cell.l1 { background: #fff5e6; }
+  .heatmap .cell.l2 { background: #ffd6b3; }
+  .heatmap .cell.l3 { background: #ffae74; }
+  .heatmap .cell.l4 { background: var(--brand); }
+  .heatmap-label { display: flex; justify-content: space-between; font-size: 10px; color: var(--text-secondary); margin-top: 4px; }
+  .heatmap-legend { display: flex; align-items: center; gap: 4px; font-size: 10px; color: var(--text-secondary); justify-content: flex-end; margin-top: 6px; }
+  .heatmap-legend .sw { width: 12px; height: 12px; border-radius: 2px; }
+
+  /* Funnel */
+  .funnel { padding-top: 4px; }
+  .funnel-row {
+    display: flex; align-items: center;
+    margin-bottom: 6px;
+  }
+  .funnel-bar {
+    height: 28px; border-radius: 4px;
+    background: linear-gradient(90deg, var(--brand), #ffae74);
+    color: #fff; font-size: 12px; font-weight: 600;
+    padding: 0 10px; line-height: 28px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .funnel-row .name { width: 76px; font-size: 12px; }
+
+  /* Product rank table */
+  .rank-table {
+    width: 100%; font-size: 13px;
+    border-collapse: collapse;
+  }
+  .rank-table th { font-weight: 500; color: var(--text-secondary); font-size: 11px; padding: 8px 4px; text-align: left; border-bottom: 1px solid var(--border); }
+  .rank-table th:last-child, .rank-table td:last-child { text-align: right; }
+  .rank-table td { padding: 10px 4px; border-bottom: 1px solid var(--border); }
+  .rank-table .medal { font-size: 16px; }
+
+  /* Member item */
+  .member-row {
+    display: flex; align-items: center;
+    padding: 12px;
+    background: #fff;
+    margin: 0 12px 8px;
+    border-radius: 8px;
+  }
+  .avatar {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: linear-gradient(135deg, #ffd1ba, #ff6b35);
+    color: #fff; display: flex; align-items: center; justify-content: center;
+    font-weight: 600; margin-right: 10px;
+  }
+  .member-info { flex: 1; }
+  .member-info .nm { font-size: 14px; font-weight: 500; }
+  .member-info .desc { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+  .member-stats { text-align: right; font-size: 11px; color: var(--text-secondary); }
+  .member-stats .star { color: var(--warn); font-size: 13px; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>摊小二 · 商户销售统计 原型</h1>
+  <p>4 屏：dashboard 改造 → 销售统计页 → 商品排行 → 会员列表</p>
+  <div class="legend">
+    <span class="dot" style="background: var(--brand);"></span> 可点击跳转 ·
+    <span class="dot" style="background: var(--success);"></span> 新增模块 ·
+    <span class="dot" style="background: var(--warn);"></span> 关键指标
+  </div>
+</div>
+
+<div class="grid">
+
+  <!-- ========== Phone 1: Dashboard 改造 ========== -->
+  <div>
+    <div class="phone">
+      <div class="phone-screen">
+        <div class="header-block">
+          <div class="statusbar" style="color:#fff;"><span>9:41</span><span>📶 5G ▮▮▮</span></div>
+          <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+            <div>
+              <div class="greet">中午好，摊主</div>
+              <div class="shop">新店1</div>
+            </div>
+            <div class="status-pill">● 营业中</div>
+          </div>
+        </div>
+
+        <div class="quick-grid">
+          <div class="quick-item"><div class="q-icon ai">AI</div><span>一键成片</span></div>
+          <div class="quick-item"><div class="q-icon add">+</div><span>AI上架</span></div>
+          <div class="quick-item"><div class="q-icon scan">扫</div><span>扫码核销</span></div>
+          <div class="quick-item"><div class="q-icon order">单</div><span>订单</span></div>
+        </div>
+
+        <div class="section-title">
+          <span>今日概览</span>
+          <span class="more">查看销售统计 ›</span>
+        </div>
+        <div class="stat-cards">
+          <div class="stat">
+            <div class="stat-label">订单数 <span class="arrow">›</span></div>
+            <div class="stat-value">1</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">销售额 <span class="arrow">›</span></div>
+            <div class="stat-value">¥500</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">新会员 <span class="arrow">›</span></div>
+            <div class="stat-value">2</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">待处理 <span class="arrow">›</span></div>
+            <div class="stat-value warn">1</div>
+          </div>
+        </div>
+
+        <!-- NEW: 推广收益本日 -->
+        <div class="section-title">
+          <span>★ 今日推广（NEW）</span>
+          <span class="more">明细 ›</span>
+        </div>
+        <div class="promo-block">
+          <div class="promo-h">
+            <span>🎁 v8 推广积分对账</span>
+            <span style="background: var(--brand); color: #fff; padding: 2px 8px; border-radius: 8px;">本日</span>
+          </div>
+          <div class="promo-row">
+            <div class="promo-mini">
+              <div class="l">发出推广积分</div><div class="v">¥120.00</div>
+            </div>
+            <div class="promo-mini">
+              <div class="l">抵扣订单</div><div class="v">¥100.00</div>
+            </div>
+            <div class="promo-mini">
+              <div class="l">极差奖发出</div><div class="v">¥1.00</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-title"><span>最近 7 天销售趋势</span></div>
+        <div class="chart-card">
+          <div class="chart">
+            <div class="bar"><div class="bar-fill" style="height: 4px;"></div><div class="bar-label">5-04</div></div>
+            <div class="bar"><div class="bar-fill" style="height: 4px;"></div><div class="bar-label">5-05</div></div>
+            <div class="bar"><div class="bar-fill" style="height: 4px;"></div><div class="bar-label">5-06</div></div>
+            <div class="bar"><div class="bar-fill" style="height: 4px;"></div><div class="bar-label">5-07</div></div>
+            <div class="bar"><div class="bar-fill" style="height: 4px;"></div><div class="bar-label">5-08</div></div>
+            <div class="bar"><div class="bar-fill" style="height: 4px;"></div><div class="bar-label">5-09</div></div>
+            <div class="bar"><div class="bar-fill" style="height: 88px;"></div><div class="bar-label">5-10</div></div>
+          </div>
+        </div>
+
+        <div class="section-title"><span>热销商品 Top 3</span><span class="more">查看全部 ›</span></div>
+        <div class="rank-card">
+          <div class="rank-row">
+            <div class="rank-no gold">1</div>
+            <div class="rank-name">v8测试商品-推5反1</div>
+            <div class="rank-meta">售出 6<div class="amount">¥500</div></div>
+          </div>
+          <div class="rank-row" style="opacity: 0.4;">
+            <div class="rank-no silver">2</div>
+            <div class="rank-name" style="color: var(--text-placeholder);">暂无</div>
+            <div class="rank-meta"></div>
+          </div>
+          <div class="rank-row" style="opacity: 0.4;">
+            <div class="rank-no bronze">3</div>
+            <div class="rank-name" style="color: var(--text-placeholder);">暂无</div>
+            <div class="rank-meta"></div>
+          </div>
+        </div>
+
+        <div style="height: 40px;"></div>
+        <div class="tabbar">
+          <div class="tab-item active"><span class="ti">🏠</span><span>工作台</span></div>
+          <div class="tab-item"><span class="ti">🎬</span><span>成片</span></div>
+          <div class="tab-item"><span class="ti">📋</span><span>订单</span></div>
+          <div class="tab-item"><span class="ti">👤</span><span>我的</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="phone-label">屏 1：工作台 dashboard 改造<br><small>4 数字可点 + 新增「今日推广」+ 销售/排行可点</small></div>
+  </div>
+
+  <!-- ========== Phone 2: 销售统计 ========== -->
+  <div>
+    <div class="phone">
+      <div class="phone-screen">
+        <div class="statusbar"><span>9:41</span><span>📶 5G ▮▮▮</span></div>
+        <div class="app-nav">
+          <span class="back">‹</span>
+          <span class="title">销售统计</span>
+          <span class="actions">导出 ›</span>
+        </div>
+
+        <div class="period-tabs">
+          <div class="pt">日</div>
+          <div class="pt">周</div>
+          <div class="pt active">月</div>
+          <div class="pt">年</div>
+          <div class="pt" style="margin-left: auto; background: transparent;">📅 2026-05</div>
+        </div>
+
+        <div class="summary-card">
+          <div class="sc-period">本月销售总览（2026-05）</div>
+          <div class="sc-big">¥500.00</div>
+          <div class="sc-label">销售总金额（订单按定价合计）</div>
+          <div class="sc-grid">
+            <div class="sc-item"><div class="l">实付总金额</div><div class="v">¥500.00</div></div>
+            <div class="sc-item"><div class="l">推广积分发出</div><div class="v">¥121.00</div></div>
+            <div class="sc-item"><div class="l">入池累计</div><div class="v">¥7.00</div></div>
+            <div class="sc-item"><div class="l">退款 / 售后</div><div class="v">¥0.00</div></div>
+          </div>
+          <div class="sc-net">
+            <span class="l">净收入 = 实付 - 退款 - 推广积分支出</span>
+            <span class="v">¥372.00</span>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>💰 资金分布<span class="more">详细 ›</span></h3>
+          <div class="funds-grid">
+            <div class="funds-item"><div class="l">用户应付未提余额</div><div class="v warn">¥120.00</div></div>
+            <div class="funds-item"><div class="l">已提现累计</div><div class="v">¥0.00</div></div>
+            <div class="funds-item"><div class="l">待处理提现申请</div><div class="v">0 笔</div></div>
+            <div class="funds-item"><div class="l">店铺余额</div><div class="v success">¥0.00</div></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>📊 30 日双线趋势</h3>
+          <div class="trend-bigchart">
+            <!-- 30 个柱子模拟 -->
+            <div class="b"><div class="bf" style="height: 0;"></div></div>
+            <div class="b"><div class="bf" style="height: 4%;"></div></div>
+            <div class="b"><div class="bf" style="height: 8%;"></div></div>
+            <div class="b"><div class="bf" style="height: 12%;"></div></div>
+            <div class="b"><div class="bf" style="height: 6%;"></div></div>
+            <div class="b"><div class="bf" style="height: 18%;"></div></div>
+            <div class="b"><div class="bf" style="height: 9%;"></div></div>
+            <div class="b"><div class="bf" style="height: 22%;"></div></div>
+            <div class="b"><div class="bf" style="height: 15%;"></div></div>
+            <div class="b"><div class="bf" style="height: 28%;"></div></div>
+            <div class="b"><div class="bf" style="height: 33%;"></div></div>
+            <div class="b"><div class="bf" style="height: 26%;"></div></div>
+            <div class="b"><div class="bf" style="height: 38%;"></div></div>
+            <div class="b"><div class="bf" style="height: 30%;"></div></div>
+            <div class="b"><div class="bf" style="height: 45%;"></div></div>
+            <div class="b"><div class="bf" style="height: 50%;"></div></div>
+            <div class="b"><div class="bf" style="height: 42%;"></div></div>
+            <div class="b"><div class="bf" style="height: 55%;"></div></div>
+            <div class="b"><div class="bf" style="height: 60%;"></div></div>
+            <div class="b"><div class="bf" style="height: 48%;"></div></div>
+            <div class="b"><div class="bf" style="height: 58%;"></div></div>
+            <div class="b"><div class="bf" style="height: 65%;"></div></div>
+            <div class="b"><div class="bf" style="height: 72%;"></div></div>
+            <div class="b"><div class="bf" style="height: 68%;"></div></div>
+            <div class="b"><div class="bf" style="height: 75%;"></div></div>
+            <div class="b"><div class="bf" style="height: 80%;"></div></div>
+            <div class="b"><div class="bf" style="height: 85%;"></div></div>
+            <div class="b"><div class="bf" style="height: 70%;"></div></div>
+            <div class="b"><div class="bf" style="height: 88%;"></div></div>
+            <div class="b"><div class="bf" style="height: 92%;"></div></div>
+          </div>
+          <div class="trend-legend">
+            <div class="lg"><span class="sw" style="background: var(--brand);"></span>销售额</div>
+            <div class="lg"><span class="sw" style="background: var(--success);"></span>实付（v8 抵扣后）</div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>🎯 推广积分对账（v8）<span class="more">流水 ›</span></h3>
+          <div class="reconcile-row"><span class="l">发出推广积分（订单触发）</span><span class="v outflow">-¥121.00</span></div>
+          <div class="reconcile-row"><span class="l">└ 抵扣订单（用户少付）</span><span class="v">¥100.00 (1 件)</span></div>
+          <div class="reconcile-row"><span class="l">└ 余额入账（首贡献+自购）</span><span class="v">¥20.00</span></div>
+          <div class="reconcile-row"><span class="l">└ 极差奖（沿链就近递增）</span><span class="v">¥1.00</span></div>
+          <div class="reconcile-row"><span class="l">入池累计（未发放）</span><span class="v income">+¥7.00</span></div>
+        </div>
+
+        <div class="panel">
+          <h3>🛍 商品销售排行<span class="more">完整排行 ›</span></h3>
+          <div class="rank-row">
+            <div class="rank-no gold">1</div>
+            <div class="rank-name">v8测试商品-推5反1</div>
+            <div class="rank-meta">售 6 件<div class="amount">¥500</div></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>👥 客户洞察</h3>
+          <div class="funds-grid">
+            <div class="funds-item"><div class="l">客单价</div><div class="v">¥500</div></div>
+            <div class="funds-item"><div class="l">复购率</div><div class="v">0%</div></div>
+            <div class="funds-item"><div class="l">新客 / 老客</div><div class="v">3 / 0</div></div>
+            <div class="funds-item"><div class="l">推荐客户占比</div><div class="v">66%</div></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>⏰ 时段热力图（本月）</h3>
+          <div class="heatmap">
+            <div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell l1"></div><div class="cell l2"></div><div class="cell l2"></div><div class="cell l3"></div><div class="cell l4"></div><div class="cell l3"></div><div class="cell l1"></div><div class="cell"></div><div class="cell l1"></div><div class="cell l2"></div><div class="cell l3"></div><div class="cell l4"></div><div class="cell l3"></div><div class="cell l2"></div><div class="cell l1"></div><div class="cell"></div><div class="cell"></div>
+          </div>
+          <div class="heatmap-label">
+            <span>0:00</span><span>6:00</span><span>12:00</span><span>18:00</span><span>23:59</span>
+          </div>
+          <div class="heatmap-legend">
+            少 <span class="sw" style="background: #f0f0f3;"></span>
+            <span class="sw" style="background: #fff5e6;"></span>
+            <span class="sw" style="background: #ffd6b3;"></span>
+            <span class="sw" style="background: #ffae74;"></span>
+            <span class="sw" style="background: var(--brand);"></span> 多
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>🎯 推广链路漏斗（v8）</h3>
+          <div class="funnel">
+            <div class="funnel-row">
+              <span class="name">已激活</span>
+              <div class="funnel-bar" style="width: 100%;"><span>3 人（含 buyer）</span><span>100%</span></div>
+            </div>
+            <div class="funnel-row">
+              <span class="name">推进中</span>
+              <div class="funnel-bar" style="width: 70%;"><span>2 人 IN_PROGRESS</span><span>67%</span></div>
+            </div>
+            <div class="funnel-row">
+              <span class="name">已完成</span>
+              <div class="funnel-bar" style="width: 33%;"><span>1 人 COMPLETED</span><span>33%</span></div>
+            </div>
+            <div class="funnel-row">
+              <span class="name">直推有效</span>
+              <div class="funnel-bar" style="width: 33%;"><span>1 人首贡献已结</span><span>33%</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div style="height: 24px;"></div>
+      </div>
+    </div>
+    <div class="phone-label">屏 2：销售统计页（NEW）<br><small>核心指标 + 双线趋势 + 推广对账 + 热力图 + 漏斗</small></div>
+  </div>
+
+  <!-- ========== Phone 3: 商品销售排行 ========== -->
+  <div>
+    <div class="phone">
+      <div class="phone-screen">
+        <div class="statusbar"><span>9:41</span><span>📶 5G ▮▮▮</span></div>
+        <div class="app-nav">
+          <span class="back">‹</span>
+          <span class="title">商品销售排行</span>
+          <span class="actions">导出</span>
+        </div>
+
+        <div class="period-tabs">
+          <div class="pt">日</div>
+          <div class="pt">周</div>
+          <div class="pt active">月</div>
+          <div class="pt">年</div>
+          <div class="pt" style="margin-left: auto; background: var(--bg);">按销量 ↓</div>
+        </div>
+
+        <div class="panel" style="margin-top: 12px;">
+          <table class="rank-table">
+            <thead>
+              <tr><th>名次</th><th>商品</th><th>销量</th><th>销售额</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="medal">🥇</span></td>
+                <td>v8测试商品-推5反1</td>
+                <td>6 件</td>
+                <td><strong style="color: var(--brand);">¥500</strong></td>
+              </tr>
+              <tr style="opacity: 0.4;">
+                <td><span class="medal">🥈</span></td>
+                <td>暂无</td><td>—</td><td>—</td>
+              </tr>
+              <tr style="opacity: 0.4;">
+                <td><span class="medal">🥉</span></td>
+                <td>暂无</td><td>—</td><td>—</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="panel">
+          <h3>🥇 v8测试商品-推5反1 详情</h3>
+          <div class="funds-grid">
+            <div class="funds-item"><div class="l">月销量</div><div class="v">6 件</div></div>
+            <div class="funds-item"><div class="l">销售额</div><div class="v">¥500</div></div>
+            <div class="funds-item"><div class="l">客单价</div><div class="v">¥500</div></div>
+            <div class="funds-item"><div class="l">复购率</div><div class="v">0%</div></div>
+          </div>
+          <div style="margin-top: 12px;">
+            <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 6px;">7 天销量曲线</div>
+            <div class="chart" style="height: 60px;">
+              <div class="bar"><div class="bar-fill" style="height: 0;"></div></div>
+              <div class="bar"><div class="bar-fill" style="height: 0;"></div></div>
+              <div class="bar"><div class="bar-fill" style="height: 0;"></div></div>
+              <div class="bar"><div class="bar-fill" style="height: 0;"></div></div>
+              <div class="bar"><div class="bar-fill" style="height: 0;"></div></div>
+              <div class="bar"><div class="bar-fill" style="height: 0;"></div></div>
+              <div class="bar"><div class="bar-fill" style="height: 50px;"></div></div>
+            </div>
+          </div>
+          <div style="margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--border);">
+            <div style="font-size: 13px; font-weight: 600; margin-bottom: 6px;">推 N 反 1 链路（spu 级）</div>
+            <div class="funnel">
+              <div class="funnel-row">
+                <span class="name">激活</span>
+                <div class="funnel-bar" style="width: 100%;"><span>3 人</span><span>100%</span></div>
+              </div>
+              <div class="funnel-row">
+                <span class="name">完成</span>
+                <div class="funnel-bar" style="width: 33%;"><span>1 人</span><span>33%</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="height: 16px;"></div>
+      </div>
+    </div>
+    <div class="phone-label">屏 3：商品销售排行 + 单品详情<br><small>展开排行 + 单品分析（含推 N 反 1 漏斗）</small></div>
+  </div>
+
+  <!-- ========== Phone 4: 会员列表 ========== -->
+  <div>
+    <div class="phone">
+      <div class="phone-screen">
+        <div class="statusbar"><span>9:41</span><span>📶 5G ▮▮▮</span></div>
+        <div class="app-nav">
+          <span class="back">‹</span>
+          <span class="title">店铺会员（5）</span>
+          <span class="actions">筛选</span>
+        </div>
+
+        <div style="background: linear-gradient(135deg, var(--brand) 0%, var(--brand-2) 100%); color: #fff; padding: 16px; margin: 12px; border-radius: 12px;">
+          <div style="font-size: 13px; opacity: 0.85;">本月新会员 / 总会员</div>
+          <div style="font-size: 32px; font-weight: 800; margin-top: 4px;">5 / 5</div>
+          <div style="font-size: 11px; opacity: 0.75; margin-top: 4px;">含商家本人 1 人 + 顾客 4 人 (推荐入店 3 人)</div>
+        </div>
+
+        <div class="period-tabs">
+          <div class="pt active">全部</div>
+          <div class="pt">活跃</div>
+          <div class="pt">高消费</div>
+          <div class="pt">流失风险</div>
+        </div>
+
+        <div class="member-row">
+          <div class="avatar">1</div>
+          <div class="member-info">
+            <div class="nm">店主 (18800009001)</div>
+            <div class="desc">商家身份 · 10 分钟前</div>
+          </div>
+          <div class="member-stats">
+            <div class="star">★ 0</div>
+            <div>余 ¥0</div>
+          </div>
+        </div>
+        <div class="member-row">
+          <div class="avatar" style="background: linear-gradient(135deg, #c9e0ff, #6196f0);">2</div>
+          <div class="member-info">
+            <div class="nm">user 2 (18800009002)</div>
+            <div class="desc">A 顶级 · 已购 1 单 ¥500 · 推广 ¥110</div>
+          </div>
+          <div class="member-stats">
+            <div class="star">★ 1</div>
+            <div>余 ¥0</div>
+          </div>
+        </div>
+        <div class="member-row">
+          <div class="avatar" style="background: linear-gradient(135deg, #d3f4d3, #4cb84c);">3</div>
+          <div class="member-info">
+            <div class="nm">user 3 (18800009003)</div>
+            <div class="desc">B (parent A) · 已购 1 单 ¥100 · 推广 ¥20</div>
+          </div>
+          <div class="member-stats">
+            <div class="star">★ 0</div>
+            <div>余 ¥0</div>
+          </div>
+        </div>
+        <div class="member-row">
+          <div class="avatar" style="background: linear-gradient(135deg, #ffd0dc, #ee5a8b);">4</div>
+          <div class="member-info">
+            <div class="nm">user 4 (18800009004)</div>
+            <div class="desc">C (parent B) · 已购 2 单 ¥200 · 推广 ¥20</div>
+          </div>
+          <div class="member-stats">
+            <div class="star">★ 0</div>
+            <div>余 ¥0</div>
+          </div>
+        </div>
+        <div class="member-row" style="opacity: 0.5;">
+          <div class="avatar" style="background: #ccc;">+</div>
+          <div class="member-info">
+            <div class="nm" style="color: var(--text-placeholder);">暂无更多</div>
+            <div class="desc"></div>
+          </div>
+          <div class="member-stats"></div>
+        </div>
+
+        <div class="panel">
+          <h3>🏆 邀请排行 Top 3</h3>
+          <div class="rank-row">
+            <div class="rank-no gold">1</div>
+            <div class="rank-name">user 2</div>
+            <div class="rank-meta">推 1 人<div class="amount">¥10</div></div>
+          </div>
+          <div class="rank-row">
+            <div class="rank-no silver">2</div>
+            <div class="rank-name">user 3</div>
+            <div class="rank-meta">推 1 人<div class="amount">¥20</div></div>
+          </div>
+        </div>
+
+        <div style="height: 16px;"></div>
+      </div>
+    </div>
+    <div class="phone-label">屏 4：店铺会员列表（NEW）<br><small>会员卡片 + 邀请关系 + 邀请排行</small></div>
+  </div>
+
+</div>
+
+<div style="text-align: center; margin-top: 32px; color: #555; font-size: 13px;">
+  <p>──────────  原型仅静态展示，确认后开始真实 API + 后端开发  ──────────</p>
+</div>
+
+</body>
+</html>
