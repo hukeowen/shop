@@ -18,6 +18,11 @@ public interface ShopInfoMapper extends BaseMapperX<ShopInfoDO> {
         return selectOne(ShopInfoDO::getTenantId, tenantId);
     }
 
+    /** 订单付款回调时累加店铺销量（按件数）。tenant_id 是业务主键不走 mybatis-plus tenant 拦截。*/
+    @Update("UPDATE shop_info SET sales_30d = COALESCE(sales_30d, 0) + #{qty}, "
+            + "update_time = NOW() WHERE tenant_id = #{tenantId} AND deleted = b'0'")
+    int incrementSales30d(@Param("tenantId") Long tenantId, @Param("qty") int qty);
+
     /**
      * 通联回调按 outOrderId 反查店铺（进件结果异步推送时用）。
      *

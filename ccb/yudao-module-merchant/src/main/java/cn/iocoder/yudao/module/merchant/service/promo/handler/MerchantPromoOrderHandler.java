@@ -53,6 +53,8 @@ public class MerchantPromoOrderHandler implements TradeOrderHandler {
     private cn.iocoder.yudao.module.merchant.service.MemberShopRelService memberShopRelService;
     @Resource
     private cn.iocoder.yudao.module.merchant.service.promo.ReferralService referralService;
+    @Resource
+    private cn.iocoder.yudao.module.merchant.dal.mysql.ShopInfoMapper shopInfoMapper;
 
     @Override
     public void afterPayOrder(TradeOrderDO order, List<TradeOrderItemDO> orderItems) {
@@ -84,6 +86,22 @@ public class MerchantPromoOrderHandler implements TradeOrderHandler {
             } catch (Exception e) {
                 log.error("[afterPayOrder] order={} spu={} 引擎处理失败，跳过本行",
                         orderId, item.getSpuId(), e);
+            }
+        }
+
+        // 累加店铺销量（shop_info.sales_30d）— 简化为累计销量，
+        // 真"近 30 天"由后续定时 job 重算覆盖（local profile 无 quartz 时即为累计值）
+        if (tenantId != null && tenantId > 0) {
+            try {
+                int totalQty = 0;
+                for (TradeOrderItemDO item : orderItems) {
+                    if (item.getCount() != null) totalQty += item.getCount();
+                }
+                if (totalQty > 0) {
+                    shopInfoMapper.incrementSales30d(tenantId, totalQty);
+                }
+            } catch (Exception e) {
+                log.warn("[afterPayOrder] 累加店铺销量失败 tenant={}: {}", tenantId, e.getMessage());
             }
         }
     }
