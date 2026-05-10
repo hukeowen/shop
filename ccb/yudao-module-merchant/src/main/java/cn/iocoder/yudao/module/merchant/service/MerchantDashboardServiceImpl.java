@@ -191,18 +191,31 @@ public class MerchantDashboardServiceImpl implements MerchantDashboardService {
      * spu_name / pic_url 快照，无需 join 商品库。tenant_id 由 TenantBaseDO 拦截器自动加。
      */
     private List<AppMerchantDashboardRespVO.TopProductVO> queryTopProducts(LocalDateTime start, LocalDateTime end) {
+        // HIGH-1 修：先拉 status > 0（已支付）的订单 id，再按 IN 限定 trade_order_item，
+        // 避免未付款订单虚增热销榜
+        QueryWrapper<cn.iocoder.yudao.module.trade.dal.dataobject.order.TradeOrderDO> ow = new QueryWrapper<>();
+        ow.select("id");
+        ow.between("create_time", start, end);
+        ow.gt("status", 0);
+        List<Map<String, Object>> orderRows = tradeOrderMapper.selectMaps(ow);
+        List<AppMerchantDashboardRespVO.TopProductVO> list = new ArrayList<>(3);
+        if (orderRows == null || orderRows.isEmpty()) return list;
+        java.util.Set<Long> orderIds = new java.util.HashSet<>(orderRows.size());
+        for (Map<String, Object> r : orderRows) {
+            if (r.get("id") != null) orderIds.add(Long.parseLong(r.get("id").toString()));
+        }
+
         QueryWrapper<cn.iocoder.yudao.module.trade.dal.dataobject.order.TradeOrderItemDO> w = new QueryWrapper<>();
         w.select("spu_id AS spuId",
                 "MAX(spu_name) AS spuName",
                 "MAX(pic_url) AS picUrl",
                 "IFNULL(SUM(count),0) AS salesCount",
                 "IFNULL(SUM(pay_price),0) AS salesAmount");
-        w.between("create_time", start, end);
+        w.in("order_id", orderIds);
         w.groupBy("spu_id");
         w.orderByDesc("salesCount");
         w.last("LIMIT 3");
         List<Map<String, Object>> rows = tradeOrderItemMapper.selectMaps(w);
-        List<AppMerchantDashboardRespVO.TopProductVO> list = new ArrayList<>(3);
         if (rows == null) return list;
         for (Map<String, Object> r : rows) {
             list.add(AppMerchantDashboardRespVO.TopProductVO.builder()

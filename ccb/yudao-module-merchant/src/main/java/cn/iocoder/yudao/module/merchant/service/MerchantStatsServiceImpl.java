@@ -43,6 +43,8 @@ public class MerchantStatsServiceImpl implements MerchantStatsService {
     @Resource
     private TradeOrderMapper tradeOrderMapper;
     @Resource
+    private cn.iocoder.yudao.module.trade.dal.mysql.order.TradeOrderItemMapper tradeOrderItemMapper;
+    @Resource
     private AfterSaleMapper afterSaleMapper;
     @Resource
     private ShopPromoRecordMapper promoRecordMapper;
@@ -383,6 +385,20 @@ public class MerchantStatsServiceImpl implements MerchantStatsService {
             case "month":
             default:      periodStart = today.withDayOfMonth(1); break;
         }
+        LocalDateTime start = LocalDateTime.of(periodStart, LocalTime.MIN);
+        LocalDateTime end = LocalDateTime.of(today, LocalTime.MAX);
+        // HIGH-1 修：先查 status > 0（已支付）的订单 id 列表，再用 IN 限制 trade_order_item，
+        // 避免未付款订单虚增销量
+        QueryWrapper<TradeOrderDO> ow = new QueryWrapper<>();
+        ow.select("id");
+        ow.between("create_time", start, end);
+        ow.gt("status", 0);
+        List<Map<String, Object>> orderRows = tradeOrderMapper.selectMaps(ow);
+        List<AppMerchantProductRankRespVO> list = new ArrayList<>();
+        if (orderRows == null || orderRows.isEmpty()) return list;
+        java.util.Set<Long> orderIds = new java.util.HashSet<>(orderRows.size());
+        for (Map<String, Object> r : orderRows) orderIds.add(parseLong(r.get("id")));
+
         String orderByCol = "amount".equals(sort) ? "salesAmount" : "salesCount";
         QueryWrapper<cn.iocoder.yudao.module.trade.dal.dataobject.order.TradeOrderItemDO> w = new QueryWrapper<>();
         w.select("spu_id AS spuId",
@@ -391,15 +407,12 @@ public class MerchantStatsServiceImpl implements MerchantStatsService {
                 "IFNULL(SUM(count),0) AS salesCount",
                 "IFNULL(SUM(price * count),0) AS salesAmount",
                 "IFNULL(SUM(pay_price),0) AS actualPay");
-        w.between("create_time", LocalDateTime.of(periodStart, LocalTime.MIN), LocalDateTime.of(today, LocalTime.MAX));
+        w.in("order_id", orderIds);
         w.groupBy("spu_id");
         w.orderByDesc(orderByCol);
+        // limit 已 clamp 到 [1, 100]，安全
         w.last("LIMIT " + limit);
-        cn.iocoder.yudao.module.trade.dal.mysql.order.TradeOrderItemMapper im =
-            cn.iocoder.yudao.framework.common.util.spring.SpringUtils.getBean(
-                cn.iocoder.yudao.module.trade.dal.mysql.order.TradeOrderItemMapper.class);
-        List<Map<String, Object>> rows = im.selectMaps(w);
-        List<AppMerchantProductRankRespVO> list = new ArrayList<>();
+        List<Map<String, Object>> rows = tradeOrderItemMapper.selectMaps(w);
         if (rows == null) return list;
         int rank = 1;
         for (Map<String, Object> r : rows) {
