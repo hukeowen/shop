@@ -149,11 +149,30 @@
         </view>
       </view>
 
+      <!-- 优惠券选择 -->
+      <view class="card coupon-card" v-if="usableCoupons.length">
+        <view class="card-title">优惠券（{{ usableCoupons.length }} 张可用）</view>
+        <view
+          v-for="c in usableCoupons"
+          :key="c.id"
+          :class="['coupon-row', selectedCouponId === c.id ? 'on' : '', grossFen < (c.minAmount || 0) ? 'disabled' : '']"
+          @click="onPickCoupon(c)"
+        >
+          <view class="cv-amt">¥{{ fen2yuan(c.discountAmount) }}</view>
+          <view class="cv-info">
+            <view class="cv-name">满 ¥{{ fen2yuan(c.minAmount) }} 可用</view>
+            <view class="cv-sub">{{ formatExpire(c.expireTime) }}</view>
+          </view>
+          <view class="cv-radio">{{ selectedCouponId === c.id ? '✓' : '○' }}</view>
+        </view>
+      </view>
+
       <!-- 组合明细 -->
       <view class="form-tip">
         <text class="b">支付明细：</text><br>
         · 店铺余额抵扣：<text class="hl">{{ useBalance ? `-¥${fen2yuan(balanceDeductFen)}` : '未启用' }}</text><br>
         · 推广积分抵扣：<text class="hl">{{ promoPreview && promoPreview.deductFen > 0 ? `-¥${fen2yuan(promoPreview.deductFen)}（${promoPreview.deductCount} 件）` : '当前无可抵扣商品' }}</text><br>
+        · 优惠券抵扣：<text class="hl">{{ selectedCoupon ? `-¥${fen2yuan(selectedCoupon.discountAmount)}` : '未选用' }}</text><br>
         · 在线支付：<text class="hl">¥{{ fen2yuan(finalRemainFen) }}</text>
       </view>
 
@@ -258,12 +277,45 @@ const balanceDeductCap = computed(() => {
 });
 const balanceDeductFen = computed(() => useBalance.value && balanceEnabled.value ? balanceDeductCap.value : 0);
 const remainFen = computed(() => Math.max(0, grossFen.value - pointDeductFen.value - balanceDeductFen.value));
-// v8: 在 remainFen 基础上再减"推广积分预演抵扣"，得到底部展示的最终实付
+
+// 优惠券
+const usableCoupons = ref([]);
+const selectedCouponId = ref(null);
+const selectedCoupon = computed(() => usableCoupons.value.find(c => c.id === selectedCouponId.value) || null);
+const couponDeductFen = computed(() => {
+  const c = selectedCoupon.value;
+  if (!c) return 0;
+  if (grossFen.value < (c.minAmount || 0)) return 0;
+  return c.discountAmount || 0;
+});
+
+// v8: 在 remainFen 基础上再减"推广积分预演抵扣 + 优惠券"，得到底部展示的最终实付
 const finalRemainFen = computed(() => {
   const base = remainFen.value;
   const promoDeduct = (promoPreview.value && promoPreview.value.deductFen) || 0;
-  return Math.max(0, base - promoDeduct);
+  return Math.max(0, base - promoDeduct - couponDeductFen.value);
 });
+
+function onPickCoupon(c) {
+  if (grossFen.value < (c.minAmount || 0)) {
+    uni.showToast({ title: `订单金额未达 ¥${(c.minAmount / 100).toFixed(2)}`, icon: 'none' });
+    return;
+  }
+  selectedCouponId.value = selectedCouponId.value === c.id ? null : c.id;
+}
+function formatExpire(ts) {
+  if (!ts) return '';
+  const d = new Date(ts);
+  if (isNaN(d.getTime())) return '';
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} 到期`;
+}
+async function loadUsableCoupons() {
+  if (!tenantId.value) return;
+  try {
+    const list = await request({ url: `/app-api/merchant/mini/coupon/usable?tenantId=${tenantId.value}` });
+    usableCoupons.value = Array.isArray(list) ? list : [];
+  } catch { usableCoupons.value = []; }
+}
 
 async function loadShopAndItems() {
   loading.value = true;
@@ -390,6 +442,7 @@ async function submitOrder() {
       },
       useShopBalance: useBalance.value,
       balanceFen: useBalance.value ? safeBalanceFen : 0,
+      couponUserId: selectedCouponId.value || undefined,
     };
     // 不传 header tenantId — 用户 token 的 tenant 跟商户 tenant 不一样会冲突
     const res = await request({
@@ -438,6 +491,7 @@ onLoad((q) => {
   if (q.skuId) { skuId.value = Number(q.skuId); count.value = Number(q.count) || 1; }
   if (q.spuId) { spuId.value = Number(q.spuId); }
   loadShopAndItems();
+  loadUsableCoupons();
 });
 </script>
 

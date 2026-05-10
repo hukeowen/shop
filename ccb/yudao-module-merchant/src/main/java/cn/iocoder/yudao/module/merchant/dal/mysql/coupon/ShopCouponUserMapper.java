@@ -28,4 +28,25 @@ public interface ShopCouponUserMapper extends BaseMapperX<ShopCouponUserDO> {
                 .eq(ShopCouponUserDO::getUserId, userId)
                 .eq(ShopCouponUserDO::getCouponId, couponId));
     }
+
+    /** 用户在当前租户下未使用 + 未过期的券（按 effectiveTime 倒序） */
+    default java.util.List<ShopCouponUserDO> selectUsableByUser(Long userId) {
+        return selectList(new LambdaQueryWrapperX<ShopCouponUserDO>()
+                .eq(ShopCouponUserDO::getUserId, userId)
+                .eq(ShopCouponUserDO::getStatus, 0)
+                .gt(ShopCouponUserDO::getExpireTime, java.time.LocalDateTime.now())
+                .orderByDesc(ShopCouponUserDO::getEffectiveTime));
+    }
+
+    /**
+     * 原子核销：仅当 status=0 且未过期才更新成 status=1 + useTime + orderId；
+     * 返 1=成功；0=已用 / 已过期 / 不存在 / 用户不匹配
+     */
+    @org.apache.ibatis.annotations.Update("UPDATE shop_coupon_user SET status = 1, "
+            + "use_time = NOW(), order_id = #{orderId}, update_time = NOW() "
+            + "WHERE id = #{id} AND user_id = #{userId} AND status = 0 "
+            + "AND deleted = b'0' AND expire_time > NOW()")
+    int markUsedAtomic(@org.apache.ibatis.annotations.Param("id") Long id,
+                       @org.apache.ibatis.annotations.Param("userId") Long userId,
+                       @org.apache.ibatis.annotations.Param("orderId") Long orderId);
 }

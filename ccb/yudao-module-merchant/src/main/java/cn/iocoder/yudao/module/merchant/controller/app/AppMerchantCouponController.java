@@ -268,4 +268,15 @@ public class AppMerchantCouponController {
                 new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<ShopCouponUserDO>()
                         .eq(ShopCouponUserDO::getUserId, userId))));
     }
+
+    @GetMapping("/merchant/mini/coupon/usable")
+    @Operation(summary = "C 端：checkout 用 — 我在某店未使用未过期的券（status=0 + 未过期）")
+    @TenantIgnore
+    public CommonResult<List<ShopCouponUserDO>> listUsable(
+            @RequestParam("tenantId") Long tenantId) {
+        Long userId = SecurityFrameworkUtils.getLoginUserId();
+        if (userId == null || tenantId == null) return success(Collections.emptyList());
+        return success(TenantUtils.execute(tenantId,
+                () -> shopCouponUserMapper.selectUsableByUser(userId)));
+    }
 }

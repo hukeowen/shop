@@ -61,6 +61,8 @@ public class AppMerchantCheckoutController {
     private cn.iocoder.yudao.module.trade.service.order.TradeOrderQueryService tradeOrderQueryService;
     @Resource
     private cn.iocoder.yudao.module.product.service.sku.ProductSkuService productSkuService;
+    @Resource
+    private cn.iocoder.yudao.module.merchant.dal.mysql.coupon.ShopCouponUserMapper shopCouponUserMapper;
 
     @PostMapping("/submit")
     @Operation(summary = "提交订单（支持店铺余额抵扣）")
@@ -168,12 +170,56 @@ public class AppMerchantCheckoutController {
                             orderId, userId, tenantId, order.getPayPrice(), finalDeductFen, e);
         }
 
+        // 5. 优惠券抵扣（最后一步，且必须在余额/积分抵扣之后；保留至少 1 分线上支付）
+        int couponDeductFen = 0;
+        if (req.getCouponUserId() != null && req.getCouponUserId() > 0) {
+            cn.iocoder.yudao.module.merchant.dal.dataobject.coupon.ShopCouponUserDO cu =
+                    shopCouponUserMapper.selectById(req.getCouponUserId());
+            if (cu == null || !userId.equals(cu.getUserId())) {
+                throw ServiceExceptionUtil.exception0(1_031_001_018, "优惠券不存在或不属于本人");
+            }
+            if (cu.getStatus() != null && cu.getStatus() != 0) {
+                throw ServiceExceptionUtil.exception0(1_031_001_019, "优惠券已使用 / 失效");
+            }
+            if (cu.getExpireTime() != null && cu.getExpireTime().isBefore(java.time.LocalDateTime.now())) {
+                throw ServiceExceptionUtil.exception0(1_031_001_020, "优惠券已过期");
+            }
+            // 校验店铺：券是 tenanted，cu.tenantId 必须 = 当前订单 tenant
+            if (cu.getTenantId() != null && !tenantId.equals(cu.getTenantId())) {
+                throw ServiceExceptionUtil.exception0(1_031_001_021, "优惠券不适用本店");
+            }
+            // 满减门槛按"订单原价"判断（与余额/积分抵扣口径一致）
+            int orderGross = order.getPayPrice() == null ? 0 : order.getPayPrice();
+            int minAmount = cu.getMinAmount() == null ? 0 : cu.getMinAmount();
+            if (orderGross < minAmount) {
+                throw ServiceExceptionUtil.exception0(1_031_001_022,
+                        "订单金额未达 ¥" + (minAmount / 100.0) + " 不能使用本券");
+            }
+            int discount = cu.getDiscountAmount() == null ? 0 : cu.getDiscountAmount();
+            int maxAllowed = Math.max(0, finalPayPrice - 1);  // 至少留 1 分线上
+            int actualCouponDeduct = Math.min(discount, maxAllowed);
+            if (actualCouponDeduct > 0) {
+                // 原子核销
+                int updated = shopCouponUserMapper.markUsedAtomic(cu.getId(), userId, orderId);
+                if (updated == 0) {
+                    throw ServiceExceptionUtil.exception0(1_031_001_023, "优惠券核销失败（并发或已用）");
+                }
+                TradeOrderUpdatePriceReqVO priceReq = new TradeOrderUpdatePriceReqVO();
+                priceReq.setId(orderId);
+                priceReq.setAdjustPrice(-actualCouponDeduct);
+                tradeOrderUpdateService.updateOrderPrice(priceReq);
+                finalPayPrice -= actualCouponDeduct;
+                couponDeductFen = actualCouponDeduct;
+            }
+        }
+
         SubmitRespVO resp = new SubmitRespVO();
         resp.setOrderId(orderId);
         resp.setPayOrderId(order.getPayOrderId());
         resp.setBalanceDeductFen(finalDeductFen);
         resp.setPromoDeductFen(finalPromoDeductFen);
         resp.setPromoDeductCount(totalPromoDeductCount);
+        resp.setCouponDeductFen(couponDeductFen);
         resp.setPayPrice(finalPayPrice);
         return success(resp);
     }
@@ -335,6 +381,9 @@ public class AppMerchantCheckoutController {
         @javax.validation.constraints.Min(value = 0, message = "余额抵扣金额不能为负")
         @javax.validation.constraints.Max(value = 100_000_000, message = "余额抵扣金额过大")
         private Integer balanceFen;
+
+        /** 选用的优惠券 user 记录 ID（shop_coupon_user.id；不传 = 不用券） */
+        private Long couponUserId;
     }
 
     @Data
@@ -347,6 +396,8 @@ public class AppMerchantCheckoutController {
         private Integer promoDeductFen;
         /** v8: 推 N 反 1 / 直推奖 抵扣件数（按 SPU 累加） */
         private Integer promoDeductCount;
+        /** 优惠券抵扣金额（分） */
+        private Integer couponDeductFen;
         /** 抵扣后还需线上支付的金额（分） */
         private Integer payPrice;
     }
