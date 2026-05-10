@@ -16,7 +16,7 @@
       <view class="sh-cover-inner">
         <view class="name-block">
           <view v-if="bizTag" class="biz-tag">🔥 {{ bizTag }}</view>
-          <view class="name">{{ shopInfo?.shopName || shopInfo?.name || '加载中...' }}</view>
+          <view class="name">{{ shopInfo?.shopName || shopInfo?.name || ' ' }}</view>
           <view class="slogan" v-if="slogan">{{ slogan }}</view>
         </view>
       </view>
@@ -648,7 +648,12 @@ onLoad((query) => {
     }, 600);
   }
 });
-onShow(() => loadCart());
+onShow(() => {
+  // SPA hash 切换偶发 onLoad 不重触发 / 或并发竞态使 shopInfo 为 null（看到"加载中..."）
+  // 兜底：进入页面只要 tenantId 有值且 shopInfo 还空就再拉一次（不会重复请求商品/购物车）
+  if (tenantId.value && !shopInfo.value) loadShopInfo();
+  loadCart();
+});
 </script>
 
 <style lang="scss" scoped>

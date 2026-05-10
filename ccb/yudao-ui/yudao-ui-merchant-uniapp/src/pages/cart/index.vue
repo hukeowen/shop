@@ -7,7 +7,7 @@
     </view>
 
     <view class="tip-bar">
-      ⚠ 一次只能在<text class="b">同一家店</text>结算（订单按店独立 + v7 营销 / 余额 / 积分都按店隔离）。
+      ⚠ 一次只能在<text class="b">同一家店</text>结算（订单按店独立 + v8 营销 / 余额 / 积分都按店隔离）。
     </view>
 
     <view v-if="loading && !items.length" class="empty-tip">加载中...</view>

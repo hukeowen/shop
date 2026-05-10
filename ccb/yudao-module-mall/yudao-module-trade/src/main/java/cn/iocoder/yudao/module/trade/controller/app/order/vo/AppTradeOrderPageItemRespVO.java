@@ -23,6 +23,9 @@ public class AppTradeOrderPageItemRespVO {
     @Schema(description = "订单状态", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
     private Integer status;
 
+    @Schema(description = "店铺租户编号（多商户：用户订单按 tenantId 分组展示店铺名/跳店铺）", example = "163")
+    private Long tenantId;
+
     @Schema(description = "购买的商品数量", requiredMode = Schema.RequiredMode.REQUIRED, example = "10")
     private Integer productCount;
 
