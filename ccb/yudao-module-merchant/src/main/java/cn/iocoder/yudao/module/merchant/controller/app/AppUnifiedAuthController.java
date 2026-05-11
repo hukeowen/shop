@@ -214,9 +214,13 @@ public class AppUnifiedAuthController {
             throw exception(PASSWORD_INVALID);
         }
 
+        // 先按 openId 找 merchant；找不到再按 user_id（平台商户 V035 SQL 建的不带 openId）
         MerchantDO merchant = StrUtil.isNotBlank(member.getMiniAppOpenId())
                 ? merchantService.getMerchantByOpenId(member.getMiniAppOpenId())
                 : null;
+        if (merchant == null) {
+            merchant = merchantService.getMerchantByUserId(member.getId());
+        }
         List<String> roles = buildRoles(merchant);
         String activeRole = decideActiveRole(member.getId(), roles);
         activeRoleCache.set(member.getId(), activeRole);

@@ -104,6 +104,10 @@ public class AllinpayCashierService {
     @Resource
     private org.springframework.beans.factory.ObjectProvider<TradeOrderAllinpayService> tradeOrderAllinpayServiceProvider;
 
+    /** SaaS 订阅服务 — 用 ObjectProvider 避循环 */
+    @Resource
+    private org.springframework.beans.factory.ObjectProvider<cn.iocoder.yudao.module.merchant.service.saas.SaasSubscriptionService> saasSubscriptionServiceProvider;
+
     /** trade mapper 用 ObjectProvider 避免循环（trade 模块也可能反向注入 merchant） */
     @Resource
     private org.springframework.beans.factory.ObjectProvider<cn.iocoder.yudao.module.trade.dal.mysql.order.TradeOrderMapper> tradeOrderMapperProvider;
@@ -216,6 +220,16 @@ public class AllinpayCashierService {
         TlpayCredential cred = merchantCredentialForTenant(order.getTenantId());
         return doBuildCashierForm(TradeOrderAllinpayService.buildTradeReqsn(tradeOrderId),
                 order.getPayPrice().longValue(), body, clientUserAgent, cred);
+    }
+
+    /**
+     * 公开版本：调用方传 reqsn / 金额 / body / credential 直接拿通联支付链接。
+     *
+     * <p>SaaS 订阅场景调用：reqsn=S${subId}，credential 用平台商户的（平台收钱）。</p>
+     */
+    public CashierForm buildCashierFormWithCredential(String reqsn, long trxamtFen, String body,
+                                                       String clientUserAgent, TlpayCredential cred) {
+        return doBuildCashierForm(reqsn, trxamtFen, body, clientUserAgent, cred);
     }
 
     /**
@@ -399,9 +413,13 @@ public class AllinpayCashierService {
             String trxamtStr = notifyParams.getOrDefault("trxamt", "0");
             String sign = notifyParams.get("sign");
 
-            // 1. 按 reqsn 业务类型加载对应凭据（trade 走商户独立凭据 / 套餐走全局凭据）
+            // 1. 按 reqsn 业务类型加载对应凭据
+            //    T 前缀 = trade_order（商品订单）→ 用 trade.tenantId 加载商户凭据
+            //    S 前缀 = subscription（SaaS 续费）→ 用平台商户凭据
+            //    无前缀 = package_order（视频套餐）→ 用全局 AllinpayProperties
             TlpayCredential cred;
             Long tradeOrderId = TradeOrderAllinpayService.parseTradeOrderId(reqsn);
+            Long subscriptionOrderId = parseSubscriptionReqsn(reqsn);
             if (tradeOrderId != null) {
                 cn.iocoder.yudao.module.trade.dal.dataobject.order.TradeOrderDO order =
                         TenantUtils.executeIgnore(() -> tradeOrderMapperProvider.getIfAvailable() == null
@@ -414,6 +432,14 @@ public class AllinpayCashierService {
                     cred = merchantCredentialForTenant(order.getTenantId());
                 } catch (IllegalStateException e) {
                     log.warn("[allinpay/notify] reqsn={} 加载商户凭据失败：{}", reqsn, e.getMessage());
+                    return "fail:credential";
+                }
+            } else if (subscriptionOrderId != null) {
+                // SaaS 续费用平台商户的凭据（V035 平台 tenant=999）
+                try {
+                    cred = merchantCredentialForTenant(999L);
+                } catch (IllegalStateException e) {
+                    log.warn("[allinpay/notify] reqsn={} 平台商户凭据加载失败：{}", reqsn, e.getMessage());
                     return "fail:credential";
                 }
             } else {
@@ -451,8 +477,8 @@ public class AllinpayCashierService {
                 return "fail:bad_amount";
             }
 
-            // 4. reqsn 路由：T 前缀 = trade_order（商城订单），无前缀 = merchant_package_order（套餐）
-            //    （tradeOrderId 在 step 1 已 parse 出来）
+            // 4. reqsn 路由：T 前缀 = trade_order（商城订单），S 前缀 = SaaS 订阅，无前缀 = 套餐
+            //    （tradeOrderId / subscriptionOrderId 在 step 1 已 parse 出来）
             if (tradeOrderId != null) {
                 log.info("[allinpay/notify] 识别为 trade_order tradeOrderId={} amount={}",
                         tradeOrderId, trxamtFen);
@@ -463,6 +489,20 @@ public class AllinpayCashierService {
                 }
                 tradeSvc.markTradeOrderPaid(tradeOrderId, trxamtFen);
                 log.info("[allinpay/notify] ───── DONE trade reqsn={} amount={} cost={}ms ─────",
+                        reqsn, trxamtFen, System.currentTimeMillis() - t0);
+                return "success";
+            }
+            if (subscriptionOrderId != null) {
+                log.info("[allinpay/notify] 识别为 SaaS subscription orderId={} amount={}",
+                        subscriptionOrderId, trxamtFen);
+                cn.iocoder.yudao.module.merchant.service.saas.SaasSubscriptionService saasSvc =
+                        saasSubscriptionServiceProvider.getIfAvailable();
+                if (saasSvc == null) {
+                    log.error("[allinpay/notify] SaasSubscriptionService 不可用，回 fail 让通联重试");
+                    return "fail:service_unavailable";
+                }
+                saasSvc.markPaid(subscriptionOrderId, trxamtFen);
+                log.info("[allinpay/notify] ───── DONE saas reqsn={} amount={} cost={}ms ─────",
                         reqsn, trxamtFen, System.currentTimeMillis() - t0);
                 return "success";
             }
@@ -702,6 +742,18 @@ public class AllinpayCashierService {
             return signSm2(params, cred.getSm2PrivateKey(), cred.getAppId());
         }
         return signRsa(params, cred.getRsaPrivateKey());
+    }
+
+    /** 解析 reqsn 中的 S 前缀（SaaS subscription id）。 */
+    public static Long parseSubscriptionReqsn(String reqsn) {
+        if (reqsn == null || reqsn.length() < 2) return null;
+        char c = reqsn.charAt(0);
+        if (c != 'S' && c != 's') return null;
+        try {
+            return Long.parseLong(reqsn.substring(1));
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
     /** 用 credential 验签 */

@@ -137,6 +137,17 @@ public class MerchantDO extends TenantBaseDO {
      */
     private Integer videoQuotaRemaining;
 
+    // ========== SaaS 订阅（V034 加） ==========
+
+    /** SaaS 服务到期时间；NULL = 永久（平台商户）。到期后商户后台部分功能锁死。 */
+    private java.time.LocalDateTime serviceExpireAt;
+
+    /** 当前生效套餐：TRIAL=30 天试用(PRO 功能) / BASIC=298 / PRO=1688 / PLATFORM=平台商户 */
+    private String servicePackageLevel;
+
+    /** 是否平台商户（永久 + 全功能 + 不会过期） */
+    private Boolean isPlatform;
+
     /**
      * 关联的用户编号
      */

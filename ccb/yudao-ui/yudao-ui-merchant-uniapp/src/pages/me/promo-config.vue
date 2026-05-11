@@ -3,11 +3,17 @@
     <!-- Banner -->
     <view class="banner">
       <text class="title">营销配置（v8）</text>
-      <text class="sub">双积分 · 极差递减 · 推 N 反 1 · 星级积分池</text>
+      <text class="sub">{{ saasLevel === 'BASIC' ? '推 N 反 1（基础包）' : '双积分 · 极差递减 · 推 N 反 1 · 星级积分池' }}</text>
     </view>
 
-    <!-- ============ 平台星级 ============ -->
-    <view class="card">
+    <!-- 套餐档位提示 -->
+    <view v-if="saasLevel === 'BASIC'" class="lvl-tip">
+      ⚡ 当前为<text class="b">基础包</text>，团队 / 星级 / 奖池配置已锁定。如需启用请
+      <text class="link" @click="goSubscription">升级到全功能包</text>
+    </view>
+
+    <!-- ============ 平台星级（PRO / PLATFORM / TRIAL 才显示） ============ -->
+    <view class="card" v-if="canUsePro">
       <view class="section-title">平台星级</view>
 
       <view class="field">
@@ -109,8 +115,8 @@
       </view>
     </view>
 
-    <!-- ============ 星级积分池 ============ -->
-    <view class="card">
+    <!-- ============ 星级积分池（PRO / PLATFORM / TRIAL 才显示） ============ -->
+    <view class="card" v-if="canUsePro">
       <view class="section-title">星级积分池</view>
 
       <view class="row">
@@ -197,8 +203,8 @@
       </template>
     </view>
 
-    <!-- ============ 积分池运营 ============ -->
-    <view class="card">
+    <!-- ============ 积分池运营（PRO 才显示） ============ -->
+    <view class="card" v-if="canUsePro">
       <view class="section-title">积分池运营</view>
 
       <view class="pool-summary">
@@ -254,7 +260,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import {
   getShopPromoConfig,
   saveShopPromoConfig,
@@ -262,8 +268,23 @@ import {
   settlePool,
   listPoolRounds,
 } from '../../api/promo.js';
+import { request } from '../../api/request.js';
 
 const saving = ref(false);
+
+// SaaS 套餐档位 — 决定团队/星级/奖池配置是否可见
+const saasLevel = ref('PRO');  // 默认 PRO；加载后真值覆盖
+const canUsePro = computed(() => saasLevel.value !== 'BASIC' && saasLevel.value !== 'EXPIRED');
+
+function goSubscription() {
+  uni.navigateTo({ url: '/pages/me/subscription' });
+}
+async function loadSaasLevel() {
+  try {
+    const st = await request({ url: '/app-api/merchant/mini/saas/my-status' });
+    if (st && st.level) saasLevel.value = st.level;
+  } catch {}
+}
 
 // 表单 — 与 PromoConfigSaveReqVO 字段对齐
 const form = ref({
@@ -489,13 +510,30 @@ async function onSettle(mode) {
 
 onMounted(async () => {
   ensureStarRows(form.value.starLevelCount);
-  await load();
-  await loadPool();
+  await Promise.all([load(), loadPool(), loadSaasLevel()]);
 });
 </script>
 
 <style lang="scss" scoped>
 @import '../../uni.scss';
+
+.lvl-tip {
+  background: #fff8e6;
+  border: 1rpx solid #ffd980;
+  border-radius: $radius-md;
+  padding: 20rpx 28rpx;
+  margin: 0 24rpx 24rpx;
+  font-size: 26rpx;
+  color: #d97706;
+  line-height: 1.6;
+
+  .b { font-weight: 700; }
+  .link {
+    color: $brand-primary;
+    text-decoration: underline;
+    margin: 0 4rpx;
+  }
+}
 
 .page {
   padding: 24rpx 24rpx 220rpx;

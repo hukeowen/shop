@@ -19,6 +19,28 @@
       </view>
     </view>
 
+    <!-- SaaS 订阅状态 -->
+    <view v-if="saasStatus" :class="['saas-card', saasStatus.expired ? 'expired' : '', saasStatus.isPlatform ? 'platform' : '']">
+      <view class="saas-hd">
+        <text class="saas-name">{{ levelLabel(saasStatus.level) }}</text>
+        <text v-if="saasStatus.expired" class="saas-tag danger">已到期</text>
+        <text v-else-if="saasStatus.isPlatform" class="saas-tag info">永久</text>
+        <text v-else-if="daysRemaining < 7" class="saas-tag warn">{{ daysRemaining }} 天到期</text>
+        <text v-else class="saas-tag ok">{{ daysRemaining }} 天剩余</text>
+      </view>
+      <view class="saas-row">
+        <text class="lbl">到期时间</text>
+        <text class="val">{{ saasStatus.isPlatform ? '永久' : (saasStatus.expireAt ? formatTime(saasStatus.expireAt) : '未订阅') }}</text>
+      </view>
+      <view class="saas-row">
+        <text class="lbl">AI 视频余量</text>
+        <text class="val">{{ saasStatus.aiVideoQuota || 0 }} 条</text>
+      </view>
+      <view v-if="!saasStatus.isPlatform" class="saas-actions">
+        <view class="saas-btn primary" @click="goSubscription">{{ saasStatus.expired ? '立即续费' : '续费 / 升级' }}</view>
+      </view>
+    </view>
+
     <view class="menu card">
       <view class="menu-item" @click="goSalesStats">
         <text>📊 销售统计</text>
@@ -104,10 +126,46 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, ref, onMounted } from 'vue';
+import { onShow } from '@dcloudio/uni-app';
 import { useUserStore } from '../../store/user.js';
+import { request } from '../../api/request.js';
 
 const userStore = useUserStore();
+
+// SaaS 订阅状态
+const saasStatus = ref(null);
+const daysRemaining = computed(() => {
+  if (!saasStatus.value || !saasStatus.value.expireAt) return 0;
+  const ms = new Date(saasStatus.value.expireAt).getTime() - Date.now();
+  return Math.max(0, Math.floor(ms / 86400000));
+});
+function levelLabel(level) {
+  return ({
+    PLATFORM: '平台商户',
+    PRO: '全功能包',
+    BASIC: '基础包',
+    TRIAL: '试用版（30 天 PRO 体验）',
+    EXPIRED: '已过期',
+  })[level] || level;
+}
+function formatTime(ts) {
+  if (!ts) return '-';
+  const d = new Date(ts);
+  if (isNaN(d.getTime())) return ts;
+  const pad = (n) => (n < 10 ? '0' + n : n);
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+function goSubscription() {
+  uni.navigateTo({ url: '/pages/me/subscription' });
+}
+async function loadSaasStatus() {
+  try {
+    saasStatus.value = await request({ url: '/app-api/merchant/mini/saas/my-status' });
+  } catch {}
+}
+onMounted(() => loadSaasStatus());
+onShow(() => loadSaasStatus());
 
 // 显示名优先级：nickname（店铺名）→ phone 末四位 → 「未登录」
 const displayName = computed(() => {
@@ -330,6 +388,82 @@ async function onLogout() {
 
   &::after {
     border: none;
+  }
+}
+
+.saas-card {
+  background: linear-gradient(135deg, #fff5ef, #ffe5d5);
+  border-radius: $radius-lg;
+  padding: 28rpx 32rpx;
+  margin-bottom: 24rpx;
+  box-shadow: 0 2rpx 12rpx rgba(255, 107, 53, 0.12);
+
+  &.expired {
+    background: linear-gradient(135deg, #ffeaea, #ffd1d1);
+    box-shadow: 0 2rpx 12rpx rgba(220, 60, 60, 0.15);
+  }
+
+  &.platform {
+    background: linear-gradient(135deg, #e8f5ff, #d0e5ff);
+    box-shadow: 0 2rpx 12rpx rgba(60, 130, 220, 0.12);
+  }
+
+  .saas-hd {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20rpx;
+
+    .saas-name {
+      font-size: 32rpx;
+      font-weight: 700;
+      color: $text-primary;
+    }
+
+    .saas-tag {
+      font-size: 22rpx;
+      padding: 4rpx 14rpx;
+      border-radius: 999rpx;
+      background: rgba(255, 255, 255, 0.7);
+      color: $text-regular;
+
+      &.danger { color: #d72e2e; background: rgba(255, 220, 220, 0.9); }
+      &.warn { color: #d97706; background: rgba(255, 244, 220, 0.9); }
+      &.ok { color: #16a34a; background: rgba(220, 244, 220, 0.9); }
+      &.info { color: #2266cc; background: rgba(220, 230, 244, 0.9); }
+    }
+  }
+
+  .saas-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 26rpx;
+    color: $text-regular;
+    margin-top: 8rpx;
+
+    .lbl { color: $text-secondary; }
+    .val { color: $text-primary; }
+  }
+
+  .saas-actions {
+    margin-top: 20rpx;
+    display: flex;
+    gap: 16rpx;
+
+    .saas-btn {
+      flex: 1;
+      height: 70rpx;
+      line-height: 70rpx;
+      text-align: center;
+      border-radius: $radius-md;
+      font-size: 28rpx;
+      font-weight: 600;
+
+      &.primary {
+        background: $brand-primary;
+        color: #fff;
+      }
+    }
   }
 }
 </style>

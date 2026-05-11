@@ -213,6 +213,7 @@ public class MerchantServiceImpl implements MerchantService {
         copyPayResourcesToNewTenant(tenantId);
 
         // 4. 创建 merchant_info（继承 TenantBaseDO，靠 TenantContextHolder 由 MP 拦截器自动填 tenant_id）
+        //    SaaS 订阅：新商户默认 30 天 TRIAL（PRO 全功能体验）
         MerchantDO merchant = MerchantDO.builder()
                 .name(shopName)
                 .contactName(shopName) // contact_name NOT NULL 无默认值，先复用店名占位（用户后续可改）
@@ -222,6 +223,9 @@ public class MerchantServiceImpl implements MerchantService {
                 .openId(openId)
                 .unionId(unionId)
                 .inviteCodeId(inviteCodeId)
+                .serviceExpireAt(LocalDateTime.now().plusDays(TRIAL_DAYS))
+                .servicePackageLevel("TRIAL")
+                .isPlatform(false)
                 .build();
         TenantUtils.execute(tenantId, () -> merchantMapper.insert(merchant));
 

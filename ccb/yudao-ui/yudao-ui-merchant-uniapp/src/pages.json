@@ -355,6 +355,13 @@
       "style": {
         "navigationBarTitleText": "店铺会员"
       }
+    },
+    {
+      "path": "pages/me/subscription",
+      "style": {
+        "navigationBarTitleText": "续费 / 升级",
+        "navigationStyle": "custom"
+      }
     }
   ],
   "globalStyle": {

@@ -128,6 +128,7 @@
 import { onMounted, ref } from 'vue';
 import { onPullDownRefresh } from '@dcloudio/uni-app';
 import { getDashboard } from '../../api/report.js';
+import { request } from '../../api/request.js';
 import { fen2yuan } from '../../utils/format.js';
 import { useUserStore } from '../../store/user.js';
 
@@ -195,6 +196,21 @@ onMounted(async () => {
     uni.reLaunch({ url: '/pages/user-home/index' });
     return;
   }
+  // SaaS 订阅到期拦截：过期 → 弹模态并跳续费页（订单 / 售后入口允许保留）
+  try {
+    const st = await request({ url: '/app-api/merchant/mini/saas/my-status' });
+    if (st && st.expired) {
+      uni.showModal({
+        title: '套餐已到期',
+        content: '续费后才能继续使用商户后台功能。订单 / 售后处理仍可正常进行。',
+        confirmText: '立即续费',
+        cancelText: '稍后处理',
+        success: (r) => {
+          if (r.confirm) uni.navigateTo({ url: '/pages/me/subscription' });
+        },
+      });
+    }
+  } catch {}
   load();
 });
 
