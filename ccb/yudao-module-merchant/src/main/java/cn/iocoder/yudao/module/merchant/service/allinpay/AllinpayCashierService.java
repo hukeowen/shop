@@ -97,6 +97,13 @@ public class AllinpayCashierService {
     @Resource
     private MerchantPackageOrderService packageOrderService;
 
+    /**
+     * trade_order 已支付适配器（按 reqsn T 前缀路由）。
+     * 用 ObjectProvider 延迟注入避免 / 防循环依赖（trade 模块也可能反向引用）。
+     */
+    @Resource
+    private org.springframework.beans.factory.ObjectProvider<TradeOrderAllinpayService> tradeOrderAllinpayServiceProvider;
+
     @Resource
     private MerchantService merchantService;
 
@@ -348,13 +355,7 @@ public class AllinpayCashierService {
                 return "success";
             }
 
-            // 3. 解析订单号 + 金额
-            Long oid;
-            try { oid = Long.parseLong(reqsn); }
-            catch (Exception e) {
-                log.warn("[allinpay/notify] 非法 reqsn={}", reqsn);
-                return "fail:bad_reqsn";
-            }
+            // 3. 解析金额
             int trxamtFen;
             try { trxamtFen = Integer.parseInt(trxamtStr); }
             catch (Exception e) {
@@ -362,10 +363,32 @@ public class AllinpayCashierService {
                 return "fail:bad_amount";
             }
 
-            // 4. markPaidExternal（不走 yudao pay_order）
-            log.info("[allinpay/notify] 调 markPaidExternal orderId={} amount={}", oid, trxamtFen);
+            // 4. reqsn 路由：T 前缀 = trade_order（商城订单），无前缀 = merchant_package_order（套餐）
+            Long tradeOrderId = TradeOrderAllinpayService.parseTradeOrderId(reqsn);
+            if (tradeOrderId != null) {
+                log.info("[allinpay/notify] 识别为 trade_order tradeOrderId={} amount={}",
+                        tradeOrderId, trxamtFen);
+                TradeOrderAllinpayService tradeSvc = tradeOrderAllinpayServiceProvider.getIfAvailable();
+                if (tradeSvc == null) {
+                    log.error("[allinpay/notify] TradeOrderAllinpayService 不可用，回 fail 让通联重试");
+                    return "fail:service_unavailable";
+                }
+                tradeSvc.markTradeOrderPaid(tradeOrderId, trxamtFen);
+                log.info("[allinpay/notify] ───── DONE trade reqsn={} amount={} cost={}ms ─────",
+                        reqsn, trxamtFen, System.currentTimeMillis() - t0);
+                return "success";
+            }
+
+            // 5. 套餐订单流程（reqsn = 纯数字，无前缀）
+            Long oid;
+            try { oid = Long.parseLong(reqsn); }
+            catch (Exception e) {
+                log.warn("[allinpay/notify] 非法 reqsn={}", reqsn);
+                return "fail:bad_reqsn";
+            }
+            log.info("[allinpay/notify] 调 markPaidExternal (package) orderId={} amount={}", oid, trxamtFen);
             packageOrderService.markPaidExternal(oid, trxamtFen, "ALLINPAY_NOTIFY");
-            log.info("[allinpay/notify] ───── DONE reqsn={} amount={} cost={}ms ─────",
+            log.info("[allinpay/notify] ───── DONE package reqsn={} amount={} cost={}ms ─────",
                     oid, trxamtFen, System.currentTimeMillis() - t0);
             return "success";
         } catch (cn.iocoder.yudao.framework.common.exception.ServiceException se) {
@@ -382,13 +405,21 @@ public class AllinpayCashierService {
     // ============================================================
 
     /**
-     * 主动查询通联订单状态。
+     * 主动查询通联订单状态（package_order 入口；reqsn=纯数字）。
      *
      * @return trxstatus，2000 = 成功；其它 = 未成功；null = 通信失败 / 查无此单
      */
     public QueryResult queryOrder(Long orderId) {
+        return queryByReqsn(String.valueOf(orderId));
+    }
+
+    /**
+     * 按 reqsn 字符串查通联订单（支持业务前缀，如 T${tradeOrderId}）。
+     * trade_order 走这个入口；package_order 走 {@link #queryOrder(Long)} 重载。
+     */
+    public QueryResult queryByReqsn(String reqsn) {
         if (!props.isH5Configured()) {
-            log.debug("[allinpay/query] 配置未就绪，跳过 orderId={}", orderId);
+            log.debug("[allinpay/query] 配置未就绪，跳过 reqsn={}", reqsn);
             return null;
         }
         long t0 = System.currentTimeMillis();
@@ -396,11 +427,11 @@ public class AllinpayCashierService {
         Map<String, String> p = new LinkedHashMap<>();
         p.put("cusid", props.getMerchantNo());
         p.put("appid", props.getAppid());
-        p.put("reqsn", String.valueOf(orderId));
+        p.put("reqsn", reqsn);
         p.put("randomstr", randomStr());
         p.put("signtype", signType);
-        log.info("[allinpay/query] orderId={} signType={} userId(=appid)={} source={}",
-                orderId, signType, props.getAppid(), buildSignSource(p));
+        log.info("[allinpay/query] reqsn={} signType={} userId(=appid)={} source={}",
+                reqsn, signType, props.getAppid(), buildSignSource(p));
         p.put("sign", signWith(p, signType));
 
         String base = props.getApiBaseUrl();
@@ -420,24 +451,24 @@ public class AllinpayCashierService {
 
             @SuppressWarnings("unchecked")
             Map<String, Object> resp = restTemplate.postForObject(url, req, Map.class);
-            log.info("[allinpay/query] orderId={} url={} resp={} cost={}ms",
-                    orderId, url, resp, System.currentTimeMillis() - t0);
+            log.info("[allinpay/query] reqsn={} url={} resp={} cost={}ms",
+                    reqsn, url, resp, System.currentTimeMillis() - t0);
             if (resp == null) return null;
             String retcode = String.valueOf(resp.getOrDefault("retcode", ""));
             if (!"SUCCESS".equals(retcode)) {
-                log.warn("[allinpay/query] orderId={} retcode={} retmsg={} errmsg={}",
-                        orderId, retcode, resp.get("retmsg"), resp.get("errmsg"));
+                log.warn("[allinpay/query] reqsn={} retcode={} retmsg={} errmsg={}",
+                        reqsn, retcode, resp.get("retmsg"), resp.get("errmsg"));
                 return null;
             }
             String trxstatus = String.valueOf(resp.getOrDefault("trxstatus", ""));
             String trxamt = String.valueOf(resp.getOrDefault("trxamt", "0"));
             int amt = 0;
             try { amt = Integer.parseInt(trxamt); } catch (Exception ignore) {}
-            log.info("[allinpay/query] orderId={} trxstatus={} trxamt={}（2000=成功 / 1001=无此交易 / 其它=进行中）",
-                    orderId, trxstatus, amt);
+            log.info("[allinpay/query] reqsn={} trxstatus={} trxamt={}（2000=成功 / 1001=无此交易 / 其它=进行中）",
+                    reqsn, trxstatus, amt);
             return new QueryResult(trxstatus, amt);
         } catch (Exception e) {
-            log.warn("[allinpay/query] orderId={} url={} 查询异常: {}", orderId, url, e.getMessage(), e);
+            log.warn("[allinpay/query] reqsn={} url={} 查询异常: {}", reqsn, url, e.getMessage(), e);
             return null;
         }
     }

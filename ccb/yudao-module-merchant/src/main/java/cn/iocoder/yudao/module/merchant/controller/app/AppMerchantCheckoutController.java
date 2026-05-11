@@ -64,6 +64,10 @@ public class AppMerchantCheckoutController {
     @Resource
     private cn.iocoder.yudao.module.merchant.dal.mysql.coupon.ShopCouponUserMapper shopCouponUserMapper;
 
+    /** 通联兜底轮询（提单成功后立即调度，6 段退避主动查通联） */
+    @Resource(name = "tradeOrderAllinpayPollingService")
+    private cn.iocoder.yudao.module.merchant.service.allinpay.TradeOrderAllinpayPollingService tradeOrderAllinpayPollingService;
+
     @PostMapping("/submit")
     @Operation(summary = "提交订单（支持店铺余额抵扣）")
     @Transactional(rollbackFor = Exception.class)
@@ -210,6 +214,19 @@ public class AppMerchantCheckoutController {
                 tradeOrderUpdateService.updateOrderPrice(priceReq);
                 finalPayPrice -= actualCouponDeduct;
                 couponDeductFen = actualCouponDeduct;
+            }
+        }
+
+        // 6. 调度通联兜底轮询（仅在还有线上支付金额时挂）
+        //    主路径是通联异步通知；轮询是漏发兜底，5/15/25/35/60/120s 6 段
+        //    集群安全由 TradeOrderAllinpayPollingService 内部的 Redisson 锁保证
+        if (finalPayPrice > 0) {
+            try {
+                tradeOrderAllinpayPollingService.schedulePolling(orderId);
+            } catch (Exception e) {
+                // 调度失败不阻塞下单，scanWaitingOrders 60s 后会兜底捞回
+                org.slf4j.LoggerFactory.getLogger(getClass())
+                        .warn("[checkout] 调度通联兜底轮询失败 orderId={}: {}", orderId, e.getMessage());
             }
         }
 
