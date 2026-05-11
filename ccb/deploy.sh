@@ -2,7 +2,7 @@
 # =============================================================================
 #  摊小二 一键部署脚本
 #  适用于：CentOS 7.9 x86_64（阿里云 ECS）
-#  用法：sudo bash deploy.sh [--skip-install] [--skip-build] [--help]
+#  用法：sudo bash deploy.sh [--skip-install] [--skip-build] [--fresh-db] [--help]
 #
 #  首次使用：cp .env.example .env && vim .env 填写密码，再运行本脚本
 #
@@ -132,7 +132,11 @@ for arg in "$@"; do
     --skip-build)    SKIP_BUILD=true ;;
     --skip-backend)  SKIP_BACKEND=true ;;
     --skip-frontend) SKIP_FRONTEND=true ;;
-    --reset)         RESET_DATA=true ;;
+    # --fresh-db 是 --reset 的语义化别名（"先删库 → 再建 → 再跑初始化脚本"）
+    # 两者效果完全一致：reset_data() 先 DROP + 重建空库 + 清 Redis + 清 sidecar tmp，
+    # 紧接着的 setup_database() 检测到核心表缺失，自动跑全部 base SQL + V*.sql 迁移。
+    --reset|--fresh-db|--fresh)
+      RESET_DATA=true ;;
     --yes|-y)        ASSUME_YES=true ;;
     --help)
       cat << HELP
@@ -142,9 +146,12 @@ for arg in "$@"; do
   --skip-build     跳过前后端所有编译（仅重新部署已有制品）
   --skip-backend   只跳过后端 Maven 构建（沿用已打好的 jar）
   --skip-frontend  只跳过前端 pnpm 构建（沿用已打好的 dist）
-  --reset          ⚠ 危险：DROP DATABASE + Redis FLUSHALL 重头来过
-                   （会删掉所有商户 / 用户 / 视频任务，仅留 OSS 上的对象）
-  --yes / -y       --reset 时跳过交互确认（脚本里自动化用）
+  --fresh-db       ⚠ 危险：先 DROP DATABASE 再重建空库，然后跑全部初始化脚本
+                   （base SQL + V*.sql 迁移 + 平台商户 seed）。等价于 --reset。
+                   同时 Redis FLUSHALL + 清 sidecar tmp（避免遗留 token 指向已删用户）。
+                   适用：环境弄脏要重头来，或换分支换 schema 后重跑。
+  --reset          同 --fresh-db（保留兼容旧文档）
+  --yes / -y       跳过 --fresh-db / --reset 的二次确认（CI / 自动化用）
 
 配置文件: ${ENV_FILE}
   首次使用请 cp .env.example .env 后填写密码
@@ -526,14 +533,16 @@ pull_code() {
 }
 
 reset_data() {
-  step "⚠ 重置数据：DROP DATABASE + Redis FLUSHALL"
+  step "⚠ 重置数据：DROP DATABASE → 重建空库 → 后续 setup_database 重跑全部初始化脚本"
   init_mysql_defaults_file
 
   # 1. 交互确认（除非 --yes）
   if [[ "${ASSUME_YES}" != true ]]; then
     echo -e "${RED}危险操作！将永久删除：${NC}"
     echo "  - MySQL 数据库 ${DB_NAME}（所有租户/商户/订单/视频任务）"
-    echo "  - Redis 全部 key（OAuth token / 验证码 / 缓存）"
+    echo "  - Redis 全部 key（避免残留 OAuth token 指向已删用户）"
+    echo "  - sidecar/tmp 中间产物"
+    echo -e "${YELLOW}重建后会自动重跑 sql/mysql/ 下所有 base SQL + V*.sql 迁移 + 平台商户 seed${NC}"
     echo "  - OSS 上已上传的文件 不会删，需自行去阿里云控制台清"
     read -r -p "确认重置？输入 YES 继续，其它任意键取消：" confirm
     if [[ "${confirm}" != "YES" ]]; then
