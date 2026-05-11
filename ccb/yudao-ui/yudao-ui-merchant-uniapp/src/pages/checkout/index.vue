@@ -10,7 +10,7 @@
 
     <template v-else>
       <!-- 收货地址 -->
-      <view class="ck-addr" v-if="deliveryType === 1">
+      <view class="ck-addr" v-if="deliveryType === 1" @click="pickAddress">
         <view class="ic">📍</view>
         <view class="body">
           <view v-if="addressId" class="row1">
@@ -18,7 +18,10 @@
             <text class="phone">{{ receiverMobile || '' }}</text>
           </view>
           <view v-if="addressId" class="row2">{{ receiverAddress || '点击选择地址' }}</view>
-          <view v-else class="row2 placeholder">点击选择收货地址</view>
+          <template v-else>
+            <view class="row1 placeholder">请选择收货地址</view>
+            <view class="row2 placeholder">点击此处选择 / 新增收货地址</view>
+          </template>
         </view>
         <text class="arrow">›</text>
       </view>
@@ -192,7 +195,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { onLoad, onShow } from '@dcloudio/uni-app';
 import { request } from '../../api/request.js';
 import { fen2yuan } from '../../utils/format.js';
@@ -496,6 +499,36 @@ async function submitOrder() {
 
 function goBack() { uni.navigateBack(); }
 
+// 把选中的地址结构填进 checkout 状态
+function applyAddress(addr) {
+  if (!addr || !addr.id) return;
+  addressId.value = addr.id;
+  receiverName.value = addr.name || '';
+  receiverMobile.value = addr.mobile || '';
+  receiverAddress.value = `${addr.areaName || ''} ${addr.detailAddress || ''}`.trim();
+}
+
+// 拉默认地址（首次进入 & 切到快递时调用）
+async function loadDefaultAddress() {
+  try {
+    const addr = await request({ url: '/app-api/member/address/get-default' });
+    if (addr && addr.id) applyAddress(addr);
+  } catch {}
+}
+
+// 点击地址卡片 → 跳到地址管理页（select 模式）
+function pickAddress() {
+  uni.navigateTo({
+    url: '/pages/user-me/address?select=1',
+    fail: () => uni.showToast({ title: '地址页打开失败', icon: 'none' }),
+  });
+}
+
+// 切到快递发货 → 没地址就拉默认地址
+watch(deliveryType, (v) => {
+  if (v === 1 && !addressId.value) loadDefaultAddress();
+});
+
 onLoad((q) => {
   tenantId.value = Number(q.tenantId);
   if (q.cartIds) cartIds.value = String(q.cartIds).split(',').map(Number).filter(Boolean);
@@ -503,6 +536,22 @@ onLoad((q) => {
   if (q.spuId) { spuId.value = Number(q.spuId); }
   loadShopAndItems();
   loadUsableCoupons();
+});
+
+// 切回 checkout 时检查地址选择 storage —— 地址页选了/新增了某个地址会写 storage
+onShow(() => {
+  try {
+    const picked = uni.getStorageSync('checkout_picked_address');
+    if (picked && picked.id) {
+      applyAddress(picked);
+      uni.removeStorageSync('checkout_picked_address');
+      // 第一次回到 checkout 同时把配送方式切到快递
+      if (deliveryType.value !== 1) deliveryType.value = 1;
+    } else if (deliveryType.value === 1 && !addressId.value) {
+      // 首次进入 & 默认就是快递 → 拉默认地址
+      loadDefaultAddress();
+    }
+  } catch {}
 });
 </script>
 

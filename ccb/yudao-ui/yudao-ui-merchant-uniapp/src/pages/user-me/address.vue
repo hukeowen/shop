@@ -2,9 +2,11 @@
   <view class="page">
     <view class="topbar safe-top">
       <text class="back" @click="goBack">‹</text>
-      <text class="title">收货地址</text>
+      <text class="title">{{ selectMode ? '选择收货地址' : '收货地址' }}</text>
       <view style="width:60rpx"></view>
     </view>
+
+    <view v-if="selectMode && !showEdit" class="select-tip">点击地址卡片选用，或新增一个新地址</view>
 
     <view v-if="loading && !list.length" class="empty-tip">加载中…</view>
     <view v-else-if="!list.length && !showEdit" class="empty-state">
@@ -18,18 +20,20 @@
       <view
         v-for="addr in list"
         :key="addr.id"
-        :class="['addr-card', addr.defaultStatus ? 'default' : '']"
+        :class="['addr-card', addr.defaultStatus ? 'default' : '', selectMode ? 'selectable' : '']"
+        @click="onCardClick(addr)"
       >
         <view class="hdr">
           <text class="name">{{ addr.name }}</text>
           <text class="mobile">{{ formatMobile(addr.mobile) }}</text>
           <text v-if="addr.defaultStatus" class="default-tag">默认</text>
+          <text v-if="selectMode" class="select-hint">点击选用 ›</text>
         </view>
         <view class="addr">{{ areaText(addr) }} {{ addr.detailAddress }}</view>
-        <view class="ops">
-          <text class="op" @click="editAddr(addr)">编辑</text>
-          <text v-if="!addr.defaultStatus" class="op" @click="setDefault(addr)">设为默认</text>
-          <text class="op danger" @click="removeAddr(addr)">删除</text>
+        <view class="ops" @click.stop>
+          <text class="op" @click.stop="editAddr(addr)">编辑</text>
+          <text v-if="!addr.defaultStatus" class="op" @click.stop="setDefault(addr)">设为默认</text>
+          <text class="op danger" @click.stop="removeAddr(addr)">删除</text>
         </view>
       </view>
       <view class="add-btn" @click="addNew">+ 新增收货地址</view>
@@ -108,11 +112,13 @@
 
 <script setup>
 import { ref, computed, onMounted, reactive } from 'vue';
+import { onLoad } from '@dcloudio/uni-app';
 import { request } from '../../api/request.js';
 
 const list = ref([]);
 const loading = ref(false);
 const showEdit = ref(false);
+const selectMode = ref(false); // ?select=1 → 选地址回填 checkout 模式
 const form = reactive({
   id: null, name: '', mobile: '', areaId: null,
   areaText: '', detailAddress: '', defaultStatus: false,
@@ -243,16 +249,22 @@ async function saveAddr() {
   };
   try {
     uni.showLoading({ title: '保存中', mask: true });
+    let newId = form.id || null;
     if (form.id) {
       await request({ url: '/app-api/member/address/update', method: 'PUT', data: { ...data, id: form.id } });
     } else {
-      await request({ url: '/app-api/member/address/create', method: 'POST', data });
+      newId = await request({ url: '/app-api/member/address/create', method: 'POST', data });
     }
     uni.hideLoading();
     uni.showToast({ title: '保存成功', icon: 'success' });
     showEdit.value = false;
     emptyForm();
     await load();
+    // 选择模式下：新增/编辑后自动选用并返回 checkout
+    if (selectMode.value && newId) {
+      const picked = list.value.find(a => a.id === newId) || list.value[0];
+      if (picked) onCardClick(picked);
+    }
   } catch (e) {
     uni.hideLoading();
     uni.showToast({ title: e?.message || '保存失败', icon: 'none' });
@@ -307,6 +319,26 @@ function removeAddr(addr) {
 
 function goBack() { uni.navigateBack({ fail: () => uni.reLaunch({ url: '/pages/user-me/index' }) }); }
 
+// 选择模式下：点击卡片 = 把选中的地址写 storage 并返回（checkout onShow 读取）
+function onCardClick(addr) {
+  if (!selectMode.value) return;
+  try {
+    uni.setStorageSync('checkout_picked_address', {
+      id: addr.id,
+      name: addr.name,
+      mobile: addr.mobile,
+      areaId: addr.areaId,
+      areaName: addr.areaName || '',
+      detailAddress: addr.detailAddress || '',
+      defaultStatus: !!addr.defaultStatus,
+    });
+  } catch {}
+  uni.navigateBack();
+}
+
+onLoad((q) => {
+  if (q && (q.select === '1' || q.select === 1)) selectMode.value = true;
+});
 onMounted(load);
 </script>
 
@@ -332,6 +364,19 @@ onMounted(load);
   border: 2rpx solid transparent;
 }
 .addr-card.default { border-color: $brand-primary-light; }
+.addr-card.selectable { cursor: pointer; transition: transform .15s, box-shadow .15s; }
+.addr-card.selectable:active { transform: scale(0.985); box-shadow: 0 8rpx 24rpx rgba(255,107,53,.15); }
+
+.select-tip {
+  margin: 16rpx 32rpx 0; padding: 16rpx 24rpx;
+  background: $brand-primary-light; color: $brand-primary;
+  border-radius: $radius-md; font-size: 24rpx; text-align: center;
+}
+
+.addr-card .select-hint {
+  margin-left: auto; color: $brand-primary;
+  font-size: 22rpx; font-weight: 600;
+}
 .addr-card .hdr { display: flex; align-items: center; gap: 16rpx; margin-bottom: 12rpx; }
 .addr-card .name { font-size: 28rpx; font-weight: 700; color: $text-primary; }
 .addr-card .mobile { font-size: 26rpx; color: $text-secondary; font-variant-numeric: tabular-nums; }
