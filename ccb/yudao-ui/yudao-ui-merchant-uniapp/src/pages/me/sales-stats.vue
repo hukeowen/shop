@@ -162,33 +162,23 @@
       <view class="panel-h">
         <text class="t">🎯 推 N 反 1 漏斗</text>
       </view>
-      <view class="funnel">
-        <view class="funnel-row">
-          <text class="name">激活</text>
-          <view class="funnel-bar" :style="{ width: '100%' }">
-            <text>{{ funnel.activatedUsers }} 人</text>
-            <text>100%</text>
-          </view>
-        </view>
-        <view class="funnel-row">
-          <text class="name">推进中</text>
-          <view class="funnel-bar" :style="{ width: pct(funnel.inProgressUsers, funnel.activatedUsers) + '%' }">
-            <text>{{ funnel.inProgressUsers }} 人 IN_PROGRESS</text>
-            <text>{{ pct(funnel.inProgressUsers, funnel.activatedUsers) }}%</text>
-          </view>
-        </view>
-        <view class="funnel-row">
-          <text class="name">已完成</text>
-          <view class="funnel-bar" :style="{ width: pct(funnel.completedUsers, funnel.activatedUsers) + '%' }">
-            <text>{{ funnel.completedUsers }} 人 COMPLETED</text>
-            <text>{{ pct(funnel.completedUsers, funnel.activatedUsers) }}%</text>
-          </view>
-        </view>
-        <view class="funnel-row">
-          <text class="name">直推有效</text>
-          <view class="funnel-bar" :style="{ width: pct(funnel.contributionCount, funnel.activatedUsers) + '%' }">
-            <text>{{ funnel.contributionCount }} 对首贡献</text>
-            <text>{{ pct(funnel.contributionCount, funnel.activatedUsers) }}%</text>
+      <!-- 全 0 状态：显示空提示，避免横条挤压错位 -->
+      <view v-if="!funnel.activatedUsers" class="funnel-empty">
+        <text class="empty-emoji">🎯</text>
+        <text class="empty-title">暂无激活用户</text>
+        <text class="empty-sub">用户在此店首次下单买推 N 反 1 商品后将激活推广资格</text>
+      </view>
+      <view v-else class="funnel">
+        <view class="funnel-row" v-for="(row, i) in funnelRows" :key="i">
+          <text class="name">{{ row.label }}</text>
+          <view class="bar-wrap">
+            <view class="bar" :style="{ width: row.barWidth + '%' }"></view>
+            <text
+              :class="['bar-text', row.barWidth < 30 ? 'outside' : 'inside']"
+              :style="row.barWidth < 30 ? { left: 'calc(' + row.barWidth + '% + 12rpx)' } : {}"
+            >
+              {{ row.value }} {{ row.unit }} · {{ row.pct }}%
+            </text>
           </view>
         </view>
       </view>
@@ -230,6 +220,25 @@ const funnel = ref(null);
 
 const periodName = computed(() => ({ day: '日', week: '周', month: '月', year: '年' }[period.value] || '月'));
 const maxSales = computed(() => Math.max(1, ...(data.value?.trendSales || [1])));
+
+// 漏斗行数据 — activatedUsers 作分母；横条 >=2% 保证可见，<30% 文字外置
+const funnelRows = computed(() => {
+  const f = funnel.value;
+  if (!f || !f.activatedUsers) return [];
+  const mk = (label, value, unit, pctVal) => ({
+    label,
+    value,
+    unit,
+    pct: pctVal,
+    barWidth: pctVal <= 0 ? 2 : Math.max(2, pctVal),
+  });
+  return [
+    mk('激活', f.activatedUsers, '人', 100),
+    mk('推进中', f.inProgressUsers || 0, '人', pct(f.inProgressUsers, f.activatedUsers)),
+    mk('已完成', f.completedUsers || 0, '人', pct(f.completedUsers, f.activatedUsers)),
+    mk('直推有效', f.contributionCount || 0, '对首贡献', pct(f.contributionCount, f.activatedUsers)),
+  ];
+});
 
 function barH(v, max) {
   if (!max || max <= 0) return 0;
@@ -404,15 +413,77 @@ onShow(loadAll);
 
 .funnel {
   padding-top: 8rpx;
-  .funnel-row { display: flex; align-items: center; margin-bottom: 12rpx; }
-  .name { width: 120rpx; font-size: 24rpx; flex-shrink: 0; }
-  .funnel-bar {
-    height: 50rpx; border-radius: 8rpx;
+
+  .funnel-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 16rpx;
+    &:last-child { margin-bottom: 0; }
+  }
+  .name {
+    width: 120rpx;
+    font-size: 24rpx;
+    color: $text-regular;
+    flex-shrink: 0;
+  }
+  .bar-wrap {
+    position: relative;
+    flex: 1;
+    height: 44rpx;
+    background: #f5f5f7;
+    border-radius: 8rpx;
+    overflow: hidden;
+  }
+  .bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    border-radius: 8rpx;
     background: linear-gradient(90deg, $brand-primary, #ffae74);
-    color: #fff; font-size: 22rpx; font-weight: 600;
-    padding: 0 16rpx; line-height: 50rpx;
-    display: flex; justify-content: space-between; align-items: center;
-    min-width: 50rpx; box-sizing: border-box;
+    transition: width 0.3s ease-out;
+  }
+  .bar-text {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 22rpx;
+    font-weight: 600;
+    white-space: nowrap;
+
+    // 横条宽 ≥ 30%：文字内嵌（白底彩色横条上）
+    &.inside {
+      left: 12rpx;
+      color: #fff;
+    }
+    // 横条宽 < 30%：文字放在横条右侧灰底上（避免压字）— left 由 inline style 设
+    &.outside {
+      color: $text-primary;
+    }
+  }
+}
+
+.funnel-empty {
+  text-align: center;
+  padding: 48rpx 24rpx 24rpx;
+
+  .empty-emoji {
+    font-size: 64rpx;
+    display: block;
+    opacity: 0.4;
+    margin-bottom: 12rpx;
+  }
+  .empty-title {
+    display: block;
+    font-size: 28rpx;
+    color: $text-regular;
+    margin-bottom: 8rpx;
+  }
+  .empty-sub {
+    display: block;
+    font-size: 22rpx;
+    color: $text-secondary;
+    line-height: 1.5;
   }
 }
 
