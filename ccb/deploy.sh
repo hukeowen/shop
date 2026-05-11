@@ -1707,6 +1707,69 @@ main() {
   # 火山即梦签名自检：用 runtime.env 真实 SK 直打火山 SubmitTask，
   # 确认凭据/签名/网络/字符编码全链路 OK。失败则大字红色警告（但不阻塞 deploy 完成）
   verify_jimeng_sign || true
+
+  # 部署完成总结：SaaS 平台商户 + 通联凭据状态
+  print_saas_summary || true
+}
+
+# ──────────────────────────────────────────────────────────────────────────────
+# 部署后总结：SaaS 订阅 / 平台商户 / 通联凭据状态
+# ──────────────────────────────────────────────────────────────────────────────
+print_saas_summary() {
+  step "SaaS 部署总结 — 平台商户 / 套餐 / 通联凭据"
+
+  local PLAT_MOBILE PWD_LEN TL_CFG PKG_LIST
+  PLAT_MOBILE=$(mysql_safe -Nse "SELECT mobile FROM member_user WHERE id=999" 2>/dev/null || echo "")
+  PWD_LEN=$(mysql_safe -Nse "SELECT LENGTH(password) FROM member_user WHERE id=999" 2>/dev/null || echo 0)
+  TL_CFG=$(mysql_safe -Nse "SELECT LENGTH(tl_sm2_private_key) FROM shop_info WHERE id=999" 2>/dev/null || echo 0)
+  PKG_LIST=$(mysql_safe -Nse "SELECT GROUP_CONCAT(CONCAT(level,'(¥',price_fen/100,')')) FROM saas_package_config WHERE status=0" 2>/dev/null || echo "")
+
+  echo ""
+  echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+  echo -e "${GREEN}  📦 SaaS 订阅体系部署状态${NC}"
+  echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+
+  if [[ "$PLAT_MOBILE" == "15928962028" ]]; then
+    echo -e "  ${GREEN}✓${NC} 平台商户: mobile=${PLAT_MOBILE}  tenant_id=999  permission=PLATFORM(永久)"
+    if [[ "$PWD_LEN" -ge 30 ]]; then
+      echo -e "  ${GREEN}✓${NC} 平台商户密码已 BCrypt 写入（明文 yhzc123456）"
+    else
+      echo -e "  ${YELLOW}⚠${NC} 平台商户密码未 BCrypt — 重启 server 让 PlatformMerchantInitializer 跑"
+    fi
+  else
+    echo -e "  ${RED}✗${NC} 平台 member_user(id=999) 未建 — 检查 V035 SQL 是否应用"
+  fi
+
+  if [[ "$TL_CFG" -gt 100 ]]; then
+    echo -e "  ${GREEN}✓${NC} 平台商户通联 SM2 凭据已加密落库 shop_info(id=999)"
+  else
+    echo -e "  ${YELLOW}⚠${NC} 平台商户通联凭据未写入 (priv=${TL_CFG} 字符)"
+    echo -e "    选项 A：确保 ${PROJECT_DIR}/docs/测试参数.txt 存在 → 重启 server"
+    echo -e "    选项 B：admin 后台 → 通联支付配置 → 编辑 id=4（新店1）手工填"
+  fi
+
+  if [[ -n "$PKG_LIST" ]]; then
+    echo -e "  ${GREEN}✓${NC} SaaS 套餐已上架: ${PKG_LIST}"
+  else
+    echo -e "  ${RED}✗${NC} SaaS 套餐未上架 — 检查 V034 SQL"
+  fi
+
+  echo ""
+  echo -e "${CYAN}  入口地址${NC}"
+  echo -e "    平台 admin 后台:      https://${SERVER_NAME:-www.doupaidoudian.com}/  (用 yudao admin/admin123)"
+  echo -e "    商户/用户端 H5:        https://${SERVER_NAME:-www.doupaidoudian.com}/m/"
+  echo -e "    通联回调 URL（已自动配）:"
+  echo -e "      支付通知: https://${SERVER_NAME:-www.doupaidoudian.com}/admin-api/merchant/allinpay/pay-notify"
+  echo -e "      进件通知: https://${SERVER_NAME:-www.doupaidoudian.com}/admin-api/merchant/allinpay/register-notify"
+
+  echo ""
+  echo -e "${CYAN}  下一步${NC}"
+  echo -e "    1. 用 admin/admin123 登录后台，找 ${YELLOW}「SaaS 运营 → 套餐配置」${NC} 改价或调赠送 AI 视频次数"
+  echo -e "    2. 找 ${YELLOW}「营销配置 → 通联支付配置」${NC} 编辑每个商户的独立通联凭据"
+  echo -e "    3. 商户登录 H5（手机号+密码）→ ${YELLOW}我的页${NC}看到 SaaS 服务卡片 + 续费入口"
+  echo -e "    4. 通联回调到达后会自动续期商户 service_expire_at + 365 天 + AI 视频额度 +N"
+  echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+  echo ""
 }
 
 # 火山即梦签名活性检测：跟 BFF JimengBffClient.java 的 SigV4 完全等价

@@ -219,6 +219,49 @@ for v in "${OPTIONAL_VARS[@]}"; do
   fi
 done
 
+# ── 幕 11：SaaS 订阅 + 平台商户 ───────────
+echo ""
+echo "[幕 11] SaaS 订阅 + 平台商户初始化"
+# 11.1 V034/V035/V036 SQL 已应用 — 检查表/字段
+COL_EXP=$(mysql_q "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA='${DB_NAME}' AND TABLE_NAME='merchant_info' AND COLUMN_NAME='service_expire_at'" 2>/dev/null || echo 0)
+[[ "$COL_EXP" == "1" ]] && ok "merchant_info.service_expire_at 字段已加" || ko "merchant_info.service_expire_at 字段缺失（V034 未跑？）"
+
+PKG_CNT=$(mysql_q "SELECT COUNT(*) FROM saas_package_config WHERE status=0" 2>/dev/null || echo 0)
+[[ "$PKG_CNT" -ge 2 ]] && ok "saas_package_config 已上架 ${PKG_CNT} 个套餐" || ko "saas_package_config 没种子数据 (V034 SQL 缺失或未跑)"
+
+# 11.2 平台商户 V035 骨架
+PLAT_USER=$(mysql_q "SELECT mobile FROM member_user WHERE id=999" 2>/dev/null || echo "")
+[[ "$PLAT_USER" == "15928962028" ]] && ok "平台 member_user(id=999, mobile=15928962028) 已建" || ko "平台 member_user 未建（V035 未跑？）"
+
+PLAT_MER=$(mysql_q "SELECT service_package_level FROM merchant_info WHERE id=999 AND is_platform=b'1'" 2>/dev/null || echo "")
+[[ "$PLAT_MER" == "PLATFORM" ]] && ok "平台 merchant_info(id=999) is_platform=1 level=PLATFORM" || ko "平台 merchant_info 未建（V035 未跑？）"
+
+# 11.3 PlatformMerchantInitializer 是否跑过（通联凭据写入 + 密码 BCrypt）
+PWD_LEN=$(mysql_q "SELECT LENGTH(password) FROM member_user WHERE id=999" 2>/dev/null || echo 0)
+[[ "$PWD_LEN" -ge 30 ]] && ok "平台商户密码 BCrypt 已写入 (${PWD_LEN} 字符)" || warn "平台商户密码未 BCrypt — 启动后 Initializer 会自动写"
+
+TL_CFG=$(mysql_q "SELECT LENGTH(tl_sm2_private_key) FROM shop_info WHERE id=999" 2>/dev/null || echo 0)
+[[ "$TL_CFG" -gt 100 ]] && ok "平台商户通联 SM2 凭据已加密落库 (priv=${TL_CFG} 字符)" || warn "平台商户通联凭据未写入 — 检查 docs/测试参数.txt 是否存在 + 启动日志 PlatformMerchantInitializer"
+
+# 11.4 SaaS admin 菜单
+SAAS_MENU=$(mysql_q "SELECT COUNT(*) FROM system_menu WHERE id BETWEEN 6400 AND 6403" 2>/dev/null || echo 0)
+[[ "$SAAS_MENU" == "4" ]] && ok "SaaS admin 菜单 4 项已建" || ko "SaaS admin 菜单未全建（V036 未跑？got=${SAAS_MENU}）"
+
+# 11.5 docs/测试参数.txt 部署到位（PlatformMerchantInitializer 读取依赖）
+if [[ -f "${PROJECT_DIR}/docs/测试参数.txt" ]]; then
+  ok "docs/测试参数.txt 已部署（Initializer 可读）"
+else
+  warn "docs/测试参数.txt 不存在 — 平台商户通联凭据无法自动写入，需 admin 后台手工配置"
+fi
+
+# 11.6 通联回调 URL nginx 公网可达探活
+HTTP_NOTIFY=$(http_code "${BASE_URL}/admin-api/merchant/allinpay/pay-notify" -X POST -d 'ping=1')
+if [[ "$HTTP_NOTIFY" == "200" || "$HTTP_NOTIFY" == "400" ]]; then
+  ok "通联支付回调路径可达 HTTP=${HTTP_NOTIFY}（404/500 视为不通）"
+else
+  warn "通联回调路径返 HTTP=${HTTP_NOTIFY}（可能 nginx 路由 / 后端 controller 注册问题）"
+fi
+
 # ── 总结 ─────────────────────────────────
 echo ""
 echo "============================================="
