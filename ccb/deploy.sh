@@ -544,7 +544,17 @@ reset_data() {
     echo "  - sidecar/tmp 中间产物"
     echo -e "${YELLOW}重建后会自动重跑 sql/mysql/ 下所有 base SQL + V*.sql 迁移 + 平台商户 seed${NC}"
     echo "  - OSS 上已上传的文件 不会删，需自行去阿里云控制台清"
-    read -r -p "确认重置？输入 YES 继续，其它任意键取消：" confirm
+    # 非交互场景（curl|bash / stdin 重定向）read 会拿不到终端报 "Bad file descriptor"。
+    # 优先从 /dev/tty 读；没有 tty 则明确报错让用户加 -y，避免无声卡死或误删。
+    local confirm=""
+    if [[ -r /dev/tty ]]; then
+      read -r -p "确认重置？输入 YES 继续，其它任意键取消：" confirm < /dev/tty
+    else
+      err "检测到非交互式 shell（无 /dev/tty），无法二次确认。"
+      err "    重新执行并加 -y / --yes 以跳过确认："
+      err "    sudo bash deploy.sh --fresh-db -y"
+      exit 1
+    fi
     if [[ "${confirm}" != "YES" ]]; then
       err "已取消重置"
       exit 1
