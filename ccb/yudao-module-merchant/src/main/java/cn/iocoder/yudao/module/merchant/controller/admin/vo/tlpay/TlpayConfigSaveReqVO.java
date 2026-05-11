@@ -35,4 +35,10 @@ public class TlpayConfigSaveReqVO {
     @Schema(description = "通联 RSA 公钥 PEM；空串 = 不变；__CLEAR__ = 清空")
     private String tlRsaPublicKey;
 
+    @Schema(description = "商户 SM2 私钥 PEM；空串 = 不变；__CLEAR__ = 清空")
+    private String tlSm2PrivateKey;
+
+    @Schema(description = "通联 SM2 公钥 PEM；空串 = 不变；__CLEAR__ = 清空")
+    private String tlSm2PublicKey;
+
 }

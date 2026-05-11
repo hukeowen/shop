@@ -146,6 +146,8 @@ public class TlpayConfigController {
         // 同时记下"是否修改"用于审计日志
         boolean privateKeyChanged = applyKey(reqVO.getTlRsaPrivateKey(), patch::setTlRsaPrivateKey);
         boolean publicKeyChanged = applyKey(reqVO.getTlRsaPublicKey(), patch::setTlRsaPublicKey);
+        boolean sm2PrivateKeyChanged = applyKey(reqVO.getTlSm2PrivateKey(), patch::setTlSm2PrivateKey);
+        boolean sm2PublicKeyChanged = applyKey(reqVO.getTlSm2PublicKey(), patch::setTlSm2PublicKey);
 
         shopInfoMapper.updateById(patch);
 
@@ -221,6 +223,8 @@ public class TlpayConfigController {
         vo.setTlNotifyUrl(shop.getTlNotifyUrl());
         vo.setPrivateKeyConfigured(shop.getTlRsaPrivateKey() != null && !shop.getTlRsaPrivateKey().isEmpty());
         vo.setPublicKeyConfigured(shop.getTlRsaPublicKey() != null && !shop.getTlRsaPublicKey().isEmpty());
+        vo.setSm2PrivateKeyConfigured(shop.getTlSm2PrivateKey() != null && !shop.getTlSm2PrivateKey().isEmpty());
+        vo.setSm2PublicKeyConfigured(shop.getTlSm2PublicKey() != null && !shop.getTlSm2PublicKey().isEmpty());
         return vo;
     }
 

@@ -31,10 +31,16 @@ public class TlpayConfigRespVO {
     @Schema(description = "异步回调地址")
     private String tlNotifyUrl;
 
-    @Schema(description = "商户私钥是否已配置（true=已配；不返明文）")
+    @Schema(description = "商户 RSA 私钥是否已配置（不返明文）")
     private Boolean privateKeyConfigured;
 
-    @Schema(description = "通联公钥是否已配置")
+    @Schema(description = "通联 RSA 公钥是否已配置")
     private Boolean publicKeyConfigured;
+
+    @Schema(description = "商户 SM2 私钥是否已配置")
+    private Boolean sm2PrivateKeyConfigured;
+
+    @Schema(description = "通联 SM2 公钥是否已配置")
+    private Boolean sm2PublicKeyConfigured;
 
 }

@@ -12,6 +12,8 @@ export interface TlpayConfigVO {
   /** 私钥不返明文，只返"是否已配置"布尔 */
   privateKeyConfigured: boolean
   publicKeyConfigured: boolean
+  sm2PrivateKeyConfigured: boolean
+  sm2PublicKeyConfigured: boolean
 }
 
 export interface TlpayConfigPageReqVO {
@@ -31,6 +33,8 @@ export interface TlpayConfigSaveReqVO {
   /** 空串 = 保留不变；__CLEAR__ = 主动清空；其它 = 覆盖 */
   tlRsaPrivateKey?: string
   tlRsaPublicKey?: string
+  tlSm2PrivateKey?: string
+  tlSm2PublicKey?: string
 }
 
 const BASE = '/merchant/tlpay'

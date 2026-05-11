@@ -134,6 +134,42 @@
         />
       </el-form-item>
 
+      <el-form-item label="商户 SM2 私钥">
+        <template #label>
+          <span>
+            商户 SM2 私钥
+            <el-tag v-if="form_meta.sm2PrivateKeyConfigured" type="success" size="small" class="ml-5px">已配置</el-tag>
+            <el-tag v-else type="info" size="small" class="ml-5px">未配置</el-tag>
+          </span>
+        </template>
+        <el-input
+          v-model="editForm.tlSm2PrivateKey"
+          type="textarea"
+          :rows="5"
+          placeholder="国密签名场景填；留空 = 不变；__CLEAR__ = 清空"
+          show-word-limit
+          :maxlength="4096"
+        />
+      </el-form-item>
+
+      <el-form-item label="通联 SM2 公钥">
+        <template #label>
+          <span>
+            通联 SM2 公钥
+            <el-tag v-if="form_meta.sm2PublicKeyConfigured" type="success" size="small" class="ml-5px">已配置</el-tag>
+            <el-tag v-else type="info" size="small" class="ml-5px">未配置</el-tag>
+          </span>
+        </template>
+        <el-input
+          v-model="editForm.tlSm2PublicKey"
+          type="textarea"
+          :rows="4"
+          placeholder="国密验回调签名；留空 = 不变；__CLEAR__ = 清空"
+          show-word-limit
+          :maxlength="4096"
+        />
+      </el-form-item>
+
       <el-form-item>
         <el-button type="primary" :loading="saving" @click="onSave">保存</el-button>
         <el-button @click="editVisible = false">取消</el-button>
@@ -202,10 +238,14 @@ const editForm = reactive<TlpayConfigSaveReqVO & { shopName?: string }>({
   tlNotifyUrl: '',
   tlRsaPrivateKey: '',
   tlRsaPublicKey: '',
+  tlSm2PrivateKey: '',
+  tlSm2PublicKey: '',
 })
 const form_meta = reactive({
   privateKeyConfigured: false,
   publicKeyConfigured: false,
+  sm2PrivateKeyConfigured: false,
+  sm2PublicKeyConfigured: false,
 })
 
 function openEdit(row: TlpayConfigVO) {
@@ -219,8 +259,12 @@ function openEdit(row: TlpayConfigVO) {
   // 私钥 / 公钥不回填明文 — 留空表示"不变"
   editForm.tlRsaPrivateKey = ''
   editForm.tlRsaPublicKey = ''
+  editForm.tlSm2PrivateKey = ''
+  editForm.tlSm2PublicKey = ''
   form_meta.privateKeyConfigured = !!row.privateKeyConfigured
   form_meta.publicKeyConfigured = !!row.publicKeyConfigured
+  form_meta.sm2PrivateKeyConfigured = !!row.sm2PrivateKeyConfigured
+  form_meta.sm2PublicKeyConfigured = !!row.sm2PublicKeyConfigured
   editVisible.value = true
 }
 
@@ -240,6 +284,8 @@ async function onSave() {
       tlNotifyUrl: editForm.tlNotifyUrl,
       tlRsaPrivateKey: editForm.tlRsaPrivateKey,
       tlRsaPublicKey: editForm.tlRsaPublicKey,
+      tlSm2PrivateKey: editForm.tlSm2PrivateKey,
+      tlSm2PublicKey: editForm.tlSm2PublicKey,
     }
     await saveTlpayConfig(payload)
     ElMessage.success('已保存')

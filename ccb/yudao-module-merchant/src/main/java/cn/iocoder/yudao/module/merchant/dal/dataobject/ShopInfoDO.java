@@ -98,6 +98,12 @@ public class ShopInfoDO extends BaseDO {
     /** 通联 RSA 公钥 PEM（验通联回调签名，AES 加密存储 — 防 DB 泄露后被冒签回调） */
     @TableField(typeHandler = cn.iocoder.yudao.framework.mybatis.core.type.EncryptTypeHandler.class)
     private String tlRsaPublicKey;
+    /** 商户 SM2 私钥 PEM（国密签名请求；AES 加密存储） */
+    @TableField(typeHandler = cn.iocoder.yudao.framework.mybatis.core.type.EncryptTypeHandler.class)
+    private String tlSm2PrivateKey;
+    /** 通联 SM2 公钥 PEM（验回调签名；AES 加密存储） */
+    @TableField(typeHandler = cn.iocoder.yudao.framework.mybatis.core.type.EncryptTypeHandler.class)
+    private String tlSm2PublicKey;
     /** 异步回调地址，空则走全局默认 */
     private String tlNotifyUrl;
     /** 签名算法 RSA / RSA2 */

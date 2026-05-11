@@ -681,8 +681,7 @@ public class AllinpayCashierService {
         }
         String signType = shop.getTlSignType() != null && !shop.getTlSignType().isEmpty()
                 ? shop.getTlSignType() : "RSA";
-        // 商户级独立直清场景下没分 SM2/RSA 两套，统一存 rsa_private_key / rsa_public_key
-        // SM2 字段留空（若商户用 SM2 签名则需要扩 shop_info 加 sm2_xxx 字段，本期不做）
+        // V033 后 shop_info 同时存 RSA + SM2 两套密钥，按 tl_sign_type 选哪套生效
         return TlpayCredential.builder()
                 .cusId(shop.getTlMchId())
                 .appId(shop.getTlAppId() != null && !shop.getTlAppId().isEmpty()
@@ -690,6 +689,8 @@ public class AllinpayCashierService {
                 .signType(signType)
                 .rsaPrivateKey(shop.getTlRsaPrivateKey())
                 .rsaPublicKey(shop.getTlRsaPublicKey())
+                .sm2PrivateKey(shop.getTlSm2PrivateKey())
+                .sm2PublicKey(shop.getTlSm2PublicKey())
                 .notifyUrl(shop.getTlNotifyUrl() != null && !shop.getTlNotifyUrl().isEmpty()
                         ? shop.getTlNotifyUrl() : props.getPayNotifyUrl())  // 空 fallback 全局
                 .build();
