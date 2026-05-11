@@ -30,6 +30,11 @@ public interface MerchantLogRecordConstants {
     String SHOP_PAY_APPLY_SUBMIT_SUB_TYPE = "提交在线支付进件资质";
     String SHOP_PAY_APPLY_SUBMIT_SUCCESS = "店铺【{{#shop.shopName}}】提交 KYC 资质，状态→审核中";
 
+    // ============ 通联支付配置（管理后台编辑）============
+    String TLPAY_CONFIG_TYPE = "通联支付配置";
+    String TLPAY_CONFIG_SAVE_SUB_TYPE = "保存通联配置";
+    String TLPAY_CONFIG_SAVE_SUCCESS = "修改店铺【{{#shopName}}】(id={{#shopId}}) 通联配置：enabled={{#tlEnabled}}, cusId={{#tlMchId}}, 私钥={{#privateKeyChanged}}, 公钥={{#publicKeyChanged}}";
+
     // ============ 通联进件回调 ============
     String ALLINPAY_NOTIFY_TYPE = "通联收付通通知";
     String ALLINPAY_OPEN_SUB_TYPE = "通联开户回调";

@@ -114,6 +114,13 @@ public class AppShopPublicController {
         resp.setSales30d(shop.getSales30d());
         resp.setAvgRating(shop.getAvgRating());
 
+        // 通联在线支付可用性：tlEnabled + cusId + 商户私钥 + 通联公钥 都配齐才算"商户可线上收款"
+        resp.setOnlinePayEnabled(
+                Boolean.TRUE.equals(shop.getTlEnabled())
+                && shop.getTlMchId() != null && !shop.getTlMchId().isEmpty()
+                && shop.getTlRsaPrivateKey() != null && !shop.getTlRsaPrivateKey().isEmpty()
+                && shop.getTlRsaPublicKey() != null && !shop.getTlRsaPublicKey().isEmpty());
+
         // 距离（用户和店铺都有合法经纬度才算）
         if (userLng != null && userLat != null
                 && shop.getLongitude() != null && shop.getLatitude() != null

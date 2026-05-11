@@ -15,7 +15,7 @@ import java.math.BigDecimal;
  * 平台级表（不继承 TenantBaseDO），支持跨租户查询（用户小程序附近/分类页需要）。
  * tenant_id 作为普通字段标识归属商户。
  */
-@TableName("shop_info")
+@TableName(value = "shop_info", autoResultMap = true)
 @KeySequence("shop_info_seq")
 @Data
 @EqualsAndHashCode(callSuper = true)
@@ -78,6 +78,7 @@ public class ShopInfoDO extends BaseDO {
     /** 通联支付商户号（通联回调下发后写入） */
     private String tlMchId;
     /** 通联支付密钥（AES 加密存储，展示前 4 后 4 脱敏） */
+    @TableField(typeHandler = cn.iocoder.yudao.framework.mybatis.core.type.EncryptTypeHandler.class)
     private String tlMchKey;
     /** 通联进件业务流水号（platform 端 outOrderId）；通联回调按这个反查店铺 */
     private String tlOpenOrderId;
@@ -91,9 +92,11 @@ public class ShopInfoDO extends BaseDO {
     private Boolean tlEnabled;
     /** 通联 appId */
     private String tlAppId;
-    /** 商户 RSA 私钥 PEM（签名请求用） */
+    /** 商户 RSA 私钥 PEM（签名请求用，AES 加密存储） */
+    @TableField(typeHandler = cn.iocoder.yudao.framework.mybatis.core.type.EncryptTypeHandler.class)
     private String tlRsaPrivateKey;
-    /** 通联 RSA 公钥 PEM（验通联回调签名） */
+    /** 通联 RSA 公钥 PEM（验通联回调签名，AES 加密存储 — 防 DB 泄露后被冒签回调） */
+    @TableField(typeHandler = cn.iocoder.yudao.framework.mybatis.core.type.EncryptTypeHandler.class)
     private String tlRsaPublicKey;
     /** 异步回调地址，空则走全局默认 */
     private String tlNotifyUrl;
