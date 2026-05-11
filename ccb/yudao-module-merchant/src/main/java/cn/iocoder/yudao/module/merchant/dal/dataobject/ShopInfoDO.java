@@ -84,6 +84,22 @@ public class ShopInfoDO extends BaseDO {
     /** 驳回原因 */
     private String payApplyRejectReason;
 
+    // ========== 通联收付通（每商户独立直清模式）==========
+    // 模式：商户在通联自己开户 → 拿到 cusId（落 tl_mch_id）+ appId + RSA 私钥
+    // 平台下载通联公钥用于验签
+    /** 通联是否启用（0=关 1=开） */
+    private Boolean tlEnabled;
+    /** 通联 appId */
+    private String tlAppId;
+    /** 商户 RSA 私钥 PEM（签名请求用） */
+    private String tlRsaPrivateKey;
+    /** 通联 RSA 公钥 PEM（验通联回调签名） */
+    private String tlRsaPublicKey;
+    /** 异步回调地址，空则走全局默认 */
+    private String tlNotifyUrl;
+    /** 签名算法 RSA / RSA2 */
+    private String tlSignType;
+
     // ========== 进件 KYC 资质（TOS key 私有存储） ==========
     // 仅存 TOS key（VARCHAR(512)），不存 URL：
     //   · 上传走 sidecar /oss/upload acl='private'，TOS 不开放公网读
