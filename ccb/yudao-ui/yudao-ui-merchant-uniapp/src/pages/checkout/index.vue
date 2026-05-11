@@ -468,9 +468,20 @@ async function submitOrder() {
     }
     const tid = tenantId.value || uni.getStorageSync('lastShopTenantId') || '';
     if (finalPayPrice > 0) {
-      // MAJ-7 修复：还需线上支付 → 跳订单列表（用户在那里点"去支付"），不显示"创建成功"误导文案
-      uni.showToast({ title: `还需线上支付 ¥${(finalPayPrice / 100).toFixed(2)}`, icon: 'none', duration: 1500 });
-      setTimeout(() => uni.redirectTo({ url: '/pages/user-order/list' }), 1200);
+      // 还需线上支付：拿到通联支付链接直接跳通联；否则 fallback 订单列表"立即付款"
+      const cashierUrl = res?.cashierUrl;
+      if (cashierUrl) {
+        uni.showToast({ title: `跳转通联支付 ¥${(finalPayPrice / 100).toFixed(2)}`, icon: 'none', duration: 1200 });
+        setTimeout(() => { location.href = cashierUrl; }, 600);
+      } else {
+        // 通联未就绪（商户未配 / 接口超时）→ 跳订单列表，用户可点"立即付款"重试
+        uni.showToast({
+          title: `还需线上支付 ¥${(finalPayPrice / 100).toFixed(2)}（请到订单列表付款）`,
+          icon: 'none',
+          duration: 2000,
+        });
+        setTimeout(() => uni.redirectTo({ url: '/pages/user-order/list' }), 1500);
+      }
     } else {
       // 余额抵扣全额或余额+积分付清 → 跳「支付完成」页（原型 ⑧ 推 N 反 1 引流）
       setTimeout(() => uni.redirectTo({

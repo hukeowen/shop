@@ -68,6 +68,10 @@ public class AppMerchantCheckoutController {
     @Resource(name = "tradeOrderAllinpayPollingService")
     private cn.iocoder.yudao.module.merchant.service.allinpay.TradeOrderAllinpayPollingService tradeOrderAllinpayPollingService;
 
+    /** 通联 cashier — 提单成功后用 trade_order.tenantId → shop_info 凭据签名拿支付链接 */
+    @Resource
+    private cn.iocoder.yudao.module.merchant.service.allinpay.AllinpayCashierService allinpayCashierService;
+
     @PostMapping("/submit")
     @Operation(summary = "提交订单（支持店铺余额抵扣）")
     @Transactional(rollbackFor = Exception.class)
@@ -217,10 +221,32 @@ public class AppMerchantCheckoutController {
             }
         }
 
-        // 6. 调度通联兜底轮询（仅在还有线上支付金额时挂）
+        SubmitRespVO resp = new SubmitRespVO();
+        resp.setOrderId(orderId);
+        resp.setPayOrderId(order.getPayOrderId());
+        resp.setBalanceDeductFen(finalDeductFen);
+        resp.setPromoDeductFen(finalPromoDeductFen);
+        resp.setPromoDeductCount(totalPromoDeductCount);
+        resp.setCouponDeductFen(couponDeductFen);
+        resp.setPayPrice(finalPayPrice);
+
+        // 6. 调用通联拿支付链接 + 调度兜底轮询（仅在还有线上支付金额时）
         //    主路径是通联异步通知；轮询是漏发兜底，5/15/25/35/60/120s 6 段
         //    集群安全由 TradeOrderAllinpayPollingService 内部的 Redisson 锁保证
         if (finalPayPrice > 0) {
+            try {
+                cn.iocoder.yudao.module.merchant.service.allinpay.AllinpayCashierService.CashierForm form =
+                        allinpayCashierService.buildCashierFormForTrade(orderId, null);
+                if (form != null && form.getRedirectUrl() != null) {
+                    resp.setCashierUrl(form.getRedirectUrl());
+                }
+            } catch (Exception e) {
+                // 通联未就绪（商户未配 tl_enabled / 私钥未配 / 通联接口超时）→
+                // 不阻塞下单（订单已落库），让用户在订单列表"立即付款"重试
+                org.slf4j.LoggerFactory.getLogger(getClass())
+                        .warn("[checkout] 通联拿支付链接失败 orderId={} tenantId={}: {}",
+                                orderId, tenantId, e.getMessage());
+            }
             try {
                 tradeOrderAllinpayPollingService.schedulePolling(orderId);
             } catch (Exception e) {
@@ -230,14 +256,6 @@ public class AppMerchantCheckoutController {
             }
         }
 
-        SubmitRespVO resp = new SubmitRespVO();
-        resp.setOrderId(orderId);
-        resp.setPayOrderId(order.getPayOrderId());
-        resp.setBalanceDeductFen(finalDeductFen);
-        resp.setPromoDeductFen(finalPromoDeductFen);
-        resp.setPromoDeductCount(totalPromoDeductCount);
-        resp.setCouponDeductFen(couponDeductFen);
-        resp.setPayPrice(finalPayPrice);
         return success(resp);
     }
 
@@ -245,6 +263,37 @@ public class AppMerchantCheckoutController {
      * v8 抵扣预演：checkout 进入时调用，让 UI 展示"抵扣前 / 抵扣 K 件 / 抵扣后"。
      * 不写库、不创建订单，纯只读计算。
      */
+    /**
+     * 「立即付款」入口 — 给指定 trade_order 重新拿通联支付链接。
+     *
+     * <p>用户在订单列表点"立即付款"调本接口，后端校验：
+     * <ol>
+     *   <li>订单存在 + 属于本人 + status=UNPAID</li>
+     *   <li>商户已配通联（tl_enabled=true + cusId/RSA 齐）</li>
+     * </ol>
+     * 通过后调 cashier 拿 redirectUrl 返前端。</p>
+     */
+    @PostMapping("/cashier-link")
+    @Operation(summary = "为待付款订单获取通联支付链接（订单列表立即付款用）")
+    @cn.iocoder.yudao.framework.tenant.core.aop.TenantIgnore
+    public CommonResult<java.util.Map<String, Object>> getCashierLink(
+            @org.springframework.web.bind.annotation.RequestParam("orderId") Long orderId) {
+        Long userId = SecurityFrameworkUtils.getLoginUserId();
+        if (userId == null) {
+            throw ServiceExceptionUtil.exception0(1_031_001_010, "请先登录");
+        }
+        try {
+            cn.iocoder.yudao.module.merchant.service.allinpay.AllinpayCashierService.CashierForm form =
+                    allinpayCashierService.buildCashierFormForTrade(orderId, null);
+            java.util.Map<String, Object> resp = new java.util.HashMap<>();
+            resp.put("cashierUrl", form.getRedirectUrl());
+            return success(resp);
+        } catch (IllegalStateException e) {
+            // 商户未开通通联 / 凭据缺失 / 通联接口异常
+            throw ServiceExceptionUtil.exception0(1_031_001_024, e.getMessage());
+        }
+    }
+
     @PostMapping("/preview-deduction")
     @Operation(summary = "v8 推广积分抵扣预演")
     @cn.iocoder.yudao.framework.tenant.core.aop.TenantIgnore
@@ -417,6 +466,12 @@ public class AppMerchantCheckoutController {
         private Integer couponDeductFen;
         /** 抵扣后还需线上支付的金额（分） */
         private Integer payPrice;
+
+        /**
+         * 通联收银台支付链接（仅 payPrice>0 且商户已配通联时有值）。
+         * 前端拿到后直接 location.href 跳转通联收银台。
+         */
+        private String cashierUrl;
     }
 
 }

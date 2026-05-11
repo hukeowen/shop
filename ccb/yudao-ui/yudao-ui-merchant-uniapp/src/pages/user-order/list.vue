@@ -223,32 +223,32 @@ function loadMore() {
 function goShop(tid) { uni.navigateTo({ url: `/pages/shop-home/index?tenantId=${tid}` }); }
 function goOrder(o) { uni.navigateTo({ url: `/pages/user-order/list` }); /* 暂用列表，详情页后续单独建 */ }
 async function onPay(o) {
-  // H5 浏览器无微信支付 SDK，跳到 pay-done 落地页（payOrderId 由该页拉支付链接 / 唤起 wx）
+  // 直接调 checkout/cashier-link 拿通联支付链接，命中即 location.href 跳通联
   if (!o.payOrderId) {
     uni.showToast({ title: '订单缺支付单号，无法支付', icon: 'none' });
     return;
   }
-  // 前置兜底：商户未启用通联 / 未配密钥 → 直接提示，避免点付款后拿 500
-  if (o.tenantId) {
-    try {
-      const shop = await request({
-        url: `/app-api/merchant/shop/public/info?tenantId=${o.tenantId}`,
-      });
-      if (shop && shop.onlinePayEnabled === false) {
-        uni.showModal({
-          title: '该商户未开通在线支付',
-          content: '请联系商户线下结账，或等商户开通后再尝试',
-          showCancel: false,
-        });
-        return;
-      }
-    } catch {
-      // 兜底接口异常不阻塞流程，继续跳 pay-done（pay-done 自己也有错误显示）
+  uni.showLoading({ title: '获取支付链接...' });
+  try {
+    const res = await request({
+      url: `/app-api/merchant/mini/checkout/cashier-link?orderId=${o.id}`,
+      method: 'POST',
+    });
+    uni.hideLoading();
+    if (res && res.cashierUrl) {
+      location.href = res.cashierUrl;
+    } else {
+      uni.showToast({ title: '通联未返支付链接', icon: 'none' });
     }
+  } catch (e) {
+    uni.hideLoading();
+    // 后端校验失败 / 商户未开通：返回 ServiceException msg
+    uni.showModal({
+      title: '无法支付',
+      content: e?.message || '商户未开通在线支付，请联系商户',
+      showCancel: false,
+    });
   }
-  uni.navigateTo({
-    url: `/pages/order/pay-done?orderId=${o.id}&payOrderId=${o.payOrderId}&tenantId=${o.tenantId || ''}&pending=1`,
-  });
 }
 function onConfirm(o) {
   uni.showModal({ title: '确认收货', content: '确认已收到货？', success: (r) => { if (r.confirm) uni.showToast({ title: '已确认', icon: 'success' }); } });

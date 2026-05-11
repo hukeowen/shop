@@ -2,6 +2,9 @@ package cn.iocoder.yudao.module.merchant.service.allinpay;
 
 import cn.iocoder.yudao.framework.tenant.core.aop.TenantIgnore;
 import cn.iocoder.yudao.framework.tenant.core.util.TenantUtils;
+import cn.iocoder.yudao.module.pay.dal.dataobject.order.PayOrderDO;
+import cn.iocoder.yudao.module.pay.dal.mysql.order.PayOrderMapper;
+import cn.iocoder.yudao.module.pay.enums.order.PayOrderStatusEnum;
 import cn.iocoder.yudao.module.trade.dal.dataobject.order.TradeOrderDO;
 import cn.iocoder.yudao.module.trade.dal.mysql.order.TradeOrderMapper;
 import cn.iocoder.yudao.module.trade.service.order.TradeOrderUpdateService;
@@ -9,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.time.LocalDateTime;
 
 /**
  * 通联 → trade_order 已支付适配器（mall 商品订单，区别于 package_order 套餐订单）。
@@ -34,6 +38,11 @@ public class TradeOrderAllinpayService {
 
     @Resource
     private TradeOrderUpdateService tradeOrderUpdateService;
+
+    /** yudao pay_order 直写：通联绕开 yudao pay 标准 channel 通知机制，
+     *  我们手动把 pay_order 标 SUCCESS 让 trade 的 validatePayOrderPaid pass。*/
+    @Resource
+    private PayOrderMapper payOrderMapper;
 
     /**
      * 通联回调 / 轮询命中支付成功 → 标 trade_order 已支付。
@@ -70,10 +79,21 @@ public class TradeOrderAllinpayService {
 
         Long payOrderId = order.getPayOrderId();
         Long tenantId = order.getTenantId();
-        log.info("[trade-allinpay/markPaid] tradeOrderId={} payOrderId={} tenantId={} payPrice={} 开始 updateOrderPaid",
+        log.info("[trade-allinpay/markPaid] tradeOrderId={} payOrderId={} tenantId={} payPrice={} 开始处理",
                 tradeOrderId, payOrderId, tenantId, order.getPayPrice());
+
+        // 1. 先把 yudao pay_order 标 SUCCESS（trade.updateOrderPaid 的 validatePayOrderPaid 要求）
+        //    通联绕开 yudao pay 标准 channel 通知，这里手工 CAS 标成功
         try {
-            // 切到该订单的商户租户上下文（mybatis-plus tenant 拦截器会用）
+            markPayOrderSuccess(payOrderId, tradeOrderId, tenantId);
+        } catch (Exception e) {
+            log.error("[trade-allinpay/markPaid] 标 pay_order={} SUCCESS 失败：{}", payOrderId, e.getMessage());
+            return;
+        }
+
+        // 2. 调 yudao trade 标 trade_order 已支付（CAS 幂等 + 触发 afterPayOrder handler）
+        //    handler 内会跑 v8 推 N 反 1 / 极差 / 升星 / 入池
+        try {
             TenantUtils.execute(tenantId, () -> {
                 tradeOrderUpdateService.updateOrderPaid(tradeOrderId, payOrderId);
                 return null;
@@ -85,6 +105,48 @@ public class TradeOrderAllinpayService {
             log.error("[trade-allinpay/markPaid] tradeOrderId={} updateOrderPaid 失败：{}",
                     tradeOrderId, e.getMessage());
         }
+    }
+
+    /**
+     * 手工把 pay_order 标 SUCCESS（CAS 幂等：仅当 status=WAITING 时才改）。
+     *
+     * <p>通联直接调 cashier H5（绕开 yudao pay channel 体系），所以 pay_order 不会被 yudao 自动更新。
+     * 这里在 markTradeOrderPaid 之前补这步，让 trade 的 validatePayOrderPaid pass。</p>
+     */
+    private void markPayOrderSuccess(Long payOrderId, Long tradeOrderId, Long tenantId) {
+        // pay_order 是 TenantBaseDO，但通联回调没 tenant ctx；用 executeIgnore 绕开拦截
+        TenantUtils.executeIgnore(() -> {
+            PayOrderDO payOrder = payOrderMapper.selectById(payOrderId);
+            if (payOrder == null) {
+                log.error("[markPayOrderSuccess] payOrder={} 不存在", payOrderId);
+                return null;
+            }
+            if (PayOrderStatusEnum.SUCCESS.getStatus().equals(payOrder.getStatus())) {
+                log.info("[markPayOrderSuccess] payOrder={} 已是 SUCCESS，幂等短路", payOrderId);
+                return null;
+            }
+            if (!PayOrderStatusEnum.WAITING.getStatus().equals(payOrder.getStatus())) {
+                log.warn("[markPayOrderSuccess] payOrder={} 状态={} 非 WAITING，跳过",
+                        payOrderId, payOrder.getStatus());
+                return null;
+            }
+            // CAS UPDATE（用 mybatis-plus selectByIdAndStatus 风格，避免抢占）
+            PayOrderDO patch = new PayOrderDO();
+            patch.setId(payOrderId);
+            patch.setStatus(PayOrderStatusEnum.SUCCESS.getStatus());
+            patch.setChannelCode("allinpay_qr");
+            patch.setSuccessTime(LocalDateTime.now());
+            int rows = payOrderMapper.update(patch,
+                    new com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<PayOrderDO>()
+                            .eq(PayOrderDO::getId, payOrderId)
+                            .eq(PayOrderDO::getStatus, PayOrderStatusEnum.WAITING.getStatus()));
+            if (rows == 0) {
+                log.warn("[markPayOrderSuccess] payOrder={} CAS 失败（并发或已被标）", payOrderId);
+            } else {
+                log.info("[markPayOrderSuccess] payOrder={} 已标 SUCCESS", payOrderId);
+            }
+            return null;
+        });
     }
 
     /**

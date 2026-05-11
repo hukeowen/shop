@@ -104,6 +104,14 @@ public class AllinpayCashierService {
     @Resource
     private org.springframework.beans.factory.ObjectProvider<TradeOrderAllinpayService> tradeOrderAllinpayServiceProvider;
 
+    /** trade mapper 用 ObjectProvider 避免循环（trade 模块也可能反向注入 merchant） */
+    @Resource
+    private org.springframework.beans.factory.ObjectProvider<cn.iocoder.yudao.module.trade.dal.mysql.order.TradeOrderMapper> tradeOrderMapperProvider;
+    @Resource
+    private org.springframework.beans.factory.ObjectProvider<cn.iocoder.yudao.module.trade.dal.mysql.order.TradeOrderItemMapper> tradeOrderItemMapperProvider;
+    @Resource
+    private org.springframework.beans.factory.ObjectProvider<cn.iocoder.yudao.module.merchant.dal.mysql.ShopInfoMapper> shopInfoMapperProvider;
+
     @Resource
     private MerchantService merchantService;
 
@@ -141,39 +149,95 @@ public class AllinpayCashierService {
      * 让通联按用户真实浏览器推支付方式。</p>
      */
     public CashierForm buildCashierForm(Long orderId, String clientUserAgent) {
-        long t0 = System.currentTimeMillis();
-        log.info("[allinpay/cashier] ───── buildCashierForm START orderId={} ─────", orderId);
         if (!props.isH5Configured()) {
-            log.error("[allinpay/cashier] 配置未就绪 signType={} appid={} merchantNo={} rsaPrivLen={} sm2PrivLen={}",
-                    props.getSignType(), props.getAppid(), props.getMerchantNo(),
-                    props.getPlatformRsaPrivateKey() == null ? 0 : props.getPlatformRsaPrivateKey().length(),
-                    props.getSm2PrivateKey() == null ? 0 : props.getSm2PrivateKey().length());
+            log.error("[allinpay/cashier] 配置未就绪 signType={} appid={} merchantNo={}",
+                    props.getSignType(), props.getAppid(), props.getMerchantNo());
             throw new IllegalStateException("通联收银台未配置（appid / merchant-no / 私钥）");
         }
         MerchantPackageOrderDO order = TenantUtils.executeIgnore(() -> packageOrderMapper.selectById(orderId));
         if (order == null) {
-            log.error("[allinpay/cashier] 订单不存在 orderId={}", orderId);
             throw new IllegalStateException("订单不存在: " + orderId);
         }
-        log.info("[allinpay/cashier] 订单加载 orderId={} merchantId={} packageName={} priceFen={} payStatus={}",
-                order.getId(), order.getMerchantId(), order.getPackageName(),
-                order.getPrice(), order.getPayStatus());
+        log.info("[allinpay/cashier] 订单加载 orderId={} packageName={} priceFen={} payStatus={}",
+                order.getId(), order.getPackageName(), order.getPrice(), order.getPayStatus());
         if (order.getPayStatus() != null
                 && order.getPayStatus() != MerchantPackageOrderDO.PAY_STATUS_WAITING) {
-            log.error("[allinpay/cashier] 订单非待支付 orderId={} payStatus={}", orderId, order.getPayStatus());
             throw new IllegalStateException("订单非待支付状态，不可重复唤起收银台");
         }
+        // 套餐场景：用全局 props 凭据
+        return doBuildCashierForm(String.valueOf(order.getId()), order.getPrice(),
+                order.getPackageName(), clientUserAgent, platformCredential());
+    }
 
-        String signType = resolveSignType();
+    /**
+     * trade_order 调通联拿支付链接（mall 商品订单）。
+     *
+     * <p>reqsn 加 T 前缀区分 package_order；body 取首个商品 SPU 名称。</p>
+     *
+     * @param tradeOrderId trade_order.id
+     * @param clientUserAgent 用户浏览器 UA（透传给通联，按 UA 推支付通道）
+     * @return CashierForm 含 redirectUrl，前端 location.href 跳通联收银台
+     */
+    public CashierForm buildCashierFormForTrade(Long tradeOrderId, String clientUserAgent) {
+        // 注意：不卡全局 props.isH5Configured() — trade 走每商户独立凭据，不依赖全局配置
+        // 跨租户加载 trade_order（用 ObjectProvider 拿 trade mapper 避免循环依赖）
+        cn.iocoder.yudao.module.trade.dal.dataobject.order.TradeOrderDO order =
+                TenantUtils.executeIgnore(() -> tradeOrderMapperProvider.getIfAvailable() == null
+                        ? null
+                        : tradeOrderMapperProvider.getIfAvailable().selectById(tradeOrderId));
+        if (order == null) {
+            throw new IllegalStateException("trade_order 不存在: " + tradeOrderId);
+        }
+        if (order.getPayPrice() == null || order.getPayPrice() <= 0) {
+            throw new IllegalStateException("订单 payPrice 异常 = " + order.getPayPrice());
+        }
+        if (Boolean.TRUE.equals(order.getPayStatus())) {
+            throw new IllegalStateException("订单已支付，不可重复唤起收银台");
+        }
+        log.info("[allinpay/cashier-trade] tradeOrderId={} tenantId={} payPrice={} payStatus={}",
+                order.getId(), order.getTenantId(), order.getPayPrice(), order.getPayStatus());
+
+        // body 取首个订单项名称（含店铺标识便于通联账单识别）
+        String body = "订单 " + order.getNo();
+        try {
+            cn.iocoder.yudao.module.trade.dal.dataobject.order.TradeOrderItemDO firstItem = null;
+            if (tradeOrderItemMapperProvider.getIfAvailable() != null) {
+                java.util.List<cn.iocoder.yudao.module.trade.dal.dataobject.order.TradeOrderItemDO> items =
+                        TenantUtils.executeIgnore(() -> tradeOrderItemMapperProvider.getIfAvailable()
+                                .selectListByOrderId(java.util.Collections.singletonList(tradeOrderId)));
+                if (items != null && !items.isEmpty()) firstItem = items.get(0);
+            }
+            if (firstItem != null && firstItem.getSpuName() != null && !firstItem.getSpuName().isEmpty()) {
+                body = firstItem.getSpuName();
+            }
+        } catch (Exception ignore) {}
+
+        // 商品订单场景：用商户独立凭据（shop_info.tl_xxx）
+        TlpayCredential cred = merchantCredentialForTenant(order.getTenantId());
+        return doBuildCashierForm(TradeOrderAllinpayService.buildTradeReqsn(tradeOrderId),
+                order.getPayPrice().longValue(), body, clientUserAgent, cred);
+    }
+
+    /**
+     * 共用核心：构造 form / 签名 / POST 通联拿 302 跳转。
+     *
+     * @param cred 凭据（套餐用 platformCredential / 商品用 merchantCredentialForTenant）
+     */
+    private CashierForm doBuildCashierForm(String reqsn, long trxamtFen, String body,
+                                           String clientUserAgent, TlpayCredential cred) {
+        long t0 = System.currentTimeMillis();
+        log.info("[allinpay/cashier] ───── START reqsn={} trxamt={} cusid={} ─────",
+                reqsn, trxamtFen, cred.getCusId());
+        String signType = cred.getSignType() == null ? "RSA" : cred.getSignType();
         boolean useOnepay = props.isUseOnepay();
         Map<String, String> p = new LinkedHashMap<>();
-        p.put("cusid", props.getMerchantNo());
-        p.put("appid", props.getAppid());
+        p.put("cusid", cred.getCusId());
+        p.put("appid", cred.getAppId());
         p.put("version", "12");
-        p.put("trxamt", String.valueOf(order.getPrice()));
-        p.put("reqsn", String.valueOf(order.getId()));
+        p.put("trxamt", String.valueOf(trxamtFen));
+        p.put("reqsn", reqsn);
         p.put("randomstr", randomStr());
-        p.put("body", truncate(order.getPackageName(), 64));
+        p.put("body", truncate(body, 64));
         if (useOnepay) {
             // 聚合收银台：front_url + 必填 expiretime
             p.put("front_url", props.getH5CashierReturnUrl());
@@ -183,16 +247,18 @@ public class AllinpayCashierService {
             // unionorder：returl
             p.put("returl", props.getH5CashierReturnUrl());
         }
-        p.put("notify_url", props.getPayNotifyUrl());
+        // notify_url 用 credential 的（trade 每商户独立；空时 fallback 全局 props）
+        p.put("notify_url", cred.getNotifyUrl() != null && !cred.getNotifyUrl().isEmpty()
+                ? cred.getNotifyUrl() : props.getPayNotifyUrl());
         p.put("signtype", signType);
 
         String source = buildSignSource(p);
         String privFp = "SM2".equalsIgnoreCase(signType)
-                ? keyFingerprint(props.getSm2PrivateKey())
-                : keyFingerprint(props.getPlatformRsaPrivateKey());
+                ? keyFingerprint(cred.getSm2PrivateKey())
+                : keyFingerprint(cred.getRsaPrivateKey());
         log.info("[allinpay/cashier] 签名 signType={} userId(=appid)={} privKeyFingerprint={} source={}",
-                signType, props.getAppid(), privFp, source);
-        String sign = signWith(p, signType);
+                signType, cred.getAppId(), privFp, source);
+        String sign = signWithCredential(p, cred);
         p.put("sign", sign);
         log.info("[allinpay/cashier] 签名结果 sign={} ({} chars，PLAIN=88 / DER≈96)",
                 sign, sign.length());
@@ -252,8 +318,8 @@ public class AllinpayCashierService {
                     log.error("[allinpay/cashier] 通联拒签 location={}", location);
                     throw new IllegalStateException("通联拒签：" + location);
                 }
-                log.info("[allinpay/cashier] ───── DONE orderId={} redirectUrl={} cost={}ms ─────",
-                        order.getId(), location, System.currentTimeMillis() - t0);
+                log.info("[allinpay/cashier] ───── DONE reqsn={} redirectUrl={} cost={}ms ─────",
+                        reqsn, location, System.currentTimeMillis() - t0);
                 CashierForm res = new CashierForm(location, java.util.Collections.emptyMap());
                 res.setRedirect(true);
                 res.setRedirectUrl(location);
@@ -268,7 +334,7 @@ public class AllinpayCashierService {
         } catch (IllegalStateException ise) {
             throw ise;
         } catch (Exception ex) {
-            log.error("[allinpay/cashier] 后端打通联失败 orderId={}", order.getId(), ex);
+            log.error("[allinpay/cashier] 后端打通联失败 reqsn={}", reqsn, ex);
             if (con != null) drainAndClose(con);
             throw new IllegalStateException("通联请求失败：" + ex.getMessage(), ex);
         }
@@ -332,15 +398,37 @@ public class AllinpayCashierService {
             String trxstatus = notifyParams.getOrDefault("trxstatus", "");
             String trxamtStr = notifyParams.getOrDefault("trxamt", "0");
             String sign = notifyParams.get("sign");
-            String notifySignType = notifyParams.getOrDefault("signtype", resolveSignType());
 
-            // 1. 验签
+            // 1. 按 reqsn 业务类型加载对应凭据（trade 走商户独立凭据 / 套餐走全局凭据）
+            TlpayCredential cred;
+            Long tradeOrderId = TradeOrderAllinpayService.parseTradeOrderId(reqsn);
+            if (tradeOrderId != null) {
+                cn.iocoder.yudao.module.trade.dal.dataobject.order.TradeOrderDO order =
+                        TenantUtils.executeIgnore(() -> tradeOrderMapperProvider.getIfAvailable() == null
+                                ? null : tradeOrderMapperProvider.getIfAvailable().selectById(tradeOrderId));
+                if (order == null) {
+                    log.warn("[allinpay/notify] reqsn={} trade 订单不存在", reqsn);
+                    return "fail:order_not_found";
+                }
+                try {
+                    cred = merchantCredentialForTenant(order.getTenantId());
+                } catch (IllegalStateException e) {
+                    log.warn("[allinpay/notify] reqsn={} 加载商户凭据失败：{}", reqsn, e.getMessage());
+                    return "fail:credential";
+                }
+            } else {
+                cred = platformCredential();
+            }
+            String notifySignType = notifyParams.getOrDefault("signtype",
+                    cred.getSignType() == null ? "RSA" : cred.getSignType());
+
+            // 2. 用 credential 验签
             Map<String, String> verifyParams = new TreeMap<>(notifyParams);
             verifyParams.remove("sign");
             String source = buildSignSource(verifyParams);
             log.info("[allinpay/notify] 验签 signType={} userId(=appid)={} source={}",
-                    notifySignType, props.getAppid(), source);
-            boolean ok = verifyWith(verifyParams, sign, notifySignType);
+                    notifySignType, cred.getAppId(), source);
+            boolean ok = verifyWithCredential(verifyParams, sign, cred);
             log.info("[allinpay/notify] 验签结果={} reqsn={}", ok, reqsn);
             if (!ok) {
                 log.warn("[allinpay/notify] {} 验签失败 reqsn={} sign={}",
@@ -364,7 +452,7 @@ public class AllinpayCashierService {
             }
 
             // 4. reqsn 路由：T 前缀 = trade_order（商城订单），无前缀 = merchant_package_order（套餐）
-            Long tradeOrderId = TradeOrderAllinpayService.parseTradeOrderId(reqsn);
+            //    （tradeOrderId 在 step 1 已 parse 出来）
             if (tradeOrderId != null) {
                 log.info("[allinpay/notify] 识别为 trade_order tradeOrderId={} amount={}",
                         tradeOrderId, trxamtFen);
@@ -410,29 +498,56 @@ public class AllinpayCashierService {
      * @return trxstatus，2000 = 成功；其它 = 未成功；null = 通信失败 / 查无此单
      */
     public QueryResult queryOrder(Long orderId) {
-        return queryByReqsn(String.valueOf(orderId));
+        return queryByReqsn(String.valueOf(orderId), platformCredential());
     }
 
     /**
-     * 按 reqsn 字符串查通联订单（支持业务前缀，如 T${tradeOrderId}）。
-     * trade_order 走这个入口；package_order 走 {@link #queryOrder(Long)} 重载。
+     * 按 reqsn 字符串查通联订单 + 自动按业务类型加载凭据。
+     *
+     * <p>T 前缀 → trade_order，按 tenantId 加载商户凭据；纯数字 → package_order 用全局凭据。
+     * 调用方不需要手工传 credential。</p>
      */
     public QueryResult queryByReqsn(String reqsn) {
-        if (!props.isH5Configured()) {
-            log.debug("[allinpay/query] 配置未就绪，跳过 reqsn={}", reqsn);
+        TlpayCredential cred;
+        Long tradeOrderId = TradeOrderAllinpayService.parseTradeOrderId(reqsn);
+        if (tradeOrderId != null) {
+            // trade 业务：按订单 tenantId 加载商户凭据
+            cn.iocoder.yudao.module.trade.dal.dataobject.order.TradeOrderDO order =
+                    TenantUtils.executeIgnore(() -> tradeOrderMapperProvider.getIfAvailable() == null
+                            ? null : tradeOrderMapperProvider.getIfAvailable().selectById(tradeOrderId));
+            if (order == null) {
+                log.warn("[allinpay/query] reqsn={} trade 订单不存在", reqsn);
+                return null;
+            }
+            try {
+                cred = merchantCredentialForTenant(order.getTenantId());
+            } catch (IllegalStateException e) {
+                log.warn("[allinpay/query] reqsn={} 加载商户凭据失败：{}", reqsn, e.getMessage());
+                return null;
+            }
+        } else {
+            cred = platformCredential();
+        }
+        return queryByReqsn(reqsn, cred);
+    }
+
+    /** 按 credential 查通联订单（核心方法）。 */
+    public QueryResult queryByReqsn(String reqsn, TlpayCredential cred) {
+        if (cred == null || cred.getCusId() == null || cred.getCusId().isEmpty()) {
+            log.debug("[allinpay/query] credential 未就绪，跳过 reqsn={}", reqsn);
             return null;
         }
         long t0 = System.currentTimeMillis();
-        String signType = resolveSignType();
+        String signType = cred.getSignType() == null ? "RSA" : cred.getSignType();
         Map<String, String> p = new LinkedHashMap<>();
-        p.put("cusid", props.getMerchantNo());
-        p.put("appid", props.getAppid());
+        p.put("cusid", cred.getCusId());
+        p.put("appid", cred.getAppId());
         p.put("reqsn", reqsn);
         p.put("randomstr", randomStr());
         p.put("signtype", signType);
         log.info("[allinpay/query] reqsn={} signType={} userId(=appid)={} source={}",
-                reqsn, signType, props.getAppid(), buildSignSource(p));
-        p.put("sign", signWith(p, signType));
+                reqsn, signType, cred.getAppId(), buildSignSource(p));
+        p.put("sign", signWithCredential(p, cred));
 
         String base = props.getApiBaseUrl();
         if (base == null || base.isEmpty()) base = "https://vsp.allinpay.com";
@@ -477,13 +592,13 @@ public class AllinpayCashierService {
     // 签名工具
     // ============================================================
 
-    /** 当前商户号在通联控制台配的签名类型（RSA / SM2） */
+    /** 当前商户号在通联控制台配的签名类型（RSA / SM2）— 套餐场景用全局 props */
     private String resolveSignType() {
         String t = props.getSignType();
         return (t != null && "SM2".equalsIgnoreCase(t)) ? "SM2" : "RSA";
     }
 
-    /** 按 signType 调对应签名方法（RSA→私钥；SM2→sm2 私钥） */
+    /** 按 signType 调对应签名方法（套餐用，读全局 props） */
     private String signWith(Map<String, String> params, String signType) {
         if ("SM2".equalsIgnoreCase(signType)) {
             return signSm2(params, props.getSm2PrivateKey(), props.getAppid());
@@ -491,12 +606,109 @@ public class AllinpayCashierService {
         return signRsa(params, props.getPlatformRsaPrivateKey());
     }
 
-    /** 按 signType 验签 */
+    /** 按 signType 验签（套餐用，读全局 props） */
     private boolean verifyWith(Map<String, String> params, String sign, String signType) {
         if ("SM2".equalsIgnoreCase(signType)) {
             return verifySm2(params, sign, props.getSm2PublicKey(), props.getAppid());
         }
         return verifyRsa(params, sign, props.getAllinpayRsaPublicKey());
+    }
+
+    // ============================================================
+    // 凭据抽象：一商户一通联账号支持
+    // ============================================================
+
+    /**
+     * 通联凭据数据类 —— 同一接口签名 / 验签所需的所有商户级字段。
+     *
+     * <p>套餐订单（merchant_package_order）：平台对商户收钱，用全局 {@link AllinpayProperties} 凭据
+     *    → {@link #platformCredential()}
+     * 商品订单（trade_order）：用户对商户付款，资金 T+1 直达商户账户，用每商户独立凭据
+     *    → {@link #merchantCredentialForTenant(Long)}
+     */
+    @lombok.Data
+    @lombok.Builder
+    @lombok.NoArgsConstructor
+    @lombok.AllArgsConstructor
+    public static class TlpayCredential {
+        private String cusId;          // 商户号（cusid）
+        private String appId;          // appid
+        private String signType;       // RSA / SM2
+        private String rsaPrivateKey;  // 商户 RSA 私钥（PEM）
+        private String rsaPublicKey;   // 通联 RSA 公钥（PEM）
+        private String sm2PrivateKey;
+        private String sm2PublicKey;
+        /** 异步通知地址（空则用全局 props.payNotifyUrl） */
+        private String notifyUrl;
+    }
+
+    /** 全局凭据（套餐场景）— 读 AllinpayProperties */
+    public TlpayCredential platformCredential() {
+        return TlpayCredential.builder()
+                .cusId(props.getMerchantNo())
+                .appId(props.getAppid())
+                .signType(resolveSignType())
+                .rsaPrivateKey(props.getPlatformRsaPrivateKey())
+                .rsaPublicKey(props.getAllinpayRsaPublicKey())
+                .sm2PrivateKey(props.getSm2PrivateKey())
+                .sm2PublicKey(props.getSm2PublicKey())
+                .notifyUrl(props.getPayNotifyUrl())
+                .build();
+    }
+
+    /**
+     * 按商户租户加载凭据（商品订单场景）— 读 shop_info.tl_xxx。
+     *
+     * <p>shop_info.tl_rsa_private_key / tl_rsa_public_key 是 AES 加密存储，
+     *    EncryptTypeHandler 会自动解密为明文 PEM。</p>
+     */
+    public TlpayCredential merchantCredentialForTenant(Long tenantId) {
+        if (tenantId == null) {
+            throw new IllegalArgumentException("tenantId 不能为空");
+        }
+        cn.iocoder.yudao.module.merchant.dal.dataobject.ShopInfoDO shop =
+                TenantUtils.executeIgnore(() -> shopInfoMapperProvider.getIfAvailable() == null
+                        ? null
+                        : shopInfoMapperProvider.getIfAvailable().selectByTenantId(tenantId));
+        if (shop == null) {
+            throw new IllegalStateException("店铺不存在 tenantId=" + tenantId);
+        }
+        if (!Boolean.TRUE.equals(shop.getTlEnabled())) {
+            throw new IllegalStateException("商户未启用通联支付 tenantId=" + tenantId);
+        }
+        if (shop.getTlMchId() == null || shop.getTlMchId().isEmpty()) {
+            throw new IllegalStateException("商户通联 cusId 未配置 tenantId=" + tenantId);
+        }
+        String signType = shop.getTlSignType() != null && !shop.getTlSignType().isEmpty()
+                ? shop.getTlSignType() : "RSA";
+        // 商户级独立直清场景下没分 SM2/RSA 两套，统一存 rsa_private_key / rsa_public_key
+        // SM2 字段留空（若商户用 SM2 签名则需要扩 shop_info 加 sm2_xxx 字段，本期不做）
+        return TlpayCredential.builder()
+                .cusId(shop.getTlMchId())
+                .appId(shop.getTlAppId() != null && !shop.getTlAppId().isEmpty()
+                        ? shop.getTlAppId() : props.getAppid())  // appId 空时 fallback 全局
+                .signType(signType)
+                .rsaPrivateKey(shop.getTlRsaPrivateKey())
+                .rsaPublicKey(shop.getTlRsaPublicKey())
+                .notifyUrl(shop.getTlNotifyUrl() != null && !shop.getTlNotifyUrl().isEmpty()
+                        ? shop.getTlNotifyUrl() : props.getPayNotifyUrl())  // 空 fallback 全局
+                .build();
+    }
+
+    /** 用 credential 签名（替代写死 props 的 signWith） */
+    private String signWithCredential(Map<String, String> params, TlpayCredential cred) {
+        if ("SM2".equalsIgnoreCase(cred.getSignType())) {
+            return signSm2(params, cred.getSm2PrivateKey(), cred.getAppId());
+        }
+        return signRsa(params, cred.getRsaPrivateKey());
+    }
+
+    /** 用 credential 验签 */
+    private boolean verifyWithCredential(Map<String, String> params, String sign, TlpayCredential cred) {
+        if ("SM2".equalsIgnoreCase(cred.getSignType())) {
+            return verifySm2(params, sign, cred.getSm2PublicKey(), cred.getAppId());
+        }
+        return verifyRsa(params, sign, cred.getRsaPublicKey());
     }
 
     /**
