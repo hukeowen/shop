@@ -772,10 +772,13 @@ merchant:
     # 回调 URL：必须公网可达
     register-notify-url: https://${SERVER_NAME:-www.doupaidoudian.com}/admin-api/merchant/allinpay/register-notify
     pay-notify-url: https://${SERVER_NAME:-www.doupaidoudian.com}/admin-api/merchant/allinpay/pay-notify
-    # 同步回跳页 — 通联付款完成后浏览器停留的 URL：
-    # · 用我们自己做的「支付完成」过渡页（白底大对勾 + 3 秒倒计时跳工作台），
-    #   避免直接跳商户首页时通联框架会插底部广告（联想笔记本之类）
-    h5-cashier-return-url: https://${SERVER_NAME:-www.doupaidoudian.com}/m/#/pages/me/subscription-paid?paid=1
+    # 同步回跳页 — 通联付款完成后浏览器停留的 URL。
+    # ⚠ 必须用「纯 URL（无 # hash 片段）」：
+    #   通联 demo sendpay.jsp 中 returl 是普通 JSP 路径；通联中转/重定向时
+    #   hash 片段（# 后）会被丢弃，导致 uniapp hash 路由识别不到目标页。
+    # 解决：用静态 HTML 中转页 pay-return.html（已部署到 /opt/tanxiaer/m/）
+    #   该页面 JS 自动跳到真正的 hash 路由目标 `#/pages/me/subscription-paid?paid=1`
+    h5-cashier-return-url: https://${SERVER_NAME:-www.doupaidoudian.com}/m/pay-return.html?paid=1
 YAML_EOF
   chmod 600 "${RESOURCES}/application-prod.yaml"
   umask 022
