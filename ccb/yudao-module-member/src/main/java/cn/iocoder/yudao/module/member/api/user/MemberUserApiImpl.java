@@ -27,12 +27,19 @@ public class MemberUserApiImpl implements MemberUserApi {
     private MemberUserService userService;
 
     @Override
+    @cn.iocoder.yudao.framework.tenant.core.aop.TenantIgnore
     public MemberUserRespDTO getUser(Long id) {
+        // C 端用户跨店下单场景：
+        //   · 用户 token tenant=用户原始租户
+        //   · checkout 切到商户租户写订单
+        //   · 此时 trade 计算价格调本 API 查 user，若不 ignore 则按商户租户找不到 → NPE
+        // MemberUserDO 虽 extends TenantBaseDO，但 user 本质是平台级实体，跨租户查合理。
         MemberUserDO user = userService.getUser(id);
         return MemberUserConvert.INSTANCE.convert2(user);
     }
 
     @Override
+    @cn.iocoder.yudao.framework.tenant.core.aop.TenantIgnore
     public List<MemberUserRespDTO> getUserList(Collection<Long> ids) {
         return MemberUserConvert.INSTANCE.convertList2(userService.getUserList(ids));
     }
