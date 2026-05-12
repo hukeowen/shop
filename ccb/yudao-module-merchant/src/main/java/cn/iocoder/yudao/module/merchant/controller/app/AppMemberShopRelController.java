@@ -57,6 +57,8 @@ public class AppMemberShopRelController {
     private ShopUserStarMapper shopUserStarMapper;
     @Resource
     private cn.iocoder.yudao.module.trade.service.order.TradeOrderQueryService tradeOrderQueryService;
+    @Resource
+    private cn.iocoder.yudao.module.merchant.dal.mysql.promo.ShopQueuePositionMapper shopQueuePositionMapper;
 
     /**
      * 列出当前用户访问过的所有店铺（设计 9.2 节"店铺级收藏"语义，按 lastVisitAt 倒序）。
@@ -80,7 +82,8 @@ public class AppMemberShopRelController {
     @Operation(summary = "我加入的店铺（含店铺名/封面/星级/余额/积分）")
     @TenantIgnore
     public CommonResult<java.util.List<AppMyShopRelRespVO>> listMyShopsEnriched(
-            @RequestParam(value = "onlyFavorite", required = false, defaultValue = "false") Boolean onlyFavorite) {
+            @RequestParam(value = "onlyFavorite", required = false, defaultValue = "false") Boolean onlyFavorite,
+            @RequestParam(value = "onlyTuijianPurchased", required = false, defaultValue = "false") Boolean onlyTuijianPurchased) {
         Long userId = SecurityFrameworkUtils.getLoginUserId();
         java.util.List<MemberShopRelDO> rels = memberShopRelService.listByUserId(userId);
         if (rels == null || rels.isEmpty()) {
@@ -90,6 +93,20 @@ public class AppMemberShopRelController {
         for (MemberShopRelDO rel : rels) {
             if (Boolean.TRUE.equals(onlyFavorite) && !Boolean.TRUE.equals(rel.getFavorite())) {
                 continue;
+            }
+            // onlyTuijianPurchased=true：只返回买过推 N 反 1 商品的店铺。
+            // 判定：shop_queue_position 在该 tenant 下有 user_id 记录（QUEUEING/EXITED 都算）
+            if (Boolean.TRUE.equals(onlyTuijianPurchased)) {
+                Long tid = rel.getTenantId();
+                final boolean[] purchased = {false};
+                try {
+                    TenantUtils.execute(tid, () ->
+                            purchased[0] = shopQueuePositionMapper.existsByUserId(userId));
+                } catch (Exception e) {
+                    log.warn("[listMyShopsEnriched] 查 shop_queue_position 失败 tenantId={}: {}",
+                            tid, e.getMessage());
+                }
+                if (!purchased[0]) continue;
             }
             AppMyShopRelRespVO vo = new AppMyShopRelRespVO();
             vo.setTenantId(rel.getTenantId());

@@ -1,24 +1,28 @@
 <template>
   <view class="page">
-    <!-- 总览卡 -->
-    <view class="hero">
-      <view class="balances">
-        <view class="bal">
-          <view class="label">推广积分</view>
-          <view class="value">{{ (promoBalance / 100).toFixed(2) }}</view>
-          <view class="unit">元</view>
+    <!-- 按店铺分组的资产卡（只显示购买过推N反1商品的店铺）-->
+    <view v-if="!myShops.length && !shopsLoading" class="empty-hero">
+      <view class="empty-emoji">🎁</view>
+      <view class="empty-title">还没参与任何店铺的推 N 反 1</view>
+      <view class="empty-sub">在店铺购买带「推 N 反 1」标识的商品后，资产会显示在这里</view>
+    </view>
+    <view v-else class="shops">
+      <view v-for="s in myShops" :key="s.tenantId" class="shop-card" @click="goShop(s)">
+        <view class="shop-head">
+          <view class="shop-name">{{ s.shopName || '店铺' + s.tenantId }}</view>
+          <view class="shop-star">{{ s.star || 0 }} ★</view>
         </view>
-        <view class="bal">
-          <view class="label">消费积分</view>
-          <view class="value">{{ (consumeBalance / 100).toFixed(2) }}</view>
-          <view class="unit">元</view>
+        <view class="shop-balances">
+          <view class="bal">
+            <view class="bal-label">推广积分</view>
+            <view class="bal-value">¥{{ ((s.promoPoints || 0) / 100).toFixed(2) }}</view>
+          </view>
+          <view class="bal-divider"></view>
+          <view class="bal">
+            <view class="bal-label">消费积分</view>
+            <view class="bal-value">¥{{ ((s.points || 0) / 100).toFixed(2) }}</view>
+          </view>
         </view>
-      </view>
-      <view class="star">
-        <text>当前星级：</text>
-        <text class="num">{{ star }}</text>
-        <text>★</text>
-        <text class="hint">直推 {{ directCount }} · 团队链 {{ teamSales }}</text>
       </view>
     </view>
 
@@ -92,12 +96,35 @@ import {
   listConsumeRecords,
   convertPromoToConsume,
 } from '../../api/promo.js';
+import { request } from '../../api/request.js';
 
 const promoBalance = ref(0);
 const consumeBalance = ref(0);
 const star = ref(0);
 const directCount = ref(0);
 const teamSales = ref(0);
+
+// 按店铺分组：只显示买过推 N 反 1 商品的店铺
+const myShops = ref([]);
+const shopsLoading = ref(false);
+
+async function loadMyShops() {
+  shopsLoading.value = true;
+  try {
+    const list = await request({
+      url: '/app-api/merchant/mini/member-rel/my-shops-enriched?onlyTuijianPurchased=true',
+    });
+    myShops.value = list || [];
+  } catch {
+    myShops.value = [];
+  } finally {
+    shopsLoading.value = false;
+  }
+}
+
+function goShop(s) {
+  uni.navigateTo({ url: `/pages/shop-home/index?tenantId=${s.tenantId}` });
+}
 
 const tab = ref('PROMO');           // PROMO / CONSUME
 const records = ref([]);
@@ -231,6 +258,7 @@ function goPoolRounds() {
 // 生产可保留（轻量 polling），如要换 SSE/WebSocket 后续再迭代
 let pollTimer = null;
 onMounted(async () => {
+  await loadMyShops();
   await loadAccount();
   await loadRecords(true);
   pollTimer = setInterval(async () => {
@@ -256,6 +284,44 @@ onUnmounted(() => {
 .page {
   padding: 24rpx 24rpx 60rpx;
   min-height: 100vh;
+}
+
+.empty-hero {
+  background: $bg-card;
+  border-radius: $radius-lg;
+  padding: 80rpx 32rpx;
+  text-align: center;
+  margin-bottom: 24rpx;
+  .empty-emoji { font-size: 80rpx; margin-bottom: 16rpx; }
+  .empty-title { font-size: 30rpx; color: $text-primary; font-weight: 700; margin-bottom: 8rpx; }
+  .empty-sub { font-size: 24rpx; color: $text-secondary; line-height: 1.5; }
+}
+
+.shops {
+  display: flex; flex-direction: column; gap: 16rpx; margin-bottom: 24rpx;
+}
+.shop-card {
+  background: linear-gradient(135deg, #ff9a4a, #ff6b35);
+  border-radius: $radius-lg;
+  padding: 28rpx 32rpx;
+  color: #fff;
+  box-shadow: 0 6rpx 20rpx rgba(255, 107, 53, .2);
+  .shop-head {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 20rpx;
+  }
+  .shop-name { font-size: 30rpx; font-weight: 700; }
+  .shop-star {
+    font-size: 24rpx; opacity: .9;
+    background: rgba(255,255,255,.18); padding: 4rpx 14rpx; border-radius: 999rpx;
+  }
+  .shop-balances {
+    display: flex; align-items: center;
+    .bal { flex: 1; }
+    .bal-label { font-size: 22rpx; opacity: .85; margin-bottom: 6rpx; }
+    .bal-value { font-size: 36rpx; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .bal-divider { width: 1rpx; height: 56rpx; background: rgba(255,255,255,.3); margin: 0 24rpx; }
+  }
 }
 
 .hero {

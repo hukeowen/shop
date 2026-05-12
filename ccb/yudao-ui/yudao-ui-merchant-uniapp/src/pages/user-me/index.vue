@@ -183,7 +183,8 @@ async function loadMyShops() {
   }
   loading.value = true;
   try {
-    const list = await request({ url: '/app-api/merchant/mini/member-rel/my-shops-enriched' });
+    // 用户「我的」页只显示购买过推 N 反 1 商品的店铺（业务规则：买过才算"加入"）
+    const list = await request({ url: '/app-api/merchant/mini/member-rel/my-shops-enriched?onlyTuijianPurchased=true' });
     myShops.value = list || [];
   } catch {
     myShops.value = [];

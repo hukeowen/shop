@@ -23,6 +23,12 @@ public interface ShopQueuePositionMapper extends BaseMapperX<ShopQueuePositionDO
                 .eq(ShopQueuePositionDO::getSpuId, spuId));
     }
 
+    /** 用户在「当前租户」是否买过任意推 N 反 1 商品（有队列记录即算）。≥1 返回 true。 */
+    default boolean existsByUserId(Long userId) {
+        return selectCount(new LambdaQueryWrapperX<ShopQueuePositionDO>()
+                .eq(ShopQueuePositionDO::getUserId, userId)) > 0;
+    }
+
     /**
      * 取队首：A 层最早进 A 的优先；A 空时取 B 层最早入队的。
      * 仅看 status = QUEUEING。
