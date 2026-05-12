@@ -771,11 +771,12 @@ public class AllinpayCashierService {
     /** 用 credential 验签 */
     private boolean verifyWithCredential(Map<String, String> params, String sign, TlpayCredential cred) {
         if ("SM2".equalsIgnoreCase(cred.getSignType())) {
-            // 通联 SM2 ZA hash userId 选取：请求签名实测 userId=appid（见 signSm2 注释），
-            // 但通联回调签名实测 userId=cusid。两种都试，避免上行/下行不一致导致永远验不过。
+            // 通联 SM2 ZA hash userId：H5 demo SybUtil.validSign line 114 写死 "Allinpay"。
+            // 上行签请求 userId=appid（实测通联接受 ✓），下行验回调 userId=固定字符串 "Allinpay"。
+            // 加 fallback 以防通联未来调整：Allinpay → appid → cusid → 空。
+            if (verifySm2(params, sign, cred.getSm2PublicKey(), "Allinpay")) return true;
             if (verifySm2(params, sign, cred.getSm2PublicKey(), cred.getAppId())) return true;
             if (verifySm2(params, sign, cred.getSm2PublicKey(), cred.getCusId())) return true;
-            // 兜底：通联老接口偶有 userId="" 的样例
             return verifySm2(params, sign, cred.getSm2PublicKey(), "");
         }
         return verifyRsa(params, sign, cred.getRsaPublicKey());
