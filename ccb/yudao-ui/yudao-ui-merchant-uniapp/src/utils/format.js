@@ -4,6 +4,18 @@ export function fen2yuan(fen) {
   return (fen / 100).toFixed(2);
 }
 
+/**
+ * 智能金额：整元显示整数（"298"），有零有角分显示 2 位小数（"0.01" / "1.50"）
+ * 适用于"价格牌"场景 — 298/1688 这种整年费要简洁，但 1 分测试单不能丢精度。
+ */
+export function smartYuan(fen) {
+  if (fen == null || fen === 0) return '0';
+  const num = Number(fen);
+  if (isNaN(num)) return '0';
+  if (num >= 100 && num % 100 === 0) return String(num / 100);
+  return (num / 100).toFixed(2);
+}
+
 /** AI 视频状态码 → 文案 & 颜色 */
 export const AI_VIDEO_STATUS = {
   1: { text: '文案生成中', color: '#3B82F6' },

@@ -90,7 +90,7 @@
           :key="i"
           :style="{ height: barHeight(v) + '%' }"
         >
-          <view class="bar-value">¥{{ (v / 100).toFixed(0) }}</view>
+          <view class="bar-value">¥{{ smartYuan(v) }}</view>
           <view class="bar-fill"></view>
           <text class="bar-label">{{ data?.trend.labels[i] }}</text>
         </view>
@@ -129,7 +129,7 @@ import { onMounted, ref } from 'vue';
 import { onPullDownRefresh } from '@dcloudio/uni-app';
 import { getDashboard } from '../../api/report.js';
 import { request } from '../../api/request.js';
-import { fen2yuan } from '../../utils/format.js';
+import { fen2yuan, smartYuan } from '../../utils/format.js';
 import { useUserStore } from '../../store/user.js';
 
 const userStore = useUserStore();

@@ -33,7 +33,7 @@
         <view class="pkg-name">{{ pkg.name }}</view>
         <view class="pkg-price">
           <text class="rmb">¥</text>
-          <text class="num">{{ (pkg.priceFen / 100).toFixed(0) }}</text>
+          <text class="num">{{ smartYuan(pkg.priceFen) }}</text>
           <text class="unit">/年</text>
         </view>
         <view class="pkg-features">
@@ -49,7 +49,7 @@
 
     <view class="bottom-bar safe-bottom" v-if="!status || !status.isPlatform">
       <view class="total">
-        <text v-if="selectedPackage">¥{{ (selectedPackage.priceFen / 100).toFixed(0) }} / 年</text>
+        <text v-if="selectedPackage">¥{{ smartYuan(selectedPackage.priceFen) }} / 年</text>
         <text v-else class="placeholder">请选择套餐</text>
       </view>
       <view :class="['pay-btn', selectedPackage ? '' : 'disabled']" @click="onPurchase">
@@ -62,6 +62,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { request } from '../../api/request.js';
+import { smartYuan } from '../../utils/format.js';
 
 const packages = ref([]);
 const status = ref(null);

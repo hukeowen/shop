@@ -28,9 +28,9 @@
           @click="selectedId = pkg.id"
         >
           <view class="pkg-count">{{ pkg.videoCount }} 条</view>
-          <view class="pkg-price">¥{{ (pkg.price / 100).toFixed(0) }}</view>
+          <view class="pkg-price">¥{{ smartYuan(pkg.price) }}</view>
           <view v-if="pkg.originalPrice" class="pkg-origin">
-            <text class="line-through">¥{{ (pkg.originalPrice / 100).toFixed(0) }}</text>
+            <text class="line-through">¥{{ smartYuan(pkg.originalPrice) }}</text>
           </view>
           <view class="pkg-unit">¥{{ (pkg.price / pkg.videoCount / 100).toFixed(1) }}/条</view>
         </view>
@@ -53,7 +53,7 @@
         @click="onBuyAllinpay"
       >
         <text v-if="paying">支付处理中…</text>
-        <text v-else-if="selectedPkg">立即支付 ¥{{ (selectedPkg.price / 100).toFixed(0) }}（通联）</text>
+        <text v-else-if="selectedPkg">立即支付 ¥{{ smartYuan(selectedPkg.price) }}（通联）</text>
         <text v-else>请选择套餐</text>
       </button>
     </view>
@@ -64,6 +64,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
 import { getMyQuota, listPackages, purchasePackage, purchasePackageAllinpay, submitPayOrder } from '../../api/quotaApi.js';
+import { smartYuan } from '../../utils/format.js';
 
 const remaining = ref(0);
 const packages = ref([]);

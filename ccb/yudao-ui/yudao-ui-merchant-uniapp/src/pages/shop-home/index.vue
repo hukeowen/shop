@@ -217,7 +217,7 @@
 import { ref, computed, reactive } from 'vue';
 import { onLoad, onShow } from '@dcloudio/uni-app';
 import { request } from '../../api/request.js';
-import { fen2yuan } from '../../utils/format.js';
+import { fen2yuan, smartYuan } from '../../utils/format.js';
 import { savePendingReferrer, flushPendingReferrer } from '../../utils/referral.js';
 import { useUserStore } from '../../store/user.js';
 
@@ -309,8 +309,8 @@ const fullCutText = computed(() => {
   const t = shopInfo.value?.fullCutThreshold;
   const a = shopInfo.value?.fullCutAmount;
   if (!t || !a || t <= 0 || a <= 0) return '';
-  const tYuan = (t / 100).toFixed(0);
-  const aYuan = (a / 100).toFixed(0);
+  const tYuan = smartYuan(t);
+  const aYuan = smartYuan(a);
   const diff = t - cartTotal.value;
   if (diff <= 0) return `满 ${tYuan} 立减 ${aYuan} · 已达门槛`;
   return `满 ${tYuan} 立减 ${aYuan} · 还差 ¥${(diff / 100).toFixed(2)}`;
