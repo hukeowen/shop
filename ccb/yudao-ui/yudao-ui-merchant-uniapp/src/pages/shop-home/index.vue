@@ -117,7 +117,8 @@
     <view v-if="signatureSpu" class="signature-card" @click="goDetail(signatureSpu)">
       <view class="crown-tag">👑 招牌 No.1</view>
       <view class="signature-card-inner">
-        <view class="pic" :style="picStyle(signatureSpu, 0)">{{ pickEmoji(signatureSpu) }}</view>
+        <image v-if="signatureSpu.picUrl" class="pic-img" :src="signatureSpu.picUrl" mode="aspectFill" />
+        <view v-else class="pic" :style="picStyle(signatureSpu, 0)">{{ pickEmoji(signatureSpu) }}</view>
         <view class="info">
           <view class="pname">{{ signatureSpu.name }}</view>
           <view class="ptag">{{ signatureSpu.introduction || '本店招牌 · 现做现卖' }}</view>
@@ -162,7 +163,8 @@
         @click="goDetail(spu)"
       >
         <view v-if="i === 0 && currentCatId === 0" class="corner-tag">🔥 热销</view>
-        <view class="pic" :style="picStyle(spu, i)">{{ pickEmoji(spu) }}</view>
+        <image v-if="spu.picUrl" class="pic-img" :src="spu.picUrl" mode="aspectFill" />
+        <view v-else class="pic" :style="picStyle(spu, i)">{{ pickEmoji(spu) }}</view>
         <view class="body">
           <view class="name">{{ spu.name }}</view>
           <view class="tag">{{ spu.introduction || '现做现卖' }}</view>
@@ -491,6 +493,8 @@ async function loadSignaturePromo() {
 }
 async function loadCart() {
   if (!tenantId.value) return;
+  // 扫码进店免登录访问：未登录就跳过购物车拉取，加购物车时再拦截登录
+  if (!userStore.token) { cartCount.value = 0; cartTotal.value = 0; return; }
   try {
     // 购物车按用户自己 token tenant 走，不传商户 tenantId 头（避免越权 401）
     const res = await request({
@@ -925,6 +929,13 @@ onShow(() => {
   flex-shrink: 0;
   box-shadow: 0 8rpx 24rpx rgba(255, 107, 53, 0.20);
 }
+.signature-card .pic-img {
+  width: 200rpx; height: 200rpx;
+  border-radius: $radius-md;
+  flex-shrink: 0;
+  background: #f0f0f0;
+  box-shadow: 0 8rpx 24rpx rgba(255, 107, 53, 0.20);
+}
 .signature-card .info {
   flex: 1;
   min-width: 0;
@@ -1016,6 +1027,12 @@ onShow(() => {
   height: 220rpx;
   display: flex; align-items: center; justify-content: center;
   color: #fff; font-size: 72rpx;
+}
+.pcard .pic-img {
+  display: block;
+  width: 100%; height: 220rpx;
+  background: #f0f0f0;
+  border-radius: $radius-md $radius-md 0 0;
 }
 .pcard .body { padding: 16rpx 20rpx 20rpx; }
 .pcard .name {

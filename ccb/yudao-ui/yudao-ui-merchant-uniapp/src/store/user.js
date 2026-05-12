@@ -44,6 +44,14 @@ function clearPersisted() {
   try {
     uni.removeStorageSync(STORAGE_KEY);
   } catch {}
+  // 兜底清掉历史代码（merchant-login/merchant-apply）直接写入的独立 token key —
+  // request.js 兜底会读 uni.getStorageSync('token')，不清的话 logout 后旧 token 还在用
+  try {
+    if (typeof localStorage !== 'undefined') localStorage.removeItem('token');
+  } catch {}
+  try {
+    uni.removeStorageSync('token');
+  } catch {}
 }
 
 const hydrated = readPersisted();

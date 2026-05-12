@@ -187,7 +187,12 @@
         <text class="arrow" :class="{ open: advancedOpen }">›</text>
       </view>
       <view v-if="advancedOpen" class="advanced-body">
-        <view class="switch-row">
+        <!--
+          ⚠ 旧版 v6 的「参与返利」「参与推N返一」开关已隐藏（v-if="false"）。
+          v7 起改走 promo.tuijianEnabled 在上方营销设置区域统一配置，
+          此处 form.brokerageEnabled / pushBackEnabled 字段保留兼容旧数据。
+        -->
+        <view v-if="false" class="switch-row">
           <view class="switch-body">
             <view class="switch-title">参与返利</view>
             <view class="switch-desc">分享后下单，按全局比例给上线分成</view>
@@ -198,7 +203,7 @@
             @change="(e) => (form.brokerageEnabled = e.detail.value)"
           />
         </view>
-        <view class="switch-row">
+        <view v-if="false" class="switch-row">
           <view class="switch-body">
             <view class="switch-title">参与推N返一</view>
             <view class="switch-desc">推 N 个新会员付费，返 1 年订阅给推荐人</view>

@@ -50,7 +50,7 @@
           >
             {{ s.status === 1 ? '下架' : '上架' }}
           </button>
-          <button class="act edit" @click="goEdit(s.id)">编辑</button>
+          <button class="act edit" @click="goEdit(s.id)">营销设置</button>
           <button class="act del" @click="onDelete(s)">删除</button>
         </view>
       </view>
