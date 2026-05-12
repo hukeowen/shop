@@ -362,6 +362,13 @@
         "navigationBarTitleText": "续费 / 升级",
         "navigationStyle": "custom"
       }
+    },
+    {
+      "path": "pages/me/subscription-paid",
+      "style": {
+        "navigationBarTitleText": "支付完成",
+        "navigationStyle": "custom"
+      }
     }
   ],
   "globalStyle": {
