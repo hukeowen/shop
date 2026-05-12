@@ -156,6 +156,8 @@ public class MemberAuthServiceImpl implements MemberAuthService {
                                                             LoginLogTypeEnum logType, String openid) {
         // 插入登陆日志
         createLoginLog(user.getId(), mobile, logType, LoginResultEnum.SUCCESS);
+        // 单设备登录：先把同账号在其他设备签发的所有旧 token 失效（互踢）
+        oauth2TokenApi.removeAccessTokenByUserId(user.getId(), getUserType().getValue());
         // 创建 Token 令牌
         OAuth2AccessTokenRespDTO accessTokenRespDTO = oauth2TokenApi.createAccessToken(new OAuth2AccessTokenCreateReqDTO()
                 .setUserId(user.getId()).setUserType(getUserType().getValue())
