@@ -744,6 +744,72 @@ onShow(() => {
 .form-tip .b { font-weight: 700; }
 .form-tip .hl { color: $brand-primary; font-weight: 700; font-variant-numeric: tabular-nums; }
 
+/* 优惠券选择区 — 传统优惠券造型（红橙渐变 + 锯齿分隔 + 选中高亮）*/
+.coupon-card {
+  margin: 24rpx 32rpx;
+  padding: 24rpx;
+  background: $bg-card;
+  border-radius: $radius-lg;
+  box-shadow: 0 4rpx 16rpx rgba(15, 23, 42, .04);
+}
+.coupon-card .card-title {
+  font-size: 28rpx; font-weight: 700; color: $text-primary;
+  padding-bottom: 16rpx;
+  border-bottom: 1rpx solid $border-color;
+}
+.coupon-row {
+  margin-top: 16rpx;
+  display: flex; align-items: stretch;
+  background: linear-gradient(135deg, #ff7e5f, #ff6b35);
+  border-radius: $radius-md;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 4rpx 12rpx rgba(255, 107, 53, .18);
+  border: 2rpx solid transparent;
+  transition: transform .15s, box-shadow .15s, border-color .15s;
+}
+.coupon-row.on {
+  border-color: #fff;
+  box-shadow: 0 0 0 4rpx $brand-primary, 0 8rpx 24rpx rgba(255, 107, 53, .35);
+}
+.coupon-row.disabled {
+  background: linear-gradient(135deg, #d1d5db, #9ca3af);
+  box-shadow: none; opacity: .85;
+}
+.coupon-row .cv-amt {
+  width: 200rpx; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 48rpx; font-weight: 800; color: #fff;
+  font-variant-numeric: tabular-nums;
+  position: relative;
+}
+.coupon-row .cv-amt::after {
+  content: ''; position: absolute;
+  right: 0; top: 12rpx; bottom: 12rpx;
+  width: 2rpx;
+  background-image: radial-gradient(circle, #fff 1.5rpx, transparent 2rpx);
+  background-size: 2rpx 12rpx;
+  background-repeat: repeat-y;
+  opacity: .6;
+}
+.coupon-row .cv-info {
+  flex: 1;
+  padding: 20rpx 24rpx; min-width: 0;
+  display: flex; flex-direction: column; justify-content: center; gap: 8rpx;
+  color: #fff;
+}
+.coupon-row .cv-name { font-size: 26rpx; font-weight: 600; }
+.coupon-row .cv-sub { font-size: 22rpx; opacity: .9; }
+.coupon-row .cv-radio {
+  width: 64rpx; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 32rpx; color: #fff; font-weight: 700;
+}
+.coupon-row.on .cv-radio {
+  color: #fff;
+  background: rgba(255, 255, 255, .22);
+}
+
 .bottom-space { height: 40rpx; }
 
 .ck-bottom {
