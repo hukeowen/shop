@@ -78,8 +78,20 @@ public class AllinpayCashierService {
             } catch (Throwable ignore) {}
         }
     }
-    /** 通联约定：trxstatus=2000 表示交易成功 */
+    /**
+     * 通联约定：trxstatus 表示交易成功 — 两种值实测都出现：
+     * · query/trans/queryOrder API 返回 → "2000"
+     * · 回调 pay-notify → "0000"（unionorder/VSP501 实测）
+     * 用 Set 兼容两种。
+     */
+    private static final java.util.Set<String> TRX_STATUS_SUCCESS_SET =
+            new java.util.HashSet<>(java.util.Arrays.asList("2000", "0000"));
+    /** 兼容旧引用：单值常量保留指向 query API 的标准值 */
     private static final String TRX_STATUS_SUCCESS = "2000";
+
+    private static boolean isTrxSuccess(String s) {
+        return s != null && TRX_STATUS_SUCCESS_SET.contains(s);
+    }
     /** 通联收银台 H5 下单 endpoint（生产）。测试环境为 https://syb-test.allinpay.com */
     /** unionorder：通联按 UA 推单一通道（iOS→Apple Pay；微信内→微信；Android→银联） */
     private static final String H5_UNIONORDER_PATH = "/apiweb/h5unionpay/unionorder";
@@ -463,7 +475,7 @@ public class AllinpayCashierService {
             }
 
             // 2. 非成功状态：通联仍要回 success
-            if (!TRX_STATUS_SUCCESS.equals(trxstatus)) {
+            if (!isTrxSuccess(trxstatus)) {
                 log.info("[allinpay/notify] reqsn={} trxstatus={}（非 2000 非成功，回 success 不重发）",
                         reqsn, trxstatus);
                 return "success";
@@ -911,6 +923,6 @@ public class AllinpayCashierService {
         private String trxstatus;
         /** 交易金额（分） */
         private int trxamt;
-        public boolean isSuccess() { return TRX_STATUS_SUCCESS.equals(trxstatus); }
+        public boolean isSuccess() { return isTrxSuccess(trxstatus); }
     }
 }

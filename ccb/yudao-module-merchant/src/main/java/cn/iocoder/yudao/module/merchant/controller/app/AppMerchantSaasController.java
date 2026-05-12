@@ -48,6 +48,8 @@ public class AppMerchantSaasController {
     private MerchantService merchantService;
     @Resource
     private AllinpayCashierService cashierService;
+    @javax.annotation.Resource
+    private cn.iocoder.yudao.module.merchant.service.allinpay.SaasOrderAllinpayPollingService saasPollingService;
     @Resource
     private ShopInfoMapper shopInfoMapper;
 
@@ -108,6 +110,8 @@ public class AppMerchantSaasController {
                     order.getTlReqsn(), order.getPriceFen().longValue(),
                     "摊小二·" + order.getLevel() + " 套餐", ua, cred);
             resp.put("cashierUrl", form == null ? null : form.getRedirectUrl());
+            // 异步排程 6 段查询兜底（回调验签 / 漏发场景）— 命中 trxstatus=2000 自动 markPaid
+            saasPollingService.schedulePolling(order.getId());
         } catch (Exception e) {
             log.warn("[saas/purchase] orderId={} 调通联失败：{}", order.getId(), e.getMessage());
             // 不阻塞，让前端用户重试
