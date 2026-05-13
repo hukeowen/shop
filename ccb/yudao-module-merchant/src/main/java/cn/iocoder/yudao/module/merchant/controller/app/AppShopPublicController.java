@@ -56,23 +56,55 @@ public class AppShopPublicController {
     private cn.iocoder.yudao.module.product.service.sku.ProductSkuService productSkuService;
 
     @GetMapping("/list")
-    @Operation(summary = "分页查询店铺列表（仅返回正常营业的店铺，支持 kw 模糊搜店铺名）")
+    @Operation(summary = "分页查询店铺列表（V039 三层闸门过滤：今日未打卡/主动打烊的店不返回；营业时间外的店权重靠后）")
     @PermitAll
     @TenantIgnore
-    public CommonResult<PageResult<ShopInfoDO>> listShops(
+    public CommonResult<PageResult<java.util.Map<String, Object>>> listShops(
             @RequestParam(value = "pageNo", defaultValue = "1") Integer pageNo,
             @RequestParam(value = "pageSize", defaultValue = "10") Integer pageSize,
             @RequestParam(value = "kw", required = false) String kw) {
+        // V039 改造：分页 + 营业判定。先按 status=1 + 今日已打卡 + !manual_closed 在 SQL 层过滤
+        // 掉 HIDDEN 店；剩下 OPEN / OUTSIDE_HOURS 在内存里算后按 isOpenNow DESC + sales30d DESC 排序。
+        // 内存排序对 page_size=10 OK；店铺基数大时迁到 SQL ORDER BY CASE 表达式更优。
         PageParam pageParam = new PageParam();
         pageParam.setPageNo(pageNo);
-        pageParam.setPageSize(pageSize);
+        // 多拉一倍样本做内存排序：避免分页边界两个 OPEN 店被排到第二页之后
+        pageParam.setPageSize(Math.max(pageSize * 3, 30));
+        java.time.LocalDate today = java.time.LocalDate.now();
         LambdaQueryWrapper<ShopInfoDO> w = new LambdaQueryWrapper<ShopInfoDO>()
-                .eq(ShopInfoDO::getStatus, 1);
+                .eq(ShopInfoDO::getStatus, 1)
+                .eq(ShopInfoDO::getTodayOpenAt, today)
+                .ne(ShopInfoDO::getManualClosed, true); // bit 字段 != 1
         if (kw != null && !kw.trim().isEmpty()) {
             w.like(ShopInfoDO::getShopName, kw.trim());
         }
         PageResult<ShopInfoDO> page = shopInfoMapper.selectPage(pageParam, w);
-        return success(page);
+        // 加 isOpenNow 字段 + 排序：OPEN 优先 OUTSIDE_HOURS 之后
+        java.util.List<java.util.Map<String, Object>> list = new java.util.ArrayList<>(page.getList().size());
+        for (ShopInfoDO shop : page.getList()) {
+            java.util.Map<String, Object> m = cn.hutool.core.bean.BeanUtil.beanToMap(shop, false, true);
+            cn.iocoder.yudao.module.merchant.util.ShopOperatingUtils.OperatingStatus st =
+                    cn.iocoder.yudao.module.merchant.util.ShopOperatingUtils.computeStatus(shop);
+            m.put("isOpenNow", st == cn.iocoder.yudao.module.merchant.util.ShopOperatingUtils.OperatingStatus.OPEN);
+            m.put("operatingStatus", st.name());
+            list.add(m);
+        }
+        list.sort((a, b) -> {
+            boolean ao = Boolean.TRUE.equals(a.get("isOpenNow"));
+            boolean bo = Boolean.TRUE.equals(b.get("isOpenNow"));
+            if (ao != bo) return ao ? -1 : 1;
+            int as = a.get("sales30d") == null ? 0 : ((Number) a.get("sales30d")).intValue();
+            int bs = b.get("sales30d") == null ? 0 : ((Number) b.get("sales30d")).intValue();
+            return bs - as;
+        });
+        // 内存排序完按外部 pageSize 截一段
+        int from = 0;
+        int to = Math.min(pageSize, list.size());
+        java.util.List<java.util.Map<String, Object>> slice = list.subList(from, to);
+        PageResult<java.util.Map<String, Object>> resp = new PageResult<>();
+        resp.setList(new java.util.ArrayList<>(slice));
+        resp.setTotal(page.getTotal());
+        return success(resp);
     }
 
     @GetMapping("/info")
@@ -120,6 +152,13 @@ public class AppShopPublicController {
                 && shop.getTlMchId() != null && !shop.getTlMchId().isEmpty()
                 && shop.getTlRsaPrivateKey() != null && !shop.getTlRsaPrivateKey().isEmpty()
                 && shop.getTlRsaPublicKey() != null && !shop.getTlRsaPublicKey().isEmpty());
+
+        // V039 营业状态：用户进店时立刻看到「营业中 / 营业时间外 / 已休业」三态
+        cn.iocoder.yudao.module.merchant.util.ShopOperatingUtils.OperatingStatus opSt =
+                cn.iocoder.yudao.module.merchant.util.ShopOperatingUtils.computeStatus(shop);
+        resp.setIsOpenNow(opSt == cn.iocoder.yudao.module.merchant.util.ShopOperatingUtils.OperatingStatus.OPEN);
+        resp.setOperatingStatus(opSt.name());
+        resp.setBusinessHoursJson(shop.getBusinessHoursJson());
 
         // 距离（用户和店铺都有合法经纬度才算）
         if (userLng != null && userLat != null

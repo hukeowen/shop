@@ -84,6 +84,8 @@
         <view class="shop-info">
           <view class="shop-row1">
             <text class="shop-name">{{ s.shopName || s.name }}</text>
+            <text v-if="s.isOpenNow" class="open-badge">营业中</text>
+            <text v-else-if="s.operatingStatus === 'OUTSIDE_HOURS'" class="open-badge outside">营业时间外</text>
             <text v-if="s.bizTag" class="shop-badge">{{ s.bizTag }}</text>
           </view>
           <view class="shop-tag-line">{{ s.tagLine || s.address || s.businessHours || '欢迎光临' }}</view>
@@ -366,6 +368,13 @@ onPullDownRefresh(async () => {
   background: $brand-primary-light; color: $brand-primary;
   font-size: 20rpx; padding: 4rpx 14rpx; border-radius: 999rpx;
   flex-shrink: 0;
+}
+.open-badge {
+  background: #d1fae5; color: #047857;
+  font-size: 20rpx; padding: 4rpx 12rpx; border-radius: 999rpx;
+  flex-shrink: 0;
+  font-weight: 500;
+  &.outside { background: #f1f5f9; color: $text-secondary; }
 }
 .shop-tag-line {
   margin-top: 8rpx; font-size: 24rpx; color: $text-secondary;

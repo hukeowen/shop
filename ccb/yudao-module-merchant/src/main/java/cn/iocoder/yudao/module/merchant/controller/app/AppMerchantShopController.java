@@ -67,10 +67,74 @@ public class AppMerchantShopController {
         update.setDescription(updateDO.getDescription());
         update.setNotice(updateDO.getNotice());
         update.setBusinessHours(updateDO.getBusinessHours());
+        update.setBusinessHoursJson(updateDO.getBusinessHoursJson());
+        update.setManualClosed(updateDO.getManualClosed());
         update.setMobile(updateDO.getMobile());
         update.setLongitude(updateDO.getLongitude());
         update.setLatitude(updateDO.getLatitude());
         update.setAddress(updateDO.getAddress());
+        shopInfoMapper.updateById(update);
+        return success(true);
+    }
+
+    // ==================== 营业打卡 + 状态 (V039) ====================
+
+    @PostMapping("/check-in")
+    @Operation(summary = "今日营业打卡（每天首次进商户首页时点一次，记录 today_open_at = today）")
+    public CommonResult<java.util.Map<String, Object>> checkIn() {
+        Long tenantId = TenantContextHolder.getTenantId();
+        ShopInfoDO existing = shopInfoMapper.selectByTenantId(tenantId);
+        if (existing == null) {
+            throw exception0(1_020_005_000, "店铺信息不存在");
+        }
+        java.time.LocalDate today = java.time.LocalDate.now();
+        ShopInfoDO update = new ShopInfoDO();
+        update.setId(existing.getId());
+        update.setTodayOpenAt(today);
+        // 打卡同时清掉主动打烊，"开张"动作语义清晰
+        update.setManualClosed(false);
+        shopInfoMapper.updateById(update);
+        java.util.Map<String, Object> resp = new java.util.HashMap<>();
+        resp.put("todayOpenAt", today.toString());
+        resp.put("manualClosed", false);
+        return success(resp);
+    }
+
+    @GetMapping("/operating-status")
+    @Operation(summary = "查询当前店铺营业状态（OPEN / OUTSIDE_HOURS / HIDDEN）+ 各闸门细节")
+    public CommonResult<java.util.Map<String, Object>> operatingStatus() {
+        Long tenantId = TenantContextHolder.getTenantId();
+        ShopInfoDO shop = shopInfoMapper.selectByTenantId(tenantId);
+        java.util.Map<String, Object> resp = new java.util.HashMap<>();
+        if (shop == null) {
+            resp.put("status", "HIDDEN");
+            resp.put("checkedInToday", false);
+            resp.put("manualClosed", false);
+            return success(resp);
+        }
+        java.time.LocalDate today = java.time.LocalDate.now();
+        boolean checkedIn = shop.getTodayOpenAt() != null && shop.getTodayOpenAt().equals(today);
+        resp.put("status",
+                cn.iocoder.yudao.module.merchant.util.ShopOperatingUtils
+                        .computeStatus(shop).name());
+        resp.put("checkedInToday", checkedIn);
+        resp.put("todayOpenAt", shop.getTodayOpenAt() == null ? null : shop.getTodayOpenAt().toString());
+        resp.put("manualClosed", Boolean.TRUE.equals(shop.getManualClosed()));
+        resp.put("businessHoursJson", shop.getBusinessHoursJson());
+        return success(resp);
+    }
+
+    @PutMapping("/manual-closed")
+    @Operation(summary = "切换主动打烊开关")
+    public CommonResult<Boolean> setManualClosed(@RequestParam("closed") Boolean closed) {
+        Long tenantId = TenantContextHolder.getTenantId();
+        ShopInfoDO existing = shopInfoMapper.selectByTenantId(tenantId);
+        if (existing == null) {
+            throw exception0(1_020_005_000, "店铺信息不存在");
+        }
+        ShopInfoDO update = new ShopInfoDO();
+        update.setId(existing.getId());
+        update.setManualClosed(closed);
         shopInfoMapper.updateById(update);
         return success(true);
     }

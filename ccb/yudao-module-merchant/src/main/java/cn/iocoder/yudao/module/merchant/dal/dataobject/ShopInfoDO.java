@@ -53,12 +53,22 @@ public class ShopInfoDO extends BaseDO {
     private String address;
 
     // ========== 运营信息 ==========
-    /** 营业时间（如 09:00-22:00） */
+    /** 营业时间（旧版纯文本，如 09:00-22:00；保留兼容） */
     private String businessHours;
+    /** 营业时间 JSON：{"start":"09:00","end":"22:00","days":[1..7]}；
+     *  机器可解析，用于用户侧 isOpenNow 判断。NULL 视为 24/7。 */
+    private String businessHoursJson;
     /** 客服电话 */
     private String mobile;
-    /** 店铺状态：1正常 2暂停营业 3违规关闭 */
+    /** 店铺状态：1正常 2暂停营业 3违规关闭（平台管理员控制） */
     private Integer status;
+
+    // ========== 营业打卡 / 主动打烊（V039） ==========
+    /** 商户主动打烊开关：true=已打烊（用户侧不显示且不可下单，无视其他闸门） */
+    private Boolean manualClosed;
+    /** 今日营业打卡日期：== LocalDate.now() 时算"今日已打卡"；商户每日点"开始营业"后写入。
+     *  未打卡 → 用户侧不显示，不可下单。强制商户活跃。 */
+    private java.time.LocalDate todayOpenAt;
 
     // ========== 排名缓存（每日定时更新） ==========
     /** 近30天销量（字段名含数字，MP 驼峰转下划线不生效，必须显式指定列名） */

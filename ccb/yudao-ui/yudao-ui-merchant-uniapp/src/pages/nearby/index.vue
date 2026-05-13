@@ -55,7 +55,11 @@
         <image v-if="shop.coverUrl" :src="shop.coverUrl" class="shop-cover" mode="aspectFill" />
         <view v-else class="shop-cover placeholder">🏪</view>
         <view class="shop-info">
-          <view class="shop-name">{{ shop.shopName }}</view>
+          <view class="shop-name">
+            {{ shop.shopName }}
+            <text v-if="shop.isOpenNow" class="open-badge">营业中</text>
+            <text v-else-if="shop.operatingStatus === 'OUTSIDE_HOURS'" class="open-badge outside">营业时间外</text>
+          </view>
           <view class="shop-meta">
             <text class="distance">📍 {{ formatDistance(shop._distance) }}</text>
             <text v-if="shop.avgRating" class="rating">★ {{ shop.avgRating }}</text>
@@ -347,6 +351,20 @@ onLoad((q) => {
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+      .open-badge {
+        margin-left: 12rpx;
+        padding: 2rpx 12rpx;
+        background: #d1fae5;
+        color: #047857;
+        border-radius: 999rpx;
+        font-size: 18rpx;
+        font-weight: 500;
+        vertical-align: middle;
+        &.outside {
+          background: #f1f5f9;
+          color: $text-secondary;
+        }
+      }
     }
 
     .shop-meta {

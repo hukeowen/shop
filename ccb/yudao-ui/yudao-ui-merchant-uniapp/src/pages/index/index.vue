@@ -1,59 +1,113 @@
 <template>
   <view class="page">
-    <view class="header safe-top">
-      <view>
-        <view class="greeting">早上好，{{ userStore.user?.nickname || '摊主' }}</view>
-        <view class="shop-name">{{ userStore.shop?.name || '未关联店铺' }}</view>
-      </view>
-      <view class="status-pill">
-        <view class="dot"></view>
-        营业中
+    <!-- 顶部渐变 hero：问候 + 日期 + 头像 -->
+    <view class="hero safe-top">
+      <view class="hero-glow"></view>
+      <view class="hero-content">
+        <view class="hero-left">
+          <view class="greeting">{{ greeting }}<text class="emoji">{{ greetingEmoji }}</text></view>
+          <view class="shop-name">{{ userStore.shop?.name || userStore.user?.nickname || '未关联店铺' }}</view>
+          <view class="date-strip">
+            <text class="date">{{ todayStr }}</text>
+            <text class="dot-sep">·</text>
+            <text class="weekday">{{ weekdayStr }}</text>
+          </view>
+        </view>
+        <view class="hero-avatar">{{ avatarText }}</view>
       </view>
     </view>
 
-    <view class="quick card">
+    <!-- 营业打卡卡片（最核心 CTA） -->
+    <view :class="['op-card', opCardClass]" @click="onOpCardTap">
+      <view class="op-bg-deco"></view>
+      <view class="op-content">
+        <!-- 未打卡：大 CTA -->
+        <template v-if="!operatingStatus?.checkedInToday">
+          <view class="op-icon-big">📍</view>
+          <view class="op-text">
+            <view class="op-title">开始今日营业</view>
+            <view class="op-sub">每日一次，让顾客知道你在</view>
+          </view>
+          <view class="op-cta">立即打卡</view>
+        </template>
+        <!-- 已打卡 + 未主动打烊：营业中 -->
+        <template v-else-if="!operatingStatus?.manualClosed">
+          <view class="op-icon-big pulse">🟢</view>
+          <view class="op-text">
+            <view class="op-title">营业中</view>
+            <view class="op-sub">今日已打卡 · 顾客可下单</view>
+          </view>
+          <view class="op-cta minor" @click.stop="setManualClosed(true)">打烊</view>
+        </template>
+        <!-- 已主动打烊 -->
+        <template v-else>
+          <view class="op-icon-big">⏸</view>
+          <view class="op-text">
+            <view class="op-title">已打烊</view>
+            <view class="op-sub">用户暂时无法下单 · 点击恢复营业</view>
+          </view>
+          <view class="op-cta primary" @click.stop="setManualClosed(false)">重开</view>
+        </template>
+      </view>
+    </view>
+
+    <!-- 4 grid 快捷功能 -->
+    <view class="quick-grid">
       <view class="quick-item" @click="jumpAi">
-        <view class="icon ai">AI</view>
-        <text>一键成片</text>
+        <view class="qi-ic" style="background:linear-gradient(135deg,#FFC8A8,#FF6B35);"><text>🎬</text></view>
+        <text class="qi-lbl">一键成片</text>
       </view>
       <view class="quick-item" @click="jumpAddProduct">
-        <view class="icon product">＋</view>
-        <text>AI上架</text>
+        <view class="qi-ic" style="background:linear-gradient(135deg,#C8FFC8,#10B981);"><text>＋</text></view>
+        <text class="qi-lbl">AI 上架</text>
       </view>
       <view class="quick-item" @click="jumpVerify">
-        <view class="icon verify">扫</view>
-        <text>扫码核销</text>
+        <view class="qi-ic" style="background:linear-gradient(135deg,#C8E0FF,#3B82F6);"><text>📷</text></view>
+        <text class="qi-lbl">扫码核销</text>
       </view>
       <view class="quick-item" @click="jumpOrders">
-        <view class="icon order">单</view>
-        <text>订单</text>
+        <view class="qi-ic" style="background:linear-gradient(135deg,#E5D6FF,#8B5CF6);"><text>📋</text></view>
+        <text class="qi-lbl">订单</text>
       </view>
     </view>
 
-    <view class="stat-title">
-      <text>今日概览</text>
-      <text class="more" @click="jumpSalesStats">查看销售统计 ›</text>
+    <!-- 今日数据 2x2，每张卡专色 -->
+    <view class="data-head">
+      <text class="dh-title">今日数据</text>
+      <text class="dh-more" @click="jumpSalesStats">查看完整 ›</text>
     </view>
-    <view class="stats">
-      <view class="stat card clickable" @click="jumpOrderTab('all')">
-        <view class="stat-label">订单数 <text class="arrow">›</text></view>
-        <view class="stat-value">{{ data?.today.orderCount ?? '-' }}</view>
+    <view class="data-grid">
+      <view class="data-card orange" @click="jumpOrderTab('all')">
+        <view class="dc-ic">🛍</view>
+        <view class="dc-body">
+          <view class="dc-lbl">订单数</view>
+          <view class="dc-val">{{ data?.today.orderCount ?? '-' }}</view>
+        </view>
       </view>
-      <view class="stat card clickable" @click="jumpSalesStats">
-        <view class="stat-label">销售额 <text class="arrow">›</text></view>
-        <view class="stat-value">¥{{ fen2yuan(data?.today.salesAmount || 0) }}</view>
+      <view class="data-card blue" @click="jumpSalesStats">
+        <view class="dc-ic">💰</view>
+        <view class="dc-body">
+          <view class="dc-lbl">销售额</view>
+          <view class="dc-val">¥{{ smartYuan(data?.today.salesAmount || 0) }}</view>
+        </view>
       </view>
-      <view class="stat card clickable" @click="jumpMembers">
-        <view class="stat-label">新会员 <text class="arrow">›</text></view>
-        <view class="stat-value">{{ data?.today.newMembers ?? '-' }}</view>
+      <view class="data-card green" @click="jumpMembers">
+        <view class="dc-ic">👥</view>
+        <view class="dc-body">
+          <view class="dc-lbl">新会员</view>
+          <view class="dc-val">{{ data?.today.newMembers ?? '-' }}</view>
+        </view>
       </view>
-      <view class="stat card clickable" @click="jumpOrderTab('pending')">
-        <view class="stat-label">待处理 <text class="arrow">›</text></view>
-        <view class="stat-value warn">{{ data?.today.pendingOrders ?? '-' }}</view>
+      <view class="data-card purple" @click="jumpOrderTab('pending')">
+        <view class="dc-ic">⏳</view>
+        <view class="dc-body">
+          <view class="dc-lbl">待处理</view>
+          <view class="dc-val warn">{{ data?.today.pendingOrders ?? '-' }}</view>
+        </view>
       </view>
     </view>
 
-    <!-- v8 今日推广 -->
+    <!-- v8 今日推广（仅有数据时显示） -->
     <view
       v-if="data?.promo && (data.promo.issued > 0 || data.promo.deducted > 0)"
       class="promo-today"
@@ -79,6 +133,7 @@
       </view>
     </view>
 
+    <!-- 7 天销售趋势 -->
     <view class="section card">
       <view class="section-head">
         <text class="title">最近 7 天销售趋势</text>
@@ -97,10 +152,11 @@
       </view>
     </view>
 
+    <!-- 热销 Top 3 -->
     <view class="section card">
       <view class="section-head">
-        <text class="title">热销商品 Top 3</text>
-        <text class="more" @click="jumpProductRank">查看完整排行 ›</text>
+        <text class="title">🏆 热销商品 Top 3</text>
+        <text class="more" @click="jumpProductRank">完整排行 ›</text>
       </view>
       <view class="rank-list">
         <view
@@ -111,10 +167,11 @@
           <view class="rank-no" :class="'rank-' + (i + 1)">{{ i + 1 }}</view>
           <view class="rank-name">{{ p.name }}</view>
           <view class="rank-meta">
-            <text>售出 {{ p.count }}</text>
+            <text>售 {{ p.count }}</text>
             <text class="rank-amount">¥{{ fen2yuan(p.amount) }}</text>
           </view>
         </view>
+        <view v-if="!data?.topProducts?.length" class="rank-empty">暂无销售数据</view>
       </view>
     </view>
 
@@ -125,8 +182,8 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue';
-import { onPullDownRefresh } from '@dcloudio/uni-app';
+import { computed, onMounted, ref } from 'vue';
+import { onPullDownRefresh, onShow } from '@dcloudio/uni-app';
 import { getDashboard } from '../../api/report.js';
 import { request } from '../../api/request.js';
 import { fen2yuan, smartYuan } from '../../utils/format.js';
@@ -134,6 +191,86 @@ import { useUserStore } from '../../store/user.js';
 
 const userStore = useUserStore();
 const data = ref(null);
+const operatingStatus = ref(null);
+
+// 时段问候 + emoji
+const now = ref(new Date());
+const hour = computed(() => now.value.getHours());
+const greeting = computed(() => {
+  const h = hour.value;
+  if (h < 5) return '夜深了，';
+  if (h < 11) return '早上好，';
+  if (h < 14) return '中午好，';
+  if (h < 18) return '下午好，';
+  if (h < 23) return '晚上好，';
+  return '夜深了，';
+});
+const greetingEmoji = computed(() => {
+  const h = hour.value;
+  if (h < 5) return '🌙';
+  if (h < 11) return '☀';
+  if (h < 14) return '🌤';
+  if (h < 18) return '☕';
+  if (h < 23) return '🌆';
+  return '🌙';
+});
+const todayStr = computed(() => {
+  const d = now.value;
+  return `${d.getMonth() + 1}月${d.getDate()}日`;
+});
+const weekdayStr = computed(() => {
+  const w = now.value.getDay();
+  return ['周日', '周一', '周二', '周三', '周四', '周五', '周六'][w];
+});
+
+const avatarText = computed(() => {
+  const n = userStore.user?.nickname || userStore.shop?.name || userStore.phone || '摊';
+  return n.slice(0, 1);
+});
+
+// 营业打卡卡片状态 class
+const opCardClass = computed(() => {
+  if (!operatingStatus.value?.checkedInToday) return 'pending'; // 未打卡 - 醒目橙
+  if (operatingStatus.value?.manualClosed) return 'closed';     // 打烊 - 灰
+  return 'open';                                                // 营业 - 绿
+});
+
+async function loadOperatingStatus() {
+  try {
+    operatingStatus.value = await request({ url: '/app-api/merchant/mini/shop/operating-status' });
+  } catch {}
+}
+
+async function onOpCardTap() {
+  // 未打卡 → 点卡片整体即打卡
+  if (!operatingStatus.value?.checkedInToday) {
+    try {
+      await request({ url: '/app-api/merchant/mini/shop/check-in', method: 'POST' });
+      uni.showToast({ title: '已打卡，营业中 ✓', icon: 'success' });
+      await loadOperatingStatus();
+    } catch (e) {
+      uni.showToast({ title: e?.message || '打卡失败', icon: 'none' });
+    }
+  }
+}
+
+async function setManualClosed(closed) {
+  const r = await uni.showModal({
+    title: closed ? '确认打烊？' : '确认重开？',
+    content: closed ? '打烊后用户无法看到您的店铺，也无法下单' : '重新对用户开放下单',
+  });
+  if (!r.confirm) return;
+  try {
+    await request({
+      url: `/app-api/merchant/mini/shop/manual-closed?closed=${closed}`,
+      method: 'PUT',
+    });
+    uni.showToast({ title: closed ? '已打烊' : '已重开', icon: 'success' });
+    await loadOperatingStatus();
+  } catch (e) {
+    uni.showToast({ title: e?.message || '操作失败', icon: 'none' });
+  }
+}
 
 async function load() {
   data.value = await getDashboard();
@@ -144,59 +281,30 @@ function barHeight(v) {
   return max ? Math.max(8, (v / max) * 100) : 0;
 }
 
-// 注：早先 pages.json 全局 tabBar 已删（改用自渲染的 RoleTabBar），
-// switchTab 只能跳 pages.json 里 tabBar 配置过的页面，现在调用会静默失败。
-// 主页 4 个快捷入口统一改 reLaunch（与 RoleTabBar 内 onTap 行为一致）。
-function jumpAi() {
-  uni.reLaunch({ url: '/pages/ai-video/index' });
-}
-function jumpOrders() {
-  uni.reLaunch({ url: '/pages/order/list' });
-}
-function jumpVerify() {
-  uni.reLaunch({ url: '/pages/order/list' });
-}
-function jumpAddProduct() {
-  // 主页快捷入口走 AI 识别上架（batch），手动 edit 仍保留在商品管理列表里
-  uni.navigateTo({ url: '/pages/product/batch' });
-}
-
-function jumpSalesStats() {
-  uni.navigateTo({ url: '/pages/me/sales-stats' });
-}
-function jumpOrderTab(tab) {
-  uni.reLaunch({ url: `/pages/order/list?tab=${tab}` });
-}
-function jumpMembers() {
-  uni.navigateTo({ url: '/pages/me/members' });
-}
-function jumpProductRank() {
-  uni.navigateTo({ url: '/pages/me/product-rank' });
-}
+function jumpAi() { uni.reLaunch({ url: '/pages/ai-video/index' }); }
+function jumpOrders() { uni.reLaunch({ url: '/pages/order/list' }); }
+function jumpVerify() { uni.reLaunch({ url: '/pages/order/list' }); }
+function jumpAddProduct() { uni.navigateTo({ url: '/pages/product/batch' }); }
+function jumpSalesStats() { uni.navigateTo({ url: '/pages/me/sales-stats' }); }
+function jumpOrderTab(tab) { uni.reLaunch({ url: `/pages/order/list?tab=${tab}` }); }
+function jumpMembers() { uni.navigateTo({ url: '/pages/me/members' }); }
+function jumpProductRank() { uni.navigateTo({ url: '/pages/me/product-rank' }); }
 
 onMounted(async () => {
-  // pages/index/index 是 H5 默认入口（pages.json 第一个），
-  // 但本页是【商户】工作台 dashboard，普通用户不应进。按 role 分流：
   if (!userStore.loggedIn) {
-    // 未登录 → 跳通用登录页（页内有"我是顾客"和"商户登录"两个分支），
-    // 不要直接推商户登录页（普通用户进来会被弹"尚未开通商户"误导）
     uni.reLaunch({ url: '/pages/login/index' });
     return;
   }
   if (userStore.activeRole && userStore.activeRole !== 'merchant') {
-    // 已登录但不是商户角色（如 member）→ 跳普通用户首页
     uni.reLaunch({ url: '/pages/user-home/index' });
     return;
   }
-  // 拉一次最新登录态：老 token（升级前签的）store 里没 nickname/shopName，
-  // 必须 refreshMe 把店铺名填上，否则一直显示"未关联店铺"
-  try { await userStore.refreshMe(); } catch (e) { /* 忽略，不阻塞看板 */ }
-  // refreshMe 后 role 可能修正（如登录态过期 fallback 成 member），再判一次
+  try { await userStore.refreshMe(); } catch (e) { /* 不阻塞 */ }
   if (userStore.activeRole && userStore.activeRole !== 'merchant') {
     uni.reLaunch({ url: '/pages/user-home/index' });
     return;
   }
-  // SaaS 订阅到期拦截：过期 → 弹模态并跳续费页（订单 / 售后入口允许保留）
+  // SaaS 订阅到期拦截
   try {
     const st = await request({ url: '/app-api/merchant/mini/saas/my-status' });
     if (st && st.expired) {
@@ -212,10 +320,18 @@ onMounted(async () => {
     }
   } catch {}
   load();
+  loadOperatingStatus();
+});
+
+// 商户从其他页（如 shop-edit 改了营业时间）回来要刷新营业状态
+onShow(() => {
+  if (userStore.loggedIn && userStore.activeRole === 'merchant') {
+    loadOperatingStatus();
+  }
 });
 
 onPullDownRefresh(async () => {
-  await load();
+  await Promise.all([load(), loadOperatingStatus()]);
   uni.stopPullDownRefresh();
 });
 </script>
@@ -224,163 +340,239 @@ onPullDownRefresh(async () => {
 @import '../../uni.scss';
 
 .page {
-  padding: 0 24rpx 48rpx;
+  // 渐变背景 — 整页底色不再纯白，让卡片浮起来
+  background: linear-gradient(180deg, #fff6f0 0%, #f7f8fb 280rpx);
+  min-height: 100vh;
+  padding: 0 24rpx 220rpx;
 }
 
-.safe-top {
-  padding-top: calc(env(safe-area-inset-top) + 24rpx);
-}
+/* ─── Hero 顶部渐变 ─── */
+.safe-top { padding-top: calc(env(safe-area-inset-top) + 24rpx); }
 
-.header {
-  padding: 16rpx 12rpx 40rpx;
+.hero {
+  position: relative;
+  padding: 8rpx 12rpx 32rpx;
+  overflow: visible;
+}
+.hero-glow {
+  position: absolute;
+  top: -120rpx; left: -40rpx; right: -40rpx;
+  height: 320rpx;
+  background: radial-gradient(ellipse at 30% 80%, rgba(255, 167, 100, .35), transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+.hero-content {
+  position: relative;
+  z-index: 1;
   display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-
-  .greeting {
-    font-size: 28rpx;
-    color: $text-secondary;
-  }
-
-  .shop-name {
-    font-size: 40rpx;
-    font-weight: 700;
-    color: $text-primary;
-    margin-top: 8rpx;
-  }
-
-  .status-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 8rpx;
-    height: 48rpx;
-    padding: 0 20rpx;
-    background: #e8f5ef;
-    color: $success;
-    border-radius: $radius-pill;
-    font-size: 24rpx;
-
-    .dot {
-      width: 12rpx;
-      height: 12rpx;
-      background: $success;
-      border-radius: 50%;
-    }
-  }
-}
-
-.card {
-  background: $bg-card;
-  border-radius: $radius-lg;
-  padding: 32rpx;
-  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.03);
-}
-
-.quick {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 32rpx;
-
-  .quick-item {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 12rpx;
-    font-size: 24rpx;
-    color: $text-regular;
-  }
-
-  .icon {
-    width: 88rpx;
-    height: 88rpx;
-    line-height: 88rpx;
-    text-align: center;
-    color: #fff;
-    border-radius: $radius-md;
-    font-size: 30rpx;
-    font-weight: 600;
-
-    &.ai {
-      background: linear-gradient(135deg, #ff6b35, #ff9b5e);
-    }
-    &.product {
-      background: #10b981;
-    }
-    &.verify {
-      background: #3b82f6;
-    }
-    &.order {
-      background: #8b5cf6;
-    }
-  }
-}
-
-.stat-title {
-  margin: 8rpx 12rpx 20rpx;
-  font-size: 28rpx;
-  color: $text-secondary;
-  font-weight: 500;
-  display: flex;
-  justify-content: space-between;
   align-items: center;
-  .more {
-    color: $brand-primary;
-    font-size: 24rpx;
-    font-weight: 400;
+  justify-content: space-between;
+}
+.hero-left { flex: 1; min-width: 0; }
+.greeting {
+  font-size: 26rpx;
+  color: $text-secondary;
+  .emoji { margin-left: 8rpx; font-size: 26rpx; }
+}
+.shop-name {
+  margin-top: 8rpx;
+  font-size: 44rpx;
+  font-weight: 800;
+  color: $text-primary;
+  letter-spacing: -0.5rpx;
+}
+.date-strip {
+  margin-top: 8rpx;
+  font-size: 22rpx;
+  color: $text-placeholder;
+  .dot-sep { margin: 0 8rpx; }
+}
+.hero-avatar {
+  width: 96rpx; height: 96rpx;
+  line-height: 96rpx;
+  text-align: center;
+  border-radius: 50%;
+  background: linear-gradient(135deg, $brand-primary, #ff9b5e);
+  color: #fff;
+  font-size: 48rpx;
+  font-weight: 700;
+  box-shadow: 0 8rpx 24rpx rgba(255, 107, 53, .35);
+  flex-shrink: 0;
+  margin-left: 24rpx;
+}
+
+/* ─── 营业打卡卡片 ─── */
+.op-card {
+  position: relative;
+  margin-bottom: 32rpx;
+  padding: 32rpx 36rpx;
+  border-radius: 28rpx;
+  overflow: hidden;
+  transition: transform 0.15s;
+  &:active { transform: scale(0.99); }
+}
+.op-card.pending {
+  // 未打卡 — 醒目橙色，发光
+  background: linear-gradient(135deg, #ff6b35 0%, #ff9b5e 100%);
+  box-shadow: 0 16rpx 32rpx rgba(255, 107, 53, .35);
+}
+.op-card.open {
+  // 营业中 — 绿色，平和
+  background: linear-gradient(135deg, #10b981 0%, #22d3a3 100%);
+  box-shadow: 0 12rpx 28rpx rgba(16, 185, 129, .28);
+}
+.op-card.closed {
+  // 打烊 — 灰，朴素
+  background: linear-gradient(135deg, #64748b 0%, #94a3b8 100%);
+  box-shadow: 0 8rpx 20rpx rgba(100, 116, 139, .25);
+}
+.op-bg-deco {
+  position: absolute;
+  top: -80rpx; right: -80rpx;
+  width: 240rpx; height: 240rpx;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 50%;
+  pointer-events: none;
+}
+.op-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+}
+.op-icon-big {
+  font-size: 64rpx;
+  flex-shrink: 0;
+  width: 96rpx; height: 96rpx;
+  line-height: 96rpx;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.22);
+  border-radius: 28rpx;
+  &.pulse {
+    animation: pulse 1.8s ease-in-out infinite;
+  }
+}
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+.op-text { flex: 1; min-width: 0; color: #fff; }
+.op-title {
+  font-size: 36rpx; font-weight: 800;
+  letter-spacing: -0.5rpx;
+  text-shadow: 0 2rpx 8rpx rgba(0, 0, 0, .12);
+}
+.op-sub {
+  margin-top: 6rpx;
+  font-size: 24rpx;
+  opacity: 0.9;
+  line-height: 1.4;
+}
+.op-cta {
+  flex-shrink: 0;
+  padding: 16rpx 28rpx;
+  background: #fff;
+  color: $brand-primary;
+  border-radius: 999rpx;
+  font-size: 26rpx;
+  font-weight: 700;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, .12);
+  &.minor {
+    background: rgba(255, 255, 255, 0.25);
+    color: #fff;
+    box-shadow: none;
+  }
+  &.primary {
+    background: #fff;
+    color: $text-primary;
   }
 }
 
-.stats {
+/* ─── 4 宫格快捷 ─── */
+.quick-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16rpx;
+  background: $bg-card;
+  padding: 28rpx 20rpx;
+  border-radius: 24rpx;
+  margin-bottom: 32rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, .04);
+}
+.quick-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12rpx;
+}
+.qi-ic {
+  width: 96rpx; height: 96rpx;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 24rpx;
+  font-size: 44rpx;
+  color: #fff;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, .08);
+}
+.qi-lbl { font-size: 24rpx; color: $text-primary; font-weight: 500; }
+
+/* ─── 今日数据 ─── */
+.data-head {
+  margin: 8rpx 12rpx 16rpx;
+  display: flex; justify-content: space-between; align-items: center;
+  .dh-title { font-size: 30rpx; font-weight: 700; color: $text-primary; }
+  .dh-more { font-size: 24rpx; color: $brand-primary; }
+}
+.data-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16rpx;
   margin-bottom: 32rpx;
-
-  .stat {
-    padding: 24rpx;
-    min-height: 160rpx;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-  }
-
-  .stat-label {
-    font-size: 24rpx;
-    color: $text-secondary;
-  }
-
-  .stat-value {
-    font-size: 44rpx;
-    font-weight: 700;
-    color: $text-primary;
-
-    &.warn {
-      color: $warning;
-    }
-  }
-
-  .clickable {
-    cursor: pointer;
-    transition: transform 0.15s;
-    position: relative;
-    .arrow {
-      color: $brand-primary;
-      font-size: 22rpx;
-      margin-left: 4rpx;
-    }
-    &:active { transform: scale(0.97); }
-  }
+}
+.data-card {
+  position: relative;
+  padding: 24rpx;
+  border-radius: 20rpx;
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  overflow: hidden;
+  transition: transform 0.15s;
+  &:active { transform: scale(0.97); }
+  &.orange { background: linear-gradient(135deg, #fff5ef, #ffe1c8); }
+  &.blue   { background: linear-gradient(135deg, #eff6ff, #d6e9ff); }
+  &.green  { background: linear-gradient(135deg, #f0fdf4, #c8f5d0); }
+  &.purple { background: linear-gradient(135deg, #f8f5ff, #e5d6ff); }
+}
+.dc-ic {
+  width: 72rpx; height: 72rpx;
+  line-height: 72rpx;
+  text-align: center;
+  border-radius: 20rpx;
+  font-size: 40rpx;
+  background: rgba(255, 255, 255, 0.7);
+  flex-shrink: 0;
+}
+.dc-body { flex: 1; min-width: 0; }
+.dc-lbl { font-size: 22rpx; color: $text-secondary; }
+.dc-val {
+  margin-top: 6rpx;
+  font-size: 40rpx;
+  font-weight: 800;
+  color: $text-primary;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -1rpx;
+  &.warn { color: #ef4444; }
 }
 
-/* v8 今日推广 */
+/* ─── 推广卡 ─── */
 .promo-today {
-  margin: 0 12rpx 24rpx;
+  margin: 0 0 32rpx;
   padding: 24rpx;
   background: linear-gradient(135deg, #fff5e6, #ffe8d4);
   border: 2rpx solid #ffae74;
-  border-radius: 16rpx;
-  cursor: pointer;
+  border-radius: 20rpx;
   &:active { transform: scale(0.99); }
   .pt-head {
     display: flex; justify-content: space-between; align-items: center;
@@ -391,131 +583,109 @@ onPullDownRefresh(async () => {
   .pt-row { display: flex; gap: 12rpx; }
   .pt-mini {
     flex: 1; padding: 12rpx;
-    background: rgba(255, 255, 255, 0.6); border-radius: 8rpx;
+    background: rgba(255, 255, 255, 0.7); border-radius: 12rpx;
     .l { display: block; font-size: 22rpx; color: $text-secondary; }
     .v { display: block; font-size: 30rpx; font-weight: 700; color: $text-primary; margin-top: 4rpx; }
   }
 }
 
-.section {
+/* ─── 通用 card / section ─── */
+.card {
+  background: $bg-card;
+  border-radius: 20rpx;
+  padding: 28rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, .04);
+}
+.section { margin-bottom: 24rpx; }
+.section .section-head {
   margin-bottom: 24rpx;
-
-  .section-head {
-    margin-bottom: 24rpx;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    .title {
-      font-size: 30rpx;
-      font-weight: 600;
-      color: $text-primary;
-    }
-    .more {
-      color: $brand-primary;
-      font-size: 24rpx;
-    }
-  }
+  display: flex; justify-content: space-between; align-items: center;
+  .title { font-size: 30rpx; font-weight: 700; color: $text-primary; }
+  .more { color: $brand-primary; font-size: 24rpx; }
 }
 
+/* ─── 7 天趋势 chart ─── */
 .chart {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  height: 240rpx;
-  padding-top: 40rpx;
-
-  .bar {
-    flex: 1;
-    height: 100%;
-    margin: 0 6rpx;
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-end;
-
-    .bar-value {
-      font-size: 18rpx;
-      color: $text-secondary;
-      margin-bottom: 6rpx;
-    }
-
-    .bar-fill {
-      width: 100%;
-      background: linear-gradient(180deg, $brand-primary, #ffb48a);
-      border-radius: 8rpx 8rpx 0 0;
-      flex: 1;
-      min-height: 12rpx;
-    }
-
-    .bar-label {
-      font-size: 20rpx;
-      color: $text-secondary;
-      margin-top: 10rpx;
-      position: absolute;
-      bottom: -36rpx;
-    }
-  }
+  height: 280rpx;
+  padding-top: 48rpx;
+}
+.chart .bar {
+  flex: 1;
+  height: 100%;
+  margin: 0 6rpx;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+}
+.chart .bar-value {
+  font-size: 18rpx;
+  color: $text-secondary;
+  margin-bottom: 6rpx;
+}
+.chart .bar-fill {
+  width: 100%;
+  background: linear-gradient(180deg, $brand-primary 0%, #ffae74 70%, #ffd1ba 100%);
+  border-radius: 12rpx 12rpx 0 0;
+  flex: 1;
+  min-height: 16rpx;
+  box-shadow: 0 -2rpx 8rpx rgba(255, 107, 53, .18);
+}
+.chart .bar-label {
+  font-size: 20rpx;
+  color: $text-secondary;
+  margin-top: 12rpx;
+  position: absolute;
+  bottom: -36rpx;
 }
 
+/* ─── 排行 ─── */
 .rank-list {
   .rank-item {
     display: flex;
     align-items: center;
     padding: 20rpx 0;
     border-bottom: 1rpx solid $border-color;
-
-    &:last-child {
-      border-bottom: none;
-    }
+    &:last-child { border-bottom: none; }
   }
-
   .rank-no {
-    width: 44rpx;
-    height: 44rpx;
-    line-height: 44rpx;
+    width: 48rpx; height: 48rpx;
+    line-height: 48rpx;
     text-align: center;
     border-radius: 50%;
-    font-size: 24rpx;
+    font-size: 26rpx;
     font-weight: 700;
     color: #fff;
     background: $text-placeholder;
     margin-right: 20rpx;
-
-    &.rank-1 {
-      background: #ffcc00;
-    }
-    &.rank-2 {
-      background: #c0c5cf;
-    }
-    &.rank-3 {
-      background: #d6793a;
-    }
+    &.rank-1 { background: linear-gradient(135deg, #ffcc00, #ffaa00); box-shadow: 0 2rpx 8rpx rgba(255, 204, 0, .4); }
+    &.rank-2 { background: linear-gradient(135deg, #c0c5cf, #94a3b8); }
+    &.rank-3 { background: linear-gradient(135deg, #d6793a, #b56428); }
   }
-
   .rank-name {
-    flex: 1;
-    font-size: 28rpx;
-    color: $text-primary;
+    flex: 1; font-size: 28rpx; color: $text-primary; font-weight: 500;
   }
-
   .rank-meta {
-    display: flex;
-    flex-direction: column;
+    display: flex; flex-direction: column;
     align-items: flex-end;
     font-size: 22rpx;
     color: $text-secondary;
-
     .rank-amount {
-      color: $brand-primary;
-      font-weight: 600;
-      font-size: 26rpx;
-      margin-top: 4rpx;
+      color: $brand-primary; font-weight: 700; font-size: 26rpx; margin-top: 4rpx;
+      font-variant-numeric: tabular-nums;
     }
+  }
+  .rank-empty {
+    padding: 40rpx 0;
+    text-align: center;
+    color: $text-placeholder;
+    font-size: 24rpx;
   }
 }
 
-.bottom-space {
-  height: 80rpx;
-}
+.bottom-space { height: 80rpx; }
 </style>

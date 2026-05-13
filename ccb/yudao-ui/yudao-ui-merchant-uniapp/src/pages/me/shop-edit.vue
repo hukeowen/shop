@@ -13,7 +13,36 @@
         </view>
         <view class="field">
           <text class="label">营业时间</text>
-          <input class="input" v-model="form.businessHours" placeholder="如：09:00-22:00" />
+          <view class="hours-row">
+            <picker mode="time" :value="form.startTime" @change="(e) => (form.startTime = e.detail.value)">
+              <view class="time-pill">{{ form.startTime || '开始时间' }}</view>
+            </picker>
+            <text class="dash">–</text>
+            <picker mode="time" :value="form.endTime" @change="(e) => (form.endTime = e.detail.value)">
+              <view class="time-pill">{{ form.endTime || '结束时间' }}</view>
+            </picker>
+          </view>
+        </view>
+        <view class="field">
+          <text class="label">营业天数</text>
+          <view class="days-col">
+            <view class="days-row">
+              <text
+                v-for="d in [{v:1,l:'一'},{v:2,l:'二'},{v:3,l:'三'},{v:4,l:'四'},{v:5,l:'五'},{v:6,l:'六'},{v:7,l:'日'}]"
+                :key="d.v"
+                :class="['day-pill', form.days.includes(d.v) ? 'on' : '']"
+                @click="toggleDay(d.v)"
+              >{{ d.l }}</text>
+            </view>
+            <text class="hint">不在营业天数 / 不在时段内：用户侧仍展示，但排在列表末尾</text>
+          </view>
+        </view>
+        <view class="field">
+          <text class="label">主动打烊</text>
+          <view class="toggle-wrap">
+            <switch :checked="form.manualClosed" color="#FF6B35" @change="(e) => (form.manualClosed = e.detail.value)" />
+            <text class="toggle-hint">{{ form.manualClosed ? '打烊中 · 用户侧不显示且无法下单' : '正常营业 / 关闭打烊' }}</text>
+          </view>
         </view>
         <view class="field">
           <text class="label">详细地址</text>
@@ -56,11 +85,35 @@ const form = ref({
   shopName: '',
   mobile: '',
   businessHours: '',
+  // V039 结构化营业时间（startTime/endTime/days 拼成 businessHoursJson 发后端）
+  startTime: '09:00',
+  endTime: '22:00',
+  days: [1, 2, 3, 4, 5, 6, 7],
+  manualClosed: false,
   address: '',
   description: '',
   notice: '',
   featureTags: '',
 });
+
+function toggleDay(d) {
+  if (form.value.days.includes(d)) {
+    form.value.days = form.value.days.filter((x) => x !== d);
+  } else {
+    form.value.days = [...form.value.days, d].sort((a, b) => a - b);
+  }
+}
+
+// 解析 businessHoursJson 回填 form；老数据（纯文本 businessHours）忽略不解析
+function applyBusinessHoursJson(json) {
+  if (!json) return;
+  try {
+    const obj = JSON.parse(json);
+    if (obj.start) form.value.startTime = obj.start;
+    if (obj.end) form.value.endTime = obj.end;
+    if (Array.isArray(obj.days) && obj.days.length) form.value.days = obj.days;
+  } catch {}
+}
 
 onLoad(async () => {
   try {
@@ -69,6 +122,8 @@ onLoad(async () => {
       form.value.shopName = res.shopName || '';
       form.value.mobile = res.mobile || '';
       form.value.businessHours = res.businessHours || '';
+      form.value.manualClosed = !!res.manualClosed;
+      applyBusinessHoursJson(res.businessHoursJson);
       form.value.address = res.address || '';
       form.value.description = res.description || '';
       form.value.notice = res.notice || '';
@@ -83,11 +138,23 @@ async function save() {
     uni.showToast({ title: '店铺名称不能为空', icon: 'none' });
     return;
   }
+  if (!form.value.days.length) {
+    uni.showToast({ title: '请至少选 1 个营业天', icon: 'none' });
+    return;
+  }
   try {
+    // 把 startTime/endTime/days 打包成 businessHoursJson
+    const businessHoursJson = JSON.stringify({
+      start: form.value.startTime,
+      end: form.value.endTime,
+      days: form.value.days,
+    });
+    // 老 businessHours 文本同步刷新一下，便于不识别 JSON 的旧接口显示
+    const businessHours = `${form.value.startTime}-${form.value.endTime}`;
     await request({
       url: '/app-api/merchant/mini/shop/info',
       method: 'PUT',
-      data: form.value,
+      data: { ...form.value, businessHours, businessHoursJson },
     });
     uni.showToast({ title: '保存成功', icon: 'success' });
     setTimeout(() => uni.navigateBack(), 1000);
@@ -159,6 +226,66 @@ async function save() {
   font-size: 22rpx;
   color: $text-secondary;
   line-height: 1.4;
+}
+
+/* V039 营业时间结构化输入 */
+.hours-row {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+.time-pill {
+  padding: 12rpx 28rpx;
+  background: $bg-page;
+  color: $text-primary;
+  border-radius: 999rpx;
+  font-size: 28rpx;
+  border: 2rpx solid transparent;
+  font-variant-numeric: tabular-nums;
+}
+.dash { color: $text-placeholder; font-size: 32rpx; }
+
+.days-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+  min-width: 0;
+}
+.days-row {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 12rpx;
+  align-items: center;
+  justify-items: center;
+}
+.day-pill {
+  width: 64rpx; height: 64rpx; line-height: 64rpx;
+  text-align: center;
+  border-radius: 50%;
+  background: $bg-page;
+  font-size: 26rpx;
+  color: $text-secondary;
+  border: 2rpx solid transparent;
+  display: block;
+  &.on {
+    background: $brand-primary;
+    color: #fff;
+    font-weight: 700;
+  }
+}
+
+.toggle-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  .toggle-hint {
+    font-size: 22rpx;
+    color: $text-secondary;
+    line-height: 1.4;
+  }
 }
 
 .bottom-bar {

@@ -72,4 +72,12 @@ public class AppShopPublicInfoRespVO {
 
     @Schema(description = "通联在线支付是否可用：tlEnabled + cusId + 商户私钥 + 通联公钥 都配齐才 true")
     private Boolean onlinePayEnabled;
+
+    // ========== V039 营业状态 ==========
+    @Schema(description = "当前是否在营业（已打卡 + 未打烊 + 在营业时段内 = true）")
+    private Boolean isOpenNow;
+    @Schema(description = "三态：OPEN / OUTSIDE_HOURS / HIDDEN（HIDDEN 通常已被 listShops 过滤掉）")
+    private String operatingStatus;
+    @Schema(description = "营业时间 JSON：{\"start\":\"09:00\",\"end\":\"22:00\",\"days\":[1..7]}；NULL 等同 24/7")
+    private String businessHoursJson;
 }

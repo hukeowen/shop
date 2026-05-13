@@ -63,6 +63,8 @@ public class AppMerchantCheckoutController {
     private cn.iocoder.yudao.module.product.service.sku.ProductSkuService productSkuService;
     @Resource
     private cn.iocoder.yudao.module.merchant.dal.mysql.coupon.ShopCouponUserMapper shopCouponUserMapper;
+    @Resource
+    private cn.iocoder.yudao.module.merchant.dal.mysql.ShopInfoMapper shopInfoMapper;
 
     /** 通联兜底轮询（提单成功后立即调度，6 段退避主动查通联） */
     @Resource(name = "tradeOrderAllinpayPollingService")
@@ -90,6 +92,14 @@ public class AppMerchantCheckoutController {
         }
         TenantContextHolder.setTenantId(tenantId);
         TenantContextHolder.setIgnore(false);
+        // V039 营业闸门校验：未打卡 / 主动打烊 → 拒单
+        cn.iocoder.yudao.module.merchant.dal.dataobject.ShopInfoDO shopForCheck =
+                shopInfoMapper.selectByTenantId(tenantId);
+        if (shopForCheck == null
+                || !cn.iocoder.yudao.module.merchant.util.ShopOperatingUtils.canOrder(shopForCheck)) {
+            throw ServiceExceptionUtil.exception0(1_031_001_012,
+                    "店铺已休业，无法下单");
+        }
         boolean useBalance = Boolean.TRUE.equals(req.getUseShopBalance());
         int balanceFen = req.getBalanceFen() == null ? 0 : req.getBalanceFen();
 
