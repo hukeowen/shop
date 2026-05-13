@@ -52,7 +52,13 @@
           </view>
           <view class="right">
             <view class="price">¥{{ fen2yuan(itemPrice(it)) }}</view>
-            <view class="qty">x {{ it.count || 1 }}</view>
+            <!-- 直购模式（无 cartIds）显示数量调整器；购物车模式只读，避免与购物车记录不同步 -->
+            <view v-if="!cartIds.length" class="qty-step">
+              <text class="qs-btn" :class="{ disabled: (it.count || 1) <= 1 }" @click="changeQty(i, -1)">−</text>
+              <text class="qs-n">{{ it.count || 1 }}</text>
+              <text class="qs-btn" @click="changeQty(i, 1)">+</text>
+            </view>
+            <view v-else class="qty">x {{ it.count || 1 }}</view>
           </view>
         </view>
         <view class="ck-fee">
@@ -341,10 +347,11 @@ async function loadShopAndItems() {
       const all = (res && res.validList) || (res && res.list) || (Array.isArray(res) ? res : []);
       items.value = all.filter(i => cartIds.value.includes(i.id));
     } else if (skuId.value) {
-      // 单品立即购买：按 spuId 拉详情拿 sku.price / spuName / picUrl
+      // 单品立即购买：按 spuId 拉详情拿 sku.price / spuName / picUrl / stock
       let realPrice = 0;
       let spuName = '商品';
       let picUrl = '';
+      let stock = 999; // 数量步进时做库存上限校验，没拉到 sku.stock 时给个宽松默认
       if (spuId.value) {
         try {
           const spuDetail = await request({ url: `/app-api/product/spu/get-detail?id=${spuId.value}` });
@@ -352,9 +359,10 @@ async function loadShopAndItems() {
           picUrl = spuDetail?.picUrl || '';
           const sku = (spuDetail?.skus || []).find(s => s.id === skuId.value);
           realPrice = sku?.price ?? spuDetail?.price ?? 0;
+          if (sku && typeof sku.stock === 'number' && sku.stock > 0) stock = sku.stock;
         } catch {}
       }
-      items.value = [{ skuId: skuId.value, count: count.value, spuName, name: spuName, picUrl, price: realPrice }];
+      items.value = [{ skuId: skuId.value, count: count.value, spuName, name: spuName, picUrl, price: realPrice, stock }];
     }
     // 4. v8 预演推广积分抵扣（仅在拉到 items 后调一次）— 不影响主流程，失败仅静默
     await loadPromoPreview();
@@ -363,6 +371,32 @@ async function loadShopAndItems() {
   } finally {
     loading.value = false;
   }
+}
+
+/**
+ * 直购模式：±调整商品数量，立即触发推 N 反 1 预演重算。
+ * 库存上限按 it.stock（loadShopAndItems 时从 sku.stock 取）。
+ */
+function changeQty(idx, delta) {
+  const it = items.value[idx];
+  if (!it) return;
+  const cur = it.count || 1;
+  const next = cur + delta;
+  if (next < 1) return;
+  const max = it.stock || 999;
+  if (next > max) {
+    uni.showToast({ title: `库存仅 ${max} 件`, icon: 'none' });
+    return;
+  }
+  it.count = next;
+  // 用户连点 + 时合并请求；250ms 节流足够 UI 跟手
+  debouncedPreview();
+}
+
+let _previewTimer = null;
+function debouncedPreview() {
+  if (_previewTimer) clearTimeout(_previewTimer);
+  _previewTimer = setTimeout(() => loadPromoPreview(), 250);
 }
 
 /**
@@ -639,6 +673,28 @@ onShow(() => {
   font-variant-numeric: tabular-nums;
 }
 .ck-row .qty { font-size: 22rpx; color: $text-placeholder; margin-top: 4rpx; }
+
+/* 直购模式数量步进器 — 圆角胶囊，主色 +/-，达上下限置灰 */
+.ck-row .qty-step {
+  display: inline-flex; align-items: center;
+  margin-top: 8rpx;
+  border: 1rpx solid $border-color;
+  border-radius: 28rpx;
+  overflow: hidden;
+  background: $bg-card;
+}
+.ck-row .qty-step .qs-btn {
+  width: 52rpx; height: 52rpx; line-height: 52rpx;
+  text-align: center; font-size: 30rpx; font-weight: 700;
+  color: $brand-primary;
+  background: rgba(255,107,53,.08);
+}
+.ck-row .qty-step .qs-btn.disabled { color: $text-placeholder; background: $bg-page; }
+.ck-row .qty-step .qs-n {
+  min-width: 64rpx; text-align: center;
+  font-size: 28rpx; font-weight: 600; color: $text-primary;
+  font-variant-numeric: tabular-nums;
+}
 
 .ck-fee {
   padding: 16rpx 32rpx; display: flex; justify-content: space-between;
