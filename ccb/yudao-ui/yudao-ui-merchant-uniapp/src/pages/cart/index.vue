@@ -272,11 +272,11 @@ function removeItem(item) {
     success: async (r) => {
       if (!r.confirm) return;
       try {
-        // 用户购物车按 token tenant 走，不传商户 tenantId 头
+        // 后端 @DeleteMapping("/delete") 用 @RequestParam("ids")，必须走 query string，
+        // DELETE body 在很多代理 / 网关都不解析；用户购物车按 token tenant 走
         await request({
-          url: '/app-api/trade/cart/delete',
+          url: `/app-api/trade/cart/delete?ids=${item.id}`,
           method: 'DELETE',
-          data: { ids: item.id },
         });
         // 本地立即移除（不等 load 重拉）
         items.value = items.value.filter((x) => x.id !== item.id);
