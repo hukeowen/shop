@@ -25,16 +25,18 @@
     </view>
 
     <view class="list">
-      <view v-for="s in list" :key="s.id" class="card">
+      <view v-for="s in list" :key="s.id" :class="['card', s._tuijianEnabled ? 'card-tuijian' : '']">
+        <!-- 推 N 反 1 角标（已启用的商品醒目置顶 + 角标） -->
+        <view v-if="s._tuijianEnabled" class="ribbon">🎯 推 {{ s._tuijianN || '?' }} 反 1</view>
         <view class="row" @click="goEdit(s.id)">
           <image class="thumb" :src="s.picUrl" mode="aspectFill" />
           <view class="body">
             <view class="name">{{ s.name }}</view>
             <view class="cat">分类：{{ s.categoryName }}</view>
             <view class="tags">
-              <text v-if="s.brokerageEnabled" class="tag brokerage">返利</text>
-              <text v-if="s.pushBackEnabled" class="tag pushback">推N返一</text>
+              <text v-if="s._tuijianEnabled" class="tag v7-tuijian">推 {{ s._tuijianN || '?' }} 反 1</text>
               <text v-if="s.stock === 0" class="tag oos">已售罄</text>
+              <text v-if="s.status === 0" class="tag offline">已下架</text>
             </view>
             <view class="bottom">
               <text class="price">¥{{ fen2yuan(s.price) }}</text>
@@ -69,6 +71,7 @@
 import { computed, ref } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
 import { getSpuPage, updateStatus, deleteSpu } from '../../api/product.js';
+import { getProductPromoConfig } from '../../api/promo.js';
 import { fen2yuan } from '../../utils/format.js';
 
 const all = ref([]);
@@ -81,13 +84,28 @@ const tabs = computed(() => [
 ]);
 
 const list = computed(() => {
-  if (current.value === -1) return all.value;
-  return all.value.filter((s) => s.status === current.value);
+  const filtered = current.value === -1
+    ? all.value
+    : all.value.filter((s) => s.status === current.value);
+  // 推 N 反 1 已启用的置顶（_tuijianEnabled true 排前），其他保持后端原顺序
+  return [...filtered].sort((a, b) => Number(!!b._tuijianEnabled) - Number(!!a._tuijianEnabled));
 });
 
 async function load() {
   const page = await getSpuPage();
   all.value = page.list;
+  // 并发拉每个商品的营销配置（单店商品通常 <30 条，OK；后续如规模上来可加批量接口）
+  await Promise.all(all.value.map(async (s) => {
+    try {
+      const c = await getProductPromoConfig(s.id);
+      s._tuijianEnabled = !!c?.tuijianEnabled;
+      s._tuijianN = c?.tuijianN || 0;
+    } catch {
+      s._tuijianEnabled = false;
+    }
+  }));
+  // 触发响应式刷新（直接改 all.value[i]._x 时 Vue 监听不到，要替换数组引用）
+  all.value = [...all.value];
 }
 
 function switchTab(v) {
@@ -253,6 +271,24 @@ onShow(() => {
   border-radius: $radius-lg;
   padding: 24rpx;
   box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.03);
+  position: relative;
+}
+/* 推 N 反 1 已启用：主色细边 + 浅色渐变背景，强化「这是营销商品」感知 */
+.card-tuijian {
+  border: 2rpx solid $brand-primary;
+  background: linear-gradient(135deg, #fff 0%, #fff5ef 100%);
+  box-shadow: 0 4rpx 16rpx rgba(255, 107, 53, .12);
+}
+.ribbon {
+  position: absolute;
+  top: 0; right: 24rpx;
+  padding: 8rpx 20rpx 8rpx 24rpx;
+  background: linear-gradient(135deg, #ff7e5f, $brand-primary);
+  color: #fff;
+  font-size: 20rpx; font-weight: 700;
+  border-radius: 0 0 12rpx 12rpx;
+  box-shadow: 0 2rpx 8rpx rgba(255, 107, 53, .28);
+  letter-spacing: 0.5rpx;
 }
 
 .row {
@@ -301,17 +337,18 @@ onShow(() => {
     border-radius: $radius-pill;
     font-size: 20rpx;
 
-    &.brokerage {
-      background: #fff3ec;
-      color: $brand-primary;
-    }
-    &.pushback {
-      background: #ede9fe;
-      color: #7c3aed;
+    &.v7-tuijian {
+      background: $brand-primary;
+      color: #fff;
+      font-weight: 700;
     }
     &.oos {
       background: #fee2e2;
       color: $danger;
+    }
+    &.offline {
+      background: #f1f5f9;
+      color: $text-secondary;
     }
   }
 }

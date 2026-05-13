@@ -25,11 +25,16 @@
         :key="c.id"
         class="coupon-row"
         :class="{ used: c.status === 1, expired: c.status === 2 }"
+        @click="goShop(c)"
       >
         <view class="amt-block">
           <view class="amt"><text class="cny">¥</text>{{ fen2yuan(c.discountAmount) }}</view>
         </view>
         <view class="info">
+          <view class="shop">
+            <text class="shop-name">{{ shopName(c.tenantId) }}</text>
+            <text class="shop-arrow">›</text>
+          </view>
           <view class="cond">{{ c.minAmount > 0 ? `满 ${fen2yuan(c.minAmount)} 可用` : '无门槛' }}</view>
           <view class="meta">{{ formatTime(c.expireTime) }} 过期</view>
         </view>
@@ -51,6 +56,36 @@ import { fen2yuan } from '../../utils/format.js';
 const list = ref([]);
 const tab = ref(0); // 0=全部 1=未使用 2=已使用 3=已过期
 const loading = ref(true);
+// tenantId → 店铺名缓存，避免每次渲染都重查
+const shopMap = ref({});
+
+function shopName(tid) {
+  if (!tid) return '未知店铺';
+  return shopMap.value[tid] || `店铺 #${tid}`;
+}
+
+function goShop(c) {
+  if (!c?.tenantId) {
+    uni.showToast({ title: '该券缺失店铺信息', icon: 'none' });
+    return;
+  }
+  uni.navigateTo({
+    url: `/pages/shop-home/index?tenantId=${c.tenantId}`,
+    fail: () => uni.reLaunch({ url: `/pages/shop-home/index?tenantId=${c.tenantId}` }),
+  });
+}
+
+// 拉所有出现过的 tenantId 的店铺名（并发，单店失败不阻塞列表显示）
+async function loadShops() {
+  const tids = [...new Set(list.value.map((c) => c.tenantId).filter(Boolean))];
+  if (!tids.length) return;
+  await Promise.all(tids.map(async (tid) => {
+    try {
+      const s = await request({ url: `/app-api/merchant/shop/public/info?tenantId=${tid}` });
+      if (s && s.shopName) shopMap.value[tid] = s.shopName;
+    } catch {}
+  }));
+}
 
 const filteredList = computed(() => {
   if (tab.value === 0) return list.value;
@@ -76,6 +111,8 @@ async function load() {
     list.value = Array.isArray(r) ? r : [];
   } catch { list.value = []; }
   loading.value = false;
+  // 列表渲染完成后再拉店铺名（不阻塞首屏）
+  loadShops();
 }
 
 function goBack() { uni.navigateBack({ fail: () => uni.reLaunch({ url: '/pages/user-home/index' }) }); }
@@ -135,6 +172,20 @@ onMounted(load);
   .cny { font-size: 22rpx; }
 }
 .info { flex: 1; min-width: 0; }
+.shop {
+  display: flex; align-items: center; gap: 4rpx;
+  margin-bottom: 6rpx;
+  .shop-name {
+    font-size: 24rpx; color: $brand-primary; font-weight: 700;
+    max-width: 320rpx;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .shop-arrow { font-size: 24rpx; color: $brand-primary; line-height: 1; }
+}
+.coupon-row.used .shop .shop-name,
+.coupon-row.used .shop .shop-arrow,
+.coupon-row.expired .shop .shop-name,
+.coupon-row.expired .shop .shop-arrow { color: $text-placeholder; }
 .cond { font-size: 26rpx; color: $text-primary; font-weight: 600; }
 .meta { margin-top: 8rpx; font-size: 22rpx; color: $text-secondary; }
 .state {
