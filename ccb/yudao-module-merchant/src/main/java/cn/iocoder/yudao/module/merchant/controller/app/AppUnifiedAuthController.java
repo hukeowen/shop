@@ -502,7 +502,7 @@ public class AppUnifiedAuthController {
             final OAuth2AccessTokenRespDTO[] tokenHolder = new OAuth2AccessTokenRespDTO[1];
             TenantUtils.execute(merchant.getTenantId(), () -> {
                 try {
-                    applyCustomShopName(finalMerchant, shopName);
+                    applyCustomShopName(finalMerchant, shopName, reqVO.getBusinessType());
                 } catch (Exception e) {
                     log.warn("[applyMerchantBySms] 改店铺名失败 merchantId={} shopName={}", mid, shopName, e);
                 }
@@ -543,15 +543,15 @@ public class AppUnifiedAuthController {
         return list.get(0);
     }
 
-    /** 把默认 "新店<userId>" 名字改成用户填的 shopName */
-    private void applyCustomShopName(MerchantDO merchant, String shopName) {
+    /** 把默认 "新店<userId>" 名字改成用户填的 shopName，同时落 business_type（V040） */
+    private void applyCustomShopName(MerchantDO merchant, String shopName, String businessType) {
         if (merchant == null || StrUtil.isBlank(shopName)) return;
         // (a) merchant_info.name
         MerchantDO mUpd = new MerchantDO();
         mUpd.setId(merchant.getId());
         mUpd.setName(shopName);
         merchantMapper.updateById(mUpd);
-        // (b) shop_info.shop_name (跨租户写：用 TenantContextHolder 切到该租户)
+        // (b) shop_info.shop_name + business_type (跨租户写：用 TenantContextHolder 切到该租户)
         cn.iocoder.yudao.module.merchant.dal.dataobject.ShopInfoDO si =
                 cn.iocoder.yudao.framework.tenant.core.util.TenantUtils.execute(
                         merchant.getTenantId(),
@@ -566,6 +566,9 @@ public class AppUnifiedAuthController {
                                         new cn.iocoder.yudao.module.merchant.dal.dataobject.ShopInfoDO();
                                 upd.setId(existed.getId());
                                 upd.setShopName(shopName);
+                                if (StrUtil.isNotBlank(businessType)) {
+                                    upd.setBusinessType(businessType);
+                                }
                                 m.updateById(upd);
                             }
                             return existed;

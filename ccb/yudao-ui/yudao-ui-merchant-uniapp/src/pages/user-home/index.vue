@@ -214,8 +214,8 @@ function goShop(tenantId) {
   uni.navigateTo({ url: `/pages/shop-home/index?tenantId=${tenantId}` });
 }
 function goNearby() { uni.navigateTo({ url: '/pages/nearby/index' }); }
-// 分类 = 跳到附近店铺页（暂时只看附近店铺；后续 nearby 页内可加 category 切换）
-function goCategories() { uni.navigateTo({ url: '/pages/nearby/index' }); }
+// V041: 分类 → 13 个行业类型总览，点进去看对应分类下的店铺
+function goCategories() { uni.navigateTo({ url: '/pages/categories/index' }); }
 // 优惠 = 跳到「我的优惠券」聚合页（跨店看所有领过的券）
 function goCoupons() { uni.navigateTo({ url: '/pages/user-me/coupons' }); }
 function goAiVideos() { uni.showToast({ title: 'AI 短视频聚合页开发中', icon: 'none' }); }

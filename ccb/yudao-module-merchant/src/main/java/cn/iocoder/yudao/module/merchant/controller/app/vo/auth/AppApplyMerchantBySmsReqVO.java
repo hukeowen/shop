@@ -36,4 +36,9 @@ public class AppApplyMerchantBySmsReqVO {
             requiredMode = Schema.RequiredMode.REQUIRED, example = "888888")
     @NotBlank(message = "验证码不能为空")
     private String smsCode;
+
+    @Schema(description = "行业类型（V040）：bbq/snack/drink/restaurant/fruit/super/tea/tea_house/bakery/clothing/massage/beauty/other；非必填，未选用 NULL（后续可在 shop-edit 补）",
+            example = "bbq")
+    @Size(max = 32)
+    private String businessType;
 }

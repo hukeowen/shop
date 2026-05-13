@@ -68,6 +68,20 @@
         </view>
       </view>
 
+      <!-- V041: 行业类型 13 选 1（必选）— AI 视频会按行业风格拍 + 用户分类页能找到你 -->
+      <view class="biz-label">
+        <text class="biz-label-text">行业类型 <text class="req">*</text></text>
+        <text class="biz-label-hint">选准 AI 视频质量提升 50%</text>
+      </view>
+      <view class="biz-grid">
+        <text
+          v-for="b in BIZ_TYPES"
+          :key="b.key"
+          :class="['biz-pill', form.businessType === b.key ? 'on' : '']"
+          @click="form.businessType = b.key"
+        ><text class="biz-emoji">{{ b.emoji }}</text>{{ b.label }}</text>
+      </view>
+
 
       <button
         class="submit-btn"
@@ -99,7 +113,24 @@ import { useUserStore } from '../../store/user.js';
 
 const userStore = useUserStore();
 
-const form = reactive({ shopName: '', mobile: '', smsCode: '' });
+const form = reactive({ shopName: '', mobile: '', smsCode: '', businessType: '' });
+
+// V041: 13 个行业类型 — key 与后端 BUSINESS_CONTEXT_MAP 一致
+const BIZ_TYPES = [
+  { key: 'bbq', label: '烧烤夜市', emoji: '🍢' },
+  { key: 'snack', label: '小吃快餐', emoji: '🥟' },
+  { key: 'drink', label: '奶茶咖啡', emoji: '🧋' },
+  { key: 'restaurant', label: '正餐餐厅', emoji: '🍽' },
+  { key: 'fruit', label: '水果生鲜', emoji: '🍓' },
+  { key: 'super', label: '超市便利店', emoji: '🛒' },
+  { key: 'tea', label: '茶叶酒水', emoji: '🍵' },
+  { key: 'tea_house', label: '茶楼茶馆', emoji: '🏯' },
+  { key: 'bakery', label: '烘焙甜品', emoji: '🥐' },
+  { key: 'clothing', label: '服装鞋帽', emoji: '👕' },
+  { key: 'massage', label: '按摩 SPA', emoji: '💆' },
+  { key: 'beauty', label: '美容美发', emoji: '💄' },
+  { key: 'other', label: '其他', emoji: '🏪' },
+];
 const submitting = ref(false);
 const smsCooldown = ref(0);
 let cooldownTimer = null;
@@ -108,7 +139,8 @@ const canSubmit = computed(
   () =>
     form.shopName.trim().length >= 2 &&
     /^1[3-9]\d{9}$/.test(form.mobile) &&
-    form.smsCode.length === 6
+    form.smsCode.length === 6 &&
+    !!form.businessType
 );
 
 async function sendSms() {
@@ -146,6 +178,7 @@ async function submit() {
         shopName: form.shopName.trim(),
         mobile: form.mobile,
         smsCode: form.smsCode,
+        businessType: form.businessType, // V041
       },
     });
     // 兼容两种返回：① 顶层 token=string ② 嵌套 token.accessToken
@@ -369,6 +402,58 @@ function goUserLogin() {
   font-weight: 700;
   font-size: 28rpx;
   color: #FF6B35;
+}
+
+/* V041 行业类型 13 选 1 */
+.biz-label {
+  margin-top: 32rpx;
+  margin-bottom: 16rpx;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+.biz-label-text {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: #1f2937;
+}
+.biz-label-text .req {
+  color: #ef4444;
+  margin-left: 2rpx;
+}
+.biz-label-hint {
+  font-size: 22rpx;
+  color: #FF6B35;
+}
+.biz-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12rpx;
+  margin-bottom: 24rpx;
+}
+.biz-pill {
+  padding: 16rpx 8rpx;
+  border-radius: 16rpx;
+  background: #f6f7f9;
+  font-size: 22rpx;
+  color: #4b5563;
+  text-align: center;
+  border: 2rpx solid transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4rpx;
+  line-height: 1.2;
+}
+.biz-pill .biz-emoji {
+  font-size: 32rpx;
+  line-height: 1;
+}
+.biz-pill.on {
+  background: #fff5ef;
+  color: #FF6B35;
+  border-color: #FF6B35;
+  font-weight: 700;
 }
 
 .submit-btn {

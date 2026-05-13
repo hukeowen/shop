@@ -62,7 +62,8 @@ public class AppShopPublicController {
     public CommonResult<PageResult<java.util.Map<String, Object>>> listShops(
             @RequestParam(value = "pageNo", defaultValue = "1") Integer pageNo,
             @RequestParam(value = "pageSize", defaultValue = "10") Integer pageSize,
-            @RequestParam(value = "kw", required = false) String kw) {
+            @RequestParam(value = "kw", required = false) String kw,
+            @RequestParam(value = "businessType", required = false) String businessType) {
         // V039 改造：分页 + 营业判定。先按 status=1 + 今日已打卡 + !manual_closed 在 SQL 层过滤
         // 掉 HIDDEN 店；剩下 OPEN / OUTSIDE_HOURS 在内存里算后按 isOpenNow DESC + sales30d DESC 排序。
         // 内存排序对 page_size=10 OK；店铺基数大时迁到 SQL ORDER BY CASE 表达式更优。
@@ -77,6 +78,10 @@ public class AppShopPublicController {
                 .ne(ShopInfoDO::getManualClosed, true); // bit 字段 != 1
         if (kw != null && !kw.trim().isEmpty()) {
             w.like(ShopInfoDO::getShopName, kw.trim());
+        }
+        // V041: 行业分类过滤（用户从「分类」页点进来时带 businessType）
+        if (businessType != null && !businessType.trim().isEmpty()) {
+            w.eq(ShopInfoDO::getBusinessType, businessType.trim());
         }
         PageResult<ShopInfoDO> page = shopInfoMapper.selectPage(pageParam, w);
         // 加 isOpenNow 字段 + 排序：OPEN 优先 OUTSIDE_HOURS 之后

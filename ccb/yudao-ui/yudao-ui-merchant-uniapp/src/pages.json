@@ -308,6 +308,20 @@
       }
     },
     {
+      "path": "pages/categories/index",
+      "style": {
+        "navigationBarTitleText": "全部分类",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/categories/shops",
+      "style": {
+        "navigationBarTitleText": "分类店铺",
+        "navigationStyle": "custom"
+      }
+    },
+    {
       "path": "pages/me/shop-edit",
       "style": {
         "navigationBarTitleText": "编辑店铺"
