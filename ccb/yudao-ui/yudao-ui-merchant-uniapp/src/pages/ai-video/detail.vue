@@ -96,12 +96,12 @@
       <view class="card">
         <view class="section-title">分镜台词</view>
         <view class="rl-wrap" v-for="(s, i) in task.scenes" :key="i">
-          <view class="rl" :class="{ playing: i === currentIdx && playing, failed: !s.clipUrl }">
+          <view class="rl" :class="rlClassOf(s, i)">
             <text class="rl-no">{{ i + 1 }}</text>
             <text class="rl-text">{{ s.narration }}</text>
-            <text v-if="!s.clipUrl" class="rl-badge">失败</text>
+            <text v-if="badgeOf(s)" class="rl-badge" :class="'rb-' + badgeKindOf(s)">{{ badgeOf(s) }}</text>
           </view>
-          <view v-if="s.error" class="rl-err">⚠ {{ s.error }}</view>
+          <view v-if="badgeKindOf(s) === 'fail' && s.error" class="rl-err">⚠ {{ s.error }}</view>
         </view>
       </view>
 
@@ -234,6 +234,31 @@ function sceneStatusClass(s) {
     done: s.status === 'ready' || s.status === 'video_only',
     running: s.status === 'video_running' || s.status === 'video_creating',
     fail: s.status === 'video_failed',
+  };
+}
+
+// 分镜行 badge 判定：区分 排队/制作中/失败/已就绪（区别于老的 !clipUrl=失败 一刀切）
+function badgeKindOf(s) {
+  if (s.status === 'video_failed') return 'fail';
+  if (s.clipUrl || s.status === 'ready' || s.status === 'video_only') return 'ok';
+  if (['video_creating', 'video_running', 'audio_muxing', 'endcard_building'].includes(s.status)) {
+    return 'running';
+  }
+  return 'pending'; // s.status === 'pending' 或未定义：前面幕还在跑，没排到这幕
+}
+function badgeOf(s) {
+  const k = badgeKindOf(s);
+  if (k === 'ok') return null; // 不显示 badge，避免视觉噪音
+  if (k === 'fail') return '失败';
+  if (k === 'running') return '制作中';
+  return '排队中';
+}
+function rlClassOf(s, i) {
+  return {
+    playing: i === currentIdx.value && playing.value,
+    failed: badgeKindOf(s) === 'fail',
+    pending: badgeKindOf(s) === 'pending',
+    running: badgeKindOf(s) === 'running',
   };
 }
 function sceneStatusLabel(s) {
@@ -925,8 +950,24 @@ onUnload(() => {
     color: #fff;
     font-size: 20rpx;
     border-radius: $radius-pill;
+    /* 默认是失败红 — fail；下面 3 个 modifier 覆写 */
+    &.rb-running {
+      background: $brand-primary;
+      animation: badgePulse 1.5s ease-in-out infinite;
+    }
+    &.rb-pending {
+      background: #e5e7eb;
+      color: $text-secondary;
+    }
+    &.rb-fail { background: $danger; }
   }
 }
+@keyframes badgePulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .55; }
+}
+.rl.pending .rl-text { color: $text-secondary; }
+.rl.running .rl-text { color: $text-primary; }
 
 .actions-grid {
   display: grid;

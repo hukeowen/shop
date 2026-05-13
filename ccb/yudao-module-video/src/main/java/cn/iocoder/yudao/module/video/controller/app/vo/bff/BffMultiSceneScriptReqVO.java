@@ -35,4 +35,33 @@ public class BffMultiSceneScriptReqVO {
     @Min(value = 1, message = "sceneDuration 至少 1 秒")
     @Max(value = 30, message = "sceneDuration 至多 30 秒")
     private Integer sceneDuration;
+
+    // ============ V040: 行业 / 风格 / 结构化卖点 brief ============
+
+    @Schema(description = "行业类型 key（bbq/snack/drink/restaurant/fruit/super/tea/tea_house/bakery/clothing/massage/beauty/other）；NULL=未选")
+    @Size(max = 32)
+    private String businessType;
+
+    @Schema(description = "视频风格调性 key（visual_burst/cozy/shelf/story/trend）；NULL=按 businessType 默认")
+    @Size(max = 32)
+    private String videoStyle;
+
+    @Schema(description = "结构化卖点 brief：{productName, sellingPoints, price, highlights[]}；NULL=fallback 走 userDescription")
+    private Brief brief;
+
+    @Data
+    public static class Brief {
+        @Schema(description = "商品名（必填）")
+        @Size(max = 64)
+        private String productName;
+        @Schema(description = "核心卖点（≤2 句）")
+        @Size(max = 200)
+        private String sellingPoints;
+        @Schema(description = "价格优惠（自由文本）")
+        @Size(max = 100)
+        private String price;
+        @Schema(description = "想突出的画面元素（多选）：cooking / closeup / hand / vibe / customer")
+        @Size(max = 8)
+        private List<@Size(max = 16) String> highlights;
+    }
 }

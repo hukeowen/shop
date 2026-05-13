@@ -69,6 +69,7 @@ public class AppMerchantShopController {
         update.setBusinessHours(updateDO.getBusinessHours());
         update.setBusinessHoursJson(updateDO.getBusinessHoursJson());
         update.setManualClosed(updateDO.getManualClosed());
+        update.setBusinessType(updateDO.getBusinessType()); // V040
         update.setMobile(updateDO.getMobile());
         update.setLongitude(updateDO.getLongitude());
         update.setLatitude(updateDO.getLatitude());

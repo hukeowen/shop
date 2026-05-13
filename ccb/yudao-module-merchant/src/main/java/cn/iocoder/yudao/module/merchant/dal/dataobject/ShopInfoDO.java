@@ -63,6 +63,10 @@ public class ShopInfoDO extends BaseDO {
     /** 店铺状态：1正常 2暂停营业 3违规关闭（平台管理员控制） */
     private Integer status;
 
+    /** 行业类型（V040）：bbq/snack/drink/restaurant/fruit/super/tea/tea_house/bakery/clothing/massage/beauty/other；
+     *  NULL=未选；AI 视频 BFF 按此值注入对应行业 cinematography prompt */
+    private String businessType;
+
     // ========== 营业打卡 / 主动打烊（V039） ==========
     /** 商户主动打烊开关：true=已打烊（用户侧不显示且不可下单，无视其他闸门） */
     private Boolean manualClosed;

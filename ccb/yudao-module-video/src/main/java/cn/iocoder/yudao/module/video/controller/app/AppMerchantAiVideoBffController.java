@@ -376,12 +376,22 @@ public class AppMerchantAiVideoBffController {
         if (shopName == null || shopName.isEmpty()) {
             shopName = merchant.getName();
         }
+        // V040: brief 是结构化卖点 form 序列化后的 JSON 字符串；businessType/videoStyle 是 key
+        String briefJson = null;
+        if (req.getBrief() != null) {
+            try {
+                briefJson = cn.iocoder.yudao.framework.common.util.json.JsonUtils.toJsonString(req.getBrief());
+            } catch (Exception ignored) {}
+        }
         AiVideoMultiSceneScriptDTO dto = copywritingService.generateMultiSceneScript(
                 shopName,
                 req.getUserDescription(),
                 req.getImageUrls(),
                 req.getSceneCount() == null ? req.getImageUrls().size() : req.getSceneCount(),
-                req.getSceneDuration() == null ? 10 : req.getSceneDuration());
+                req.getSceneDuration() == null ? 10 : req.getSceneDuration(),
+                req.getBusinessType(),
+                req.getVideoStyle(),
+                briefJson);
         return success(dto);
     }
 

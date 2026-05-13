@@ -416,7 +416,7 @@ function newTask(init) {
  *                                                     enhancedCount, totalCount}
  * @returns taskId
  */
-export async function createTask({ imageBase64s, imageUrls, userDescription, voiceKey, ratio, shopName, enhance = true, onProgress }) {
+export async function createTask({ imageBase64s, imageUrls, userDescription, voiceKey, ratio, shopName, enhance = true, businessType = '', videoStyle = '', brief = null, onProgress }) {
   // 优先复用已上传的 OSS URL（create.vue 选图时即上传），没有再走 base64 上传
   const preUploadedUrls = (imageUrls || []).filter(Boolean);
   const imgs = preUploadedUrls.length ? preUploadedUrls : (imageBase64s || []).filter(Boolean);
@@ -493,7 +493,15 @@ export async function createTask({ imageBase64s, imageUrls, userDescription, voi
       userDescription: polishedDescription,
       sceneCount,
       sceneDuration: perSceneDuration,
+      // V040 透传 行业 / 风格 / brief 给后端 LLM
+      businessType,
+      videoStyle,
+      brief,
     });
+    // 落到 task 上，便于后续调试 / detail 页展示来源
+    task.businessType = businessType;
+    task.videoStyle = videoStyle;
+    task.brief = brief;
     // 用 rich.visualPrompt 当 fallback：LLM 没给某幕 visual_prompt 时填这个基底
     if (richBaseVisualPrompt) {
       scenes.forEach((s) => {

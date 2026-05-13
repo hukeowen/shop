@@ -53,4 +53,20 @@ public interface CopywritingService {
             String shopName, String userDescription,
             java.util.List<String> imageUrls,
             int sceneCount, int sceneDuration);
+
+    /**
+     * V040 升级版：接入行业类型 + 视频风格 + 结构化卖点 brief。
+     *
+     * <p>{@code businessType}（bbq/snack/drink/restaurant/fruit/super/tea/tea_house/
+     * bakery/clothing/massage/beauty/other）让 LLM 知道你是什么行业；
+     * {@code videoStyle}（visual_burst/cozy/shelf/story/trend）让 LLM 用对应风格写
+     * 镜头；{@code brief} 是商品名/卖点/价格/想突出的画面这些结构化信息。</p>
+     *
+     * <p>所有新参数都允许 NULL，旧前端调用 4 参版本时退化成 V039 行为。</p>
+     */
+    AiVideoMultiSceneScriptDTO generateMultiSceneScript(
+            String shopName, String userDescription,
+            java.util.List<String> imageUrls,
+            int sceneCount, int sceneDuration,
+            String businessType, String videoStyle, String briefJson);
 }

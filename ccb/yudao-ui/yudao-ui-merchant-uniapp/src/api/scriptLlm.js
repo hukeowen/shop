@@ -51,8 +51,9 @@ async function arkChat(model, messages) {
  * @param {number} p.sceneDuration  每幕秒数
  * @returns {{title:string, scenes:Array<{img_idx,narration,visual_prompt,image_summary}>}}
  */
-export async function generateScript({ imageCount, imageUrls, userDescription, sceneCount, sceneDuration }) {
-  const urls = Array.isArray(imageUrls) ? imageUrls.filter(Boolean).slice(0, 3) : [];
+export async function generateScript({ imageCount, imageUrls, userDescription, sceneCount, sceneDuration, businessType, videoStyle, brief }) {
+  // 后端 CopywritingServiceImpl.MULTI_MAX_SCENES = 6，老 slice(0,3) 是 bug 导致 4-6 张图被吞
+  const urls = Array.isArray(imageUrls) ? imageUrls.filter(Boolean).slice(0, 6) : [];
   if (!urls.length) {
     // 没图无法走 vision；返一个最小可用的兜底，让前端流程不崩
     const n = Math.max(1, Math.min(6, sceneCount || imageCount || 1));
@@ -74,6 +75,10 @@ export async function generateScript({ imageCount, imageUrls, userDescription, s
       imageUrls: urls,
       sceneCount: sceneCount || urls.length,
       sceneDuration: sceneDuration || 10,
+      // v040 新加：行业 + 风格 + 结构化卖点；后端按这些细化 system prompt
+      businessType: businessType || '',
+      videoStyle: videoStyle || '',
+      brief: brief || null,
     },
   });
 
@@ -112,7 +117,8 @@ export async function generateScript({ imageCount, imageUrls, userDescription, s
  * @param {string[]} imageBase64sOrUrls
  */
 export async function generateHighlight(imageBase64sOrUrls) {
-  const imgs = (imageBase64sOrUrls || []).slice(0, 3).filter(Boolean);
+  // V040：取消 3 张硬截，最多 6 张（与后端 MULTI_MAX_SCENES 一致）
+  const imgs = (imageBase64sOrUrls || []).slice(0, 6).filter(Boolean);
   if (!imgs.length) throw new Error('无图片');
   const imageContent = imgs.map((s) => {
     const url = /^https?:\/\//i.test(s)
@@ -176,7 +182,8 @@ export async function polishDescription(rawDesc, shopName = '', imageUrls = []) 
   ].join('\n');
 
   // 视觉模型 messages：先文本指令，再每张图（OSS URL；base64 也兼容但不推荐）
-  const imgs = (imageUrls || []).slice(0, 3).filter(Boolean);
+  // polishDescription：取前 6 张图给 LLM 看（与后端 MULTI_MAX_SCENES 一致）
+  const imgs = (imageUrls || []).slice(0, 6).filter(Boolean);
   const userTextHead = (shopName ? `店家：${shopName}\n` : '') +
     `老板原始描述：${text}\n\n` +
     '请先识别图片中能看到的具体内容，再围绕老板这段话扩写成短视频解说基稿（60-100 字，结尾"微信扫码下单"）：';

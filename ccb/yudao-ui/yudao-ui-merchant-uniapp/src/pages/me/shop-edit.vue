@@ -7,6 +7,20 @@
           <text class="label">店铺名称</text>
           <input class="input" v-model="form.shopName" placeholder="请输入店铺名称" />
         </view>
+        <view class="field biz-field">
+          <text class="label">行业类型</text>
+          <view class="biz-wrap">
+            <view class="biz-grid">
+              <text
+                v-for="b in BIZ_TYPES"
+                :key="b.key"
+                :class="['biz-pill', form.businessType === b.key ? 'on' : '']"
+                @click="form.businessType = b.key"
+              ><text class="biz-emoji">{{ b.emoji }}</text>{{ b.label }}</text>
+            </view>
+            <text class="hint">选准行业 → AI 视频会按你这一行的镜头风格拍（油花/拉丝/陈列/治愈…），少打 60% 废稿</text>
+          </view>
+        </view>
         <view class="field">
           <text class="label">客服电话</text>
           <input class="input" type="number" v-model="form.mobile" placeholder="请输入客服电话" />
@@ -80,11 +94,29 @@ import { ref } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
 import { request } from '../../api/request.js';
 
+// V040: 13 个行业类型（用户进店时 emoji + 中文标签）；key 跟后端 BUSINESS_CONTEXT_MAP 一一对应
+const BIZ_TYPES = [
+  { key: 'bbq', label: '烧烤夜市', emoji: '🍢' },
+  { key: 'snack', label: '小吃快餐', emoji: '🥟' },
+  { key: 'drink', label: '奶茶咖啡', emoji: '🧋' },
+  { key: 'restaurant', label: '正餐餐厅', emoji: '🍽' },
+  { key: 'fruit', label: '水果生鲜', emoji: '🍓' },
+  { key: 'super', label: '超市便利店', emoji: '🛒' },
+  { key: 'tea', label: '茶叶酒水', emoji: '🍵' },
+  { key: 'tea_house', label: '茶楼茶馆', emoji: '🏯' },
+  { key: 'bakery', label: '烘焙甜品', emoji: '🥐' },
+  { key: 'clothing', label: '服装鞋帽', emoji: '👕' },
+  { key: 'massage', label: '按摩 SPA', emoji: '💆' },
+  { key: 'beauty', label: '美容美发', emoji: '💄' },
+  { key: 'other', label: '其他', emoji: '🏪' },
+];
+
 const loading = ref(true);
 const form = ref({
   shopName: '',
   mobile: '',
   businessHours: '',
+  businessType: '',
   // V039 结构化营业时间（startTime/endTime/days 拼成 businessHoursJson 发后端）
   startTime: '09:00',
   endTime: '22:00',
@@ -122,6 +154,7 @@ onLoad(async () => {
       form.value.shopName = res.shopName || '';
       form.value.mobile = res.mobile || '';
       form.value.businessHours = res.businessHours || '';
+      form.value.businessType = res.businessType || ''; // V040
       form.value.manualClosed = !!res.manualClosed;
       applyBusinessHoursJson(res.businessHoursJson);
       form.value.address = res.address || '';
@@ -226,6 +259,39 @@ async function save() {
   font-size: 22rpx;
   color: $text-secondary;
   line-height: 1.4;
+}
+
+/* V040 行业类型 13 选 1 */
+.biz-field { align-items: flex-start; }
+.biz-wrap { flex: 1; min-width: 0; }
+.biz-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12rpx;
+}
+.biz-pill {
+  padding: 14rpx 8rpx;
+  border-radius: 16rpx;
+  background: $bg-page;
+  font-size: 22rpx;
+  color: $text-regular;
+  text-align: center;
+  border: 2rpx solid transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4rpx;
+  line-height: 1.2;
+}
+.biz-pill .biz-emoji {
+  font-size: 30rpx;
+  line-height: 1;
+}
+.biz-pill.on {
+  background: $brand-primary-light;
+  color: $brand-primary;
+  border-color: $brand-primary;
+  font-weight: 700;
 }
 
 /* V039 营业时间结构化输入 */

@@ -292,6 +292,16 @@ public class CopywritingServiceImpl implements CopywritingService {
     public AiVideoMultiSceneScriptDTO generateMultiSceneScript(
             String shopName, String userDescription,
             List<String> imageUrls, int sceneCount, int sceneDuration) {
+        // V039 旧入口：delegate 到 V040 新方法，businessType / videoStyle / brief 全空
+        return generateMultiSceneScript(shopName, userDescription, imageUrls,
+                sceneCount, sceneDuration, null, null, null);
+    }
+
+    @Override
+    public AiVideoMultiSceneScriptDTO generateMultiSceneScript(
+            String shopName, String userDescription,
+            List<String> imageUrls, int sceneCount, int sceneDuration,
+            String businessType, String videoStyle, String briefJson) {
         // 1. 入参规整：scenes / images 数量都 cap [1, 6]，sceneDuration ≥ 1
         List<String> imgs = imageUrls == null
                 ? Collections.emptyList()
@@ -315,7 +325,8 @@ public class CopywritingServiceImpl implements CopywritingService {
 
         // 2. 调豆包 vision-pro：messages 含 system + user (含图)
         try {
-            String content = callVisionLlmForScript(shopName, userDescription, imgs, n, dur);
+            String content = callVisionLlmForScript(shopName, userDescription, imgs, n, dur,
+                    businessType, videoStyle, briefJson);
             return postProcessMultiScene(content, imgCount, n, dur);
         } catch (Exception e) {
             log.error("[generateMultiSceneScript] 调用 / 解析失败，返回兜底", e);
@@ -326,9 +337,11 @@ public class CopywritingServiceImpl implements CopywritingService {
     /** 真实调 vision-pro 拿原始 JSON 文本；失败抛 RuntimeException 让外层兜底 */
     private String callVisionLlmForScript(
             String shopName, String userDescription,
-            List<String> imageUrls, int n, int dur) {
-        String systemPrompt = buildMultiSceneSystemPrompt(n, dur);
-        String userText = buildMultiSceneUserText(shopName, userDescription, imageUrls.size(), n, dur);
+            List<String> imageUrls, int n, int dur,
+            String businessType, String videoStyle, String briefJson) {
+        String systemPrompt = buildMultiSceneSystemPrompt(n, dur, businessType, videoStyle);
+        String userText = buildMultiSceneUserText(shopName, userDescription, imageUrls.size(), n, dur,
+                businessType, videoStyle, briefJson);
 
         // 视觉消息：text + N 个 image_url（detail=low 节省 token）
         List<Object> userContents = new ArrayList<>();
@@ -391,8 +404,13 @@ public class CopywritingServiceImpl implements CopywritingService {
         }
     }
 
-    private String buildMultiSceneSystemPrompt(int n, int dur) {
+    /** V040: 行业 + 风格上下文注入（旧 4 参版本兜底为空）— 让 LLM 知道"我是干啥的、用啥调性" */
+    private String buildMultiSceneSystemPrompt(int n, int dur, String businessType, String videoStyle) {
+        String bizCtx = renderBusinessContext(businessType);
+        String styleCtx = renderStyleContext(videoStyle);
         return "你是抖音爆款短视频导演，专为线下小店老板拍 30 秒竖屏带货大片。\n"
+                + (bizCtx.isEmpty() ? "" : bizCtx + "\n")
+                + (styleCtx.isEmpty() ? "" : styleCtx + "\n")
                 + "我给你 " + n + " 张店铺/商品照片。你站在导演视角整体看完所有图，自由决定播放顺序、自由分配每幕时长（5 或 10 秒）、自由写台词、自由写运镜。\n"
                 + "**目标：让平淡的商品照动起来变成大片**——不是简单拉扯原图，要有食欲爆破/质感涌动/光影流动/物理动作的电影级镜头。\n\n"
                 + "【硬规则】违反算失败：\n"
@@ -432,10 +450,16 @@ public class CopywritingServiceImpl implements CopywritingService {
                 + "}\n";
     }
 
-    private String buildMultiSceneUserText(String shopName, String userDescription, int imgCount, int n, int dur) {
+    private String buildMultiSceneUserText(String shopName, String userDescription, int imgCount, int n, int dur,
+                                            String businessType, String videoStyle, String briefJson) {
         StringBuilder sb = new StringBuilder();
         if (StrUtil.isNotBlank(shopName)) {
             sb.append("店铺名称：").append(shopName).append("\n");
+        }
+        // V040 结构化卖点 brief（前端 form 字段拼成 JSON 传过来；展开成中文给 LLM 更好理解）
+        String briefText = renderBriefJson(briefJson);
+        if (!briefText.isEmpty()) {
+            sb.append(briefText);
         }
         sb.append("商品/店铺背景：").append(StrUtil.nullToEmpty(userDescription)).append("\n");
         sb.append("共 ").append(imgCount).append(" 张图。**请逐张仔细观察图片**，识别每张图里的具体内容（菜名/物品名/场景/颜色/动作/光线），然后为每张图量身定做：\n");
@@ -657,6 +681,89 @@ public class CopywritingServiceImpl implements CopywritingService {
                 .bgmStyle(DEFAULT_BGM_STYLE)
                 .scenes(scenes)
                 .build();
+    }
+
+    // ============ V040: 行业 / 风格 / 结构化 brief 上下文渲染 ============
+    //
+    // 设计原则：上下文是"补充信息"，**不是覆盖**主 system prompt。
+    // 主 prompt 已经把 cinematography 4 要素（subject/action/camera/style）讲透；
+    // 行业上下文只补"这个行业典型的 hero noun + 物理动作 + 光线" 词汇白名单，
+    // 让 LLM 更容易写出贴近这个店的镜头，而不是泛化的"product/dish"。
+
+    /** 13 个行业类型的 cinematography 提示词（key → 行业上下文中文段） */
+    private static final Map<String, String> BUSINESS_CONTEXT_MAP;
+    static {
+        Map<String, String> m = new LinkedHashMap<>();
+        m.put("bbq", "【行业】烧烤/夜市路边摊。典型镜头词：sizzling oil splashing / smoke curling / glowing charcoal embers / brush dripping chili oil / skewer rotating / fat dripping。光线偏 warm tungsten + golden rim light。");
+        m.put("snack", "【行业】小吃/快餐/早餐。典型镜头词：steam bursting / golden batter pouring / dough wrapping in hands / wok flames / noodles being pulled。光线偏 warm window light + steam backlight。");
+        m.put("drink", "【行业】奶茶/咖啡/果汁。典型镜头词：condensation dripping / cheese foam pouring / golden caramel strands / ice cubes clinking / latte art swirl / cup sleeve sliding。光线偏 soft window light + creamy bokeh。");
+        m.put("restaurant", "【行业】正餐/餐厅。典型镜头词：plating shot / pour shot / steam reveal / hands placing dish / chopsticks lifting / sauce drizzling。光线偏 warm tungsten + soft side light。");
+        m.put("fruit", "【行业】水果/生鲜。典型镜头词：knife slicing through fruit / juice splashing / dew droplets rolling / hands washing under water / fresh skin macro。光线偏 cool fresh daylight + back light through translucent fruit。");
+        m.put("super", "【行业】超市/便利店/零售。典型镜头词：slow tilt-up reveal of stacked shelves / hand grabbing item / fluorescent tubes flickering on / aisle dolly push / price tag flash。光线偏 cool fluorescent + neon accent。");
+        m.put("tea", "【行业】茶叶/酒水。典型镜头词：tea leaves unfurling in clear water / amber liquid pouring / dry leaves cascading / bottle macro with reflection / wax seal cracking。光线偏 warm tungsten + golden hour rim light。");
+        m.put("tea_house", "【行业】茶楼/茶馆。典型镜头词：steam rising from gaiwan / hands pouring tea in slow motion / bamboo screen swaying / candle flame flicker / wooden tray placing。光线偏 warm tungsten + soft window light + smoky atmosphere。");
+        m.put("bakery", "【行业】烘焙/甜品/手作。典型镜头词：dough kneading / golden flaky pastry tearing / sugar crystals scattering / icing piping / chocolate dripping。光线偏 soft window light + warm rim light + flour dust。");
+        m.put("clothing", "【行业】服装/鞋帽/饰品。典型镜头词：fabric flowing in breeze / hanger rotating / texture macro / mannequin reveal / accessory close-up with reflection。光线偏 cool studio light + accent rim light。");
+        m.put("massage", "【行业】按摩/SPA/养生（不露脸）。典型镜头词：candle flame flickering / aroma oil dripping / hands pressing on back / steam rolling from towel / petals on tray / dim spa room reveal。光线偏 warm low-key tungsten + candlelight + soft shadow。");
+        m.put("beauty", "【行业】美容/美发/美甲。典型镜头词：mirror reflection close-up / brush stroke on cheek / hair flowing / nail polish glossy macro / product bottle macro with light reflection。光线偏 soft beauty light + pink/peach color grade。");
+        m.put("other", "");
+        BUSINESS_CONTEXT_MAP = Collections.unmodifiableMap(m);
+    }
+
+    /** 5 个视频风格调性（用户选） */
+    private static final Map<String, String> STYLE_CONTEXT_MAP;
+    static {
+        Map<String, String> m = new LinkedHashMap<>();
+        m.put("visual_burst", "【风格】视觉爆破：每幕优先用极端特写 + 强物理动作（油花/拉丝/蒸汽/切刀），节奏快，3-5 秒一幕，强对比光线，刺激食欲。");
+        m.put("cozy", "【风格】治愈探店：节奏慢 5-10 秒一幕，温馨光线（golden hour / soft window light），运镜以 push-in / tilt-up reveal 为主，少快切。");
+        m.put("shelf", "【风格】货架陈列：优先 dolly slide / tilt-up reveal 展示产品矩阵，每幕带「价格牌/标签/品牌」特写，适合零售/超市。");
+        m.put("story", "【风格】故事感：每幕带「人手 + 时间感」（老板手部动作 / 招牌细节 / 老物件），运镜偏 cinematic vlog handheld，光线偏 warm soft，配文带年代/工艺/传承感。");
+        m.put("trend", "【风格】网红种草：节奏极快 3 秒一幕，强对比镜头切换（大特写 → 拉远 → 反应镜头），高饱和色调，结尾留「反差/惊艳」感。");
+        STYLE_CONTEXT_MAP = Collections.unmodifiableMap(m);
+    }
+
+    private static String renderBusinessContext(String key) {
+        if (StrUtil.isBlank(key)) return "";
+        String ctx = BUSINESS_CONTEXT_MAP.get(key.trim());
+        return ctx == null ? "" : ctx;
+    }
+    private static String renderStyleContext(String key) {
+        if (StrUtil.isBlank(key)) return "";
+        String ctx = STYLE_CONTEXT_MAP.get(key.trim());
+        return ctx == null ? "" : ctx;
+    }
+
+    /**
+     * 把前端 brief JSON 展开成 LLM 易理解的中文段。
+     * brief 形如 {productName, sellingPoints, price, highlights[]}；任一字段空跳过。
+     */
+    private static String renderBriefJson(String briefJson) {
+        if (StrUtil.isBlank(briefJson)) return "";
+        try {
+            JsonNode b = JsonUtils.parseTree(briefJson);
+            StringBuilder sb = new StringBuilder();
+            String name = b.path("productName").asText("").trim();
+            if (!name.isEmpty()) sb.append("商品名：").append(name).append("\n");
+            String sp = b.path("sellingPoints").asText("").trim();
+            if (!sp.isEmpty()) sb.append("核心卖点：").append(sp).append("\n");
+            String price = b.path("price").asText("").trim();
+            if (!price.isEmpty()) sb.append("价格优惠：").append(price).append("\n");
+            JsonNode hl = b.get("highlights");
+            if (hl != null && hl.isArray() && hl.size() > 0) {
+                List<String> labels = new ArrayList<>();
+                for (JsonNode n : hl) {
+                    String v = n.asText("").trim();
+                    if (!v.isEmpty()) labels.add(v);
+                }
+                if (!labels.isEmpty()) {
+                    sb.append("商户希望突出的画面元素：").append(String.join(" / ", labels)).append("\n");
+                }
+            }
+            return sb.toString();
+        } catch (Exception e) {
+            log.warn("[renderBriefJson] 解析失败: {}", e.getMessage());
+            return "";
+        }
     }
 
     private static int clamp(int v, int lo, int hi) {
