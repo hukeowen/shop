@@ -759,12 +759,16 @@ export async function confirmTask({ taskId, scenes, bgmStyle }) {
   t.progress = { total: t.scenes.length, done: 0 };
   persist();
 
-  // B 改造 Step 4.2：把 N 幕脚本 + 任务元数据落到后端 video_scene / video_task 表，
-  // 实现"老板换设备登录能看到自己生成中的任务+分镜"。失败不抛错（thin wrapper 内部
-  // catch + warn），不阻塞下面的 runClip。需要 task.dbId 已就位（registerTaskToDB
-  // 在 createTask 末尾已调）；register 失败的话 dbId 为空就跳过同步。
+  // B 改造 Step 4.2：把 N 幕脚本 + 任务元数据落到后端 video_scene / video_task 表。
+  //
+  // V040 fix：必须 await 落库完成再启动 runClip — runClip 第一行就调 patchSceneToDB
+  // 写 startImageUrl/status，那时 scene 行还没 INSERT 会被服务端 silently skip
+  // （日志：「[updateScenePartial] task=X sceneIndex=Y 不存在，跳过」），导致
+  // 整轮生成不落库、detail 页拿不到 scenes → 用户看到"任务信息已丢失/参数不正确"。
+  //
+  // 失败不抛错（thin wrapper 内部 catch + warn），但 await 等它完。
   if (t.dbId) {
-    syncScenesAndMetaToDB(t).catch((e) =>
+    await syncScenesAndMetaToDB(t).catch((e) =>
         console.warn('[confirmTask] syncScenesAndMetaToDB 异常:', e?.message));
   }
 
