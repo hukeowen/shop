@@ -41,80 +41,90 @@
       </view>
     </view>
 
+    <!-- 快捷功能 4 宫格：最常用的「商品/统计/会员/优惠券」一击到位 -->
+    <view class="quick-grid">
+      <view class="quick-item" @click="goProducts">
+        <view class="qi-ic" style="background:linear-gradient(135deg,#FFC8A8,#FF6B35);">🛒</view>
+        <text class="qi-lbl">商品管理</text>
+      </view>
+      <view class="quick-item" @click="goSalesStats">
+        <view class="qi-ic" style="background:linear-gradient(135deg,#A8D8FF,#5B95E0);">📊</view>
+        <text class="qi-lbl">销售统计</text>
+      </view>
+      <view class="quick-item" @click="goShopMembers">
+        <view class="qi-ic" style="background:linear-gradient(135deg,#C8FFC8,#4CB84C);">👥</view>
+        <text class="qi-lbl">店铺会员</text>
+      </view>
+      <view class="quick-item" @click="goCoupon">
+        <view class="qi-ic" style="background:linear-gradient(135deg,#FFD0DC,#EE5A8B);">🎁</view>
+        <text class="qi-lbl">优惠券</text>
+      </view>
+    </view>
+
+    <!-- 经营数据 -->
+    <view class="section-title">经营数据</view>
     <view class="menu card">
-      <view class="menu-item" @click="goSalesStats">
-        <text>📊 销售统计</text>
-        <text class="arrow">›</text>
-      </view>
       <view class="menu-item" @click="goProductRank">
-        <text>🛍 商品销售排行</text>
-        <text class="arrow">›</text>
-      </view>
-      <view class="menu-item" @click="goShopMembers">
-        <text>👥 店铺会员</text>
-        <text class="arrow">›</text>
-      </view>
-      <view class="menu-item" @click="goProducts">
-        <text>商品管理</text>
-        <text class="arrow">›</text>
-      </view>
-      <view class="menu-item" @click="goQrcode">
-        <text>店铺二维码</text>
-        <text class="arrow">›</text>
-      </view>
-      <view class="menu-item" @click="goBrokerage">
-        <text>返佣与积分设置</text>
-        <text class="arrow">›</text>
-      </view>
-      <view class="menu-item" @click="goPromoConfig">
-        <text>营销配置（v8）</text>
-        <text class="arrow">›</text>
-      </view>
-      <view class="menu-item" @click="goCoupon">
-        <text>优惠券管理</text>
-        <text class="arrow">›</text>
-      </view>
-      <view class="menu-item" @click="goWithdrawApprove">
-        <text>提现审批</text>
-        <text class="arrow">›</text>
-      </view>
-      <view class="menu-item" @click="goWithdrawApply">
-        <text>商户提现</text>
-        <text class="arrow">›</text>
-      </view>
-      <view class="menu-item" @click="goUserWithdraw">
-        <text>用户提现审核</text>
-        <text class="arrow">›</text>
-      </view>
-      <view class="menu-item" @click="goMemberWithdraw">
-        <text>用户余额提现审核</text>
-        <text class="arrow">›</text>
-      </view>
-      <view class="menu-item" @click="goPayApply">
-        <text>在线支付开通</text>
-        <text class="arrow">›</text>
-      </view>
-      <view class="menu-item" @click="goQuota">
-        <text>AI 视频配额</text>
-        <text class="arrow">›</text>
-      </view>
-      <view class="menu-item" @click="goPackageOrders">
-        <text>配额订单</text>
+        <view class="mi-l"><text class="mi-ic">🛍</text><text>商品销售排行</text></view>
         <text class="arrow">›</text>
       </view>
       <view class="menu-item" @click="goMembers">
-        <text>会员消费排行</text>
+        <view class="mi-l"><text class="mi-ic">🏆</text><text>会员消费排行</text></view>
         <text class="arrow">›</text>
       </view>
     </view>
 
+    <!-- 财务管理 -->
+    <view class="section-title">财务管理</view>
     <view class="menu card">
+      <view class="menu-item" @click="goWithdrawApply">
+        <view class="mi-l"><text class="mi-ic">💸</text><text>商户提现</text></view>
+        <text class="arrow">›</text>
+      </view>
+      <view class="menu-item" @click="goWithdrawApprove">
+        <view class="mi-l"><text class="mi-ic">✅</text><text>提现审批</text></view>
+        <text class="arrow">›</text>
+      </view>
+      <view class="menu-item" @click="goUserWithdraw">
+        <view class="mi-l"><text class="mi-ic">🪙</text><text>用户提现审核</text></view>
+        <text class="arrow">›</text>
+      </view>
+      <view class="menu-item" @click="goMemberWithdraw">
+        <view class="mi-l"><text class="mi-ic">💼</text><text>用户余额提现审核</text></view>
+        <text class="arrow">›</text>
+      </view>
+      <view class="menu-item" @click="goPayApply">
+        <view class="mi-l"><text class="mi-ic">💳</text><text>在线支付开通</text></view>
+        <text class="arrow">›</text>
+      </view>
+    </view>
+
+    <!-- AI 视频工具 -->
+    <view class="section-title">AI 工具</view>
+    <view class="menu card">
+      <view class="menu-item" @click="goQuota">
+        <view class="mi-l"><text class="mi-ic">🎬</text><text>AI 视频配额</text></view>
+        <text class="arrow">›</text>
+      </view>
+      <view class="menu-item" @click="goPackageOrders">
+        <view class="mi-l"><text class="mi-ic">📦</text><text>配额订单</text></view>
+        <text class="arrow">›</text>
+      </view>
+    </view>
+
+    <!-- 设置与帮助 -->
+    <view class="section-title">设置</view>
+    <view class="menu card">
+      <view class="menu-item" @click="goQrcode">
+        <view class="mi-l"><text class="mi-ic">📲</text><text>店铺二维码</text></view>
+        <text class="arrow">›</text>
+      </view>
       <view class="menu-item" @click="goHelp">
-        <text>帮助与反馈</text>
+        <view class="mi-l"><text class="mi-ic">❓</text><text>帮助与反馈</text></view>
         <text class="arrow">›</text>
       </view>
       <view class="menu-item" @click="goAbout">
-        <text>关于摊小二</text>
+        <view class="mi-l"><text class="mi-ic">ℹ️</text><text>关于摊小二</text></view>
         <text class="arrow">›</text>
       </view>
     </view>
@@ -215,13 +225,6 @@ function goProducts() {
   uni.navigateTo({ url: '/pages/product/list' });
 }
 
-function goBrokerage() {
-  uni.navigateTo({ url: '/pages/me/brokerage' });
-}
-
-function goPromoConfig() {
-  uni.navigateTo({ url: '/pages/me/promo-config' });
-}
 function goCoupon() {
   uni.navigateTo({ url: '/pages/me/coupon' });
 }
@@ -274,7 +277,8 @@ async function onLogout() {
 @import '../../uni.scss';
 
 .page {
-  padding: 0 24rpx 48rpx;
+  // 底部 220rpx 留给固定 RoleTabBar 高度（约 120rpx）+ 安全区，避免内容被 tabbar 遮挡
+  padding: 0 24rpx 220rpx;
 }
 
 .safe-top {
@@ -373,7 +377,60 @@ async function onLogout() {
       color: $text-placeholder;
       font-size: 40rpx;
     }
+
+    .mi-l {
+      display: flex;
+      align-items: center;
+      gap: 18rpx;
+    }
+    .mi-ic {
+      font-size: 32rpx;
+      width: 44rpx;
+      text-align: center;
+      line-height: 1;
+    }
   }
+}
+
+/* 4 宫格快捷功能 — 最高频操作一击直达 */
+.quick-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24rpx;
+  background: $bg-card;
+  padding: 32rpx 24rpx;
+  border-radius: $radius-lg;
+  margin-bottom: 24rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, .03);
+}
+.quick-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12rpx;
+}
+.quick-item .qi-ic {
+  width: 96rpx; height: 96rpx;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 24rpx;
+  font-size: 44rpx;
+  color: #fff;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, .08);
+}
+.quick-item .qi-lbl {
+  font-size: 24rpx;
+  color: $text-primary;
+  font-weight: 500;
+}
+
+/* 区块标题 — 视觉分组锚点 */
+.section-title {
+  padding: 0 12rpx;
+  margin: 8rpx 0 16rpx;
+  font-size: 26rpx;
+  font-weight: 600;
+  color: $text-secondary;
+  letter-spacing: 1rpx;
 }
 
 .logout {
