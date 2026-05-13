@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>订单 · 摊小二</title>
+<style>
+  :root{--bg:#fafafa;--card:#fff;--line:rgba(0,0,0,.06);--text:#1a1a1a;--text-2:#6b7280;--text-3:#9ca3af;--accent:#ff6b35;--success:#10b981;--warn:#f59e0b}
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;font-size:14px}
+  body{background:#e5e7eb;min-height:100vh;display:flex;justify-content:center;padding:24px 0;color:var(--text)}
+  .phone{width:375px;min-height:812px;background:var(--bg);box-shadow:0 24px 64px rgba(0,0,0,.18);border-radius:40px;overflow:hidden;position:relative}
+  .nav{height:60px;padding-top:16px;display:flex;align-items:center;padding:16px 20px 0}
+  .nav-t{flex:1;font-size:22px;font-weight:700;letter-spacing:-.5px}
+  .nav-e{font-size:13px;color:var(--text-2)}
+  .tabs{margin:16px 20px 0;display:flex;gap:24px;border-bottom:1px solid var(--line);padding-bottom:10px}
+  .t{font-size:14px;color:var(--text-3);position:relative}
+  .t.on{color:var(--text);font-weight:700}
+  .t.on::after{content:'';position:absolute;bottom:-10px;left:50%;transform:translateX(-50%);width:16px;height:3px;background:var(--text);border-radius:2px}
+  .list{padding:16px 20px;display:flex;flex-direction:column;gap:12px}
+  .o{background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+  .o-hd{padding:14px 16px;display:flex;align-items:center;border-bottom:1px solid var(--line)}
+  .o-shop{flex:1;display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600}
+  .o-go{font-size:12px;color:var(--text-3)}
+  .o-st{font-size:11px;font-weight:600;padding:3px 10px;border-radius:999px}
+  .o-st.warn{color:var(--warn);background:rgba(245,158,11,.1)}
+  .o-st.ok{color:var(--success);background:rgba(16,185,129,.1)}
+  .o-st.done{color:var(--text-3);background:#f3f4f6}
+  .o-body{padding:14px 16px;display:flex;gap:12px}
+  .o-imgs{display:flex;gap:8px;flex-shrink:0}
+  .o-i{width:56px;height:56px;background:#f3f4f6;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:28px}
+  .o-info{flex:1;min-width:0}
+  .o-items{font-size:12px;color:var(--text-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .o-cnt{margin-top:2px;font-size:10px;color:var(--text-3)}
+  .o-price{text-align:right;flex-shrink:0}
+  .o-price-l{font-size:10px;color:var(--text-3)}
+  .o-price-n{font-size:18px;font-weight:700;letter-spacing:-.5px}
+  .o-foot{padding:12px 16px;display:flex;justify-content:flex-end;gap:8px;border-top:1px solid var(--line);background:#fafafa}
+  .o-btn{height:32px;line-height:32px;padding:0 14px;font-size:12px;border:1px solid var(--line);border-radius:999px;color:var(--text-2);background:#fff}
+  .o-btn.fill{background:var(--text);color:#fff;border-color:var(--text);font-weight:600}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="nav">
+    <div class="nav-t">订单</div>
+    <div class="nav-e">售后</div>
+  </div>
+  <div class="tabs">
+    <div class="t on">全部</div>
+    <div class="t">待付款</div>
+    <div class="t">待发货</div>
+    <div class="t">待收货</div>
+    <div class="t">已完成</div>
+  </div>
+  <div class="list">
+    <div class="o">
+      <div class="o-hd">
+        <div class="o-shop">王记水果店<span class="o-go">›</span></div>
+        <div class="o-st warn">待付款</div>
+      </div>
+      <div class="o-body">
+        <div class="o-imgs"><div class="o-i">🍓</div><div class="o-i">🍇</div></div>
+        <div class="o-info">
+          <div class="o-items">现切草莓盘 · 阳光玫瑰</div>
+          <div class="o-cnt">共 2 件</div>
+        </div>
+        <div class="o-price"><div class="o-price-l">应付</div><div class="o-price-n">¥66</div></div>
+      </div>
+      <div class="o-foot">
+        <div class="o-btn">取消</div>
+        <div class="o-btn fill">去付款</div>
+      </div>
+    </div>
+
+    <div class="o">
+      <div class="o-hd">
+        <div class="o-shop">蜜薯小铺<span class="o-go">›</span></div>
+        <div class="o-st ok">待自提</div>
+      </div>
+      <div class="o-body">
+        <div class="o-imgs"><div class="o-i">🍠</div></div>
+        <div class="o-info">
+          <div class="o-items">炭火烤蜜薯 × 2</div>
+          <div class="o-cnt">15 分钟内自提</div>
+        </div>
+        <div class="o-price"><div class="o-price-l">实付</div><div class="o-price-n">¥30</div></div>
+      </div>
+      <div class="o-foot">
+        <div class="o-btn">联系商家</div>
+        <div class="o-btn fill">查看核销码</div>
+      </div>
+    </div>
+
+    <div class="o">
+      <div class="o-hd">
+        <div class="o-shop">青山茶馆<span class="o-go">›</span></div>
+        <div class="o-st done">已完成</div>
+      </div>
+      <div class="o-body">
+        <div class="o-imgs"><div class="o-i">🍵</div></div>
+        <div class="o-info">
+          <div class="o-items">老茶师手揉单丛 × 1</div>
+          <div class="o-cnt">3 天前</div>
+        </div>
+        <div class="o-price"><div class="o-price-l">实付</div><div class="o-price-n">¥120</div></div>
+      </div>
+      <div class="o-foot">
+        <div class="o-btn">删除</div>
+        <div class="o-btn">评价</div>
+        <div class="o-btn fill">再来一单</div>
+      </div>
+    </div>
+
+    <div class="o">
+      <div class="o-hd">
+        <div class="o-shop">清晨面店<span class="o-go">›</span></div>
+        <div class="o-st done">已完成</div>
+      </div>
+      <div class="o-body">
+        <div class="o-imgs"><div class="o-i">🍜</div><div class="o-i">🥟</div></div>
+        <div class="o-info">
+          <div class="o-items">骨汤牛肉面 · 韭菜煎包</div>
+          <div class="o-cnt">7 天前 · 共 2 件</div>
+        </div>
+        <div class="o-price"><div class="o-price-l">实付</div><div class="o-price-n">¥36</div></div>
+      </div>
+      <div class="o-foot">
+        <div class="o-btn">删除</div>
+        <div class="o-btn fill">再来一单</div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

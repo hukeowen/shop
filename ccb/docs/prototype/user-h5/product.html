@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>商品 · 摊小二</title>
+<style>
+  :root{--bg:#fafafa;--card:#fff;--line:rgba(0,0,0,.06);--text:#1a1a1a;--text-2:#6b7280;--text-3:#9ca3af;--accent:#ff6b35}
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;font-size:14px}
+  body{background:#e5e7eb;min-height:100vh;display:flex;justify-content:center;padding:24px 0;color:var(--text)}
+  .phone{width:375px;min-height:812px;background:var(--bg);box-shadow:0 24px 64px rgba(0,0,0,.18);border-radius:40px;overflow:hidden;position:relative;padding-bottom:96px}
+  .hero{position:relative;height:340px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;font-size:140px}
+  .hero-nav{position:absolute;top:44px;left:0;right:0;padding:0 20px;display:flex;justify-content:space-between;z-index:2}
+  .nb{width:36px;height:36px;background:rgba(255,255,255,.92);backdrop-filter:blur(20px);border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--text)}
+  .nb svg{width:18px;height:18px}
+  .pager{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.4);color:#fff;padding:3px 12px;border-radius:999px;font-size:11px;letter-spacing:1px}
+  .price-card{margin:-24px 20px 0;background:var(--card);border-radius:20px;padding:20px;position:relative;z-index:3;border:1px solid var(--line)}
+  .pc-top{display:flex;align-items:baseline;gap:10px;margin-bottom:6px}
+  .pcp{font-size:14px;color:var(--text)}
+  .pcn{font-size:32px;font-weight:700;letter-spacing:-1px;color:var(--text)}
+  .pcm{font-size:11px;color:var(--text-3);text-decoration:line-through;font-variant-numeric:tabular-nums}
+  .name{font-size:20px;font-weight:700;letter-spacing:-.5px;margin-bottom:8px}
+  .desc{font-size:12px;color:var(--text-2);line-height:1.6}
+  .features{margin-top:14px;display:flex;flex-wrap:wrap;gap:6px}
+  .feat{font-size:10px;color:var(--text);padding:4px 10px;background:#f3f4f6;border-radius:4px}
+  .shop-row{margin:14px 20px 0;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit}
+  .sr-ic{width:40px;height:40px;background:#f3f4f6;border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--text-3);font-weight:700;flex-shrink:0}
+  .sr-b{flex:1;min-width:0}
+  .sr-n{font-size:14px;font-weight:600}
+  .sr-m{margin-top:2px;font-size:10px;color:var(--text-3)}
+  .sr-go{font-size:11px;color:var(--text-2);padding:6px 14px;border:1px solid var(--line);border-radius:999px}
+  .sec{margin:24px 20px 8px;display:flex;align-items:baseline;justify-content:space-between}
+  .sec-t{font-size:16px;font-weight:700}
+  .sec-d{font-size:10px;color:var(--text-3)}
+  .gallery{margin:0 20px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .gi{aspect-ratio:1;background:#f3f4f6;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:48px;color:#d1d5db}
+  .bar{position:absolute;left:0;right:0;bottom:0;height:78px;background:var(--card);border-top:1px solid var(--line);padding:12px 16px;padding-bottom:calc(env(safe-area-inset-bottom) + 12px);display:flex;align-items:center;gap:12px}
+  .b-l{display:flex;gap:14px}
+  .b-ic-wrap{display:flex;flex-direction:column;align-items:center;gap:2px;color:var(--text)}
+  .b-ic-wrap svg{width:20px;height:20px}
+  .b-ic-l{font-size:9px;color:var(--text-2)}
+  .b-cta{flex:1;display:flex;gap:8px}
+  .btn{flex:1;height:48px;line-height:48px;text-align:center;font-size:13px;font-weight:600;border-radius:999px;border:1px solid var(--text)}
+  .btn-line{color:var(--text);background:transparent}
+  .btn-fill{color:#fff;background:var(--text);border-color:var(--text)}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="hero">
+    🍓
+    <div class="hero-nav">
+      <a class="nb" href="shop.html" style="text-decoration:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 19l-7-7 7-7"/></svg></a>
+      <div class="nb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M9 11l6-4M9 13l6 4"/></svg></div>
+    </div>
+    <div class="pager">1 / 4</div>
+  </div>
+  <div class="price-card">
+    <div class="pc-top">
+      <div class="pcp">¥<span class="pcn">38</span></div>
+      <div class="pcm">¥48</div>
+    </div>
+    <div class="name">现切草莓盘</div>
+    <div class="desc">丹东 99 草莓，每天清晨手挑、店内现切，5 分钟内出餐。装在透明环保盒里，颜色与香气一同送到你手上。</div>
+    <div class="features">
+      <span class="feat">丹东 99</span>
+      <span class="feat">现切现卖</span>
+      <span class="feat">5 分钟出餐</span>
+      <span class="feat">环保包装</span>
+    </div>
+  </div>
+  <a class="shop-row" href="shop.html">
+    <div class="sr-ic">王</div>
+    <div class="sr-b"><div class="sr-n">王记水果店</div><div class="sr-m">距您 0.6 km · 4.9</div></div>
+    <div class="sr-go">进店</div>
+  </a>
+  <div class="sec"><span class="sec-t">商品图</span><span class="sec-d">4 张</span></div>
+  <div class="gallery">
+    <div class="gi">🍓</div>
+    <div class="gi">🍓</div>
+    <div class="gi">🍓</div>
+    <div class="gi">🍓</div>
+  </div>
+  <div class="sec"><span class="sec-t">商品介绍</span></div>
+  <div style="margin:0 20px;background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px;font-size:13px;line-height:1.8;color:var(--text-2)">
+    采用丹东 99 大草莓，单果约 30g。当日清晨从产地直发，进店后单果手挑、洗净、切角，装入透明环保盒。
+    <br><br>
+    建议 4 小时内食用，冷藏可保鲜 8 小时。
+  </div>
+  <div class="bar">
+    <div class="b-l">
+      <div class="b-ic-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h18l-2 13H5L3 7zM8 7V5a4 4 0 0 1 8 0v2"/></svg>
+        <div class="b-ic-l">店铺</div>
+      </div>
+      <div class="b-ic-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 1 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        <div class="b-ic-l">收藏</div>
+      </div>
+    </div>
+    <div class="b-cta">
+      <div class="btn btn-line">加购物车</div>
+      <a class="btn btn-fill" href="cart.html" style="text-decoration:none">立即购买</a>
+    </div>
+  </div>
+</div>
+</body>
+</html>

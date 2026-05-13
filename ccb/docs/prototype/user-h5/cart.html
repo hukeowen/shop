@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>购物车 · 摊小二</title>
+<style>
+  :root{--bg:#fafafa;--card:#fff;--line:rgba(0,0,0,.06);--text:#1a1a1a;--text-2:#6b7280;--text-3:#9ca3af;--accent:#ff6b35}
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;font-size:14px}
+  body{background:#e5e7eb;min-height:100vh;display:flex;justify-content:center;padding:24px 0;color:var(--text)}
+  .phone{width:375px;min-height:812px;background:var(--bg);box-shadow:0 24px 64px rgba(0,0,0,.18);border-radius:40px;overflow:hidden;position:relative;padding-bottom:88px}
+  .nav{height:60px;padding-top:16px;display:flex;align-items:center;padding-left:8px;padding-right:20px;gap:8px}
+  .back{width:36px;height:36px;display:flex;align-items:center;justify-content:center;color:var(--text)}
+  .back svg{width:18px;height:18px}
+  .nav-t{flex:1;font-size:18px;font-weight:700;letter-spacing:-.5px}
+  .nav-e{font-size:13px;color:var(--text-2)}
+  .shop{margin:16px 16px 0;background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+  .sh-hd{padding:16px 18px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--line)}
+  .sh-ck{width:18px;height:18px;border:2px solid var(--text);border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+  .sh-ck.on{background:var(--text)}
+  .sh-ck.on::after{content:'';width:6px;height:10px;border-right:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(45deg) translate(-1px,-1px)}
+  .sh-n{flex:1;font-size:14px;font-weight:600}
+  .sh-go{font-size:11px;color:var(--text-3);display:flex;align-items:center;gap:2px}
+  .row{padding:16px 18px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--line)}
+  .row:last-child{border-bottom:none}
+  .rk{width:18px;height:18px;border:2px solid var(--text-3);border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+  .rk.on{background:var(--text);border-color:var(--text)}
+  .rk.on::after{content:'';width:6px;height:10px;border-right:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(45deg) translate(-1px,-1px)}
+  .rc{width:64px;height:64px;background:#f3f4f6;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:32px;flex-shrink:0}
+  .rb{flex:1;min-width:0}
+  .rn{font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .rd{margin-top:2px;font-size:10px;color:var(--text-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .rf{margin-top:8px;display:flex;align-items:center;justify-content:space-between}
+  .rp{font-size:10px;color:var(--text)}
+  .rpn{font-size:16px;font-weight:700;letter-spacing:-.5px}
+  .step{display:flex;align-items:center;gap:0;border:1px solid var(--line);border-radius:999px;height:28px;background:var(--card)}
+  .st-b{width:28px;height:28px;line-height:1;display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--text)}
+  .st-b.dis{color:var(--text-3)}
+  .st-n{min-width:24px;text-align:center;font-size:13px;font-weight:600;font-variant-numeric:tabular-nums}
+  .empty{padding:120px 32px;text-align:center;color:var(--text-3)}
+  .empty-t{margin-top:16px;font-size:16px;font-weight:600;color:var(--text)}
+  .empty-d{margin-top:6px;font-size:12px}
+  .bar{position:absolute;left:0;right:0;bottom:0;height:74px;background:var(--card);border-top:1px solid var(--line);padding:12px 16px;padding-bottom:calc(env(safe-area-inset-bottom) + 12px);display:flex;align-items:center;gap:12px}
+  .bk{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-2)}
+  .bk-c{width:18px;height:18px;border:2px solid var(--text);border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--text)}
+  .bk-c::after{content:'';width:6px;height:10px;border-right:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(45deg) translate(-1px,-1px)}
+  .bp{flex:1;text-align:right}
+  .bp-t{font-size:10px;color:var(--text-2)}
+  .bp-n{font-size:22px;font-weight:700;letter-spacing:-.5px;color:var(--text)}
+  .pay{height:48px;line-height:48px;padding:0 24px;background:var(--text);color:#fff;border-radius:999px;font-size:13px;font-weight:600}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="nav">
+    <a class="back" href="home.html" style="text-decoration:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 19l-7-7 7-7"/></svg></a>
+    <div class="nav-t">购物车</div>
+    <div class="nav-e">编辑</div>
+  </div>
+
+  <div class="shop">
+    <div class="sh-hd">
+      <div class="sh-ck on"></div>
+      <div class="sh-n">王记水果店</div>
+      <div class="sh-go">进店 ›</div>
+    </div>
+    <div class="row">
+      <div class="rk on"></div>
+      <div class="rc">🍓</div>
+      <div class="rb">
+        <div class="rn">现切草莓盘</div>
+        <div class="rd">丹东 99 · 现切</div>
+        <div class="rf">
+          <div class="rp">¥<span class="rpn">38</span></div>
+          <div class="step">
+            <div class="st-b">−</div>
+            <div class="st-n">1</div>
+            <div class="st-b">+</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="rk on"></div>
+      <div class="rc">🍇</div>
+      <div class="rb">
+        <div class="rn">阳光玫瑰</div>
+        <div class="rd">200g 装</div>
+        <div class="rf">
+          <div class="rp">¥<span class="rpn">28</span></div>
+          <div class="step">
+            <div class="st-b">−</div>
+            <div class="st-n">1</div>
+            <div class="st-b">+</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="shop">
+    <div class="sh-hd">
+      <div class="sh-ck on"></div>
+      <div class="sh-n">蜜薯小铺</div>
+      <div class="sh-go">进店 ›</div>
+    </div>
+    <div class="row">
+      <div class="rk on"></div>
+      <div class="rc">🍠</div>
+      <div class="rb">
+        <div class="rn">炭火烤蜜薯</div>
+        <div class="rd">流糖心 · 250g</div>
+        <div class="rf">
+          <div class="rp">¥<span class="rpn">15</span></div>
+          <div class="step">
+            <div class="st-b">−</div>
+            <div class="st-n">2</div>
+            <div class="st-b">+</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bar">
+    <div class="bk"><div class="bk-c"></div>全选</div>
+    <div class="bp">
+      <div class="bp-t">合计</div>
+      <div class="bp-n">¥96</div>
+    </div>
+    <div class="pay">结算 (4)</div>
+  </div>
+</div>
+</body>
+</html>

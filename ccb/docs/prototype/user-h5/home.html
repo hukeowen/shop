@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>发现 · 摊小二</title>
+<style>
+  :root{--bg:#fafafa;--card:#fff;--line:rgba(0,0,0,.06);--text:#1a1a1a;--text-2:#6b7280;--text-3:#9ca3af;--accent:#ff6b35}
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;font-size:14px}
+  body{background:#e5e7eb;min-height:100vh;display:flex;justify-content:center;padding:24px 0;color:var(--text)}
+  .phone{width:375px;min-height:812px;background:var(--bg);box-shadow:0 24px 64px rgba(0,0,0,.18);border-radius:40px;overflow:hidden;position:relative;padding-bottom:90px}
+  .stb{height:44px;display:flex;justify-content:space-between;align-items:center;padding:0 24px;font-size:14px;font-weight:600}
+  .top{padding:8px 24px 0}
+  .hello{font-size:11px;color:var(--text-3);letter-spacing:1px;margin-bottom:4px}
+  .loc{display:flex;align-items:baseline;gap:6px;font-size:22px;font-weight:700;letter-spacing:-.5px}
+  .loc-arrow{font-size:18px;color:var(--text)}
+  .search{margin:16px 24px 0;height:44px;background:var(--card);border:1px solid var(--line);border-radius:999px;display:flex;align-items:center;padding:0 18px;gap:10px}
+  .si{width:16px;height:16px;flex-shrink:0;color:var(--text-2)}
+  .sp{font-size:13px;color:var(--text-3);flex:1}
+  .cats{margin:24px 24px 0;display:grid;grid-template-columns:repeat(4,1fr);gap:16px 0}
+  .cat{display:flex;flex-direction:column;align-items:center;gap:6px}
+  .cat-ic{width:48px;height:48px;border-radius:14px;background:var(--card);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--text)}
+  .cat-ic svg{width:22px;height:22px}
+  .cat-l{font-size:11px}
+  .sec{margin:32px 24px 12px;display:flex;align-items:baseline;justify-content:space-between}
+  .sec-t{font-size:20px;font-weight:700;letter-spacing:-.5px}
+  .sec-more{font-size:11px;color:var(--text-3)}
+  .hscroll{padding-left:24px;overflow-x:auto;white-space:nowrap;scrollbar-width:none}
+  .hscroll::-webkit-scrollbar{display:none}
+  .hwrap{display:inline-flex;gap:12px;padding-right:24px}
+  .hs{flex-shrink:0;width:140px;white-space:normal}
+  .hs-c{width:140px;height:140px;background:#f3f4f6;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:42px;color:#d1d5db;font-weight:700;margin-bottom:8px}
+  .hs-n{font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .hs-m{font-size:10px;color:var(--text-3);margin-top:2px}
+  .list{margin:0 24px;display:flex;flex-direction:column;gap:12px}
+  .lr{display:flex;gap:14px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px}
+  .lr-c{width:88px;height:88px;background:#f3f4f6;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:36px;color:#d1d5db;font-weight:700;flex-shrink:0;position:relative}
+  .lr-tag{position:absolute;top:6px;left:6px;padding:2px 8px;background:var(--text);color:#fff;font-size:9px;letter-spacing:1px;border-radius:4px}
+  .lr-b{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:4px}
+  .lr-n{font-size:15px;font-weight:600}
+  .lr-d{font-size:11px;color:var(--text-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .lr-f{margin-top:6px;display:flex;align-items:center;gap:6px;font-size:10px;color:var(--text-3)}
+  .lr-r{color:var(--text);font-weight:700;font-size:11px}
+  .dot{color:#d1d5db}
+  .tab{position:absolute;left:0;right:0;bottom:0;height:74px;background:var(--card);border-top:1px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom)}
+  .ti{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--text-3)}
+  .ti.on{color:var(--text)}
+  .ti svg{width:20px;height:20px}
+  .tl{font-size:10px}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="stb"><span>9:41</span><span>● ● ●</span></div>
+  <div class="top">
+    <div class="hello">早安</div>
+    <div class="loc">朝阳区 · 国贸<span class="loc-arrow">›</span></div>
+  </div>
+  <div class="search">
+    <svg class="si" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+    <div class="sp">搜店铺、商品</div>
+  </div>
+  <div class="cats">
+    <div class="cat"><div class="cat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 4v16M4 12h16"/></svg></div><div class="cat-l">小吃</div></div>
+    <div class="cat"><div class="cat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 12h14M5 7h14M5 17h14"/></svg></div><div class="cat-l">烧烤</div></div>
+    <div class="cat"><div class="cat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="8"/></svg></div><div class="cat-l">茶饮</div></div>
+    <div class="cat"><div class="cat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4h16v16H4z"/></svg></div><div class="cat-l">水果</div></div>
+    <div class="cat"><div class="cat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 7h18l-2 13H5L3 7zM8 7V5a4 4 0 0 1 8 0v2"/></svg></div><div class="cat-l">超市</div></div>
+    <div class="cat"><div class="cat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8"/></svg></div><div class="cat-l">烘焙</div></div>
+    <div class="cat"><div class="cat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 12c0 4.4 3.6 8 8 8s8-3.6 8-8H4z"/></svg></div><div class="cat-l">茶馆</div></div>
+    <div class="cat"><div class="cat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="18" cy="12" r="1.5"/></svg></div><div class="cat-l">全部</div></div>
+  </div>
+  <div class="sec"><span class="sec-t">附近</span><span class="sec-more">查看全部</span></div>
+  <div class="hscroll"><div class="hwrap">
+    <div class="hs"><div class="hs-c">果</div><div class="hs-n">王记水果店</div><div class="hs-m">0.6 km · 月售 312</div></div>
+    <div class="hs"><div class="hs-c">炸</div><div class="hs-n">老王炸土豆</div><div class="hs-m">0.9 km · 月售 188</div></div>
+    <div class="hs"><div class="hs-c">茶</div><div class="hs-n">青山茶馆</div><div class="hs-m">1.2 km · 月售 96</div></div>
+    <div class="hs"><div class="hs-c">面</div><div class="hs-n">清晨面店</div><div class="hs-m">1.5 km · 月售 240</div></div>
+  </div></div>
+  <div class="sec"><span class="sec-t">为你推荐</span></div>
+  <div class="list">
+    <a class="lr" href="shop.html" style="text-decoration:none;color:inherit">
+      <div class="lr-c">果<span class="lr-tag">推荐</span></div>
+      <div class="lr-b">
+        <div class="lr-n">王记水果店</div>
+        <div class="lr-d">现切现卖 · 多种切法</div>
+        <div class="lr-f"><span class="lr-r">4.9</span><span class="dot">·</span><span>0.6 km</span><span class="dot">·</span><span>月售 312</span></div>
+      </div>
+    </a>
+    <div class="lr">
+      <div class="lr-c">炸</div>
+      <div class="lr-b">
+        <div class="lr-n">老王炸土豆</div>
+        <div class="lr-d">现炸现做 · 街头小吃</div>
+        <div class="lr-f"><span class="lr-r">4.8</span><span class="dot">·</span><span>0.9 km</span><span class="dot">·</span><span>月售 188</span></div>
+      </div>
+    </div>
+    <div class="lr">
+      <div class="lr-c">糖<span class="lr-tag">热销</span></div>
+      <div class="lr-b">
+        <div class="lr-n">蜜薯小铺</div>
+        <div class="lr-d">炭火现烤 · 流糖心</div>
+        <div class="lr-f"><span class="lr-r">4.9</span><span class="dot">·</span><span>1.8 km</span><span class="dot">·</span><span>月售 421</span></div>
+      </div>
+    </div>
+    <div class="lr">
+      <div class="lr-c">茶</div>
+      <div class="lr-b">
+        <div class="lr-n">青山茶馆</div>
+        <div class="lr-d">老茶师手揉 · 静谧时光</div>
+        <div class="lr-f"><span class="lr-r">4.7</span><span class="dot">·</span><span>1.2 km</span><span class="dot">·</span><span>月售 96</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="tab">
+    <a class="ti on" href="home.html" style="text-decoration:none">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7v9a2 2 0 0 1-2 2h-4v-7h-6v7H5a2 2 0 0 1-2-2v-9z"/></svg>
+      <div class="tl">发现</div>
+    </a>
+    <a class="ti" href="orders.html" style="text-decoration:none;color:inherit">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3h6l2 4H7l2-4zM5 7h14v14H5z"/></svg>
+      <div class="tl">订单</div>
+    </a>
+    <div class="ti">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 0 1-9 9c-1.5 0-2.9-.4-4.2-1L3 21l1-4.8A9 9 0 1 1 21 12z"/></svg>
+      <div class="tl">消息</div>
+    </div>
+    <a class="ti" href="me.html" style="text-decoration:none;color:inherit">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
+      <div class="tl">我的</div>
+    </a>
+  </div>
+</div>
+</body>
+</html>

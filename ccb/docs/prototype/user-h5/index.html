@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>原型导航 · 摊小二 C 端</title>
+<style>
+  :root{--bg:#fafafa;--card:#fff;--line:rgba(0,0,0,.06);--text:#1a1a1a;--text-2:#6b7280;--text-3:#9ca3af;--accent:#ff6b35}
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;font-size:16px}
+  body{background:#e5e7eb;min-height:100vh;display:flex;justify-content:center;padding:24px 0;color:var(--text)}
+  .phone{width:375px;min-height:812px;background:var(--bg);box-shadow:0 24px 64px rgba(0,0,0,.18);border-radius:40px;overflow:hidden;position:relative}
+  .hdr{padding:80px 32px 40px}
+  .eyebrow{font-size:10px;color:var(--text-3);letter-spacing:3px;text-transform:uppercase;margin-bottom:10px}
+  .title{font-size:32px;font-weight:700;letter-spacing:-.5px;line-height:1.15}
+  .sub{margin-top:8px;font-size:12px;color:var(--text-2);line-height:1.6}
+  .nav{margin:0 32px}
+  .row{display:flex;align-items:center;gap:16px;padding:24px 0;border-bottom:1px solid var(--line);text-decoration:none;color:inherit}
+  .row:first-child{border-top:1px solid var(--line)}
+  .no{font-size:11px;color:var(--text-3);letter-spacing:2px;width:30px;flex-shrink:0;font-variant-numeric:tabular-nums}
+  .body{flex:1;min-width:0}
+  .r-t{font-size:17px;font-weight:600;margin-bottom:3px}
+  .r-d{font-size:12px;color:var(--text-2)}
+  .arrow{font-size:20px;color:var(--text)}
+  .foot{margin-top:60px;text-align:center}
+  .foot-line{display:inline-block;width:32px;height:1px;background:rgba(0,0,0,.12);margin-bottom:10px}
+  .foot-t{display:block;font-size:10px;color:var(--text-3);letter-spacing:.5px;padding-bottom:48px}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="hdr">
+    <div class="eyebrow">C 端原型 · v0</div>
+    <div class="title">现代极简</div>
+    <div class="sub">单色克制 · 大留白 · 线性 icon · 不对接后端</div>
+  </div>
+  <div class="nav">
+    <a class="row" href="home.html">
+      <div class="no">01</div>
+      <div class="body"><div class="r-t">发现</div><div class="r-d">首页 · 店铺列表 + 分类</div></div>
+      <div class="arrow">→</div>
+    </a>
+    <a class="row" href="shop.html">
+      <div class="no">02</div>
+      <div class="body"><div class="r-t">店铺</div><div class="r-d">店铺主页 · 商品 + 浮动购物车</div></div>
+      <div class="arrow">→</div>
+    </a>
+    <a class="row" href="product.html">
+      <div class="no">03</div>
+      <div class="body"><div class="r-t">商品</div><div class="r-d">详情 · 大图 + 卖点 + 加购</div></div>
+      <div class="arrow">→</div>
+    </a>
+    <a class="row" href="cart.html">
+      <div class="no">04</div>
+      <div class="body"><div class="r-t">购物车</div><div class="r-d">按店分组 · 数量步进 · 结算</div></div>
+      <div class="arrow">→</div>
+    </a>
+    <a class="row" href="orders.html">
+      <div class="no">05</div>
+      <div class="body"><div class="r-t">订单</div><div class="r-d">列表 · 状态 tab</div></div>
+      <div class="arrow">→</div>
+    </a>
+    <a class="row" href="me.html">
+      <div class="no">06</div>
+      <div class="body"><div class="r-t">我的</div><div class="r-d">个人中心 · 资产 + 菜单</div></div>
+      <div class="arrow">→</div>
+    </a>
+  </div>
+  <div class="foot">
+    <span class="foot-line"></span>
+    <span class="foot-t">STATIC MOCKUP · NO BACKEND</span>
+  </div>
+</div>
+</body>
+</html>
