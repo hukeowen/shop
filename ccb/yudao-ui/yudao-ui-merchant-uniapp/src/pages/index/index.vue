@@ -46,7 +46,7 @@
             <view class="op-title">已打烊</view>
             <view class="op-sub">用户暂时无法下单 · 点击恢复营业</view>
           </view>
-          <view class="op-cta primary" @click.stop="setManualClosed(false)">重开</view>
+          <view class="op-cta primary" @click.stop="setManualClosed(false)">正常营业</view>
         </template>
       </view>
     </view>
@@ -256,7 +256,7 @@ async function onOpCardTap() {
 
 async function setManualClosed(closed) {
   const r = await uni.showModal({
-    title: closed ? '确认打烊？' : '确认重开？',
+    title: closed ? '确认打烊？' : '确认恢复营业？',
     content: closed ? '打烊后用户无法看到您的店铺，也无法下单' : '重新对用户开放下单',
   });
   if (!r.confirm) return;
@@ -265,7 +265,7 @@ async function setManualClosed(closed) {
       url: `/app-api/merchant/mini/shop/manual-closed?closed=${closed}`,
       method: 'PUT',
     });
-    uni.showToast({ title: closed ? '已打烊' : '已重开', icon: 'success' });
+    uni.showToast({ title: closed ? '已打烊' : '已恢复营业', icon: 'success' });
     await loadOperatingStatus();
   } catch (e) {
     uni.showToast({ title: e?.message || '操作失败', icon: 'none' });
