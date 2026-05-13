@@ -36,7 +36,10 @@
           <image v-if="item.picUrl" class="pic-item-img" :src="item.picUrl" mode="aspectFill" />
           <view v-else class="pic-item" :style="itemPicStyle(item)">{{ pickEmoji(item) }}</view>
           <view class="info">
-            <view class="iname">{{ item.spuName || '商品' }}</view>
+            <view class="iname-row">
+              <text class="iname">{{ item.spuName || '商品' }}</text>
+              <view class="del-btn" @click.stop="removeItem(item)">×</view>
+            </view>
             <view class="spec" v-if="item.skuName">{{ item.skuName }}</view>
             <view class="row">
               <view class="price">¥{{ fen2yuan(item.price) }}</view>
@@ -244,22 +247,8 @@ async function loadShopNames() {
 async function changeQty(item, delta) {
   const next = (item.count || 0) + delta;
   if (next <= 0) {
-    uni.showModal({
-      title: '移除商品',
-      content: '确定要从购物车中移除吗？',
-      success: async (r) => {
-        if (!r.confirm) return;
-        try {
-          // 用户购物车按 token tenant 走，不传商户 tenantId 头
-          await request({
-            url: '/app-api/trade/cart/delete',
-            method: 'DELETE',
-            data: { ids: item.id },
-          });
-          load();
-        } catch { uni.showToast({ title: '操作失败', icon: 'none' }); }
-      },
-    });
+    // 数量减到 0 时走通用 removeItem（带二次确认）
+    removeItem(item);
     return;
   }
   try {
@@ -270,6 +259,34 @@ async function changeQty(item, delta) {
     });
     item.count = next;
   } catch { uni.showToast({ title: '操作失败', icon: 'none' }); }
+}
+
+/** 显式删除购物车单项（右上角 × 按钮 + 数量减到 0 都走这里） */
+function removeItem(item) {
+  if (!item || !item.id) return;
+  uni.showModal({
+    title: '移除商品',
+    content: `确定将「${item.spuName || '该商品'}」从购物车移除？`,
+    confirmText: '移除',
+    confirmColor: '#EF4444',
+    success: async (r) => {
+      if (!r.confirm) return;
+      try {
+        // 用户购物车按 token tenant 走，不传商户 tenantId 头
+        await request({
+          url: '/app-api/trade/cart/delete',
+          method: 'DELETE',
+          data: { ids: item.id },
+        });
+        // 本地立即移除（不等 load 重拉）
+        items.value = items.value.filter((x) => x.id !== item.id);
+        selected.value.delete(item.id);
+        uni.showToast({ title: '已移除', icon: 'success' });
+      } catch (e) {
+        uni.showToast({ title: e?.message || '操作失败', icon: 'none' });
+      }
+    },
+  });
 }
 
 function switchCurrent(tid) {
@@ -388,7 +405,24 @@ onShow(load);
   background: $bg-page;
 }
 .cart-row .info { flex: 1; min-width: 0; }
-.cart-row .iname { font-size: 26rpx; color: $text-primary; font-weight: 500; }
+.cart-row .iname-row {
+  display: flex; align-items: flex-start; gap: 12rpx;
+}
+.cart-row .iname {
+  flex: 1; min-width: 0;
+  font-size: 26rpx; color: $text-primary; font-weight: 500;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.cart-row .del-btn {
+  flex-shrink: 0;
+  width: 44rpx; height: 44rpx;
+  margin-top: -8rpx; margin-right: -8rpx;
+  display: flex; align-items: center; justify-content: center;
+  color: $text-placeholder;
+  font-size: 32rpx;
+  line-height: 1;
+}
+.cart-row .del-btn:active { color: $danger; }
 .cart-row .spec { margin-top: 8rpx; font-size: 22rpx; color: $text-placeholder; }
 .cart-row .row { margin-top: 16rpx; display: flex; align-items: center; justify-content: space-between; }
 .cart-row .price {
