@@ -291,6 +291,18 @@ function jumpMembers() { uni.navigateTo({ url: '/pages/me/members' }); }
 function jumpProductRank() { uni.navigateTo({ url: '/pages/me/product-rank' }); }
 
 onMounted(async () => {
+  // 子域名分流：tuo./ke. 直接定向到对应端，避免商户工作台 API 调用 → 401 → 跳通用登录
+  try {
+    const host = (typeof location !== 'undefined' ? location.hostname : '').toLowerCase();
+    if (host.startsWith('ke.')) {
+      uni.reLaunch({ url: '/pages/user-home/index' });
+      return;
+    }
+    if (host.startsWith('tuo.') && !userStore.loggedIn) {
+      uni.reLaunch({ url: '/pages/merchant-login/index' });
+      return;
+    }
+  } catch {}
   if (!userStore.loggedIn) {
     uni.reLaunch({ url: '/pages/login/index' });
     return;

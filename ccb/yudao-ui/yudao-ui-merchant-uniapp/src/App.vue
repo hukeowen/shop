@@ -50,7 +50,7 @@ function captureRedirect() {
       }
     }
 
-    if (!route) return '';
+    if (!route || route === '/') return '';
     if (route.startsWith('/pages/login/')) return '';
     if (route.startsWith('/pages/index/')) return '';
     if (route.startsWith('/pages/user-home/')) return '';
@@ -64,11 +64,11 @@ function captureRedirect() {
 }
 
 // 子域名分流：tuo.* → 商户端；ke.* → 用户端；其它 → 不抢，沿用默认逻辑
-// 仅在"无 hash 路由"（顶层落地根路径）时生效，已 deep-link 的访问不影响
+// 注：deep-link（hash 指向具体页）的兼容由 captureRedirect 提前 return 保证，
+// 这里只看 hostname。uniapp 启动时会自动把 hash 补成默认 hash，不能依赖 hash 长度判断。
 function detectBrandedHost() {
   try {
     if (typeof location === 'undefined') return null;
-    if (location.hash && location.hash.length > 2) return null;
     const host = (location.hostname || '').toLowerCase();
     if (host.startsWith('tuo.')) return 'merchant';
     if (host.startsWith('ke.')) return 'member';
@@ -122,20 +122,26 @@ export default {
     // ⭐ 子域名分流（仅根路径落地时生效）
     //   tuo.doupaidoudian.com → 商户端：已登录跳工作台，未登录跳商户登录
     //   ke.doupaidoudian.com  → 用户端：已登录跳 user-home，未登录跳通用登录
-    if (brandedHost === 'merchant') {
-      if (userStore.token && userStore.activeRole === 'merchant') {
-        try { uni.reLaunch({ url: '/pages/index/index' }); } catch {}
+    //
+    // 注：uniapp H5 在 onLaunch 异步排队的 reLaunch 会被默认 entry page（pages.json
+    // 第一个 page = /pages/index/index 商户工作台）的同步 mount 抢先 — 后者会触发
+    // 401 → request.js 跳 /pages/login/index，覆盖我们的目标。
+    // 解法：直接改 location.hash 同步抢路由，再让 uniapp router 接管。
+    if (brandedHost === 'merchant' || brandedHost === 'member') {
+      let target;
+      if (brandedHost === 'merchant') {
+        target = (userStore.token && userStore.activeRole === 'merchant')
+          ? '/pages/index/index'
+          : '/pages/merchant-login/index';
       } else {
-        try { uni.reLaunch({ url: '/pages/merchant-login/index' }); } catch {}
+        target = userStore.token ? '/pages/user-home/index' : '/pages/login/index';
       }
-      return;
-    }
-    if (brandedHost === 'member') {
-      if (userStore.token) {
-        try { uni.reLaunch({ url: '/pages/user-home/index' }); } catch {}
-      } else {
-        try { uni.reLaunch({ url: '/pages/login/index' }); } catch {}
-      }
+      try {
+        if (typeof location !== 'undefined') {
+          location.hash = '#' + target;
+        }
+      } catch {}
+      try { uni.reLaunch({ url: target }); } catch {}
       return;
     }
 
