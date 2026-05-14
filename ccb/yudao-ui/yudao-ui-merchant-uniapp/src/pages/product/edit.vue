@@ -58,7 +58,7 @@
       </view>
     </view>
 
-    <!-- 营销配置（v7 双积分 / 推N反1 / 入池） — 仅编辑态可用 -->
+    <!-- 营销配置（v7 双积分 / 邀请激励 / 入池） — 仅编辑态可用 -->
     <view v-if="isEdit" class="card promo">
       <view class="promo-head">
         <text class="promo-title">营销配置（v7）</text>
@@ -77,8 +77,8 @@
 
       <view class="switch-row">
         <view class="switch-body">
-          <view class="switch-title">参与推 N 反 1（v7）</view>
-          <view class="switch-desc">链上前 N 位推荐人按比例瓜分该商品的 1 笔订单返佣</view>
+          <view class="switch-title">参与邀请激励（v7）</view>
+          <view class="switch-desc">链上前 N 位推荐人按比例瓜分该商品的 1 笔订单推广奖励</view>
         </view>
         <switch
           :checked="promo.tuijianEnabled"
@@ -97,7 +97,7 @@
           />
         </view>
         <view class="field">
-          <text class="label">N 个返佣比例 % （从近到远）</text>
+          <text class="label">N 个推广奖励比例 % （从近到远）</text>
           <view class="ratios-row">
             <input
               v-for="(r, i) in promo.tuijianRatios"
@@ -114,15 +114,15 @@
         </view>
       </template>
 
-      <!-- v8: 直推奖比例（推 N 反 1 完成后每件按此比例返） -->
+      <!-- v8: 邀请奖比例（邀请激励 完成后每件按此比例返） -->
       <view class="field">
-        <text class="label">直推/间推奖比例（%）</text>
+        <text class="label">邀请奖比例比例（%）</text>
         <input class="input compact" type="digit" v-model="promo.directRate" placeholder="例 10（buyer 完成 N 后自购按此返；parent 首贡献 1 件价 × 此）" />
       </view>
 
-      <!-- v8: 团队极差奖（按商品独立） -->
+      <!-- v8: 店内星级奖励（按商品独立） -->
       <view class="field">
-        <text class="label">团队极差 - 星级数（0=不启用）</text>
+        <text class="label">星级递减 - 星级数（0=不启用）</text>
         <input class="input compact" type="number" v-model="promo.starCount" @blur="syncStarCount" />
       </view>
       <template v-if="(parseInt(promo.starCount)||0) > 0">
@@ -141,15 +141,15 @@
           <text class="hint inline">如 1,2,3 表示 1 星拿 1%、2 星拿 2%、3 星拿 3%</text>
         </view>
         <view class="field">
-          <text class="label">升星规则（每星：直推数 + 团队链路销售元）</text>
+          <text class="label">升星规则（每星：邀请人数 + 店内累计单）</text>
           <view v-for="(rule, i) in promo.starUpgradeRules" :key="i" class="upgrade-row">
             <text class="upgrade-label">{{ i + 1 }}星</text>
             <input class="input upgrade-input" type="number" :value="rule.directCount"
               @input="(e) => (promo.starUpgradeRules[i].directCount = e.detail.value)"
-              placeholder="直推数" />
+              placeholder="邀请人数" />
             <input class="input upgrade-input" type="number" :value="rule.teamSalesYuan"
               @input="(e) => (promo.starUpgradeRules[i].teamSalesYuan = e.detail.value)"
-              placeholder="团队销售（元）" />
+              placeholder="店内累计金额（元）" />
           </view>
         </view>
       </template>
@@ -282,7 +282,7 @@ const promo = reactive({
   tuijianEnabled: false,
   tuijianN: '4',
   tuijianRatios: ['25', '25', '25', '25'],
-  // v8: 商品级直推奖 / 团队极差 / 入池
+  // v8: 商品级邀请奖 / 星级递减 / 入池
   directRate: '10',
   starCount: '0',
   starRatios: [],
@@ -321,7 +321,7 @@ async function loadPromo(spuId) {
       promo.tuijianRatios = [];
     }
     syncTuijianN();
-    // v8: 直推奖 / 团队极差 / 入池
+    // v8: 邀请奖 / 星级递减 / 入池
     promo.directRate = String(data.directRate ?? '10');
     promo.starCount = String(data.starCount ?? 0);
     try {
@@ -364,7 +364,7 @@ async function onSavePromo() {
   syncTuijianN();
   const n = parseInt(promo.tuijianN) || 0;
   if (promo.tuijianEnabled && n <= 0) {
-    uni.showToast({ title: '推 N 反 1 启用时 N 必须 > 0', icon: 'none' });
+    uni.showToast({ title: '邀请激励 启用时 N 必须 > 0', icon: 'none' });
     return;
   }
   // v7 文档：N 个比例加总不能超过 100%（会把商品价超额返出去）

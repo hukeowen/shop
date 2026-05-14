@@ -1,10 +1,10 @@
 <template>
   <view class="page">
-    <!-- 按店铺分组的资产卡（只显示购买过推N反1商品的店铺）-->
+    <!-- 按店铺分组的资产卡（只显示购买过邀请激励商品的店铺）-->
     <view v-if="!myShops.length && !shopsLoading" class="empty-hero">
       <view class="empty-emoji">🎁</view>
-      <view class="empty-title">还没参与任何店铺的推 N 反 1</view>
-      <view class="empty-sub">在店铺购买带「推 N 反 1」标识的商品后，资产会显示在这里</view>
+      <view class="empty-title">还没参与任何店铺的邀请激励</view>
+      <view class="empty-sub">在店铺购买带「邀请激励」标识的商品后，资产会显示在这里</view>
     </view>
     <view v-else class="shops">
       <view v-for="s in myShops" :key="s.tenantId" class="shop-card" @click="goShop(s)">
@@ -104,7 +104,7 @@ const star = ref(0);
 const directCount = ref(0);
 const teamSales = ref(0);
 
-// 按店铺分组：只显示买过推 N 反 1 商品的店铺
+// 按店铺分组：只显示买过邀请激励 商品的店铺
 const myShops = ref([]);
 const shopsLoading = ref(false);
 
@@ -138,14 +138,14 @@ const converting = ref(false);
 const convertAmount = ref('');
 
 const SOURCE_LABELS = {
-  // v8 推 N 反 1 实际写入类型
+  // v8 邀请激励 实际写入类型
   SELF_BATCH: '自购返奖',
   REFERRAL_PROGRESS: '推广累积',
-  REFERRAL_COMMISSION: '下级首贡献',
-  COMMISSION: '团队极差',
+  REFERRAL_COMMISSION: '朋友首单',
+  COMMISSION: '星级递减',
   POOL: '积分池',
   // 兼容历史 / 其他来源
-  DIRECT: '直推奖',
+  DIRECT: '邀请奖',
   QUEUE: '队列返奖',
   SELF_PURCHASE: '自购插队',
   CONVERT: '转换',

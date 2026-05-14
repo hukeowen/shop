@@ -3,12 +3,12 @@
     <!-- Banner -->
     <view class="banner">
       <text class="title">营销配置（v8）</text>
-      <text class="sub">{{ saasLevel === 'BASIC' ? '推 N 反 1（基础包）' : '双积分 · 极差递减 · 推 N 反 1 · 星级积分池' }}</text>
+      <text class="sub">{{ saasLevel === 'BASIC' ? '邀请激励（基础包）' : '双积分 · 星级递减 · 邀请激励 · 星级积分池' }}</text>
     </view>
 
     <!-- 套餐档位提示 -->
     <view v-if="saasLevel === 'BASIC'" class="lvl-tip">
-      ⚡ 当前为<text class="b">基础包</text>，团队 / 星级 / 奖池配置已锁定。如需启用请
+      ⚡ 当前为<text class="b">基础包</text>，店内 / 星级 / 奖池配置已锁定。如需启用请
       <text class="link" @click="goSubscription">升级到全功能包</text>
     </view>
 
@@ -26,21 +26,21 @@
         />
       </view>
 
-      <view class="hint">下面为每个星级配置：极差抽成 % + 升星门槛（直推人数 + 团队销售额，元）</view>
+      <view class="hint">下面为每个星级配置：星级递减抽成 % + 升星门槛（邀请人数 + 店内累计售额，元）</view>
 
       <view class="star-row" v-for="(s, i) in starList" :key="i">
         <view class="star-tag">{{ i + 1 }}星</view>
         <view class="star-fields">
           <view class="field">
-            <text class="label">极差抽成 %</text>
+            <text class="label">星级递减抽成 %</text>
             <input class="input" type="digit" v-model="s.rate" />
           </view>
           <view class="field">
-            <text class="label">直推人数</text>
+            <text class="label">邀请人数</text>
             <input class="input" type="number" v-model="s.directCount" />
           </view>
           <view class="field">
-            <text class="label">团队销售额（元）</text>
+            <text class="label">店内累计金额（元）</text>
             <input class="input" type="number" v-model="s.teamSales" />
           </view>
           <view class="field">
@@ -78,16 +78,16 @@
       </view>
     </view>
 
-    <!-- ============ v8 推 N 反 1 全局配置（商户级兜底）============ -->
+    <!-- ============ v8 邀请激励 全局配置（商户级兜底）============ -->
     <view class="card">
-      <view class="section-title">推广奖励（推 N 反 1 · 商户级兜底，商品级配置优先）</view>
-      <view class="hint">用户必须先自购该商品才有资格享受推 N 反 1，完成 N 次累计后进入「终态」。</view>
+      <view class="section-title">推广奖励（邀请激励 · 商户级兜底，商品级配置优先）</view>
+      <view class="hint">用户必须先自购该商品才有资格享受邀请激励，完成 N 次累计后进入「终态」。</view>
 
       <view class="field">
-        <text class="label">间推百分比（%）</text>
+        <text class="label">后续百分比（%）</text>
         <input class="input" type="digit" v-model="form.directCommissionRatio"
-               placeholder="如 10（用户完成推 N 反 1 后，自购或下级首单返此 % 推广积分）" />
-        <text class="hint inline">完成推 N 反 1 后，自购或下级首单都按订单实付总额 × 此 % 返推广积分。</text>
+               placeholder="如 10（用户完成邀请激励 后，自购或朋友首单返此 % 推广积分）" />
+        <text class="hint inline">完成邀请激励 后，自购或朋友首单都按订单实付总额 × 此 % 返推广积分。</text>
       </view>
 
       <view class="field row-switch">
@@ -97,7 +97,7 @@
           @change="(e) => (form.naturalPushEnabled = e.detail.value)"
           color="#FF6B35"
         />
-        <text class="hint inline">仅作用于「无上级的真自然用户」订单：开 = 走旧 A/B 队列分配；关 = 奖励吞掉。</text>
+        <text class="hint inline">仅作用于「无邀请人的真自然用户」订单：开 = 走旧 A/B 队列分配；关 = 奖励吞掉。</text>
       </view>
     </view>
 
@@ -272,7 +272,7 @@ import { request } from '../../api/request.js';
 
 const saving = ref(false);
 
-// SaaS 套餐档位 — 决定团队/星级/奖池配置是否可见
+// SaaS 套餐档位 — 决定店内/星级/奖池配置是否可见
 const saasLevel = ref('PRO');  // 默认 PRO；加载后真值覆盖
 const canUsePro = computed(() => saasLevel.value !== 'BASIC' && saasLevel.value !== 'EXPIRED');
 
@@ -299,7 +299,7 @@ const form = ref({
   poolSettleMode: 'FULL',
   fullCutThresholdYuan: '',
   fullCutAmountYuan: '',
-  // v8 推 N 反 1
+  // v8 邀请激励
   directCommissionRatio: '',
   naturalPushEnabled: false,
 });

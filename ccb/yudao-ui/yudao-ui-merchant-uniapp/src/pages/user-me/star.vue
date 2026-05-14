@@ -7,8 +7,8 @@
     </view>
 
     <view class="info-tip">
-      <text class="b">星级 = 在该店的等级特权：</text>
-      达成"直推 N 人 + 团队销 M 单"自动升星，<text class="b">终生制不降级</text>，每升一星可享对应等级的团队极差奖与积分池抽奖资格。
+      <text class="b">星级 = 在该店的会员等级：</text>
+      累计在该店消费及邀请新顾客达成对应目标，自动升星，升星后享对应等级的店内积分加成与抽奖权益。
     </view>
 
     <!-- 店铺切换 tab -->
@@ -42,12 +42,12 @@
       <!-- 数据卡 -->
       <view class="grid">
         <view class="cell">
-          <view class="label">直推下级</view>
+          <view class="label">邀请新顾客</view>
           <view class="num">{{ current.directCount || 0 }}</view>
           <view class="unit">人</view>
         </view>
         <view class="cell">
-          <view class="label">团队销售</view>
+          <view class="label">店内累计单</view>
           <view class="num">{{ current.teamSalesCount || 0 }}</view>
           <view class="unit">单</view>
         </view>
@@ -68,12 +68,12 @@
         <view class="title">距下一星：{{ (current.currentStar || 0) + 1 }}★</view>
 
         <view class="row">
-          <view class="row-label">直推下级 {{ current.directCount || 0 }} / {{ nextRule.directCount }}</view>
+          <view class="row-label">邀请新顾客 {{ current.directCount || 0 }} / {{ nextRule.directCount }}</view>
           <view class="bar"><view class="fill" :style="`width:${pct(current.directCount, nextRule.directCount)}%`"></view></view>
         </view>
 
         <view class="row">
-          <view class="row-label">团队销售 {{ current.teamSalesCount || 0 }} / {{ nextRule.teamSales }}</view>
+          <view class="row-label">店内累计单 {{ current.teamSalesCount || 0 }} / {{ nextRule.teamSales }}</view>
           <view class="bar"><view class="fill" :style="`width:${pct(current.teamSalesCount, nextRule.teamSales)}%`"></view></view>
         </view>
 
@@ -81,7 +81,7 @@
       </view>
       <view v-else class="upgrade-card max">
         <view class="title">🏆 已达本店最高星级</view>
-        <view class="row-tip">享受最高等级的极差奖与积分池抽奖权重</view>
+        <view class="row-tip">享受最高等级的星级奖励与积分池抽奖权重</view>
       </view>
 
       <!-- 完整星级规则 -->
@@ -93,7 +93,7 @@
             <text v-if="(current.currentStar || 0) >= (i+1)" class="check">✓</text>
           </view>
           <view class="rule-cond">
-            直推 ≥ <text class="b">{{ r.directCount }}</text> 人 + 团队销 ≥ <text class="b">{{ r.teamSales }}</text> 单
+            邀请新顾客 ≥ <text class="b">{{ r.directCount }}</text> 人 + 店内累计单 ≥ <text class="b">{{ r.teamSales }}</text> 单
           </view>
         </view>
       </view>
@@ -121,9 +121,9 @@ const nextRule = computed(() => {
 });
 const statusHint = computed(() => {
   const s = current.value?.currentStar || 0;
-  if (s === 0) return '完成 1★ 升星条件即可解锁极差奖资格';
+  if (s === 0) return '完成 1★ 升星条件即可解锁星级奖励资格';
   if (s >= rules.value.length) return '已达最高星级，享受满级权益';
-  return `已是 ${s} 星，继续推荐下一星只差一步`;
+  return `已是 ${s} 星，继续努力下一星只差一步`;
 });
 
 function shortName(n) {

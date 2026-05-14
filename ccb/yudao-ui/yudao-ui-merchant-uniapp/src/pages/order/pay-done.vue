@@ -30,7 +30,7 @@
     <view class="succ-promo">
       <view class="hdr">🎁 推广奖励已就绪</view>
       <view class="body">
-        · 这单已自动进入<text class="b">推 N 反 1</text>队列<br/>
+        · 这单已自动进入<text class="b">邀请激励</text>队列<br/>
         · <text class="b">推荐 4 个朋友</text>买同款 → 累计返 <text class="b">¥5</text> 推广积分<br/>
         · 当前位置：<text class="b">B 层第 3 位</text>，等下个朋友进店触发首次返奖
       </view>

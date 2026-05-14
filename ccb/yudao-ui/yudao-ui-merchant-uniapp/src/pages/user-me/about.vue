@@ -33,7 +33,7 @@
       <view class="p">客小二是<text class="b">"扫码进店 · 拿优惠 · 帮老板说话"</text>的消费者 H5：扫店主二维码进店下单，享受推广积分换钱，分享好店给朋友。</view>
       <view class="p">三句话讲透：</view>
       <view class="li">① 拍一张图 → AI 自动写文案、出短视频，一键发抖音</view>
-      <view class="li">② 朋友扫码进店买东西 → 你能拿到推广积分（推 N 反 1）</view>
+      <view class="li">② 朋友扫码进店买东西 → 你能拿到推广积分（邀请激励）</view>
       <view class="li">③ 推广积分换余额、抵消费、提现到微信，每分钱都看得见</view>
     </view>
 

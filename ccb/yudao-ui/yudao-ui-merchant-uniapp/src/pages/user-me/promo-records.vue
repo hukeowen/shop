@@ -80,11 +80,11 @@ function flowIcon(r) {
 }
 function flowName(r) {
   const map = {
-    // v8 推 N 反 1 实际写入类型
-    SELF_BATCH: '自购返奖', REFERRAL_PROGRESS: '推广累积', REFERRAL_COMMISSION: '下级首贡献',
-    COMMISSION: '团队极差奖', POOL: '星级积分池中奖',
+    // v8 邀请激励 实际写入类型
+    SELF_BATCH: '自购返奖', REFERRAL_PROGRESS: '推广累积', REFERRAL_COMMISSION: '朋友首单',
+    COMMISSION: '店内星级奖励', POOL: '星级积分池中奖',
     // 兼容历史 / 其他来源
-    DIRECT: '直推奖', QUEUE: '队列返奖', SELF_PURCHASE: '插队自购奖',
+    DIRECT: '邀请奖', QUEUE: '队列返奖', SELF_PURCHASE: '插队自购奖',
     CONVERT: '兑换为消费积分', WITHDRAW: '提现到余额', CONSUME: '消费抵扣',
   };
   return map[r.sourceType] || (r.title || '积分变动');

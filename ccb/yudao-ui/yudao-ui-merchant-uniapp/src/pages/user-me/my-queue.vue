@@ -7,16 +7,16 @@
     </view>
 
     <view class="info-tip">
-      <text class="b">推 N 反 1：</text>
-      自购该商品 → 激活推广资格；自购或下级首单买同款 → 累计 +1，按 1/N 返推广积分；
-      累计满 N 次进入「已完成」，之后自购或下级首单按订单金额 × 间推 % 返推广积分。
+      <text class="b">邀请激励：</text>
+      自购该商品 → 激活推广资格；自购或朋友首单买同款 → 累计 +1，按 1/N 返推广积分；
+      累计满 N 次进入「已完成」，之后自购或朋友首单按订单金额 × 后续 % 返推广积分。
     </view>
 
     <view v-if="loading" class="empty-tip">加载中…</view>
     <view v-else-if="!list.length" class="empty-state">
       <view class="empty-emoji">🎯</view>
       <view class="empty-title">暂无队列记录</view>
-      <view class="empty-sub">下单参与"推 N 反 1"的商品后会进入队列</view>
+      <view class="empty-sub">下单参与"邀请激励"的商品后会进入队列</view>
       <view class="empty-cta" @click="goHome">去逛附近店铺 ›</view>
     </view>
 
@@ -97,8 +97,8 @@ async function load() {
 
 function showRules() {
   uni.showModal({
-    title: '推 N 反 1 规则',
-    content: '1. 必须自购才激活资格（首单不返奖）\n2. 已激活：自购或下级首单累计 +1，按 1/N 返推广积分\n3. 满 N 次后进入"已完成"，之后按订单金额 × 间推% 返推广积分\n4. 每个下级对每个上级在每个商品上只贡献 1 次（首单）\n5. 上级未自购该商品 → 完全跳过，不发奖\n6. 返奖基准 = 用户实际支付金额',
+    title: '邀请激励 规则',
+    content: '1. 必须自购才激活资格（首单不返奖）\n2. 已激活：自购或朋友首单累计 +1，按 1/N 返推广积分\n3. 满 N 次后进入"已完成"，之后按订单金额 × 后续% 返推广积分\n4. 每个朋友对每个邀请人在每个商品上只贡献 1 次（首单）\n5. 邀请人未自购该商品 → 完全跳过，不发奖\n6. 返奖基准 = 用户实际支付金额',
     showCancel: false,
   });
 }

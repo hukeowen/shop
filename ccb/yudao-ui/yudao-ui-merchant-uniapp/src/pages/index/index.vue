@@ -127,7 +127,7 @@
           <text class="v">¥{{ fen2yuan(data.promo.deducted) }}</text>
         </view>
         <view class="pt-mini">
-          <text class="l">极差奖发出</text>
+          <text class="l">星级奖励发出</text>
           <text class="v">¥{{ fen2yuan(data.promo.commission) }}</text>
         </view>
       </view>

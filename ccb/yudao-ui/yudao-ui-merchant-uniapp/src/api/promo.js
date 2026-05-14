@@ -1,5 +1,5 @@
 /**
- * 营销配置 API（v6 双积分 / 极差 / 推 N 反 1 / 星级积分池）
+ * 营销配置 API（v6 双积分 / 星级递减 / 邀请激励 / 星级积分池）
  *
  *   · GET/PUT /app-api/merchant/mini/promo/config              商户级
  *   · GET/PUT /app-api/merchant/mini/promo/product-config      商品级
@@ -72,7 +72,7 @@ export function listMyQueues() {
 
 // ==================== 推荐链 ====================
 
-/** 绑定上级（首次有效）。后端用 @RequestParam，必须用 query 而不是 body。 */
+/** 绑定邀请人（首次有效）。后端用 @RequestParam，必须用 query 而不是 body。 */
 export function bindReferral(inviterUserId, orderId) {
   const q = `inviterUserId=${encodeURIComponent(inviterUserId)}` +
             (orderId ? `&orderId=${encodeURIComponent(orderId)}` : '');
@@ -82,7 +82,7 @@ export function bindReferral(inviterUserId, orderId) {
   });
 }
 
-/** 当前用户的直接上级（0 = 自然用户）。 */
+/** 当前用户的直接邀请人（0 = 自然用户）。 */
 export function getMyReferralParent() {
   return request({ url: '/app-api/merchant/mini/promo/referral/parent' });
 }

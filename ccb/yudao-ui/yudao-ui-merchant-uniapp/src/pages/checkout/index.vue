@@ -139,7 +139,7 @@
       <!-- v8 推广积分抵扣预演（仅在有可抵扣商品时展示） -->
       <view class="promo-deduct-card" v-if="promoPreview && promoPreview.deductFen > 0">
         <view class="pd-head">
-          <text class="pd-title">🎁 推 N 反 1 抵扣</text>
+          <text class="pd-title">🎁 邀请激励 抵扣</text>
           <text class="pd-tag">少付 ¥{{ fen2yuan(promoPreview.deductFen) }}</text>
         </view>
         <view class="pd-row" v-for="(line, i) in promoPreview.items.filter(x => x.deductCount > 0)" :key="i">
@@ -374,7 +374,7 @@ async function loadShopAndItems() {
 }
 
 /**
- * 直购模式：±调整商品数量，立即触发推 N 反 1 预演重算。
+ * 直购模式：±调整商品数量，立即触发邀请激励 预演重算。
  * 库存上限按 it.stock（loadShopAndItems 时从 sku.stock 取）。
  */
 function changeQty(idx, delta) {
@@ -520,7 +520,7 @@ async function submitOrder() {
         setTimeout(() => uni.redirectTo({ url: '/pages/user-order/list' }), 1500);
       }
     } else {
-      // 余额抵扣全额或余额+积分付清 → 跳「支付完成」页（原型 ⑧ 推 N 反 1 引流）
+      // 余额抵扣全额或余额+积分付清 → 跳「支付完成」页（原型 ⑧ 邀请激励 引流）
       setTimeout(() => uni.redirectTo({
         url: `/pages/order/pay-done?orderId=${orderId}${tid ? `&tenantId=${tid}` : ''}`,
       }), 600);

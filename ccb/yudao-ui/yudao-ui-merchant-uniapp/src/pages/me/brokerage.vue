@@ -1,23 +1,23 @@
 <template>
   <view class="page">
-    <!-- 返佣设置 -->
+    <!-- 推广奖励设置 -->
     <view class="card">
-      <view class="section-title">返佣设置</view>
+      <view class="section-title">推广奖励设置</view>
       <view class="row">
-        <text class="label">开启返佣</text>
+        <text class="label">开启推广奖励</text>
         <switch :checked="form.brokerageEnabled" @change="e => form.brokerageEnabled = e.detail.value" color="#FF6B35" />
       </view>
       <template v-if="form.brokerageEnabled">
         <view class="field">
-          <text class="label">一级佣金比例 (%)</text>
+          <text class="label">一级推广积分比例 (%)</text>
           <input class="input" type="digit" v-model="form.firstBrokeragePercent" placeholder="如 5" />
         </view>
         <view class="field">
-          <text class="label">二级佣金比例 (%)</text>
+          <text class="label">二级推广积分比例 (%)</text>
           <input class="input" type="digit" v-model="form.secondBrokeragePercent" placeholder="如 2" />
         </view>
         <view class="field">
-          <text class="label">佣金冻结天数</text>
+          <text class="label">推广积分冻结天数</text>
           <input class="input" type="number" v-model="form.freezeDays" placeholder="如 7" />
         </view>
       </template>

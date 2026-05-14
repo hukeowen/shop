@@ -157,16 +157,16 @@
       </view>
     </view>
 
-    <!-- 推 N 反 1 漏斗 -->
+    <!-- 邀请激励 漏斗 -->
     <view class="panel" v-if="funnel">
       <view class="panel-h">
-        <text class="t">🎯 推 N 反 1 漏斗</text>
+        <text class="t">🎯 邀请激励 漏斗</text>
       </view>
       <!-- 全 0 状态：显示空提示，避免横条挤压错位 -->
       <view v-if="!funnel.activatedUsers" class="funnel-empty">
         <text class="empty-emoji">🎯</text>
         <text class="empty-title">暂无激活用户</text>
-        <text class="empty-sub">用户在此店首次下单买推 N 反 1 商品后将激活推广资格</text>
+        <text class="empty-sub">用户在此店首次下单买邀请激励 商品后将激活推广资格</text>
       </view>
       <view v-else class="funnel">
         <view class="funnel-row" v-for="(row, i) in funnelRows" :key="i">
@@ -236,7 +236,7 @@ const funnelRows = computed(() => {
     mk('激活', f.activatedUsers, '人', 100),
     mk('推进中', f.inProgressUsers || 0, '人', pct(f.inProgressUsers, f.activatedUsers)),
     mk('已完成', f.completedUsers || 0, '人', pct(f.completedUsers, f.activatedUsers)),
-    mk('直推有效', f.contributionCount || 0, '对首贡献', pct(f.contributionCount, f.activatedUsers)),
+    mk('邀请生效', f.contributionCount || 0, '对首贡献', pct(f.contributionCount, f.activatedUsers)),
   ];
 });
 

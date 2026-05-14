@@ -74,7 +74,7 @@
         </view>
         <view class="vip-sub">
           <text v-if="myRel">已邀请 {{ inviterCount }} 位好友 · 在该店赚 ¥{{ fen2yuan(myRel?.balance || 0) }}</text>
-          <text v-else>每邀 1 位好友购买，按 v8 推 N 反 1 拿返奖</text>
+          <text v-else>每邀 1 位好友购买，按 v8 邀请激励 拿返奖</text>
         </view>
       </view>
       <view class="vip-cta">邀请赚奖 ›</view>
@@ -108,7 +108,7 @@
       </view>
     </scroll-view>
 
-    <!-- 招牌商品大卡（products 第一个；推 N 反 1 标仅在该商品启用 tuijian 时显示） -->
+    <!-- 招牌商品大卡（products 第一个；邀请激励 标仅在该商品启用 tuijian 时显示） -->
     <view v-if="signatureSpu" class="sh-section-title">
       <view class="sh-section-h3">
         <text class="ic">🏆</text>本店招牌
@@ -194,7 +194,7 @@
     <view v-if="showShare" class="share-mask" @click.self="showShare = false">
       <view class="share-sheet">
         <view class="share-title">邀请好友进店</view>
-        <view class="share-sub">朋友通过你的链接进店并下单，按 v8 推 N 反 1 自动返奖到你的推广积分</view>
+        <view class="share-sub">朋友通过你的链接进店并下单，按 v8 邀请激励 自动返奖到你的推广积分</view>
         <view v-if="myShareQr" class="share-qr-wrap">
           <image :src="myShareQr" class="share-qr" mode="aspectFit" />
           <text class="share-qr-tip">长按图片可保存到相册</text>
@@ -254,7 +254,7 @@ const cartTotal = ref(0);
 const loading = ref(false);
 const myRel = ref(null); // 含 favorite/star/balance/points
 const inviterCount = ref(0);
-// 招牌商品（products 第一项 + 它的 promo 配置——含「推 N 反 1」N 值）
+// 招牌商品（products 第一项 + 它的 promo 配置——含「邀请激励」N 值）
 const signaturePromo = ref(null);
 // 该店可领的优惠券模板（C 端只展示 status=0；taken=true 表示当前用户已领过）
 const coupons = ref([]);
@@ -283,7 +283,7 @@ const displayProducts = computed(() => {
   }
   return list.filter((p) => p.id !== sigId);
 });
-// 「推 N 反 1」标，仅在该商品启用了推荐返佣时显示
+// 「邀请激励」标，仅在该商品启用了推荐推广奖励时显示
 const signatureTuijian = computed(() => {
   const p = signaturePromo.value;
   if (!p || !p.tuijianEnabled || !p.tuijianN || p.tuijianN < 1) return '';
@@ -421,7 +421,7 @@ async function loadProducts() {
       url: `/app-api/merchant/shop/public/products?tenantId=${tenantId.value}&pageNo=1&pageSize=20`,
     });
     products.value = (res && res.list) ? res.list : (Array.isArray(res) ? res : []);
-    // 加载完商品后异步：① 招牌商品「推 N 反 1」配置；② 该店分类 tab
+    // 加载完商品后异步：① 招牌商品「邀请激励」配置；② 该店分类 tab
     loadSignaturePromo();
     loadCats();
   } catch { products.value = []; }

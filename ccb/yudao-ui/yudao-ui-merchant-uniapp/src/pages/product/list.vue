@@ -26,7 +26,7 @@
 
     <view class="list">
       <view v-for="s in list" :key="s.id" :class="['card', s._tuijianEnabled ? 'card-tuijian' : '']">
-        <!-- 推 N 反 1 角标（已启用的商品醒目置顶 + 角标） -->
+        <!-- 邀请激励 角标（已启用的商品醒目置顶 + 角标） -->
         <view v-if="s._tuijianEnabled" class="ribbon">🎯 推 {{ s._tuijianN || '?' }} 反 1</view>
         <view class="row" @click="goEdit(s.id)">
           <image class="thumb" :src="s.picUrl" mode="aspectFill" />
@@ -87,7 +87,7 @@ const list = computed(() => {
   const filtered = current.value === -1
     ? all.value
     : all.value.filter((s) => s.status === current.value);
-  // 推 N 反 1 已启用的置顶（_tuijianEnabled true 排前），其他保持后端原顺序
+  // 邀请激励 已启用的置顶（_tuijianEnabled true 排前），其他保持后端原顺序
   return [...filtered].sort((a, b) => Number(!!b._tuijianEnabled) - Number(!!a._tuijianEnabled));
 });
 
@@ -273,7 +273,7 @@ onShow(() => {
   box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.03);
   position: relative;
 }
-/* 推 N 反 1 已启用：主色细边 + 浅色渐变背景，强化「这是营销商品」感知 */
+/* 邀请激励 已启用：主色细边 + 浅色渐变背景，强化「这是营销商品」感知 */
 .card-tuijian {
   border: 2rpx solid $brand-primary;
   background: linear-gradient(135deg, #fff 0%, #fff5ef 100%);

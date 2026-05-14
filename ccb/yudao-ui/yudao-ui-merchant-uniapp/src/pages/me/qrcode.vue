@@ -22,7 +22,7 @@
         <view class="hint-title">使用说明</view>
         <view class="hint-item">• 将此二维码印刷/展示在店铺门口</view>
         <view class="hint-item">• 顾客扫码后直接进入您的店铺页</view>
-        <view class="hint-item">• 通过二维码进店的顾客消费，您可以获得返佣</view>
+        <view class="hint-item">• 通过二维码进店的顾客消费，您可以获得推广奖励</view>
       </view>
     </template>
   </view>

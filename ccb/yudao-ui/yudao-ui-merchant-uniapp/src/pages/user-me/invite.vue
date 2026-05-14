@@ -2,7 +2,7 @@
   <view class="page">
     <view class="hero">
       <view class="hero-title">邀请好友到本店购物</view>
-      <view class="hero-sub">好友通过你的链接进店并下单，你可获得直推奖 / 队列返奖</view>
+      <view class="hero-sub">好友通过你的链接进店并下单，你可获得邀请奖 / 队列返奖</view>
     </view>
 
     <view v-if="!tenantId" class="warn-card">
@@ -28,7 +28,7 @@
         <input class="input" :value="shareUrl" disabled />
         <button class="btn primary" :disabled="!shareUrl" @click="onCopy">复制</button>
       </view>
-      <view class="hint">朋友打开链接进入本店，登录后即自动绑定为你的下级（终生制，仅首次有效）。</view>
+      <view class="hint">朋友打开链接进入本店，登录后即自动绑定为你的朋友（长期有效，仅首次有效）。</view>
     </view>
 
     <view class="card hint-card">

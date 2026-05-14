@@ -79,7 +79,7 @@
       </view>
       <view class="me-row" @click="goQueue">
         <view class="me-row-icon i2">🎯</view>
-        <text class="me-row-name">我的队列（v8 推 N 反 1）</text>
+        <text class="me-row-name">我的队列（v8 邀请激励）</text>
         <text v-if="queueCount" class="me-row-tag">{{ queueCount }} 个排队中</text>
         <text class="me-row-arrow">›</text>
       </view>
@@ -183,7 +183,7 @@ async function loadMyShops() {
   }
   loading.value = true;
   try {
-    // 用户「我的」页只显示购买过推 N 反 1 商品的店铺（业务规则：买过才算"加入"）
+    // 用户「我的」页只显示购买过邀请激励 商品的店铺（业务规则：买过才算"加入"）
     const list = await request({ url: '/app-api/merchant/mini/member-rel/my-shops-enriched?onlyTuijianPurchased=true' });
     myShops.value = list || [];
   } catch {

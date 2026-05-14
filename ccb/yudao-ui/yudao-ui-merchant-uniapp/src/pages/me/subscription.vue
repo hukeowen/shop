@@ -85,11 +85,11 @@ function featuresOf(pkg) {
     const arr = pkg.features ? JSON.parse(pkg.features) : [];
     const map = {
       order: '订单系统',
-      tuijian: '推 N 反 1 推广',
-      team: '团队 / 极差奖',
+      tuijian: '邀请激励 推广',
+      team: '店内 / 星级奖励',
       star: '星级体系',
       pool: '积分池',
-      brokerage: '商户分销返佣',
+      brokerage: '商户推广奖励',
     };
     return arr.map(k => map[k] || k);
   } catch {
