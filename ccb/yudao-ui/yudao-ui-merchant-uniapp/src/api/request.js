@@ -50,10 +50,27 @@ const MERCHANT_PAGE_PREFIXES = [
   'pages/merchant-login/', // 商户登录（防回跳自身）
 ];
 
+// 允许匿名浏览（401 不跳 login，避免和 login 重定向器互踢死循环）
+const ANON_BROWSE_PREFIXES = [
+  'pages/user-home/',      // 用户首页：附近 / 搜索 / 推荐都可未登录浏览
+  'pages/categories/',     // 分类页：未登录可浏览
+  'pages/nearby/',         // 附近店铺：未登录可浏览
+  'pages/shop-home/',      // 店铺主页：未登录可浏览，下单时由 checkout 处理
+  'pages/product/detail',  // 商品详情：未登录可浏览
+  'pages/login/',          // 已是登录重定向器，再跳会死循环
+  'pages/merchant-login/', // 同上
+];
+
 function isMerchantPage(route) {
   if (!route) return false;
   const r = String(route).replace(/^\/+/, '');
   return MERCHANT_PAGE_PREFIXES.some((p) => r.startsWith(p));
+}
+
+function isAnonBrowsePage(route) {
+  if (!route) return true; // 不知道当前页时也别跳，避免死循环
+  const r = String(route).replace(/^\/+/, '');
+  return ANON_BROWSE_PREFIXES.some((p) => r.startsWith(p));
 }
 
 function clearTokenAndRedirectToLogin() {
@@ -84,6 +101,11 @@ function clearTokenAndRedirectToLogin() {
 
     // 已在登录页就不重复跳，避免死循环
     if (/pages\/(login|merchant-login)\/index/.test(curRoute)) return;
+
+    // 允许匿名浏览的页面：401 只清 token，不跳 login。
+    // 避免 user-home 调需登录接口 → 401 → login → login 重定向回 user-home → 死循环。
+    // 这类页面的 UI 已对空数据做了兜底（"附近暂无店铺" 等），不会白屏。
+    if (isAnonBrowsePage(curRoute)) return;
 
     // 仅当用户已有商户身份（roles 含 merchant）才跳商户登录页；
     // 否则统一走 /pages/login/index（通用登录有"我是顾客 / 我是商户"两入口）。
