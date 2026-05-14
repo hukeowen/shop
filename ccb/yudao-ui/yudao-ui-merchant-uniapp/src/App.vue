@@ -63,6 +63,19 @@ function captureRedirect() {
   }
 }
 
+// 子域名分流：tuo.* → 商户端；ke.* → 用户端；其它 → 不抢，沿用默认逻辑
+// 仅在"无 hash 路由"（顶层落地根路径）时生效，已 deep-link 的访问不影响
+function detectBrandedHost() {
+  try {
+    if (typeof location === 'undefined') return null;
+    if (location.hash && location.hash.length > 2) return null;
+    const host = (location.hostname || '').toLowerCase();
+    if (host.startsWith('tuo.')) return 'merchant';
+    if (host.startsWith('ke.')) return 'member';
+  } catch {}
+  return null;
+}
+
 export default {
   onLaunch() {
     // 1) 落地先抓 inviter（不管有没 token，都尽早暂存）
@@ -72,10 +85,13 @@ export default {
     // 2) 从 localStorage 恢复登录态
     const userStore = useUserStore();
     userStore.hydrate();
+    const brandedHost = detectBrandedHost();
     // eslint-disable-next-line no-console
     console.log(
       '[小二] App Launched, role=', userStore.activeRole,
-      'hasToken=', !!userStore.token, 'landing=', landingRoute || '(default)'
+      'hasToken=', !!userStore.token,
+      'landing=', landingRoute || '(default)',
+      'brand=', brandedHost || '(none)'
     );
 
     // ⭐ 店铺分享场景：顶层带 ?tenantId=...，访问者一定是 C 端用户
@@ -103,7 +119,27 @@ export default {
       return;
     }
 
-    // 默认行为（落地是 / 或 #/pages/login 或 #/pages/index 或 #/pages/user-home 时）：
+    // ⭐ 子域名分流（仅根路径落地时生效）
+    //   tuo.doupaidoudian.com → 商户端：已登录跳工作台，未登录跳商户登录
+    //   ke.doupaidoudian.com  → 用户端：已登录跳 user-home，未登录跳通用登录
+    if (brandedHost === 'merchant') {
+      if (userStore.token && userStore.activeRole === 'merchant') {
+        try { uni.reLaunch({ url: '/pages/index/index' }); } catch {}
+      } else {
+        try { uni.reLaunch({ url: '/pages/merchant-login/index' }); } catch {}
+      }
+      return;
+    }
+    if (brandedHost === 'member') {
+      if (userStore.token) {
+        try { uni.reLaunch({ url: '/pages/user-home/index' }); } catch {}
+      } else {
+        try { uni.reLaunch({ url: '/pages/login/index' }); } catch {}
+      }
+      return;
+    }
+
+    // 默认行为（www.* 或 IP 直接访问，落地是 / 或 #/pages/login 或 #/pages/index 或 #/pages/user-home 时）：
     // Member role → route to user home
     if (userStore.token && userStore.activeRole === 'member') {
       try { uni.reLaunch({ url: '/pages/user-home/index' }); } catch {}
