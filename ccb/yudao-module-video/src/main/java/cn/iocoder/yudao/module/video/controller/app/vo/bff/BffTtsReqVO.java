@@ -13,7 +13,7 @@ import javax.validation.constraints.Size;
 @Data
 public class BffTtsReqVO {
 
-    @Schema(description = "待合成文本", requiredMode = Schema.RequiredMode.REQUIRED, example = "欢迎来到摊小二")
+    @Schema(description = "待合成文本", requiredMode = Schema.RequiredMode.REQUIRED, example = "欢迎来到拓小二")
     @NotBlank(message = "text 不能为空")
     @Size(max = 300, message = "text 长度不能超过 300")
     private String text;

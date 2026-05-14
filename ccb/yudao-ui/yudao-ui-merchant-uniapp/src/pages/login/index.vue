@@ -1,9 +1,9 @@
 <template>
   <view class="login">
     <view class="brand">
-      <view class="logo">摊</view>
-      <view class="name">摊小二</view>
-      <view class="slogan">小摊主的生意伙伴</view>
+      <view class="logo">小</view>
+      <view class="name">小二</view>
+      <view class="slogan">扫码进店，下单更顺手</view>
     </view>
 
     <!-- 被邀请落地引导：同时展示邀请人 + 店铺（onLoad 解析 redirect 中 inviter+tenantId） -->

@@ -6,7 +6,7 @@ import lombok.Data;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Pattern;
 
-@Schema(description = "摊小二 - 发送 SMS 验证码 ReqVO")
+@Schema(description = "小二 - 发送 SMS 验证码 ReqVO")
 @Data
 public class AppSmsCodeSendReqVO {
 

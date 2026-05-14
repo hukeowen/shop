@@ -1,7 +1,7 @@
 {
-  "name": "摊小二商户端",
+  "name": "小二（拓小二 · 客小二）",
   "appid": "",
-  "description": "摊小二商户端 — AI 一键成片、订单核销、发货、报表",
+  "description": "小二 SaaS — 商户端拓小二 / 用户端客小二，AI 一键成片、订单核销、发货、报表",
   "versionName": "0.1.0",
   "versionCode": "1",
   "transformPx": false,
@@ -26,7 +26,7 @@
     "usingComponents": true
   },
   "h5": {
-    "title": "摊小二商户端",
+    "title": "小二",
     "template": "index.html",
     "router": {
       "mode": "hash",

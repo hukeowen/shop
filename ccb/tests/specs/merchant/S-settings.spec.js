@@ -37,7 +37,7 @@ test.describe('M-S 设置 / 个人页', () => {
     expect(page.url()).not.toContain('merchant-login');
   });
 
-  test('M-S-11 关于摊小二页', async ({ page }) => {
+  test('M-S-11 关于拓小二页', async ({ page }) => {
     await page.goto('/m/#/pages/me/about');
     await page.waitForTimeout(2000);
     expect(page.url()).not.toContain('merchant-login');

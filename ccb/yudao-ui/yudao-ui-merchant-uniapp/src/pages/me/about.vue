@@ -1,8 +1,8 @@
 <template>
   <view class="page">
     <view class="hero">
-      <view class="logo">摊</view>
-      <view class="app-name">摊小二</view>
+      <view class="logo">拓</view>
+      <view class="app-name">拓小二</view>
       <view class="app-version">v1.0.0</view>
       <view class="app-slogan">让每个小摊，都有大生意</view>
     </view>
@@ -14,7 +14,7 @@
       </view>
       <view class="about-item">
         <text class="about-label">开发商</text>
-        <text class="about-val">摊小二科技</text>
+        <text class="about-val">拓小二科技</text>
       </view>
       <view class="about-item">
         <text class="about-label">官方网站</text>
@@ -24,13 +24,13 @@
 
     <view class="card section">
       <view class="desc">
-        摊小二是专为线下摊位、小店商户打造的数字化经营工具。
+        拓小二是专为线下摊位、小店商户打造的数字化经营工具。
         提供商品管理、订单处理、会员积分、推广返佣、AI 视频营销等一站式功能，
         帮助每一位摊主轻松开店、高效运营。
       </view>
     </view>
 
-    <view class="copyright">© 2025 摊小二科技 版权所有</view>
+    <view class="copyright">© 2026 拓小二科技 版权所有</view>
   </view>
 </template>
 

@@ -21,7 +21,7 @@ public class ProductSpuRespDTO {
 
     /**
      * 店铺/租户 ID — TenantBaseDO 自动维护；
-     * 摊小二多商户场景下购物车按 tenantId 分组用（每商户一租户）。
+     * 小二多商户场景下购物车按 tenantId 分组用（每商户一租户）。
      */
     private Long tenantId;
 

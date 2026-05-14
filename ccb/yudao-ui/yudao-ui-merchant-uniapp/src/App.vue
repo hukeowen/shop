@@ -74,7 +74,7 @@ export default {
     userStore.hydrate();
     // eslint-disable-next-line no-console
     console.log(
-      '[摊小二] App Launched, role=', userStore.activeRole,
+      '[小二] App Launched, role=', userStore.activeRole,
       'hasToken=', !!userStore.token, 'landing=', landingRoute || '(default)'
     );
 

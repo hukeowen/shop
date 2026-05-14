@@ -1,7 +1,7 @@
 import { defineConfig, loadEnv } from 'vite';
 import uni from '@dcloudio/vite-plugin-uni';
 
-// 摊小二商户/用户端 H5/小程序构建配置
+// 小二（拓小二商户端 / 客小二用户端）H5/小程序构建配置
 //
 // 历史沿革：早期 sidecar（OSS 上传 / TTS / 视频后处理 / 抖音发布）以 vite plugin
 // 形式内嵌在本文件 ~900 行，附带 ffmpeg-static / aws-sdk / undici / msedge-tts

@@ -96,7 +96,7 @@ public interface MemberUserMapper extends BaseMapperX<MemberUserDO> {
     }
 
     /**
-     * 根据摊小二统一小程序 OpenID 查询会员。
+     * 根据小二统一小程序 OpenID 查询会员。
      *
      * <p>注意：{@code member_user} 为全局表（tenant_id=0），调用方需通过
      * {@link cn.iocoder.yudao.framework.tenant.core.aop.TenantIgnore} 或

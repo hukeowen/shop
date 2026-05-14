@@ -9,10 +9,10 @@
       <!-- 左：品牌叙事面板（lt-md 隐藏） -->
       <div class="brand-panel">
         <div class="brand-head">
-          <div class="logo">摊</div>
+          <div class="logo">拓</div>
           <div class="brand">
-            <div class="brand-name">摊小二</div>
-            <div class="brand-en">Tanxiaer Admin</div>
+            <div class="brand-name">拓小二</div>
+            <div class="brand-en">Tuoxiaoer Admin</div>
           </div>
         </div>
 
@@ -40,7 +40,7 @@
         </div>
 
         <div class="brand-foot">
-          © 2026 摊小二 · 让每一个小生意都被看见
+          © 2026 拓小二 · 让每一个小生意都被看见
         </div>
       </div>
 
@@ -48,8 +48,8 @@
       <div class="form-panel">
         <div class="form-top">
           <div class="brand-mini">
-            <div class="logo-mini">摊</div>
-            <span>{{ appStore.getTitle || '摊小二管理后台' }}</span>
+            <div class="logo-mini">拓</div>
+            <span>{{ appStore.getTitle || '拓小二管理后台' }}</span>
           </div>
           <div class="actions">
             <ThemeSwitch />

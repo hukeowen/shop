@@ -153,10 +153,10 @@ public class MerchantDO extends TenantBaseDO {
      */
     private Long userId;
 
-    // ========== 摊小二统一小程序扩展字段（Phase 0.2） ==========
+    // ========== 拓小二统一小程序扩展字段（Phase 0.2） ==========
 
     /**
-     * 摊小二商户小程序 OpenID
+     * 拓小二商户小程序 OpenID
      */
     private String openId;
 

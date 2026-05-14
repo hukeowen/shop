@@ -108,7 +108,7 @@ public class AppMerchantSaasController {
                     cashierService.merchantCredentialForTenant(PLATFORM_TENANT_ID);
             AllinpayCashierService.CashierForm form = cashierService.buildCashierFormWithCredential(
                     order.getTlReqsn(), order.getPriceFen().longValue(),
-                    "摊小二·" + order.getLevel() + " 套餐", ua, cred);
+                    "拓小二·" + order.getLevel() + " 套餐", ua, cred);
             resp.put("cashierUrl", form == null ? null : form.getRedirectUrl());
             // 异步排程 6 段查询兜底（回调验签 / 漏发场景）— 命中 trxstatus=2000 自动 markPaid
             saasPollingService.schedulePolling(order.getId());

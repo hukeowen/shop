@@ -5,9 +5,9 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 /**
- * 摊小二商户统一小程序配置
+ * 拓小二商户统一小程序配置
  *
- * <p>注意：这是【摊小二商户端专属】小程序，不同于 yudao 自带的 wx.miniapp 会员小程序。
+ * <p>注意：这是【拓小二商户端专属】小程序，不同于 yudao 自带的 wx.miniapp 会员小程序。
  * 需要独立的 appId / appSecret 以便跟会员端小程序区分。</p>
  */
 @Component

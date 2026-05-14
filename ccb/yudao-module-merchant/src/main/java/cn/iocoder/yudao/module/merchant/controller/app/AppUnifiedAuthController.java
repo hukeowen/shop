@@ -69,7 +69,7 @@ import static cn.iocoder.yudao.module.merchant.enums.MerchantErrorCodeConstants.
 import static cn.iocoder.yudao.module.merchant.enums.MerchantErrorCodeConstants.SESSION_KEY_EXPIRED;
 
 /**
- * 摊小二统一登录 Controller（微信小程序 · 会员 ↔ 商户 双角色）
+ * 小二统一登录 Controller（微信小程序 · 会员 ↔ 商户 双角色）
  *
  * <p>实际 URL 前缀 = {@code /app-api/app/auth}。会员和商户共用一个小程序入口：</p>
  *
@@ -84,7 +84,7 @@ import static cn.iocoder.yudao.module.merchant.enums.MerchantErrorCodeConstants.
  * <p>架构说明：starter OAuth2 不支持 extra claims，roles/activeRole 不放 JWT，
  * 而是由当前接口在每次调用时按 memberId 从 DB + Redis 解析。</p>
  */
-@Tag(name = "摊小二 App - 统一登录")
+@Tag(name = "小二 App - 统一登录（商户拓小二 / 用户客小二）")
 @RestController
 @RequestMapping("/app/auth")
 @Validated

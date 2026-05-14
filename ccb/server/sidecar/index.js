@@ -1,5 +1,5 @@
 /**
- * 摊小二 Sidecar — 独立 Node express 服务
+ * 小二 Sidecar — 独立 Node express 服务
  *
  * 把 yudao-ui-merchant-uniapp/vite.config.js 里 dev-only 的 sidecar 抽出来，
  * 让生产 H5 build 后也能跑视频端卡 / 二维码植入 / 抖音发布等功能。
@@ -1130,8 +1130,8 @@ app.get('/douyin/demo-auth', (req, res) => {
   .tip { color:#666; font-size:12px; margin-top:24px; }
 </style></head><body>
 <div class="logo">抖</div>
-<h1>授权"摊小二"</h1>
-<div class="sub">摊小二 SaaS 想要访问你的抖音账号</div>
+<h1>授权"拓小二"</h1>
+<div class="sub">拓小二 SaaS 想要访问你的抖音账号</div>
 <div class="card">
   <div class="row">读取你的抖音昵称和头像</div>
   <div class="row">代你上传视频草稿</div>

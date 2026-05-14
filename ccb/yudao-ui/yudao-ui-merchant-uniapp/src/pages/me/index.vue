@@ -124,7 +124,7 @@
         <text class="arrow">›</text>
       </view>
       <view class="menu-item" @click="goAbout">
-        <view class="mi-l"><text class="mi-ic">ℹ️</text><text>关于摊小二</text></view>
+        <view class="mi-l"><text class="mi-ic">ℹ️</text><text>关于拓小二</text></view>
         <text class="arrow">›</text>
       </view>
     </view>

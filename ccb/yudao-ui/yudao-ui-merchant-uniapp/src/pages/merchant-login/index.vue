@@ -2,10 +2,10 @@
   <view class="page">
     <!-- 顶部品牌 -->
     <view class="hero">
-      <view class="logo">摊</view>
+      <view class="logo">拓</view>
       <view class="brand">
         <view class="brand-name">商户登录</view>
-        <view class="brand-slogan">摊小二 SaaS 后台</view>
+        <view class="brand-slogan">拓小二 SaaS 后台</view>
       </view>
     </view>
 

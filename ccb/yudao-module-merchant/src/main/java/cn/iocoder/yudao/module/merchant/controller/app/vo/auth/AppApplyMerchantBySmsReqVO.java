@@ -18,7 +18,7 @@ import javax.validation.constraints.Size;
  * <p>验证码：生产 yudao.sms-code.demo-mode=false → 真发短信；
  * demo-mode=true → 全场景固定 demo-code（默认 888888，由 yaml 控制）。</p>
  */
-@Schema(description = "摊小二 - 店铺名+手机号+SMS 一键申请商户")
+@Schema(description = "拓小二 - 店铺名+手机号+SMS 一键申请商户")
 @Data
 public class AppApplyMerchantBySmsReqVO {
 

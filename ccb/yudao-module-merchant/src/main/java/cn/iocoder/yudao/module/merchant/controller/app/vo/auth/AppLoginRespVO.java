@@ -7,7 +7,7 @@ import lombok.ToString;
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Schema(description = "摊小二 - 登录响应 VO")
+@Schema(description = "小二 - 登录响应 VO")
 @Data
 public class AppLoginRespVO {
 

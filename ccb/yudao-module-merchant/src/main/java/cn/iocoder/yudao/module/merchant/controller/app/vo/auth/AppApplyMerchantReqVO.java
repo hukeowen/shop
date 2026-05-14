@@ -5,7 +5,7 @@ import lombok.Data;
 
 import javax.validation.constraints.NotBlank;
 
-@Schema(description = "摊小二 - 开通商户（邀请码 + 可选手机号） Req")
+@Schema(description = "拓小二 - 开通商户（邀请码 + 可选手机号） Req")
 @Data
 public class AppApplyMerchantReqVO {
 

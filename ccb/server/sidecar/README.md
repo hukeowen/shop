@@ -1,6 +1,6 @@
 # tanxiaoer-sidecar
 
-独立 Node express 服务，承载摊小二的"AI 视频后处理 + OSS 上传 + TTS + 抖音发布"能力。
+独立 Node express 服务，承载小二（拓小二 / 客小二）的"AI 视频后处理 + OSS 上传 + TTS + 抖音发布"能力。
 
 ## 为什么单独成进程
 

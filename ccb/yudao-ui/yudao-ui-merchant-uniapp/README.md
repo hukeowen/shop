@@ -1,4 +1,4 @@
-# 摊小二商户端（yudao-ui-merchant-uniapp）
+# 小二（拓小二 / 客小二）H5（yudao-ui-merchant-uniapp）
 
 > 原型阶段。订单/商品/报表走 mock；**AI 一键成片走真实火山引擎**。
 

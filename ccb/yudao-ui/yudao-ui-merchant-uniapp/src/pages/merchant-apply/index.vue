@@ -2,9 +2,9 @@
   <view class="page">
     <!-- 顶部品牌区 -->
     <view class="hero">
-      <view class="logo">摊</view>
+      <view class="logo">拓</view>
       <view class="brand">
-        <view class="brand-name">摊小二</view>
+        <view class="brand-name">拓小二</view>
         <view class="brand-slogan">让每个小摊，都有大生意</view>
       </view>
     </view>
@@ -94,7 +94,7 @@
       </button>
 
       <view class="agreement">
-        提交即同意 <text class="agreement-link">《摊小二商户服务协议》</text>
+        提交即同意 <text class="agreement-link">《拓小二商户服务协议》</text>
       </view>
     </view>
 

@@ -34,7 +34,7 @@
       <view class="btn ghost" @click="goSubscription">查看套餐详情</view>
     </view>
 
-    <view class="footer-tip">感谢支持 摊小二 SaaS 服务</view>
+    <view class="footer-tip">感谢支持 拓小二 SaaS 服务</view>
   </view>
 </template>
 

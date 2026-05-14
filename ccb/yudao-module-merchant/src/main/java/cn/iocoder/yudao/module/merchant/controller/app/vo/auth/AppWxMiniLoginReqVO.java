@@ -5,7 +5,7 @@ import lombok.Data;
 
 import javax.validation.constraints.NotBlank;
 
-@Schema(description = "摊小二 - 微信小程序登录 Req")
+@Schema(description = "小二 - 微信小程序登录 Req")
 @Data
 public class AppWxMiniLoginReqVO {
 

@@ -11,7 +11,7 @@ import javax.validation.constraints.Size;
  * H5 / 演示用 — 手机号 + 密码登录。
  * 不发短信、不验真，首次输入即注册（password 走 BCrypt 落库）。
  */
-@Schema(description = "摊小二 - 手机号+密码登录 Req（不验真，首次输入即注册）")
+@Schema(description = "小二 - 手机号+密码登录 Req（不验真，首次输入即注册）")
 @Data
 public class AppPasswordLoginReqVO {
 

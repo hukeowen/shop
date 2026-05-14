@@ -6,7 +6,7 @@
     {
       "path": "pages/index/index",
       "style": {
-        "navigationBarTitleText": "摊小二",
+        "navigationBarTitleText": "拓小二",
         "navigationStyle": "custom",
         "enablePullDownRefresh": true
       }
@@ -179,7 +179,7 @@
     {
       "path": "pages/user-home/index",
       "style": {
-        "navigationBarTitleText": "摊小二",
+        "navigationBarTitleText": "客小二",
         "navigationStyle": "custom",
         "enablePullDownRefresh": true
       }
@@ -283,7 +283,7 @@
     {
       "path": "pages/user-me/about",
       "style": {
-        "navigationBarTitleText": "关于摊小二",
+        "navigationBarTitleText": "关于客小二",
         "navigationStyle": "custom"
       }
     },
@@ -349,7 +349,7 @@
     {
       "path": "pages/me/about",
       "style": {
-        "navigationBarTitleText": "关于摊小二"
+        "navigationBarTitleText": "关于拓小二"
       }
     },
     {
@@ -387,7 +387,7 @@
   ],
   "globalStyle": {
     "navigationBarTextStyle": "black",
-    "navigationBarTitleText": "摊小二",
+    "navigationBarTitleText": "小二",
     "navigationBarBackgroundColor": "#FFFFFF",
     "backgroundColor": "#F6F7F9"
   },

@@ -6,7 +6,7 @@ import lombok.Data;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Pattern;
 
-@Schema(description = "摊小二 - 切换角色 Req")
+@Schema(description = "小二 - 切换角色 Req")
 @Data
 public class AppSwitchRoleReqVO {
 
