@@ -67,8 +67,8 @@ import { useUserStore } from '../../store/user.js';
 
 const userStore = useUserStore();
 
-// redirecting=true 时只渲染 spinner；onLoad 决定到底立即跳还是显示表单
-const redirecting = ref(true);
+// 始终显示登录表单 —— 按产品要求 login 永不自动跳转，避免任何死循环可能
+const redirecting = ref(false);
 const hint = ref('正在进入…');
 
 // 表单态
@@ -109,41 +109,15 @@ function routeByRole() {
 }
 
 function decide(query) {
-  // 收集 redirect（query 优先于已暂存的）
-  let target = '';
+  // 永不自动跳转 —— 进 login 就显示表单。
+  // 仅保存 query.redirect 到 localStorage，供 onPasswordLogin 登录成功后消费。
   if (query?.redirect) {
-    try { target = decodeURIComponent(query.redirect); } catch {}
-  }
-  if (!target) target = readStoredRedirect();
-
-  // 已登录：立即消费 redirect 或按 role 跳，永远不展示表单
-  if (userStore.token) {
-    redirecting.value = true;
-    try {
-      if (target && typeof localStorage !== 'undefined') {
-        localStorage.removeItem('redirect:after-login');
-      }
-    } catch {}
-    if (target) { uni.reLaunch({ url: target }); return; }
-    if (userStore.activeRole === 'merchant') { uni.reLaunch({ url: '/pages/index/index' }); return; }
-    uni.reLaunch({ url: '/pages/user-home/index' });
-    return;
-  }
-
-  // 未登录但有 redirect（来自 401 / shop-share）：先保存，落到 user-home 浏览
-  // —— user-home 已被 request.js 加入 ANON_BROWSE 白名单，不会再 401 → login 死循环
-  if (target) {
     try {
       if (typeof localStorage !== 'undefined') {
-        localStorage.setItem('redirect:after-login', target);
+        localStorage.setItem('redirect:after-login', decodeURIComponent(query.redirect));
       }
     } catch {}
-    redirecting.value = true;
-    uni.reLaunch({ url: '/pages/user-home/index' });
-    return;
   }
-
-  // 未登录且无 redirect：展示登录表单（H5 演示用）
   redirecting.value = false;
 }
 
