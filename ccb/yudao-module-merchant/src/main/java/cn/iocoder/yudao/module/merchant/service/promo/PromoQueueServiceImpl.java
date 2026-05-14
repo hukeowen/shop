@@ -584,14 +584,24 @@ public class PromoQueueServiceImpl implements PromoQueueService {
         int cumulated = buyerPos == null ? 0 : (buyerPos.getAccumulatedCount() == null ? 0 : buyerPos.getAccumulatedCount());
         boolean completed = buyerPos != null && STATE_COMPLETED.equals(buyerPos.getState());
 
-        long total = 0L;
+        // 精度修复：单件 round_down(unitPrice × ratio / 100) 会丢 < 1 分的余数；
+        // 多件累加后差额放大（例：unitPrice=10 + ratios=[25,25,25,25]，4 件本应 100%=10 分，
+        // 但每件 round_down(2.5)=2，累加 8 分，导致"推 4 反 1"要买 7 件才够抵扣 1 件）。
+        // 改为：累加 ratio，最后一次 round_down(unitPrice × accRatio / 100) — 推 4 反 1 买 5 件即 1 件免单。
+        BigDecimal accRatio = BigDecimal.ZERO;
         for (int i = 0; i < totalCount; i++) {
             boolean isFirst = isFirstPurchase && i == 0;
             V8Step step = simulateOneItem(cumulated, completed, isFirst, unitPrice, ratios, directRate, n);
-            total += step.award;
+            if (step.usedRatio != null) {
+                accRatio = accRatio.add(step.usedRatio);
+            }
             cumulated = step.nextCumulated;
             completed = step.nextCompleted;
         }
+        long total = BigDecimal.valueOf(unitPrice)
+                .multiply(accRatio)
+                .divide(BigDecimal.valueOf(100), 0, RoundingMode.DOWN)
+                .longValueExact();
         return total;
     }
 
