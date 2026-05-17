@@ -158,6 +158,60 @@ public class AppMerchantPromoController {
         return success(poolRoundMapper.selectPage(pageParam));
     }
 
+    // ==================== v8 SPU 级星级奖池（按商品独立池） ====================
+
+    @Resource
+    private cn.iocoder.yudao.module.merchant.service.promo.SpuPoolSettleService spuPoolSettleService;
+    @Resource
+    private cn.iocoder.yudao.module.merchant.dal.mysql.promo.SpuStarPoolMapper spuStarPoolMapper;
+    @Resource
+    private cn.iocoder.yudao.module.merchant.dal.mysql.promo.SpuStarPoolSettleRecordMapper spuStarPoolSettleRecordMapper;
+    @Resource
+    private cn.iocoder.yudao.module.merchant.dal.mysql.promo.SpuStarPoolPayoutItemMapper spuStarPoolPayoutItemMapper;
+
+    @GetMapping("/spu-pool/balance")
+    @Operation(summary = "v8 查某 SPU 的池余额 + 累计入/出")
+    @Parameter(name = "spuId", required = true)
+    public CommonResult<Map<String, Object>> getSpuPoolBalance(@RequestParam("spuId") @NotNull Long spuId) {
+        cn.iocoder.yudao.module.merchant.dal.dataobject.promo.SpuStarPoolDO pool =
+                spuStarPoolMapper.selectBySpuId(spuId);
+        Map<String, Object> resp = new HashMap<>();
+        if (pool == null) {
+            resp.put("poolBalance", 0L);
+            resp.put("totalIn", 0L);
+            resp.put("totalOut", 0L);
+        } else {
+            resp.put("poolBalance", pool.getPoolBalance() == null ? 0L : pool.getPoolBalance());
+            resp.put("totalIn", pool.getTotalIn() == null ? 0L : pool.getTotalIn());
+            resp.put("totalOut", pool.getTotalOut() == null ? 0L : pool.getTotalOut());
+        }
+        return success(resp);
+    }
+
+    @PostMapping("/spu-pool/settle")
+    @Operation(summary = "v8 立即结算某 SPU 的奖池")
+    public CommonResult<cn.iocoder.yudao.module.merchant.dal.dataobject.promo.SpuStarPoolSettleRecordDO> settleSpuPool(
+            @RequestParam("spuId") @NotNull Long spuId,
+            @RequestParam(value = "remark", required = false) String remark) {
+        return success(spuPoolSettleService.settle(spuId, remark));
+    }
+
+    @GetMapping("/spu-pool/settle-records")
+    @Operation(summary = "v8 分页查某 SPU 的历次结算单（倒序）")
+    public CommonResult<PageResult<cn.iocoder.yudao.module.merchant.dal.dataobject.promo.SpuStarPoolSettleRecordDO>> listSpuPoolRecords(
+            @RequestParam("spuId") @NotNull Long spuId,
+            @RequestParam(value = "pageNo", defaultValue = "1") int pageNo,
+            @RequestParam(value = "pageSize", defaultValue = "10") int pageSize) {
+        return success(spuStarPoolSettleRecordMapper.selectPageBySpuId(spuId, pageNo, pageSize));
+    }
+
+    @GetMapping("/spu-pool/settle-record/payouts")
+    @Operation(summary = "v8 查某次结算的中奖明细")
+    public CommonResult<List<cn.iocoder.yudao.module.merchant.dal.dataobject.promo.SpuStarPoolPayoutItemDO>> listSpuPoolPayouts(
+            @RequestParam("settleId") @NotNull Long settleId) {
+        return success(spuStarPoolPayoutItemMapper.selectListBySettleId(settleId));
+    }
+
     // ==================== 推荐链绑定 ====================
 
     /**

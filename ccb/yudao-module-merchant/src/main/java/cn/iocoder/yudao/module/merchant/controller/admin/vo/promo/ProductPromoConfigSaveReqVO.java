@@ -58,4 +58,8 @@ public class ProductPromoConfigSaveReqVO {
     @DecimalMin("0.00")
     private BigDecimal poolRatio;
 
+    @Schema(description = "v8 奖池分配规则 JSON [{star,ratio,mode:EQUAL|LOTTERY,winners?}]，sum(ratio)=100",
+            example = "[{\"star\":5,\"ratio\":50,\"mode\":\"EQUAL\"},{\"star\":4,\"ratio\":50,\"mode\":\"LOTTERY\",\"winners\":3}]")
+    private String poolDistRules;
+
 }

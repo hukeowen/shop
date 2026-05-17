@@ -160,6 +160,40 @@
         <input class="input compact" type="digit" v-model="promo.poolRatio" placeholder="例 1（每订单实付 × 此入池）" />
       </view>
 
+      <!-- v8: 奖池分配规则（手工结算时按此分） -->
+      <template v-if="(parseInt(promo.starCount)||0) > 0 && parseFloat(promo.poolRatio) > 0">
+        <view class="field">
+          <text class="label">奖池分配规则（按星级切片，加总必须 = 100%）</text>
+          <view v-for="(d, i) in promo.poolDistList" :key="i" class="dist-row">
+            <view class="dist-tag">{{ d.star }}星</view>
+            <view class="dist-fields">
+              <view class="field-mini">
+                <text class="mini-label">占池 %</text>
+                <input class="input mini" type="digit" :value="d.ratio"
+                  @input="(e) => (promo.poolDistList[i].ratio = e.detail.value)" />
+              </view>
+              <view class="field-mini">
+                <text class="mini-label">方式</text>
+                <view class="radio-row tight">
+                  <view class="radio-chip sm" :class="{ active: d.mode === 'EQUAL' }"
+                    @click="promo.poolDistList[i].mode = 'EQUAL'">均分</view>
+                  <view class="radio-chip sm" :class="{ active: d.mode === 'LOTTERY' }"
+                    @click="promo.poolDistList[i].mode = 'LOTTERY'">抽奖</view>
+                </view>
+              </view>
+              <view class="field-mini" v-if="d.mode === 'LOTTERY'">
+                <text class="mini-label">中奖名额</text>
+                <input class="input mini" type="number" :value="d.winners"
+                  @input="(e) => (promo.poolDistList[i].winners = e.detail.value)" placeholder="≥1" />
+              </view>
+            </view>
+          </view>
+          <text class="hint inline" :class="{ warn: distSum !== 100 }">
+            合计 {{ distSum.toFixed(1) }}% / 100%（必须严格等于 100%）
+          </text>
+        </view>
+      </template>
+
       <view class="switch-row">
         <view class="switch-body">
           <view class="switch-title">参与星级积分池（v6 兼容）</view>
@@ -176,6 +210,27 @@
         <button class="btn ghost-brand" :disabled="promoSaving" @click="onSavePromo">
           {{ promoSaving ? '保存中…' : '保存营销配置' }}
         </button>
+      </view>
+
+      <!-- v8: 当前 SPU 池余额 + 结算入口（编辑模式 + 入池比例 > 0 才显示） -->
+      <view v-if="isEdit && parseFloat(promo.poolRatio) > 0" class="pool-ops">
+        <view class="pool-summary">
+          <view class="pool-item">
+            <text class="label">当前池余额</text>
+            <text class="value">¥{{ (poolBalance / 100).toFixed(2) }}</text>
+            <text class="sub">≈ {{ poolBalance }} 分</text>
+          </view>
+          <view class="pool-item">
+            <text class="label">累计入/出</text>
+            <text class="sub">入 ¥{{ (poolTotalIn / 100).toFixed(2) }} / 出 ¥{{ (poolTotalOut / 100).toFixed(2) }}</text>
+          </view>
+        </view>
+        <view class="pool-btn-row">
+          <button class="btn ghost-brand" :disabled="settling || poolBalance <= 0" @click="onSettle">
+            {{ settling ? '结算中…' : '立即结算' }}
+          </button>
+          <button class="btn ghost" @click="goSettleRecords">结算记录</button>
+        </view>
       </view>
     </view>
 
@@ -256,7 +311,12 @@ import {
   loadCategories,
   updateSpu,
 } from '../../api/product.js';
-import { getProductPromoConfig, saveProductPromoConfig } from '../../api/promo.js';
+import {
+  getProductPromoConfig,
+  saveProductPromoConfig,
+  getSpuPoolBalance,
+  settleSpuPool,
+} from '../../api/promo.js';
 
 const categories = CATEGORIES;
 const isEdit = ref(false);
@@ -289,6 +349,21 @@ const promo = reactive({
   starUpgradeRules: [],   // [{directCount, teamSalesYuan}]，提交时 ×100 转分
   poolRatio: '0',
   poolEnabled: false,
+  // v8: 奖池分配规则；每星一条 {star, ratio, mode:EQUAL|LOTTERY, winners}
+  poolDistList: [],
+});
+
+// v8 当前 SPU 池余额（编辑模式实时拉）
+const poolBalance = ref(0);
+const poolTotalIn = ref(0);
+const poolTotalOut = ref(0);
+const settling = ref(false);
+
+// 奖池分配规则合计
+const distSum = computed(() => {
+  let s = 0;
+  for (const d of promo.poolDistList) s += Number(d.ratio) || 0;
+  return s;
 });
 
 function syncTuijianN() {
@@ -305,6 +380,20 @@ function syncStarCount() {
   if (promo.starRatios.length > target) promo.starRatios.length = target;
   while (promo.starUpgradeRules.length < target) promo.starUpgradeRules.push({ directCount: '0', teamSalesYuan: '0' });
   if (promo.starUpgradeRules.length > target) promo.starUpgradeRules.length = target;
+  syncPoolDistRows();
+}
+
+// 奖池分配行：跟 starCount 联动；保留已填值，按 1..starCount 重排
+function syncPoolDistRows() {
+  const target = Math.max(0, Math.min(10, parseInt(promo.starCount) || 0));
+  const existing = new Map(promo.poolDistList.map((d) => [Number(d.star), d]));
+  const next = [];
+  // 高星到低星生成（用户视觉习惯 5 → 1）
+  for (let s = target; s >= 1; s--) {
+    const e = existing.get(s);
+    next.push(e || { star: s, ratio: '0', mode: 'EQUAL', winners: '1' });
+  }
+  promo.poolDistList = next;
 }
 
 async function loadPromo(spuId) {
@@ -344,6 +433,25 @@ async function loadPromo(spuId) {
     syncStarCount();
     promo.poolRatio = String(data.poolRatio ?? '0');
     promo.poolEnabled = !!data.poolEnabled;
+    // poolDistRules: 把 JSON 反序列化到 poolDistList；优先用后端，星级缺失自动补
+    try {
+      const arr = JSON.parse(data.poolDistRules || '[]');
+      if (Array.isArray(arr) && arr.length > 0) {
+        const map = new Map(arr.map((r) => [Number(r.star), r]));
+        const target = parseInt(promo.starCount) || 0;
+        const next = [];
+        for (let s = target; s >= 1; s--) {
+          const r = map.get(s);
+          next.push(r
+            ? { star: s, ratio: String(r.ratio ?? '0'),
+                mode: r.mode || 'EQUAL', winners: String(r.winners ?? '1') }
+            : { star: s, ratio: '0', mode: 'EQUAL', winners: '1' });
+        }
+        promo.poolDistList = next;
+      }
+    } catch {
+      // 解析失败留空 — syncPoolDistRows 已补
+    }
   } finally {
     promoLoaded.value = true;
   }
@@ -376,6 +484,41 @@ async function onSavePromo() {
     });
     return;
   }
+  // 奖池分配规则校验：入池比例 > 0 时才校验；强 sum=100
+  const poolEnabled = (parseFloat(promo.poolRatio) || 0) > 0;
+  let poolDistJson = '';
+  if (poolEnabled && parseInt(promo.starCount) > 0) {
+    const filled = promo.poolDistList
+      .filter((d) => Number(d.ratio) > 0)
+      .map((d) => {
+        const o = {
+          star: Number(d.star),
+          ratio: Number(d.ratio) || 0,
+          mode: d.mode || 'EQUAL',
+        };
+        if (o.mode === 'LOTTERY') o.winners = parseInt(d.winners) || 1;
+        return o;
+      });
+    if (filled.length > 0) {
+      const sum = filled.reduce((s, x) => s + Number(x.ratio), 0);
+      if (Math.abs(sum - 100) > 0.001) {
+        uni.showToast({
+          title: `奖池分配 ${sum.toFixed(1)}% ≠ 100%，请调整`,
+          icon: 'none',
+          duration: 2500,
+        });
+        return;
+      }
+      for (const x of filled) {
+        if (x.mode === 'LOTTERY' && (!x.winners || x.winners < 1)) {
+          uni.showToast({ title: `${x.star} 星抽奖名额必须 ≥ 1`, icon: 'none' });
+          return;
+        }
+      }
+      poolDistJson = JSON.stringify(filled);
+    }
+  }
+
   promoSaving.value = true;
   try {
     syncStarCount();
@@ -397,11 +540,53 @@ async function onSavePromo() {
       }))) : '[]',
       poolRatio: parseFloat(promo.poolRatio) || 0,
       poolEnabled: !!promo.poolEnabled,
+      poolDistRules: poolDistJson,
     });
     uni.showToast({ title: '营销配置已保存', icon: 'success' });
   } finally {
     promoSaving.value = false;
   }
+}
+
+// v8 拉池余额
+async function loadPoolBalance() {
+  if (!isEdit.value || !editingId.value) return;
+  try {
+    const r = await getSpuPoolBalance(editingId.value);
+    if (r) {
+      poolBalance.value = r.poolBalance || 0;
+      poolTotalIn.value = r.totalIn || 0;
+      poolTotalOut.value = r.totalOut || 0;
+    }
+  } catch {}
+}
+
+async function onSettle() {
+  const m = await uni.showModal({
+    title: '确认结算',
+    content: `将按"奖池分配规则"把当前 ¥${(poolBalance.value / 100).toFixed(2)} 全部分发给对应星级用户的推广积分。结算后池清零，无法撤销。`,
+  });
+  if (!m.confirm) return;
+  settling.value = true;
+  try {
+    const rec = await settleSpuPool(editingId.value, '');
+    if (rec) {
+      const dist = rec.totalDistributed || 0;
+      uni.showToast({
+        title: `已分发 ¥${(dist / 100).toFixed(2)}`,
+        icon: 'success',
+      });
+      await loadPoolBalance();
+    }
+  } catch (e) {
+    uni.showToast({ title: e?.msg || '结算失败', icon: 'none', duration: 2200 });
+  } finally {
+    settling.value = false;
+  }
+}
+
+function goSettleRecords() {
+  uni.navigateTo({ url: `/pages/product/pool-records?spuId=${editingId.value}` });
 }
 
 const categoryIdx = computed(() => {
@@ -481,6 +666,7 @@ async function loadIfEdit(id) {
   }
   uni.setNavigationBarTitle({ title: '编辑商品' });
   loadPromo(id);
+  loadPoolBalance();
 }
 
 async function onSubmit() {
@@ -780,6 +966,128 @@ onLoad(async (q) => {
     &.warn {
       color: #e63946;
       font-weight: 600;
+    }
+  }
+
+  .dist-row {
+    display: flex;
+    gap: 12rpx;
+    padding: 12rpx 0;
+    border-top: 1rpx dashed $border-color;
+
+    .dist-tag {
+      flex: 0 0 80rpx;
+      height: 60rpx;
+      margin-top: 30rpx;
+      line-height: 60rpx;
+      text-align: center;
+      background: linear-gradient(135deg, #ffd6b8, #ff6b35);
+      color: #fff;
+      border-radius: $radius-md;
+      font-size: 24rpx;
+      font-weight: 600;
+    }
+    .dist-fields {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 1.4fr 1fr;
+      gap: 12rpx;
+      align-items: end;
+    }
+    .field-mini {
+      .mini-label {
+        display: block;
+        font-size: 22rpx;
+        color: $text-secondary;
+        margin-bottom: 6rpx;
+      }
+      .input.mini {
+        width: 100%;
+        height: 60rpx;
+        line-height: 60rpx;
+        background: #f6f7f9;
+        border-radius: $radius-md;
+        padding: 0 16rpx;
+        font-size: 26rpx;
+        box-sizing: border-box;
+      }
+    }
+  }
+
+  .radio-row.tight {
+    display: flex;
+    gap: 8rpx;
+    .radio-chip.sm {
+      padding: 8rpx 14rpx;
+      font-size: 22rpx;
+      border-radius: 999rpx;
+      background: #f6f7f9;
+      color: $text-secondary;
+      border: 1rpx solid transparent;
+      &.active {
+        background: rgba(255, 107, 53, 0.12);
+        color: $brand-primary;
+        border-color: $brand-primary;
+        font-weight: 600;
+      }
+    }
+  }
+
+  .pool-ops {
+    margin-top: 20rpx;
+    padding: 20rpx;
+    background: linear-gradient(135deg, rgba(255, 107, 53, 0.05), rgba(255, 154, 74, 0.05));
+    border-radius: $radius-md;
+
+    .pool-summary {
+      display: flex;
+      gap: 16rpx;
+      margin-bottom: 16rpx;
+      .pool-item {
+        flex: 1;
+        .label {
+          display: block;
+          font-size: 22rpx;
+          color: $text-secondary;
+        }
+        .value {
+          display: block;
+          margin-top: 4rpx;
+          font-size: 36rpx;
+          font-weight: 700;
+          color: $brand-primary;
+        }
+        .sub {
+          display: block;
+          margin-top: 4rpx;
+          font-size: 22rpx;
+          color: $text-secondary;
+        }
+      }
+    }
+    .pool-btn-row {
+      display: flex;
+      gap: 12rpx;
+      .btn {
+        flex: 1;
+        height: 76rpx;
+        line-height: 76rpx;
+        font-size: 26rpx;
+        font-weight: 600;
+        border-radius: $radius-md;
+        &.ghost-brand {
+          background: rgba(255, 107, 53, 0.12);
+          color: $brand-primary;
+          border: 2rpx solid rgba(255, 107, 53, 0.4);
+        }
+        &.ghost {
+          background: #f6f7f9;
+          color: $text-primary;
+          border: 1rpx solid $border-color;
+        }
+        &[disabled] { opacity: 0.5; }
+        &::after { border: none; }
+      }
     }
   }
 

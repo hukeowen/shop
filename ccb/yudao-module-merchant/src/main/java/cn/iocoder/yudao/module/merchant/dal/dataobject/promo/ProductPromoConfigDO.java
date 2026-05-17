@@ -62,6 +62,12 @@ public class ProductPromoConfigDO extends TenantBaseDO {
     /** 星级奖池入池比例 (%)；订单 spu 行实付 × 此比例 入 spu_star_pool */
     private BigDecimal poolRatio;
 
+    /**
+     * v8 奖池分配规则 JSON：[{"star":N,"ratio":pct,"mode":"EQUAL|LOTTERY","winners":?}]。
+     * sum(ratio)=100 强校验；EQUAL = 该星全员均分；LOTTERY = 抽 winners 名，winners > 实际人数时全中。
+     */
+    private String poolDistRules;
+
     // ========== 积分池 ==========
     /** 是否参与星级积分池（v6 兼容字段；v8 用 poolRatio>0 判定）*/
     private Boolean poolEnabled;

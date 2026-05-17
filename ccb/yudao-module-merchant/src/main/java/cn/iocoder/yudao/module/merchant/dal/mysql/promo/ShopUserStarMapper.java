@@ -122,4 +122,11 @@ public interface ShopUserStarMapper extends BaseMapperX<ShopUserStarDO> {
             + "WHERE user_id = #{userId} AND spu_id = #{spuId} AND deleted = b'0' AND current_star < #{newStar}")
     int upgradeStarIfHigherBySpu(@Param("userId") Long userId, @Param("spuId") Long spuId, @Param("newStar") int newStar);
 
+    /** v8 奖池结算用：列出在指定 SPU 上达到指定星级的用户。 */
+    default List<ShopUserStarDO> selectListBySpuAndStar(Long spuId, int star) {
+        return selectList(new LambdaQueryWrapperX<ShopUserStarDO>()
+                .eq(ShopUserStarDO::getSpuId, spuId)
+                .eq(ShopUserStarDO::getCurrentStar, star));
+    }
+
 }

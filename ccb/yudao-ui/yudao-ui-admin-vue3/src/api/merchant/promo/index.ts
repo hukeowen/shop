@@ -32,6 +32,13 @@ export interface ProductPromoConfigVO {
   tuijianN: number
   tuijianRatios: string
   poolEnabled: boolean
+  // v8
+  directRate?: number
+  starCount?: number
+  starRatios?: string
+  starUpgradeRules?: string
+  poolRatio?: number
+  poolDistRules?: string
 }
 
 export const getProductPromoConfig = (spuId: number) =>
@@ -39,6 +46,49 @@ export const getProductPromoConfig = (spuId: number) =>
 
 export const saveProductPromoConfig = (data: ProductPromoConfigVO) =>
   request.put({ url: '/merchant/promo/product-config', data })
+
+// ==================== v8 SPU 级奖池结算（管理后台） ====================
+
+export interface SpuPoolBalanceVO {
+  poolBalance: number
+  totalIn: number
+  totalOut: number
+}
+
+export interface SpuPoolSettleRecordVO {
+  id: number
+  spuId: number
+  poolBalanceBefore: number
+  poolBalanceAfter: number
+  totalDistributed: number
+  rulesSnapshot: string
+  operatorId?: number
+  operatorName?: string
+  remark?: string
+  createTime: string
+}
+
+export interface SpuPoolPayoutItemVO {
+  id: number
+  settleId: number
+  spuId: number
+  userId: number
+  star: number
+  mode: string
+  amount: number
+}
+
+export const getSpuPoolBalance = (spuId: number) =>
+  request.get({ url: '/merchant/promo/pool/balance', params: { spuId } })
+
+export const settleSpuPool = (spuId: number, remark?: string) =>
+  request.post({ url: '/merchant/promo/pool/settle', params: { spuId, remark } })
+
+export const listSpuPoolSettleRecords = (spuId: number, pageNo = 1, pageSize = 10) =>
+  request.get({ url: '/merchant/promo/pool/settle-records', params: { spuId, pageNo, pageSize } })
+
+export const listSpuPoolPayouts = (settleId: number) =>
+  request.get({ url: '/merchant/promo/pool/settle-record/payouts', params: { settleId } })
 
 // ==================== 推广积分提现审批 ====================
 

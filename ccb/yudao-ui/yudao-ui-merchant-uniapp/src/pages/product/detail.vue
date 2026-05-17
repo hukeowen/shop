@@ -56,6 +56,35 @@
         <view class="body">{{ product.description }}</view>
       </view>
 
+      <!-- v8 本期中奖名单 + 池余额 -->
+      <view v-if="poolBalance > 0 || latestWinners.length > 0" class="pd-section pool-section">
+        <view class="hdr">
+          <text>奖池公示</text>
+          <text class="t-brand" @click="goPoolPublic">查看全部 ›</text>
+        </view>
+        <view class="pool-strip">
+          <text class="pool-bal">当前奖池 <text class="b">¥{{ fen2yuan(poolBalance) }}</text></text>
+          <text class="pool-out" v-if="poolTotalOut > 0">已发 ¥{{ fen2yuan(poolTotalOut) }}</text>
+        </view>
+        <view v-if="latestWinners.length === 0" class="pool-empty">暂无中奖记录</view>
+        <view v-else class="winners-list">
+          <view v-for="(w, idx) in latestWinners.slice(0, 6)" :key="w.id" class="winner-row" :class="{ self: w.isSelf }">
+            <text class="rank">{{ idx + 1 }}</text>
+            <image v-if="w.avatar" :src="w.avatar" class="ava" mode="aspectFill" />
+            <view v-else class="ava default-ava">{{ (w.maskedNickname || '?').charAt(0) }}</view>
+            <view class="info">
+              <view class="r1">
+                <text class="nk">{{ w.maskedNickname }}</text>
+                <text v-if="w.isSelf" class="self-tag">我</text>
+                <text class="star-tag">{{ w.star }}星</text>
+              </view>
+              <text class="r2">{{ w.mode === 'LOTTERY' ? '抽中' : '均分' }}</text>
+            </view>
+            <text class="amt">+¥{{ fen2yuan(w.amount) }}</text>
+          </view>
+        </view>
+      </view>
+
       <view class="bottom-space"></view>
     </view>
 
@@ -89,6 +118,11 @@ const selectedSkuId = ref(null);
 const promoConfig = ref(null);
 const cartCount = ref(0);
 const loading = ref(false);
+
+// v8 奖池公示（最近一次中奖名单 + 池余额）
+const poolBalance = ref(0);
+const poolTotalOut = ref(0);
+const latestWinners = ref([]);
 
 const selectedSku = computed(() => {
   if (!product.value || !product.value.skus) return null;
@@ -146,6 +180,29 @@ async function loadPromoConfig() {
   } catch { promoConfig.value = null; }
 }
 
+// v8 加载奖池公示数据（池余额 + 最近一次中奖名单）
+async function loadPoolPublic() {
+  if (!spuId.value) return;
+  try {
+    const [bal, lw] = await Promise.all([
+      request({ url: `/app-api/merchant/promo/pool/balance?spuId=${spuId.value}` }),
+      request({ url: `/app-api/merchant/promo/pool/latest-payouts?spuId=${spuId.value}&limit=6` }),
+    ]);
+    if (bal) {
+      poolBalance.value = bal.poolBalance || 0;
+      poolTotalOut.value = bal.totalOut || 0;
+    }
+    latestWinners.value = Array.isArray(lw) ? lw : [];
+  } catch {
+    poolBalance.value = 0;
+    latestWinners.value = [];
+  }
+}
+
+function goPoolPublic() {
+  uni.navigateTo({ url: `/pages/user-me/pool-public?spuId=${spuId.value}` });
+}
+
 async function loadCartCount() {
   try {
     // 购物车按用户自身 token tenant 走，不传商户 tenantId 头
@@ -196,6 +253,7 @@ onLoad((q) => {
   loadProduct();
   loadPromoConfig();
   loadCartCount();
+  loadPoolPublic();
 });
 </script>
 
@@ -280,6 +338,57 @@ onLoad((q) => {
 }
 .pd-section .hdr .t-brand { color: $brand-primary; font-weight: 400; font-size: 24rpx; }
 .pd-section .body { margin-top: 16rpx; font-size: 26rpx; color: $text-secondary; line-height: 1.7; }
+
+.pool-section .pool-strip {
+  margin-top: 14rpx;
+  padding: 16rpx 20rpx;
+  background: linear-gradient(135deg, rgba(255,107,53,.08), rgba(255,154,74,.06));
+  border-radius: $radius-md;
+  display: flex; justify-content: space-between;
+  .pool-bal { font-size: 24rpx; color: $text-secondary; }
+  .pool-bal .b { color: $brand-primary; font-weight: 800; font-size: 30rpx; }
+  .pool-out { font-size: 22rpx; color: $text-secondary; align-self: center; }
+}
+.pool-section .pool-empty {
+  margin-top: 16rpx; text-align: center; padding: 30rpx 0;
+  color: $text-placeholder; font-size: 24rpx;
+}
+.pool-section .winners-list { margin-top: 12rpx; }
+.pool-section .winner-row {
+  display: flex; align-items: center; gap: 16rpx;
+  padding: 14rpx 0;
+  border-bottom: 1rpx dashed $border-color;
+  &:last-child { border-bottom: none; }
+  &.self { background: rgba(255,107,53,.05); border-radius: $radius-md; padding-left: 12rpx; padding-right: 12rpx; }
+  .rank {
+    flex: 0 0 36rpx; height: 36rpx; line-height: 36rpx; text-align: center;
+    font-size: 22rpx; color: $text-secondary; font-weight: 600;
+  }
+  .ava {
+    width: 60rpx; height: 60rpx; border-radius: 50%;
+    flex: 0 0 60rpx;
+  }
+  .default-ava {
+    background: $bg-page; color: $text-secondary;
+    line-height: 60rpx; text-align: center;
+    font-size: 26rpx; font-weight: 600;
+  }
+  .info {
+    flex: 1; display: flex; flex-direction: column; gap: 4rpx;
+    .r1 { display: flex; align-items: center; gap: 8rpx; }
+    .nk { font-size: 24rpx; color: $text-primary; font-weight: 500; }
+    .self-tag {
+      font-size: 18rpx; background: $brand-primary; color: #fff;
+      padding: 2rpx 8rpx; border-radius: 999rpx;
+    }
+    .star-tag {
+      font-size: 18rpx; background: rgba(255,107,53,.12); color: $brand-primary;
+      padding: 2rpx 10rpx; border-radius: 999rpx;
+    }
+    .r2 { font-size: 20rpx; color: $text-secondary; }
+  }
+  .amt { font-size: 26rpx; font-weight: 700; color: $brand-primary; }
+}
 
 .sku-list { margin-top: 16rpx; display: flex; flex-wrap: wrap; gap: 12rpx; }
 .sku-pill {

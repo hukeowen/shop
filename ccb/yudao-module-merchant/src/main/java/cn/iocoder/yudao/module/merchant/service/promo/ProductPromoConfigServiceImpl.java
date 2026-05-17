@@ -99,6 +99,69 @@ public class ProductPromoConfigServiceImpl implements ProductPromoConfigService 
                         "starUpgradeRules 不是合法 JSON 数组：" + e.getMessage());
             }
         }
+
+        // v8 奖池分配规则：可空（不配 = 没启用结算），非空时强校验
+        String distJson = req.getPoolDistRules();
+        if (distJson != null && !distJson.trim().isEmpty() && !"[]".equals(distJson.trim())) {
+            List<Map<String, Object>> rules;
+            try {
+                rules = JsonUtils.parseArray(distJson, (Class) Map.class);
+            } catch (Exception e) {
+                throw ServiceExceptionUtil.exception0(1_031_002_009,
+                        "poolDistRules 不是合法 JSON 数组：" + e.getMessage());
+            }
+            if (rules == null || rules.isEmpty()) {
+                throw ServiceExceptionUtil.exception0(1_031_002_010, "poolDistRules 至少配 1 条");
+            }
+            int starCount = sc == null ? 0 : sc;
+            BigDecimal ratioSum = BigDecimal.ZERO;
+            java.util.Set<Integer> seenStars = new java.util.HashSet<>();
+            for (int i = 0; i < rules.size(); i++) {
+                Map<String, Object> r = rules.get(i);
+                Object starObj = r.get("star");
+                Object ratioObj = r.get("ratio");
+                Object modeObj = r.get("mode");
+                if (!(starObj instanceof Number)) {
+                    throw ServiceExceptionUtil.exception0(1_031_002_011,
+                            "poolDistRules[" + i + "].star 缺失或非数字");
+                }
+                int star = ((Number) starObj).intValue();
+                if (star <= 0 || (starCount > 0 && star > starCount)) {
+                    throw ServiceExceptionUtil.exception0(1_031_002_012,
+                            "poolDistRules[" + i + "].star=" + star + " 必须 ∈ [1," + starCount + "]");
+                }
+                if (!seenStars.add(star)) {
+                    throw ServiceExceptionUtil.exception0(1_031_002_013,
+                            "poolDistRules 星级 " + star + " 重复");
+                }
+                if (!(ratioObj instanceof Number)) {
+                    throw ServiceExceptionUtil.exception0(1_031_002_014,
+                            "poolDistRules[" + i + "].ratio 缺失或非数字");
+                }
+                BigDecimal ratio = new BigDecimal(ratioObj.toString());
+                if (ratio.compareTo(BigDecimal.ZERO) <= 0 || ratio.compareTo(new BigDecimal("100")) > 0) {
+                    throw ServiceExceptionUtil.exception0(1_031_002_015,
+                            "poolDistRules[" + i + "].ratio=" + ratio + " 必须 ∈ (0,100]");
+                }
+                ratioSum = ratioSum.add(ratio);
+                String mode = modeObj == null ? "" : modeObj.toString();
+                if (!"EQUAL".equals(mode) && !"LOTTERY".equals(mode)) {
+                    throw ServiceExceptionUtil.exception0(1_031_002_016,
+                            "poolDistRules[" + i + "].mode 必须是 EQUAL 或 LOTTERY，当前=" + mode);
+                }
+                if ("LOTTERY".equals(mode)) {
+                    Object winnersObj = r.get("winners");
+                    if (!(winnersObj instanceof Number) || ((Number) winnersObj).intValue() < 1) {
+                        throw ServiceExceptionUtil.exception0(1_031_002_017,
+                                "poolDistRules[" + i + "] LOTTERY 模式 winners 必须 ≥ 1");
+                    }
+                }
+            }
+            if (ratioSum.compareTo(new BigDecimal("100")) != 0) {
+                throw ServiceExceptionUtil.exception0(1_031_002_018,
+                        "poolDistRules ratio 加总 = " + ratioSum + " 必须严格等于 100");
+            }
+        }
     }
 
     private List<BigDecimal> parseDecArray(String json, String fieldName) {

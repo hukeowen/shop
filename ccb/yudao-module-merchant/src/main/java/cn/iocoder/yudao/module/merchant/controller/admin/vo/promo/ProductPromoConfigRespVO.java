@@ -44,4 +44,7 @@ public class ProductPromoConfigRespVO {
     @Schema(description = "v8 入池比例(%)")
     private BigDecimal poolRatio;
 
+    @Schema(description = "v8 奖池分配规则 JSON [{star,ratio,mode,winners?}]，sum(ratio)=100")
+    private String poolDistRules;
+
 }

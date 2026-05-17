@@ -123,6 +123,24 @@
       }
     },
     {
+      "path": "pages/product/pool-records",
+      "style": {
+        "navigationBarTitleText": "奖池结算记录"
+      }
+    },
+    {
+      "path": "pages/product/pool-detail",
+      "style": {
+        "navigationBarTitleText": "结算明细"
+      }
+    },
+    {
+      "path": "pages/user-me/pool-public",
+      "style": {
+        "navigationBarTitleText": "奖池公示"
+      }
+    },
+    {
       "path": "pages/product/batch",
       "style": {
         "navigationBarTitleText": "AI 识别上架"

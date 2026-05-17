@@ -108,6 +108,75 @@ export function listPoolRounds({ pageNo = 1, pageSize = 20 } = {}) {
   });
 }
 
+// ==================== v8 SPU 级奖池（按商品独立） ====================
+
+/** 查某 SPU 当前池余额 + 历史入/出 */
+export function getSpuPoolBalance(spuId) {
+  return request({
+    url: '/app-api/merchant/mini/promo/spu-pool/balance',
+    data: { spuId },
+  });
+}
+
+/** 商户触发某 SPU 立即结算 */
+export function settleSpuPool(spuId, remark) {
+  const q = `spuId=${encodeURIComponent(spuId)}` + (remark ? `&remark=${encodeURIComponent(remark)}` : '');
+  return request({
+    url: `/app-api/merchant/mini/promo/spu-pool/settle?${q}`,
+    method: 'POST',
+  });
+}
+
+/** 商户查某 SPU 的历次结算单 */
+export function listSpuPoolRecords(spuId, { pageNo = 1, pageSize = 10 } = {}) {
+  return request({
+    url: '/app-api/merchant/mini/promo/spu-pool/settle-records',
+    data: { spuId, pageNo, pageSize },
+  });
+}
+
+/** 商户查某次结算的中奖明细 */
+export function listSpuPoolPayouts(settleId) {
+  return request({
+    url: '/app-api/merchant/mini/promo/spu-pool/settle-record/payouts',
+    data: { settleId },
+  });
+}
+
+// ==================== 用户端「奖池公示」 ====================
+
+/** 用户：查某 SPU 当前池余额（公开） */
+export function getPublicPoolBalance(spuId) {
+  return request({
+    url: '/app-api/merchant/promo/pool/balance',
+    data: { spuId },
+  });
+}
+
+/** 用户：查某 SPU 最近一次结算的中奖名单（脱敏） */
+export function getPublicLatestPayouts(spuId, limit = 20) {
+  return request({
+    url: '/app-api/merchant/promo/pool/latest-payouts',
+    data: { spuId, limit },
+  });
+}
+
+/** 用户：分页查某 SPU 历次结算 */
+export function listPublicSettleRecords(spuId, { pageNo = 1, pageSize = 10 } = {}) {
+  return request({
+    url: '/app-api/merchant/promo/pool/settle-records',
+    data: { spuId, pageNo, pageSize },
+  });
+}
+
+/** 用户：查某次结算的中奖名单（脱敏） */
+export function getPublicPayoutsBySettle(settleId) {
+  return request({
+    url: '/app-api/merchant/promo/pool/settle-record/payouts',
+    data: { settleId },
+  });
+}
+
 // ==================== 提现 ====================
 
 /** 用户申请提现。 */
