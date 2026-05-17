@@ -43,10 +43,10 @@ function normalizeOrder(o) {
   };
 }
 
-/** 分页查询订单（status=0 表示全部） */
-export async function getOrderPage({ status = 0, pageNo = 1, pageSize = 50 } = {}) {
+/** 分页查询订单（status=-1 表示全部；status=0 表示真正的"待支付"） */
+export async function getOrderPage({ status = -1, pageNo = 1, pageSize = 50 } = {}) {
   const params = { pageNo, pageSize };
-  if (status) params.status = status;
+  if (status >= 0) params.status = status;
   const data = await request({ url: `${BASE}/page`, data: params });
   return {
     total: data.total,
@@ -96,9 +96,14 @@ export function pickUpById(id) {
   return request({ url: `${BASE}/pick-up-by-id?id=${id}`, method: 'PUT' });
 }
 
-/** 到店付款 - 商户确认收款 */
+/** 到店付款 - 商户确认收款（线下完成） */
 export function offlineConfirm(id) {
   return request({ url: `${BASE}/offline-confirm?id=${id}`, method: 'POST' });
+}
+
+/** 商户取消订单（仅未支付） */
+export function offlineCancel(id) {
+  return request({ url: `${BASE}/offline-cancel?id=${id}`, method: 'POST' });
 }
 
 /** 商户主动确认送达（同城配送 / 自营配送 → 等价于代用户确认收货） */

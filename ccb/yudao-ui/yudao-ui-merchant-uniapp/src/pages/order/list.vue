@@ -47,7 +47,14 @@
           </view>
           <view class="order-total">¥{{ fen2yuan(o.totalPrice) }}</view>
         </view>
-        <view class="order-actions" v-if="o.status === 10 || o.status === 20">
+        <view class="order-actions" v-if="o.status === 0 || o.status === 10 || o.status === 20">
+          <button
+            v-if="o.status === 0"
+            class="btn ghost danger"
+            @click.stop="onOfflineCancel(o)"
+          >
+            取消订单
+          </button>
           <button
             v-if="o.status === 10 && o.deliveryType === 'express'"
             class="btn primary"
@@ -56,11 +63,11 @@
             去发货
           </button>
           <button
-            v-if="o.status === 10 && !o.payStatus"
+            v-if="(o.status === 0 || o.status === 10) && !o.payStatus"
             class="btn primary"
-            @click.stop="onOfflineConfirm(o.id)"
+            @click.stop="onOfflineConfirm(o)"
           >
-            已收款
+            确认收款
           </button>
           <button
             v-if="o.status === 20"
@@ -107,17 +114,18 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
-import { getOrderPage, offlineConfirm, pickUpVerify } from '../../api/order.js';
+import { getOrderPage, offlineConfirm, offlineCancel, pickUpVerify } from '../../api/order.js';
 import { fen2yuan, ORDER_STATUS } from '../../utils/format.js';
 
 const tabs = computed(() => [
-  { label: '全部', value: 0 },
+  { label: '全部', value: -1 },
+  { label: '待支付', value: 0, badge: badgeOf(0) },
   { label: '待发货', value: 10, badge: badgeOf(10) },
   { label: '待核销', value: 20, badge: badgeOf(20) },
   { label: '已完成', value: 30 },
 ]);
 
-const currentStatus = ref(0);
+const currentStatus = ref(-1);
 const list = ref([]);
 const allList = ref([]);
 const showVerify = ref(false);
@@ -135,15 +143,15 @@ function badgeOf(s) {
 }
 
 async function load() {
-  const all = await getOrderPage({ status: 0 });
+  const all = await getOrderPage({ status: -1 });
   allList.value = all.list;
   applyFilter();
 }
 
 function applyFilter() {
-  list.value = currentStatus.value
-    ? allList.value.filter((o) => o.status === currentStatus.value)
-    : [...allList.value];
+  list.value = currentStatus.value === -1
+    ? [...allList.value]
+    : allList.value.filter((o) => o.status === currentStatus.value);
 }
 
 function switchTab(v) {
@@ -189,13 +197,36 @@ function onScan() {
   // #endif
 }
 
-async function onOfflineConfirm(id) {
+async function onOfflineConfirm(o) {
+  const id = typeof o === 'object' ? o.id : o;
+  const amt = typeof o === 'object' ? (o.totalPrice / 100).toFixed(2) : '';
+  const m = await uni.showModal({
+    title: '确认收款',
+    content: amt ? `确认已收到顾客线下支付 ¥${amt}？\n确认后订单将标记为已完成，会触发积分/奖池/分销结算，不可撤销。`
+                 : '确认线下已收款？操作不可撤销。',
+  });
+  if (!m.confirm) return;
   try {
     await offlineConfirm(id);
     uni.showToast({ title: '已确认收款', icon: 'success' });
     load();
   } catch (err) {
     uni.showToast({ title: err?.message || '操作失败', icon: 'none' });
+  }
+}
+
+async function onOfflineCancel(o) {
+  const m = await uni.showModal({
+    title: '取消订单',
+    content: `确认取消订单 #${o.no || o.id}？\n库存会回滚、优惠券返还。取消后无法恢复。`,
+  });
+  if (!m.confirm) return;
+  try {
+    await offlineCancel(o.id);
+    uni.showToast({ title: '订单已取消', icon: 'success' });
+    load();
+  } catch (err) {
+    uni.showToast({ title: err?.message || '取消失败', icon: 'none' });
   }
 }
 
@@ -374,6 +405,12 @@ onShow(() => {
     background: transparent;
     color: $brand-primary;
     border: 2rpx solid $brand-primary;
+  }
+
+  &.danger {
+    background: transparent;
+    color: #e63946;
+    border: 2rpx solid #e63946;
   }
 
   &[disabled] {

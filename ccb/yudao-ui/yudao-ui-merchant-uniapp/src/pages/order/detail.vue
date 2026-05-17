@@ -50,9 +50,26 @@
       <view class="remark">{{ order.remark }}</view>
     </view>
 
-    <view v-if="order.status !== 30" class="actions safe-bottom">
+    <view v-if="order.status !== 30 && order.status !== 40" class="actions safe-bottom">
+      <!-- 未支付：取消订单 + 确认收款 -->
       <button
-        v-if="order.status === 10 && order.deliveryType === 'express'"
+        v-if="order.status === 0"
+        class="btn danger"
+        :disabled="acting"
+        @click="onCancel"
+      >
+        取消订单
+      </button>
+      <button
+        v-if="(order.status === 0 || order.status === 10) && !order.payStatus"
+        class="btn primary"
+        :disabled="acting"
+        @click="onOfflineConfirm"
+      >
+        {{ acting ? '处理中…' : '确认收款（线下完成）' }}
+      </button>
+      <button
+        v-if="order.status === 10 && order.deliveryType === 'express' && order.payStatus"
         class="btn primary"
         @click="goDeliver"
       >
@@ -70,10 +87,10 @@
       <button
         v-if="order.status === 20 && order.deliveryType === 'express'"
         class="btn primary"
-        :disabled="confirming"
+        :disabled="acting"
         @click="onConfirmDelivered"
       >
-        {{ confirming ? '提交中…' : '确认已送达' }}
+        {{ acting ? '提交中…' : '确认已送达' }}
       </button>
     </view>
   </view>
@@ -84,12 +101,12 @@
 <script setup>
 import { ref } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
-import { getOrder, pickUpVerify, confirmDelivered } from '../../api/order.js';
+import { getOrder, pickUpVerify, confirmDelivered, offlineConfirm, offlineCancel } from '../../api/order.js';
 import { fen2yuan, ORDER_STATUS } from '../../utils/format.js';
 
 const order = ref(null);
 const orderId = ref('');
-const confirming = ref(false);
+const acting = ref(false);
 
 function statusText(s) {
   return ORDER_STATUS[s]?.text || s;
@@ -124,7 +141,7 @@ function onConfirmDelivered() {
     confirmText: '确认送达',
     success: async (modal) => {
       if (!modal.confirm) return;
-      confirming.value = true;
+      acting.value = true;
       try {
         await confirmDelivered(orderId.value);
         uni.showToast({ title: '已确认送达', icon: 'success' });
@@ -132,10 +149,47 @@ function onConfirmDelivered() {
       } catch (e) {
         uni.showToast({ title: '操作失败：' + (e?.message || e), icon: 'none' });
       } finally {
-        confirming.value = false;
+        acting.value = false;
       }
     },
   });
+}
+
+async function onOfflineConfirm() {
+  const amt = order.value ? (order.value.totalPrice / 100).toFixed(2) : '';
+  const m = await uni.showModal({
+    title: '确认收款',
+    content: `确认已收到顾客线下支付 ¥${amt}？\n确认后订单将标记为已完成，会触发积分/奖池/分销结算，不可撤销。`,
+  });
+  if (!m.confirm) return;
+  acting.value = true;
+  try {
+    await offlineConfirm(orderId.value);
+    uni.showToast({ title: '已确认收款', icon: 'success' });
+    await load();
+  } catch (e) {
+    uni.showToast({ title: e?.message || '操作失败', icon: 'none' });
+  } finally {
+    acting.value = false;
+  }
+}
+
+async function onCancel() {
+  const m = await uni.showModal({
+    title: '取消订单',
+    content: `确认取消订单 #${order.value?.no || orderId.value}？\n库存会回滚、优惠券返还。取消后无法恢复。`,
+  });
+  if (!m.confirm) return;
+  acting.value = true;
+  try {
+    await offlineCancel(orderId.value);
+    uni.showToast({ title: '订单已取消', icon: 'success' });
+    await load();
+  } catch (e) {
+    uni.showToast({ title: e?.message || '取消失败', icon: 'none' });
+  } finally {
+    acting.value = false;
+  }
 }
 
 onLoad((q) => {
@@ -284,10 +338,12 @@ onLoad((q) => {
   padding: 24rpx 32rpx calc(env(safe-area-inset-bottom) + 24rpx);
   background: #fff;
   box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.05);
+  display: flex;
+  gap: 16rpx;
 }
 
 .btn {
-  width: 100%;
+  flex: 1;
   height: 96rpx;
   line-height: 96rpx;
   font-size: 30rpx;
@@ -296,6 +352,16 @@ onLoad((q) => {
   &.primary {
     background: $brand-primary;
     color: #fff;
+  }
+
+  &.danger {
+    background: transparent;
+    color: #e63946;
+    border: 2rpx solid #e63946;
+  }
+
+  &[disabled] {
+    opacity: 0.5;
   }
 
   &::after {

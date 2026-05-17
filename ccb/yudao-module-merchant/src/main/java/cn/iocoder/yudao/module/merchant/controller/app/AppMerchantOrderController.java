@@ -11,11 +11,14 @@ import cn.iocoder.yudao.module.trade.controller.admin.order.vo.TradeOrderPageReq
 import cn.iocoder.yudao.module.trade.dal.dataobject.order.TradeOrderDO;
 import cn.iocoder.yudao.module.trade.dal.dataobject.order.TradeOrderItemDO;
 import cn.iocoder.yudao.module.trade.dal.mysql.order.TradeOrderMapper;
+import cn.iocoder.yudao.module.trade.dal.mysql.order.TradeOrderItemMapper;
 import cn.iocoder.yudao.module.trade.service.order.TradeOrderQueryService;
 import cn.iocoder.yudao.module.trade.service.order.TradeOrderUpdateService;
+import cn.iocoder.yudao.module.trade.service.order.handler.TradeOrderHandler;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -38,6 +41,7 @@ import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
 @RestController
 @RequestMapping("/merchant/mini/order")
 @Validated
+@Slf4j
 public class AppMerchantOrderController {
 
     @Resource
@@ -47,7 +51,16 @@ public class AppMerchantOrderController {
     @Resource
     private TradeOrderMapper tradeOrderMapper;
     @Resource
+    private TradeOrderItemMapper tradeOrderItemMapper;
+    @Resource
     private ApplicationEventPublisher eventPublisher;
+
+    /**
+     * trade 模块所有 {@link TradeOrderHandler} 实现 bean。
+     * <p>线下确认收款 / 商户取消订单时复用 trade 自带钩子链（库存 / 优惠券 / 分销 / 积分）。</p>
+     */
+    @Resource
+    private List<TradeOrderHandler> tradeOrderHandlers;
 
     // ==================== #19 订单列表 + 发货 ====================
 
@@ -140,7 +153,7 @@ public class AppMerchantOrderController {
     // ==================== #37 到店付款 - 商户确认收款 ====================
 
     @PostMapping("/offline-confirm")
-    @Operation(summary = "确认到店付款收款")
+    @Operation(summary = "确认到店付款收款（线下完成）")
     @Parameter(name = "id", description = "订单编号", required = true)
     public CommonResult<Boolean> offlineConfirm(@RequestParam("id") Long id) {
         TradeOrderDO order = tradeOrderQueryService.getOrder(id);
@@ -155,8 +168,15 @@ public class AppMerchantOrderController {
             throw exception0(400, "订单已支付，请勿重复确认");
         }
         // "到店付款" = 用户到店现场付款 + 现场取货，一步完成；不走 trade.pickUpOrder
-        // （该接口要求 deliveryPickUpStore.verifyUserIds 包含 admin，对小商户不实用）
-        // 直接设 status=30 (COMPLETED) + payStatus=true，afterPayOrder 触发推 N 反 1
+        // 流程拆为 2 段：
+        //   (1) 改订单状态 status=30 (COMPLETED) + payStatus=true
+        //   (2) 显式跑 trade 模块 afterPayOrder 钩子链，补完线上支付才会做的副作用：
+        //       - TradeProductSkuOrderHandler  扣库存
+        //       - TradeCouponOrderHandler      标券已用 + 满赠
+        //       - TradeBrokerageOrderHandler   trade 自带分销返佣
+        //       - TradeMemberPointOrderHandler 积分入账
+        //   (3) 发 OrderOfflineConfirmedEvent → OrderPaidListener 异步触发 v8 营销引擎
+        //       （推 N 反 1 / 极差 / 升星 / SPU 奖池入池 / merchant 自定义返佣 / 商户余额）
         TradeOrderDO update = new TradeOrderDO();
         update.setId(id);
         update.setStatus(30);
@@ -164,7 +184,28 @@ public class AppMerchantOrderController {
         update.setPayTime(LocalDateTime.now());
         update.setReceiveTime(LocalDateTime.now());
         tradeOrderMapper.updateById(update);
-        // 发布到店收款确认事件
+        // 刷新内存中的 order 对象，让 handler 看到最新状态
+        order.setStatus(30);
+        order.setPayStatus(Boolean.TRUE);
+
+        // ---- (2) 跑 trade 自带 handler 链 ----
+        try {
+            List<TradeOrderItemDO> items = tradeOrderItemMapper.selectListByOrderId(id);
+            // afterPayOrder：库存扣减 / 券核销+满赠 / 分销 / 积分入账（每个 handler 内部自行判断是否生效）
+            for (TradeOrderHandler h : tradeOrderHandlers) {
+                try {
+                    h.afterPayOrder(order, items);
+                } catch (Exception e) {
+                    // 单个 handler 失败不能影响整体确认（事务已 commit 在状态更新阶段），记 log 后续人工补偿
+                    log.error("[offlineConfirm] handler {} afterPayOrder failed order={}",
+                            h.getClass().getSimpleName(), id, e);
+                }
+            }
+        } catch (Exception e) {
+            log.error("[offlineConfirm] trade handler 链整体异常 order={}", id, e);
+        }
+
+        // ---- (3) 发 merchant 营销引擎事件 ----
         // 用 order.tenantId 而不是 TenantContextHolder.getTenantId()：
         // 后者依赖请求 ctx，@TenantIgnore 时为 null；前者是订单写入时落库的真实租户
         Long tenantId = order.getTenantId();
@@ -176,6 +217,32 @@ public class AppMerchantOrderController {
                 tenantId,
                 order.getUserId(),
                 order.getPayPrice()));
+        return success(true);
+    }
+
+    // ==================== 线下场景 - 商户取消订单 ====================
+
+    @PostMapping("/offline-cancel")
+    @Operation(summary = "商户取消订单（仅未支付）")
+    @Parameter(name = "id", description = "订单编号", required = true)
+    public CommonResult<Boolean> offlineCancel(@RequestParam("id") Long id) {
+        TradeOrderDO order = tradeOrderQueryService.getOrder(id);
+        if (order == null) {
+            throw exception0(400, "订单不存在");
+        }
+        // 仅允许 UNPAID(0) 取消；已支付订单走售后退款流程
+        if (!Integer.valueOf(0).equals(order.getStatus())) {
+            throw exception0(400, "订单已支付或已完成，无法取消（请走售后退款）");
+        }
+        if (Boolean.TRUE.equals(order.getPayStatus())) {
+            throw exception0(400, "订单已支付，无法取消");
+        }
+        // 复用 trade 模块的系统取消链路：状态机 → 40(CANCELED)，含 afterCancelOrder 钩子
+        // （库存回滚 / 优惠券返还 / 分销回滚 / 积分回滚 / 订单日志）。
+        // 注：trade.cancelOrderBySystem 内部会先校验 payOrder 是否已支付（防回调延迟），无 payOrderId 时跳过。
+        // 已知限制：trade 模块未提供 MERCHANT_CANCEL 枚举，目前记 log 为 SYSTEM_CANCEL。
+        tradeOrderUpdateService.cancelOrderBySystem(order);
+        log.info("[offlineCancel] order={} 商户主动取消", id);
         return success(true);
     }
 
