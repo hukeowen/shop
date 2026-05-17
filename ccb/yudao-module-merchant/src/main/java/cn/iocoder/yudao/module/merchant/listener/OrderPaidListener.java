@@ -81,14 +81,8 @@ public class OrderPaidListener {
             TradeOrderDO order = TenantUtils.execute(tenantId, () -> tradeOrderQueryService.getOrder(orderId));
             List<TradeOrderItemDO> items = TenantUtils.execute(tenantId,
                     () -> tradeOrderQueryService.getOrderItemListByOrderId(orderId));
-            log.info("[OrderPaidListener] 加载订单数据 orderId={} order={} itemsSize={}",
-                    orderId, order == null ? "null" : "OK", items == null ? -1 : items.size());
             if (order != null && items != null && !items.isEmpty()) {
-                log.info("[OrderPaidListener] 触发 merchantPromoOrderHandler.afterPayOrder orderId={}", orderId);
                 TenantUtils.execute(tenantId, () -> merchantPromoOrderHandler.afterPayOrder(order, items));
-                log.info("[OrderPaidListener] merchantPromoOrderHandler.afterPayOrder 完成 orderId={}", orderId);
-            } else {
-                log.warn("[OrderPaidListener] 跳过营销引擎：order/items 为空 orderId={}", orderId);
             }
         } catch (Exception e) {
             log.error("[OrderPaidListener] 触发推 N 反 1 引擎失败 orderId={}", orderId, e);
