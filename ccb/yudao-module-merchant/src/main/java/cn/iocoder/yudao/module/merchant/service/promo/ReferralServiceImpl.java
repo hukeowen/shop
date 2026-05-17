@@ -1,6 +1,7 @@
 package cn.iocoder.yudao.module.merchant.service.promo;
 
 import cn.iocoder.yudao.framework.tenant.core.context.TenantContextHolder;
+import cn.iocoder.yudao.framework.tenant.core.util.TenantUtils;
 import cn.iocoder.yudao.module.merchant.dal.dataobject.MemberShopRelDO;
 import cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopUserReferralDO;
 import cn.iocoder.yudao.module.merchant.dal.mysql.promo.ShopUserReferralMapper;
@@ -88,7 +89,10 @@ public class ReferralServiceImpl implements ReferralService {
 
     @Override
     public Long getDirectParent(Long userId) {
-        ShopUserReferralDO record = referralMapper.selectByUserId(userId);
+        // 邀请关系是全局的（用户跨商户共享同一 parent），跳过多租户过滤。
+        // 否则订单 tenant=1001 上下文查 referral 时只能看到 tenant=1001 的记录，
+        // 而 referral 通常在 ke.doupaidoudian.com 用户子域以 tenant=0 写入 → 跨租户读不到 → parent=0 → 邀请激励全失效。
+        ShopUserReferralDO record = TenantUtils.executeIgnore(() -> referralMapper.selectByUserId(userId));
         if (record == null || record.getParentUserId() == null) {
             return 0L;
         }
