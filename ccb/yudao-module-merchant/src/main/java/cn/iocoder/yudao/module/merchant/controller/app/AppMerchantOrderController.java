@@ -237,11 +237,38 @@ public class AppMerchantOrderController {
         if (Boolean.TRUE.equals(order.getPayStatus())) {
             throw exception0(400, "订单已支付，无法取消");
         }
-        // 复用 trade 模块的系统取消链路：状态机 → 40(CANCELED)，含 afterCancelOrder 钩子
-        // （库存回滚 / 优惠券返还 / 分销回滚 / 积分回滚 / 订单日志）。
-        // 注：trade.cancelOrderBySystem 内部会先校验 payOrder 是否已支付（防回调延迟），无 payOrderId 时跳过。
-        // 已知限制：trade 模块未提供 MERCHANT_CANCEL 枚举，目前记 log 为 SYSTEM_CANCEL。
-        tradeOrderUpdateService.cancelOrderBySystem(order);
+
+        // 复刻 TradeOrderUpdateServiceImpl.cancelOrder0：
+        //   trade 模块 cancelOrder0 是 private，cancelOrderBySystem(order) 未在 Service 接口暴露；
+        //   只能用 TradeOrderUpdateServiceImpl 内部方法。这里手工组装等价逻辑：
+        //   (1) 原子更新 status 0→40 + cancelType=PAY_TIMEOUT（暂借用，trade 无 MERCHANT_CANCEL 枚举）
+        //   (2) forEach 跑 trade handler.afterCancelOrder：库存回滚 / 券返还 / 分销回滚 / 积分回滚
+        TradeOrderDO update = new TradeOrderDO();
+        update.setStatus(40);
+        update.setCancelType(40);    // PAY_TIMEOUT=40；MEMBER_CANCEL=10；trade 模块 enum 取值
+        update.setCancelTime(LocalDateTime.now());
+        int rows = tradeOrderMapper.updateByIdAndStatus(id, 0, update);
+        if (rows == 0) {
+            throw exception0(409, "订单状态已变更，请刷新后重试");
+        }
+        // 刷新内存 order 给 handler 看到正确 status
+        order.setStatus(40);
+        order.setCancelType(40);
+        order.setCancelTime(update.getCancelTime());
+
+        try {
+            List<TradeOrderItemDO> items = tradeOrderItemMapper.selectListByOrderId(id);
+            for (TradeOrderHandler h : tradeOrderHandlers) {
+                try {
+                    h.afterCancelOrder(order, items);
+                } catch (Exception e) {
+                    log.error("[offlineCancel] handler {} afterCancelOrder failed order={}",
+                            h.getClass().getSimpleName(), id, e);
+                }
+            }
+        } catch (Exception e) {
+            log.error("[offlineCancel] handler 链整体异常 order={}", id, e);
+        }
         log.info("[offlineCancel] order={} 商户主动取消", id);
         return success(true);
     }
