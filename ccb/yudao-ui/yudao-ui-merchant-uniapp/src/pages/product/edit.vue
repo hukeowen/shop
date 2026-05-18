@@ -65,8 +65,8 @@
         <text class="promo-sub">{{ promoLoaded ? '已配置' : '加载中…' }}</text>
       </view>
 
-      <view class="field row">
-        <text class="label">消费积分倍率</text>
+      <view class="field-v">
+        <text class="label-v">消费积分倍率</text>
         <input
           class="input compact"
           type="digit"
@@ -87,26 +87,34 @@
         />
       </view>
       <template v-if="promo.tuijianEnabled">
-        <view class="field row">
-          <text class="label">N 值</text>
+        <view class="field-v">
+          <text class="label-v">N 值（推几个）</text>
           <input
             class="input compact"
             type="number"
             v-model="promo.tuijianN"
             @blur="syncTuijianN"
+            placeholder="如 4"
           />
         </view>
-        <view class="field">
-          <text class="label">N 个推广奖励比例 % （从近到远）</text>
+        <view class="field-v">
+          <text class="label-v">N 个推广奖励比例 % （从近到远）</text>
           <view class="ratios-row">
-            <input
+            <view
               v-for="(r, i) in promo.tuijianRatios"
               :key="i"
-              class="input ratio"
-              type="digit"
-              :value="r"
-              @input="(e) => (promo.tuijianRatios[i] = e.detail.value)"
-            />
+              class="ratio-cell"
+            >
+              <text class="ratio-tag">第 {{ i + 1 }} 次</text>
+              <input
+                class="input ratio"
+                type="digit"
+                :value="r"
+                @input="(e) => (promo.tuijianRatios[i] = e.detail.value)"
+                placeholder="0"
+              />
+              <text class="suffix-sm">%</text>
+            </view>
           </view>
           <text class="hint inline" :class="{ warn: ratiosSum > 100 }">
             合计 {{ ratiosSum.toFixed(1) }}% / 100%（超过 100% 不能保存）
@@ -115,76 +123,103 @@
       </template>
 
       <!-- v8: 邀请奖比例（邀请激励 完成后每件按此比例返） -->
-      <view class="field">
-        <text class="label">邀请奖比例比例（%）</text>
-        <input class="input compact" type="digit" v-model="promo.directRate" placeholder="例 10（buyer 完成 N 后自购按此返；parent 首贡献 1 件价 × 此）" />
+      <view class="field-v">
+        <text class="label-v">邀请奖比例</text>
+        <view class="star-row-input">
+          <input class="input compact" type="digit" v-model="promo.directRate" placeholder="例 10" />
+          <text class="suffix">%</text>
+        </view>
+        <text class="hint inline">buyer 完成 N 后自购按此返；parent 首贡献 1 件价 × 此</text>
       </view>
 
       <!-- v8: 店内星级奖励（按商品独立） -->
-      <view class="field">
-        <text class="label">星级递减 - 星级数（0=不启用）</text>
-        <input class="input compact" type="number" v-model="promo.starCount" @blur="syncStarCount" />
+      <view class="field-v">
+        <text class="label-v">星级数（0=不启用）</text>
+        <input class="input compact" type="number" v-model="promo.starCount" @blur="syncStarCount" placeholder="0" />
       </view>
       <template v-if="(parseInt(promo.starCount)||0) > 0">
-        <view class="field">
-          <text class="label">各星级返奖比例 % （1星 → 高星）</text>
-          <view class="ratios-row">
-            <input
-              v-for="(r, i) in promo.starRatios"
-              :key="i"
-              class="input ratio"
-              type="digit"
-              :value="r"
-              @input="(e) => (promo.starRatios[i] = e.detail.value)"
-            />
-          </view>
-          <text class="hint inline">如 1,2,3 表示 1 星拿 1%、2 星拿 2%、3 星拿 3%</text>
-        </view>
-        <view class="field">
-          <text class="label">升星规则（每星：邀请人数 + 店内累计单）</text>
-          <view v-for="(rule, i) in promo.starUpgradeRules" :key="i" class="upgrade-row">
-            <text class="upgrade-label">{{ i + 1 }}星</text>
-            <input class="input upgrade-input" type="number" :value="rule.directCount"
-              @input="(e) => (promo.starUpgradeRules[i].directCount = e.detail.value)"
-              placeholder="邀请人数" />
-            <input class="input upgrade-input" type="number" :value="rule.teamSalesYuan"
-              @input="(e) => (promo.starUpgradeRules[i].teamSalesYuan = e.detail.value)"
-              placeholder="店内累计金额（元）" />
+        <!-- 每星一张卡：返奖比例 + 升星条件 三项垂直排 -->
+        <view class="star-block">
+          <view class="star-block-title">各星级配置</view>
+          <view class="star-block-hint">每星填：返奖比例（%）/ 升星所需邀请人数 / 升星所需店内累计金额（元）</view>
+          <view v-for="(rule, i) in promo.starUpgradeRules" :key="i" class="star-card">
+            <view class="star-card-head">
+              <view class="star-badge">{{ i + 1 }}星</view>
+            </view>
+            <view class="star-card-body">
+              <view class="star-row">
+                <text class="star-row-label">返奖比例</text>
+                <view class="star-row-input">
+                  <input class="input" type="digit"
+                    :value="promo.starRatios[i]"
+                    @input="(e) => (promo.starRatios[i] = e.detail.value)"
+                    placeholder="0" />
+                  <text class="suffix">%</text>
+                </view>
+              </view>
+              <view class="star-row">
+                <text class="star-row-label">邀请人数</text>
+                <input class="input" type="number" :value="rule.directCount"
+                  @input="(e) => (promo.starUpgradeRules[i].directCount = e.detail.value)"
+                  placeholder="升星所需人数" />
+              </view>
+              <view class="star-row">
+                <text class="star-row-label">累计金额</text>
+                <view class="star-row-input">
+                  <input class="input" type="digit" :value="rule.teamSalesYuan"
+                    @input="(e) => (promo.starUpgradeRules[i].teamSalesYuan = e.detail.value)"
+                    placeholder="升星所需金额" />
+                  <text class="suffix">元</text>
+                </view>
+              </view>
+            </view>
           </view>
         </view>
       </template>
 
       <!-- v8: 商品级奖池入池比例 -->
-      <view class="field">
-        <text class="label">星级奖池入池比例（%）</text>
-        <input class="input compact" type="digit" v-model="promo.poolRatio" placeholder="例 1（每订单实付 × 此入池）" />
+      <view class="field-v">
+        <text class="label-v">星级奖池入池比例</text>
+        <view class="star-row-input">
+          <input class="input compact" type="digit" v-model="promo.poolRatio" placeholder="0" />
+          <text class="suffix">%</text>
+        </view>
+        <text class="hint inline">每订单实付 × 此比例，进入该商品的奖池</text>
       </view>
 
       <!-- v8: 奖池分配规则（手工结算时按此分） -->
       <template v-if="(parseInt(promo.starCount)||0) > 0 && parseFloat(promo.poolRatio) > 0">
-        <view class="field">
-          <text class="label">奖池分配规则（按星级切片，加总必须 = 100%）</text>
-          <view v-for="(d, i) in promo.poolDistList" :key="i" class="dist-row">
-            <view class="dist-tag">{{ d.star }}星</view>
-            <view class="dist-fields">
-              <view class="field-mini">
-                <text class="mini-label">占池 %</text>
-                <input class="input mini" type="digit" :value="d.ratio"
-                  @input="(e) => (promo.poolDistList[i].ratio = e.detail.value)" />
+        <view class="star-block">
+          <view class="star-block-title">奖池分配规则</view>
+          <view class="star-block-hint">按星级切片：每星填占池比例 + 分配方式；加总必须 = 100%</view>
+          <view v-for="(d, i) in promo.poolDistList" :key="i" class="star-card">
+            <view class="star-card-head">
+              <view class="star-badge">{{ d.star }}星</view>
+            </view>
+            <view class="star-card-body">
+              <view class="star-row">
+                <text class="star-row-label">占池</text>
+                <view class="star-row-input">
+                  <input class="input" type="digit" :value="d.ratio"
+                    @input="(e) => (promo.poolDistList[i].ratio = e.detail.value)"
+                    placeholder="0" />
+                  <text class="suffix">%</text>
+                </view>
               </view>
-              <view class="field-mini">
-                <text class="mini-label">方式</text>
-                <view class="radio-row tight">
-                  <view class="radio-chip sm" :class="{ active: d.mode === 'EQUAL' }"
+              <view class="star-row">
+                <text class="star-row-label">方式</text>
+                <view class="radio-pair">
+                  <view class="radio-big" :class="{ active: d.mode === 'EQUAL' }"
                     @click="promo.poolDistList[i].mode = 'EQUAL'">均分</view>
-                  <view class="radio-chip sm" :class="{ active: d.mode === 'LOTTERY' }"
+                  <view class="radio-big" :class="{ active: d.mode === 'LOTTERY' }"
                     @click="promo.poolDistList[i].mode = 'LOTTERY'">抽奖</view>
                 </view>
               </view>
-              <view class="field-mini" v-if="d.mode === 'LOTTERY'">
-                <text class="mini-label">中奖名额</text>
-                <input class="input mini" type="number" :value="d.winners"
-                  @input="(e) => (promo.poolDistList[i].winners = e.detail.value)" placeholder="≥1" />
+              <view class="star-row" v-if="d.mode === 'LOTTERY'">
+                <text class="star-row-label">中奖名额</text>
+                <input class="input" type="number" :value="d.winners"
+                  @input="(e) => (promo.poolDistList[i].winners = e.detail.value)"
+                  placeholder="≥1（如 3）" />
               </view>
             </view>
           </view>
@@ -193,18 +228,6 @@
           </text>
         </view>
       </template>
-
-      <view class="switch-row">
-        <view class="switch-body">
-          <view class="switch-title">参与星级积分池（v6 兼容）</view>
-          <view class="switch-desc">老开关；v8 仅看入池比例 > 0 即生效</view>
-        </view>
-        <switch
-          :checked="promo.poolEnabled"
-          color="#FF6B35"
-          @change="(e) => (promo.poolEnabled = e.detail.value)"
-        />
-      </view>
 
       <view class="promo-actions">
         <button class="btn ghost-brand" :disabled="promoSaving" @click="onSavePromo">
@@ -976,23 +999,183 @@ onLoad(async (q) => {
     &:focus { background: #fff; border: 1rpx solid $brand-primary; }
   }
 
+  // === 垂直布局表单字段：label 在上，input 在下；窄屏更好读好点 ===
+  .field-v {
+    display: flex;
+    flex-direction: column;
+    padding: 16rpx 0;
+    border-bottom: 1rpx solid $border-color;
+    &:last-child { border-bottom: none; }
+
+    .label-v {
+      display: block;
+      font-size: 26rpx;
+      color: $text-regular;
+      margin-bottom: 12rpx;
+      font-weight: 500;
+    }
+  }
+
+  // === 「带后缀」输入（如 %, 元） ===
+  .star-row-input {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 12rpx;
+    .input { flex: 1; }
+    .suffix {
+      font-size: 28rpx;
+      color: $text-secondary;
+      padding: 0 8rpx;
+      flex-shrink: 0;
+    }
+  }
+
+  // === N 个比例：每行 2 个 cell，含"第 i 次" 标 + 输入 + % 后缀 ===
   .ratios-row {
     display: flex;
     flex-wrap: wrap;
     gap: 16rpx;
-    margin-top: 16rpx;
+    margin-top: 8rpx;
 
-    .ratio {
-      flex: 0 0 calc(50% - 16rpx);    // 每行 2 个比 4 个易点
-      min-height: 80rpx;
+    .ratio-cell {
+      flex: 0 0 calc(50% - 8rpx);
+      display: flex;
+      align-items: center;
+      gap: 8rpx;
       background: #f6f7f9;
       border-radius: $radius-md;
-      padding: 0 24rpx;
-      font-size: 30rpx;
-      text-align: center;
+      padding: 0 16rpx;
+      min-height: 80rpx;
       box-sizing: border-box;
-      &:focus { background: #fff; border: 1rpx solid $brand-primary; }
+
+      .ratio-tag {
+        font-size: 22rpx;
+        color: $text-secondary;
+        flex-shrink: 0;
+      }
+      .input.ratio {
+        flex: 1;
+        background: transparent;
+        border: none;
+        padding: 0;
+        min-height: 0;
+        font-size: 30rpx;
+        text-align: center;
+      }
+      .suffix-sm {
+        font-size: 24rpx;
+        color: $text-secondary;
+        flex-shrink: 0;
+      }
     }
+  }
+
+  // === 每星一张卡：返奖比例 / 升星条件 / 奖池分配（垂直布局，绝不挤）===
+  .star-block {
+    margin-top: 20rpx;
+    padding-top: 20rpx;
+    border-top: 1rpx dashed $border-color;
+
+    .star-block-title {
+      font-size: 28rpx;
+      font-weight: 600;
+      color: $text-primary;
+    }
+    .star-block-hint {
+      margin-top: 6rpx;
+      margin-bottom: 12rpx;
+      font-size: 22rpx;
+      color: $text-secondary;
+      line-height: 1.5;
+    }
+
+    .star-card {
+      background: linear-gradient(135deg, rgba(255, 107, 53, 0.04), rgba(255, 154, 74, 0.02));
+      border: 1rpx solid rgba(255, 107, 53, 0.15);
+      border-radius: $radius-md;
+      margin-bottom: 16rpx;
+      overflow: hidden;
+    }
+
+    .star-card-head {
+      padding: 12rpx 20rpx;
+      background: linear-gradient(135deg, #ffd6b8, #ff6b35);
+      .star-badge {
+        font-size: 26rpx;
+        font-weight: 700;
+        color: #fff;
+      }
+    }
+
+    .star-card-body {
+      padding: 16rpx 20rpx 20rpx;
+    }
+
+    .star-row {
+      display: flex;
+      align-items: center;
+      gap: 16rpx;
+      padding: 10rpx 0;
+
+      .star-row-label {
+        flex: 0 0 130rpx;
+        font-size: 26rpx;
+        color: $text-regular;
+      }
+
+      .input {
+        flex: 1;
+        min-height: 80rpx;
+        background: #fff;
+        border: 1rpx solid $border-color;
+        border-radius: $radius-md;
+        padding: 0 20rpx;
+        font-size: 30rpx;
+        box-sizing: border-box;
+        &:focus { border-color: $brand-primary; }
+      }
+
+      .star-row-input { flex: 1; }
+      .star-row-input .input { background: #fff; }
+    }
+
+    .radio-pair {
+      flex: 1;
+      display: flex;
+      gap: 12rpx;
+
+      .radio-big {
+        flex: 1;
+        min-height: 80rpx;
+        line-height: 80rpx;
+        text-align: center;
+        background: #fff;
+        border: 1rpx solid $border-color;
+        border-radius: $radius-md;
+        font-size: 28rpx;
+        color: $text-regular;
+
+        &.active {
+          background: rgba(255, 107, 53, 0.12);
+          color: $brand-primary;
+          border-color: $brand-primary;
+          font-weight: 600;
+        }
+      }
+    }
+  }
+
+  // 旧 .ratios-row 单输入式样保留作为 fallback（用了 input.ratio 类的地方）
+  .ratios-row .ratio {
+    min-height: 80rpx;
+    background: #f6f7f9;
+    border-radius: $radius-md;
+    padding: 0 16rpx;
+    font-size: 30rpx;
+    text-align: center;
+    box-sizing: border-box;
+    &:focus { background: #fff; border: 1rpx solid $brand-primary; }
   }
 
   .hint.inline {
@@ -1004,51 +1187,6 @@ onLoad(async (q) => {
     &.warn {
       color: #e63946;
       font-weight: 600;
-    }
-  }
-
-  .dist-row {
-    display: flex;
-    gap: 12rpx;
-    padding: 12rpx 0;
-    border-top: 1rpx dashed $border-color;
-
-    .dist-tag {
-      flex: 0 0 80rpx;
-      height: 60rpx;
-      margin-top: 30rpx;
-      line-height: 60rpx;
-      text-align: center;
-      background: linear-gradient(135deg, #ffd6b8, #ff6b35);
-      color: #fff;
-      border-radius: $radius-md;
-      font-size: 24rpx;
-      font-weight: 600;
-    }
-    .dist-fields {
-      flex: 1;
-      display: grid;
-      grid-template-columns: 1fr 1.4fr 1fr;
-      gap: 12rpx;
-      align-items: end;
-    }
-    .field-mini {
-      .mini-label {
-        display: block;
-        font-size: 24rpx;
-        color: $text-secondary;
-        margin-bottom: 8rpx;
-      }
-      .input.mini {
-        width: 100%;
-        min-height: 76rpx;
-        background: #f6f7f9;
-        border-radius: $radius-md;
-        padding: 0 20rpx;
-        font-size: 28rpx;
-        box-sizing: border-box;
-        &:focus { background: #fff; border: 1rpx solid $brand-primary; }
-      }
     }
   }
 
