@@ -787,7 +787,7 @@ onLoad(async (q) => {
 .field {
   display: flex;
   align-items: center;
-  gap: 24rpx;
+  gap: 20rpx;
   padding: 20rpx 0;
   border-bottom: 1rpx solid $border-color;
 
@@ -798,28 +798,58 @@ onLoad(async (q) => {
 
   .label {
     flex-shrink: 0;
-    width: 140rpx;
+    width: 160rpx;
     font-size: 28rpx;
     color: $text-regular;
   }
 }
 
+// 视觉清晰的输入框：浅灰底 + 圆角 + 充足内边距 + ≥16px 字号防 iOS 缩放
 .input {
   flex: 1;
-  height: 72rpx;
-  font-size: 30rpx;
+  min-height: 88rpx;
+  padding: 0 24rpx;
+  background: #f6f7f9;
+  border: 1rpx solid transparent;
+  border-radius: $radius-md;
+  font-size: 32rpx; // ≥16px，避免 iOS Safari 自动 zoom
   color: $text-primary;
+  box-sizing: border-box;
+  line-height: 1.4;
+
+  &:focus,
+  &:focus-within {
+    background: #fff;
+    border-color: $brand-primary;
+  }
+
+  &.compact {
+    min-height: 80rpx;
+    font-size: 30rpx;
+  }
 }
 
 .input-row {
   flex: 1;
   display: flex;
   align-items: center;
-  gap: 8rpx;
+  gap: 12rpx;
+  padding: 0 24rpx;
+  min-height: 88rpx;
+  background: #f6f7f9;
+  border-radius: $radius-md;
+
+  .input {
+    background: transparent;
+    padding: 0;
+    border: none;
+    min-height: 0;
+  }
 
   .prefix {
-    font-size: 30rpx;
-    color: $text-placeholder;
+    font-size: 32rpx;
+    color: $text-secondary;
+    flex-shrink: 0;
   }
 }
 
@@ -828,10 +858,13 @@ onLoad(async (q) => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  height: 72rpx;
+  min-height: 88rpx;
+  padding: 0 24rpx;
+  background: #f6f7f9;
+  border-radius: $radius-md;
 
   .picker-text {
-    font-size: 30rpx;
+    font-size: 32rpx;
     color: $text-primary;
   }
 
@@ -932,28 +965,33 @@ onLoad(async (q) => {
     flex: 0 0 200rpx;
   }
 
+  // 营销卡片里的 compact 输入 — 比顶部商品名/价格 input 小一些，但仍保留≥16px 字号防 iOS auto-zoom
   .input.compact {
-    height: 64rpx;
+    min-height: 80rpx;
     background: #f6f7f9;
     border-radius: $radius-md;
-    padding: 0 20rpx;
-    font-size: 26rpx;
+    padding: 0 24rpx;
+    font-size: 30rpx;
+    box-sizing: border-box;
+    &:focus { background: #fff; border: 1rpx solid $brand-primary; }
   }
 
   .ratios-row {
     display: flex;
     flex-wrap: wrap;
-    gap: 12rpx;
-    margin-top: 12rpx;
+    gap: 16rpx;
+    margin-top: 16rpx;
 
     .ratio {
-      flex: 0 0 calc(25% - 12rpx);
-      height: 64rpx;
+      flex: 0 0 calc(50% - 16rpx);    // 每行 2 个比 4 个易点
+      min-height: 80rpx;
       background: #f6f7f9;
       border-radius: $radius-md;
-      padding: 0 16rpx;
-      font-size: 26rpx;
+      padding: 0 24rpx;
+      font-size: 30rpx;
       text-align: center;
+      box-sizing: border-box;
+      &:focus { background: #fff; border: 1rpx solid $brand-primary; }
     }
   }
 
@@ -997,19 +1035,19 @@ onLoad(async (q) => {
     .field-mini {
       .mini-label {
         display: block;
-        font-size: 22rpx;
+        font-size: 24rpx;
         color: $text-secondary;
-        margin-bottom: 6rpx;
+        margin-bottom: 8rpx;
       }
       .input.mini {
         width: 100%;
-        height: 60rpx;
-        line-height: 60rpx;
+        min-height: 76rpx;
         background: #f6f7f9;
         border-radius: $radius-md;
-        padding: 0 16rpx;
-        font-size: 26rpx;
+        padding: 0 20rpx;
+        font-size: 28rpx;
         box-sizing: border-box;
+        &:focus { background: #fff; border: 1rpx solid $brand-primary; }
       }
     }
   }
