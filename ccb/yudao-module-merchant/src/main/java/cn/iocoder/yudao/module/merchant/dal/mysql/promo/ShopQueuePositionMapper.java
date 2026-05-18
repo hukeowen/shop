@@ -16,11 +16,18 @@ import java.util.List;
 @Mapper
 public interface ShopQueuePositionMapper extends BaseMapperX<ShopQueuePositionDO> {
 
-    /** 取某用户某商品的队列记录（可能不存在 / 已 EXITED） */
+    /**
+     * 取某用户某商品的队列记录（可能不存在 / 已 EXITED）。
+     *
+     * <p>跨租户读：queue_position 写入用 buyer 自己 tenant，但 v8 推 N 反 1 引擎
+     * 检查 parent 是否已激活 spu 时，parent 和 buyer 可能不在同一租户（如 SaaS 套餐场景：
+     * A 在 tenant=1005 激活，B 在 tenant=1006 买）。spu_id 全局唯一，userId 全局，跨租户安全。</p>
+     */
     default ShopQueuePositionDO selectByUserAndSpu(Long userId, Long spuId) {
-        return selectOne(new LambdaQueryWrapperX<ShopQueuePositionDO>()
-                .eq(ShopQueuePositionDO::getUserId, userId)
-                .eq(ShopQueuePositionDO::getSpuId, spuId));
+        return cn.iocoder.yudao.framework.tenant.core.util.TenantUtils.executeIgnore(() ->
+                selectOne(new LambdaQueryWrapperX<ShopQueuePositionDO>()
+                        .eq(ShopQueuePositionDO::getUserId, userId)
+                        .eq(ShopQueuePositionDO::getSpuId, spuId)));
     }
 
     /** 用户在「当前租户」是否买过任意推 N 反 1 商品（有队列记录即算）。≥1 返回 true。 */

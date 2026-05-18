@@ -8,11 +8,15 @@ import org.apache.ibatis.annotations.Mapper;
 @Mapper
 public interface ShopReferralContributionMapper extends BaseMapperX<ShopReferralContributionDO> {
 
-    /** 查 (parent, child, spu) 是否已贡献过；存在即视为「首贡献已用，永久不再触发」 */
+    /**
+     * 查 (parent, child, spu) 是否已贡献过；存在即视为「首贡献已用，永久不再触发」。
+     * 跨租户读：parent / child / spu 都是全局 id；推广关系不应受 tenant 隔离。
+     */
     default boolean exists(Long parentUserId, Long childUserId, Long spuId) {
-        return selectCount(new LambdaQueryWrapperX<ShopReferralContributionDO>()
-                .eq(ShopReferralContributionDO::getParentUserId, parentUserId)
-                .eq(ShopReferralContributionDO::getChildUserId, childUserId)
-                .eq(ShopReferralContributionDO::getSpuId, spuId)) > 0;
+        return cn.iocoder.yudao.framework.tenant.core.util.TenantUtils.executeIgnore(() ->
+                selectCount(new LambdaQueryWrapperX<ShopReferralContributionDO>()
+                        .eq(ShopReferralContributionDO::getParentUserId, parentUserId)
+                        .eq(ShopReferralContributionDO::getChildUserId, childUserId)
+                        .eq(ShopReferralContributionDO::getSpuId, spuId)) > 0);
     }
 }
