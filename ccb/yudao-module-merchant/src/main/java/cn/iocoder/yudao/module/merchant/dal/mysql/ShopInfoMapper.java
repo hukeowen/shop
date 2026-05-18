@@ -49,6 +49,7 @@ public interface ShopInfoMapper extends BaseMapperX<ShopInfoDO> {
      * 主排序仍按距离（用户附近偏好），次排序用综合分突出优质 / 新店。
      */
     @Select("SELECT * FROM shop_info WHERE status = 1 AND deleted = 0" +
+            " AND is_platform_shop = 0" +
             " AND latitude BETWEEN #{minLat} AND #{maxLat}" +
             " AND longitude BETWEEN #{minLng} AND #{maxLng}" +
             " ORDER BY ABS(latitude - #{lat}) + ABS(longitude - #{lng}) ASC," +
@@ -65,8 +66,11 @@ public interface ShopInfoMapper extends BaseMapperX<ShopInfoDO> {
      * 按分类列出店铺，按设计 6.7 节综合评分公式排序：
      *   score = sales_30d * 0.5 + avg_rating * 10 * 0.3 + isNew * 50 * 0.2
      * isNew = 创建至今 ≤ 30 天则为 1。
+     *
+     * <p>V042：is_platform_shop=1 的平台 SaaS 店（卖套餐）在 ke 端不展示，过滤掉。</p>
      */
     @Select("SELECT * FROM shop_info WHERE status = 1 AND deleted = 0" +
+            " AND is_platform_shop = 0" +
             " AND category_id = #{categoryId}" +
             " ORDER BY (COALESCE(sales_30d, 0) * 0.5" +
             "  + COALESCE(avg_rating, 0) * 10 * 0.3" +

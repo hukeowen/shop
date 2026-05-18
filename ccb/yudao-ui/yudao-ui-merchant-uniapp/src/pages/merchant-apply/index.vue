@@ -28,6 +28,12 @@
       </view>
     </view>
 
+    <!-- V042: 邀请码 banner -->
+    <view v-if="form.shareCode" class="invite-banner" :class="{ valid: inviterInfo }">
+      <text v-if="inviterInfo">🎉 老商户邀请码 <text class="code-text">{{ form.shareCode }}</text> 已生效</text>
+      <text v-else>📨 邀请码 {{ form.shareCode }} 校验中…</text>
+    </view>
+
     <!-- 申请表单卡片 -->
     <view class="card">
       <view class="card-title">立即入驻</view>
@@ -107,13 +113,35 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue';
+import { ref, reactive, computed, onMounted } from 'vue';
+import { onLoad } from '@dcloudio/uni-app';
 import { request } from '../../api/request.js';
 import { useUserStore } from '../../store/user.js';
 
 const userStore = useUserStore();
 
-const form = reactive({ shopName: '', mobile: '', smsCode: '', businessType: '' });
+// V042: shareCode 通过 URL `?invite=xxx` 传入，注册时绑定上线商户
+const form = reactive({ shopName: '', mobile: '', smsCode: '', businessType: '', shareCode: '' });
+const inviterInfo = ref(null);
+
+// 解析 URL 参数 + 验证 code
+onLoad((q) => {
+  const code = q?.invite || q?.shareCode;
+  if (code) {
+    form.shareCode = String(code).trim().toUpperCase();
+    // 异步校验 code 是否有效，给用户反馈
+    request({ url: `/app-api/merchant/mini/invite-share-code/lookup`, data: { code: form.shareCode } })
+      .then((r) => {
+        if (r && r.valid) {
+          inviterInfo.value = r;
+        } else {
+          form.shareCode = '';
+          uni.showToast({ title: '邀请码无效或已过期', icon: 'none' });
+        }
+      })
+      .catch(() => {});
+  }
+});
 
 // V041: 13 个行业类型 — key 与后端 BUSINESS_CONTEXT_MAP 一致
 const BIZ_TYPES = [
@@ -179,6 +207,7 @@ async function submit() {
         mobile: form.mobile,
         smsCode: form.smsCode,
         businessType: form.businessType, // V041
+        shareCode: form.shareCode || undefined, // V042 上线商户邀请码
       },
     });
     // 兼容两种返回：① 顶层 token=string ② 嵌套 token.accessToken
@@ -311,6 +340,30 @@ function goUserLogin() {
 }
 
 /* ── 表单卡片 ─────────────────────────────── */
+.invite-banner {
+  margin: 0 32rpx 16rpx;
+  padding: 20rpx;
+  background: linear-gradient(135deg, #fff7ed, #ffedd5);
+  border: 2rpx solid #fb923c;
+  border-radius: 16rpx;
+  text-align: center;
+  font-size: 26rpx;
+  color: #ea580c;
+  font-weight: 600;
+  &.valid {
+    background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+    border-color: #10b981;
+    color: #047857;
+  }
+  .code-text {
+    background: #fff;
+    padding: 2rpx 12rpx;
+    border-radius: 8rpx;
+    letter-spacing: 2rpx;
+    font-family: monospace;
+  }
+}
+
 .card {
   background: #fff;
   border-radius: 32rpx;

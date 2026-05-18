@@ -38,6 +38,16 @@
       </view>
       <view v-if="!saasStatus.isPlatform" class="saas-actions">
         <view class="saas-btn primary" @click="goSubscription">{{ saasStatus.expired ? '立即续费' : '续费 / 升级' }}</view>
+        <view
+          v-if="saasStatus.level === 'BASIC' || saasStatus.level === 'PRO' || saasStatus.isPlatform"
+          class="saas-btn ghost"
+          @click="goShareCode"
+        >
+          🚀 分享开店赚奖励
+        </view>
+      </view>
+      <view v-else class="saas-actions">
+        <view class="saas-btn ghost" @click="goShareCode">🚀 分享开店赚奖励</view>
       </view>
     </view>
 
@@ -168,6 +178,9 @@ function formatTime(ts) {
 }
 function goSubscription() {
   uni.navigateTo({ url: '/pages/me/subscription' });
+}
+function goShareCode() {
+  uni.navigateTo({ url: '/pages/me/share-code' });
 }
 async function loadSaasStatus() {
   try {
