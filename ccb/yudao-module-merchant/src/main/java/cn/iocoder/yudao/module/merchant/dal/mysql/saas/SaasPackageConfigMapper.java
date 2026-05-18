@@ -18,13 +18,17 @@ public interface SaasPackageConfigMapper extends BaseMapperX<SaasPackageConfigDO
     }
 
     default SaasPackageConfigDO selectByLevel(String level) {
-        return selectOne(new LambdaQueryWrapperX<SaasPackageConfigDO>()
-                .eq(SaasPackageConfigDO::getLevel, level));
+        // saas_package_config 是全局表（无 tenant_id 列），但拦截器仍会强加 tenant_id 条件 → 报 BadSqlGrammar
+        // 全部跨租户读
+        return cn.iocoder.yudao.framework.tenant.core.util.TenantUtils.executeIgnore(() ->
+                selectOne(new LambdaQueryWrapperX<SaasPackageConfigDO>()
+                        .eq(SaasPackageConfigDO::getLevel, level)));
     }
 
     /** V042：套餐作为商品 SPU 后，按 spu_id 反查套餐配置 */
     default SaasPackageConfigDO selectBySpuId(Long spuId) {
-        return selectOne(new LambdaQueryWrapperX<SaasPackageConfigDO>()
-                .eq(SaasPackageConfigDO::getSpuId, spuId));
+        return cn.iocoder.yudao.framework.tenant.core.util.TenantUtils.executeIgnore(() ->
+                selectOne(new LambdaQueryWrapperX<SaasPackageConfigDO>()
+                        .eq(SaasPackageConfigDO::getSpuId, spuId)));
     }
 }
