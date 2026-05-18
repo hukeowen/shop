@@ -33,6 +33,8 @@ public class StarServiceImpl implements StarService {
     private PromoConfigService promoConfigService;
     @Resource
     private ReferralService referralService;
+    @Resource
+    private cn.iocoder.yudao.module.merchant.dal.mysql.promo.ShopUserReferralMapper shopUserReferralMapper;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -187,15 +189,36 @@ public class StarServiceImpl implements StarService {
         attemptUpgradeV8(userId, spuId, rules);
     }
 
+    /**
+     * v8 升星判定（链式规则）：
+     *   rules 按 index 0..N 对应升到 1..N 星，每条 rule = {requiredCount, teamSales}
+     *   升 N 星需要：
+     *     - 直推下级中达到 (N-1) 星及以上的人数 ≥ requiredCount
+     *     - 团队链路销售实付累计 ≥ teamSales 分
+     *
+     * <p>例：升 1 星 = 任意付费下级 ≥ X 个（requiredStar=0）；
+     *    升 2 星 = 1 星下级 ≥ X 个；
+     *    升 3 星 = 2 星下级 ≥ X 个 …</p>
+     *
+     * <p>requiredStar 字段保留作为前端可覆盖的入口；为空时按 index 自动推断 = i（即 target-1）。</p>
+     */
     private void attemptUpgradeV8(Long userId, Long spuId, List<RuleV8> rules) {
         ShopUserStarDO acct = userStarMapper.selectByUserAndSpu(userId, spuId);
         if (acct == null) return;
         int target = acct.getCurrentStar() == null ? 0 : acct.getCurrentStar();
-        int directCount = acct.getDirectCount() == null ? 0 : acct.getDirectCount();
         long teamSalesAmount = acct.getTeamSalesAmount() == null ? 0L : acct.getTeamSalesAmount();
+
+        int[] starHisto = countDirectChildrenByStar(userId, spuId, rules);
+
         while (target < rules.size()) {
             RuleV8 r = rules.get(target);
-            if (directCount >= r.getDirectCount() && teamSalesAmount >= r.getTeamSales()) {
+            // 链式规则：升 (target+1) 星，需要 target 星下级 X 个
+            // 若 requiredStar 显式 ≥0 用之；否则按 index 推断
+            int needStar = r.getRequiredStar() > 0 ? r.getRequiredStar() : target;
+            int needCount = Math.max(0, effectiveCount(r));
+            int matched = 0;
+            for (int s = needStar; s < starHisto.length; s++) matched += starHisto[s];
+            if (matched >= needCount && teamSalesAmount >= r.getTeamSales()) {
                 target++;
             } else {
                 break;
@@ -205,6 +228,39 @@ public class StarServiceImpl implements StarService {
         if (target > curr) {
             userStarMapper.upgradeStarIfHigherBySpu(userId, spuId, target);
         }
+    }
+
+    /** 兼容老 JSON：requiredCount 字段不存在时 fallback 到 directCount */
+    private static int effectiveCount(RuleV8 r) {
+        if (r.getRequiredCount() != null) return r.getRequiredCount();
+        return r.getDirectCount();
+    }
+
+    /** 返回 histo：starHisto[s] = 直推下达到星级 s 的人数；上界 = rules.size()（足够覆盖最高 N-1 星需求） */
+    private int[] countDirectChildrenByStar(Long userId, Long spuId, List<RuleV8> rules) {
+        int maxStar = Math.max(rules.size(), 1);
+        for (RuleV8 r : rules) {
+            int s = Math.max(0, r.getRequiredStar());
+            if (s > maxStar) maxStar = s;
+        }
+        int[] histo = new int[maxStar + 1];
+        // 直推下级 user_id 列表（跨租户读）
+        List<cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopUserReferralDO> children =
+                cn.iocoder.yudao.framework.tenant.core.util.TenantUtils.executeIgnore(
+                        () -> referralService == null ? Collections.<cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopUserReferralDO>emptyList()
+                                : shopUserReferralMapper.selectListByParentUserId(userId));
+        if (children == null || children.isEmpty()) return histo;
+        // 批量查这些 child 在该 SPU 上的星级
+        for (cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopUserReferralDO child : children) {
+            Long childId = child.getUserId();
+            if (childId == null) continue;
+            ShopUserStarDO childStar = cn.iocoder.yudao.framework.tenant.core.util.TenantUtils.executeIgnore(
+                    () -> userStarMapper.selectByUserAndSpu(childId, spuId));
+            int cs = (childStar != null && childStar.getCurrentStar() != null) ? childStar.getCurrentStar() : 0;
+            int idx = Math.min(cs, maxStar);
+            histo[idx]++;
+        }
+        return histo;
     }
 
     private ShopUserStarDO getOrCreateBySpu(Long userId, Long spuId) {
@@ -240,8 +296,12 @@ public class StarServiceImpl implements StarService {
     @Data
     @NoArgsConstructor
     public static class RuleV8 {
-        /** 升此星需要的直推下级数（在该商品上） */
+        /** 升此星需要的直推下级数（兼容旧字段；新逻辑用 requiredCount） */
         private int directCount;
+        /** 升此星需要直推下级达到的星级（0=任意星级；新字段） */
+        private int requiredStar;
+        /** 升此星需要 ≥requiredStar 星的直推下级数（新字段；为空时 fallback 到 directCount） */
+        private Integer requiredCount;
         /** 升此星需要的团队链路销售实付（分） */
         private long teamSales;
     }

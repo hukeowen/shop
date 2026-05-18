@@ -141,7 +141,7 @@
         <!-- 每星一张卡：返奖比例 + 升星条件 三项垂直排 -->
         <view class="star-block">
           <view class="star-block-title">各星级配置</view>
-          <view class="star-block-hint">每星填：返奖比例（%）/ 升星所需邀请人数 / 升星所需店内累计金额（元）</view>
+          <view class="star-block-hint">链式升级规则：1 星 = 直推付费用户 X 个；N≥2 星 = 直推 (N-1) 星下级 X 个</view>
           <view v-for="(rule, i) in promo.starUpgradeRules" :key="i" class="star-card">
             <view class="star-card-head">
               <view class="star-badge">{{ i + 1 }}星</view>
@@ -158,10 +158,13 @@
                 </view>
               </view>
               <view class="star-row">
-                <text class="star-row-label">邀请人数</text>
-                <input class="input" type="number" :value="rule.directCount"
-                  @input="(e) => (promo.starUpgradeRules[i].directCount = e.detail.value)"
-                  placeholder="升星所需人数" />
+                <text class="star-row-label">{{ i === 0 ? '付费用户' : (i + '星下级') }}</text>
+                <view class="star-row-input">
+                  <input class="input" type="number" :value="rule.requiredCount"
+                    @input="(e) => (promo.starUpgradeRules[i].requiredCount = e.detail.value)"
+                    placeholder="升星所需直推人数" />
+                  <text class="suffix">人</text>
+                </view>
               </view>
               <view class="star-row">
                 <text class="star-row-label">累计金额</text>
@@ -369,7 +372,7 @@ const promo = reactive({
   directRate: '10',
   starCount: '0',
   starRatios: [],
-  starUpgradeRules: [],   // [{directCount, teamSalesYuan}]，提交时 ×100 转分
+  starUpgradeRules: [],   // [{requiredCount, teamSalesYuan}]，提交时 requiredCount → JSON，teamSalesYuan ×100 转分
   poolRatio: '0',
   poolEnabled: false,
   // v8: 奖池分配规则；每星一条 {star, ratio, mode:EQUAL|LOTTERY, winners}
@@ -401,7 +404,7 @@ function syncStarCount() {
   promo.starCount = String(target);
   while (promo.starRatios.length < target) promo.starRatios.push('0');
   if (promo.starRatios.length > target) promo.starRatios.length = target;
-  while (promo.starUpgradeRules.length < target) promo.starUpgradeRules.push({ directCount: '0', teamSalesYuan: '0' });
+  while (promo.starUpgradeRules.length < target) promo.starUpgradeRules.push({ requiredCount: '0', teamSalesYuan: '0' });
   if (promo.starUpgradeRules.length > target) promo.starUpgradeRules.length = target;
   syncPoolDistRows();
 }
@@ -446,7 +449,8 @@ async function loadPromo(spuId) {
       const arr = JSON.parse(data.starUpgradeRules || '[]');
       promo.starUpgradeRules = Array.isArray(arr)
         ? arr.map(r => ({
-            directCount: String(r.directCount ?? '0'),
+            // 兼容老 JSON：requiredCount 缺省时 fallback 到 directCount
+            requiredCount: String(r.requiredCount ?? r.directCount ?? '0'),
             teamSalesYuan: String(((r.teamSales ?? 0) / 100).toFixed(2)),
           }))
         : [];
@@ -558,7 +562,9 @@ async function onSavePromo() {
       starRatios: sc > 0 ? JSON.stringify(promo.starRatios.slice(0, sc).map(r => Number(r) || 0)) : '[]',
       starUpgradeRules: sc > 0 ? JSON.stringify(promo.starUpgradeRules.slice(0, sc).map((r, i) => ({
         star: i + 1,
-        directCount: parseInt(r.directCount) || 0,
+        // 链式规则：升 i+1 星需要 i 星下级 X 个（1 星即 0 星下级 = 任意付费用户）
+        requiredStar: i,
+        requiredCount: parseInt(r.requiredCount) || 0,
         teamSales: Math.round((parseFloat(r.teamSalesYuan) || 0) * 100),  // 元 → 分
       }))) : '[]',
       poolRatio: parseFloat(promo.poolRatio) || 0,
