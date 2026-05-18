@@ -79,8 +79,17 @@ const myBalance = ref(0);
 
 const shareUrl = computed(() => {
   if (!code.value) return '';
-  // 商户端入驻页 URL 带 invite= 参数
-  return `${location.protocol}//${location.host}/m/#/pages/merchant-apply/index?invite=${code.value.code}`;
+  // 「开店分享」给潜在商户用 → 落到商户端域名 tuo.（让被邀请人直接进入入驻页）
+  let host = (typeof location !== 'undefined' ? location.host : 'tuo.doupaidoudian.com');
+  // 当前可能在 tuo. / www. / admin. 任一域，强制改成 tuo.
+  try {
+    host = host.replace(/^(ke|www|admin)\./, 'tuo.');
+    if (!/^tuo\./.test(host) && /doupaidoudian/.test(host)) {
+      host = 'tuo.' + host.replace(/^[^.]+\./, '');
+    }
+  } catch {}
+  const proto = (typeof location !== 'undefined' ? location.protocol : 'https:');
+  return `${proto}//${host}/m/#/pages/merchant-apply/index?invite=${code.value.code}`;
 });
 
 async function load() {

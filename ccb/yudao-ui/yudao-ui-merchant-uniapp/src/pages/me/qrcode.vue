@@ -40,24 +40,34 @@ const qrUrl = ref('');
 const shopName = ref('');
 const shareUrl = ref('');
 
-// 二维码分享必须用真域名 www.doupaidoudian.com（即使商户在 IP 直访 ECS 后台，
-// 顾客拿到二维码后跑在公网上）。优先级：
-//   1) VITE_PUBLIC_BASE_URL 环境变量（运维改 .env 可覆盖）
-//   2) 当前 location.origin 含 doupaidoudian（域名访问），用 location.origin
-//   3) 最终 fallback http://www.doupaidoudian.com
-const PUBLIC_BASE_URL =
-  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_PUBLIC_BASE_URL) ||
-  'http://www.doupaidoudian.com';
+// 店铺二维码是商户**给顾客扫**的 → 必须落到用户端域名 ke.doupaidoudian.com
+// （商户自己在 tuo. 后台生成二维码，但扫描者是潜在/已注册顾客，应进顾客流程）
+// App.vue 按 hostname 嗅探：ke.* 走顾客角色，tuo.* 走商户角色。
+//
+// 优先级：
+//   1) VITE_PUBLIC_USER_BASE_URL 环境变量（运维可覆盖）
+//   2) 当前 location.origin 替换 host 为 ke.（强制顾客域）
+//   3) fallback https://ke.doupaidoudian.com
+const USER_BASE_URL =
+  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_PUBLIC_USER_BASE_URL) ||
+  'https://ke.doupaidoudian.com';
 
 function buildShareUrl(tenantId) {
   const inviter = userStore.userId || '';
-  let origin = PUBLIC_BASE_URL;
+  let origin = USER_BASE_URL;
   try {
     if (typeof location !== 'undefined' && location.origin && /doupaidoudian/i.test(location.origin)) {
-      origin = location.origin; // 已经在域名下访问，直接复用（保留 https 等）
+      // 强制 host 替换：tuo./www./admin. → ke.（保留 https）
+      const u = new URL(location.origin);
+      u.host = u.host.replace(/^(tuo|www|admin)\./, 'ke.');
+      // 若原 host 不含子域（如 IP 或裸 doupaidoudian.com），强制加 ke.
+      if (!/^ke\./.test(u.host)) {
+        u.host = 'ke.' + u.host.replace(/^[^.]+\./, '');
+      }
+      origin = u.origin;
     }
   } catch {
-    // 小程序无 location
+    // 小程序无 location / URL
   }
   const params = [];
   if (tenantId) params.push('tenantId=' + tenantId);
