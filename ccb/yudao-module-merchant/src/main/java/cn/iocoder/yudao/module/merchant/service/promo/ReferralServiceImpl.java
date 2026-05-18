@@ -41,8 +41,10 @@ public class ReferralServiceImpl implements ReferralService {
             log.warn("[bindParent] 用户 {} 不能将自己绑为上级", userId);
             return false;
         }
-        // 已绑定（无论上级是谁），不再覆盖 — 终生绑定
-        ShopUserReferralDO existing = referralMapper.selectByUserId(userId);
+        // 已绑定（无论上级是谁，无论哪个 tenant），不再覆盖 — 终生绑定 + 全局唯一。
+        // 跨租户读：referral 表唯一键是 (tenant_id, user_id)，同 user 可能在不同 tenant 各一条
+        // （bug 历史数据），逻辑上一个用户全网只该有一个 parent。这里跨租户兜底防再次写入。
+        ShopUserReferralDO existing = TenantUtils.executeIgnore(() -> referralMapper.selectByUserId(userId));
         if (existing != null) {
             return false;
         }

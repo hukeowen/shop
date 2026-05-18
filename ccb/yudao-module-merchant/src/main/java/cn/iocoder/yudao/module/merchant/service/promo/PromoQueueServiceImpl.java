@@ -617,6 +617,19 @@ public class PromoQueueServiceImpl implements PromoQueueService {
         List<BigDecimal> ratios = parseRatios(config.getTuijianRatios(), n);
         if (ratios.isEmpty()) return;
 
+        // === 幂等：同 (orderId, userId, spuId) 已处理过 → 整个 handleOrderPaidV8 跳过 ===
+        // 防止：重复 confirm 同一订单导致 shop_queue_position.cumulated 被多次推进、
+        //       shop_queue_event 多写、但 shop_promo_record 因 (user,source_type,source_id) 三元组
+        //       唯一只首次入账 → 状态机被过度推进，后续订单按错误起点结算（实战 case：
+        //       order 10006 confirm 多次 → cumulated 推到 3+ → order 10007 该按 ratios[2]+directRate
+        //       结算却按 directRate×2 结算，少返 80 分）。
+        // 用 shop_promo_deduction_record（每订单 spu 行一条）做幂等标记 —— 哪怕 produced=0
+        // 也会写 deduction record（line ~660），比 promo_record 覆盖率好。
+        if (deductionRecordMapper.existsByOrderUserSpu(orderId, buyerUserId, spuId)) {
+            log.info("[handleOrderPaidV8] 幂等命中 orderId={} buyer={} spu={}，跳过状态机推进", orderId, buyerUserId, spuId);
+            return;
+        }
+
         BigDecimal directRate = config.getDirectRate();
         if (directRate == null || directRate.signum() <= 0) {
             directRate = loadDirectCommissionRatio();
