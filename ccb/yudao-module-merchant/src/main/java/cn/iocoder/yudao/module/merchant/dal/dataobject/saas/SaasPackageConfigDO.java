@@ -46,4 +46,6 @@ public class SaasPackageConfigDO extends BaseDO {
     private Integer sort;
     /** 0=上架 1=下架 */
     private Integer status;
+    /** 关联的 product_spu.id（V042：套餐作为 tenant=999 平台店铺的商品 SPU，复用 trade 流程） */
+    private Long spuId;
 }

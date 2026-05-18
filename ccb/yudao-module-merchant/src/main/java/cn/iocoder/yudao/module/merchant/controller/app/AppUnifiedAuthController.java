@@ -111,6 +111,10 @@ public class AppUnifiedAuthController {
     private PasswordEncoder passwordEncoder;
     @Resource
     private SmsCodeApi smsCodeApi;
+    @Resource
+    private cn.iocoder.yudao.module.merchant.service.saas.MerchantInviteShareCodeService inviteShareCodeService;
+    @Resource
+    private cn.iocoder.yudao.module.merchant.service.promo.ReferralService referralService;
 
     // ==================== 1. 微信登录 ====================
 
@@ -515,6 +519,30 @@ public class AppUnifiedAuthController {
             // 同时还原 ignore + tenantId，防异常分支留下脏 ThreadLocal
             TenantContextHolder.setIgnore(prevIgnore);
             TenantContextHolder.setTenantId(prevTenantId);
+        }
+
+        // 7. 解析开店分享码 → 绑定 referrer（v8 推广引擎入口）
+        //    shareCode 可空（无邀请直接申请）；非空时解析失败仅 warn，不影响入驻
+        if (StrUtil.isNotBlank(reqVO.getShareCode())) {
+            try {
+                cn.iocoder.yudao.module.merchant.dal.dataobject.saas.MerchantInviteShareCodeDO inviteRow =
+                        inviteShareCodeService.findByCode(reqVO.getShareCode());
+                if (inviteRow != null && inviteRow.getReferrerUserId() != null
+                        && !inviteRow.getReferrerUserId().equals(member.getId())) {
+                    // 跨租户写 shop_user_referral（推广关系是全局的，不带 tenant 过滤）
+                    final Long inviterId = inviteRow.getReferrerUserId();
+                    boolean bound = TenantUtils.executeIgnore(() ->
+                            referralService.bindParent(member.getId(), inviterId, null));
+                    inviteShareCodeService.incrementUsedCount(reqVO.getShareCode());
+                    log.info("[applyMerchantBySms] 绑定开店推荐关系 child={} parent={} code={} bound={}",
+                            member.getId(), inviterId, reqVO.getShareCode(), bound);
+                } else if (inviteRow == null) {
+                    log.warn("[applyMerchantBySms] 分享码无效 code={} mobile={}", reqVO.getShareCode(), mobile);
+                }
+            } catch (Exception e) {
+                log.error("[applyMerchantBySms] 绑定开店推荐关系失败 mobile={} code={}",
+                        mobile, reqVO.getShareCode(), e);
+            }
         }
 
         List<String> roles = buildRoles(merchant);

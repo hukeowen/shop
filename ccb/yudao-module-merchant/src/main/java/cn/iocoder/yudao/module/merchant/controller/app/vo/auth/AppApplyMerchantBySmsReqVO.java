@@ -41,4 +41,9 @@ public class AppApplyMerchantBySmsReqVO {
             example = "bbq")
     @Size(max = 32)
     private String businessType;
+
+    @Schema(description = "开店分享码（可选，老商户邀请新商户用）",
+            example = "AB3K7M")
+    @Size(max = 16)
+    private String shareCode;
 }

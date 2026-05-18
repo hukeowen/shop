@@ -21,4 +21,10 @@ public interface SaasPackageConfigMapper extends BaseMapperX<SaasPackageConfigDO
         return selectOne(new LambdaQueryWrapperX<SaasPackageConfigDO>()
                 .eq(SaasPackageConfigDO::getLevel, level));
     }
+
+    /** V042：套餐作为商品 SPU 后，按 spu_id 反查套餐配置 */
+    default SaasPackageConfigDO selectBySpuId(Long spuId) {
+        return selectOne(new LambdaQueryWrapperX<SaasPackageConfigDO>()
+                .eq(SaasPackageConfigDO::getSpuId, spuId));
+    }
 }
