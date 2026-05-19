@@ -778,7 +778,7 @@ merchant:
     #   hash 片段（# 后）会被丢弃，导致 uniapp hash 路由识别不到目标页。
     # 解决：用静态 HTML 中转页 pay-return.html（已部署到 /opt/tanxiaer/m/）
     #   该页面 JS 自动跳到真正的 hash 路由目标 `#/pages/me/subscription-paid?paid=1`
-    h5-cashier-return-url: https://${SERVER_NAME:-www.doupaidoudian.com}/m/pay-return.html?paid=1
+    h5-cashier-return-url: https://${SERVER_NAME:-www.doupaidoudian.com}/m/static/pay-return.html
 YAML_EOF
   chmod 600 "${RESOURCES}/application-prod.yaml"
   umask 022
