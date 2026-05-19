@@ -86,7 +86,8 @@ public class AppMerchantCheckoutController {
     @Operation(summary = "提交订单（支持店铺余额抵扣）")
     @Transactional(rollbackFor = Exception.class)
     @cn.iocoder.yudao.framework.tenant.core.aop.TenantIgnore  // C 端跨店下单：先 ignore，再按 body.tenantId 切 ctx
-    public CommonResult<SubmitRespVO> submit(@Valid @RequestBody SubmitReqVO req) {
+    public CommonResult<SubmitRespVO> submit(@Valid @RequestBody SubmitReqVO req,
+                                              javax.servlet.http.HttpServletRequest httpReq) {
         Long userId = SecurityFrameworkUtils.getLoginUserId();
         if (userId == null || userId <= 0) {
             throw ServiceExceptionUtil.exception0(1_031_001_010, "请先登录");
@@ -347,8 +348,11 @@ public class AppMerchantCheckoutController {
         //    集群安全由 TradeOrderAllinpayPollingService 内部的 Redisson 锁保证
         if (finalPayPrice > 0) {
             try {
+                // 透传客户端 UA：通联根据 UA 推支付方式（微信浏览器→微信支付）。
+                //     null 时通联兜底 Android Chrome → iPhone/微信里可能推 Apple Pay（错的）
+                String clientUA = httpReq == null ? null : httpReq.getHeader("User-Agent");
                 cn.iocoder.yudao.module.merchant.service.allinpay.AllinpayCashierService.CashierForm form =
-                        allinpayCashierService.buildCashierFormForTrade(orderId, null);
+                        allinpayCashierService.buildCashierFormForTrade(orderId, clientUA);
                 if (form != null && form.getRedirectUrl() != null) {
                     resp.setCashierUrl(form.getRedirectUrl());
                 }
@@ -389,14 +393,16 @@ public class AppMerchantCheckoutController {
     @Operation(summary = "为待付款订单获取通联支付链接（订单列表立即付款用）")
     @cn.iocoder.yudao.framework.tenant.core.aop.TenantIgnore
     public CommonResult<java.util.Map<String, Object>> getCashierLink(
-            @org.springframework.web.bind.annotation.RequestParam("orderId") Long orderId) {
+            @org.springframework.web.bind.annotation.RequestParam("orderId") Long orderId,
+            javax.servlet.http.HttpServletRequest httpReq) {
         Long userId = SecurityFrameworkUtils.getLoginUserId();
         if (userId == null) {
             throw ServiceExceptionUtil.exception0(1_031_001_010, "请先登录");
         }
         try {
+            String clientUA = httpReq == null ? null : httpReq.getHeader("User-Agent");
             cn.iocoder.yudao.module.merchant.service.allinpay.AllinpayCashierService.CashierForm form =
-                    allinpayCashierService.buildCashierFormForTrade(orderId, null);
+                    allinpayCashierService.buildCashierFormForTrade(orderId, clientUA);
             java.util.Map<String, Object> resp = new java.util.HashMap<>();
             resp.put("cashierUrl", form.getRedirectUrl());
             return success(resp);
