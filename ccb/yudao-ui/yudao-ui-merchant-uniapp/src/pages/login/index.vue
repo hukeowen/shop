@@ -110,12 +110,18 @@ function routeByRole() {
 
 function decide(query) {
   // 永不自动跳转 —— 进 login 就显示表单。
-  // 仅保存 query.redirect 到 localStorage，供 onPasswordLogin 登录成功后消费。
   if (query?.redirect) {
+    // URL 显式带 redirect（401 反弹 / 业务跳转）→ 写 localStorage 等登录成功消费
     try {
       if (typeof localStorage !== 'undefined') {
         localStorage.setItem('redirect:after-login', decodeURIComponent(query.redirect));
       }
+    } catch {}
+  } else {
+    // 用户手工打开 /pages/login/index（如收藏夹 / 切账号）→ 清掉陈旧 redirect。
+    // 否则上次 wallet/某页 401 残留的 redirect:after-login 会让这次登录莫名跳回去。
+    try {
+      if (typeof localStorage !== 'undefined') localStorage.removeItem('redirect:after-login');
     } catch {}
   }
   redirecting.value = false;

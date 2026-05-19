@@ -67,6 +67,8 @@ public class AppMerchantPromoController {
     @Resource
     private ProductPromoConfigService productPromoConfigService;
     @Resource
+    private cn.iocoder.yudao.module.merchant.dal.mysql.promo.ProductPromoConfigMapper productPromoConfigMapper;
+    @Resource
     private PoolSettlementService poolSettlementService;
     @Resource
     private ShopPromoPoolMapper poolMapper;
@@ -148,6 +150,32 @@ public class AppMerchantPromoController {
     public CommonResult<Boolean> saveProductConfig(@Valid @RequestBody ProductPromoConfigSaveReqVO reqVO) {
         productPromoConfigService.save(reqVO);
         return success(true);
+    }
+
+    @GetMapping("/product-configs")
+    @Operation(summary = "批量取商品营销配置（C 端 shop-home 用，判断哪些商品启用了推 N 反 1 → 选「招牌」）")
+    @Parameter(name = "spuIds", description = "SPU ID 逗号串，如 1,2,3", required = true)
+    @cn.iocoder.yudao.framework.tenant.core.aop.TenantIgnore
+    public CommonResult<java.util.List<ProductPromoConfigRespVO>> listProductConfigs(
+            @RequestParam("spuIds") String spuIds) {
+        java.util.List<ProductPromoConfigRespVO> result = new java.util.ArrayList<>();
+        if (spuIds == null || spuIds.isEmpty()) return success(result);
+        java.util.List<Long> idList = new java.util.ArrayList<>();
+        for (String s : spuIds.split(",")) {
+            String t = s.trim();
+            if (t.isEmpty()) continue;
+            try { idList.add(Long.parseLong(t)); } catch (NumberFormatException ignore) {}
+        }
+        if (idList.isEmpty()) return success(result);
+        java.util.List<cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ProductPromoConfigDO> rows =
+                productPromoConfigMapper.selectListBySpuIds(idList);
+        if (rows == null) return success(result);
+        for (cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ProductPromoConfigDO row : rows) {
+            ProductPromoConfigRespVO vo = new ProductPromoConfigRespVO();
+            BeanUtils.copyProperties(row, vo);
+            result.add(vo);
+        }
+        return success(result);
     }
 
     // ==================== 星级积分池 ====================

@@ -270,8 +270,21 @@ const sortedProducts = computed(() => {
   list.sort((a, b) => (b.salesCount || 0) - (a.salesCount || 0));
   return list;
 });
-// 招牌商品 = 该店销量 #1
-const signatureSpu = computed(() => sortedProducts.value[0] || null);
+// promo 配置 map：spuId → ProductPromoConfigDO（loadAllPromo 拉完填）
+const promoMap = ref({});
+// 招牌商品规则（v8）：
+//   1) 必须启用「推 N 反 1」（tuijianEnabled = true）
+//   2) 同时满足 → 取销量最高
+//   3) 整店都没启用 → fallback 销量最高，不开标
+const signatureSpu = computed(() => {
+  const list = sortedProducts.value;
+  if (!list.length) return null;
+  const withPromo = list.find((p) => {
+    const cfg = promoMap.value[p.id];
+    return cfg && cfg.tuijianEnabled && (cfg.tuijianN || 0) >= 1;
+  });
+  return withPromo || list[0];
+});
 
 // 当前分类下的商品（cat=0 全部；否则按 categoryId 过滤；招牌商品已在卡片单独展示，
 // 全部 grid 排除掉招牌避免重复）
@@ -479,17 +492,29 @@ async function onGrabCoupon(c) {
   }
 }
 
-// 招牌商品的 promo 配置（产生「推 4 反 1」标）
+// 批量拉本店所有商品的 promo 配置 → 填 promoMap → signatureSpu computed 自动重算。
+// 招牌优先 tuijianEnabled=true 的销量最高那个，没有则 fallback 整体销量最高。
 async function loadSignaturePromo() {
   signaturePromo.value = null;
-  const spu = signatureSpu.value;
-  if (!spu || !spu.id) return;
+  promoMap.value = {};
+  const ids = (products.value || []).map((p) => p.id).filter((x) => x);
+  if (!ids.length) return;
   try {
-    const cfg = await request({
-      url: `/app-api/merchant/mini/promo/product-config?spuId=${spu.id}`,
+    const list = await request({
+      url: `/app-api/merchant/mini/promo/product-configs?spuIds=${ids.join(',')}`,
     });
-    signaturePromo.value = cfg || null;
-  } catch { signaturePromo.value = null; }
+    const map = {};
+    (Array.isArray(list) ? list : []).forEach((cfg) => {
+      if (cfg && cfg.spuId) map[cfg.spuId] = cfg;
+    });
+    promoMap.value = map;
+    // 招牌商品 promo 配置（产生「推 4 反 1」标）
+    const sig = signatureSpu.value;
+    signaturePromo.value = sig && map[sig.id] ? map[sig.id] : null;
+  } catch {
+    promoMap.value = {};
+    signaturePromo.value = null;
+  }
 }
 async function loadCart() {
   if (!tenantId.value) return;
