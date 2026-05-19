@@ -74,20 +74,19 @@
       <view class="field-v">
         <text class="label-v">买一份返积分（顾客下单可抵现）</text>
         <view class="star-row-input">
-          <text class="prefix">每消费 1 元 = 送</text>
+          <text class="prefix">每消费 1 元 = 返</text>
           <input
             class="input compact"
             type="digit"
             v-model="promo.consumePointRatio"
             placeholder="0"
           />
-          <text class="suffix">积分</text>
+          <text class="suffix">元</text>
         </view>
         <text class="hint inline">
-          💡 单位换算：<text style="color:#f56c6c;font-weight:600;">100 积分 = ¥1.00</text>。<br/>
-          - 填 <text style="font-weight:600;">100</text> → 「1 元购物 = 返 1 元积分」（全额返）<br/>
-          - 填 <text style="font-weight:600;">10</text>  → 「1 元购物 = 返 0.1 元积分」（10% 返）<br/>
-          - 填 <text style="font-weight:600;">0</text>   → 不返
+          填 <text style="font-weight:600;">1</text> = 1 元购物返 1 元（全额返）；
+          填 <text style="font-weight:600;">0.1</text> = 返 10%；
+          填 <text style="font-weight:600;">0</text> = 不返。
         </text>
       </view>
 
@@ -442,7 +441,10 @@ async function loadPromo(spuId) {
   try {
     const data = await getProductPromoConfig(spuId);
     if (!data) return;
-    promo.consumePointRatio = String(data.consumePointRatio ?? '0');
+    // DB ratio 语义：每元返多少分钱积分（1 fen point）。
+    // UI 语义：每元返多少元。两者差 100 倍；展示侧 ÷100。
+    promo.consumePointRatio = data.consumePointRatio != null
+      ? String(Number(data.consumePointRatio) / 100) : '0';
     promo.tuijianEnabled = !!data.tuijianEnabled;
     promo.tuijianN = String(data.tuijianN ?? 0);
     try {
@@ -568,7 +570,8 @@ async function onSavePromo() {
     const sc = parseInt(promo.starCount) || 0;
     await saveProductPromoConfig({
       spuId: editingId.value,
-      consumePointRatio: parseFloat(promo.consumePointRatio) || 0,
+      // UI 输入元 → 后端存「分钱/元」单位，×100
+      consumePointRatio: Math.round(((parseFloat(promo.consumePointRatio) || 0) * 100) * 100) / 100,
       tuijianEnabled: !!promo.tuijianEnabled,
       tuijianN: n,
       tuijianRatios: JSON.stringify(promo.tuijianRatios.map((r) => Number(r) || 0)),
