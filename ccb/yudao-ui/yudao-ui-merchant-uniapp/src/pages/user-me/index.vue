@@ -56,7 +56,7 @@
           <view class="stats">
             <text>余额 <text class="em">¥{{ fen2yuan(s.balance) }}</text></text>
             <text>推广 <text class="em">¥{{ fen2yuan(s.promoPoints || 0) }}</text></text>
-            <text>消费积分 <text class="em">{{ s.points || 0 }}</text></text>
+            <text>消费 <text class="em">¥{{ fen2yuan(s.points || 0) }}</text></text>
           </view>
         </view>
         <text class="arrow">›</text>
