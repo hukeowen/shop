@@ -649,13 +649,22 @@ public class PromoQueueServiceImpl implements PromoQueueService {
             }
         }
 
-        // 2. buyer 自购：按件循环推进状态机；产生积分**全部**入余额，
-        //    抵扣的 K 件价款已在 checkout 阶段从 payPrice 中扣除（用户少付）
+        // 2. buyer 自购：按件循环推进状态机
         long produced = applyBuyerLoopV8(buyerUserId, spuId, unitPrice, totalCount, ratios, directRate, orderId, n);
 
+        // 2.1 入余额：full produced（流水透明）
         if (produced > 0) {
             promoPointService.addPromoPoint(buyerUserId, produced, "SELF_BATCH", orderId,
                     "v8 多件订单产生积分 spu=" + spuId + " count=" + totalCount + " deduct=" + deductCount);
+        }
+        // 2.2 反向扣回：deductCount × unitPrice 部分已在 checkout 折抵给用户（少付价款），
+        //     必须从余额扣回，否则用户既享了折扣又拿了积分 = 双倍。
+        //     用独立 sourceType=ORDER_DEDUCT 走 deductPromoPoint，与 SELF_BATCH 同 sourceId 不冲突，
+        //     流水可见正负两条 + 净余额 = produced - deductCount × unitPrice。
+        long autoDeduct = Math.min((long) deductCount * unitPrice, produced);
+        if (autoDeduct > 0) {
+            promoPointService.deductPromoPoint(buyerUserId, autoDeduct, "ORDER_DEDUCT", orderId,
+                    "v8 下单已抵扣 " + deductCount + " 件价款 spu=" + spuId);
         }
 
         // 3. 抵扣流水写入（审计 / 对账）
