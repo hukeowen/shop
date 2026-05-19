@@ -79,7 +79,31 @@ onLoad((q) => {
   pending.value = q?.pending === '1';
   payOrderId.value = q?.payOrderId ? Number(q.payOrderId) : null;
   loadOrder();
+  // 微信点金计划：在微信支付完成后，本页可能被嵌在 payapp.weixin.qq.com 的 iframe 里。
+  // 不发 onIframeReady → 微信只显示自己的官方结果页 + 「点金计划」广告，看不到我们这页 + 商家自定义按钮。
+  // 发 SHOW_CUSTOM_PAGE → 微信切到当前页 + 隐藏官方页底部广告。详见 https://prodoc.allinpay.com/doc/1551/
+  try {
+    if (typeof window !== 'undefined' && window.parent && window.parent !== window) {
+      const mchData = { action: 'onIframeReady', displayStyle: 'SHOW_CUSTOM_PAGE' };
+      window.parent.postMessage(JSON.stringify(mchData), 'https://payapp.weixin.qq.com');
+    }
+  } catch {}
 });
+
+// 点金计划「跳出 iframe」专用：微信支付完成页里调用 jumpOut，让顶层从结果页跳到 jumpOutUrl
+// 浏览器直接打开（不在 iframe 里）→ fallback 普通跳转
+function jumpOutOrNav(targetUrl) {
+  try {
+    if (typeof window !== 'undefined' && window.parent && window.parent !== window) {
+      const mchData = { action: 'jumpOut', jumpOutUrl: targetUrl };
+      window.parent.postMessage(JSON.stringify(mchData), 'https://payapp.weixin.qq.com');
+      // 兜底：postMessage 后若 200ms 内微信没接管，自己跳
+      setTimeout(() => { location.href = targetUrl; }, 200);
+      return;
+    }
+  } catch {}
+  location.href = targetUrl;
+}
 
 async function callPay() {
   if (!payOrderId.value) {
@@ -144,9 +168,20 @@ function onShare() {
   });
 }
 function goOrder() {
+  // 嵌在微信结果页 iframe 时走 jumpOut；否则普通 reLaunch
+  if (typeof window !== 'undefined' && window.parent && window.parent !== window) {
+    const origin = location.origin;
+    jumpOutOrNav(`${origin}/m/#/pages/user-order/list`);
+    return;
+  }
   uni.reLaunch({ url: '/pages/user-order/list' });
 }
 function goHome() {
+  if (typeof window !== 'undefined' && window.parent && window.parent !== window) {
+    const origin = location.origin;
+    jumpOutOrNav(`${origin}/m/#/pages/user-home/index`);
+    return;
+  }
   uni.reLaunch({ url: '/pages/user-home/index' });
 }
 </script>
