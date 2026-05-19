@@ -83,7 +83,12 @@
           />
           <text class="suffix">积分</text>
         </view>
-        <text class="hint inline">填 0 = 不送；建议 1（即 1 元 = 1 积分）。顾客在下单页可勾选用积分抵扣订单金额。</text>
+        <text class="hint inline">
+          💡 单位换算：<text style="color:#f56c6c;font-weight:600;">100 积分 = ¥1.00</text>。<br/>
+          - 填 <text style="font-weight:600;">100</text> → 「1 元购物 = 返 1 元积分」（全额返）<br/>
+          - 填 <text style="font-weight:600;">10</text>  → 「1 元购物 = 返 0.1 元积分」（10% 返）<br/>
+          - 填 <text style="font-weight:600;">0</text>   → 不返
+        </text>
       </view>
 
       <view class="switch-row">

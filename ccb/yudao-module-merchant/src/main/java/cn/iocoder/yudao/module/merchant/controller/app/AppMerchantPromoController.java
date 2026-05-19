@@ -98,7 +98,7 @@ public class AppMerchantPromoController {
     // ==================== 商户级营销配置 ====================
 
     @GetMapping("/config")
-    @Operation(summary = "获取营销配置（不传 tenantId 用 ctx 商户；C 端 checkout 必须传 tenantId 走目标店铺）")
+    @Operation(summary = "获取营销配置")
     @cn.iocoder.yudao.framework.tenant.core.aop.TenantIgnore
     public CommonResult<PromoConfigRespVO> getConfig(
             @RequestParam(name = "tenantId", required = false) Long tenantId) {
@@ -153,7 +153,7 @@ public class AppMerchantPromoController {
     }
 
     @GetMapping("/product-configs")
-    @Operation(summary = "批量取商品营销配置（C 端 shop-home 用，判断哪些商品启用了推 N 反 1 → 选「招牌」）")
+    @Operation(summary = "批量取商品营销配置")
     @Parameter(name = "spuIds", description = "SPU ID 逗号串，如 1,2,3", required = true)
     @cn.iocoder.yudao.framework.tenant.core.aop.TenantIgnore
     public CommonResult<java.util.List<ProductPromoConfigRespVO>> listProductConfigs(
