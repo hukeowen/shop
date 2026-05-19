@@ -91,4 +91,13 @@ public class PromoConfigSaveReqVO {
             example = "false")
     private Boolean naturalPushEnabled;
 
+    // ========== 消费积分抵扣下单 ==========
+    @Schema(description = "是否启用消费积分抵扣下单", example = "true")
+    private Boolean consumePointRedeemEnabled;
+
+    @Schema(description = "抵扣比例：1 积分 = X 分钱（默认 1.0000）", example = "1.0000")
+    @DecimalMin(value = "0.0001", message = "抵扣比例必须 > 0")
+    @DecimalMax(value = "100.0000", message = "抵扣比例上限 100")
+    private BigDecimal consumePointRedeemRatio;
+
 }

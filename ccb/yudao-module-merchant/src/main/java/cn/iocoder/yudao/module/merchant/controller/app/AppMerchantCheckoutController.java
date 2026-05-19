@@ -66,6 +66,14 @@ public class AppMerchantCheckoutController {
     @Resource
     private cn.iocoder.yudao.module.merchant.dal.mysql.ShopInfoMapper shopInfoMapper;
 
+    // V043 消费积分抵扣依赖
+    @Resource
+    private cn.iocoder.yudao.module.merchant.service.promo.PromoConfigService promoConfigService;
+    @Resource
+    private cn.iocoder.yudao.module.merchant.service.promo.PromoPointService promoPointService;
+    @Resource
+    private cn.iocoder.yudao.module.merchant.dal.mysql.promo.ShopConsumePointDeductMapper consumePointDeductMapper;
+
     /** 通联兜底轮询（提单成功后立即调度，6 段退避主动查通联） */
     @Resource(name = "tradeOrderAllinpayPollingService")
     private cn.iocoder.yudao.module.merchant.service.allinpay.TradeOrderAllinpayPollingService tradeOrderAllinpayPollingService;
@@ -137,6 +145,72 @@ public class AppMerchantCheckoutController {
                 priceReq.setAdjustPrice(-finalDeductFen);
                 tradeOrderUpdateService.updateOrderPrice(priceReq);
                 finalPayPrice -= finalDeductFen;
+            }
+        }
+
+        // 3.5 V043: 消费积分抵扣（在余额抵扣之后、v8 推 N 反 1 之前；优先级符合 user 设计）
+        //     约束：a) 商户 promo_config.consumePointRedeemEnabled = true
+        //          b) 用户 consume_point_balance 足够
+        //          c) 抵扣后 finalPayPrice 必须 ≥ 1 分（trade.updateOrderPrice 限制）
+        int finalConsumePointDeductFen = 0;
+        long finalConsumePointUsed = 0;
+        if (Boolean.TRUE.equals(req.getUseConsumePoint())
+                && req.getConsumePointDeductFen() != null
+                && req.getConsumePointDeductFen() > 0) {
+            cn.iocoder.yudao.module.merchant.dal.dataobject.promo.PromoConfigDO promoConfig =
+                    promoConfigService.getConfig();
+            if (!Boolean.TRUE.equals(promoConfig.getConsumePointRedeemEnabled())) {
+                throw ServiceExceptionUtil.exception0(1_031_001_030,
+                        "本店暂未开启消费积分抵扣");
+            }
+            java.math.BigDecimal ratio = promoConfig.getConsumePointRedeemRatio();
+            if (ratio == null || ratio.signum() <= 0) {
+                throw ServiceExceptionUtil.exception0(1_031_001_031,
+                        "消费积分抵扣比例配置异常");
+            }
+            int requestFen = req.getConsumePointDeductFen();
+            int maxByRemain = Math.max(0, finalPayPrice - 1);
+            int actualDeductFen = Math.min(requestFen, maxByRemain);
+            if (actualDeductFen > 0) {
+                // 反推积分数量 = ceil(actualDeductFen / ratio)，向上取整保证扣足额度
+                java.math.BigDecimal points = java.math.BigDecimal.valueOf(actualDeductFen)
+                        .divide(ratio, 0, java.math.RoundingMode.CEILING);
+                long pointsUsed = points.longValueExact();
+                if (pointsUsed <= 0) {
+                    throw ServiceExceptionUtil.exception0(1_031_001_032,
+                            "积分抵扣金额过小");
+                }
+                // 扣减消费积分（带余额不足校验 + 幂等：sourceType=REDEEM, sourceId=orderId）
+                // submit 已切到 merchant tenant，promoPointService 内部 MyBatis-Plus 自动 where tenant_id
+                // → 与 OrderPaidListener / MerchantPromoOrderHandler 的 addConsumePoint 写入维度一致
+                boolean ok = promoPointService.deductConsumePoint(userId, pointsUsed,
+                        "REDEEM", orderId, "下单消费积分抵扣");
+                if (!ok) {
+                    throw ServiceExceptionUtil.exception0(1_031_001_033,
+                            "消费积分扣减失败（余额不足或重复抵扣）");
+                }
+                // 改价
+                TradeOrderUpdatePriceReqVO priceReq = new TradeOrderUpdatePriceReqVO();
+                priceReq.setId(orderId);
+                priceReq.setAdjustPrice(-actualDeductFen);
+                tradeOrderUpdateService.updateOrderPrice(priceReq);
+                finalPayPrice -= actualDeductFen;
+                finalConsumePointDeductFen = actualDeductFen;
+                finalConsumePointUsed = pointsUsed;
+                // 落抵扣记录（COMMITTED：balance 已扣 + 改价已成功；cancel 时退回）
+                cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopConsumePointDeductDO deduct =
+                        cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopConsumePointDeductDO
+                                .builder()
+                                .orderId(orderId)
+                                .userId(userId)
+                                .pointsUsed(pointsUsed)
+                                .ratioSnapshot(ratio)
+                                .deductAmount((long) actualDeductFen)
+                                .status(cn.iocoder.yudao.module.merchant.dal.dataobject.promo
+                                        .ShopConsumePointDeductDO.STATUS_COMMITTED)
+                                .commitTime(java.time.LocalDateTime.now())
+                                .build();
+                consumePointDeductMapper.insert(deduct);
             }
         }
 
@@ -235,6 +309,8 @@ public class AppMerchantCheckoutController {
         resp.setOrderId(orderId);
         resp.setPayOrderId(order.getPayOrderId());
         resp.setBalanceDeductFen(finalDeductFen);
+        resp.setConsumePointDeductFen(finalConsumePointDeductFen);
+        resp.setConsumePointUsed(finalConsumePointUsed);
         resp.setPromoDeductFen(finalPromoDeductFen);
         resp.setPromoDeductCount(totalPromoDeductCount);
         resp.setCouponDeductFen(couponDeductFen);
@@ -460,6 +536,14 @@ public class AppMerchantCheckoutController {
 
         /** 选用的优惠券 user 记录 ID（shop_coupon_user.id；不传 = 不用券） */
         private Long couponUserId;
+
+        /** 是否启用消费积分抵扣（商户在 promo_config 必须先 enabled） */
+        private Boolean useConsumePoint;
+
+        /** 拟抵扣的消费积分对应的订单金额（分）。后端按 promo_config.consumePointRedeemRatio 反推积分数量。 */
+        @javax.validation.constraints.Min(value = 0, message = "积分抵扣金额不能为负")
+        @javax.validation.constraints.Max(value = 100_000_000, message = "积分抵扣金额过大")
+        private Integer consumePointDeductFen;
     }
 
     @Data
@@ -468,6 +552,10 @@ public class AppMerchantCheckoutController {
         private Long payOrderId;
         /** 实际抵扣的余额（分） */
         private Integer balanceDeductFen;
+        /** 实际抵扣的消费积分对应金额（分） */
+        private Integer consumePointDeductFen;
+        /** 实际扣减的消费积分数量 */
+        private Long consumePointUsed;
         /** v8: 推 N 反 1 / 直推奖 抵扣金额（分） */
         private Integer promoDeductFen;
         /** v8: 推 N 反 1 / 直推奖 抵扣件数（按 SPU 累加） */

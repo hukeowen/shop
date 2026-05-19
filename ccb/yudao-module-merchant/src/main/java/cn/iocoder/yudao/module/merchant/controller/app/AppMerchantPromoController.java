@@ -96,15 +96,32 @@ public class AppMerchantPromoController {
     // ==================== 商户级营销配置 ====================
 
     @GetMapping("/config")
-    @Operation(summary = "获取本商户的营销配置（不存在则返默认值）")
-    public CommonResult<PromoConfigRespVO> getConfig() {
-        PromoConfigDO config = promoConfigService.getConfig();
-        PromoConfigRespVO resp = new PromoConfigRespVO();
-        BeanUtils.copyProperties(config, resp);
-        // BeanUtils 在 JDK8 反射 corner case 不拷 BigDecimal/Boolean 包装类，主动兜底
-        resp.setDirectCommissionRatio(config.getDirectCommissionRatio());
-        resp.setNaturalPushEnabled(config.getNaturalPushEnabled());
-        return success(resp);
+    @Operation(summary = "获取营销配置（不传 tenantId 用 ctx 商户；C 端 checkout 必须传 tenantId 走目标店铺）")
+    @cn.iocoder.yudao.framework.tenant.core.aop.TenantIgnore
+    public CommonResult<PromoConfigRespVO> getConfig(
+            @RequestParam(name = "tenantId", required = false) Long tenantId) {
+        // C 端跨店：显式传 tenantId → 切上下文到该店；商户自己看自家 → 不传走 ctx
+        Long oldTid = cn.iocoder.yudao.framework.tenant.core.context.TenantContextHolder.getTenantId();
+        if (tenantId != null && tenantId > 0) {
+            cn.iocoder.yudao.framework.tenant.core.context.TenantContextHolder.setTenantId(tenantId);
+            cn.iocoder.yudao.framework.tenant.core.context.TenantContextHolder.setIgnore(false);
+        }
+        try {
+            PromoConfigDO config = promoConfigService.getConfig();
+            PromoConfigRespVO resp = new PromoConfigRespVO();
+            BeanUtils.copyProperties(config, resp);
+            // BeanUtils 在 JDK8 反射 corner case 不拷 BigDecimal/Boolean 包装类，主动兜底
+            resp.setDirectCommissionRatio(config.getDirectCommissionRatio());
+            resp.setNaturalPushEnabled(config.getNaturalPushEnabled());
+            resp.setConsumePointRedeemEnabled(config.getConsumePointRedeemEnabled());
+            resp.setConsumePointRedeemRatio(config.getConsumePointRedeemRatio());
+            return success(resp);
+        } finally {
+            // 复位上下文（避免污染后续同请求其他 service）
+            if (tenantId != null && tenantId > 0) {
+                cn.iocoder.yudao.framework.tenant.core.context.TenantContextHolder.setTenantId(oldTid);
+            }
+        }
     }
 
     @PutMapping("/config")

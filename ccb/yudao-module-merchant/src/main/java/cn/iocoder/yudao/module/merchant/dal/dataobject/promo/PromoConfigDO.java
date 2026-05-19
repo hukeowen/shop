@@ -57,6 +57,12 @@ public class PromoConfigDO extends TenantBaseDO {
     /** 推广积分提现门槛(分，默认 10000=100元) */
     private Integer withdrawThreshold;
 
+    // ========== 消费积分抵扣下单 ==========
+    /** 是否启用消费积分抵扣下单 */
+    private Boolean consumePointRedeemEnabled;
+    /** 抵扣比例：1 积分 = X 分钱（默认 1.0000） */
+    private BigDecimal consumePointRedeemRatio;
+
     // ========== 星级积分池 ==========
     /** 是否启用星级积分池 */
     private Boolean poolEnabled;

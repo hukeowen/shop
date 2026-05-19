@@ -55,4 +55,10 @@ public class PromoConfigRespVO {
     @Schema(description = "v7 自然推开关")
     private Boolean naturalPushEnabled;
 
+    @Schema(description = "是否启用消费积分抵扣下单")
+    private Boolean consumePointRedeemEnabled;
+
+    @Schema(description = "抵扣比例：1 积分 = X 分钱")
+    private BigDecimal consumePointRedeemRatio;
+
 }

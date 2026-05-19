@@ -53,6 +53,8 @@ public class PromoConfigServiceImpl implements PromoConfigService {
                 .poolSettleCron("0 0 0 1 * ?")
                 .poolLotteryRatio(new BigDecimal("5.00"))
                 .poolSettleMode("FULL")
+                .consumePointRedeemEnabled(false)
+                .consumePointRedeemRatio(BigDecimal.ONE)
                 .build();
     }
 
@@ -67,6 +69,8 @@ public class PromoConfigServiceImpl implements PromoConfigService {
             // 显式 set v7 字段（Spring BeanUtils 在某些版本对包装类有问题，主动兜底）
             insert.setDirectCommissionRatio(reqVO.getDirectCommissionRatio());
             insert.setNaturalPushEnabled(reqVO.getNaturalPushEnabled());
+            insert.setConsumePointRedeemEnabled(reqVO.getConsumePointRedeemEnabled());
+            insert.setConsumePointRedeemRatio(reqVO.getConsumePointRedeemRatio());
             promoConfigMapper.insert(insert);
             return;
         }
@@ -79,6 +83,12 @@ public class PromoConfigServiceImpl implements PromoConfigService {
         }
         if (reqVO.getNaturalPushEnabled() != null) {
             existing.setNaturalPushEnabled(reqVO.getNaturalPushEnabled());
+        }
+        if (reqVO.getConsumePointRedeemEnabled() != null) {
+            existing.setConsumePointRedeemEnabled(reqVO.getConsumePointRedeemEnabled());
+        }
+        if (reqVO.getConsumePointRedeemRatio() != null) {
+            existing.setConsumePointRedeemRatio(reqVO.getConsumePointRedeemRatio());
         }
         log.info("[saveConfig] after copy: directCommissionRatio={} naturalPushEnabled={}",
                 existing.getDirectCommissionRatio(), existing.getNaturalPushEnabled());

@@ -86,13 +86,6 @@
       <!-- 组合支付 - 店铺资产抵扣 -->
       <view class="ck-method">
         <view class="gh">店铺资产抵扣</view>
-        <!--
-          MAJ-6 修复：移除"店铺消费积分抵扣"开关。
-          原 UI 上的 usePoints 实际通过 trade 模块的 pointStatus 触发 member_user.point 抵扣，
-          而该数值并不是用户在 member_shop_rel.points 看到的"店铺消费积分"——两者是不同账户。
-          直到把 shop_rel.points 也接进 trade 价格计算管线之前，先下线这个 toggle 避免用户误解。
-          后续要恢复请按 V2 规划：扩展 TradeShopBalancePriceCalculator + 价格计算时同步扣 shop_rel.points。
-        -->
         <!-- 店铺余额抵扣（订单创建后调用 deduct-for-order 幂等扣减） -->
         <view class="m-row" :class="{ disabled: !balanceEnabled }">
           <view class="m-icon i-balance">余</view>
@@ -104,6 +97,24 @@
           <view class="m-trail">
             <text class="amt" :class="{ off: !useBalance }">{{ useBalance ? `-¥${fen2yuan(balanceDeductFen)}` : '未使用' }}</text>
             <view class="switch" :class="{ on: useBalance && balanceEnabled }" @click="toggleBalance">
+              <view class="dot"></view>
+            </view>
+          </view>
+        </view>
+        <!-- 消费积分抵扣（仅当商户开启且用户有积分时显示） -->
+        <view v-if="consumePointEnabled" class="m-row" :class="{ disabled: !consumePointAvailable }">
+          <view class="m-icon i-points">分</view>
+          <view class="m-info">
+            <view class="m-name">消费积分抵扣</view>
+            <view class="m-sub" v-if="consumePointAvailable">
+              余 {{ userConsumePoints }} 分 · 最多抵 ¥{{ fen2yuan(maxConsumePointDeductFen) }}
+              <text style="color:#999;"> · 1 积分={{ (consumePointRatio / 100).toFixed(4) }} 元</text>
+            </view>
+            <view class="m-sub" v-else>积分余额不足或剩余订单已无可抵</view>
+          </view>
+          <view class="m-trail">
+            <text class="amt" :class="{ off: !useConsumePoint }">{{ useConsumePoint ? `-¥${fen2yuan(consumePointDeductFen)}` : '未使用' }}</text>
+            <view class="switch" :class="{ on: useConsumePoint && consumePointAvailable }" @click="toggleConsumePoint">
               <view class="dot"></view>
             </view>
           </view>
@@ -180,6 +191,7 @@
       <view class="form-tip">
         <text class="b">支付明细：</text><br>
         · 店铺余额抵扣：<text class="hl">{{ useBalance ? `-¥${fen2yuan(balanceDeductFen)}` : '未启用' }}</text><br>
+        <text v-if="consumePointEnabled">· 消费积分抵扣：<text class="hl">{{ useConsumePoint ? `-¥${fen2yuan(consumePointDeductFen)}` : '未启用' }}</text><br></text>
         · 推广积分抵扣：<text class="hl">{{ promoPreview && promoPreview.deductFen > 0 ? `-¥${fen2yuan(promoPreview.deductFen)}（${promoPreview.deductCount} 件）` : '当前无可抵扣商品' }}</text><br>
         · 优惠券抵扣：<text class="hl">{{ selectedCoupon ? `-¥${fen2yuan(selectedCoupon.discountAmount)}` : '未选用' }}</text><br>
         · 在线支付：<text class="hl">¥{{ fen2yuan(finalRemainFen) }}</text>
@@ -229,6 +241,33 @@ const useBalance = ref(false);
 const userPoints = ref(0);
 const pointPerYuan = ref(100); // 100 分 = ¥1（trade 默认）
 const userBalance = ref(0);
+
+// ===== 消费积分抵扣 =====
+const consumePointEnabled = ref(false);              // 商户开关
+const consumePointRatio = ref(1);                    // 1 积分=X 分钱（后端单位）
+const userConsumePoints = ref(0);                    // 用户当前消费积分余额（分=积分数量）
+const useConsumePoint = ref(false);                  // 用户在 checkout 勾选了抵扣
+
+// 单个积分能抵的分钱数 = ratio（后端就是 "1 积分 = X 分钱"）
+// 最多能抵扣的分钱 = floor(points * ratio)，并按 100% 订单价封顶
+const maxConsumePointDeductFen = computed(() => {
+  if (!consumePointEnabled.value || userConsumePoints.value <= 0 || consumePointRatio.value <= 0) return 0;
+  // 抵扣后剩余 = 商品小计 - 余额抵扣，再用积分抵这部分
+  const remainAfterBalance = Math.max(0, grossFen.value - balanceDeductFen.value);
+  const byPoints = Math.floor(userConsumePoints.value * consumePointRatio.value);
+  return Math.min(byPoints, remainAfterBalance);
+});
+const consumePointAvailable = computed(() => maxConsumePointDeductFen.value > 0);
+const consumePointDeductFen = computed(() =>
+  useConsumePoint.value && consumePointAvailable.value ? maxConsumePointDeductFen.value : 0
+);
+function toggleConsumePoint() {
+  if (!consumePointAvailable.value) {
+    uni.showToast({ title: '消费积分不足或订单无可抵', icon: 'none' });
+    return;
+  }
+  useConsumePoint.value = !useConsumePoint.value;
+}
 
 // balanceEnabled 不再写死 false：只要余额 > 0 即开放抵扣
 const balanceEnabled = computed(() => (userBalance.value || 0) > 0);
@@ -285,7 +324,7 @@ const balanceDeductCap = computed(() => {
   return Math.min(userBalance.value || 0, remainAfterPoint);
 });
 const balanceDeductFen = computed(() => useBalance.value && balanceEnabled.value ? balanceDeductCap.value : 0);
-const remainFen = computed(() => Math.max(0, grossFen.value - pointDeductFen.value - balanceDeductFen.value));
+const remainFen = computed(() => Math.max(0, grossFen.value - pointDeductFen.value - balanceDeductFen.value - consumePointDeductFen.value));
 
 // 优惠券
 const usableCoupons = ref([]);
@@ -341,6 +380,22 @@ async function loadShopAndItems() {
       userBalance.value = rel?.balance || 0;
       userPoints.value = rel?.points || 0;
     } catch {}
+    // 2.1 拉商户营销配置（看是否启用消费积分抵扣 + 比例）
+    try {
+      const cfg = await request({ url: `/app-api/merchant/mini/promo/config?tenantId=${tenantId.value}` });
+      consumePointEnabled.value = !!cfg?.consumePointRedeemEnabled;
+      consumePointRatio.value = Number(cfg?.consumePointRedeemRatio || 1);
+    } catch {}
+    // 2.2 拉用户消费积分余额（按 merchant tenant 维度；与下单 deductConsumePoint 用同一 tenant）
+    if (consumePointEnabled.value) {
+      try {
+        const acct = await request({
+          url: '/app-api/merchant/mini/promo/account',
+          tenantId: tenantId.value,
+        });
+        userConsumePoints.value = Number(acct?.consumePointBalance || 0);
+      } catch {}
+    }
     // 3. 拉商品（按 cartIds 或 skuId）— 购物车按用户自身 tenant 走
     if (cartIds.value.length) {
       const res = await request({ url: '/app-api/trade/cart/list' });
@@ -479,6 +534,9 @@ async function submitOrder() {
       },
       useShopBalance: useBalance.value,
       balanceFen: useBalance.value ? safeBalanceFen : 0,
+      // 消费积分抵扣：传分钱金额，后端按 ratio 反推积分数量 + 扣减 + 写流水
+      useConsumePoint: useConsumePoint.value,
+      consumePointDeductFen: useConsumePoint.value ? consumePointDeductFen.value : 0,
       couponUserId: selectedCouponId.value || undefined,
     };
     // 不传 header tenantId — 用户 token 的 tenant 跟商户 tenant 不一样会冲突

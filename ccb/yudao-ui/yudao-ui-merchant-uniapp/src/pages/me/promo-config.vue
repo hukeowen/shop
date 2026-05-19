@@ -78,6 +78,35 @@
       </view>
     </view>
 
+    <!-- ============ 消费积分抵扣下单 ============ -->
+    <view class="card">
+      <view class="section-title">消费积分抵扣下单</view>
+      <view class="hint">开启后，顾客下单时可勾选「使用消费积分抵扣」直接折抵订单金额。优先扣余额，余额不足才用积分。</view>
+
+      <view class="row">
+        <text class="label">开启消费积分抵扣</text>
+        <switch
+          :checked="form.consumePointRedeemEnabled"
+          @change="(e) => (form.consumePointRedeemEnabled = e.detail.value)"
+          color="#FF6B35"
+        />
+      </view>
+
+      <view v-if="form.consumePointRedeemEnabled" class="field">
+        <text class="label">抵扣比例（1 积分 = X 元）</text>
+        <input
+          class="input"
+          type="digit"
+          v-model="form.consumePointRedeemRatio"
+          placeholder="如 0.01（即 1 积分=1分钱）或 1（即 1 积分=1元）"
+        />
+        <text class="hint inline">
+          单位：元 / 积分。默认 0.01（1 积分=1分钱=1:1 分账）。后端按"分钱"存储，输入元自动 ×100。<br/>
+          上限不超过订单总价的 100%（顾客可全额积分支付）。
+        </text>
+      </view>
+    </view>
+
     <!-- ============ v8 邀请激励 全局配置（商户级兜底）============ -->
     <view class="card">
       <view class="section-title">推广奖励（邀请激励 · 商户级兜底，商品级配置优先）</view>
@@ -302,6 +331,9 @@ const form = ref({
   // v8 邀请激励
   directCommissionRatio: '',
   naturalPushEnabled: false,
+  // 消费积分抵扣（前端以「元 / 积分」展示；后端存「分钱 / 积分」即 元*100）
+  consumePointRedeemEnabled: false,
+  consumePointRedeemRatio: '0.01',
 });
 
 // 星级行展开（rate%, directCount, teamSales）
@@ -362,6 +394,11 @@ async function load() {
     form.value.directCommissionRatio = data.directCommissionRatio != null
       ? String(data.directCommissionRatio) : '';
     form.value.naturalPushEnabled = !!data.naturalPushEnabled;
+    // 消费积分抵扣 — 后端单位「分钱 / 积分」转「元 / 积分」展示
+    form.value.consumePointRedeemEnabled = !!data.consumePointRedeemEnabled;
+    if (data.consumePointRedeemRatio != null) {
+      form.value.consumePointRedeemRatio = String(Number(data.consumePointRedeemRatio) / 100);
+    }
 
     const rates = safeJsonArr(data.commissionRates, [1, 2, 3, 4, 5]);
     const rules = safeJsonArr(data.starUpgradeRules, []);
@@ -443,6 +480,12 @@ async function onSave() {
     directCommissionRatio: parseFloat(form.value.directCommissionRatio) > 0
       ? parseFloat(form.value.directCommissionRatio) : 0,
     naturalPushEnabled: !!form.value.naturalPushEnabled,
+    // 消费积分抵扣：前端「元」→ 后端「分钱」(×100)
+    consumePointRedeemEnabled: !!form.value.consumePointRedeemEnabled,
+    consumePointRedeemRatio: (() => {
+      const yuan = parseFloat(form.value.consumePointRedeemRatio);
+      return yuan > 0 ? Number((yuan * 100).toFixed(4)) : 1;
+    })(),
   };
 
   saving.value = true;
