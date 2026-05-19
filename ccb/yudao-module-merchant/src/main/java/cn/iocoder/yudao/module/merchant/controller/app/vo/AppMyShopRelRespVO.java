@@ -33,8 +33,8 @@ public class AppMyShopRelRespVO {
     @Schema(description = "我在此店的余额（分）")
     private Integer balance;
 
-    @Schema(description = "我在此店的消费积分（每元赠积分配置累加；不是推广积分）")
-    private Integer points;
+    @Schema(description = "我在此店的消费积分（v8 体系，shop_user_star.consume_point_balance，单位分）")
+    private Long points;
 
     @Schema(description = "我在此店的推广积分（推 N 反 1 / 团队极差 / 自然推 累加；分）")
     private Long promoPoints;

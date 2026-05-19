@@ -111,7 +111,7 @@ public class AppMemberShopRelController {
             AppMyShopRelRespVO vo = new AppMyShopRelRespVO();
             vo.setTenantId(rel.getTenantId());
             vo.setBalance(rel.getBalance() == null ? 0 : rel.getBalance());
-            vo.setPoints(rel.getPoints() == null ? 0 : rel.getPoints());
+            // 老字段 member_shop_rel.points 已弃用；消费积分来自 shop_user_star（v8）下面切租户取
             vo.setLastVisitAt(rel.getLastVisitAt());
             vo.setReferrerUserId(rel.getReferrerUserId());
             // shop_info 是 BaseDO（tenantId 普通字段），跨租户查直接 mapper 即可
@@ -153,9 +153,11 @@ public class AppMemberShopRelController {
                     if (star != null) {
                         vo.setStar(star.getCurrentStar() != null ? star.getCurrentStar() : 0);
                         vo.setPromoPoints(star.getPromoPointBalance() != null ? star.getPromoPointBalance() : 0L);
+                        vo.setPoints(star.getConsumePointBalance() != null ? star.getConsumePointBalance() : 0L);
                     } else {
                         vo.setStar(0);
                         vo.setPromoPoints(0L);
+                        vo.setPoints(0L);
                     }
                 });
             } catch (Exception e) {
@@ -163,6 +165,7 @@ public class AppMemberShopRelController {
                         rel.getTenantId(), e.getMessage());
                 vo.setStar(0);
                 vo.setPromoPoints(0L);
+                vo.setPoints(0L);
             }
             out.add(vo);
         }
