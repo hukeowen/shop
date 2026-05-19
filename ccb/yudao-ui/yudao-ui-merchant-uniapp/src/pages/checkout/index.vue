@@ -119,6 +119,23 @@
             </view>
           </view>
         </view>
+        <!-- 推广积分抵扣（用户主动；1 推广积分 = 1 分钱） -->
+        <view class="m-row" :class="{ disabled: !promoPointAvailable }">
+          <view class="m-icon i-points">推</view>
+          <view class="m-info">
+            <view class="m-name">推广积分抵扣</view>
+            <view class="m-sub" v-if="promoPointAvailable">
+              余 ¥{{ fen2yuan(userPromoPoints) }} · 最多抵 ¥{{ fen2yuan(maxPromoPointDeductFen) }}
+            </view>
+            <view class="m-sub" v-else>推广积分余额为 0 或剩余订单已无可抵</view>
+          </view>
+          <view class="m-trail">
+            <text class="amt" :class="{ off: !usePromoPoint }">{{ usePromoPoint ? `-¥${fen2yuan(promoPointDeductFen)}` : '未使用' }}</text>
+            <view class="switch" :class="{ on: usePromoPoint && promoPointAvailable }" @click="togglePromoPoint">
+              <view class="dot"></view>
+            </view>
+          </view>
+        </view>
         <!-- 抵扣后还需在线支付 -->
         <view class="m-fee-final">
           <text>抵扣后还需在线支付</text>
@@ -192,7 +209,8 @@
         <text class="b">支付明细：</text><br>
         · 店铺余额抵扣：<text class="hl">{{ useBalance ? `-¥${fen2yuan(balanceDeductFen)}` : '未启用' }}</text><br>
         <text v-if="consumePointEnabled">· 消费积分抵扣：<text class="hl">{{ useConsumePoint ? `-¥${fen2yuan(consumePointDeductFen)}` : '未启用' }}</text><br></text>
-        · 推广积分抵扣：<text class="hl">{{ promoPreview && promoPreview.deductFen > 0 ? `-¥${fen2yuan(promoPreview.deductFen)}（${promoPreview.deductCount} 件）` : '当前无可抵扣商品' }}</text><br>
+        · 推广积分抵扣：<text class="hl">{{ usePromoPoint ? `-¥${fen2yuan(promoPointDeductFen)}` : '未启用' }}</text><br>
+        · 推广奖励自动抵：<text class="hl">{{ promoPreview && promoPreview.deductFen > 0 ? `-¥${fen2yuan(promoPreview.deductFen)}（${promoPreview.deductCount} 件）` : '当前无可抵扣商品' }}</text><br>
         · 优惠券抵扣：<text class="hl">{{ selectedCoupon ? `-¥${fen2yuan(selectedCoupon.discountAmount)}` : '未选用' }}</text><br>
         · 在线支付：<text class="hl">¥{{ fen2yuan(finalRemainFen) }}</text>
       </view>
@@ -269,6 +287,27 @@ function toggleConsumePoint() {
   useConsumePoint.value = !useConsumePoint.value;
 }
 
+// ===== 推广积分抵扣（1 推广积分 = 1 分钱） =====
+const userPromoPoints = ref(0);
+const usePromoPoint = ref(false);
+const maxPromoPointDeductFen = computed(() => {
+  if (userPromoPoints.value <= 0) return 0;
+  // 抵扣顺序：余额 → 消费积分 → 推广积分，三者叠后须留 1 分线上支付
+  const remain = Math.max(0, grossFen.value - balanceDeductFen.value - consumePointDeductFen.value);
+  return Math.min(userPromoPoints.value, remain);
+});
+const promoPointAvailable = computed(() => maxPromoPointDeductFen.value > 0);
+const promoPointDeductFen = computed(() =>
+  usePromoPoint.value && promoPointAvailable.value ? maxPromoPointDeductFen.value : 0
+);
+function togglePromoPoint() {
+  if (!promoPointAvailable.value) {
+    uni.showToast({ title: '推广积分余额不足或订单无可抵', icon: 'none' });
+    return;
+  }
+  usePromoPoint.value = !usePromoPoint.value;
+}
+
 // balanceEnabled 不再写死 false：只要余额 > 0 即开放抵扣
 const balanceEnabled = computed(() => (userBalance.value || 0) > 0);
 
@@ -324,7 +363,7 @@ const balanceDeductCap = computed(() => {
   return Math.min(userBalance.value || 0, remainAfterPoint);
 });
 const balanceDeductFen = computed(() => useBalance.value && balanceEnabled.value ? balanceDeductCap.value : 0);
-const remainFen = computed(() => Math.max(0, grossFen.value - pointDeductFen.value - balanceDeductFen.value - consumePointDeductFen.value));
+const remainFen = computed(() => Math.max(0, grossFen.value - pointDeductFen.value - balanceDeductFen.value - consumePointDeductFen.value - promoPointDeductFen.value));
 
 // 优惠券
 const usableCoupons = ref([]);
@@ -386,16 +425,15 @@ async function loadShopAndItems() {
       consumePointEnabled.value = !!cfg?.consumePointRedeemEnabled;
       consumePointRatio.value = Number(cfg?.consumePointRedeemRatio || 1);
     } catch {}
-    // 2.2 拉用户消费积分余额（按 merchant tenant 维度；与下单 deductConsumePoint 用同一 tenant）
-    if (consumePointEnabled.value) {
-      try {
-        const acct = await request({
-          url: '/app-api/merchant/mini/promo/account',
-          tenantId: tenantId.value,
-        });
-        userConsumePoints.value = Number(acct?.consumePointBalance || 0);
-      } catch {}
-    }
+    // 2.2 拉用户在该 merchant tenant 的双积分余额（与扣减侧用同一 tenant）
+    try {
+      const acct = await request({
+        url: '/app-api/merchant/mini/promo/account',
+        tenantId: tenantId.value,
+      });
+      userConsumePoints.value = Number(acct?.consumePointBalance || 0);
+      userPromoPoints.value = Number(acct?.promoPointBalance || 0);
+    } catch {}
     // 3. 拉商品（按 cartIds 或 skuId）— 购物车按用户自身 tenant 走
     if (cartIds.value.length) {
       const res = await request({ url: '/app-api/trade/cart/list' });
@@ -537,6 +575,9 @@ async function submitOrder() {
       // 消费积分抵扣：传分钱金额，后端按 ratio 反推积分数量 + 扣减 + 写流水
       useConsumePoint: useConsumePoint.value,
       consumePointDeductFen: useConsumePoint.value ? consumePointDeductFen.value : 0,
+      // 推广积分抵扣：1:1 fen，无 ratio
+      usePromoPoint: usePromoPoint.value,
+      promoPointDeductFen: usePromoPoint.value ? promoPointDeductFen.value : 0,
       couponUserId: selectedCouponId.value || undefined,
     };
     // 不传 header tenantId — 用户 token 的 tenant 跟商户 tenant 不一样会冲突

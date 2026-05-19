@@ -214,6 +214,31 @@ public class AppMerchantCheckoutController {
             }
         }
 
+        // 3.6 推广积分抵扣（用户主动）— 1 推广积分 = 1 分钱。在消费积分之后、v8 自动抵扣之前
+        //     幂等：sourceType=REDEEM_ORDER, sourceId=orderId
+        int finalPromoPointRedeemFen = 0;
+        if (Boolean.TRUE.equals(req.getUsePromoPoint())
+                && req.getPromoPointDeductFen() != null
+                && req.getPromoPointDeductFen() > 0) {
+            int requestFen = req.getPromoPointDeductFen();
+            int maxByRemain = Math.max(0, finalPayPrice - 1);
+            int actualDeductFen = Math.min(requestFen, maxByRemain);
+            if (actualDeductFen > 0) {
+                boolean ok = promoPointService.deductPromoPoint(userId, (long) actualDeductFen,
+                        "REDEEM_ORDER", orderId, "下单推广积分抵扣");
+                if (!ok) {
+                    throw ServiceExceptionUtil.exception0(1_031_001_034,
+                            "推广积分扣减失败（余额不足或重复抵扣）");
+                }
+                TradeOrderUpdatePriceReqVO priceReq = new TradeOrderUpdatePriceReqVO();
+                priceReq.setId(orderId);
+                priceReq.setAdjustPrice(-actualDeductFen);
+                tradeOrderUpdateService.updateOrderPrice(priceReq);
+                finalPayPrice -= actualDeductFen;
+                finalPromoPointRedeemFen = actualDeductFen;
+            }
+        }
+
         // 4. v8: 推 N 反 1 / 直推奖 本单立即抵扣
         //    按订单中每个 spu 行预演产生积分 → K = floor(produced / unitPrice) → 调订单价格
         int finalPromoDeductFen = 0;
@@ -311,6 +336,7 @@ public class AppMerchantCheckoutController {
         resp.setBalanceDeductFen(finalDeductFen);
         resp.setConsumePointDeductFen(finalConsumePointDeductFen);
         resp.setConsumePointUsed(finalConsumePointUsed);
+        resp.setPromoPointRedeemFen(finalPromoPointRedeemFen);
         resp.setPromoDeductFen(finalPromoDeductFen);
         resp.setPromoDeductCount(totalPromoDeductCount);
         resp.setCouponDeductFen(couponDeductFen);
@@ -544,6 +570,14 @@ public class AppMerchantCheckoutController {
         @javax.validation.constraints.Min(value = 0, message = "积分抵扣金额不能为负")
         @javax.validation.constraints.Max(value = 100_000_000, message = "积分抵扣金额过大")
         private Integer consumePointDeductFen;
+
+        /** 是否启用推广积分抵扣 */
+        private Boolean usePromoPoint;
+
+        /** 拟抵扣的推广积分对应金额（分）。1 推广积分 = 1 分钱，1:1。 */
+        @javax.validation.constraints.Min(value = 0, message = "推广积分抵扣金额不能为负")
+        @javax.validation.constraints.Max(value = 100_000_000, message = "推广积分抵扣金额过大")
+        private Integer promoPointDeductFen;
     }
 
     @Data
@@ -556,6 +590,8 @@ public class AppMerchantCheckoutController {
         private Integer consumePointDeductFen;
         /** 实际扣减的消费积分数量 */
         private Long consumePointUsed;
+        /** 实际抵扣的推广积分对应金额（分；与扣减积分数量 1:1） */
+        private Integer promoPointRedeemFen;
         /** v8: 推 N 反 1 / 直推奖 抵扣金额（分） */
         private Integer promoDeductFen;
         /** v8: 推 N 反 1 / 直推奖 抵扣件数（按 SPU 累加） */
