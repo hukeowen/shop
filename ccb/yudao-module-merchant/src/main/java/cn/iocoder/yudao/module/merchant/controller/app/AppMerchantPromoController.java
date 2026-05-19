@@ -312,39 +312,54 @@ public class AppMerchantPromoController {
     // ==================== 用户钱包（双积分账户） ====================
 
     @GetMapping("/account")
-    @Operation(summary = "当前用户星级 / 双积分余额（v8: star/direct/team 按 SPU 聚合最高 + 累计）")
+    @Operation(summary = "用户账户余额")
     public CommonResult<ShopUserStarDO> getMyAccount() {
         Long userId = SecurityFrameworkUtils.getLoginUserId();
-        ShopUserStarDO base = promoPointService.getOrCreateAccount(userId);
-        // v8 升星都写在 spu_id>0 行（商品级账户），全局账户 spu_id=0 永远是 0
-        // → UI 看到 currentStar=0 困惑。聚合：max(star) + sum(direct/team) 覆盖回 base。
-        // 余额（promoPointBalance/consumePointBalance）不动，仍是全局共享。
+        // User 在多个 tenant 下都有 shop_user_star 行（每店一份余额）。
+        // 老实现走 selectByUserId(单 tenant) → 在 tenantFilter 失效时跨 tenant 拉到 N>1 行抛
+        // TooManyResultsException。改为跨 tenant 全拉 + 内存聚合：
+        //   - 余额 = sum(全店)        → 用户看到的「我的积分」是跨店总额
+        //   - star/direct/team = SPU 行 max / sum（与原逻辑一致）
+        cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopUserStarDO agg =
+                new cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopUserStarDO();
+        agg.setUserId(userId);
+        agg.setPromoPointBalance(0L);
+        agg.setConsumePointBalance(0L);
         try {
             java.util.List<cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopUserStarDO> all =
-                    userStarMapper.selectList(
-                            new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopUserStarDO>()
-                                    .eq(cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopUserStarDO::getUserId, userId)
-                                    .gt(cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopUserStarDO::getSpuId, 0L));
-            if (all != null && !all.isEmpty()) {
-                int maxStar = 0;
-                long sumDirect = 0;
-                long sumTeam = 0;
-                long sumTeamAmt = 0;
-                for (cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopUserStarDO row : all) {
+                    cn.iocoder.yudao.framework.tenant.core.util.TenantUtils.executeIgnore(() ->
+                            userStarMapper.selectList(
+                                    new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopUserStarDO>()
+                                            .eq(cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopUserStarDO::getUserId, userId)));
+            long sumPromo = 0, sumConsume = 0;
+            int maxStar = 0;
+            long sumDirect = 0, sumTeam = 0, sumTeamAmt = 0;
+            for (cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopUserStarDO row : all) {
+                Long spu = row.getSpuId();
+                Long pb = row.getPromoPointBalance();
+                Long cb = row.getConsumePointBalance();
+                if (spu == null || spu == 0L) {
+                    // 全局账户行（spu_id=0）：累积余额
+                    sumPromo += pb == null ? 0 : pb;
+                    sumConsume += cb == null ? 0 : cb;
+                } else {
+                    // SPU 级账户行（spu_id>0）：累积星级/团队
                     if (row.getCurrentStar() != null && row.getCurrentStar() > maxStar) maxStar = row.getCurrentStar();
                     if (row.getDirectCount() != null) sumDirect += row.getDirectCount();
                     if (row.getTeamSalesCount() != null) sumTeam += row.getTeamSalesCount();
                     if (row.getTeamSalesAmount() != null) sumTeamAmt += row.getTeamSalesAmount();
                 }
-                base.setCurrentStar(maxStar);
-                base.setDirectCount((int) sumDirect);
-                base.setTeamSalesCount((int) sumTeam);
-                base.setTeamSalesAmount(sumTeamAmt);
             }
+            agg.setPromoPointBalance(sumPromo);
+            agg.setConsumePointBalance(sumConsume);
+            agg.setCurrentStar(maxStar);
+            agg.setDirectCount((int) sumDirect);
+            agg.setTeamSalesCount((int) sumTeam);
+            agg.setTeamSalesAmount(sumTeamAmt);
         } catch (Exception e) {
-            log.warn("[getMyAccount] SPU 聚合失败 userId={} : {}", userId, e.getMessage());
+            log.warn("[getMyAccount] 聚合失败 userId={} : {}", userId, e.getMessage());
         }
-        return success(base);
+        return success(agg);
     }
 
     @GetMapping("/promo-records")
