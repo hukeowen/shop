@@ -58,10 +58,16 @@
       </view>
     </view>
 
-    <!-- 营销配置（v7 双积分 / 邀请激励 / 入池） — 仅编辑态可用 -->
+    <!-- 上架前提示用户：新增商品时不能配营销，先上架→自动跳转到编辑态再设 -->
+    <view v-if="!isEdit" class="card promo-hint">
+      <view class="promo-title">营销配置（v8）</view>
+      <view class="promo-sub">先点底部"上架"完成商品创建，系统会自动跳到编辑页让你设置「消费积分倍率 / 推 N 反 1 / 星级 / 入池」等。</view>
+    </view>
+
+    <!-- 营销配置（v8 双积分 / 邀请激励 / 入池） — 仅编辑态可用 -->
     <view v-if="isEdit" class="card promo">
       <view class="promo-head">
-        <text class="promo-title">营销配置（v7）</text>
+        <text class="promo-title">营销配置（v8）</text>
         <text class="promo-sub">{{ promoLoaded ? '已配置' : '加载中…' }}</text>
       </view>
 
@@ -711,8 +717,17 @@ async function onSubmit() {
       uni.hideLoading();
       uni.showToast({ title: '已保存', icon: 'success' });
     } else {
-      await createSpu(payload);
+      const newId = await createSpu(payload);
       uni.hideLoading();
+      // 上架成功 → 跳到编辑态，让用户接着配「营销配置」（消费积分倍率 / 推 N 反 1 / 入池 等）
+      // 否则新建商品后回列表，没机会设营销 → 用户找不到「消费积分倍率」入口（已经踩过）
+      if (newId) {
+        uni.showToast({ title: '上架成功，继续设置营销', icon: 'success', duration: 1200 });
+        setTimeout(() => {
+          uni.redirectTo({ url: `/pages/product/edit?id=${newId}` });
+        }, 800);
+        return;
+      }
       uni.showToast({ title: '上架成功', icon: 'success' });
     }
     setTimeout(() => uni.navigateBack(), 800);
@@ -964,6 +979,23 @@ onLoad(async (q) => {
     font-size: 22rpx;
     color: $text-secondary;
     line-height: 1.5;
+  }
+}
+
+.promo-hint {
+  padding: 28rpx 32rpx;
+  background: #fff8ec;
+  border: 2rpx solid #fbd38d;
+  .promo-title {
+    font-size: 28rpx;
+    font-weight: 700;
+    color: $brand-primary;
+    margin-bottom: 8rpx;
+  }
+  .promo-sub {
+    font-size: 24rpx;
+    color: $text-secondary;
+    line-height: 1.6;
   }
 }
 
