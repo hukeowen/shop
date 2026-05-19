@@ -72,13 +72,18 @@
       </view>
 
       <view class="field-v">
-        <text class="label-v">消费积分倍率</text>
-        <input
-          class="input compact"
-          type="digit"
-          v-model="promo.consumePointRatio"
-          placeholder="每元返多少消费积分，0=关闭"
-        />
+        <text class="label-v">买一份返积分（顾客下单可抵现）</text>
+        <view class="star-row-input">
+          <text class="prefix">每消费 1 元 = 送</text>
+          <input
+            class="input compact"
+            type="digit"
+            v-model="promo.consumePointRatio"
+            placeholder="0"
+          />
+          <text class="suffix">积分</text>
+        </view>
+        <text class="hint inline">填 0 = 不送；建议 1（即 1 元 = 1 积分）。顾客在下单页可勾选用积分抵扣订单金额。</text>
       </view>
 
       <view class="switch-row">
