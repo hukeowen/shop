@@ -19,25 +19,91 @@
 <body>
 <div class="wrap">
   <div class="check"><span>✓</span></div>
-  <div class="h1">套餐购买成功</div>
-  <div class="sub">SaaS 服务已激活</div>
-  <div class="tip" id="countdown">3 秒后自动返回工作台...</div>
-  <a class="btn" href="#" id="goNow">立即进入工作台</a>
+  <div class="h1" id="title">支付成功</div>
+  <div class="sub" id="sub">正在为你跳转…</div>
+  <div class="tip" id="countdown">3 秒后自动跳转</div>
+  <a class="btn" href="#" id="goNow">立即进入</a>
 </div>
 <script>
-// 跳到 uniapp hash 路由的 subscription-paid 页（hash # 不能直接出现在 returnUrl 里，所以走中转）
-var target = '/m/#/pages/me/subscription-paid?paid=1';
+// Allinpay returnUrl 着陆页。本页通常被嵌在微信「支付完成」iframe 里 → 必须用点金计划
+// postMessage(onIframeReady, SHOW_CUSTOM_PAGE) 隐藏底部「点金计划」广告，
+// 然后 postMessage(jumpOut, jumpOutUrl) 把顶层换成商户 / 顾客的真实主页。
+//
+// 场景区分：
+//   ?type=saas  → 商户买套餐 → 跳 tuo.doupaidoudian.com/m/#/pages/me/subscription-paid
+//   ?type=trade → 顾客订单付款 → 跳 ke.doupaidoudian.com/m/#/pages/order/pay-done?orderId=X
+//   未指定     → fallback 商户工作台（旧链路兼容）
+
+function qs(name) {
+  var m = location.search.match(new RegExp('[?&]' + name + '=([^&]*)'));
+  return m ? decodeURIComponent(m[1]) : '';
+}
+
+var type = qs('type') || 'saas';
+var oid = qs('oid');
+var tenantId = qs('tenantId');
+
+var title = '支付成功', sub = '正在为你跳转…', target = '';
+if (type === 'trade') {
+  title = '订单支付成功';
+  sub = '正在返回商家页面…';
+  target = 'https://ke.doupaidoudian.com/m/#/pages/order/pay-done?orderId=' + encodeURIComponent(oid || '');
+  if (tenantId) target += '&tenantId=' + encodeURIComponent(tenantId);
+} else {
+  title = '套餐购买成功';
+  sub = 'SaaS 服务已激活';
+  target = 'https://tuo.doupaidoudian.com/m/#/pages/me/subscription-paid?paid=1';
+}
+
+document.getElementById('title').innerText = title;
+document.getElementById('sub').innerText = sub;
 document.getElementById('goNow').href = target;
+
+// 嵌在微信 payapp 里：先告知"切到自定义页 + 隐藏广告"
+function postToWx(data) {
+  try {
+    if (window.parent && window.parent !== window) {
+      window.parent.postMessage(JSON.stringify(data), 'https://payapp.weixin.qq.com');
+      return true;
+    }
+  } catch (e) {}
+  return false;
+}
+
+var inIframe = (function () {
+  try { return window.parent && window.parent !== window; } catch (e) { return false; }
+})();
+
+if (inIframe) {
+  postToWx({ action: 'onIframeReady', displayStyle: 'SHOW_CUSTOM_PAGE' });
+}
+
+// 倒计时 3 秒：iframe 中走 jumpOut（彻底跳出微信壳）；非 iframe fallback 普通跳转
 var n = 3;
-var timer = setInterval(function(){
+var timer = setInterval(function () {
   n--;
   if (n <= 0) {
     clearInterval(timer);
-    location.href = target;
+    if (inIframe) {
+      postToWx({ action: 'jumpOut', jumpOutUrl: target });
+      // 兜底：300ms 没跳成自己跳
+      setTimeout(function () { location.href = target; }, 300);
+    } else {
+      location.href = target;
+    }
   } else {
-    document.getElementById('countdown').innerText = n + ' 秒后自动返回工作台...';
+    document.getElementById('countdown').innerText = n + ' 秒后自动跳转';
   }
 }, 1000);
+
+// 点按钮也优先 jumpOut
+document.getElementById('goNow').addEventListener('click', function (e) {
+  if (inIframe) {
+    e.preventDefault();
+    postToWx({ action: 'jumpOut', jumpOutUrl: target });
+    setTimeout(function () { location.href = target; }, 300);
+  }
+});
 </script>
 </body>
 </html>

@@ -264,14 +264,29 @@ public class AllinpayCashierService {
         p.put("reqsn", reqsn);
         p.put("randomstr", randomStr());
         p.put("body", truncate(body, 64));
+        // 按 reqsn 前缀（T{id}=trade / S{id}=saas）给 returnUrl 加 type / oid 查询参数 →
+        // 着陆页 pay-return.html 据此跳对应域名（顾客 ke. / 商户 tuo.）的真实主页 +
+        // 调微信点金计划 postMessage 隐藏广告。
+        String baseReturn = props.getH5CashierReturnUrl();
+        String returnUrl = baseReturn;
+        if (reqsn != null && reqsn.length() >= 2 && baseReturn != null && !baseReturn.isEmpty()) {
+            String sep = baseReturn.indexOf('?') >= 0 ? "&" : "?";
+            char head = reqsn.charAt(0);
+            String oid = reqsn.substring(1);
+            if (head == 'T') {
+                returnUrl = baseReturn + sep + "type=trade&oid=" + oid;
+            } else if (head == 'S') {
+                returnUrl = baseReturn + sep + "type=saas&oid=" + oid;
+            }
+        }
         if (useOnepay) {
             // 聚合收银台：front_url + 必填 expiretime
-            p.put("front_url", props.getH5CashierReturnUrl());
+            p.put("front_url", returnUrl);
             p.put("expiretime", new java.text.SimpleDateFormat("yyyyMMddHHmmss")
                     .format(new java.util.Date(System.currentTimeMillis() + 2 * 3600_000L)));
         } else {
             // unionorder：returl
-            p.put("returl", props.getH5CashierReturnUrl());
+            p.put("returl", returnUrl);
         }
         // notify_url 用 credential 的（trade 每商户独立；空时 fallback 全局 props）
         p.put("notify_url", cred.getNotifyUrl() != null && !cred.getNotifyUrl().isEmpty()
