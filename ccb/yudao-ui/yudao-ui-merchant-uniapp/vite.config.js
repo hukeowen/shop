@@ -25,6 +25,9 @@ export default defineConfig(({ mode }) => {
   const SIDECAR_URL = env.VITE_SIDECAR_URL || 'http://127.0.0.1:8081';
 
   return {
+    // H5 部署在 nginx /m/ 子路径下；其他平台（小程序）保持 /
+    // 注：与 manifest.json 的 h5.publicPath 双保险（uniapp 版本对哪个生效不一致）
+    base: process.env.UNI_PLATFORM === 'h5' ? '/m/' : '/',
     plugins: [uni()],
     server: {
       host: true,

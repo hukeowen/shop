@@ -28,6 +28,7 @@
   "h5": {
     "title": "小二",
     "template": "index.html",
+    "publicPath": "/m/",
     "router": {
       "mode": "hash",
       "base": "/"
