@@ -81,17 +81,42 @@ function startCountdown() {
   }, 1000);
 }
 
+// 点金计划：本页被嵌在 payapp.weixin.qq.com iframe 里时，uni.reLaunch 只换 iframe 内的页面，
+// 用户视觉上仍卡在「微信支付完成 + 广告」框里。必须 postMessage(jumpOut) 让顶层换页。
+function jumpOutOrNav(targetUrl) {
+  try {
+    if (typeof window !== 'undefined' && window.parent && window.parent !== window) {
+      const mchData = { action: 'jumpOut', jumpOutUrl: targetUrl };
+      window.parent.postMessage(JSON.stringify(mchData), 'https://payapp.weixin.qq.com');
+      setTimeout(() => { location.href = targetUrl; }, 200);
+      return true;
+    }
+  } catch {}
+  return false;
+}
+
 function goNow() {
   if (timer) { clearInterval(timer); timer = null; }
+  const origin = (typeof location !== 'undefined' && location.origin) || 'https://tuo.doupaidoudian.com';
+  if (jumpOutOrNav(`${origin}/m/#/pages/index/index`)) return;
   uni.reLaunch({ url: '/pages/index/index' });
 }
 
 function goSubscription() {
   if (timer) { clearInterval(timer); timer = null; }
+  const origin = (typeof location !== 'undefined' && location.origin) || 'https://tuo.doupaidoudian.com';
+  if (jumpOutOrNav(`${origin}/m/#/pages/me/subscription`)) return;
   uni.redirectTo({ url: '/pages/me/subscription' });
 }
 
 onShow(() => {
+  // 进入即告诉微信「展示我这页 + 隐藏点金计划广告」
+  try {
+    if (typeof window !== 'undefined' && window.parent && window.parent !== window) {
+      const mchData = { action: 'onIframeReady', displayStyle: 'SHOW_CUSTOM_PAGE' };
+      window.parent.postMessage(JSON.stringify(mchData), 'https://payapp.weixin.qq.com');
+    }
+  } catch {}
   countdown.value = 3;
   loadStatus();
   startCountdown();
