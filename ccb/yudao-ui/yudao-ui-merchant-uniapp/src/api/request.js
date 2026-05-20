@@ -59,6 +59,7 @@ const ANON_BROWSE_PREFIXES = [
   'pages/product/detail',  // 商品详情：未登录可浏览
   'pages/login/',          // 已是登录重定向器，再跳会死循环
   'pages/merchant-login/', // 同上
+  'pages/merchant-apply/', // 商户入驻 H5，未登录可浏览（注册场景）
 ];
 
 function isMerchantPage(route) {

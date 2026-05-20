@@ -39,7 +39,7 @@ public class AppMerchantInviteShareCodeController {
     private MerchantService merchantService;
 
     @GetMapping("/my")
-    @Operation(summary = "取或生成「我的开店分享码」（商户已登录）")
+    @Operation(summary = "取或生成「我的开店分享码」（已付费商户才能拿）")
     @SecurityRequirement(name = "Authorization")
     public CommonResult<MerchantInviteShareCodeDO> getOrCreateMyCode() {
         Long userId = SecurityFrameworkUtils.getLoginUserId();
@@ -50,12 +50,21 @@ public class AppMerchantInviteShareCodeController {
         if (merchant == null) {
             throw new ServiceException(403, "当前账号未开通商户，无法生成分享码");
         }
+        // 付费门槛：只有已购套餐（BASIC/PRO/PLATFORM）的商户才有分享权限
+        // TRIAL 商户必须先升级到 BASIC 或 PRO 才能开通分享码
+        String level = merchant.getServicePackageLevel();
+        boolean paid = "BASIC".equals(level) || "PRO".equals(level) || "PLATFORM".equals(level);
+        if (!paid) {
+            throw new ServiceException(403, "试用期商户暂无邀请权限，请先升级到 BASIC 或 PRO 套餐");
+        }
         return success(inviteShareCodeService.getOrCreate(userId, merchant.getTenantId()));
     }
 
     @GetMapping("/lookup")
     @Operation(summary = "按分享码查询邀请人信息（入驻页解析 ?invite= 用，匿名可访问）")
     @Parameter(name = "code", description = "分享码", required = true)
+    @javax.annotation.security.PermitAll
+    @cn.iocoder.yudao.framework.tenant.core.aop.TenantIgnore
     public CommonResult<Map<String, Object>> lookup(@RequestParam("code") @NotBlank String code) {
         MerchantInviteShareCodeDO record = inviteShareCodeService.findByCode(code);
         Map<String, Object> resp = new HashMap<>();
