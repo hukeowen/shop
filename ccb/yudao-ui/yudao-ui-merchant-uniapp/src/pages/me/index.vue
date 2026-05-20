@@ -71,6 +71,15 @@
       </view>
     </view>
 
+    <!-- 营销 -->
+    <view class="section-title">营销</view>
+    <view class="menu card">
+      <view class="menu-item" @click="goPromoConfig">
+        <view class="mi-l"><text class="mi-ic">🎯</text><text>营销配置（推 N 反 1 / 星级 / 自然队列 / 积分池）</text></view>
+        <text class="arrow">›</text>
+      </view>
+    </view>
+
     <!-- 经营数据 -->
     <view class="section-title">经营数据</view>
     <view class="menu card">
@@ -212,6 +221,10 @@ function toast() {
 
 function goShopEdit() {
   uni.navigateTo({ url: '/pages/me/shop-edit' });
+}
+
+function goPromoConfig() {
+  uni.navigateTo({ url: '/pages/me/promo-config' });
 }
 
 function goQrcode() {
