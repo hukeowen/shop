@@ -748,7 +748,9 @@ public class PromoQueueServiceImpl implements PromoQueueService {
     /** v8: 自然推队首拿 1 件价 × ratios[head.cumulated] */
     private void handleNaturalPushV8(Long buyerUserId, Long spuId, int unitPrice,
                                       List<BigDecimal> ratios, Long orderId) {
-        ShopQueuePositionDO head = queueMapper.selectQueueHead(spuId);
+        // 自然队列语义：新买家奖前一个（最近一个 QUEUEING 自然用户），逐级推进。
+        // 不能用 selectQueueHead（最早入队）—— 那样第一个用户永远拿奖直到累满 N，新买家从未拿过奖。
+        ShopQueuePositionDO head = queueMapper.selectQueueLatest(spuId);
         if (head == null || head.getUserId().equals(buyerUserId)) return;
         int idx = head.getAccumulatedCount() == null ? 0 : head.getAccumulatedCount();
         if (idx >= ratios.size()) return;  // head 已超 N
