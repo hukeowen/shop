@@ -119,14 +119,23 @@
         <text class="hint inline">完成邀请激励 后，自购或朋友首单都按订单实付总额 × 此 % 返推广积分。</text>
       </view>
 
-      <view class="field row-switch">
-        <text class="label">自然推开关</text>
+    </view>
+
+    <!-- ============ 自然队列（自然推） ============ -->
+    <view class="card">
+      <view class="section-title">自然队列（自然推）</view>
+      <view class="hint">
+        当一个顾客「没人推荐就直接进店下单」（无邀请人）时，这单产生的「推 N 反 1」奖励怎么分？<br/>
+        - <text style="color:#16a34a;font-weight:600;">开启</text>：奖励进入「自然队列」，由排在队首的用户领走（先到先得；激励老顾客主动推广）<br/>
+        - <text style="color:#999;">关闭</text>：奖励吞掉，店内没人拿（不鼓励自然顾客）
+      </view>
+      <view class="field row-switch" style="margin-top: 16rpx;">
+        <text class="label" style="font-weight:600;">启用自然队列</text>
         <switch
           :checked="form.naturalPushEnabled"
           @change="(e) => (form.naturalPushEnabled = e.detail.value)"
           color="#FF6B35"
         />
-        <text class="hint inline">仅作用于「无邀请人的真自然用户」订单：开 = 走旧 A/B 队列分配；关 = 奖励吞掉。</text>
       </view>
     </view>
 
