@@ -50,18 +50,6 @@ public interface ShopQueuePositionMapper extends BaseMapperX<ShopQueuePositionDO
                 .last("LIMIT 1"));
     }
 
-    /**
-     * 自然队列「最近一个 QUEUEING 用户」— 新买家进入时，奖前一个（最近入队）自然用户。
-     * 链路：1 激活 → 2 买（奖 1） → 3 买（奖 2） → 4 买（奖 3）...
-     * 用 joined_at DESC 让每个新买家奖到他的"上一位"。
-     */
-    default ShopQueuePositionDO selectQueueLatest(Long spuId) {
-        return selectOne(new LambdaQueryWrapperX<ShopQueuePositionDO>()
-                .eq(ShopQueuePositionDO::getSpuId, spuId)
-                .eq(ShopQueuePositionDO::getStatus, "QUEUEING")
-                .orderByDesc(ShopQueuePositionDO::getJoinedAt)
-                .last("LIMIT 1"));
-    }
 
     /** 列出某商品所有 QUEUEING 状态的位置（调试 / 商户后台展示） */
     default List<ShopQueuePositionDO> selectListBySpuQueueing(Long spuId) {
