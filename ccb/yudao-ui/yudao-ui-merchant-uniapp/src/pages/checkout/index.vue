@@ -102,7 +102,7 @@
           </view>
         </view>
         <!-- 消费积分抵扣（仅当商户开启且用户有积分时显示） -->
-        <view v-if="consumePointEnabled" class="m-row" :class="{ disabled: !consumePointAvailable }">
+        <view class="m-row" :class="{ disabled: !consumePointAvailable }">
           <view class="m-icon i-points">分</view>
           <view class="m-info">
             <view class="m-name">消费积分抵扣</view>
@@ -208,7 +208,7 @@
       <view class="form-tip">
         <text class="b">支付明细：</text><br>
         · 店铺余额抵扣：<text class="hl">{{ useBalance ? `-¥${fen2yuan(balanceDeductFen)}` : '未启用' }}</text><br>
-        <text v-if="consumePointEnabled">· 消费积分抵扣：<text class="hl">{{ useConsumePoint ? `-¥${fen2yuan(consumePointDeductFen)}` : '未启用' }}</text><br></text>
+        · 消费积分抵扣：<text class="hl">{{ useConsumePoint ? `-¥${fen2yuan(consumePointDeductFen)}` : '未启用' }}</text><br>
         · 推广积分抵扣：<text class="hl">{{ usePromoPoint ? `-¥${fen2yuan(promoPointDeductFen)}` : '未启用' }}</text><br>
         · 推广奖励自动抵：<text class="hl">{{ promoPreview && promoPreview.deductFen > 0 ? `-¥${fen2yuan(promoPreview.deductFen)}（${promoPreview.deductCount} 件）` : '当前无可抵扣商品' }}</text><br>
         · 优惠券抵扣：<text class="hl">{{ selectedCoupon ? `-¥${fen2yuan(selectedCoupon.discountAmount)}` : '未选用' }}</text><br>
@@ -269,7 +269,7 @@ const useConsumePoint = ref(false);                  // 用户在 checkout 勾�
 // 单个积分能抵的分钱数 = ratio（后端就是 "1 积分 = X 分钱"）
 // 最多能抵扣的分钱 = floor(points * ratio)，并按 100% 订单价封顶
 const maxConsumePointDeductFen = computed(() => {
-  if (!consumePointEnabled.value || userConsumePoints.value <= 0 || consumePointRatio.value <= 0) return 0;
+  if (userConsumePoints.value <= 0 || consumePointRatio.value <= 0) return 0;
   // 抵扣后剩余 = 商品小计 - 余额抵扣，再用积分抵这部分
   const remainAfterBalance = Math.max(0, grossFen.value - balanceDeductFen.value);
   const byPoints = Math.floor(userConsumePoints.value * consumePointRatio.value);

@@ -158,16 +158,13 @@ public class AppMerchantCheckoutController {
         if (Boolean.TRUE.equals(req.getUseConsumePoint())
                 && req.getConsumePointDeductFen() != null
                 && req.getConsumePointDeductFen() > 0) {
+            // 不再校验商户开关：消费积分是用户资产，永远可抵扣（与推广积分一致）
             cn.iocoder.yudao.module.merchant.dal.dataobject.promo.PromoConfigDO promoConfig =
                     promoConfigService.getConfig();
-            if (!Boolean.TRUE.equals(promoConfig.getConsumePointRedeemEnabled())) {
-                throw ServiceExceptionUtil.exception0(1_031_001_030,
-                        "本店暂未开启消费积分抵扣");
-            }
-            java.math.BigDecimal ratio = promoConfig.getConsumePointRedeemRatio();
+            java.math.BigDecimal ratio = promoConfig == null ? null : promoConfig.getConsumePointRedeemRatio();
             if (ratio == null || ratio.signum() <= 0) {
-                throw ServiceExceptionUtil.exception0(1_031_001_031,
-                        "消费积分抵扣比例配置异常");
+                // 商户没配比例 → 默认 1 积分 = 1 分钱（即 100 积分 = 1 元）
+                ratio = java.math.BigDecimal.ONE;
             }
             int requestFen = req.getConsumePointDeductFen();
             int maxByRemain = Math.max(0, finalPayPrice - 1);
