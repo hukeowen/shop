@@ -150,6 +150,89 @@ public class AppMerchantOrderController {
         return success(true);
     }
 
+    // ==================== C 端「支付完成」页详情 ====================
+
+    @GetMapping("/pay-done-info")
+    @Operation(summary = "C 端支付完成页拉订单/店铺/商品 + 营销标")
+    @cn.iocoder.yudao.framework.tenant.core.aop.TenantIgnore
+    public CommonResult<java.util.Map<String, Object>> getPayDoneInfo(
+            @RequestParam("orderId") Long orderId,
+            @RequestParam("tenantId") Long tenantId) {
+        java.util.Map<String, Object> resp = new java.util.HashMap<>();
+        // 切到目标商户 tenant 拉订单 / 商品 / 店铺
+        cn.iocoder.yudao.framework.tenant.core.util.TenantUtils.execute(tenantId, () -> {
+            TradeOrderDO order = tradeOrderQueryService.getOrder(orderId);
+            if (order == null) {
+                resp.put("found", false);
+                return null;
+            }
+            resp.put("found", true);
+            resp.put("orderId", order.getId());
+            resp.put("orderNo", order.getNo());
+            resp.put("payPrice", order.getPayPrice());
+            resp.put("payTime", order.getPayTime());
+            resp.put("payChannel", order.getPayChannelCode());
+            resp.put("status", order.getStatus());
+
+            java.util.List<TradeOrderItemDO> items =
+                    tradeOrderQueryService.getOrderItemListByOrderId(orderId);
+            java.util.List<java.util.Map<String, Object>> itemsView = new java.util.ArrayList<>();
+            boolean anyTuijian = false;
+            int itemCount = 0;
+            if (items != null) {
+                java.util.Set<Long> spuIds = new java.util.HashSet<>();
+                for (TradeOrderItemDO it : items) {
+                    if (it.getSpuId() != null) spuIds.add(it.getSpuId());
+                    itemCount += it.getCount() == null ? 0 : it.getCount();
+                }
+                // 一次性拉所有 spu 的 promo 配置（跨 tenant 安全）
+                java.util.Map<Long, Boolean> spuTuijianMap = new java.util.HashMap<>();
+                if (!spuIds.isEmpty()) {
+                    java.util.List<cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ProductPromoConfigDO> cfgs =
+                            productPromoConfigMapper.selectListBySpuIds(new java.util.ArrayList<>(spuIds));
+                    for (cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ProductPromoConfigDO c : cfgs) {
+                        spuTuijianMap.put(c.getSpuId(),
+                                Boolean.TRUE.equals(c.getTuijianEnabled()));
+                    }
+                }
+                for (TradeOrderItemDO it : items) {
+                    java.util.Map<String, Object> iv = new java.util.HashMap<>();
+                    iv.put("spuId", it.getSpuId());
+                    iv.put("skuId", it.getSkuId());
+                    iv.put("spuName", it.getSpuName());
+                    iv.put("picUrl", it.getPicUrl());
+                    iv.put("count", it.getCount());
+                    iv.put("price", it.getPrice());
+                    iv.put("payPrice", it.getPayPrice());
+                    boolean tuijian = spuTuijianMap.getOrDefault(it.getSpuId(), false);
+                    iv.put("tuijianEnabled", tuijian);
+                    if (tuijian) anyTuijian = true;
+                    itemsView.add(iv);
+                }
+            }
+            resp.put("itemCount", itemCount);
+            resp.put("items", itemsView);
+            resp.put("anyTuijian", anyTuijian);
+
+            // 店铺名 / 封面
+            try {
+                cn.iocoder.yudao.module.merchant.dal.dataobject.ShopInfoDO shop =
+                        shopInfoMapper.selectByTenantId(tenantId);
+                if (shop != null) {
+                    resp.put("shopName", shop.getShopName());
+                    resp.put("shopCover", shop.getCoverUrl());
+                }
+            } catch (Exception ignore) {}
+            return null;
+        });
+        return success(resp);
+    }
+
+    @Resource
+    private cn.iocoder.yudao.module.merchant.dal.mysql.promo.ProductPromoConfigMapper productPromoConfigMapper;
+    @Resource
+    private cn.iocoder.yudao.module.merchant.dal.mysql.ShopInfoMapper shopInfoMapper;
+
     // ==================== #37 到店付款 - 商户确认收款 ====================
 
     @PostMapping("/offline-confirm")

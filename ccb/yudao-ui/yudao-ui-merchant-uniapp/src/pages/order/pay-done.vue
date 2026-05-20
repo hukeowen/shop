@@ -16,23 +16,34 @@
     <view v-else class="succ-page">
       <view class="icon-circle">✓</view>
       <view class="h2">支付成功</view>
-      <view class="subtitle">订单已通知商家，预计 30 分钟内出餐</view>
     </view>
 
-    <view v-if="order" class="succ-card">
-      <view class="row"><text class="lbl">订单号</text><text class="val">{{ order.orderNo || order.id }}</text></view>
-      <view class="row"><text class="lbl">下单店铺</text><text class="val">{{ order.shopName || shopName || '-' }}</text></view>
-      <view class="row"><text class="lbl">商品数量</text><text class="val">{{ order.itemCount || 0 }} 件</text></view>
-      <view class="row"><text class="lbl">支付方式</text><text class="val">{{ payMethodText }}</text></view>
-      <view class="row amt"><text class="lbl">支付金额</text><text class="val">¥{{ payPriceYuan }}</text></view>
+    <view v-if="info && info.found" class="succ-card">
+      <view class="row"><text class="lbl">订单号</text><text class="val">{{ info.orderNo || info.orderId }}</text></view>
+      <view class="row"><text class="lbl">下单店铺</text><text class="val">{{ info.shopName || '-' }}</text></view>
+      <view class="row"><text class="lbl">支付金额</text><text class="val amt">¥{{ payPriceYuan }}</text></view>
     </view>
 
-    <view class="succ-promo">
+    <!-- 商品清单 -->
+    <view v-if="info && info.items && info.items.length" class="items-card">
+      <view class="items-title">已购买商品</view>
+      <view v-for="it in info.items" :key="it.skuId" class="item-row">
+        <image v-if="it.picUrl" class="item-pic" :src="it.picUrl" mode="aspectFill" />
+        <view v-else class="item-pic placeholder">🛍</view>
+        <view class="item-info">
+          <view class="item-name">{{ it.spuName }}</view>
+          <view class="item-meta">¥{{ (it.price / 100).toFixed(2) }} × {{ it.count }}</view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 邀请激励：仅在订单含 tuijianEnabled 商品时显示 -->
+    <view v-if="info && info.anyTuijian" class="succ-promo">
       <view class="hdr">🎁 推广奖励已就绪</view>
       <view class="body">
-        · 这单已自动进入<text class="b">邀请激励</text>队列<br/>
-        · <text class="b">推荐 4 个朋友</text>买同款 → 累计返 <text class="b">¥5</text> 推广积分<br/>
-        · 当前位置：<text class="b">B 层第 3 位</text>，等下个朋友进店触发首次返奖
+        · 这单已进入<text class="b">邀请激励</text>队列<br/>
+        · 推荐朋友买同款 → 累计返推广积分<br/>
+        · 详情见「我的钱包 · 推广积分流水」
       </view>
       <view class="actions">
         <view class="btn ghost-brand" @click="onCopyLink">复制邀请链接</view>
@@ -61,16 +72,12 @@ const tenantId = ref(null);
 const pending = ref(false);
 const payOrderId = ref(null);
 const payErr = ref('');
+// 新版统一详情（merchant 端 /pay-done-info 跨租户安全）
+const info = ref(null);
 
 const payPriceYuan = computed(() => {
-  const fen = order.value?.payPrice ?? order.value?.totalPrice ?? 0;
+  const fen = info.value?.payPrice ?? order.value?.payPrice ?? 0;
   return (fen / 100).toFixed(2);
-});
-const payMethodText = computed(() => {
-  const t = order.value?.payChannel || order.value?.payType;
-  if (!t) return '微信支付';
-  const map = { wx_pub: '微信支付', wx_mp: '微信支付', alipay_qr: '支付宝', balance: '余额抵扣' };
-  return map[t] || t;
 });
 
 onLoad((q) => {
@@ -135,16 +142,16 @@ async function callPay() {
 }
 
 async function loadOrder() {
-  if (!orderId.value) return;
+  if (!orderId.value || !tenantId.value) return;
   try {
+    // merchant 端跨租户安全 endpoint：一次返订单 + 店铺 + 商品 + tuijian 标
     const res = await request({
-      url: `/app-api/trade/order/get?id=${encodeURIComponent(orderId.value)}`,
-      tenantId: tenantId.value || undefined,
+      url: `/app-api/merchant/mini/order/pay-done-info?orderId=${encodeURIComponent(orderId.value)}&tenantId=${tenantId.value}`,
     });
-    order.value = res || {};
-    shopName.value = res?.shopName || '';
+    info.value = res || { found: false };
+    shopName.value = info.value?.shopName || '';
   } catch {
-    order.value = { id: orderId.value };
+    info.value = { found: false };
   }
 }
 
@@ -209,6 +216,49 @@ function goHome() {
   }
   .h2 { font-size: 40rpx; font-weight: 700; color: $text-primary; }
   .subtitle { color: $text-regular; margin-top: 12rpx; font-size: 26rpx; }
+}
+
+.items-card {
+  margin: 24rpx 24rpx 0;
+  background: $bg-card;
+  border-radius: $radius-lg;
+  padding: 24rpx 28rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
+  .items-title {
+    font-size: 28rpx;
+    font-weight: 600;
+    color: $text-primary;
+    padding-bottom: 16rpx;
+    border-bottom: 1rpx solid $border-color;
+  }
+  .item-row {
+    display: flex;
+    align-items: center;
+    gap: 20rpx;
+    padding: 20rpx 0;
+    border-bottom: 1rpx solid $border-color;
+    &:last-child { border-bottom: none; }
+  }
+  .item-pic {
+    width: 96rpx; height: 96rpx;
+    border-radius: $radius-md;
+    background: #f6f7f9;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 40rpx;
+    &.placeholder { color: $text-placeholder; }
+  }
+  .item-info { flex: 1; min-width: 0; }
+  .item-name {
+    font-size: 28rpx; color: $text-primary;
+    overflow: hidden; text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .item-meta {
+    margin-top: 8rpx; font-size: 24rpx;
+    color: $text-secondary;
+    font-variant-numeric: tabular-nums;
+  }
 }
 
 .succ-card {
