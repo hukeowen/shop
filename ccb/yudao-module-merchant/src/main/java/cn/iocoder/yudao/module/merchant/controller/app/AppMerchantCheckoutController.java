@@ -82,6 +82,15 @@ public class AppMerchantCheckoutController {
     @Resource
     private cn.iocoder.yudao.module.merchant.service.allinpay.AllinpayCashierService allinpayCashierService;
 
+    /** 直接 mapper：积分全额抵扣免支付场景下绕过 updateOrderPrice 强校验 newPayPrice>0 */
+    @Resource
+    private cn.iocoder.yudao.module.trade.dal.mysql.order.TradeOrderMapper tradeOrderMapper;
+    /** 全部 TradeOrderHandler bean —— 全额抵扣免支付时同 offline-confirm 跑一遍 afterPayOrder */
+    @Resource
+    private java.util.List<cn.iocoder.yudao.module.trade.service.order.handler.TradeOrderHandler> tradeOrderHandlers;
+    @Resource
+    private org.springframework.context.ApplicationEventPublisher eventPublisher;
+
     @PostMapping("/submit")
     @Operation(summary = "提交订单（支持店铺余额抵扣）")
     @Transactional(rollbackFor = Exception.class)
@@ -339,6 +348,51 @@ public class AppMerchantCheckoutController {
         resp.setPromoDeductCount(totalPromoDeductCount);
         resp.setCouponDeductFen(couponDeductFen);
         resp.setPayPrice(finalPayPrice);
+
+        // 5.5 全额积分/余额抵扣免支付：若用户主动抵扣（balance/consume/promo）已覆盖到只剩 ≤1 分，
+        //     trade.updateOrderPrice 拒 newPayPrice=0，所以 1 分留给"内部免单"路径处理：
+        //       a) 直接 mapper 标 pay_status=true、status=30、pay_time=now
+        //       b) 跑 trade tradeOrderHandlers.afterPayOrder（库存扣减 / 营销引擎等）
+        //       c) 发 OrderOfflineConfirmedEvent → merchant 营销引擎补 v8 副作用
+        //       d) finalPayPrice 设 0，不调通联
+        boolean fullyCoveredByRedeem = finalPayPrice <= 1
+                && (finalDeductFen > 0 || finalConsumePointDeductFen > 0
+                    || finalPromoPointRedeemFen > 0 || couponDeductFen > 0);
+        if (fullyCoveredByRedeem) {
+            try {
+                cn.iocoder.yudao.module.trade.dal.dataobject.order.TradeOrderDO upd =
+                        new cn.iocoder.yudao.module.trade.dal.dataobject.order.TradeOrderDO();
+                upd.setId(orderId);
+                upd.setPayStatus(Boolean.TRUE);
+                upd.setPayTime(java.time.LocalDateTime.now());
+                upd.setStatus(30); // COMPLETED
+                tradeOrderMapper.updateById(upd);
+
+                cn.iocoder.yudao.module.trade.dal.dataobject.order.TradeOrderDO paidOrder =
+                        tradeOrderQueryService.getOrder(orderId);
+                java.util.List<cn.iocoder.yudao.module.trade.dal.dataobject.order.TradeOrderItemDO> items =
+                        tradeOrderQueryService.getOrderItemListByOrderId(orderId);
+                for (cn.iocoder.yudao.module.trade.service.order.handler.TradeOrderHandler h : tradeOrderHandlers) {
+                    try {
+                        h.afterPayOrder(paidOrder, items);
+                    } catch (Exception e) {
+                        org.slf4j.LoggerFactory.getLogger(getClass())
+                                .error("[checkout 免支付] handler {} afterPayOrder 失败 orderId={}",
+                                        h.getClass().getSimpleName(), orderId, e);
+                    }
+                }
+                eventPublisher.publishEvent(new cn.iocoder.yudao.module.merchant.event.OrderOfflineConfirmedEvent(
+                        this, orderId, tenantId, userId,
+                        paidOrder.getPayPrice() == null ? 0 : paidOrder.getPayPrice()));
+                resp.setPayPrice(0);
+                finalPayPrice = 0;  // 跳过通联
+                org.slf4j.LoggerFactory.getLogger(getClass())
+                        .info("[checkout 免支付] orderId={} 余额/积分全额抵扣，跳过通联", orderId);
+            } catch (Exception e) {
+                org.slf4j.LoggerFactory.getLogger(getClass())
+                        .error("[checkout 免支付] orderId={} 标记已支付失败，仍走通联兜底", orderId, e);
+            }
+        }
 
         // 6. 调用通联拿支付链接 + 调度兜底轮询（仅在还有线上支付金额时）
         //    主路径是通联异步通知；轮询是漏发兜底，5/15/25/35/60/120s 6 段
