@@ -363,49 +363,25 @@ public class AppMerchantCheckoutController {
                 && (finalDeductFen > 0 || finalConsumePointDeductFen > 0
                     || finalPromoPointRedeemFen > 0 || couponDeductFen > 0);
         if (fullyCoveredByRedeem) {
-            final Long fOrderId = orderId;
-            final Long fTenantId = tenantId;
-            final Long fUserId = userId;
-            // 用 REQUIRES_NEW 起新事务执行 mark-paid + handler 链；handler 内部 @Transactional
-            // 抛异常只回滚自己的 REQUIRES_NEW 事务，外层 submit 主事务不受污染。
-            org.springframework.transaction.support.TransactionTemplate tt =
-                    new org.springframework.transaction.support.TransactionTemplate(transactionManager);
-            tt.setPropagationBehavior(org.springframework.transaction.TransactionDefinition.PROPAGATION_REQUIRES_NEW);
             try {
-                tt.execute(status -> {
-                    cn.iocoder.yudao.module.trade.dal.dataobject.order.TradeOrderDO upd =
-                            new cn.iocoder.yudao.module.trade.dal.dataobject.order.TradeOrderDO();
-                    upd.setId(fOrderId);
-                    upd.setPayStatus(Boolean.TRUE);
-                    upd.setPayTime(java.time.LocalDateTime.now());
-                    upd.setStatus(30); // COMPLETED
-                    tradeOrderMapper.updateById(upd);
+                // 直接在主事务里 mark-paid（同事务连写，不会锁等待）。
+                // 不再跑 trade tradeOrderHandlers：
+                //   - 库存：trade.createOrder 时已预扣，无需重复
+                //   - member.point/level：内部 @Transactional 抛 NPE 会污染主事务（已踩坑）
+                //   - 分销/优惠券赠送：本场景非必要
+                // v8 营销 + 商户余额入账等副作用走 OrderOfflineConfirmedEvent → OrderPaidListener
+                cn.iocoder.yudao.module.trade.dal.dataobject.order.TradeOrderDO upd =
+                        new cn.iocoder.yudao.module.trade.dal.dataobject.order.TradeOrderDO();
+                upd.setId(orderId);
+                upd.setPayStatus(Boolean.TRUE);
+                upd.setPayTime(java.time.LocalDateTime.now());
+                upd.setStatus(30); // COMPLETED
+                tradeOrderMapper.updateById(upd);
 
-                    cn.iocoder.yudao.module.trade.dal.dataobject.order.TradeOrderDO paidOrder =
-                            tradeOrderQueryService.getOrder(fOrderId);
-                    java.util.List<cn.iocoder.yudao.module.trade.dal.dataobject.order.TradeOrderItemDO> items =
-                            tradeOrderQueryService.getOrderItemListByOrderId(fOrderId);
-                    // 每个 handler 用 REQUIRES_NEW 跑 → 失败仅影响自己
-                    for (cn.iocoder.yudao.module.trade.service.order.handler.TradeOrderHandler h : tradeOrderHandlers) {
-                        org.springframework.transaction.support.TransactionTemplate inner =
-                                new org.springframework.transaction.support.TransactionTemplate(transactionManager);
-                        inner.setPropagationBehavior(org.springframework.transaction.TransactionDefinition.PROPAGATION_REQUIRES_NEW);
-                        try {
-                            inner.execute(s -> {
-                                h.afterPayOrder(paidOrder, items);
-                                return null;
-                            });
-                        } catch (Exception e) {
-                            org.slf4j.LoggerFactory.getLogger(getClass())
-                                    .error("[checkout 免支付] handler {} afterPayOrder 失败 orderId={}",
-                                            h.getClass().getSimpleName(), fOrderId, e);
-                        }
-                    }
-                    eventPublisher.publishEvent(new cn.iocoder.yudao.module.merchant.event.OrderOfflineConfirmedEvent(
-                            this, fOrderId, fTenantId, fUserId,
-                            paidOrder.getPayPrice() == null ? 0 : paidOrder.getPayPrice()));
-                    return null;
-                });
+                // 发事件：OrderPaidListener 会异步跑 merchantPromoOrderHandler.afterPayOrder（v8 营销）
+                int payPriceForEvent = finalPayPrice;  // 1 fen 或 0
+                eventPublisher.publishEvent(new cn.iocoder.yudao.module.merchant.event.OrderOfflineConfirmedEvent(
+                        this, orderId, tenantId, userId, payPriceForEvent));
                 resp.setPayPrice(0);
                 finalPayPrice = 0;  // 跳过通联
                 org.slf4j.LoggerFactory.getLogger(getClass())
