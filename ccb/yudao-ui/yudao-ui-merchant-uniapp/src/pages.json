@@ -285,6 +285,13 @@
       }
     },
     {
+      "path": "pages/user-me/consume-records",
+      "style": {
+        "navigationBarTitleText": "消费积分明细",
+        "navigationStyle": "custom"
+      }
+    },
+    {
       "path": "pages/user-me/star",
       "style": {
         "navigationBarTitleText": "店铺星级",

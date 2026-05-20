@@ -77,6 +77,11 @@
         <text class="me-row-name">推广积分明细</text>
         <text class="me-row-arrow">›</text>
       </view>
+      <view class="me-row" @click="goConsumeRecords">
+        <view class="me-row-icon i1">💵</view>
+        <text class="me-row-name">消费积分明细</text>
+        <text class="me-row-arrow">›</text>
+      </view>
       <view class="me-row" @click="goQueue">
         <view class="me-row-icon i2">🎯</view>
         <text class="me-row-name">我的队列（v8 邀请激励）</text>
@@ -215,6 +220,7 @@ function goShop(tid) {
 }
 function goWallet() { uni.navigateTo({ url: '/pages/user-me/wallet' }); }
 function goPromoRecords() { uni.navigateTo({ url: '/pages/user-me/promo-records' }); }
+function goConsumeRecords() { uni.navigateTo({ url: '/pages/user-me/consume-records' }); }
 function goQueue() { uni.navigateTo({ url: '/pages/user-me/my-queue' }); }
 function goStar() { uni.navigateTo({ url: '/pages/user-me/star' }); }
 function goInvite() { uni.navigateTo({ url: '/pages/user-me/invite' }); }
