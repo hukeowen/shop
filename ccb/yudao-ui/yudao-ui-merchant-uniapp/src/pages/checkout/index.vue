@@ -107,7 +107,7 @@
           <view class="m-info">
             <view class="m-name">消费积分抵扣</view>
             <view class="m-sub" v-if="consumePointAvailable">
-              余 ¥{{ fen2yuan(userConsumePoints) }} · 最多抵 ¥{{ fen2yuan(maxConsumePointDeductFen) }}
+              余 {{ Math.floor(userConsumePoints / 100) }} 积分 · 最多抵 ¥{{ fen2yuan(maxConsumePointDeductFen) }}
             </view>
             <view class="m-sub" v-else>积分余额不足或剩余订单已无可抵</view>
           </view>

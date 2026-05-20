@@ -20,7 +20,7 @@
           <view class="bal-divider"></view>
           <view class="bal">
             <view class="bal-label">消费积分</view>
-            <view class="bal-value">¥{{ ((s.points || 0) / 100).toFixed(2) }}</view>
+            <view class="bal-value">{{ Math.floor((s.points || 0) / 100) }} <text style="font-size:24rpx;">积分</text></view>
           </view>
         </view>
       </view>

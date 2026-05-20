@@ -8,8 +8,8 @@
 
     <view v-if="myShops.length" class="hero" :style="heroStyle">
       <view class="label">{{ currentShop?.shopName || '请选店铺' }} · 消费积分</view>
-      <view class="num">{{ ((currentShop?.points ?? 0) / 100).toFixed(2) }}<text class="unit"> 元</text></view>
-      <view class="hint">💡 消费积分可在下单时直接抵扣订单金额（1 积分 = 0.01 元）</view>
+      <view class="num">{{ Math.floor((currentShop?.points ?? 0) / 100) }}<text class="unit"> 积分</text></view>
+      <view class="hint">💡 1 积分 = 1 元 · 下单时可直接抵扣订单金额</view>
     </view>
 
     <view v-if="myShops.length" class="cat-tab">
@@ -43,7 +43,7 @@
           <view class="name">{{ flowName(r) }}</view>
           <view class="meta">{{ formatTime(r.createTime) }}{{ r.remark ? ' · ' + r.remark : '' }}</view>
         </view>
-        <view class="amt">{{ r.amount >= 0 ? '+' : '' }}¥{{ (r.amount / 100).toFixed(2) }}</view>
+        <view class="amt">{{ r.amount >= 0 ? '+' : '' }}{{ Math.floor(Math.abs(r.amount) / 100) * (r.amount >= 0 ? 1 : -1) }} 积分</view>
       </view>
     </view>
     <view class="bottom-space"></view>
