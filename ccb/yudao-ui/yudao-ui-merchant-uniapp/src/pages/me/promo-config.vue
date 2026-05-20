@@ -2,54 +2,15 @@
   <view class="page">
     <!-- Banner -->
     <view class="banner">
-      <text class="title">营销配置（v8）</text>
-      <text class="sub">{{ saasLevel === 'BASIC' ? '邀请激励（基础包）' : '双积分 · 星级递减 · 邀请激励 · 星级积分池' }}</text>
+      <text class="title">店铺营销设置（全局）</text>
+      <text class="sub">推广积分提现 · 消费积分抵扣 · 自然队列 · 满减 · 推广奖励兜底</text>
+      <text class="sub" style="margin-top:8rpx;font-size:22rpx;color:#9CA3AF;">注：星级、推 N 反 1、积分池均为商品级配置 → 商品列表 → 单品编辑</text>
     </view>
 
     <!-- 套餐档位提示 -->
     <view v-if="saasLevel === 'BASIC'" class="lvl-tip">
       ⚡ 当前为<text class="b">基础包</text>，店内 / 星级 / 奖池配置已锁定。如需启用请
       <text class="link" @click="goSubscription">升级到全功能包</text>
-    </view>
-
-    <!-- ============ 平台星级（PRO / PLATFORM / TRIAL 才显示） ============ -->
-    <view class="card" v-if="canUsePro">
-      <view class="section-title">平台星级</view>
-
-      <view class="field">
-        <text class="label">星级数量（1–10）</text>
-        <input
-          class="input"
-          type="number"
-          v-model="form.starLevelCount"
-          @blur="onStarCountChange"
-        />
-      </view>
-
-      <view class="hint">下面为每个星级配置：星级递减抽成 % + 升星门槛（邀请人数 + 店内累计售额，元）</view>
-
-      <view class="star-row" v-for="(s, i) in starList" :key="i">
-        <view class="star-tag">{{ i + 1 }}星</view>
-        <view class="star-fields">
-          <view class="field">
-            <text class="label">星级递减抽成 %</text>
-            <input class="input" type="digit" v-model="s.rate" />
-          </view>
-          <view class="field">
-            <text class="label">邀请人数</text>
-            <input class="input" type="number" v-model="s.directCount" />
-          </view>
-          <view class="field">
-            <text class="label">店内累计金额（元）</text>
-            <input class="input" type="number" v-model="s.teamSales" />
-          </view>
-          <view class="field">
-            <text class="label">会员折扣（折，10=原价）</text>
-            <input class="input" type="digit" v-model="s.discount" placeholder="如 9.5（不打折留空）" />
-          </view>
-        </view>
-      </view>
-      <view class="hint">「会员折扣」仅在店铺详情页文案展示，不参与结算。</view>
     </view>
 
     <!-- ============ 推广积分 ============ -->
@@ -153,141 +114,7 @@
       </view>
     </view>
 
-    <!-- ============ 星级积分池（PRO / PLATFORM / TRIAL 才显示） ============ -->
-    <view class="card" v-if="canUsePro">
-      <view class="section-title">星级积分池</view>
-
-      <view class="row">
-        <text class="label">开启积分池</text>
-        <switch
-          :checked="form.poolEnabled"
-          @change="(e) => (form.poolEnabled = e.detail.value)"
-          color="#FF6B35"
-        />
-      </view>
-
-      <template v-if="form.poolEnabled">
-        <view class="field">
-          <text class="label">入池比例 %</text>
-          <input class="input" type="digit" v-model="form.poolRatio" placeholder="如 5.00" />
-        </view>
-
-        <view class="field">
-          <text class="label">可参与瓜分的星级</text>
-          <view class="checks">
-            <view
-              v-for="i in form.starLevelCount"
-              :key="i"
-              class="check-chip"
-              :class="{ active: poolStars.includes(i) }"
-              @click="togglePoolStar(i)"
-            >
-              {{ i }}星
-            </view>
-          </view>
-        </view>
-
-        <view class="field">
-          <text class="label">分配方式</text>
-          <view class="radio-row">
-            <view
-              class="radio-chip"
-              :class="{ active: form.poolDistributeMode === 'ALL' }"
-              @click="form.poolDistributeMode = 'ALL'"
-            >
-              全员均分
-            </view>
-            <view
-              class="radio-chip"
-              :class="{ active: form.poolDistributeMode === 'STAR' }"
-              @click="form.poolDistributeMode = 'STAR'"
-            >
-              按星级均分
-            </view>
-          </view>
-        </view>
-
-        <view class="field">
-          <text class="label">结算 Cron 表达式</text>
-          <input class="input" v-model="form.poolSettleCron" placeholder="0 0 0 1 * ?" />
-          <text class="hint inline">默认每月 1 号 00:00 结算。</text>
-        </view>
-
-        <view class="field">
-          <text class="label">抽奖中奖占比 %</text>
-          <input class="input" type="digit" v-model="form.poolLotteryRatio" placeholder="如 5.00" />
-        </view>
-
-        <view class="field">
-          <text class="label">cron 自动结算模式</text>
-          <view class="radio-row">
-            <view
-              class="radio-chip"
-              :class="{ active: form.poolSettleMode === 'FULL' }"
-              @click="form.poolSettleMode = 'FULL'"
-            >
-              全员均分
-            </view>
-            <view
-              class="radio-chip"
-              :class="{ active: form.poolSettleMode === 'LOTTERY' }"
-              @click="form.poolSettleMode = 'LOTTERY'"
-            >
-              抽奖
-            </view>
-          </view>
-          <text class="hint inline">仅影响 cron 自动跑；下方"立即结算"按钮商户可随时切换。</text>
-        </view>
-      </template>
-    </view>
-
-    <!-- ============ 积分池运营（PRO 才显示） ============ -->
-    <view class="card" v-if="canUsePro">
-      <view class="section-title">积分池运营</view>
-
-      <view class="pool-summary">
-        <view class="pool-item">
-          <text class="label">当前池余额</text>
-          <text class="value">{{ poolBalance }} <text class="unit">分</text></text>
-          <text class="sub">≈ {{ (poolBalance / 100).toFixed(2) }} 元</text>
-        </view>
-        <view class="pool-item">
-          <text class="label">最近结算</text>
-          <text class="sub">{{ lastSettledAt ? formatTime(lastSettledAt) : '从未结算' }}</text>
-        </view>
-      </view>
-
-      <view class="settle-row">
-        <button
-          class="btn ghost-brand"
-          :disabled="settling || poolBalance <= 0"
-          @click="onSettle('FULL')"
-        >
-          {{ settling ? '结算中…' : '全员均分结算' }}
-        </button>
-        <button
-          class="btn ghost-brand"
-          :disabled="settling || poolBalance <= 0"
-          @click="onSettle('LOTTERY')"
-        >
-          抽奖结算
-        </button>
-      </view>
-      <text class="hint inline">FULL 全员瓜分；LOTTERY 按上方"抽奖中奖占比"抽出部分用户瓜分。结算后池清零。</text>
-
-      <view class="rounds-title">结算历史（近 {{ rounds.length }} 轮）</view>
-      <view v-if="!rounds.length" class="empty">暂无</view>
-      <view v-for="r in rounds" :key="r.id" class="round-item">
-        <view class="round-row1">
-          <text class="amt">{{ r.totalAmount }} 分</text>
-          <text class="mode">{{ r.mode === 'LOTTERY' ? '抽奖' : '均分' }} · {{ r.distributeMode === 'STAR' ? '按星级' : '全员' }}</text>
-        </view>
-        <view class="round-row2">
-          <text>参与 {{ r.participantCount }} 人 · 中奖 {{ r.winnerCount }} 人</text>
-          <text>{{ formatTime(r.settledAt) }}</text>
-        </view>
-      </view>
-    </view>
+    <!-- 店级营销结束。星级 / 积分池 / 推 N 反 1 均为商品级，去商品编辑页配置。 -->
 
     <view class="safe-bottom">
       <button class="btn primary" :disabled="saving" @click="onSave">
