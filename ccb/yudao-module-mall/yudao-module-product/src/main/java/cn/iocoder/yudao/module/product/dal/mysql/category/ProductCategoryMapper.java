@@ -41,7 +41,12 @@ public interface ProductCategoryMapper extends BaseMapperX<ProductCategoryDO> {
     }
 
     default ProductCategoryDO selectByName(String name) {
-        return selectOne(ProductCategoryDO::getName, name);
+        // 历史并发可能造成同 tenant 同名分类重复（id 不同）；用 LIMIT 1 兜底，
+        // 取最早创建的（最小 id）保持幂等。否则 selectOne 抛 TooManyResults
+        return selectOne(new cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX<ProductCategoryDO>()
+                .eq(ProductCategoryDO::getName, name)
+                .orderByAsc(ProductCategoryDO::getId)
+                .last("LIMIT 1"));
     }
 
 }

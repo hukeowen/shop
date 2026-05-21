@@ -197,11 +197,13 @@ public class ProductCategoryServiceImpl implements ProductCategoryService {
         }
         // 顶级父分类「AI 上架」（level=1，parentId=0）— SPU 不能直接挂这里
         Long rootId = findOrCreateRootCategory(AI_UPLOAD_ROOT_NAME);
-        // 在该根下找/建同名 level=2 分类
+        // 在该根下找/建同名 level=2 分类（LIMIT 1 容忍跨租户重复）
         ProductCategoryDO existedChild = productCategoryMapper.selectOne(
                 new cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX<ProductCategoryDO>()
                         .eq(ProductCategoryDO::getName, trimmed)
-                        .eq(ProductCategoryDO::getParentId, rootId));
+                        .eq(ProductCategoryDO::getParentId, rootId)
+                        .orderByAsc(ProductCategoryDO::getId)
+                        .last("LIMIT 1"));
         if (existedChild != null) return existedChild.getId();
         ProductCategoryDO cate = new ProductCategoryDO();
         cate.setName(trimmed);
@@ -216,7 +218,9 @@ public class ProductCategoryServiceImpl implements ProductCategoryService {
             ProductCategoryDO winner = productCategoryMapper.selectOne(
                     new cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX<ProductCategoryDO>()
                             .eq(ProductCategoryDO::getName, trimmed)
-                            .eq(ProductCategoryDO::getParentId, rootId));
+                            .eq(ProductCategoryDO::getParentId, rootId)
+                            .orderByAsc(ProductCategoryDO::getId)
+                            .last("LIMIT 1"));
             if (winner != null) return winner.getId();
             throw dup;
         }
@@ -224,10 +228,15 @@ public class ProductCategoryServiceImpl implements ProductCategoryService {
 
     /** 找/建顶级父分类（parentId=0L）— 仅 findOrCreateCategory 内部用 */
     private Long findOrCreateRootCategory(String rootName) {
+        // 加 LIMIT 1：mybatis tenant filter 在某些路径未生效（如 controller 没 @TenantIgnore
+        // 但 token tenant=0 跨租户场景），跨租户能查到多家商户都有同名根分类 → selectOne 抛
+        // TooManyResults。LIMIT 1 兜底取最早创建的那个。
         ProductCategoryDO existed = productCategoryMapper.selectOne(
                 new cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX<ProductCategoryDO>()
                         .eq(ProductCategoryDO::getName, rootName)
-                        .eq(ProductCategoryDO::getParentId, 0L));
+                        .eq(ProductCategoryDO::getParentId, 0L)
+                        .orderByAsc(ProductCategoryDO::getId)
+                        .last("LIMIT 1"));
         if (existed != null) return existed.getId();
         ProductCategoryDO root = new ProductCategoryDO();
         root.setName(rootName);
@@ -242,7 +251,9 @@ public class ProductCategoryServiceImpl implements ProductCategoryService {
             ProductCategoryDO winner = productCategoryMapper.selectOne(
                     new cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX<ProductCategoryDO>()
                             .eq(ProductCategoryDO::getName, rootName)
-                            .eq(ProductCategoryDO::getParentId, 0L));
+                            .eq(ProductCategoryDO::getParentId, 0L)
+                            .orderByAsc(ProductCategoryDO::getId)
+                            .last("LIMIT 1"));
             if (winner != null) return winner.getId();
             throw dup;
         }

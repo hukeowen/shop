@@ -52,6 +52,28 @@ public class AppMerchantOrderRespVO {
     @Schema(description = "创建时间")
     private LocalDateTime createTime;
 
+    // ========== 抵扣明细 (商家端 / 用户端订单详情都用) ==========
+    @Schema(description = "店铺余额抵扣（分）")
+    private Integer balanceDeductFen;
+
+    @Schema(description = "消费积分抵扣金额（分）")
+    private Integer consumePointDeductFen;
+
+    @Schema(description = "消费积分扣减数量")
+    private Long consumePointUsed;
+
+    @Schema(description = "推广积分抵扣金额（分；1 积分 = 1 分钱）")
+    private Integer promoPointRedeemFen;
+
+    @Schema(description = "推 N 反 1 自动抵扣金额（分）")
+    private Integer promoAutoDeductFen;
+
+    @Schema(description = "推 N 反 1 自动抵扣件数")
+    private Integer promoAutoDeductCount;
+
+    @Schema(description = "优惠券抵扣（分）")
+    private Integer couponDeductFen;
+
     @Schema(description = "订单明细")
     private List<Item> items;
 

@@ -26,13 +26,24 @@ function normalizeOrder(o) {
     userNickname: o.receiverName || '',
     userMobile: o.receiverMobile || '',
     address: o.receiverDetailAddress || '',
+    // totalPrice 仍以 payPrice 兜底（旧前端展示）；真正"商品原价"用 originalPrice 字段
     totalPrice: o.payPrice ?? o.totalPrice ?? 0,
+    originalPrice: o.totalPrice ?? 0,        // 订单商品原价（抵扣前）
+    payPrice: o.payPrice ?? 0,                // 实付（抵扣后）
     productCount: o.productCount ?? 0,
     remark: o.userRemark || '',
     deliveryType: o.deliveryType === 1 ? 'express' : 'pickup',
     verifyCode: o.pickUpVerifyCode || '',
     createdAt: formatCreateTime(o.createTime),
     payStatus: o.payStatus,
+    // ===== 抵扣明细（v8 五路抵扣 + 优惠券）=====
+    balanceDeductFen: o.balanceDeductFen ?? 0,
+    consumePointDeductFen: o.consumePointDeductFen ?? 0,
+    consumePointUsed: o.consumePointUsed ?? 0,
+    promoPointRedeemFen: o.promoPointRedeemFen ?? 0,
+    promoAutoDeductFen: o.promoAutoDeductFen ?? 0,
+    promoAutoDeductCount: o.promoAutoDeductCount ?? 0,
+    couponDeductFen: o.couponDeductFen ?? 0,
     items: (o.items || []).map((it) => ({
       spuName: it.spuName,
       skuName: it.skuName || it.spuName,

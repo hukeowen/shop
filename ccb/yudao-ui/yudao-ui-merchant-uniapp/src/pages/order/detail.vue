@@ -39,9 +39,36 @@
           <text class="item-sub">¥{{ fen2yuan(it.price) }}</text>
         </view>
       </view>
-      <view class="total">
-        <text>订单金额</text>
-        <text class="amount">¥{{ fen2yuan(order.totalPrice) }}</text>
+      <!-- 抵扣明细：商品原价 + 各路抵扣 + 实付 -->
+      <view class="deduct-block">
+        <view class="dr">
+          <text>商品总价</text>
+          <text class="dr-v">¥{{ fen2yuan(order.originalPrice ?? order.totalPrice) }}</text>
+        </view>
+        <view v-if="order.balanceDeductFen > 0" class="dr">
+          <text>店铺余额抵扣</text>
+          <text class="dr-v dr-neg">- ¥{{ fen2yuan(order.balanceDeductFen) }}</text>
+        </view>
+        <view v-if="order.consumePointDeductFen > 0" class="dr">
+          <text>消费积分抵扣 ({{ (order.consumePointUsed / 100).toFixed(2) }} 积分)</text>
+          <text class="dr-v dr-neg">- ¥{{ fen2yuan(order.consumePointDeductFen) }}</text>
+        </view>
+        <view v-if="order.promoPointRedeemFen > 0" class="dr">
+          <text>推广积分抵扣 ({{ (order.promoPointRedeemFen / 100).toFixed(2) }} 积分)</text>
+          <text class="dr-v dr-neg">- ¥{{ fen2yuan(order.promoPointRedeemFen) }}</text>
+        </view>
+        <view v-if="order.promoAutoDeductFen > 0" class="dr">
+          <text>推广奖励抵扣 (推 N 反 1 自动抵 {{ order.promoAutoDeductCount }} 件)</text>
+          <text class="dr-v dr-neg">- ¥{{ fen2yuan(order.promoAutoDeductFen) }}</text>
+        </view>
+        <view v-if="order.couponDeductFen > 0" class="dr">
+          <text>优惠券抵扣</text>
+          <text class="dr-v dr-neg">- ¥{{ fen2yuan(order.couponDeductFen) }}</text>
+        </view>
+        <view class="total">
+          <text>实付金额</text>
+          <text class="amount">¥{{ fen2yuan(order.payPrice ?? order.totalPrice) }}</text>
+        </view>
       </view>
     </view>
 
@@ -318,6 +345,22 @@ onLoad((q) => {
     font-size: 36rpx;
     font-weight: 700;
     color: $brand-primary;
+  }
+}
+
+.deduct-block {
+  margin-top: 12rpx;
+  padding-top: 12rpx;
+  border-top: 1rpx dashed #e5e7eb;
+  .dr {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8rpx 0;
+    font-size: 26rpx;
+    color: $text-regular;
+    .dr-v { color: $text-regular; font-weight: 500; }
+    .dr-neg { color: #ef4444; }
   }
 }
 

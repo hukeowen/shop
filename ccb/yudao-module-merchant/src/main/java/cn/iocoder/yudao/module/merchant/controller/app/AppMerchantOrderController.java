@@ -62,6 +62,91 @@ public class AppMerchantOrderController {
     @Resource
     private List<TradeOrderHandler> tradeOrderHandlers;
 
+    // ===== 抵扣明细查询所需 mapper =====
+    @Resource
+    private cn.iocoder.yudao.module.merchant.dal.mysql.MemberOrderBalanceLogMapper memberOrderBalanceLogMapper;
+    @Resource
+    private cn.iocoder.yudao.module.merchant.dal.mysql.promo.ShopConsumePointDeductMapper consumePointDeductMapper;
+    @Resource
+    private cn.iocoder.yudao.module.merchant.dal.mysql.promo.ShopPromoRecordMapper promoRecordMapper;
+    @Resource
+    private cn.iocoder.yudao.module.merchant.dal.mysql.promo.ShopPromoDeductionRecordMapper promoDeductionRecordMapper;
+
+    /** 跨租户读各抵扣日志，填充订单 VO 的抵扣明细 4 项。失败不阻断订单展示。 */
+    private void fillDeductionDetail(AppMerchantOrderRespVO vo, TradeOrderDO order) {
+        Long orderId = order.getId();
+        Long userId = order.getUserId();
+        Long tenantId = order.getTenantId();
+        try {
+            // 1. 余额抵扣（member_order_balance_log，跨租户读，UNIQUE by orderId）
+            Integer bal = cn.iocoder.yudao.framework.tenant.core.util.TenantUtils.executeIgnore(() -> {
+                cn.iocoder.yudao.module.merchant.dal.dataobject.MemberOrderBalanceLogDO log =
+                        memberOrderBalanceLogMapper.selectOne(
+                                new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<cn.iocoder.yudao.module.merchant.dal.dataobject.MemberOrderBalanceLogDO>()
+                                        .eq(cn.iocoder.yudao.module.merchant.dal.dataobject.MemberOrderBalanceLogDO::getOrderId, orderId)
+                                        .last("LIMIT 1"));
+                return log == null ? 0 : (log.getAmount() == null ? 0 : log.getAmount());
+            });
+            vo.setBalanceDeductFen(bal);
+
+            // 2. 消费积分抵扣（shop_consume_point_deduct）
+            cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopConsumePointDeductDO cpd =
+                    cn.iocoder.yudao.framework.tenant.core.util.TenantUtils.executeIgnore(() ->
+                            consumePointDeductMapper.selectOne(
+                                    new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopConsumePointDeductDO>()
+                                            .eq(cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopConsumePointDeductDO::getOrderId, orderId)
+                                            .last("LIMIT 1")));
+            if (cpd != null
+                    && cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopConsumePointDeductDO.STATUS_COMMITTED.equals(cpd.getStatus())) {
+                vo.setConsumePointDeductFen(cpd.getDeductAmount() == null ? 0 : cpd.getDeductAmount().intValue());
+                vo.setConsumePointUsed(cpd.getPointsUsed() == null ? 0L : cpd.getPointsUsed());
+            } else {
+                vo.setConsumePointDeductFen(0);
+                vo.setConsumePointUsed(0L);
+            }
+
+            // 3. 推广积分主动抵扣（shop_promo_record sourceType=REDEEM_ORDER, amount 为负）
+            Long promoRedeem = cn.iocoder.yudao.framework.tenant.core.util.TenantUtils.executeIgnore(() -> {
+                java.util.List<cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopPromoRecordDO> rs =
+                        promoRecordMapper.selectList(
+                                new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopPromoRecordDO>()
+                                        .eq(cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopPromoRecordDO::getUserId, userId)
+                                        .eq(cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopPromoRecordDO::getSourceType, "REDEEM_ORDER")
+                                        .eq(cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopPromoRecordDO::getSourceId, orderId));
+                long sum = 0;
+                for (cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopPromoRecordDO r : rs) {
+                    if (r.getAmount() != null && r.getAmount() < 0) sum += Math.abs(r.getAmount());
+                }
+                return sum;
+            });
+            vo.setPromoPointRedeemFen(promoRedeem == null ? 0 : promoRedeem.intValue());
+
+            // 4. v8 推 N 反 1 自动抵扣（shop_promo_deduction_record，按 SPU 行求和）
+            cn.iocoder.yudao.framework.tenant.core.util.TenantUtils.executeIgnore(() -> {
+                java.util.List<cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopPromoDeductionRecordDO> rs =
+                        promoDeductionRecordMapper.selectList(
+                                new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopPromoDeductionRecordDO>()
+                                        .eq(cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopPromoDeductionRecordDO::getOrderId, orderId));
+                int totalFen = 0;
+                int totalCount = 0;
+                for (cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopPromoDeductionRecordDO r : rs) {
+                    int dc = r.getDeductCount() == null ? 0 : r.getDeductCount();
+                    int up = r.getUnitPrice() == null ? 0 : r.getUnitPrice();
+                    totalCount += dc;
+                    totalFen += dc * up;
+                }
+                vo.setPromoAutoDeductFen(totalFen);
+                vo.setPromoAutoDeductCount(totalCount);
+                return null;
+            });
+
+            // 5. 优惠券抵扣（trade_order.coupon_price 内置）
+            vo.setCouponDeductFen(order.getCouponPrice() == null ? 0 : order.getCouponPrice());
+        } catch (Exception e) {
+            log.warn("[fillDeductionDetail] orderId={} 加载抵扣明细失败: {}", orderId, e.getMessage());
+        }
+    }
+
     // ==================== #19 订单列表 + 发货 ====================
 
     @GetMapping("/page")
@@ -372,6 +457,9 @@ public class AppMerchantOrderController {
         vo.setPickUpVerifyCode(order.getPickUpVerifyCode());
         vo.setPayStatus(order.getPayStatus());
         vo.setCreateTime(order.getCreateTime());
+
+        // ========== 抵扣明细：跨租户读各扣减日志表 ==========
+        fillDeductionDetail(vo, order);
         List<AppMerchantOrderRespVO.Item> itemVOs = items.stream().map(item -> {
             AppMerchantOrderRespVO.Item i = new AppMerchantOrderRespVO.Item();
             i.setSpuName(item.getSpuName());

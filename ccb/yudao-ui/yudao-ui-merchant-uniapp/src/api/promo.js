@@ -11,14 +11,30 @@ const PRODUCT_BASE = '/app-api/merchant/mini/promo/product-config';
 
 // ==================== 商户级 ====================
 
-/** 拉取本商户营销配置；未配置时后端返默认值。 */
+/** 商户老板自己的 merchant tenant —— 从登录后 store 持久化的 tenantId 读。
+ *  若取不到（user 直接走 member_user 登录，没拿到 merchant tenant），返 0；
+ *  请求会按 token 自身 tenant 走（不带 header），后端可能拒绝/写到错误 tenant。
+ */
+function _ownTenantId() {
+  try {
+    const v = uni.getStorageSync('tenantId');
+    const n = Number(v);
+    return n > 0 ? n : 0;
+  } catch { return 0; }
+}
+
+/** 拉取本商户营销配置；未配置时后端返默认值。必须带 tenantId 让后端切到 merchant 租户。 */
 export function getShopPromoConfig() {
-  return request({ url: SHOP_BASE });
+  const tid = _ownTenantId();
+  // GET /config 的 tenant 是 @RequestParam（query）；PUT /config 是 header（TenantIgnore + ctx 切）
+  const url = tid > 0 ? `${SHOP_BASE}?tenantId=${tid}` : SHOP_BASE;
+  return request({ url, tenantId: tid || undefined });
 }
 
 /** upsert 本商户营销配置。req 字段与 PromoConfigSaveReqVO 一一对应。 */
 export function saveShopPromoConfig(req) {
-  return request({ url: SHOP_BASE, method: 'PUT', data: req });
+  const tid = _ownTenantId();
+  return request({ url: SHOP_BASE, method: 'PUT', data: req, tenantId: tid || undefined });
 }
 
 // ==================== 商品级 ====================

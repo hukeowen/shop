@@ -128,8 +128,16 @@ public class AppMerchantPromoController {
 
     @PutMapping("/config")
     @Operation(summary = "保存本商户的营销配置（upsert）")
+    @cn.iocoder.yudao.framework.tenant.core.aop.TenantIgnore
     public CommonResult<Boolean> saveConfig(@Valid @RequestBody PromoConfigSaveReqVO reqVO) {
-        promoConfigService.saveConfig(reqVO);
+        // 商户老板用 member_user 身份登录商户端 (token tenant=0)，但配置必须写到 merchant tenant
+        // 由前端 promo.js 设 header tenant-id = 商户 merchant tenant
+        Long headerTenant = cn.iocoder.yudao.framework.tenant.core.context.TenantContextHolder.getTenantId();
+        if (headerTenant == null || headerTenant <= 0) {
+            throw new IllegalArgumentException("缺少 tenant 上下文：请刷新页面重新登录");
+        }
+        cn.iocoder.yudao.framework.tenant.core.util.TenantUtils.execute(headerTenant,
+                () -> promoConfigService.saveConfig(reqVO));
         return success(true);
     }
 
@@ -373,24 +381,36 @@ public class AppMerchantPromoController {
 
     @GetMapping("/account")
     @Operation(summary = "用户账户余额")
+    @cn.iocoder.yudao.framework.tenant.core.aop.TenantIgnore // 跨租户：手动按 header 分支
     public CommonResult<ShopUserStarDO> getMyAccount() {
         Long userId = SecurityFrameworkUtils.getLoginUserId();
-        // User 在多个 tenant 下都有 shop_user_star 行（每店一份余额）。
-        // 老实现走 selectByUserId(单 tenant) → 在 tenantFilter 失效时跨 tenant 拉到 N>1 行抛
-        // TooManyResultsException。改为跨 tenant 全拉 + 内存聚合：
-        //   - 余额 = sum(全店)        → 用户看到的「我的积分」是跨店总额
-        //   - star/direct/team = SPU 行 max / sum（与原逻辑一致）
+        // header tenant-id 决定行为：
+        //   - 传了具体商户租户（>0，且不是 user 自己的 0/默认）→ 单店模式，仅返该店余额
+        //     用于 checkout 抵扣展示（"本店消费积分 X"）
+        //   - 没传 / 传 0 → 跨店聚合（钱包页"我的积分"显示全部）
+        Long headerTenant = cn.iocoder.yudao.framework.tenant.core.context.TenantContextHolder.getTenantId();
+        boolean perTenant = headerTenant != null && headerTenant > 0;
+
         cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopUserStarDO agg =
                 new cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopUserStarDO();
         agg.setUserId(userId);
         agg.setPromoPointBalance(0L);
         agg.setConsumePointBalance(0L);
         try {
-            java.util.List<cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopUserStarDO> all =
-                    cn.iocoder.yudao.framework.tenant.core.util.TenantUtils.executeIgnore(() ->
-                            userStarMapper.selectList(
-                                    new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopUserStarDO>()
-                                            .eq(cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopUserStarDO::getUserId, userId)));
+            // 单店：仅查 header tenant；跨店：executeIgnore 拉全部
+            java.util.List<cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopUserStarDO> all;
+            if (perTenant) {
+                // 在 header tenant 上下文里查（TenantIgnore 已开 → 手动切回去）
+                all = cn.iocoder.yudao.framework.tenant.core.util.TenantUtils.execute(headerTenant, () ->
+                        userStarMapper.selectList(
+                                new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopUserStarDO>()
+                                        .eq(cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopUserStarDO::getUserId, userId)));
+            } else {
+                all = cn.iocoder.yudao.framework.tenant.core.util.TenantUtils.executeIgnore(() ->
+                        userStarMapper.selectList(
+                                new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopUserStarDO>()
+                                        .eq(cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopUserStarDO::getUserId, userId)));
+            }
             long sumPromo = 0, sumConsume = 0;
             int maxStar = 0;
             long sumDirect = 0, sumTeam = 0, sumTeamAmt = 0;
@@ -399,11 +419,9 @@ public class AppMerchantPromoController {
                 Long pb = row.getPromoPointBalance();
                 Long cb = row.getConsumePointBalance();
                 if (spu == null || spu == 0L) {
-                    // 全局账户行（spu_id=0）：累积余额
                     sumPromo += pb == null ? 0 : pb;
                     sumConsume += cb == null ? 0 : cb;
                 } else {
-                    // SPU 级账户行（spu_id>0）：累积星级/团队
                     if (row.getCurrentStar() != null && row.getCurrentStar() > maxStar) maxStar = row.getCurrentStar();
                     if (row.getDirectCount() != null) sumDirect += row.getDirectCount();
                     if (row.getTeamSalesCount() != null) sumTeam += row.getTeamSalesCount();
@@ -417,7 +435,8 @@ public class AppMerchantPromoController {
             agg.setTeamSalesCount((int) sumTeam);
             agg.setTeamSalesAmount(sumTeamAmt);
         } catch (Exception e) {
-            log.warn("[getMyAccount] 聚合失败 userId={} : {}", userId, e.getMessage());
+            log.warn("[getMyAccount] 聚合失败 userId={} perTenant={} headerTenant={} : {}",
+                    userId, perTenant, headerTenant, e.getMessage());
         }
         return success(agg);
     }

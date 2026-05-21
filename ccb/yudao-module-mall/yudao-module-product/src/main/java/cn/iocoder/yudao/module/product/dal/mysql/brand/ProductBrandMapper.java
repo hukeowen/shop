@@ -28,7 +28,12 @@ public interface ProductBrandMapper extends BaseMapperX<ProductBrandDO> {
     }
 
     default ProductBrandDO selectByName(String name) {
-        return selectOne(ProductBrandDO::getName, name);
+        // 跨租户多家商户都有同名品牌（如"通用"）→ selectOne 抛 TooManyResults。
+        // LIMIT 1 兜底取最早创建，与 ProductCategoryMapper.selectByName 保持一致。
+        return selectOne(new LambdaQueryWrapperX<ProductBrandDO>()
+                .eq(ProductBrandDO::getName, name)
+                .orderByAsc(ProductBrandDO::getId)
+                .last("LIMIT 1"));
     }
 
     default List<ProductBrandDO> selectListByStatus(Integer status) {

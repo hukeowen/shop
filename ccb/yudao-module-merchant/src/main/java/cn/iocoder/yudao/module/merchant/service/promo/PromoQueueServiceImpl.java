@@ -412,7 +412,12 @@ public class PromoQueueServiceImpl implements PromoQueueService {
         }
         // v7：列出 IN_PROGRESS 的所有商品队列；COMPLETED 的不展示
         // 兼容旧数据：state 为 null 时按 status='QUEUEING' fallback
-        List<ShopQueuePositionDO> positions = queueMapper.selectListByUserIdQueueing(userId);
+        //
+        // ⚠ 跨租户：C 端用户 token tenant_id=0，但 queue 行在各商户租户里。
+        //   必须 executeIgnore 跨租户拉，否则用户在任一商户的队列都查不到。
+        List<ShopQueuePositionDO> positions =
+                cn.iocoder.yudao.framework.tenant.core.util.TenantUtils.executeIgnore(
+                        () -> queueMapper.selectListByUserIdQueueing(userId));
         if (positions.isEmpty()) {
             return Collections.emptyList();
         }
