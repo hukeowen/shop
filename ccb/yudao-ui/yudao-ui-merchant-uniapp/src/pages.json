@@ -299,6 +299,13 @@
       }
     },
     {
+      "path": "pages/user-me/star-shop",
+      "style": {
+        "navigationBarTitleText": "店铺商品星级",
+        "navigationStyle": "custom"
+      }
+    },
+    {
       "path": "pages/user-me/address",
       "style": {
         "navigationBarTitleText": "收货地址",

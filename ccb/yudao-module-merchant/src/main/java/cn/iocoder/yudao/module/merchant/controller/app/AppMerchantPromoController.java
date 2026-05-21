@@ -311,6 +311,66 @@ public class AppMerchantPromoController {
 
     // ==================== 用户钱包（双积分账户） ====================
 
+    @GetMapping("/my-spu-stars")
+    @Operation(summary = "我在某店所有购买过商品的星级 + 升星规则（star.vue 直接渲染）")
+    @cn.iocoder.yudao.framework.tenant.core.aop.TenantIgnore
+    public CommonResult<java.util.List<java.util.Map<String, Object>>> getMySpuStars(
+            @RequestParam("tenantId") Long tenantId) {
+        Long userId = SecurityFrameworkUtils.getLoginUserId();
+        java.util.List<java.util.Map<String, Object>> resp = new java.util.ArrayList<>();
+        cn.iocoder.yudao.framework.tenant.core.util.TenantUtils.execute(tenantId, () -> {
+            // 1) 用户在该店所有 spu_id>0 的 star 行
+            java.util.List<cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopUserStarDO> rows =
+                    userStarMapper.selectList(new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopUserStarDO>()
+                            .eq(cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopUserStarDO::getUserId, userId)
+                            .gt(cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopUserStarDO::getSpuId, 0L));
+            if (rows == null || rows.isEmpty()) return null;
+            java.util.List<Long> spuIds = new java.util.ArrayList<>();
+            for (cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopUserStarDO r : rows) {
+                if (r.getSpuId() != null) spuIds.add(r.getSpuId());
+            }
+            // 2) 拉对应 promo_config（升星规则 / starCount 等）
+            java.util.Map<Long, cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ProductPromoConfigDO> cfgMap = new java.util.HashMap<>();
+            java.util.List<cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ProductPromoConfigDO> cfgs =
+                    productPromoConfigMapper.selectListBySpuIds(spuIds);
+            if (cfgs != null) for (cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ProductPromoConfigDO c : cfgs) cfgMap.put(c.getSpuId(), c);
+            // 3) 拉 SPU 名 + 图
+            java.util.Map<Long, cn.iocoder.yudao.module.product.dal.dataobject.spu.ProductSpuDO> spuMap = new java.util.HashMap<>();
+            try {
+                java.util.List<cn.iocoder.yudao.module.product.dal.dataobject.spu.ProductSpuDO> spus =
+                        productSpuService.getSpuList(spuIds);
+                if (spus != null) for (cn.iocoder.yudao.module.product.dal.dataobject.spu.ProductSpuDO s : spus) spuMap.put(s.getId(), s);
+            } catch (Exception ignore) {}
+            // 4) 组装
+            for (cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopUserStarDO r : rows) {
+                java.util.Map<String, Object> v = new java.util.HashMap<>();
+                v.put("spuId", r.getSpuId());
+                v.put("currentStar", r.getCurrentStar());
+                v.put("directCount", r.getDirectCount());
+                v.put("teamSalesCount", r.getTeamSalesCount());
+                v.put("teamSalesAmount", r.getTeamSalesAmount());
+                cn.iocoder.yudao.module.product.dal.dataobject.spu.ProductSpuDO s = spuMap.get(r.getSpuId());
+                if (s != null) {
+                    v.put("spuName", s.getName());
+                    v.put("picUrl", s.getPicUrl());
+                }
+                cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ProductPromoConfigDO cfg = cfgMap.get(r.getSpuId());
+                if (cfg != null) {
+                    v.put("starCount", cfg.getStarCount());
+                    v.put("starUpgradeRules", cfg.getStarUpgradeRules());
+                    v.put("starRatios", cfg.getStarRatios());
+                    v.put("tuijianN", cfg.getTuijianN());
+                }
+                resp.add(v);
+            }
+            return null;
+        });
+        return success(resp);
+    }
+
+    @Resource
+    private cn.iocoder.yudao.module.product.service.spu.ProductSpuService productSpuService;
+
     @GetMapping("/account")
     @Operation(summary = "用户账户余额")
     public CommonResult<ShopUserStarDO> getMyAccount() {

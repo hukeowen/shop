@@ -145,20 +145,32 @@ public class AppMemberShopRelController {
                             rel.getTenantId(), e.getMessage());
                 }
             }
-            // shop_user_star 是 TenantBaseDO，要切租户查（同时拿 currentStar + promoPointBalance）
+            // shop_user_star 是 TenantBaseDO，切租户查。v8 改造：
+            //   - 余额：取 spu_id=0 全局账户行
+            //   - star：取 spu_id>0 各商品行的 MAX（每商品独立星级，店级展示用最高）
             try {
                 Long tid = rel.getTenantId();
                 TenantUtils.execute(tid, () -> {
-                    ShopUserStarDO star = shopUserStarMapper.selectByUserId(userId);
-                    if (star != null) {
-                        vo.setStar(star.getCurrentStar() != null ? star.getCurrentStar() : 0);
-                        vo.setPromoPoints(star.getPromoPointBalance() != null ? star.getPromoPointBalance() : 0L);
-                        vo.setPoints(star.getConsumePointBalance() != null ? star.getConsumePointBalance() : 0L);
+                    ShopUserStarDO base = shopUserStarMapper.selectByUserId(userId);
+                    if (base != null) {
+                        vo.setPromoPoints(base.getPromoPointBalance() != null ? base.getPromoPointBalance() : 0L);
+                        vo.setPoints(base.getConsumePointBalance() != null ? base.getConsumePointBalance() : 0L);
                     } else {
-                        vo.setStar(0);
                         vo.setPromoPoints(0L);
                         vo.setPoints(0L);
                     }
+                    // SPU 行取最高星
+                    int maxStar = 0;
+                    try {
+                        java.util.List<ShopUserStarDO> spuRows = shopUserStarMapper.selectList(
+                                new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<ShopUserStarDO>()
+                                        .eq(ShopUserStarDO::getUserId, userId)
+                                        .gt(ShopUserStarDO::getSpuId, 0L));
+                        for (ShopUserStarDO r : spuRows) {
+                            if (r.getCurrentStar() != null && r.getCurrentStar() > maxStar) maxStar = r.getCurrentStar();
+                        }
+                    } catch (Exception ignore) {}
+                    vo.setStar(maxStar);
                 });
             } catch (Exception e) {
                 log.warn("[listMyShopsEnriched] 查 shop_user_star 失败 tenantId={}: {}",
