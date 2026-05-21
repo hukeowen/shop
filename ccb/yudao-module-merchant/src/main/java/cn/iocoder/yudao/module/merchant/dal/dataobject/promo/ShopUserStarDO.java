@@ -41,6 +41,9 @@ public class ShopUserStarDO extends TenantBaseDO {
     /** v8: 团队链路在该商品上的销售实付累计（分）— 用于按金额阈值升星 */
     private Long teamSalesAmount;
 
+    /** v8.1: 用户在该 SPU 上自己下单实付累计（分）— 升星 OR 分支用 */
+    private Long selfPurchaseAmount;
+
     /** 当前星级，0 = 未达任何星级 */
     private Integer currentStar;
 

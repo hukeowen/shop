@@ -122,6 +122,12 @@ public interface ShopUserStarMapper extends BaseMapperX<ShopUserStarDO> {
             + "WHERE user_id = #{userId} AND spu_id = #{spuId} AND deleted = b'0' AND current_star < #{newStar}")
     int upgradeStarIfHigherBySpu(@Param("userId") Long userId, @Param("spuId") Long spuId, @Param("newStar") int newStar);
 
+    /** v8.1: 累加用户在该 SPU 上自购实付金额（分）。buyer 自己下单时调，触发升星 OR 分支判定。 */
+    @Update("UPDATE shop_user_star "
+            + "SET self_purchase_amount = self_purchase_amount + #{amtDelta}, update_time = NOW() "
+            + "WHERE user_id = #{userId} AND spu_id = #{spuId} AND deleted = b'0'")
+    int addSelfPurchaseBySpu(@Param("userId") Long userId, @Param("spuId") Long spuId, @Param("amtDelta") long amtDelta);
+
     /** v8 奖池结算用：列出在指定 SPU 上达到指定星级的用户。 */
     default List<ShopUserStarDO> selectListBySpuAndStar(Long spuId, int star) {
         return selectList(new LambdaQueryWrapperX<ShopUserStarDO>()

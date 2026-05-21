@@ -291,7 +291,29 @@ spu_star_pool: pool_balance += deposit, total_in += deposit
 - 残值（无人段 / 整除零头）留池给下次
 - 幂等：同 settleId 二次入 add 因三元组冲突直接返 false
 
-### 6.4 升星 — `StarServiceImpl.handleOrderPaidV8`
+### 6.4 升星 — `StarServiceImpl.handleOrderPaidV8` （v8.1 加 OR 分支）
+
+**升星条件（两条 OR 任一满足即升）**：
+- **团队分支**：`matched N-1 星下级数 ≥ rule.requiredCount` **AND** `teamSalesAmount ≥ rule.teamSales`
+- **自购分支**（v8.1 新增）：`rule.selfPurchaseAmount > 0` **AND** `selfPurchaseAmount ≥ rule.selfPurchaseAmount`
+
+自购金额 = 用户在该 SPU 上**自己下单实付**累计（分），存 `shop_user_star.self_purchase_amount`，buyer 每次自购触发 `addSelfPurchaseBySpu(buyerId, spuId, paidAmount)`。
+
+rule JSON 例：
+```json
+[
+  {"star":1, "requiredCount":2, "teamSales":30000, "selfPurchaseAmount":50000},
+  {"star":2, "requiredCount":3, "teamSales":90000, "selfPurchaseAmount":150000},
+  {"star":3, "requiredCount":5, "teamSales":270000, "selfPurchaseAmount":0}
+]
+```
+- 升 1 星：直推 2 个付费用户 + 团队累计 ¥300 → 或自购累计 ¥500
+- 升 2 星：1 星下级 3 个 + 团队累计 ¥900 → 或自购累计 ¥1500
+- 升 3 星：仅看团队（selfPurchaseAmount=0 = 不启用此分支）
+
+**v8.1 内部判定逻辑**：
+
+
 
 ```java
 bumpTeamSalesV8(buyer, spu, qty, paidAmount)

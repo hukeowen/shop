@@ -162,7 +162,12 @@ public class StarServiceImpl implements StarService {
         List<RuleV8> rules = parseRulesV8(config.getStarUpgradeRules());
         if (rules.isEmpty()) return;
 
-        bumpTeamSalesV8(buyerUserId, spuId, qty, paidAmount, rules);
+        // buyer 自己：累加 team + self_purchase（OR 分支用）
+        getOrCreateBySpu(buyerUserId, spuId);
+        userStarMapper.addTeamSalesBySpu(buyerUserId, spuId, qty, paidAmount);
+        userStarMapper.addSelfPurchaseBySpu(buyerUserId, spuId, paidAmount);  // v8.1 自购累加
+        attemptUpgradeV8(buyerUserId, spuId, rules);
+        // ancestors：仅累 team（不算他们自购）
         for (Long ancestorId : referralService.getAncestors(buyerUserId, ReferralService.DEFAULT_MAX_DEPTH)) {
             bumpTeamSalesV8(ancestorId, spuId, qty, paidAmount, rules);
         }
@@ -207,6 +212,7 @@ public class StarServiceImpl implements StarService {
         if (acct == null) return;
         int target = acct.getCurrentStar() == null ? 0 : acct.getCurrentStar();
         long teamSalesAmount = acct.getTeamSalesAmount() == null ? 0L : acct.getTeamSalesAmount();
+        long selfPurchaseAmount = acct.getSelfPurchaseAmount() == null ? 0L : acct.getSelfPurchaseAmount();
 
         int[] starHisto = countDirectChildrenByStar(userId, spuId, rules);
 
@@ -218,7 +224,12 @@ public class StarServiceImpl implements StarService {
             int needCount = Math.max(0, effectiveCount(r));
             int matched = 0;
             for (int s = needStar; s < starHisto.length; s++) matched += starHisto[s];
-            if (matched >= needCount && teamSalesAmount >= r.getTeamSales()) {
+            boolean teamBranch = matched >= needCount && teamSalesAmount >= r.getTeamSales();
+            // v8.1 OR 分支：自购累计达标也升（仅 rule.selfPurchaseAmount > 0 时启用）
+            boolean selfBranch = r.getSelfPurchaseAmount() != null
+                    && r.getSelfPurchaseAmount() > 0
+                    && selfPurchaseAmount >= r.getSelfPurchaseAmount();
+            if (teamBranch || selfBranch) {
                 target++;
             } else {
                 break;
@@ -304,5 +315,10 @@ public class StarServiceImpl implements StarService {
         private Integer requiredCount;
         /** 升此星需要的团队链路销售实付（分） */
         private long teamSales;
+        /**
+         * v8.1: 自购累计金额阈值（分）— OR 分支：用户自己在该 SPU 累计买够此金额也升此星。
+         * null / 0 = 不启用此分支（仅看 team 条件）。
+         */
+        private Long selfPurchaseAmount;
     }
 }

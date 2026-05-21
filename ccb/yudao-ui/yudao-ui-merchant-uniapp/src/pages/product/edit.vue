@@ -182,14 +182,24 @@
                 </view>
               </view>
               <view class="star-row">
-                <text class="star-row-label">累计金额</text>
+                <text class="star-row-label">团队累计</text>
                 <view class="star-row-input">
                   <input class="input" type="digit" :value="rule.teamSalesYuan"
                     @input="(e) => (promo.starUpgradeRules[i].teamSalesYuan = e.detail.value)"
-                    placeholder="升星所需金额" />
+                    placeholder="团队累计销售额" />
                   <text class="suffix">元</text>
                 </view>
               </view>
+              <view class="star-row">
+                <text class="star-row-label">或 自购</text>
+                <view class="star-row-input">
+                  <input class="input" type="digit" :value="rule.selfPurchaseYuan"
+                    @input="(e) => (promo.starUpgradeRules[i].selfPurchaseYuan = e.detail.value)"
+                    placeholder="自购累计也可升 (0=不启用)" />
+                  <text class="suffix">元</text>
+                </view>
+              </view>
+              <view class="star-row-tip">同时满足上面"团队 + 直推"达标，<b>或</b>自购金额达标，任一即升此星</view>
             </view>
           </view>
         </view>
@@ -419,8 +429,12 @@ function syncStarCount() {
   promo.starCount = String(target);
   while (promo.starRatios.length < target) promo.starRatios.push('0');
   if (promo.starRatios.length > target) promo.starRatios.length = target;
-  while (promo.starUpgradeRules.length < target) promo.starUpgradeRules.push({ requiredCount: '0', teamSalesYuan: '0' });
+  while (promo.starUpgradeRules.length < target) promo.starUpgradeRules.push({ requiredCount: '0', teamSalesYuan: '0', selfPurchaseYuan: '0' });
   if (promo.starUpgradeRules.length > target) promo.starUpgradeRules.length = target;
+  // 给已有项补默认（兼容老数据 / 新增字段）
+  promo.starUpgradeRules.forEach(r => {
+    if (r.selfPurchaseYuan == null) r.selfPurchaseYuan = '0';
+  });
   syncPoolDistRows();
 }
 
@@ -470,6 +484,8 @@ async function loadPromo(spuId) {
             // 兼容老 JSON：requiredCount 缺省时 fallback 到 directCount
             requiredCount: String(r.requiredCount ?? r.directCount ?? '0'),
             teamSalesYuan: String(((r.teamSales ?? 0) / 100).toFixed(2)),
+            // v8.1 OR 分支：自购累计金额（分 → 元）。老数据无此字段时为 0
+            selfPurchaseYuan: String(((r.selfPurchaseAmount ?? 0) / 100).toFixed(2)),
           }))
         : [];
     } catch {
@@ -585,6 +601,8 @@ async function onSavePromo() {
         requiredStar: i,
         requiredCount: parseInt(r.requiredCount) || 0,
         teamSales: Math.round((parseFloat(r.teamSalesYuan) || 0) * 100),  // 元 → 分
+        // v8.1 OR 分支：自购累计金额阈值；0 = 不启用
+        selfPurchaseAmount: Math.round((parseFloat(r.selfPurchaseYuan) || 0) * 100),
       }))) : '[]',
       poolRatio: parseFloat(promo.poolRatio) || 0,
       poolEnabled: !!promo.poolEnabled,
@@ -1189,6 +1207,17 @@ onLoad(async (q) => {
 
       .star-row-input { flex: 1; }
       .star-row-input .input { background: #fff; }
+    }
+
+    .star-row-tip {
+      margin-top: 8rpx;
+      padding: 8rpx 12rpx;
+      background: #fff5e8;
+      border-radius: 8rpx;
+      font-size: 22rpx;
+      color: #8a5a00;
+      line-height: 1.5;
+      b { color: #e8721b; font-weight: 700; padding: 0 2rpx; }
     }
 
     .radio-pair {
