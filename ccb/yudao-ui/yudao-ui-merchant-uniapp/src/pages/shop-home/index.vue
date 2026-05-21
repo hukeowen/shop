@@ -654,10 +654,10 @@ onLoad((query) => {
       method: 'POST',
     }).catch(() => {});
   }
-  if (referrerUserId) savePendingReferrer(referrerUserId);
+  if (referrerUserId) savePendingReferrer(referrerUserId, tenantId.value);
 
   let isLoggedIn = !!(userStore?.token || userStore?.userId);
-  if (isLoggedIn && userStore?.userId) flushPendingReferrer(userStore.userId);
+  if (isLoggedIn && userStore?.userId) flushPendingReferrer(userStore.userId, tenantId.value);
   loadAll();
 
   if (!isLoggedIn && tenantId.value) {

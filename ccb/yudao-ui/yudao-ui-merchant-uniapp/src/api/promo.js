@@ -72,13 +72,14 @@ export function listMyQueues() {
 
 // ==================== 推荐链 ====================
 
-/** 绑定邀请人（首次有效）。后端用 @RequestParam，必须用 query 而不是 body。 */
-export function bindReferral(inviterUserId, orderId) {
+/** 绑定邀请人（首次有效，per-tenant 终生）。必传 tenantId，后端按上下文绑当前店。 */
+export function bindReferral(inviterUserId, orderId, tenantId) {
   const q = `inviterUserId=${encodeURIComponent(inviterUserId)}` +
             (orderId ? `&orderId=${encodeURIComponent(orderId)}` : '');
   return request({
     url: `/app-api/merchant/mini/promo/referral/bind?${q}`,
     method: 'POST',
+    tenantId: tenantId || undefined,  // header tenant-id → 后端 TenantContextHolder → bindParent per-tenant 操作
   });
 }
 

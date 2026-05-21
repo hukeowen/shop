@@ -2,14 +2,15 @@
 import { useUserStore } from './store/user.js';
 import { savePendingReferrer } from './utils/referral.js';
 
-// H5 落地：把 ?inviter= / ?referrerUserId= 暂存到 localStorage，
-// 即使后续 reLaunch 到 login 也不会丢 — 登录后由 referral.js flush 自动绑定。
+// H5 落地：把 ?inviter= + ?tenantId= 暂存到 localStorage（per-tenant 绑定）。
+// 即使后续 reLaunch 到 login 也不会丢 — 登录后由 referral.js flush 在该 tenant 内自动绑定。
 function captureLandingInviter() {
   try {
     if (typeof location === 'undefined' || !location.search) return null;
     const sp = new URLSearchParams(location.search);
     const inviter = sp.get('inviter') || sp.get('referrerUserId');
-    if (inviter) savePendingReferrer(inviter);
+    const tenantId = sp.get('tenantId');
+    if (inviter) savePendingReferrer(inviter, tenantId);
     return null;
   } catch {
     return null;
@@ -94,18 +95,25 @@ export default {
       'brand=', brandedHost || '(none)'
     );
 
-    // ⭐ 店铺分享场景：顶层带 ?tenantId=...，访问者一定是 C 端用户
-    //   - 已登录 → reLaunch shop-home（消费 redirect:after-login）
-    //   - 未登录 → 也 reLaunch 到 shop-home（让用户先浏览；inviter 已 captureLandingInviter
-    //     存到 localStorage，登录后由 referral.js flushPendingReferrer 自动绑定）
-    //     下单 / 加购需登录由 shop-home 的 modal + 后续 checkout 跳转处理
+    // ⭐ 店铺分享场景：顶层带 ?tenantId=...，访问者一定是 C 端用户。
+    //   不再区分是否登录：未登录也直接进 shop-home，下单时 checkout 自然跳登录。
+    //   inviter 已 captureLandingInviter 存 localStorage，登录后 flushPendingReferrer 绑定。
+    //
+    //   坑：onLaunch 里的 uni.reLaunch 是异步排队的 → 会被默认 entry page
+    //   （pages.json[0] = /pages/index/index 商户工作台）的同步 mount 抢先：
+    //   它一 mount 就拉 API → 401 → request.js 跳 user-home/login → 覆盖我们的目标。
+    //   解法：先 location.hash = '#' + target 同步抢路由，再让 uniapp router 接管。
     if (landingRoute === 'shop-share') {
       const target = (typeof localStorage !== 'undefined'
         ? localStorage.getItem('redirect:after-login') : '') || '/pages/user-home/index';
       try {
-        if (typeof localStorage !== 'undefined') localStorage.removeItem('redirect:after-login');
-        uni.reLaunch({ url: target });
+        // 不 remove redirect:after-login —— shop-home 的 onLoad 不消费它，
+        // 留着供 401 重定向回来用（被点"去登录"或 checkout 跳 login 时使用）
+        if (typeof location !== 'undefined') {
+          location.hash = '#' + target;
+        }
       } catch {}
+      try { uni.reLaunch({ url: target }); } catch {}
       return;
     }
 
