@@ -7,8 +7,9 @@
     </view>
 
     <view class="info-tip">
-      <text class="b">星级 = 在该店的会员等级：</text>
-      累计在该店消费及邀请新顾客达成对应目标，自动升星，升星后享对应等级的店内积分加成与抽奖权益。
+      <text class="b">星级按商品独立计算：</text>
+      不同商品有不同的升星条件，本页展示的是你在该店所有购买过的商品中达到的<text class="b">最高星级</text>。
+      具体某商品的升星规则、当前进度、奖励比例，请到该商品详情页查看。
     </view>
 
     <!-- 店铺切换 tab -->
@@ -63,39 +64,11 @@
         </view>
       </view>
 
-      <!-- 升星进度 -->
-      <view v-if="nextRule" class="upgrade-card">
-        <view class="title">距下一星：{{ (current.currentStar || 0) + 1 }}★</view>
-
-        <view class="row">
-          <view class="row-label">邀请新顾客 {{ current.directCount || 0 }} / {{ nextRule.directCount }}</view>
-          <view class="bar"><view class="fill" :style="`width:${pct(current.directCount, nextRule.directCount)}%`"></view></view>
-        </view>
-
-        <view class="row">
-          <view class="row-label">店内累计单 {{ current.teamSalesCount || 0 }} / {{ nextRule.teamSales }}</view>
-          <view class="bar"><view class="fill" :style="`width:${pct(current.teamSalesCount, nextRule.teamSales)}%`"></view></view>
-        </view>
-
-        <view class="row-tip">📌 升星条件 = 两项 <text class="b">同时满足</text>，达成后自动升级</view>
-      </view>
-      <view v-else class="upgrade-card max">
-        <view class="title">🏆 已达本店最高星级</view>
-        <view class="row-tip">享受最高等级的星级奖励与积分池抽奖权重</view>
-      </view>
-
-      <!-- 完整星级规则 -->
-      <view v-if="rules.length" class="rules-card">
-        <view class="rules-title">本店升星规则</view>
-        <view v-for="(r, i) in rules" :key="i" :class="['rule-row', (current.currentStar || 0) >= (i+1) ? 'achieved' : '']">
-          <view class="rule-star">
-            <text>{{ i + 1 }}★</text>
-            <text v-if="(current.currentStar || 0) >= (i+1)" class="check">✓</text>
-          </view>
-          <view class="rule-cond">
-            邀请新顾客 ≥ <text class="b">{{ r.directCount }}</text> 人 + 店内累计单 ≥ <text class="b">{{ r.teamSales }}</text> 单
-          </view>
-        </view>
+      <!-- 跳商品列表 -->
+      <view class="goto-card" @click="goShop">
+        <view class="goto-title">📋 查看每个商品的星级 / 升星规则</view>
+        <view class="goto-sub">进入店铺主页 → 点击商品 → 「营销活动」</view>
+        <text class="arrow">›</text>
       </view>
     </view>
 
@@ -110,32 +83,19 @@ import { request } from '../../api/request.js';
 const myShops = ref([]);
 const currentTenantId = ref(null);
 const current = ref(null);
-const rules = ref([]);
 const loading = ref(false);
 
 const currentShop = computed(() => myShops.value.find(s => s.tenantId === currentTenantId.value));
-const nextRule = computed(() => {
-  const star = current.value?.currentStar || 0;
-  if (star >= rules.value.length) return null;
-  return rules.value[star];
-});
 const statusHint = computed(() => {
   const s = current.value?.currentStar || 0;
-  if (s === 0) return '完成 1★ 升星条件即可解锁星级奖励资格';
-  if (s >= rules.value.length) return '已达最高星级，享受满级权益';
-  return `已是 ${s} 星，继续努力下一星只差一步`;
+  if (s === 0) return '本店还没在任何商品上升星，去看看营销商品吧';
+  return `本店最高星级 ${s}★（取所有已购商品中最高）`;
 });
 
 function shortName(n) {
   if (!n) return '店铺';
   return n.length > 5 ? n.slice(0, 4) + '..' : n;
 }
-function pct(cur, max) {
-  if (!max || max <= 0) return 100;
-  const v = Math.min(100, Math.round(((cur || 0) / max) * 100));
-  return v;
-}
-
 async function loadShops() {
   try {
     const list = await request({ url: '/app-api/merchant/mini/member-rel/my-shops-enriched' });
@@ -144,21 +104,6 @@ async function loadShops() {
       currentTenantId.value = myShops.value[0].tenantId;
     }
   } catch { myShops.value = []; }
-}
-async function loadConfig() {
-  if (!currentTenantId.value) return;
-  try {
-    const conf = await request({
-      url: '/app-api/merchant/mini/promo/config',
-      tenantId: currentTenantId.value,
-    });
-    if (conf?.starUpgradeRules) {
-      try { rules.value = JSON.parse(conf.starUpgradeRules) || []; }
-      catch { rules.value = []; }
-    } else {
-      rules.value = [];
-    }
-  } catch { rules.value = []; }
 }
 async function loadAccount() {
   if (!currentTenantId.value) return;
@@ -179,14 +124,17 @@ async function loadAccount() {
 function switchShop(tid) {
   if (currentTenantId.value === tid) return;
   currentTenantId.value = tid;
-  loadConfig();
   loadAccount();
 }
 function goBack() { uni.navigateBack({ fail: () => uni.reLaunch({ url: '/pages/user-me/index' }) }); }
+function goShop() {
+  if (!currentTenantId.value) return;
+  uni.navigateTo({ url: `/pages/shop-home/index?tenantId=${currentTenantId.value}` });
+}
 
 onMounted(async () => {
   await loadShops();
-  await Promise.all([loadConfig(), loadAccount()]);
+  await loadAccount();
 });
 </script>
 
@@ -242,6 +190,19 @@ onMounted(async () => {
 .grid .cell .label { font-size: 22rpx; color: $text-placeholder; }
 .grid .cell .num { font-size: 40rpx; font-weight: 800; color: $text-primary; font-variant-numeric: tabular-nums; margin: 4rpx 0; }
 .grid .cell .unit { font-size: 22rpx; color: $text-placeholder; }
+
+.goto-card {
+  margin: 24rpx 32rpx; padding: 28rpx 32rpx;
+  background: $bg-card; border-radius: $radius-md;
+  box-shadow: 0 4rpx 12rpx rgba(15,23,42,.03);
+  display: flex; align-items: center; gap: 16rpx;
+  position: relative;
+  cursor: pointer;
+  .goto-title { font-size: 28rpx; font-weight: 600; color: $text-primary; }
+  .goto-sub { font-size: 22rpx; color: $text-placeholder; margin-top: 4rpx; }
+  .arrow { position: absolute; right: 28rpx; top: 50%; transform: translateY(-50%); color: $text-placeholder; font-size: 32rpx; }
+  > view:first-child { flex: 1; min-width: 0; }
+}
 
 .upgrade-card {
   margin: 24rpx 32rpx; padding: 32rpx;
