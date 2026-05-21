@@ -1,4 +1,14 @@
-# 摊小二营销系统 v8 设计文档
+# 摊小二营销系统 v8 设计文档（早期版）
+
+> ⚠️ **OBSOLETE — 早期 v8 设计稿，部分条款已与代码漂移。**
+> 现行权威文档：[`marketing-system-v8-final.md`](./marketing-system-v8-final.md)（2026-05-21，对照真实代码）
+> 主要差异：
+> - 升星走"实时 histo + 链式 requiredStar"，本文写的"buyer 买过该商品的下级数 = directCount"是被实时算法覆盖的兜底
+> - 第 9 节"池累计 ≈¥35"是估算，真实代码出 ¥33
+> - 第 6 节 T8 / T11 / T10 等步骤的"余额变化 0"已被 SELF_BATCH + ORDER_DEDUCT 双流水机制实现
+> 本文留作设计原意参考，**实现请以 v8-final 为准**。
+
+---
 
 最终版本，落地依据。任何代码实现与本文档不一致都视为 bug。
 
@@ -82,6 +92,7 @@
 - 每件返 `单件价 × directRate%`
 
 **parent 首贡献**（UNIQUE 1 次）：
+
 - 任何用户作 parent（含自然用户）：返 `1 × 单件价 × directRate%`
 
 ### 3.3 团队极差奖（每订单 SPU 行触发，独立于推 N 反 1）

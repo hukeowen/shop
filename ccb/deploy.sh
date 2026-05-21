@@ -730,8 +730,8 @@ yudao:
   sms-code:
     demo-mode: ${YUDAO_SMS_DEMO_MODE:-true}
     demo-code: ${YUDAO_SMS_DEMO_CODE:-888888}
-    expire-times: 600
-    send-frequency: 60
+    expire-times: 10m       # 注：Spring Duration 不带单位 = 毫秒，必须显式写 10m / 600s
+    send-frequency: 1s      # 同上：60 = 60ms 不是 60s
     send-maximum-quantity-per-day: 10
     begin-code: 1000
     end-code: 9999
