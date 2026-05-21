@@ -153,7 +153,8 @@ SELECT id, natural_push_enabled, consume_point_redeem_ratio, withdraw_threshold 
 " > /dev/null
 
 # 清掉测试用户的 marketing 状态（保留 member_user）
-TEST_PHONES="'13900000001','13900000002','13900000003','13900000004','13900000005','13900000006','13900000007','13900000008'"
+# 包含 I/J (13900000009/010)，防 Phase B 残留干扰 A 的星级判定
+TEST_PHONES="'13900000001','13900000002','13900000003','13900000004','13900000005','13900000006','13900000007','13900000008','13900000009','13900000010'"
 # 关键：SPU 99006 是测试专用，全清；防老数据污染自然推队首 / contribution UNIQUE
 xx "
 DELETE FROM shop_queue_position WHERE tenant_id=$SHOP_TENANT AND spu_id=$SPU;

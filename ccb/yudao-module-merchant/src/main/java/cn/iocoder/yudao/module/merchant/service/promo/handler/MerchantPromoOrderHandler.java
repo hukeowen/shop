@@ -1,6 +1,8 @@
 package cn.iocoder.yudao.module.merchant.service.promo.handler;
 
 import cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ProductPromoConfigDO;
+import cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopQueueEventDO;
+import cn.iocoder.yudao.module.merchant.dal.mysql.promo.ShopQueueEventMapper;
 import cn.iocoder.yudao.module.merchant.service.promo.CommissionService;
 import cn.iocoder.yudao.module.merchant.service.promo.ProductPromoConfigService;
 import cn.iocoder.yudao.module.merchant.service.promo.PromoPointService;
@@ -55,6 +57,8 @@ public class MerchantPromoOrderHandler implements TradeOrderHandler {
     private cn.iocoder.yudao.module.merchant.service.promo.ReferralService referralService;
     @Resource
     private cn.iocoder.yudao.module.merchant.dal.mysql.ShopInfoMapper shopInfoMapper;
+    @Resource
+    private ShopQueueEventMapper queueEventMapper;
 
     @Override
     public void afterPayOrder(TradeOrderDO order, List<TradeOrderItemDO> orderItems) {
@@ -115,6 +119,13 @@ public class MerchantPromoOrderHandler implements TradeOrderHandler {
             return;
         }
 
+        // ===== 整单幂等：防止双调（offline-confirm 同步 tradeOrderHandlers + 异步 OrderPaidListener
+        //                 都会跑一次 afterPayOrder，若不幂等极差/升星会累加双倍） =====
+        if (queueEventMapper.existsHandlerDoneV8(orderId, spuId)) {
+            log.info("[afterPayOrder] 幂等命中 order={} spu={}，跳过整个 SPU 行营销", orderId, spuId);
+            return;
+        }
+
         ProductPromoConfigDO config = productPromoConfigService.getBySpuId(spuId);
 
         // 1. 消费积分入账
@@ -168,6 +179,23 @@ public class MerchantPromoOrderHandler implements TradeOrderHandler {
             } catch (Exception e) {
                 log.error("[afterPayOrder v8] 升星失败 order={} spu={}", orderId, spuId, e);
             }
+        }
+
+        // ===== 写完所有 SPU 行处理 → 留 marker，让重入调用整段 skip =====
+        try {
+            queueEventMapper.insert(ShopQueueEventDO.builder()
+                    .spuId(spuId)
+                    .eventType("HANDLER_DONE_V8")
+                    .beneficiaryUserId(buyerId)
+                    .sourceUserId(buyerId)
+                    .sourceOrderId(orderId)
+                    .positionIndex(0)
+                    .ratioPercent(java.math.BigDecimal.ZERO)
+                    .amount(0L)
+                    .build());
+        } catch (Exception e) {
+            log.warn("[afterPayOrder] 写 HANDLER_DONE_V8 marker 失败 order={} spu={}: {}",
+                    orderId, spuId, e.getMessage());
         }
     }
 

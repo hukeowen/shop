@@ -31,4 +31,18 @@ public interface ShopQueueEventMapper extends BaseMapperX<ShopQueueEventDO> {
                 .eq(ShopQueueEventDO::getEventType, eventType)) > 0;
     }
 
+    /**
+     * MerchantPromoOrderHandler 整单幂等键：检查某订单 × spu 是否已跑过营销引擎。
+     *
+     * <p>由 MerchantPromoOrderHandler.processOneItem 在结束时写入一条 type=HANDLER_DONE_V8 的
+     * 事件作为 marker；同订单 + 同 SPU 第二次调用（offline-confirm 同步 + 事件监听器异步
+     * 双调）时立即返回，避免极差奖 / 升星累加双倍。</p>
+     */
+    default boolean existsHandlerDoneV8(Long orderId, Long spuId) {
+        return selectCount(new LambdaQueryWrapperX<ShopQueueEventDO>()
+                .eq(ShopQueueEventDO::getSourceOrderId, orderId)
+                .eq(ShopQueueEventDO::getSpuId, spuId)
+                .eq(ShopQueueEventDO::getEventType, "HANDLER_DONE_V8")) > 0;
+    }
+
 }
