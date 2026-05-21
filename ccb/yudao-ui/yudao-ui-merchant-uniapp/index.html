@@ -10,6 +10,34 @@
     <title>小二</title>
     <!--preload-links-->
     <!--app-context-->
+    <script>
+      // ⭐ 店铺分享落地早期重定向（必须在 uniapp bundle 加载前同步跑）。
+      //
+      // 落地链接形如 https://ke.doupaidoudian.com/m/shop-home?tenantId=1010&inviter=99012
+      // nginx try_files 把这个 path fallback 到 /m/index.html，但 browser URL 留着 ?tenantId=...
+      // 直接让 uniapp 启动 → pages.json[0] 商户工作台 mount → 401 → 跳 login → 覆盖 redirect →
+      // 最后用户进 user-home，跟期望的 shop-home 不一致。
+      //
+      // 这里在 bundle 之前同步把 URL 改写成 #/pages/shop-home/index?tenantId=... 的 hash 形式，
+      // 让 uniapp 启动时直接进 shop-home 路由。history.replaceState 不会触发 reload。
+      (function () {
+        try {
+          if (typeof location === 'undefined' || !location.search) return;
+          if (!/[?&]tenantId=/.test(location.search)) return;
+          // 已经是 shop-home hash 路由就不重复改写
+          if (location.hash && location.hash.indexOf('#/pages/shop-home/') === 0) return;
+          var sp = new URLSearchParams(location.search);
+          var tenantId = sp.get('tenantId');
+          if (!tenantId) return;
+          var inviter = sp.get('inviter') || sp.get('referrerUserId') || '';
+          var qs = 'tenantId=' + encodeURIComponent(tenantId);
+          if (inviter) qs += '&inviter=' + encodeURIComponent(inviter);
+          // pathname 保留 /m/（publicPath），search 清空，hash 设到 shop-home
+          var target = location.pathname.replace(/[^/]+$/, '') + '#/pages/shop-home/index?' + qs;
+          history.replaceState(null, '', target);
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="app"><!--app-html--></div>
