@@ -2,8 +2,30 @@
   <view class="page">
     <view class="topbar safe-top">
       <text class="back" @click="goBack">‹</text>
-      <text class="title">{{ shopName || '店铺星级' }}</text>
+      <text class="title">{{ shopName || '店铺' }} · 商品星级</text>
       <view style="width:60rpx"></view>
+    </view>
+
+    <!-- 店铺汇总 hero -->
+    <view class="shop-hero">
+      <view class="name">🏪 {{ shopName || '店铺 ' + tenantId }}</view>
+      <view class="stats">
+        <view class="stat">
+          <view class="lbl">最高星级</view>
+          <view class="val stars">{{ maxStar > 0 ? stars(maxStar) : '—' }}</view>
+        </view>
+        <view class="stat">
+          <view class="lbl">推广积分</view>
+          <view class="val">{{ ((shopAccount.promoPoints || 0) / 100).toFixed(2) }}</view>
+        </view>
+        <view class="stat">
+          <view class="lbl">消费积分</view>
+          <view class="val">{{ ((shopAccount.points || 0) / 100).toFixed(2) }}</view>
+        </view>
+      </view>
+      <view class="hero-tip">
+        💡 <text class="b">推广积分</text>可线下到商家提现 · <text class="b">消费积分</text>下次消费直接抵扣（1 积分 = 1 元）
+      </view>
     </view>
 
     <view v-if="loading && !items.length" class="empty-tip">加载中…</view>
@@ -20,47 +42,57 @@
           <view v-else class="spu-pic placeholder">🛍</view>
           <view class="spu-info">
             <view class="spu-name">{{ it.spuName || '商品 #' + it.spuId }}</view>
-            <view class="spu-star">
-              <text v-if="it.currentStar > 0" class="star-badge">⭐ {{ it.currentStar }}★</text>
-              <text v-else class="star-badge zero">未升星</text>
+            <view class="spu-current">
+              <text v-if="it.currentStar > 0" class="badge">{{ stars(it.currentStar) }}</text>
+              <text v-else class="badge zero">未升星</text>
+              <text v-if="getRules(it).length && it.currentStar >= getRules(it).length" class="progress-text">满星</text>
+              <text v-else-if="nextRule(it)" class="progress-text">
+                距 {{ stars((it.currentStar || 0) + 1) }} 还差
+                {{ Math.max(0, (nextRule(it).requiredCount || 0) - (it.directCount || 0)) }} 个
+                {{ (nextRule(it).requiredStar || 0) > 0 ? stars(nextRule(it).requiredStar) : '付费' }} 顾客
+              </text>
             </view>
           </view>
         </view>
 
-        <!-- 升星规则 + 当前进度 -->
-        <view v-if="parseRules(it).length" class="rules">
-          <view class="rules-title">升星条件</view>
+        <view v-if="getRules(it).length" class="stars-section">
+          <view class="stars-title">本商品升星规则 + 权益</view>
+
           <view
-            v-for="(r, i) in parseRules(it)"
+            v-for="(r, i) in getRules(it)"
             :key="i"
-            :class="['rule-row', (it.currentStar || 0) >= (i + 1) ? 'achieved' : '']"
+            :class="['star-row', (it.currentStar || 0) >= (i + 1) ? 'achieved' : (((it.currentStar || 0) === i) ? 'inprogress' : '')]"
           >
-            <view class="rule-star">
-              <text>{{ i + 1 }}★</text>
-              <text v-if="(it.currentStar || 0) >= (i + 1)" class="check">✓</text>
-            </view>
-            <view class="rule-cond">
-              直推 ≥ <text class="b">{{ r.requiredCount || 0 }}</text> 个
-              <text v-if="r.requiredStar > 0">{{ r.requiredStar }}★ </text>
-              <text v-else>付费用户 </text>
-              + 团队累计 ≥ <text class="b">¥{{ ((r.teamSales || 0) / 100).toFixed(2) }}</text>
+            <view class="star-tag">{{ stars(i + 1) }}</view>
+            <view class="star-body">
+              <view class="star-section-lbl">
+                <template v-if="(it.currentStar || 0) >= (i + 1)">升星条件 <text class="check">✓ 已达成</text></template>
+                <template v-else-if="(it.currentStar || 0) === i">升星条件 · 进行中</template>
+                <template v-else>升星条件</template>
+              </view>
+              <view class="cond">
+                直推 ≥ <text class="b">{{ r.requiredCount || 0 }}</text> 个
+                <text v-if="(r.requiredStar || 0) > 0">{{ stars(r.requiredStar) }} </text>
+                <text v-else>付费 </text>顾客 +
+                团队累计 ≥ <text class="b">¥{{ ((r.teamSales || 0) / 100).toFixed(2) }}</text>
+              </view>
+              <view v-if="(it.currentStar || 0) === i" class="progress-bar"><view class="fill" :style="`width:${pct(it, r)}%`"></view></view>
+              <view v-if="(it.currentStar || 0) === i" class="progress-detail">
+                <text>直推 {{ it.directCount || 0 }} / {{ r.requiredCount || 0 }}</text>
+                <text>团队 ¥{{ ((it.teamSalesAmount || 0) / 100).toFixed(2) }} / ¥{{ ((r.teamSales || 0) / 100).toFixed(2) }}</text>
+              </view>
+              <view class="benefit">
+                <text v-if="(it.currentStar || 0) >= (i + 1)">⚡ 享受权益：</text>
+                <text v-else>⚡ 升上去后享受：</text>
+                <text class="benefit-line">· 团队订单分润 <text class="b">{{ getStarRatio(it, i) }}%</text></text>
+                <text class="benefit-line">· 店铺奖池分润 <text class="b">{{ getPoolShare(it, i + 1) }}%</text></text>
+              </view>
             </view>
           </view>
 
-          <!-- 当前进度（仅显示下一星距离） -->
-          <view v-if="nextRule(it)" class="progress">
-            <view class="prog-row">
-              <text class="prog-lbl">直推 {{ it.directCount || 0 }} / {{ nextRule(it).requiredCount }}</text>
-              <view class="bar"><view class="fill" :style="`width:${pct(it.directCount, nextRule(it).requiredCount)}%`"></view></view>
-            </view>
-            <view class="prog-row">
-              <text class="prog-lbl">团队累计 ¥{{ ((it.teamSalesAmount || 0) / 100).toFixed(2) }} / ¥{{ ((nextRule(it).teamSales || 0) / 100).toFixed(2) }}</text>
-              <view class="bar"><view class="fill" :style="`width:${pct(it.teamSalesAmount, nextRule(it).teamSales)}%`"></view></view>
-            </view>
-          </view>
-          <view v-else class="max-tip">🏆 已达本商品最高星级</view>
+          <view v-if="getRules(it).length && (it.currentStar || 0) >= getRules(it).length" class="max-tip">🏆 已达本商品最高星级</view>
         </view>
-        <view v-else class="no-rules">商家未配置升星规则</view>
+        <view v-else class="no-rules">商家未配置升星规则；按商品「推 N 反 1」直接返奖。</view>
       </view>
     </view>
 
@@ -69,31 +101,62 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
 import { request } from '../../api/request.js';
 
 const tenantId = ref(null);
 const shopName = ref('');
 const items = ref([]);
+const shopAccount = ref({ star: 0, promoPoints: 0, points: 0 });
 const loading = ref(false);
 
-function parseRules(it) {
+const maxStar = computed(() => {
+  let mx = 0;
+  for (const it of items.value) if ((it.currentStar || 0) > mx) mx = it.currentStar;
+  return mx;
+});
+
+function stars(n) {
+  const cnt = Math.max(0, Math.min(10, parseInt(n) || 0));
+  return '⭐'.repeat(cnt);
+}
+function getRules(it) {
   try {
     const arr = JSON.parse(it.starUpgradeRules || '[]');
     return Array.isArray(arr) ? arr : [];
   } catch { return []; }
 }
+function getStarRatios(it) {
+  try {
+    const arr = JSON.parse(it.starRatios || '[]');
+    return Array.isArray(arr) ? arr : [];
+  } catch { return []; }
+}
+function getStarRatio(it, idx) {
+  const arr = getStarRatios(it);
+  return arr[idx] != null ? arr[idx] : 0;
+}
+function getPoolShare(it, star) {
+  // pool dist rules: [{star,ratio,mode,winners?}]
+  try {
+    const arr = JSON.parse(it.poolDistRules || '[]');
+    if (!Array.isArray(arr)) return 0;
+    const m = arr.find(x => Number(x.star) === Number(star));
+    return m ? (m.ratio || 0) : 0;
+  } catch { return 0; }
+}
 function nextRule(it) {
-  const rules = parseRules(it);
+  const rules = getRules(it);
   const s = it.currentStar || 0;
   if (s >= rules.length) return null;
   return rules[s];
 }
-function pct(cur, max) {
-  if (!max || max <= 0) return 0;
-  const v = Math.min(100, Math.round(((cur || 0) / max) * 100));
-  return v;
+function pct(it, r) {
+  if (!r) return 0;
+  const pDirect = r.requiredCount ? Math.min(100, ((it.directCount || 0) / r.requiredCount) * 100) : 100;
+  const pTeam = r.teamSales ? Math.min(100, ((it.teamSalesAmount || 0) / r.teamSales) * 100) : 100;
+  return Math.round((pDirect + pTeam) / 2);
 }
 function goBack() { uni.navigateBack({ fail: () => uni.reLaunch({ url: '/pages/user-me/star' }) }); }
 
@@ -103,10 +166,17 @@ onLoad(async (q) => {
   if (!tenantId.value) return;
   loading.value = true;
   try {
-    const res = await request({
+    // 1) 该店每个 SPU 的星级 + 商品配置
+    const list = await request({
       url: `/app-api/merchant/mini/promo/my-spu-stars?tenantId=${tenantId.value}`,
     });
-    items.value = Array.isArray(res) ? res : [];
+    items.value = Array.isArray(list) ? list : [];
+    // 2) 该店账户余额（推广 / 消费积分；从 my-shops-enriched 单独取）
+    try {
+      const shops = await request({ url: '/app-api/merchant/mini/member-rel/my-shops-enriched' });
+      const me = (shops || []).find(s => s.tenantId === tenantId.value);
+      if (me) shopAccount.value = me;
+    } catch {}
   } catch { items.value = []; }
   finally { loading.value = false; }
 });
@@ -114,11 +184,32 @@ onLoad(async (q) => {
 
 <style lang="scss" scoped>
 @import '../../uni.scss';
-.page { min-height: 100vh; background: $bg-page; }
+.page { min-height: 100vh; background: $bg-page; padding-bottom: 40rpx; }
 .safe-top { padding-top: calc(env(safe-area-inset-top) + 16rpx); }
-.topbar { display: flex; align-items: center; padding: 16rpx 32rpx; background: $bg-card; border-bottom: 1rpx solid $border-color; }
+.topbar { display: flex; align-items: center; padding: 16rpx 32rpx; background: $bg-card; border-bottom: 1rpx solid $border-color; position: sticky; top: 0; z-index: 10; }
 .topbar .back { font-size: 44rpx; color: $text-primary; padding-right: 16rpx; }
-.topbar .title { flex: 1; text-align: center; font-size: 32rpx; font-weight: 600; color: $text-primary; }
+.topbar .title { flex: 1; text-align: center; font-size: 32rpx; font-weight: 600; color: $text-primary; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0 16rpx; }
+
+.shop-hero {
+  margin: 24rpx; padding: 36rpx;
+  background: linear-gradient(135deg, #ff9a4a, $brand-primary);
+  color: #fff; border-radius: $radius-lg;
+  box-shadow: 0 16rpx 40rpx rgba(255,107,53,.30);
+}
+.shop-hero .name { font-size: 34rpx; font-weight: 700; }
+.shop-hero .stats {
+  display: flex; gap: 48rpx; margin-top: 24rpx;
+  padding-top: 24rpx; border-top: 1rpx solid rgba(255,255,255,.2);
+}
+.shop-hero .stat .lbl { font-size: 22rpx; opacity: .85; }
+.shop-hero .stat .val { font-size: 40rpx; font-weight: 800; margin-top: 8rpx; font-variant-numeric: tabular-nums; }
+.shop-hero .stat .val.stars { font-size: 36rpx; letter-spacing: 4rpx; }
+.shop-hero .hero-tip {
+  margin-top: 20rpx; padding-top: 16rpx;
+  border-top: 1rpx solid rgba(255,255,255,.2);
+  font-size: 22rpx; line-height: 1.55; opacity: .92;
+  .b { font-weight: 700; }
+}
 
 .empty-tip { text-align: center; padding: 80rpx 0; color: $text-placeholder; font-size: 26rpx; }
 .empty-state { text-align: center; padding: 120rpx 60rpx; }
@@ -126,59 +217,96 @@ onLoad(async (q) => {
 .empty-state .empty-title { font-size: 32rpx; font-weight: 700; color: $text-primary; }
 .empty-state .empty-sub { margin-top: 12rpx; font-size: 24rpx; color: $text-placeholder; }
 
-.list { padding: 24rpx 32rpx; }
+.list { padding: 0 24rpx; }
 .spu-card {
   background: $bg-card; border-radius: $radius-lg;
-  padding: 28rpx; margin-bottom: 20rpx;
-  box-shadow: 0 2rpx 12rpx rgba(15,23,42,.04);
+  padding: 32rpx; margin-bottom: 24rpx;
+  box-shadow: 0 4rpx 16rpx rgba(15,23,42,.04);
 }
-.spu-head { display: flex; align-items: center; gap: 20rpx; }
+.spu-head { display: flex; align-items: center; gap: 24rpx; }
 .spu-pic {
-  width: 96rpx; height: 96rpx; border-radius: $radius-md;
-  background: #f6f7f9;
-  flex-shrink: 0;
+  width: 112rpx; height: 112rpx; border-radius: $radius-md;
+  background: #f6f7f9; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
-  font-size: 44rpx; color: $text-placeholder;
+  font-size: 52rpx; color: $text-placeholder;
 }
 .spu-info { flex: 1; min-width: 0; }
-.spu-name { font-size: 28rpx; font-weight: 600; color: $text-primary; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.spu-star { margin-top: 8rpx; }
-.star-badge {
-  display: inline-block;
-  padding: 4rpx 16rpx;
+.spu-name { font-size: 30rpx; font-weight: 600; color: $text-primary; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.spu-current { margin-top: 12rpx; display: flex; align-items: center; gap: 16rpx; flex-wrap: wrap; }
+.spu-current .badge {
+  display: inline-block; padding: 6rpx 24rpx;
   background: linear-gradient(135deg, #fff5ef, #ffd1ba);
-  color: $brand-primary;
-  border-radius: 999rpx;
-  font-size: 24rpx; font-weight: 700;
+  color: $brand-primary; border-radius: 999rpx;
+  font-size: 26rpx; font-weight: 700;
+  letter-spacing: 4rpx;
 }
-.star-badge.zero { background: #f6f7f9; color: $text-placeholder; font-weight: 400; }
+.spu-current .badge.zero { background: #f6f7f9; color: $text-placeholder; font-weight: 400; letter-spacing: 0; }
+.spu-current .progress-text { font-size: 22rpx; color: $text-secondary; }
 
-.rules { margin-top: 24rpx; padding-top: 20rpx; border-top: 1rpx dashed $border-color; }
-.rules-title { font-size: 24rpx; font-weight: 700; color: $text-primary; margin-bottom: 12rpx; }
-.rule-row {
-  display: flex; align-items: center;
-  padding: 12rpx 0;
-  font-size: 24rpx;
+.stars-section { margin-top: 32rpx; padding-top: 32rpx; border-top: 1rpx dashed $border-color; }
+.stars-title { font-size: 26rpx; font-weight: 700; color: $text-primary; margin-bottom: 24rpx; }
+
+.star-row {
+  display: flex; gap: 20rpx; padding: 24rpx;
+  background: #fafbfd; border-radius: $radius-sm;
+  margin-bottom: 16rpx;
+  border-left: 6rpx solid $border-color;
 }
-.rule-row .rule-star {
-  width: 80rpx; flex-shrink: 0;
-  font-size: 24rpx; font-weight: 700; color: $text-placeholder;
+.star-row.achieved {
+  background: linear-gradient(90deg, #fff5ef, #fff);
+  border-left-color: $brand-primary;
 }
-.rule-row.achieved .rule-star { color: $brand-primary; }
-.rule-row .rule-star .check { color: $success; margin-left: 4rpx; }
-.rule-row .rule-cond { flex: 1; color: $text-secondary; }
-.rule-row.achieved .rule-cond { color: $text-primary; }
-.rule-row .b { color: $brand-primary; font-weight: 700; }
+.star-row.inprogress {
+  background: linear-gradient(90deg, #fffbf3, #fff);
+  border-left-color: #f59e0b;
+}
+.star-row .star-tag {
+  flex-shrink: 0; width: 180rpx; padding: 14rpx 0;
+  border-radius: $radius-sm; background: #eaeef2; color: $text-placeholder;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22rpx; letter-spacing: 2rpx;
+  line-height: 1; height: fit-content;
+  white-space: nowrap;
+}
+.star-row.achieved .star-tag {
+  background: linear-gradient(135deg, #ff9a4a, $brand-primary); color: #fff;
+  box-shadow: 0 4rpx 12rpx rgba(255,107,53,.25);
+}
+.star-row.inprogress .star-tag {
+  background: linear-gradient(135deg, #fcd34d, #f59e0b); color: #fff;
+}
+.star-row .star-body { flex: 1; min-width: 0; font-size: 24rpx; line-height: 1.65; }
+.star-row .star-section-lbl { color: $text-placeholder; font-size: 22rpx; font-weight: 600; margin-bottom: 4rpx; }
+.star-row .check { color: $success; font-weight: 700; margin-left: 8rpx; }
+.star-row .cond { color: $text-secondary; }
+.star-row.achieved .cond { color: $text-primary; }
+.star-row .b { color: $brand-primary; font-weight: 700; }
 
-.progress { margin-top: 16rpx; padding: 16rpx; background: #f6f7f9; border-radius: $radius-sm; }
-.prog-row { margin-bottom: 12rpx; }
-.prog-row:last-child { margin-bottom: 0; }
-.prog-lbl { display: block; font-size: 22rpx; color: $text-secondary; margin-bottom: 6rpx; font-variant-numeric: tabular-nums; }
-.bar { height: 12rpx; border-radius: 6rpx; background: #fff; overflow: hidden; }
-.bar .fill { height: 100%; background: $brand-primary; border-radius: 6rpx; transition: width .35s ease-out; }
+.star-row .progress-bar {
+  margin-top: 12rpx; height: 10rpx; border-radius: 5rpx;
+  background: #f0f2f5; overflow: hidden;
+}
+.star-row .progress-bar .fill {
+  height: 100%; background: linear-gradient(90deg, #ff9a4a, $brand-primary);
+  border-radius: 5rpx; transition: width .35s ease-out;
+}
+.star-row .progress-detail {
+  margin-top: 8rpx; font-size: 22rpx; color: $text-placeholder;
+  display: flex; justify-content: space-between;
+}
+.star-row .benefit {
+  margin-top: 12rpx; color: $brand-primary;
+  display: flex; flex-direction: column; gap: 4rpx;
+}
+.star-row .benefit-line { font-size: 24rpx; }
 
-.max-tip { margin-top: 16rpx; padding: 16rpx; text-align: center; background: linear-gradient(135deg, #fff8e1, #ffe7a3); border-radius: $radius-sm; font-size: 24rpx; color: #b07b15; }
-.no-rules { margin-top: 24rpx; padding-top: 20rpx; border-top: 1rpx dashed $border-color; text-align: center; color: $text-placeholder; font-size: 24rpx; }
+.no-rules { margin-top: 32rpx; padding: 24rpx; text-align: center; color: $text-placeholder; font-size: 24rpx; background: #fafbfd; border-radius: $radius-sm; }
+.max-tip {
+  margin-top: 16rpx; padding: 20rpx; text-align: center;
+  background: linear-gradient(135deg, #fff8e1, #ffe7a3);
+  border-radius: $radius-sm; font-size: 26rpx; color: #b07b15;
+  font-weight: 700;
+}
 
 .bottom-space { height: 80rpx; }
 </style>

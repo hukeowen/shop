@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>店铺商品星级（详情）</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif; color: #1a1d24; background: #f6f7f9; }
+  body { max-width: 540px; margin: 0 auto; min-height: 100vh; padding-bottom: 40px; }
+  .topbar {
+    display: flex; align-items: center; padding: 16px;
+    background: #fff; border-bottom: 1px solid #eaeef2; position: sticky; top: 0; z-index: 10;
+  }
+  .topbar .back { font-size: 24px; color: #1a1d24; width: 32px; }
+  .topbar .title { flex: 1; text-align: center; font-size: 17px; font-weight: 600; }
+
+  .shop-hero {
+    margin: 12px; padding: 18px;
+    background: linear-gradient(135deg, #ff9a4a, #ff6b35);
+    color: #fff; border-radius: 14px;
+    box-shadow: 0 8px 20px rgba(255,107,53,.30);
+  }
+  .shop-hero .name { font-size: 18px; font-weight: 700; }
+  .shop-hero .stats {
+    display: flex; gap: 24px; margin-top: 12px;
+    padding-top: 12px; border-top: 1px solid rgba(255,255,255,.2);
+  }
+  .shop-hero .stat .lbl { font-size: 12px; opacity: .85; }
+  .shop-hero .stat .val { font-size: 20px; font-weight: 800; margin-top: 4px; font-variant-numeric: tabular-nums; }
+
+  .list { padding: 0 12px; }
+  .spu-card {
+    background: #fff; border-radius: 14px;
+    padding: 16px; margin-bottom: 12px;
+    box-shadow: 0 2px 8px rgba(15,23,42,.04);
+  }
+  .spu-head { display: flex; align-items: center; gap: 12px; }
+  .spu-pic {
+    width: 56px; height: 56px; border-radius: 10px;
+    background: #f6f7f9; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px;
+  }
+  .spu-info { flex: 1; min-width: 0; }
+  .spu-name { font-size: 16px; font-weight: 600; color: #1a1d24; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .spu-current {
+    margin-top: 6px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .spu-current .badge {
+    display: inline-block; padding: 3px 12px;
+    background: linear-gradient(135deg, #fff5ef, #ffd1ba);
+    color: #ff6b35; border-radius: 999px;
+    font-size: 13px; font-weight: 700;
+  }
+  .spu-current .badge.zero { background: #f6f7f9; color: #9ca3af; font-weight: 500; }
+  .spu-current .progress-text { font-size: 12px; color: #6b7280; }
+
+  .progress-bar {
+    margin-top: 12px; height: 6px; border-radius: 3px;
+    background: #f0f2f5; overflow: hidden;
+  }
+  .progress-bar .fill {
+    height: 100%; background: linear-gradient(90deg, #ff9a4a, #ff6b35);
+    border-radius: 3px;
+  }
+  .progress-detail {
+    margin-top: 6px; font-size: 11px; color: #6b7280;
+    display: flex; justify-content: space-between;
+  }
+
+  .stars-section { margin-top: 16px; padding-top: 16px; border-top: 1px dashed #eaeef2; }
+  .stars-title { font-size: 13px; font-weight: 700; color: #1a1d24; margin-bottom: 12px; }
+  .star-row {
+    display: flex; gap: 10px; padding: 12px;
+    background: #fafbfd; border-radius: 8px;
+    margin-bottom: 10px;
+    border-left: 3px solid #eaeef2;
+  }
+  .star-row.achieved { background: linear-gradient(90deg, #fff5ef, #fff); border-left-color: #ff6b35; }
+  .star-row .star-tag {
+    flex-shrink: 0; width: 90px; padding: 7px 0;
+    border-radius: 8px; background: #eaeef2; color: #9ca3af;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; letter-spacing: 1px;
+    line-height: 1; height: fit-content;
+    white-space: nowrap;
+  }
+  .star-row.achieved .star-tag {
+    background: linear-gradient(135deg, #ff9a4a, #ff6b35); color: #fff;
+    box-shadow: 0 4px 8px rgba(255,107,53,.25);
+  }
+  .star-row .star-body { flex: 1; min-width: 0; font-size: 12px; line-height: 1.65; }
+  .star-row .star-section-lbl { color: #9ca3af; font-size: 11px; font-weight: 600; margin-bottom: 2px; }
+  .star-row .cond { color: #5a6577; }
+  .star-row .benefit { color: #ff6b35; font-weight: 600; margin-top: 4px; }
+  .star-row.achieved .cond { color: #1a1d24; }
+  .star-row .check { color: #16a34a; font-weight: 700; margin-left: 4px; }
+  .star-row .b { color: #ff6b35; font-weight: 700; }
+
+  .no-rules {
+    margin-top: 16px; padding: 20px; text-align: center;
+    color: #9ca3af; font-size: 13px;
+    background: #fafbfd; border-radius: 8px;
+  }
+  .max-tip {
+    margin-top: 16px; padding: 16px; text-align: center;
+    background: linear-gradient(135deg, #fff8e1, #ffe7a3);
+    border-radius: 8px; font-size: 13px; color: #b07b15;
+    font-weight: 700;
+  }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="back">‹</div>
+    <div class="title">爱家超市 · 商品星级</div>
+    <div style="width:32px"></div>
+  </div>
+
+  <!-- 店铺汇总 -->
+  <div class="shop-hero">
+    <div class="name">🏪 爱家超市</div>
+    <div class="stats">
+      <div class="stat">
+        <div class="lbl">最高星级</div>
+        <div class="val" style="font-size:22px;letter-spacing:2px;">⭐⭐⭐</div>
+      </div>
+      <div class="stat">
+        <div class="lbl">推广积分</div>
+        <div class="val">12.50</div>
+      </div>
+      <div class="stat">
+        <div class="lbl">消费积分</div>
+        <div class="val">191.00</div>
+      </div>
+    </div>
+    <div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.2);font-size:11px;line-height:1.55;opacity:.92;">
+      💡 <b>推广积分</b>可线下到商家提现 · <b>消费积分</b>下次消费直接抵扣（1 积分 = 1 元）
+    </div>
+  </div>
+
+  <!-- 商品 1：已达 3 星 -->
+  <div class="list">
+    <div class="spu-card">
+      <div class="spu-head">
+        <div class="spu-pic">🥩</div>
+        <div class="spu-info">
+          <div class="spu-name">红烧牛肉面（推 3 反 1）</div>
+          <div class="spu-current">
+            <span class="badge" style="letter-spacing:2px;">⭐⭐⭐</span>
+            <span class="progress-text">满星</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="stars-section">
+        <div class="stars-title">本商品升星规则 + 权益</div>
+
+        <div class="star-row achieved">
+          <div class="star-tag">⭐</div>
+          <div class="star-body">
+            <div class="star-section-lbl">升星条件 <span class="check">✓ 已达成</span></div>
+            <div class="cond">直推 ≥ <span class="b">2</span> 个付费用户 + 团队累计 ≥ <span class="b">¥3.00</span></div>
+            <div class="benefit">
+              ⚡ 享受权益：<br>
+              · 团队订单分润 <span class="b">5%</span><br>
+              · 店铺奖池分润 <span class="b">10%</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="star-row achieved">
+          <div class="star-tag">⭐⭐</div>
+          <div class="star-body">
+            <div class="star-section-lbl">升星条件 <span class="check">✓ 已达成</span></div>
+            <div class="cond">直推 ≥ <span class="b">3</span> 个 ⭐ 顾客 + 团队累计 ≥ <span class="b">¥9.00</span></div>
+            <div class="benefit">
+              ⚡ 享受权益：<br>
+              · 团队订单分润 <span class="b">8%</span><br>
+              · 店铺奖池分润 <span class="b">20%</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="star-row achieved">
+          <div class="star-tag">⭐⭐⭐</div>
+          <div class="star-body">
+            <div class="star-section-lbl">升星条件 <span class="check">✓ 已达成</span></div>
+            <div class="cond">直推 ≥ <span class="b">5</span> 个 ⭐⭐ 顾客 + 团队累计 ≥ <span class="b">¥27.00</span></div>
+            <div class="benefit">
+              ⚡ 享受权益：<br>
+              · 团队订单分润 <span class="b">12%</span><br>
+              · 店铺奖池分润 <span class="b">30%</span>（抽奖名额 <span class="b">10</span> 位）
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="max-tip">🏆 已达本商品最高星级</div>
+    </div>
+
+    <!-- 商品 2：进行中 1 星，正向 2 星 -->
+    <div class="spu-card">
+      <div class="spu-head">
+        <div class="spu-pic">🍵</div>
+        <div class="spu-info">
+          <div class="spu-name">海福盛干贝炖鸡粥（推 4 反 1）</div>
+          <div class="spu-current">
+            <span class="badge">⭐</span>
+            <span class="progress-text">距 ⭐⭐ 还差 1 个 ⭐ 下级</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="stars-section">
+        <div class="stars-title">本商品升星规则 + 权益</div>
+
+        <div class="star-row achieved">
+          <div class="star-tag">⭐</div>
+          <div class="star-body">
+            <div class="star-section-lbl">升星条件 <span class="check">✓ 已达成</span></div>
+            <div class="cond">直推 ≥ <span class="b">2</span> 个付费用户</div>
+            <div class="benefit">
+              ⚡ 享受权益：<br>
+              · 团队订单分润 <span class="b">5%</span><br>
+              · 店铺奖池分润 <span class="b">10%</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="star-row">
+          <div class="star-tag">⭐⭐</div>
+          <div class="star-body">
+            <div class="star-section-lbl">升星条件 · 进行中</div>
+            <div class="cond">直推 ≥ <span class="b">2</span> 个 ⭐ 顾客 + 团队累计 ≥ <span class="b">¥40.00</span></div>
+            <div class="progress-bar"><div class="fill" style="width:50%"></div></div>
+            <div class="progress-detail"><span>直推 1/2</span><span>团队 ¥28.50 / ¥40.00</span></div>
+            <div class="benefit">
+              ⚡ 升上去后享受：<br>
+              · 团队订单分润 <span class="b">8%</span><br>
+              · 店铺奖池分润 <span class="b">20%</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="star-row">
+          <div class="star-tag">⭐⭐⭐</div>
+          <div class="star-body">
+            <div class="star-section-lbl">升星条件</div>
+            <div class="cond">直推 ≥ <span class="b">3</span> 个 ⭐⭐ 顾客 + 团队累计 ≥ <span class="b">¥120.00</span></div>
+            <div class="benefit">
+              ⚡ 升上去后享受：<br>
+              · 团队订单分润 <span class="b">12%</span><br>
+              · 店铺奖池分润 <span class="b">30%</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="star-row">
+          <div class="star-tag">⭐⭐⭐⭐</div>
+          <div class="star-body">
+            <div class="star-section-lbl">升星条件</div>
+            <div class="cond">直推 ≥ <span class="b">5</span> 个 ⭐⭐⭐ 顾客 + 团队累计 ≥ <span class="b">¥360.00</span></div>
+            <div class="benefit">
+              ⚡ 升上去后享受：<br>
+              · 团队订单分润 <span class="b">18%</span><br>
+              · 店铺奖池分润 <span class="b">40%</span>（抽奖名额 <span class="b">15</span> 位）
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 商品 3：商家未配置星级 -->
+    <div class="spu-card">
+      <div class="spu-head">
+        <div class="spu-pic">🍓</div>
+        <div class="spu-info">
+          <div class="spu-name">新疆西梅（仅推 N 反 1）</div>
+          <div class="spu-current"><span class="badge zero">本商品未配星级</span></div>
+        </div>
+      </div>
+      <div class="no-rules">商家未配置升星规则；按商品「推 N 反 1」直接返奖。</div>
+    </div>
+  </div>
+</body>
+</html>
