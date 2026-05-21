@@ -140,6 +140,11 @@ async function onPasswordLogin() {
   passwordLogining.value = true;
   try {
     await userStore.passwordLogin(loginMobile.value.trim(), loginPassword.value);
+    // 落地页存了 ?inviter= → 登录成功后立即绑定（兜底；shop-home onLoad 也会再 flush 一次）
+    try {
+      const { flushPendingReferrer } = await import('../../utils/referral.js');
+      await flushPendingReferrer(userStore.userId);
+    } catch {}
     uni.showToast({ title: '登录成功', icon: 'success' });
     routeByRole();
   } catch (e) {

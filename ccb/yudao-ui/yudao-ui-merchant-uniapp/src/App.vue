@@ -96,19 +96,15 @@ export default {
 
     // ⭐ 店铺分享场景：顶层带 ?tenantId=...，访问者一定是 C 端用户
     //   - 已登录 → reLaunch shop-home（消费 redirect:after-login）
-    //   - 未登录 → reLaunch user-login，把 redirect 当 query 传过去，登录页据 tenantId 拉店铺名
+    //   - 未登录 → 也 reLaunch 到 shop-home（让用户先浏览；inviter 已 captureLandingInviter
+    //     存到 localStorage，登录后由 referral.js flushPendingReferrer 自动绑定）
+    //     下单 / 加购需登录由 shop-home 的 modal + 后续 checkout 跳转处理
     if (landingRoute === 'shop-share') {
       const target = (typeof localStorage !== 'undefined'
         ? localStorage.getItem('redirect:after-login') : '') || '/pages/user-home/index';
       try {
-        if (userStore.token) {
-          if (typeof localStorage !== 'undefined') localStorage.removeItem('redirect:after-login');
-          uni.reLaunch({ url: target });
-        } else {
-          uni.reLaunch({
-            url: `/pages/login/index?redirect=${encodeURIComponent(target)}`,
-          });
-        }
+        if (typeof localStorage !== 'undefined') localStorage.removeItem('redirect:after-login');
+        uni.reLaunch({ url: target });
       } catch {}
       return;
     }
