@@ -102,28 +102,34 @@ public class AppMerchantPromoController {
     @cn.iocoder.yudao.framework.tenant.core.aop.TenantIgnore
     public CommonResult<PromoConfigRespVO> getConfig(
             @RequestParam(name = "tenantId", required = false) Long tenantId) {
-        // C 端跨店：显式传 tenantId → 切上下文到该店；商户自己看自家 → 不传走 ctx
-        Long oldTid = cn.iocoder.yudao.framework.tenant.core.context.TenantContextHolder.getTenantId();
-        if (tenantId != null && tenantId > 0) {
-            cn.iocoder.yudao.framework.tenant.core.context.TenantContextHolder.setTenantId(tenantId);
-            cn.iocoder.yudao.framework.tenant.core.context.TenantContextHolder.setIgnore(false);
+        // 决定查哪个 tenant：
+        //   1) query 显式 tenantId → 用它（C 端跨店 / 商户老板从 storage 读 merchant tenant）
+        //   2) 否则用 JWT token 自带 tenant（issueTokenForMerchant 签发时设的 merchant tenant）
+        // 注：@TenantIgnore 让本方法 ctx 是 ignore，selectCurrent 用的空 wrapper 在 ignore 下
+        //     会全表 selectOne 撞 TooManyResults。必须显式 execute 一个具体 tenant。
+        Long targetTenant = (tenantId != null && tenantId > 0)
+                ? tenantId
+                : cn.iocoder.yudao.framework.tenant.core.context.TenantContextHolder.getTenantId();
+        if (targetTenant == null || targetTenant <= 0) {
+            // tenant 既没在 query 也不在 token → 返默认（空配置）
+            return success(new PromoConfigRespVO());
         }
-        try {
+        return cn.iocoder.yudao.framework.tenant.core.util.TenantUtils.execute(targetTenant, () -> {
+            Long ctxTenant = cn.iocoder.yudao.framework.tenant.core.context.TenantContextHolder.getTenantId();
             PromoConfigDO config = promoConfigService.getConfig();
+            log.info("[GET /config] target={} ctx={} configId={} np={}",
+                    targetTenant, ctxTenant,
+                    config == null ? null : config.getId(),
+                    config == null ? null : config.getNaturalPushEnabled());
             PromoConfigRespVO resp = new PromoConfigRespVO();
             BeanUtils.copyProperties(config, resp);
-            // BeanUtils 在 JDK8 反射 corner case 不拷 BigDecimal/Boolean 包装类，主动兜底
+            resp.setId(config.getId());
             resp.setDirectCommissionRatio(config.getDirectCommissionRatio());
             resp.setNaturalPushEnabled(config.getNaturalPushEnabled());
             resp.setConsumePointRedeemEnabled(config.getConsumePointRedeemEnabled());
             resp.setConsumePointRedeemRatio(config.getConsumePointRedeemRatio());
             return success(resp);
-        } finally {
-            // 复位上下文（避免污染后续同请求其他 service）
-            if (tenantId != null && tenantId > 0) {
-                cn.iocoder.yudao.framework.tenant.core.context.TenantContextHolder.setTenantId(oldTid);
-            }
-        }
+        });
     }
 
     @PutMapping("/config")
