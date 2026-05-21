@@ -28,6 +28,28 @@
       </view>
     </view>
 
+    <!-- 分享拉新卡片 -->
+    <view class="share-card">
+      <view class="share-info">
+        <view class="share-title">🎁 分享这家店给朋友</view>
+        <view class="share-sub">朋友通过你的链接消费，按商品规则给你返团队订单分润</view>
+      </view>
+      <view class="share-actions">
+        <view class="share-btn primary" @click="onCopyLink">复制邀请链接</view>
+        <view class="share-btn ghost" @click="onShowQr">生成二维码</view>
+      </view>
+    </view>
+
+    <!-- QR 弹层 -->
+    <view v-if="qrShow" class="qr-mask" @click="qrShow=false">
+      <view class="qr-modal" @click.stop>
+        <view class="qr-title">长按二维码 → 保存 / 分享给朋友</view>
+        <image v-if="qrUrl" class="qr-img" :src="qrUrl" mode="aspectFit" />
+        <view class="qr-link">{{ shareUrl }}</view>
+        <view class="qr-close" @click="qrShow=false">关闭</view>
+      </view>
+    </view>
+
     <view v-if="loading && !items.length" class="empty-tip">加载中…</view>
     <view v-else-if="!items.length" class="empty-state">
       <view class="empty-emoji">🛍</view>
@@ -104,12 +126,51 @@
 import { ref, computed } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
 import { request } from '../../api/request.js';
+import { useUserStore } from '../../store/user.js';
 
+const userStore = useUserStore();
 const tenantId = ref(null);
 const shopName = ref('');
 const items = ref([]);
 const shopAccount = ref({ star: 0, promoPoints: 0, points: 0 });
 const loading = ref(false);
+const qrShow = ref(false);
+
+const shareUrl = computed(() => {
+  if (!tenantId.value) return '';
+  const inviter = userStore.userId || '';
+  // 强制走 ke. 域；shop-home 顶层 query 让 App.vue 走 shop-share 分支
+  let origin = 'https://ke.doupaidoudian.com';
+  try {
+    if (typeof location !== 'undefined' && location.origin && /doupaidoudian/i.test(location.origin)) {
+      const u = new URL(location.origin);
+      u.host = u.host.replace(/^(tuo|www|admin)\./, 'ke.');
+      if (!/^ke\./.test(u.host)) u.host = 'ke.' + u.host.replace(/^[^.]+\./, '');
+      origin = u.origin;
+    }
+  } catch {}
+  return `${origin}/m/shop-home?tenantId=${tenantId.value}${inviter ? `&inviter=${inviter}` : ''}`;
+});
+const qrUrl = computed(() => {
+  if (!shareUrl.value) return '';
+  const base = (typeof location !== 'undefined' && location.origin) ? location.origin : '';
+  return `${base}/qr?text=${encodeURIComponent(shareUrl.value)}&w=480&m=1&center=${encodeURIComponent(shopName.value || '店铺')}`;
+});
+
+function onCopyLink() {
+  if (!shareUrl.value) {
+    uni.showToast({ title: '链接生成失败', icon: 'none' });
+    return;
+  }
+  uni.setClipboardData({
+    data: shareUrl.value,
+    success: () => uni.showToast({ title: '邀请链接已复制', icon: 'success' }),
+    fail: () => uni.showToast({ title: '复制失败', icon: 'none' }),
+  });
+}
+function onShowQr() {
+  qrShow.value = true;
+}
 
 const maxStar = computed(() => {
   let mx = 0;
@@ -209,6 +270,49 @@ onLoad(async (q) => {
   border-top: 1rpx solid rgba(255,255,255,.2);
   font-size: 22rpx; line-height: 1.55; opacity: .92;
   .b { font-weight: 700; }
+}
+
+.share-card {
+  margin: 0 24rpx 24rpx; padding: 28rpx;
+  background: $bg-card; border-radius: $radius-lg;
+  box-shadow: 0 4rpx 16rpx rgba(15,23,42,.04);
+}
+.share-card .share-info { margin-bottom: 20rpx; }
+.share-card .share-title { font-size: 28rpx; font-weight: 700; color: $text-primary; }
+.share-card .share-sub { margin-top: 6rpx; font-size: 22rpx; color: $text-secondary; line-height: 1.55; }
+.share-card .share-actions { display: flex; gap: 16rpx; }
+.share-card .share-btn {
+  flex: 1; height: 76rpx; line-height: 76rpx;
+  text-align: center; font-size: 26rpx; font-weight: 600;
+  border-radius: $radius-md;
+}
+.share-card .share-btn.primary { background: $brand-primary; color: #fff; }
+.share-card .share-btn.ghost { background: rgba(255,107,53,.08); color: $brand-primary; border: 2rpx solid rgba(255,107,53,.4); }
+
+.qr-mask {
+  position: fixed; inset: 0; z-index: 100;
+  background: rgba(0,0,0,.6);
+  display: flex; align-items: center; justify-content: center;
+  padding: 32rpx;
+}
+.qr-modal {
+  width: 80%; max-width: 600rpx;
+  background: #fff; border-radius: $radius-lg;
+  padding: 40rpx 32rpx;
+  text-align: center;
+}
+.qr-modal .qr-title { font-size: 26rpx; color: $text-primary; font-weight: 600; margin-bottom: 24rpx; }
+.qr-modal .qr-img { width: 400rpx; height: 400rpx; }
+.qr-modal .qr-link {
+  margin-top: 20rpx; padding: 16rpx;
+  background: #f6f7f9; border-radius: $radius-sm;
+  font-size: 22rpx; color: $text-secondary;
+  word-break: break-all;
+}
+.qr-modal .qr-close {
+  margin-top: 24rpx;
+  padding: 16rpx; font-size: 28rpx;
+  color: $brand-primary; font-weight: 600;
 }
 
 .empty-tip { text-align: center; padding: 80rpx 0; color: $text-placeholder; font-size: 26rpx; }
