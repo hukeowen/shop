@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>用户端 H5 · v8 暖橙克制版</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
+  body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;background:#1a1410;min-height:100vh;padding:32px 24px;display:flex;flex-wrap:wrap;gap:32px;justify-content:center;color:#fff}
+  :root{
+    --bg:#1a1410;--bg-card:#1f1a14;--bg-card2:#2a201a;--line:rgba(255,255,255,.08);
+    --ink:#fff;--mute:#8a8aa0;--mute2:#5a5a70;
+    --p1:#e8721b;--p2:#f59546;--p3:#d4920a;
+    --a1:#e8721b;--a2:#d4920a;--a3:#22a06b;
+    --warn:#d4920a;--danger:#c93030;--ok:#22a06b;
+  }
+  .frame{width:390px;height:844px;background:#1a1410;border-radius:48px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.04);position:relative;display:flex;flex-direction:column}
+  .frame-label{position:absolute;top:-32px;left:50%;transform:translateX(-50%);color:#8a8aa0;font-size:11px;font-weight:600;letter-spacing:3px;text-transform:uppercase}
+  .statusbar{height:44px;display:flex;justify-content:space-between;align-items:center;padding:0 28px;font-size:14px;font-weight:700;color:#fff;flex-shrink:0}
+  .body{flex:1;overflow-y:auto;padding-bottom:88px}
+  .body::-webkit-scrollbar{display:none}
+
+  /* 通用 */
+  .gradient-text{background:linear-gradient(135deg,var(--p1),var(--p2),var(--p3));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+  .glow-card{position:relative;overflow:hidden}
+  .glow-card::before{content:'';position:absolute;inset:0;background:radial-gradient(800px circle at var(--mx,30%) var(--my,20%),rgba(232,114,27,.15),transparent 60%);pointer-events:none}
+
+  /* ===== 首页 ===== */
+  .home-hd{padding:14px 22px 0;display:flex;justify-content:space-between;align-items:center}
+  .greet{display:flex;align-items:center;gap:10px}
+  .av{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#e8721b,#d4920a);border:2px solid rgba(255,255,255,.1)}
+  .greet-t{font-size:13px;color:var(--mute);font-weight:500}
+  .greet-t b{color:#fff;font-weight:800}
+  .head-ics{display:flex;gap:8px}
+  .head-ic{width:36px;height:36px;border-radius:12px;background:rgba(255,255,255,.05);display:flex;align-items:center;justify-content:center;font-size:14px;position:relative}
+  .head-dot{position:absolute;top:8px;right:8px;width:6px;height:6px;background:#c93030;border-radius:50%}
+
+  /* 收益 hero 卡 */
+  .earn-card{margin:18px 14px 0;background:linear-gradient(135deg,#2a1810 0%,#3a2010 50%,#4a2810 100%);border-radius:24px;padding:22px;position:relative;overflow:hidden;border:1px solid rgba(232,114,27,.3)}
+  .earn-card::before{content:'';position:absolute;top:-50%;right:-30%;width:300px;height:300px;background:radial-gradient(circle,rgba(232,114,27,.25),transparent 60%);pointer-events:none}
+  .earn-card::after{content:'';position:absolute;bottom:-30%;left:-20%;width:240px;height:240px;background:radial-gradient(circle,rgba(212,146,10,.18),transparent 60%);pointer-events:none}
+  .earn-l{display:flex;align-items:center;gap:6px;font-size:11px;color:#e8c89a;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;position:relative}
+  .earn-l::before{content:'💎';font-size:13px}
+  .earn-v{font-size:46px;font-weight:900;letter-spacing:-2px;margin-top:8px;line-height:1;position:relative}
+  .earn-v small{font-size:18px;font-weight:700;opacity:.7;margin-left:3px}
+  .earn-tag{display:inline-block;margin-top:8px;padding:3px 10px;background:rgba(232,114,27,.18);color:#f5b27a;border-radius:6px;font-size:10px;font-weight:700;position:relative}
+  .earn-bot{margin-top:18px;display:flex;justify-content:space-between;align-items:center;position:relative}
+  .earn-act{display:flex;gap:8px}
+  .earn-btn{padding:8px 16px;background:rgba(255,255,255,.1);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.15);color:#fff;border-radius:12px;font-size:11px;font-weight:700;display:flex;align-items:center;gap:4px}
+  .earn-btn.primary{background:linear-gradient(135deg,#e8721b,#f59546);border:none;box-shadow:0 6px 20px rgba(232,114,27,.4)}
+  .earn-mini{display:flex;gap:14px}
+  .em{font-size:10px;color:#b8a888;font-weight:600}
+  .em b{display:block;font-size:14px;font-weight:800;color:#fff;margin-top:2px}
+
+  /* 推 N 反 1 进度卡 */
+  .promo-card{margin:14px;background:var(--bg-card);border-radius:20px;padding:18px;border:1px solid var(--line);position:relative;overflow:hidden}
+  .promo-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(232,114,27,.08),transparent 60%);pointer-events:none}
+  .promo-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;position:relative}
+  .promo-t{font-size:14px;font-weight:800;display:flex;align-items:center;gap:8px}
+  .promo-t::before{content:'';width:6px;height:6px;border-radius:50%;background:#22a06b;box-shadow:0 0 12px #22a06b;animation:pulse 2s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+  .promo-step{font-size:11px;color:var(--mute);font-weight:600}
+  .promo-step b{color:var(--ok);font-weight:800}
+
+  .progress{display:flex;gap:6px;position:relative;height:32px;align-items:center}
+  .p-node{flex:1;height:6px;background:rgba(255,255,255,.08);border-radius:99px;position:relative;overflow:hidden}
+  .p-node.done{background:linear-gradient(90deg,#e8721b,#d4920a);box-shadow:0 0 12px rgba(77,214,255,.5)}
+  .p-node.cur{background:linear-gradient(90deg,#e8721b 0%,#f59546 50%,transparent 50%);background-size:200% 100%;animation:slide 2s linear infinite}
+  @keyframes slide{0%{background-position:200% 0}100%{background-position:0 0}}
+  .p-step{position:absolute;top:14px;font-size:9px;color:var(--mute);font-weight:600;left:0;width:100%;text-align:center;letter-spacing:1px}
+  .p-step.done{color:#22a06b}
+  .p-step.cur{color:#f59546;font-weight:800}
+
+  .promo-tip{margin-top:14px;padding:10px 12px;background:rgba(34,160,107,.08);border-left:3px solid #22a06b;border-radius:6px;font-size:11px;color:#9ad4a8;font-weight:500;position:relative}
+  .promo-tip b{color:#22a06b;font-weight:800}
+
+  /* 区块标题 */
+  .sec{padding:22px 22px 12px;display:flex;justify-content:space-between;align-items:flex-end}
+  .sec-t{font-size:20px;font-weight:900;letter-spacing:-.5px}
+  .sec-t small{font-size:10px;color:var(--mute);font-weight:600;margin-left:6px;letter-spacing:1px;text-transform:uppercase}
+  .sec-more{font-size:11px;color:var(--mute);font-weight:600}
+
+  /* 分类圆 */
+  .cats{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;padding:0 14px}
+  .cat-i{display:flex;flex-direction:column;align-items:center;gap:6px;padding:8px 0}
+  .cat-c{width:46px;height:46px;border-radius:16px;background:linear-gradient(135deg,#2a201a,#1f1a14);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:22px;position:relative}
+  .cat-c.hot::after{content:'热';position:absolute;top:-3px;right:-3px;font-size:8px;font-weight:800;padding:1px 4px;background:linear-gradient(135deg,#e8721b,#f59546);border-radius:6px;color:#fff}
+  .cat-l{font-size:10px;color:var(--mute);font-weight:600}
+
+  /* 中奖横滚 */
+  .ticker{margin:18px 14px 0;padding:10px 14px;background:linear-gradient(90deg,rgba(232,114,27,.12),rgba(255,123,61,.12));border:1px solid rgba(232,114,27,.2);border-radius:12px;display:flex;align-items:center;gap:10px;overflow:hidden;position:relative}
+  .ticker::before{content:'🎉';font-size:16px;flex-shrink:0}
+  .ticker-text{font-size:11px;color:#d4920a;font-weight:600;animation:tick 12s linear infinite;white-space:nowrap}
+  @keyframes tick{0%{transform:translateX(100%)}100%{transform:translateX(-100%)}}
+  .ticker-text b{color:#f5b27a;font-weight:800;margin:0 4px}
+
+  /* 店铺/商品卡 */
+  .feat-list{display:flex;gap:12px;padding:0 22px;overflow-x:auto;scrollbar-width:none}
+  .feat-list::-webkit-scrollbar{display:none}
+  .fc{flex-shrink:0;width:260px;height:340px;border-radius:24px;position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;padding:20px}
+  .fc-1{background:linear-gradient(135deg,#e8721b 0%,#7b1b48 100%)}
+  .fc-2{background:linear-gradient(135deg,#e8721b 0%,#3b2a8d 100%)}
+  .fc-3{background:linear-gradient(135deg,#d4920a 0%,#0a5d8a 100%)}
+  .fc::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 70% 30%,rgba(255,255,255,.25),transparent 50%);pointer-events:none}
+  .fc-tag{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;background:rgba(0,0,0,.4);backdrop-filter:blur(20px);color:#fff;border-radius:5px;font-size:10px;font-weight:700;align-self:flex-start;border:1px solid rgba(255,255,255,.15)}
+  .fc-tag.flame::before{content:'🔥'}
+  .fc-name{font-size:24px;font-weight:900;letter-spacing:-.5px;line-height:1.1;margin-top:auto}
+  .fc-sub{font-size:11px;opacity:.8;margin-top:6px}
+  .fc-bot{margin-top:14px;display:flex;justify-content:space-between;align-items:flex-end}
+  .fc-meta{display:flex;flex-direction:column;gap:2px}
+  .fc-l{font-size:10px;opacity:.7;letter-spacing:.5px;text-transform:uppercase}
+  .fc-v{font-size:22px;font-weight:900;letter-spacing:-.5px}
+  .fc-cta{padding:10px 18px;background:rgba(255,255,255,.95);color:#1a1410;border-radius:99px;font-size:11px;font-weight:800}
+
+  /* 商品 grid */
+  .grid{padding:0 14px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .p{background:var(--bg-card);border-radius:18px;padding:10px;border:1px solid var(--line);position:relative;overflow:hidden}
+  .p-pic{height:128px;border-radius:12px;background:linear-gradient(135deg,#2a1a3a,#2a201a);display:flex;align-items:center;justify-content:center;font-size:64px;margin-bottom:10px;position:relative;overflow:hidden}
+  .p-pic.flame{background:linear-gradient(135deg,#3a1a2a,#2a201a)}
+  .p-pic.lucky{background:linear-gradient(135deg,#2a1a3a,#1a2a3a)}
+  .p-badge{position:absolute;top:8px;left:8px;padding:3px 7px;background:linear-gradient(135deg,#e8721b,#f59546);color:#fff;border-radius:5px;font-size:9px;font-weight:800;letter-spacing:.5px}
+  .p-badge.cool{background:linear-gradient(135deg,#e8721b,#d4920a)}
+  .p-n{font-size:13px;font-weight:700;line-height:1.3;color:#fff;height:34px;overflow:hidden}
+  .p-meta{display:flex;justify-content:space-between;align-items:center;margin-top:6px}
+  .p-price{font-size:18px;font-weight:900;color:#fff;letter-spacing:-.5px}
+  .p-price small{font-size:10px;color:var(--mute);font-weight:600;margin-left:1px}
+  .p-earn{font-size:10px;color:#22a06b;font-weight:700;background:rgba(34,160,107,.1);padding:2px 6px;border-radius:5px}
+
+  /* Tab bar */
+  .tabbar{position:absolute;bottom:0;left:0;right:0;height:84px;background:rgba(10,10,20,.92);backdrop-filter:blur(28px);display:flex;border-top:1px solid var(--line);padding:6px 0 20px}
+  .tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:10px;color:var(--mute2);font-weight:600;position:relative}
+  .tab svg{width:22px;height:22px}
+  .tab.on{color:#fff}
+  .tab.on .tab-dot{position:absolute;top:8px;width:4px;height:4px;border-radius:50%;background:linear-gradient(135deg,#e8721b,#f59546);box-shadow:0 0 8px #e8721b}
+  .tab .cart-circle{width:50px;height:50px;border-radius:50%;background:linear-gradient(135deg,#e8721b,#f59546);display:flex;align-items:center;justify-content:center;margin-top:-12px;box-shadow:0 8px 24px rgba(232,114,27,.4)}
+  .tab .cart-circle svg{width:24px;height:24px;color:#fff}
+  .tab-badge{position:absolute;top:6px;right:24px;min-width:16px;height:16px;padding:0 4px;background:linear-gradient(135deg,#e8721b,#f59546);color:#fff;border-radius:8px;font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center}
+
+  /* ===== 钱包 ===== */
+  .wallet-hd{padding:18px 22px;background:linear-gradient(180deg,#1a1410,transparent);position:relative}
+  .wl-back{width:38px;height:38px;border-radius:12px;background:rgba(255,255,255,.05);display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:18px}
+  .wl-hero{background:linear-gradient(135deg,#2a1810 0%,#4a2810 50%,#4a2810 100%);border-radius:28px;padding:24px;margin:0 0 18px;position:relative;overflow:hidden;border:1px solid rgba(232,114,27,.25)}
+  .wl-hero::before{content:'';position:absolute;top:-40%;right:-20%;width:280px;height:280px;background:radial-gradient(circle,rgba(232,114,27,.3),transparent 60%);pointer-events:none}
+  .wl-hero::after{content:'';position:absolute;bottom:-30%;left:-15%;width:220px;height:220px;background:radial-gradient(circle,rgba(212,146,10,.2),transparent 60%);pointer-events:none}
+  .wl-l{font-size:11px;color:#e8c89a;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;position:relative}
+  .wl-v{font-size:52px;font-weight:900;letter-spacing:-2px;margin-top:6px;line-height:1;position:relative}
+  .wl-v small{font-size:18px;font-weight:700;opacity:.6;margin-left:4px}
+  .wl-grow{display:inline-flex;align-items:center;gap:4px;margin-top:8px;padding:3px 9px;background:rgba(34,160,107,.15);color:#22a06b;border-radius:6px;font-size:10px;font-weight:800;position:relative}
+  .wl-acts{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:18px;position:relative}
+  .wl-act{padding:14px;background:rgba(255,255,255,.08);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.1);border-radius:14px;text-align:center}
+  .wl-act-i{font-size:22px;display:block;margin-bottom:4px}
+  .wl-act-t{font-size:11px;font-weight:700}
+
+  .wl-tabs{display:flex;padding:0 22px;gap:24px;border-bottom:1px solid var(--line)}
+  .wl-tab{padding:14px 0;font-size:13px;color:var(--mute);font-weight:700;position:relative}
+  .wl-tab.on{color:#fff}
+  .wl-tab.on::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#e8721b,#f59546);border-radius:2px}
+
+  /* 流水时间轴 */
+  .flow{padding:14px 22px}
+  .flow-d{font-size:11px;color:var(--mute);font-weight:700;letter-spacing:1px;margin:12px 0 8px;text-transform:uppercase}
+  .flow-i{display:flex;gap:14px;padding:14px;background:var(--bg-card);border-radius:14px;border:1px solid var(--line);margin-bottom:8px;position:relative;overflow:hidden}
+  .flow-i.win{border-color:rgba(232,114,27,.3);background:linear-gradient(135deg,rgba(232,114,27,.06),var(--bg-card))}
+  .flow-ic{width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+  .flow-ic.in{background:linear-gradient(135deg,rgba(34,160,107,.18),rgba(34,160,107,.06));color:#22a06b}
+  .flow-ic.out{background:rgba(255,255,255,.05);color:var(--mute)}
+  .flow-ic.win{background:linear-gradient(135deg,#e8721b,#f59546);color:#fff;box-shadow:0 4px 14px rgba(232,114,27,.4)}
+  .flow-m{flex:1;min-width:0}
+  .flow-n{font-size:13px;font-weight:700}
+  .flow-d2{font-size:10px;color:var(--mute);margin-top:2px}
+  .flow-v{text-align:right}
+  .flow-amt{font-size:16px;font-weight:900;letter-spacing:-.3px}
+  .flow-amt.in{color:#22a06b}
+  .flow-amt.out{color:var(--mute)}
+  .flow-amt.win{background:linear-gradient(135deg,#e8721b,#f59546);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  .flow-bal{font-size:9px;color:var(--mute);font-weight:600;margin-top:2px}
+
+  /* ===== 中奖弹窗 demo ===== */
+  .win-frame{background:radial-gradient(circle at 50% 30%,#3a2010 0%,#1a1410 70%)}
+  .win-overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px}
+  .conf{position:absolute;width:8px;height:8px;border-radius:2px;opacity:.85}
+  .c1{top:8%;left:18%;background:#e8721b;animation:fall1 3s ease-in infinite}
+  .c2{top:6%;left:35%;background:#d4920a;animation:fall2 3.5s ease-in infinite}
+  .c3{top:5%;left:52%;background:#22a06b;animation:fall1 2.8s ease-in infinite}
+  .c4{top:4%;left:68%;background:#e8721b;animation:fall2 3.2s ease-in infinite}
+  .c5{top:7%;left:82%;background:#d4920a;animation:fall1 3.5s ease-in infinite}
+  .c6{top:9%;left:26%;background:#f59546;animation:fall2 3s ease-in infinite}
+  .c7{top:6%;left:45%;background:#e8721b;animation:fall1 3.2s ease-in infinite}
+  .c8{top:5%;left:62%;background:#22a06b;animation:fall2 2.7s ease-in infinite}
+  .c9{top:8%;left:75%;background:#d4920a;animation:fall1 3.6s ease-in infinite}
+  @keyframes fall1{0%{transform:translateY(0) rotate(0)}100%{transform:translateY(900px) rotate(720deg)}}
+  @keyframes fall2{0%{transform:translateY(0) rotate(0)}100%{transform:translateY(900px) rotate(-720deg)}}
+
+  .trophy{font-size:96px;animation:trophy 2s ease-in-out infinite;text-shadow:0 0 40px rgba(212,146,10,.6)}
+  @keyframes trophy{0%,100%{transform:scale(1) rotate(-3deg)}50%{transform:scale(1.08) rotate(3deg)}}
+  .win-t{font-size:32px;font-weight:900;background:linear-gradient(135deg,#d4920a,#f59546,#e8721b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-top:18px;letter-spacing:-.5px;line-height:1.1;text-align:center}
+  .win-sub{font-size:13px;color:#b8a888;font-weight:600;margin-top:8px;text-align:center}
+  .win-amt-card{margin-top:24px;background:linear-gradient(135deg,#2a1810,#4a2810);border:1px solid rgba(212,146,10,.4);border-radius:22px;padding:24px 40px;text-align:center;box-shadow:0 20px 60px rgba(232,114,27,.3),inset 0 1px 0 rgba(255,255,255,.1)}
+  .win-amt-l{font-size:11px;color:#d4920a;font-weight:700;letter-spacing:2px;text-transform:uppercase}
+  .win-amt-v{font-size:56px;font-weight:900;letter-spacing:-2px;margin-top:4px;background:linear-gradient(135deg,#d4920a,#f59546);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1}
+  .win-amt-v small{font-size:18px;opacity:.7;margin-left:4px}
+  .win-detail{font-size:11px;color:#e8c89a;font-weight:600;margin-top:10px}
+  .win-cta{margin-top:32px;padding:14px 46px;background:linear-gradient(135deg,#e8721b,#f59546);color:#fff;border-radius:99px;font-size:14px;font-weight:800;box-shadow:0 12px 32px rgba(232,114,27,.5);border:none}
+
+  /* ===== 派单动画屏 ===== */
+  .ship-anim{background:linear-gradient(180deg,#1a1410 0%,#2a1810 50%,#1a1410 100%);position:relative}
+  .ship-stage{padding:32px 22px;height:100%;display:flex;flex-direction:column}
+  .ship-h{font-size:18px;font-weight:900;text-align:center;margin-bottom:8px}
+  .ship-sub{font-size:11px;color:var(--mute);text-align:center;margin-bottom:30px}
+  .timeline{flex:1;display:flex;flex-direction:column;gap:0;padding:0 14px}
+  .tl-i{display:flex;align-items:center;gap:14px;padding:18px 0;position:relative}
+  .tl-i+.tl-i::before{content:'';position:absolute;top:-8px;left:19px;width:2px;height:16px;background:linear-gradient(180deg,#e8721b,rgba(255,255,255,.08))}
+  .tl-dot{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;position:relative;z-index:1}
+  .tl-dot.done{background:linear-gradient(135deg,#22a06b,#0d4e30);box-shadow:0 0 16px rgba(34,160,107,.4)}
+  .tl-dot.cur{background:linear-gradient(135deg,#e8721b,#f59546);box-shadow:0 0 24px rgba(255,77,141,.6);animation:cur 1.5s ease-in-out infinite}
+  @keyframes cur{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
+  .tl-dot.wait{background:rgba(255,255,255,.06);color:var(--mute2);border:1px dashed var(--mute2)}
+  .tl-m{flex:1}
+  .tl-n{font-size:14px;font-weight:800}
+  .tl-d{font-size:11px;color:var(--mute);margin-top:2px}
+  .tl-d.cur{color:#f59546;font-weight:700}
+
+  .ship-cta-area{padding:20px 22px;border-top:1px solid var(--line)}
+  .ship-eta{background:linear-gradient(135deg,rgba(232,114,27,.12),rgba(245,149,70,.08));border:1px solid rgba(232,114,27,.25);border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:12px;margin-bottom:14px}
+  .ship-eta-ic{font-size:28px}
+  .ship-eta-m{flex:1}
+  .ship-eta-t{font-size:13px;font-weight:800}
+  .ship-eta-d{font-size:11px;color:#f5b27a;margin-top:2px}
+  .ship-eta-v{font-size:20px;font-weight:900;color:#fff;text-align:right}
+  .ship-eta-v small{font-size:10px;opacity:.6;font-weight:600;margin-left:2px}
+  .ship-row-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .ship-btn{padding:14px;border-radius:14px;font-size:13px;font-weight:800;text-align:center}
+  .ship-btn.s{background:rgba(255,255,255,.06);color:#fff;border:1px solid var(--line)}
+  .ship-btn.p{background:linear-gradient(135deg,#e8721b,#f59546);color:#fff;box-shadow:0 8px 24px rgba(232,114,27,.35)}
+
+  /* ===== shop-home with promo card ===== */
+  .sh-hd{padding:14px 22px;background:linear-gradient(180deg,rgba(255,77,141,.15) 0%,transparent 100%);position:relative}
+  .sh-shop{display:flex;align-items:center;gap:14px}
+  .sh-logo{width:60px;height:60px;border-radius:18px;background:linear-gradient(135deg,#e8721b,#f59546);display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:900;flex-shrink:0;box-shadow:0 10px 28px rgba(232,114,27,.35)}
+  .sh-meta{flex:1}
+  .sh-name{font-size:18px;font-weight:900}
+  .sh-stats{font-size:11px;color:var(--mute);margin-top:4px;display:flex;gap:10px}
+  .sh-stats b{color:#fff;font-weight:800}
+  .sh-stats .rate{color:#d4920a}
+  .sh-fav{width:38px;height:38px;border-radius:12px;background:rgba(255,255,255,.05);display:flex;align-items:center;justify-content:center;font-size:16px}
+
+  /* 推 N 反 1 大卡 */
+  .nback-card{margin:18px 14px;background:linear-gradient(135deg,#2a1810 0%,#3a2010 100%);border-radius:24px;padding:20px;position:relative;overflow:hidden;border:1px solid rgba(232,114,27,.3)}
+  .nback-card::before{content:'';position:absolute;top:-50%;right:-30%;width:300px;height:300px;background:radial-gradient(circle,rgba(212,146,10,.2),transparent 60%);pointer-events:none}
+  .nb-h{display:flex;justify-content:space-between;align-items:flex-start;position:relative}
+  .nb-l{flex:1}
+  .nb-lbl{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;background:rgba(255,179,61,.18);color:#d4920a;border-radius:5px;font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px}
+  .nb-lbl::before{content:'🔥'}
+  .nb-t{font-size:22px;font-weight:900;letter-spacing:-.5px;line-height:1.15}
+  .nb-t .h{background:linear-gradient(135deg,#d4920a,#f59546,#e8721b);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  .nb-sub{font-size:11px;color:#e8c89a;margin-top:6px}
+  .nb-money{text-align:right}
+  .nb-mv{font-size:30px;font-weight:900;letter-spacing:-.5px;background:linear-gradient(135deg,#22a06b,#d4920a);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1}
+  .nb-ml{font-size:9px;color:var(--mute);margin-top:2px;letter-spacing:.5px;text-transform:uppercase}
+
+  .nb-bar{margin-top:18px;height:36px;background:rgba(0,0,0,.3);border-radius:18px;padding:4px;display:flex;align-items:center;position:relative;overflow:hidden}
+  .nb-fill{height:28px;background:linear-gradient(90deg,#e8721b,#f59546,#d4920a);border-radius:14px;width:73%;position:relative;box-shadow:0 0 16px rgba(245,149,70,.5)}
+  .nb-fill::after{content:'';position:absolute;top:0;right:0;width:24px;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.6));border-radius:14px;animation:shine 2s ease-in-out infinite}
+  @keyframes shine{0%,100%{opacity:.5}50%{opacity:1}}
+  .nb-txt{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:11px;font-weight:800;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.5);letter-spacing:.5px;z-index:2}
+
+  .nb-foot{margin-top:14px;display:flex;justify-content:space-between;font-size:10px;color:var(--mute);position:relative}
+  .nb-foot b{color:#fff;font-weight:800}
+  .nb-cta{padding:8px 16px;background:#fff;color:#1a1410;border-radius:99px;font-size:11px;font-weight:800}
+
+  /* hot 商品列表（横滚）*/
+  .hot-prods{padding:0 14px;display:flex;gap:10px;overflow-x:auto;scrollbar-width:none}
+  .hot-prods::-webkit-scrollbar{display:none}
+  .hp{flex-shrink:0;width:160px;background:var(--bg-card);border-radius:18px;padding:10px;border:1px solid var(--line);position:relative}
+  .hp-pic{height:120px;border-radius:12px;background:linear-gradient(135deg,#2a1a3a,#2a201a);display:flex;align-items:center;justify-content:center;font-size:48px;margin-bottom:8px;position:relative}
+  .hp-rank{position:absolute;top:0;left:0;width:32px;height:32px;border-radius:0 0 12px 0;background:linear-gradient(135deg,#e8721b,#f59546);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;color:#fff}
+  .hp-n{font-size:12px;font-weight:700;height:32px;overflow:hidden;line-height:1.3}
+  .hp-meta{display:flex;justify-content:space-between;align-items:center;margin-top:6px}
+  .hp-pr{font-size:16px;font-weight:900;color:#fff;letter-spacing:-.3px}
+  .hp-pr small{font-size:9px;color:var(--mute);font-weight:600}
+  .hp-sales{font-size:9px;color:var(--mute);font-weight:600}
+</style>
+</head>
+<body>
+
+<!-- ============================ 1. 首页 ============================ -->
+<div class="frame">
+  <div class="frame-label">首页</div>
+  <div class="statusbar"><span>9:41</span><span>⚡5G ▮▮▮▮</span></div>
+  <div class="body">
+    <div class="home-hd">
+      <div class="greet">
+        <div class="av"></div>
+        <div>
+          <div class="greet-t">下午好 · <b>小慧</b></div>
+          <div style="font-size:10px;color:var(--mute2);margin-top:2px">已是 <b style="color:#22a06b">3 星</b> · 海淀区</div>
+        </div>
+      </div>
+      <div class="head-ics">
+        <div class="head-ic">🔍</div>
+        <div class="head-ic">🔔<div class="head-dot"></div></div>
+      </div>
+    </div>
+
+    <!-- 我加入的店铺（按店独立结算）-->
+    <div class="earn-card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;position:relative">
+        <div class="earn-l">我加入的店铺 · 按店独立</div>
+        <button class="earn-btn">钱包 →</button>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;position:relative">
+        <div style="background:rgba(255,255,255,.06);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:12px;display:flex;align-items:center;gap:10px">
+          <div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#f5b27a,#e8721b);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff">爱</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:700">爱家超市 <span style="font-size:9px;background:rgba(212,146,10,.25);color:#fde9c4;padding:1px 5px;border-radius:4px;font-weight:800;margin-left:3px">★3</span></div>
+            <div style="font-size:10px;color:#b8a888;margin-top:2px">余 ¥52 · 推广 ¥86.40 · 消费 1.05</div>
+          </div>
+          <div style="font-size:11px;color:#e8c89a;font-weight:600">›</div>
+        </div>
+        <div style="background:rgba(255,255,255,.06);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:12px;display:flex;align-items:center;gap:10px">
+          <div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#9ad4a8,#22a06b);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff">茶</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:700">茶楼 <span style="font-size:9px;background:rgba(212,146,10,.25);color:#fde9c4;padding:1px 5px;border-radius:4px;font-weight:800;margin-left:3px">★1</span></div>
+            <div style="font-size:10px;color:#b8a888;margin-top:2px">余 ¥0 · 推广 ¥18 · 消费 0.32</div>
+          </div>
+          <div style="font-size:11px;color:#e8c89a;font-weight:600">›</div>
+        </div>
+        <div style="background:rgba(255,255,255,.06);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:12px;display:flex;align-items:center;gap:10px">
+          <div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#d4920a,#a87a3a);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff">明</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:700">明德食材 <span style="font-size:9px;background:rgba(212,146,10,.25);color:#fde9c4;padding:1px 5px;border-radius:4px;font-weight:800;margin-left:3px">★2</span></div>
+            <div style="font-size:10px;color:#b8a888;margin-top:2px">余 ¥12 · 推广 ¥24 · 消费 0.6</div>
+          </div>
+          <div style="font-size:11px;color:#e8c89a;font-weight:600">›</div>
+        </div>
+      </div>
+      <div style="margin-top:14px;padding:10px;background:rgba(0,0,0,.18);border-radius:10px;font-size:10px;color:#e8c89a;text-align:center;font-weight:600;position:relative;letter-spacing:.5px">
+        💡 每家店的余额、积分、星级都独立结算 · 1:1 提现
+      </div>
+    </div>
+
+    <!-- 推 N 反 1 进度 -->
+    <div class="promo-card">
+      <div class="promo-h">
+        <div class="promo-t">推 N 反 1 进度 · 红烧牛肉面</div>
+        <div class="promo-step"><b>3</b> / 3 · 已完成</div>
+      </div>
+      <div class="progress">
+        <div class="p-node done"></div>
+        <div class="p-node done"></div>
+        <div class="p-node done"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:4px;font-size:9px;color:var(--mute);font-weight:600;letter-spacing:.5px">
+        <span style="color:#22a06b">激活 ✓</span><span style="color:#22a06b">+30% ✓</span><span style="color:#22a06b">+50% ✓</span>
+      </div>
+      <div class="promo-tip">🎉 <b>已完成</b>，每件继续返 10%。下一笔朋友买就给你 ¥1，不会差一刀，已发就到账。</div>
+    </div>
+
+    <!-- ticker -->
+    <div class="ticker">
+      <div class="ticker-text"><b>用户***123</b> 刚拿了 <b>¥8.60</b> · <b>用户***456</b> 升到 4 星 · <b>用户***789</b> 中奖池 <b>¥30</b> · 你也在 <b>红烧牛肉面</b> 队列里</div>
+    </div>
+
+    <!-- 分类 -->
+    <div class="sec">
+      <div class="sec-t">分类逛逛</div>
+      <div class="sec-more">全部 ›</div>
+    </div>
+    <div class="cats">
+      <div class="cat-i"><div class="cat-c hot">🍱</div><div class="cat-l">外卖</div></div>
+      <div class="cat-i"><div class="cat-c">☕</div><div class="cat-l">咖啡</div></div>
+      <div class="cat-i"><div class="cat-c">🍜</div><div class="cat-l">面食</div></div>
+      <div class="cat-i"><div class="cat-c">🍰</div><div class="cat-l">甜品</div></div>
+      <div class="cat-i"><div class="cat-c">🛒</div><div class="cat-l">超市</div></div>
+    </div>
+
+    <!-- 精选 -->
+    <div class="sec">
+      <div class="sec-t">今日精选<small>FEATURED</small></div>
+      <div class="sec-more">›</div>
+    </div>
+    <div class="feat-list">
+      <div class="fc fc-1">
+        <div class="fc-tag flame">推 3 反 1 · 限时</div>
+        <div class="fc-name">爱家超市<br>麻辣红烧牛肉面</div>
+        <div class="fc-sub">3 件起返 · 邀请朋友也返</div>
+        <div class="fc-bot">
+          <div class="fc-meta"><div class="fc-l">¥/件</div><div class="fc-v">10.00</div></div>
+          <div class="fc-cta">去赚 →</div>
+        </div>
+      </div>
+      <div class="fc fc-2">
+        <div class="fc-tag">满 30 减 5</div>
+        <div class="fc-name">茶楼<br>菊花枸杞茶</div>
+        <div class="fc-sub">100% 实在不忽悠</div>
+        <div class="fc-bot">
+          <div class="fc-meta"><div class="fc-l">¥/份</div><div class="fc-v">15.00</div></div>
+          <div class="fc-cta">看看</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 热销榜 -->
+    <div class="sec">
+      <div class="sec-t">热销榜<small>TOP NOW</small></div>
+      <div class="sec-more">完整榜 ›</div>
+    </div>
+    <div class="hot-prods">
+      <div class="hp">
+        <div class="hp-pic">🍜<div class="hp-rank">1</div></div>
+        <div class="hp-n">红烧牛肉面</div>
+        <div class="hp-meta"><div class="hp-pr">¥10<small>.00</small></div><div class="hp-sales">已售 2.4K</div></div>
+      </div>
+      <div class="hp">
+        <div class="hp-pic">🥩<div class="hp-rank" style="background:linear-gradient(135deg,#94a3b8,#475569)">2</div></div>
+        <div class="hp-n">满小饱肥汁米线</div>
+        <div class="hp-meta"><div class="hp-pr">¥5<small>.00</small></div><div class="hp-sales">已售 1.8K</div></div>
+      </div>
+      <div class="hp">
+        <div class="hp-pic">🍚<div class="hp-rank" style="background:linear-gradient(135deg,#d97706,#92400e)">3</div></div>
+        <div class="hp-n">海福盛干贝粥</div>
+        <div class="hp-meta"><div class="hp-pr">¥10<small>.00</small></div><div class="hp-sales">已售 1.2K</div></div>
+      </div>
+    </div>
+
+    <!-- 推荐 grid -->
+    <div class="sec">
+      <div class="sec-t">猜你赚<small>FOR YOU</small></div>
+    </div>
+    <div class="grid">
+      <div class="p">
+        <div class="p-pic flame">🥓<div class="p-badge">推 3 反 1</div></div>
+        <div class="p-n">五花肉 · 鲜切批发</div>
+        <div class="p-meta"><div class="p-price">¥28<small>/斤</small></div><div class="p-earn">赚 ¥2.8</div></div>
+      </div>
+      <div class="p">
+        <div class="p-pic">🍳<div class="p-badge cool">星级返</div></div>
+        <div class="p-n">土鸡蛋 30 枚装</div>
+        <div class="p-meta"><div class="p-price">¥32<small>/板</small></div><div class="p-earn">2 星额外 +2%</div></div>
+      </div>
+      <div class="p">
+        <div class="p-pic lucky">🎁<div class="p-badge">入池抽奖</div></div>
+        <div class="p-n">中秋限量月饼礼盒</div>
+        <div class="p-meta"><div class="p-price">¥88<small>/盒</small></div><div class="p-earn">入池 5%</div></div>
+      </div>
+      <div class="p">
+        <div class="p-pic">🥬<div class="p-badge cool">满 50 减 5</div></div>
+        <div class="p-n">山东大白菜 包邮</div>
+        <div class="p-meta"><div class="p-price">¥1.6<small>/斤</small></div><div class="p-earn">消费 +5</div></div>
+      </div>
+    </div>
+
+  </div>
+  <div class="tabbar">
+    <div class="tab on"><div class="tab-dot"></div><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3 4 9v12h5v-7h6v7h5V9z"/></svg>主页</div>
+    <div class="tab"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 5h18v2H3zm0 6h18v2H3zm0 6h18v2H3z"/></svg>分类</div>
+    <div class="tab"><div class="cart-circle"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4h-2l-3 6 4 11h12l4-11-3-6h-2zM9 21a1 1 0 1 1 0-2 1 1 0 0 1 0 2zm6 0a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/></svg></div>购物车<div class="tab-badge" style="top:0">9</div></div>
+    <div class="tab"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 5h18v3H3zM3 10h18v3H3zM3 15h18v3H3z"/></svg>订单</div>
+    <div class="tab"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 22c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>我的</div>
+  </div>
+</div>
+
+<!-- ============================ 2. 钱包 ============================ -->
+<div class="frame">
+  <div class="frame-label">钱包 · 双积分</div>
+  <div class="statusbar"><span>9:41</span><span>⚡5G ▮▮▮▮</span></div>
+  <div class="body">
+    <div class="wallet-hd">
+      <div class="wl-back">‹</div>
+      <div class="wl-hero">
+        <div class="wl-l">推广积分余额 · 1:1 提现</div>
+        <div class="wl-v">128.50<small>积分</small></div>
+        <div class="wl-grow">↑ 本月 +¥18.20</div>
+        <div class="wl-acts">
+          <div class="wl-act"><span class="wl-act-i">💰</span><div class="wl-act-t">提现</div></div>
+          <div class="wl-act"><span class="wl-act-i">🔄</span><div class="wl-act-t">转消费</div></div>
+          <div class="wl-act"><span class="wl-act-i">📊</span><div class="wl-act-t">详细账单</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="padding:0 22px;display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+      <div style="background:var(--bg-card);border-radius:14px;padding:14px;border:1px solid var(--line)">
+        <div style="font-size:10px;color:var(--mute);font-weight:700;letter-spacing:.5px">消费积分</div>
+        <div style="font-size:22px;font-weight:900;margin-top:4px;color:#22a06b">8.40<span style="font-size:11px;color:var(--mute);font-weight:600;margin-left:2px">积分</span></div>
+      </div>
+      <div style="background:var(--bg-card);border-radius:14px;padding:14px;border:1px solid var(--line)">
+        <div style="font-size:10px;color:var(--mute);font-weight:700;letter-spacing:.5px">店铺余额</div>
+        <div style="font-size:22px;font-weight:900;margin-top:4px;color:#d4920a">52.00<span style="font-size:11px;color:var(--mute);font-weight:600;margin-left:2px">元</span></div>
+      </div>
+    </div>
+
+    <div class="wl-tabs">
+      <div class="wl-tab on">全部流水</div>
+      <div class="wl-tab">收入</div>
+      <div class="wl-tab">支出</div>
+      <div class="wl-tab">中奖</div>
+    </div>
+
+    <div class="flow">
+      <div class="flow-d">今天 · 5/22</div>
+
+      <div class="flow-i win">
+        <div class="flow-ic win">🎁</div>
+        <div class="flow-m">
+          <div class="flow-n">奖池中奖<span style="font-size:9px;background:linear-gradient(135deg,#e8721b,#f59546);padding:1px 6px;border-radius:4px;margin-left:5px;font-weight:800">WIN</span></div>
+          <div class="flow-d2">爱家超市 · 月饼礼盒 SPU 池 · 3 星抽中</div>
+        </div>
+        <div class="flow-v">
+          <div class="flow-amt win">+10.00</div>
+          <div class="flow-bal">余 128.50</div>
+        </div>
+      </div>
+
+      <div class="flow-i">
+        <div class="flow-ic in">⚡</div>
+        <div class="flow-m">
+          <div class="flow-n">朋友首单返利</div>
+          <div class="flow-d2">小红 在「爱家超市」首单 · 你拿 10%</div>
+        </div>
+        <div class="flow-v">
+          <div class="flow-amt in">+1.00</div>
+          <div class="flow-bal">余 118.50</div>
+        </div>
+      </div>
+
+      <div class="flow-i">
+        <div class="flow-ic in">🥩</div>
+        <div class="flow-m">
+          <div class="flow-n">自购返奖 · 推 3 反 1 第 3 件</div>
+          <div class="flow-d2">红烧牛肉面 · 件 3 完成期 +50%</div>
+        </div>
+        <div class="flow-v">
+          <div class="flow-amt in">+5.00</div>
+          <div class="flow-bal">余 117.50</div>
+        </div>
+      </div>
+
+      <div class="flow-d">昨天 · 5/21</div>
+
+      <div class="flow-i">
+        <div class="flow-ic in">🌟</div>
+        <div class="flow-m">
+          <div class="flow-n">团队极差奖</div>
+          <div class="flow-d2">下级小白下单 · 你 3 星拿 3% 实付</div>
+        </div>
+        <div class="flow-v">
+          <div class="flow-amt in">+0.60</div>
+          <div class="flow-bal">余 112.50</div>
+        </div>
+      </div>
+
+      <div class="flow-i">
+        <div class="flow-ic out">⬇️</div>
+        <div class="flow-m">
+          <div class="flow-n">下单抵扣（自购换）</div>
+          <div class="flow-d2">订单 #10118 · 推 N 反 1 自动抵 1 件</div>
+        </div>
+        <div class="flow-v">
+          <div class="flow-amt out">−10.00</div>
+          <div class="flow-bal">余 111.90</div>
+        </div>
+      </div>
+
+      <div class="flow-i">
+        <div class="flow-ic in">🎯</div>
+        <div class="flow-m">
+          <div class="flow-n">自然推队首奖</div>
+          <div class="flow-d2">新人下单 · 你排红烧牛肉面队首</div>
+        </div>
+        <div class="flow-v">
+          <div class="flow-amt in">+3.00</div>
+          <div class="flow-bal">余 121.90</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================ 3. 中奖弹窗 ============================ -->
+<div class="frame win-frame">
+  <div class="frame-label">中奖弹窗 · WOW</div>
+  <div class="statusbar"><span>9:41</span><span>⚡5G ▮▮▮▮</span></div>
+  <div class="body" style="padding-bottom:0;background:rgba(0,0,0,.6)">
+    <div class="conf c1"></div>
+    <div class="conf c2"></div>
+    <div class="conf c3"></div>
+    <div class="conf c4"></div>
+    <div class="conf c5"></div>
+    <div class="conf c6"></div>
+    <div class="conf c7"></div>
+    <div class="conf c8"></div>
+    <div class="conf c9"></div>
+    <div class="win-overlay">
+      <div class="trophy">🏆</div>
+      <div class="win-t">恭喜中奖!</div>
+      <div class="win-sub">爱家超市 · 月饼礼盒 SPU 奖池</div>
+      <div class="win-amt-card">
+        <div class="win-amt-l">RECEIVED</div>
+        <div class="win-amt-v">¥10<small>.00</small></div>
+        <div class="win-detail">已发到推广积分余额 · 可立即提现</div>
+      </div>
+      <div style="margin-top:24px;text-align:center">
+        <div style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;background:rgba(255,255,255,.08);border-radius:99px;font-size:11px;font-weight:600;color:#e8c89a;backdrop-filter:blur(10px)">
+          <span style="color:#22a06b">●</span> 这一轮共 24 人中奖，你是 3 星抽签获选
+        </div>
+      </div>
+      <button class="win-cta">查看奖池详情 →</button>
+      <div style="margin-top:18px;font-size:11px;color:var(--mute);text-align:center">推广积分 1 积分 = 1 元 · 我们的承诺<br>不会"差一刀"，到账即可提现</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================ 4. 派单 / 订单进度动画 ============================ -->
+<div class="frame ship-anim">
+  <div class="frame-label">订单进度 · 派单</div>
+  <div class="statusbar"><span>9:41</span><span>⚡5G ▮▮▮▮</span></div>
+  <div class="body" style="padding-bottom:0">
+    <div class="ship-stage">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:24px">
+        <div style="width:36px;height:36px;border-radius:12px;background:rgba(255,255,255,.05);display:flex;align-items:center;justify-content:center;font-size:16px">‹</div>
+        <div>
+          <div style="font-size:11px;color:var(--mute);font-weight:600">订单</div>
+          <div style="font-size:13px;font-weight:800">#PO-20260522-0028</div>
+        </div>
+        <div style="margin-left:auto;padding:5px 12px;background:linear-gradient(135deg,#e8721b,#f59546);border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px">配送中</div>
+      </div>
+
+      <div class="ship-h">您的订单已发车 🚀</div>
+      <div class="ship-sub">爱家超市 王师傅正在赶来</div>
+
+      <div class="timeline">
+        <div class="tl-i">
+          <div class="tl-dot done">✓</div>
+          <div class="tl-m">
+            <div class="tl-n">订单已确认</div>
+            <div class="tl-d">9:32 · 商家已接单 · ¥10 已扣，¥0 实付（积分抵扣）</div>
+          </div>
+        </div>
+        <div class="tl-i">
+          <div class="tl-dot done">📦</div>
+          <div class="tl-m">
+            <div class="tl-n">商品已打包</div>
+            <div class="tl-d">9:45 · 红烧牛肉面 ×1</div>
+          </div>
+        </div>
+        <div class="tl-i">
+          <div class="tl-dot cur">🚀</div>
+          <div class="tl-m">
+            <div class="tl-n">骑手取货 · 配送中</div>
+            <div class="tl-d cur">9:58 · 王师傅 · 京 P·12345 · 距您 0.8km</div>
+          </div>
+        </div>
+        <div class="tl-i">
+          <div class="tl-dot wait">○</div>
+          <div class="tl-m">
+            <div class="tl-n" style="color:var(--mute)">预计送达</div>
+            <div class="tl-d">10:18 · 您家</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ship-cta-area">
+      <div class="ship-eta">
+        <div class="ship-eta-ic">⏱️</div>
+        <div class="ship-eta-m">
+          <div class="ship-eta-t">预计还有</div>
+          <div class="ship-eta-d">王师傅正在加速赶来</div>
+        </div>
+        <div class="ship-eta-v">12<small>分钟</small></div>
+      </div>
+      <div class="ship-row-btns">
+        <div class="ship-btn s">📞 联系骑手</div>
+        <div class="ship-btn p">查看地图</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================ 5. 店铺主页 - 推 N 反 1 大卡 ============================ -->
+<div class="frame">
+  <div class="frame-label">店铺主页 · 比拼多多实在</div>
+  <div class="statusbar"><span>9:41</span><span>⚡5G ▮▮▮▮</span></div>
+  <div class="body">
+    <div class="sh-hd">
+      <div class="sh-shop">
+        <div class="sh-logo">爱</div>
+        <div class="sh-meta">
+          <div class="sh-name">爱家超市</div>
+          <div class="sh-stats">
+            <span><b>4.9</b> <span class="rate">★</span></span>
+            <span>月售 <b>2.4K</b></span>
+            <span><b>30</b> 分送达</span>
+          </div>
+        </div>
+        <div class="sh-fav">❤️</div>
+      </div>
+    </div>
+
+    <!-- 推 N 反 1 大卡 -->
+    <div class="nback-card">
+      <div class="nb-h">
+        <div class="nb-l">
+          <div class="nb-lbl">推 3 反 1 · 不会差一刀</div>
+          <div class="nb-t">买够 4 件，<span class="h">1 件免单</span><br>朋友也下你 +¥1</div>
+          <div class="nb-sub">推广积分 1:1 提现 · 实在透明</div>
+        </div>
+        <div class="nb-money">
+          <div class="nb-mv">¥10.00</div>
+          <div class="nb-ml">已 拿 / 共可拿 ¥10</div>
+        </div>
+      </div>
+      <div class="nb-bar">
+        <div class="nb-fill"></div>
+        <div class="nb-txt">已完成 3 / 3 件 · 第 4 件已立即抵扣</div>
+      </div>
+      <div class="nb-foot">
+        <div>当前阶段 <b>完成期</b> · 每件返 10%</div>
+        <button class="nb-cta">分享朋友 +¥1</button>
+      </div>
+    </div>
+
+    <!-- 我们的承诺 vs 拼多多 -->
+    <div style="margin:0 14px 14px;padding:14px;background:linear-gradient(135deg,rgba(34,160,107,.08),rgba(77,214,255,.04));border:1px solid rgba(61,240,194,.2);border-radius:16px;display:flex;gap:12px">
+      <div style="font-size:22px">✅</div>
+      <div style="flex:1">
+        <div style="font-size:12px;font-weight:800;color:#22a06b">我们的承诺</div>
+        <div style="font-size:10px;color:#9ad4a8;margin-top:4px;line-height:1.5">
+          ✓ 推广积分 <b>1:1 提现</b>，最低 100 元起<br>
+          ✓ 进度真实记录，不存在"差一刀"<br>
+          ✓ 中奖明细 + 链路可追溯
+        </div>
+      </div>
+    </div>
+
+    <!-- 分类 -->
+    <div style="padding:0 14px;display:flex;gap:8px;overflow-x:auto;scrollbar-width:none">
+      <div style="flex-shrink:0;padding:8px 16px;background:#fff;color:#1a1410;border-radius:99px;font-size:11px;font-weight:800">全部</div>
+      <div style="flex-shrink:0;padding:8px 16px;background:var(--bg-card);border:1px solid var(--line);color:var(--mute);border-radius:99px;font-size:11px;font-weight:700">面食</div>
+      <div style="flex-shrink:0;padding:8px 16px;background:var(--bg-card);border:1px solid var(--line);color:var(--mute);border-radius:99px;font-size:11px;font-weight:700">米粉</div>
+      <div style="flex-shrink:0;padding:8px 16px;background:var(--bg-card);border:1px solid var(--line);color:var(--mute);border-radius:99px;font-size:11px;font-weight:700">粥品</div>
+      <div style="flex-shrink:0;padding:8px 16px;background:var(--bg-card);border:1px solid var(--line);color:var(--mute);border-radius:99px;font-size:11px;font-weight:700">饮品</div>
+    </div>
+
+    <div class="sec" style="padding-top:18px">
+      <div class="sec-t">热销商品</div>
+      <div class="sec-more">19 件</div>
+    </div>
+    <div class="grid">
+      <div class="p">
+        <div class="p-pic flame">🍜<div class="p-badge">推 3 反 1</div></div>
+        <div class="p-n">红烧牛肉面</div>
+        <div class="p-meta"><div class="p-price">¥10<small>.00</small></div><div class="p-earn">最高 ¥10</div></div>
+      </div>
+      <div class="p">
+        <div class="p-pic">🍱<div class="p-badge cool">入池 5%</div></div>
+        <div class="p-n">麻辣牛肉面 · 统一</div>
+        <div class="p-meta"><div class="p-price">¥5<small>.00</small></div><div class="p-earn">入池抽奖</div></div>
+      </div>
+      <div class="p">
+        <div class="p-pic lucky">🍝<div class="p-badge">星级 +3%</div></div>
+        <div class="p-n">满小饱肥汁米线</div>
+        <div class="p-meta"><div class="p-price">¥5<small>.00</small></div><div class="p-earn">3 星额外</div></div>
+      </div>
+      <div class="p">
+        <div class="p-pic">🍚<div class="p-badge cool">老客 ¥2</div></div>
+        <div class="p-n">海福盛干贝鸡粥</div>
+        <div class="p-meta"><div class="p-price">¥10<small>.00</small></div><div class="p-earn">老客返 ¥2</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="tabbar">
+    <div class="tab on"><div class="tab-dot"></div><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3 4 9v12h5v-7h6v7h5V9z"/></svg>店铺</div>
+    <div class="tab"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 5h18v2H3zm0 6h18v2H3zm0 6h18v2H3z"/></svg>分类</div>
+    <div class="tab"><div class="cart-circle"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4h-2l-3 6 4 11h12l4-11-3-6h-2zM9 21a1 1 0 1 1 0-2 1 1 0 0 1 0 2zm6 0a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/></svg></div>购物车<div class="tab-badge" style="top:0">2</div></div>
+    <div class="tab"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 5h18v3H3zM3 10h18v3H3zM3 15h18v3H3z"/></svg>订单</div>
+    <div class="tab"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 22c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>我的</div>
+  </div>
+</div>
+
+<!-- ============================ 6. 我的页 - 个人收益中心 ============================ -->
+<div class="frame">
+  <div class="frame-label">我的 · 收益中心</div>
+  <div class="statusbar"><span>9:41</span><span>⚡5G ▮▮▮▮</span></div>
+  <div class="body">
+    <!-- 个人 hero -->
+    <div style="padding:24px 22px 0;background:radial-gradient(ellipse at 50% 0%,rgba(232,114,27,.25),transparent 60%);position:relative">
+      <div style="display:flex;align-items:center;gap:14px">
+        <div style="width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,#e8721b,#e8721b);border:3px solid rgba(255,255,255,.15);box-shadow:0 8px 24px rgba(232,114,27,.3)"></div>
+        <div style="flex:1">
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="font-size:18px;font-weight:900">小慧</div>
+            <div style="display:inline-flex;align-items:center;padding:2px 8px;background:linear-gradient(135deg,#d4920a,#f59546);border-radius:5px;font-size:9px;font-weight:800;color:#fff;letter-spacing:1px">★★★ 3 星</div>
+          </div>
+          <div style="font-size:11px;color:var(--mute);margin-top:3px">手机 138****8888 · 已加入 <b style="color:#fff">3</b> 家店</div>
+        </div>
+        <div style="width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,.05);display:flex;align-items:center;justify-content:center;font-size:14px">⚙️</div>
+      </div>
+
+      <!-- 跨店 3 项计数（不是收益，是计数）-->
+      <div style="margin-top:20px;background:linear-gradient(135deg,#2a1810,#4a2810);border-radius:22px;padding:20px;border:1px solid rgba(232,114,27,.25);position:relative;overflow:hidden">
+        <div style="position:absolute;top:-30%;right:-15%;width:200px;height:200px;background:radial-gradient(circle,rgba(212,146,10,.2),transparent 60%);pointer-events:none"></div>
+        <div style="display:flex;gap:12px;position:relative">
+          <div style="flex:1;text-align:center">
+            <div style="font-size:28px;font-weight:900;color:#fff;letter-spacing:-1px;line-height:1">3</div>
+            <div style="font-size:10px;color:#b8a888;font-weight:600;margin-top:6px;letter-spacing:.5px">加入店铺</div>
+          </div>
+          <div style="width:1px;background:rgba(255,255,255,.08)"></div>
+          <div style="flex:1;text-align:center">
+            <div style="font-size:28px;font-weight:900;color:#fff;letter-spacing:-1px;line-height:1">48</div>
+            <div style="font-size:10px;color:#b8a888;font-weight:600;margin-top:6px;letter-spacing:.5px">累计订单</div>
+          </div>
+          <div style="width:1px;background:rgba(255,255,255,.08)"></div>
+          <div style="flex:1;text-align:center">
+            <div style="font-size:28px;font-weight:900;color:#e8721b;letter-spacing:-1px;line-height:1">5</div>
+            <div style="font-size:10px;color:#b8a888;font-weight:600;margin-top:6px;letter-spacing:.5px">推荐好友</div>
+          </div>
+        </div>
+        <div style="margin-top:14px;padding:10px;background:rgba(232,114,27,.12);border-radius:10px;font-size:11px;color:#e8c89a;font-weight:600;position:relative">
+          💡 资产按店铺独立：余额 / 推广积分 / 消费积分 / 星级 都隔离在每家店的账户
+        </div>
+      </div>
+    </div>
+
+    <!-- 升星卡 -->
+    <div style="margin:18px 14px 0;background:var(--bg-card);border-radius:18px;padding:16px;border:1px solid var(--line);position:relative;overflow:hidden">
+      <div style="position:absolute;top:0;right:0;width:120px;height:120px;background:radial-gradient(circle,rgba(212,146,10,.15),transparent 60%);pointer-events:none"></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;position:relative">
+        <div style="font-size:13px;font-weight:800">距 <span style="background:linear-gradient(135deg,#d4920a,#f59546);-webkit-background-clip:text;-webkit-text-fill-color:transparent">4 星</span> 还差</div>
+        <div style="font-size:10px;color:var(--mute);font-weight:600">3 星 / 5 星</div>
+      </div>
+      <div style="position:relative">
+        <div style="height:8px;background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden">
+          <div style="width:64%;height:100%;background:linear-gradient(90deg,#d4920a,#f59546);border-radius:99px;box-shadow:0 0 12px rgba(245,149,70,.5)"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:10px;color:var(--mute);font-weight:600">
+          <span>邀请 3/5 人</span>
+          <span>团队 ¥640/¥1000</span>
+        </div>
+      </div>
+      <div style="margin-top:14px;display:flex;gap:10px">
+        <button style="flex:1;padding:10px;background:linear-gradient(135deg,#e8721b,#f59546);border:none;color:#fff;border-radius:10px;font-size:12px;font-weight:800;box-shadow:0 6px 16px rgba(232,114,27,.3)">分享邀请</button>
+        <button style="flex:1;padding:10px;background:rgba(255,255,255,.06);border:1px solid var(--line);color:#fff;border-radius:10px;font-size:12px;font-weight:700">看晋级规则</button>
+      </div>
+    </div>
+
+    <!-- 功能 grid -->
+    <div style="padding:18px 14px 0">
+      <div style="font-size:14px;font-weight:800;padding:0 8px 12px">我的资产</div>
+      <div style="background:var(--bg-card);border-radius:18px;padding:8px;border:1px solid var(--line);display:grid;grid-template-columns:repeat(4,1fr)">
+        <div style="padding:14px 8px;text-align:center"><div style="font-size:22px;margin-bottom:4px">💎</div><div style="font-size:10px;color:#c0c0d0">钱包</div></div>
+        <div style="padding:14px 8px;text-align:center"><div style="font-size:22px;margin-bottom:4px">🎫</div><div style="font-size:10px;color:#c0c0d0">优惠券</div></div>
+        <div style="padding:14px 8px;text-align:center"><div style="font-size:22px;margin-bottom:4px">⭐</div><div style="font-size:10px;color:#c0c0d0">我的星级</div></div>
+        <div style="padding:14px 8px;text-align:center"><div style="font-size:22px;margin-bottom:4px">📦</div><div style="font-size:10px;color:#c0c0d0">我的队列</div></div>
+        <div style="padding:14px 8px;text-align:center"><div style="font-size:22px;margin-bottom:4px">📍</div><div style="font-size:10px;color:#c0c0d0">地址</div></div>
+        <div style="padding:14px 8px;text-align:center"><div style="font-size:22px;margin-bottom:4px">❤️</div><div style="font-size:10px;color:#c0c0d0">收藏</div></div>
+        <div style="padding:14px 8px;text-align:center"><div style="font-size:22px;margin-bottom:4px">🎁</div><div style="font-size:10px;color:#c0c0d0">邀请</div></div>
+        <div style="padding:14px 8px;text-align:center"><div style="font-size:22px;margin-bottom:4px">💬</div><div style="font-size:10px;color:#c0c0d0">客服</div></div>
+      </div>
+    </div>
+
+    <!-- 数据小卡 -->
+    <div style="padding:18px 14px 0">
+      <div style="font-size:14px;font-weight:800;padding:0 8px 12px">数据洞察</div>
+      <div style="background:var(--bg-card);border-radius:18px;padding:18px;border:1px solid var(--line)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+          <div style="font-size:13px;font-weight:800">近 30 天</div>
+          <div style="font-size:10px;color:var(--mute)">5/22 更新</div>
+        </div>
+        <!-- mini bar chart -->
+        <div style="display:flex;align-items:flex-end;justify-content:space-between;height:80px;gap:4px">
+          <div style="flex:1;background:linear-gradient(180deg,#e8721b,#e8721b);height:35%;border-radius:4px 4px 0 0"></div>
+          <div style="flex:1;background:linear-gradient(180deg,#e8721b,#e8721b);height:55%;border-radius:4px 4px 0 0"></div>
+          <div style="flex:1;background:linear-gradient(180deg,#e8721b,#e8721b);height:40%;border-radius:4px 4px 0 0"></div>
+          <div style="flex:1;background:linear-gradient(180deg,#e8721b,#e8721b);height:62%;border-radius:4px 4px 0 0"></div>
+          <div style="flex:1;background:linear-gradient(180deg,#e8721b,#e8721b);height:75%;border-radius:4px 4px 0 0"></div>
+          <div style="flex:1;background:linear-gradient(180deg,#e8721b,#e8721b);height:48%;border-radius:4px 4px 0 0"></div>
+          <div style="flex:1;background:linear-gradient(180deg,#d4920a,#f59546);height:92%;border-radius:4px 4px 0 0;box-shadow:0 0 12px rgba(245,149,70,.6)"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:10px;font-size:9px;color:var(--mute)">
+          <span>5/16</span><span>5/17</span><span>5/18</span><span>5/19</span><span>5/20</span><span>5/21</span><span>今</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="tabbar">
+    <div class="tab"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3 4 9v12h5v-7h6v7h5V9z"/></svg>主页</div>
+    <div class="tab"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 5h18v2H3zm0 6h18v2H3zm0 6h18v2H3z"/></svg>分类</div>
+    <div class="tab"><div class="cart-circle"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4h-2l-3 6 4 11h12l4-11-3-6h-2zM9 21a1 1 0 1 1 0-2 1 1 0 0 1 0 2zm6 0a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/></svg></div>购物车</div>
+    <div class="tab"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 5h18v3H3zM3 10h18v3H3zM3 15h18v3H3z"/></svg>订单</div>
+    <div class="tab on"><div class="tab-dot"></div><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 22c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>我的</div>
+  </div>
+</div>
+
+</body>
+</html>
