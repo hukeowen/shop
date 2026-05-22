@@ -29,30 +29,48 @@ let _loadingPromise = null;
 
 /**
  * 异步拉后端商品分类，缓存到 CATEGORIES。失败用 fallback，不抛错。
+ * 优先调商户自建分类接口 /merchant/mini/product/category/list（按 tenant 过滤，
+ * 商户能看到自家所有自建分类）；失败 fallback 到平台公共接口；再失败用本地常量。
  */
 export async function loadCategories(force = false) {
   if (!force && _categoriesLoaded) return CATEGORIES;
   if (_loadingPromise) return _loadingPromise;
   _loadingPromise = (async () => {
+    let list = null;
     try {
-      const list = await request({ url: '/app-api/product/category/list' });
-      if (Array.isArray(list) && list.length) {
-        const normalized = list
-            .filter((c) => c && c.id != null && c.name)
-            .map((c) => ({ id: Number(c.id), name: String(c.name) }));
-        if (normalized.length) {
-          CATEGORIES.splice(0, CATEGORIES.length, ...normalized);
-          _categoriesLoaded = true;
-        }
+      list = await request({ url: '/app-api/merchant/mini/product/category/list' });
+    } catch {}
+    if (!Array.isArray(list) || !list.length) {
+      try {
+        list = await request({ url: '/app-api/product/category/list' });
+      } catch (e) {
+        console.warn('[product] loadCategories 失败，用本地 fallback:', e?.message);
       }
-    } catch (e) {
-      console.warn('[product] loadCategories 失败，用本地 fallback:', e?.message);
-    } finally {
-      _loadingPromise = null;
     }
+    if (Array.isArray(list) && list.length) {
+      const normalized = list
+          .filter((c) => c && c.id != null && c.name)
+          .map((c) => ({ id: Number(c.id), name: String(c.name) }));
+      if (normalized.length) {
+        CATEGORIES.splice(0, CATEGORIES.length, ...normalized);
+        _categoriesLoaded = true;
+      }
+    }
+    _loadingPromise = null;
     return CATEGORIES;
   })();
   return _loadingPromise;
+}
+
+/** 商户自建商品分类。返回新分类 id；同名幂等（findOrCreate 后端实现）。 */
+export async function createCategory(name) {
+  const id = await request({
+    url: `/app-api/merchant/mini/product/category/create?name=${encodeURIComponent(name)}`,
+    method: 'POST',
+  });
+  // 创建成功后强制刷新本地列表
+  await loadCategories(true);
+  return id;
 }
 
 // 模块加载时触发一次预热（异步），让 product/edit.vue 打开时大概率已就绪

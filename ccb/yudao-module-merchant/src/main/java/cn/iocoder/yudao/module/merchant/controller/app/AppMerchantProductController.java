@@ -113,6 +113,39 @@ public class AppMerchantProductController {
         return success(true);
     }
 
+    // ==================== 商品分类（商户自建） ====================
+
+    @GetMapping("/category/list")
+    @Operation(summary = "本商户的商品分类列表")
+    public CommonResult<java.util.List<java.util.Map<String, Object>>> listMyCategories() {
+        java.util.List<cn.iocoder.yudao.module.product.dal.dataobject.category.ProductCategoryDO> list =
+                productCategoryService.getEnableCategoryList();
+        // 只返二级分类（parentId != 0），以及顶级"通用"作为兜底；按 sort 排
+        list.sort(java.util.Comparator.comparing(
+                cn.iocoder.yudao.module.product.dal.dataobject.category.ProductCategoryDO::getSort));
+        java.util.List<java.util.Map<String, Object>> resp = new java.util.ArrayList<>();
+        for (cn.iocoder.yudao.module.product.dal.dataobject.category.ProductCategoryDO c : list) {
+            java.util.Map<String, Object> m = new java.util.HashMap<>();
+            m.put("id", c.getId());
+            m.put("name", c.getName());
+            m.put("parentId", c.getParentId());
+            resp.add(m);
+        }
+        return success(resp);
+    }
+
+    @PostMapping("/category/create")
+    @Operation(summary = "商户自建商品分类（名称去重，幂等）")
+    @Parameter(name = "name", description = "分类名称", required = true)
+    public CommonResult<Long> createMyCategory(@RequestParam("name") String name) {
+        if (name == null || name.trim().isEmpty()) {
+            throw cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil
+                    .exception0(400, "分类名称不能为空");
+        }
+        Long id = productCategoryService.findOrCreateCategory(name.trim());
+        return success(id);
+    }
+
     /**
      * 将极简VO转换为标准SPU创建VO，填充默认值
      */

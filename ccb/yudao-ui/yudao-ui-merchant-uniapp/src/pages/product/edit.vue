@@ -46,12 +46,12 @@
         <picker
           mode="selector"
           :value="categoryIdx"
-          :range="categories"
+          :range="categoryOptions"
           range-key="name"
           @change="onPickCategory"
         >
           <view class="picker-row">
-            <text class="picker-text">{{ categories[categoryIdx].name }}</text>
+            <text class="picker-text">{{ (categoryOptions[categoryIdx]||{}).name }}</text>
             <text class="arrow">›</text>
           </view>
         </picker>
@@ -356,6 +356,7 @@ import { onLoad } from '@dcloudio/uni-app';
 import {
   CATEGORIES,
   DEFAULT_CATEGORY_ID,
+  createCategory,
   createSpu,
   deleteSpu,
   getSpu,
@@ -655,6 +656,9 @@ function goSettleRecords() {
   uni.navigateTo({ url: `/pages/product/pool-records?spuId=${editingId.value}` });
 }
 
+// 分类下拉的实际选项：真实分类 + 末尾的「＋ 新增分类」哑元（id=-1）
+const ADD_CATEGORY_OPTION = { id: -1, name: '＋ 新增分类' };
+const categoryOptions = computed(() => [...categories, ADD_CATEGORY_OPTION]);
 const categoryIdx = computed(() => {
   const i = categories.findIndex((c) => c.id === form.categoryId);
   return i >= 0 ? i : 0;
@@ -677,7 +681,36 @@ const advancedHint = computed(() => {
 });
 
 function onPickCategory(e) {
-  form.categoryId = categories[Number(e.detail.value)].id;
+  const idx = Number(e.detail.value);
+  const picked = categoryOptions.value[idx];
+  if (!picked) return;
+  if (picked.id === -1) {
+    // 点了「＋ 新增分类」哑元 → 弹输入框创建
+    uni.showModal({
+      title: '新增商品分类',
+      editable: true,
+      placeholderText: '如：饭团 / 卤味 / 文具',
+      success: async (res) => {
+        if (!res.confirm) return;
+        const name = (res.content || '').trim();
+        if (!name) {
+          uni.showToast({ title: '分类名不能为空', icon: 'none' });
+          return;
+        }
+        try {
+          const newId = await createCategory(name);
+          if (newId) {
+            form.categoryId = Number(newId);
+            uni.showToast({ title: `已创建「${name}」`, icon: 'success' });
+          }
+        } catch (e) {
+          uni.showToast({ title: '创建失败：' + (e?.msg || e?.message || '未知'), icon: 'none' });
+        }
+      },
+    });
+    return;
+  }
+  form.categoryId = picked.id;
 }
 
 function onPriceInput(e) {

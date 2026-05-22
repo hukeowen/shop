@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>明德中学 · 租户管理</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-font-smoothing:antialiased}
+  body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;background:#f4f6fa;color:#0f1729;font-size:14px}
+  :root{
+    --ink:#0f1729;--mute:#6b7280;--mute2:#a6b0c2;--line:#e5e9ef;--bg:#f4f6fa;
+    --green:#16a34a;--green-dk:#0d4e30;--green-lt:#dcfce7;
+    --blue:#2563eb;--blue-lt:#e8efff;--orange:#e8721b;--red:#dc2626;--amber:#d99e2b;--amber-lt:#fef3cd;
+  }
+  .layout{display:flex;min-height:100vh}
+
+  .side{width:220px;background:linear-gradient(180deg,#0d4e30,#072917);color:#fff;flex-shrink:0;display:flex;flex-direction:column}
+  .side-brand{padding:24px 20px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(255,255,255,.1)}
+  .brand-logo{width:36px;height:36px;border-radius:10px;background:#16a34a;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800}
+  .brand-name{font-size:15px;font-weight:800}
+  .brand-sub{font-size:10px;opacity:.7;margin-top:2px}
+
+  .nav{padding:14px 10px;flex:1;overflow-y:auto}
+  .nav-group{margin-bottom:18px}
+  .nav-lbl{font-size:10px;color:rgba(255,255,255,.5);letter-spacing:2px;padding:0 12px 8px;text-transform:uppercase}
+  .nav-i{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;color:rgba(255,255,255,.78);font-size:13px;font-weight:500;margin-bottom:2px;cursor:pointer}
+  .nav-i:hover{background:rgba(255,255,255,.06)}
+  .nav-i.on{background:rgba(22,163,74,.25);color:#fff;font-weight:700}
+  .nav-i.on::before{content:'';width:3px;height:14px;background:#22c55e;border-radius:2px;margin-left:-12px;margin-right:9px}
+  .nav-ic{width:18px;text-align:center;font-size:14px}
+  .nav-badge{margin-left:auto;background:#dc2626;color:#fff;font-size:9px;padding:1px 5px;border-radius:8px;font-weight:700}
+
+  .side-user{padding:14px 16px;border-top:1px solid rgba(255,255,255,.1);display:flex;align-items:center;gap:10px}
+  .side-u-av{width:34px;height:34px;border-radius:50%;background:#16a34a;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800}
+  .side-u-meta{flex:1}
+  .side-u-n{font-size:13px;font-weight:700}
+  .side-u-r{font-size:10px;opacity:.7;margin-top:2px}
+
+  .main{flex:1;display:flex;flex-direction:column;min-width:0}
+  .topbar{height:60px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 24px;gap:16px}
+  .crumb{font-size:13px;color:var(--mute)}.crumb b{color:var(--ink);font-weight:700}
+  .top-r{margin-left:auto;display:flex;align-items:center;gap:14px}
+  .top-search{width:240px;height:34px;background:var(--bg);border-radius:8px;display:flex;align-items:center;padding:0 12px;font-size:12px;color:var(--mute)}
+
+  .content{flex:1;padding:24px;overflow-y:auto}
+  .page-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+  .page-t{font-size:22px;font-weight:800;letter-spacing:-.3px}
+  .page-t small{font-size:12px;color:var(--mute);font-weight:600;margin-left:8px}
+  .page-cta{padding:10px 18px;background:var(--green);color:#fff;border-radius:8px;font-size:13px;font-weight:700;border:none;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 4px 12px rgba(22,163,74,.25)}
+
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+  .stat{background:#fff;border-radius:12px;padding:18px;border:1px solid var(--line)}
+  .stat-h{display:flex;justify-content:space-between;margin-bottom:12px}
+  .stat-l{font-size:12px;color:var(--mute);font-weight:600}
+  .stat-ic{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px}
+  .stat-ic.green{background:var(--green-lt);color:var(--green-dk)}
+  .stat-ic.blue{background:var(--blue-lt);color:#1e3a8a}
+  .stat-ic.orange{background:#fff5e8;color:var(--orange)}
+  .stat-ic.amber{background:var(--amber-lt);color:#8a5a00}
+  .stat-v{font-size:26px;font-weight:900;letter-spacing:-.5px;line-height:1}
+  .stat-v small{font-size:13px;font-weight:600;color:var(--mute);margin-left:3px}
+  .stat-d{font-size:11px;color:var(--mute2);margin-top:6px}
+  .stat-d.up{color:var(--green)}.stat-d.warn{color:var(--orange)}
+
+  .row2{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:24px}
+  .card{background:#fff;border-radius:12px;border:1px solid var(--line);overflow:hidden}
+  .card-h{padding:16px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line)}
+  .card-t{font-size:15px;font-weight:800}
+  .card-more{font-size:12px;color:var(--mute);font-weight:600}
+
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{text-align:left;padding:12px 20px;background:#fafbff;font-weight:700;color:var(--mute);font-size:11px;letter-spacing:.5px;text-transform:uppercase;border-bottom:1px solid var(--line)}
+  td{padding:14px 20px;border-bottom:1px solid var(--line);vertical-align:middle}
+  tr:last-child td{border-bottom:none}
+  tr:hover td{background:#fafff8}
+
+  .row-shop{display:flex;align-items:center;gap:10px}
+  .shop-ic{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#16a34a,#0d4e30);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800}
+  .shop-n{font-size:13px;font-weight:700}
+  .shop-sub{font-size:10px;color:var(--mute);margin-top:2px}
+
+  .tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700}
+  .tag-on{background:var(--green-lt);color:#15803d}
+  .tag-off{background:#fee2e2;color:#991b1b}
+  .tag-low{background:var(--amber-lt);color:#8a5a00}
+
+  .act-btn{padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;border:1px solid var(--line);background:#fff;color:var(--ink);margin-right:4px;cursor:pointer}
+  .act-btn.primary{background:var(--green);color:#fff;border-color:var(--green)}
+  .act-btn:hover{background:var(--green-lt);color:var(--green-dk);border-color:var(--green-lt)}
+
+  .acts-side{padding:18px;display:flex;flex-direction:column;gap:10px}
+  .side-act{background:#fafff8;border:1px solid var(--green-lt);border-radius:10px;padding:14px;display:flex;align-items:center;gap:12px;cursor:pointer}
+  .side-act:hover{background:var(--green-lt)}
+  .side-act-ic{width:40px;height:40px;border-radius:10px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:20px}
+  .side-act-m{flex:1}
+  .side-act-t{font-size:13px;font-weight:700;color:var(--ink)}
+  .side-act-d{font-size:11px;color:var(--mute);margin-top:2px}
+
+  /* 二维码模块 */
+  .qr-card{background:linear-gradient(135deg,#16a34a 0%,#0d4e30 100%);color:#fff;border-radius:12px;padding:20px}
+  .qr-t{font-size:14px;font-weight:800;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+  .qr-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+  .qr-item{background:rgba(255,255,255,.12);border-radius:10px;padding:12px;text-align:center}
+  .qr-mock{width:84px;height:84px;background:#fff;border-radius:8px;margin:0 auto 8px;padding:6px}
+  .qr-mock-i{width:100%;height:100%;background:conic-gradient(from 0deg,#000 0deg 90deg,#fff 90deg 180deg,#000 180deg 270deg,#fff 270deg 360deg);background-image:radial-gradient(circle at 50% 50%,#000 6%,transparent 7%,transparent 11%,#000 12%,#000 14%,transparent 15%);background-color:#fff;background-size:8px 8px;border-radius:4px;position:relative}
+  .qr-mock-i::before,.qr-mock-i::after{content:'';position:absolute;width:18px;height:18px;border:3px solid #000;background:#fff}
+  .qr-mock-i::before{top:4px;left:4px}
+  .qr-mock-i::after{top:4px;right:4px}
+  .qr-lbl{font-size:11px;font-weight:600;opacity:.85;margin-bottom:2px}
+  .qr-name{font-size:13px;font-weight:800}
+
+  /* 角色 + 子账号 */
+  .role-pill{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700;margin-right:4px}
+  .role-admin{background:#fef3cd;color:#8a5a00}
+  .role-inbound{background:var(--blue-lt);color:#1e3a8a}
+  .role-finance{background:#f0e8ff;color:#5d3fd3}
+
+  /* 报警 */
+  .alerts{background:#fef3cd;border:1px solid #fde68a;border-radius:10px;padding:14px;margin-bottom:24px;display:flex;gap:12px;align-items:flex-start}
+  .alert-ic{font-size:20px;flex-shrink:0}
+  .alert-m{flex:1;font-size:13px;color:#8a5a00}
+  .alert-t{font-weight:700;margin-bottom:4px}
+  .alert-d{font-size:11px;color:#92400e}
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="side">
+    <div class="side-brand">
+      <div class="brand-logo">明</div>
+      <div>
+        <div class="brand-name">明德中学</div>
+        <div class="brand-sub">租户管理后台</div>
+      </div>
+    </div>
+    <div class="nav">
+      <div class="nav-group">
+        <div class="nav-lbl">运营</div>
+        <div class="nav-i on"><span class="nav-ic">📊</span>工作台</div>
+        <div class="nav-i"><span class="nav-ic">🏪</span>供货商家管理</div>
+        <div class="nav-i"><span class="nav-ic">📦</span>商品库</div>
+        <div class="nav-i"><span class="nav-ic">📋</span>订单管理</div>
+        <div class="nav-i"><span class="nav-ic">📥</span>入库管理<span class="nav-badge">3</span></div>
+        <div class="nav-i"><span class="nav-ic">🍱</span>食堂会员</div>
+      </div>
+      <div class="nav-group">
+        <div class="nav-lbl">系统</div>
+        <div class="nav-i"><span class="nav-ic">👥</span>子账号 & 权限</div>
+        <div class="nav-i"><span class="nav-ic">📱</span>邀请二维码</div>
+        <div class="nav-i"><span class="nav-ic">📈</span>报表</div>
+        <div class="nav-i"><span class="nav-ic">⚙️</span>租户设置</div>
+      </div>
+    </div>
+    <div class="side-user">
+      <div class="side-u-av">张</div>
+      <div class="side-u-meta">
+        <div class="side-u-n">张校长</div>
+        <div class="side-u-r">租户管理员</div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="crumb">首页 / <b>工作台</b></div>
+      <div class="top-r">
+        <div class="top-search">🔍 搜索订单 / 商品 / 会员</div>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="page-h">
+        <div class="page-t">工作台 <small>明德中学 · 朝阳区</small></div>
+        <button class="page-cta">＋ 开通新供货商</button>
+      </div>
+
+      <!-- 报警 -->
+      <div class="alerts">
+        <div class="alert-ic">⚠️</div>
+        <div class="alert-m">
+          <div class="alert-t">3 单待入库 · 大米 50 袋 / 食用油 30 桶 / 蔬菜 200 斤</div>
+          <div class="alert-d">来自鑫源食材批发等 2 家上游供货商 · 已等待 4h 25m</div>
+        </div>
+        <button class="act-btn primary">去入库</button>
+      </div>
+
+      <!-- 4 stats -->
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-h"><div class="stat-l">本租户商家</div><div class="stat-ic green">🏪</div></div>
+          <div class="stat-v">3<small>家</small></div>
+          <div class="stat-d">食材库 / 超市 / 文具</div>
+        </div>
+        <div class="stat">
+          <div class="stat-h"><div class="stat-l">食堂会员</div><div class="stat-ic blue">🍱</div></div>
+          <div class="stat-v">14<small>家</small></div>
+          <div class="stat-d up">↑ 本月扫码 +3 家</div>
+        </div>
+        <div class="stat">
+          <div class="stat-h"><div class="stat-l">本月订单</div><div class="stat-ic orange">📋</div></div>
+          <div class="stat-v">286<small>单</small></div>
+          <div class="stat-d up">↑ 较上月 +14%</div>
+        </div>
+        <div class="stat">
+          <div class="stat-h"><div class="stat-l">本月供货 GMV</div><div class="stat-ic amber">💰</div></div>
+          <div class="stat-v">¥86,400</div>
+          <div class="stat-d up">↑ 18.3% MoM</div>
+        </div>
+      </div>
+
+      <!-- 商家列表 + 快捷 -->
+      <div class="row2">
+        <div class="card">
+          <div class="card-h">
+            <div class="card-t">本租户供货商家</div>
+            <div class="card-more">管理 ›</div>
+          </div>
+          <table>
+            <thead><tr><th>商家</th><th>商品 SKU</th><th>会员数</th><th>本月单量</th><th>状态</th><th>操作</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><div class="row-shop"><div class="shop-ic">食</div><div><div class="shop-n">明德食材库</div><div class="shop-sub">主营米油蛋奶</div></div></div></td>
+                <td>86</td>
+                <td>10</td>
+                <td>212</td>
+                <td><span class="tag tag-on">营业中</span></td>
+                <td><button class="act-btn">详情</button><button class="act-btn">二维码</button></td>
+              </tr>
+              <tr>
+                <td><div class="row-shop"><div class="shop-ic" style="background:linear-gradient(135deg,#2563eb,#1e3a8a)">超</div><div><div class="shop-n">明德便民超市</div><div class="shop-sub">日用 / 零食 / 饮品</div></div></div></td>
+                <td>52</td>
+                <td>3</td>
+                <td>60</td>
+                <td><span class="tag tag-on">营业中</span></td>
+                <td><button class="act-btn">详情</button><button class="act-btn">二维码</button></td>
+              </tr>
+              <tr>
+                <td><div class="row-shop"><div class="shop-ic" style="background:linear-gradient(135deg,#e8721b,#92400e)">文</div><div><div class="shop-n">明德文具站</div><div class="shop-sub">教学耗材</div></div></div></td>
+                <td>28</td>
+                <td>1</td>
+                <td>14</td>
+                <td><span class="tag tag-low">低活跃</span></td>
+                <td><button class="act-btn">详情</button><button class="act-btn">二维码</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- 快捷操作 -->
+        <div class="card">
+          <div class="card-h">
+            <div class="card-t">快捷操作</div>
+          </div>
+          <div class="acts-side">
+            <div class="side-act"><div class="side-act-ic">📥</div><div class="side-act-m"><div class="side-act-t">上游订单录入</div><div class="side-act-d">从外部供货商进货</div></div></div>
+            <div class="side-act"><div class="side-act-ic">✅</div><div class="side-act-m"><div class="side-act-t">确认收货入库</div><div class="side-act-d">3 单待处理</div></div></div>
+            <div class="side-act"><div class="side-act-ic">📦</div><div class="side-act-m"><div class="side-act-t">商品上架</div><div class="side-act-d">添加新 SKU</div></div></div>
+            <div class="side-act"><div class="side-act-ic">👥</div><div class="side-act-m"><div class="side-act-t">添加收货员</div><div class="side-act-d">分配子账号</div></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 二维码 + 子账号 -->
+      <div class="row2">
+        <div class="card">
+          <div class="card-h">
+            <div class="card-t">子账号 & 权限</div>
+            <div class="card-more">管理 ›</div>
+          </div>
+          <table>
+            <thead><tr><th>账号</th><th>姓名</th><th>角色</th><th>最近登录</th><th>状态</th><th>操作</th></tr></thead>
+            <tbody>
+              <tr>
+                <td>13800138001</td>
+                <td>张校长</td>
+                <td><span class="role-pill role-admin">租户管理员</span></td>
+                <td>10 分钟前</td>
+                <td><span class="tag tag-on">启用</span></td>
+                <td><button class="act-btn">权限</button></td>
+              </tr>
+              <tr>
+                <td>13800138002</td>
+                <td>李采购</td>
+                <td><span class="role-pill role-admin">商家管理</span><span class="role-pill role-inbound">收货</span></td>
+                <td>1 小时前</td>
+                <td><span class="tag tag-on">启用</span></td>
+                <td><button class="act-btn">权限</button></td>
+              </tr>
+              <tr>
+                <td>13800138003</td>
+                <td>王仓管</td>
+                <td><span class="role-pill role-inbound">收货员</span></td>
+                <td>15 分钟前</td>
+                <td><span class="tag tag-on">启用</span></td>
+                <td><button class="act-btn">权限</button></td>
+              </tr>
+              <tr>
+                <td>13800138004</td>
+                <td>赵会计</td>
+                <td><span class="role-pill role-finance">财务</span></td>
+                <td>昨天</td>
+                <td><span class="tag tag-on">启用</span></td>
+                <td><button class="act-btn">权限</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="qr-card">
+          <div class="qr-t">📱 食堂扫码注册</div>
+          <div style="font-size:11px;opacity:.85;margin-bottom:14px">食堂用微信扫对应商家二维码 → 注册 → 自动绑定为该商家会员</div>
+          <div class="qr-grid">
+            <div class="qr-item">
+              <div class="qr-mock"><div class="qr-mock-i"></div></div>
+              <div class="qr-lbl">扫码进入</div>
+              <div class="qr-name">明德食材库</div>
+            </div>
+            <div class="qr-item">
+              <div class="qr-mock"><div class="qr-mock-i"></div></div>
+              <div class="qr-lbl">扫码进入</div>
+              <div class="qr-name">便民超市</div>
+            </div>
+          </div>
+          <div style="margin-top:14px;padding:8px;background:rgba(0,0,0,.15);border-radius:6px;font-size:10px;text-align:center;letter-spacing:.5px;opacity:.85">
+            短链：m.t/c/MD-X3K9 · 复制 · 下载
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+</body>
+</html>

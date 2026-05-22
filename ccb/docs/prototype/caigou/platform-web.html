@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>采购供应链 · 平台管理</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-font-smoothing:antialiased}
+  body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;background:#f4f6fa;color:#0f1729;font-size:14px;min-height:100vh}
+  :root{
+    --bg:#f4f6fa;--ink:#0f1729;--mute:#6b7280;--mute2:#a6b0c2;--line:#e5e9ef;
+    --blue:#2563eb;--blue-dk:#1e3a8a;--blue-lt:#e8efff;
+    --green:#16a34a;--green-lt:#dcfce7;
+    --orange:#e8721b;--red:#dc2626;--amber:#d99e2b;--amber-lt:#fef3cd;
+  }
+  .layout{display:flex;min-height:100vh}
+
+  /* Sidebar */
+  .side{width:220px;background:#0f1729;color:#fff;flex-shrink:0;display:flex;flex-direction:column}
+  .side-brand{padding:24px 20px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(255,255,255,.08)}
+  .brand-logo{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#2563eb,#1e3a8a);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800}
+  .brand-name{font-size:16px;font-weight:800;letter-spacing:.5px}
+  .brand-sub{font-size:10px;opacity:.6;margin-top:2px;letter-spacing:1px}
+
+  .nav{padding:14px 10px;flex:1;overflow-y:auto}
+  .nav-group{margin-bottom:18px}
+  .nav-lbl{font-size:10px;color:rgba(255,255,255,.45);letter-spacing:2px;padding:0 12px 8px;text-transform:uppercase}
+  .nav-i{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;color:rgba(255,255,255,.75);font-size:13px;font-weight:500;margin-bottom:2px;cursor:pointer}
+  .nav-i:hover{background:rgba(255,255,255,.05)}
+  .nav-i.on{background:linear-gradient(90deg,rgba(37,99,235,.25),rgba(37,99,235,.05));color:#fff;font-weight:700}
+  .nav-i.on::before{content:'';width:3px;height:14px;background:#2563eb;border-radius:2px;margin-left:-12px;margin-right:9px}
+  .nav-ic{width:18px;display:flex;justify-content:center;font-size:14px}
+  .nav-badge{margin-left:auto;background:#dc2626;color:#fff;font-size:9px;padding:1px 5px;border-radius:8px;font-weight:700}
+
+  .side-user{padding:14px 16px;border-top:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:10px}
+  .side-u-av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#2563eb,#1e3a8a);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800}
+  .side-u-meta{flex:1;min-width:0}
+  .side-u-n{font-size:13px;font-weight:700}
+  .side-u-r{font-size:10px;opacity:.6;margin-top:2px}
+
+  /* Main */
+  .main{flex:1;display:flex;flex-direction:column;min-width:0}
+  .topbar{height:60px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 24px;gap:16px}
+  .crumb{font-size:13px;color:var(--mute);display:flex;align-items:center;gap:6px}
+  .crumb b{color:var(--ink);font-weight:700}
+  .top-r{margin-left:auto;display:flex;align-items:center;gap:14px}
+  .top-search{width:240px;height:34px;background:var(--bg);border-radius:8px;display:flex;align-items:center;padding:0 12px;gap:8px;font-size:12px;color:var(--mute)}
+  .top-ic{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--mute);background:var(--bg);font-size:14px;position:relative}
+  .top-dot{position:absolute;top:6px;right:6px;width:6px;height:6px;background:#dc2626;border-radius:50%}
+
+  .content{flex:1;padding:24px;overflow-y:auto}
+  .page-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+  .page-t{font-size:22px;font-weight:800;color:var(--ink);letter-spacing:-.3px}
+  .page-t small{font-size:12px;color:var(--mute);font-weight:600;margin-left:8px;letter-spacing:0}
+  .page-cta{padding:10px 18px;background:var(--blue);color:#fff;border-radius:8px;font-size:13px;font-weight:700;border:none;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 4px 12px rgba(37,99,235,.25)}
+
+  /* Stat cards */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+  .stat{background:#fff;border-radius:12px;padding:18px;border:1px solid var(--line)}
+  .stat-h{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px}
+  .stat-l{font-size:12px;color:var(--mute);font-weight:600}
+  .stat-ic{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px}
+  .stat-ic.blue{background:var(--blue-lt);color:var(--blue-dk)}
+  .stat-ic.green{background:var(--green-lt);color:var(--green)}
+  .stat-ic.orange{background:#fff5e8;color:var(--orange)}
+  .stat-ic.amber{background:var(--amber-lt);color:#8a5a00}
+  .stat-v{font-size:26px;font-weight:900;color:var(--ink);letter-spacing:-.5px;line-height:1}
+  .stat-v small{font-size:13px;font-weight:600;color:var(--mute);margin-left:3px}
+  .stat-d{font-size:11px;color:var(--mute2);margin-top:6px}
+  .stat-d.up{color:var(--green)}
+
+  /* Table card */
+  .tcard{background:#fff;border-radius:12px;border:1px solid var(--line);overflow:hidden}
+  .tcard-h{padding:16px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line)}
+  .tcard-t{font-size:15px;font-weight:800;color:var(--ink)}
+  .tcard-fil{display:flex;gap:8px;font-size:12px;color:var(--mute);align-items:center}
+  .fil-tab{padding:5px 10px;border-radius:6px;font-weight:600;cursor:pointer}
+  .fil-tab.on{background:var(--ink);color:#fff}
+
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{text-align:left;padding:12px 20px;background:#fafbff;font-weight:700;color:var(--mute);font-size:11px;letter-spacing:.5px;text-transform:uppercase;border-bottom:1px solid var(--line)}
+  td{padding:14px 20px;border-bottom:1px solid var(--line);color:var(--ink);font-size:13px;vertical-align:middle}
+  tr:last-child td{border-bottom:none}
+  tr:hover td{background:#fafbff}
+
+  .row-school{display:flex;align-items:center;gap:10px}
+  .school-ic{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#2563eb,#1e3a8a);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;flex-shrink:0}
+  .school-n{font-size:13px;font-weight:700}
+  .school-sub{font-size:10px;color:var(--mute);margin-top:2px}
+  .tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:.3px}
+  .tag-active{background:var(--green-lt);color:#15803d}
+  .tag-trial{background:var(--amber-lt);color:#8a5a00}
+  .tag-stop{background:#fee2e2;color:#991b1b}
+  .tag-pro{background:linear-gradient(90deg,#fbbf24,#f59e0b);color:#fff}
+
+  .act-btns{display:flex;gap:4px}
+  .act-btn{padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer}
+  .act-btn:hover{background:var(--blue-lt);color:var(--blue-dk);border-color:var(--blue-lt)}
+  .act-btn.danger{color:#dc2626}
+
+  /* Sub charts */
+  .row2{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-top:24px}
+  .chart{background:#fff;border-radius:12px;border:1px solid var(--line);padding:18px;height:280px;display:flex;flex-direction:column}
+  .chart-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+  .chart-t{font-size:14px;font-weight:800}
+  .chart-body{flex:1;display:flex;align-items:flex-end;justify-content:space-around;gap:8px;padding-top:24px;position:relative}
+  .bar-wrap{display:flex;flex-direction:column;align-items:center;gap:6px;flex:1}
+  .bar{width:100%;background:linear-gradient(180deg,var(--blue) 0%,var(--blue-dk) 100%);border-radius:6px 6px 0 0;position:relative;transition:all .2s}
+  .bar:hover{filter:brightness(1.15)}
+  .bar-v{position:absolute;top:-18px;left:50%;transform:translateX(-50%);font-size:10px;font-weight:700;color:var(--ink)}
+  .bar-l{font-size:10px;color:var(--mute);font-weight:600}
+
+  .top-list{display:flex;flex-direction:column;gap:10px}
+  .top-r-i{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;background:#fafbff}
+  .top-r-rank{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;flex-shrink:0}
+  .top-r-rank.r1{background:linear-gradient(135deg,#fbbf24,#f59e0b)}
+  .top-r-rank.r2{background:linear-gradient(135deg,#94a3b8,#475569)}
+  .top-r-rank.r3{background:linear-gradient(135deg,#d97706,#92400e)}
+  .top-r-rank.r4,.top-r-rank.r5{background:var(--mute2)}
+  .top-r-n{flex:1;font-size:12px;font-weight:700}
+  .top-r-v{font-size:12px;font-weight:800;color:var(--blue-dk)}
+
+  /* Empty / Hint */
+  .hint{margin:18px 0 0;padding:12px 14px;background:var(--blue-lt);border:1px solid #c7d6fb;border-radius:8px;color:var(--blue-dk);font-size:12px;font-weight:600;display:flex;gap:8px}
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- Sidebar -->
+  <aside class="side">
+    <div class="side-brand">
+      <div class="brand-logo">采</div>
+      <div>
+        <div class="brand-name">小二采购供应链</div>
+        <div class="brand-sub">PLATFORM</div>
+      </div>
+    </div>
+    <div class="nav">
+      <div class="nav-group">
+        <div class="nav-lbl">运营</div>
+        <div class="nav-i on"><span class="nav-ic">📊</span>平台概览</div>
+        <div class="nav-i"><span class="nav-ic">🏫</span>租户管理<span class="nav-badge">3</span></div>
+        <div class="nav-i"><span class="nav-ic">📦</span>套餐管理</div>
+        <div class="nav-i"><span class="nav-ic">📋</span>订单聚合</div>
+        <div class="nav-i"><span class="nav-ic">💰</span>财务对账</div>
+      </div>
+      <div class="nav-group">
+        <div class="nav-lbl">系统</div>
+        <div class="nav-i"><span class="nav-ic">🛡️</span>平台账号</div>
+        <div class="nav-i"><span class="nav-ic">📜</span>操作日志</div>
+        <div class="nav-i"><span class="nav-ic">⚙️</span>系统设置</div>
+      </div>
+    </div>
+    <div class="side-user">
+      <div class="side-u-av">王</div>
+      <div class="side-u-meta">
+        <div class="side-u-n">王运营</div>
+        <div class="side-u-r">超级管理员</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+    <div class="topbar">
+      <div class="crumb">首页 / <b>平台概览</b></div>
+      <div class="top-r">
+        <div class="top-search">🔍 搜索租户 / 订单号</div>
+        <div class="top-ic">🔔<div class="top-dot"></div></div>
+        <div class="top-ic">❓</div>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="page-h">
+        <div class="page-t">平台概览 <small>2026 年 5 月</small></div>
+        <button class="page-cta">＋ 开通新租户</button>
+      </div>
+
+      <!-- 4 stats -->
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-h">
+            <div class="stat-l">租户数</div>
+            <div class="stat-ic blue">🏫</div>
+          </div>
+          <div class="stat-v">8<small>家</small></div>
+          <div class="stat-d up">↑ 本月新增 2 家</div>
+        </div>
+        <div class="stat">
+          <div class="stat-h">
+            <div class="stat-l">供货商家数</div>
+            <div class="stat-ic green">🏪</div>
+          </div>
+          <div class="stat-v">23<small>家</small></div>
+          <div class="stat-d">平均 2.9 家/租户</div>
+        </div>
+        <div class="stat">
+          <div class="stat-h">
+            <div class="stat-l">本月平台 GMV</div>
+            <div class="stat-ic orange">💰</div>
+          </div>
+          <div class="stat-v">¥486K</div>
+          <div class="stat-d up">↑ 18.2% MoM</div>
+        </div>
+        <div class="stat">
+          <div class="stat-h">
+            <div class="stat-l">月活食堂</div>
+            <div class="stat-ic amber">🍱</div>
+          </div>
+          <div class="stat-v">156<small>个</small></div>
+          <div class="stat-d">28 天活跃下单</div>
+        </div>
+      </div>
+
+      <!-- 租户列表 -->
+      <div class="tcard">
+        <div class="tcard-h">
+          <div class="tcard-t">租户列表 · 8 家</div>
+          <div class="tcard-fil">
+            <span class="fil-tab on">全部</span>
+            <span class="fil-tab">运营中 5</span>
+            <span class="fil-tab">试用 2</span>
+            <span class="fil-tab">已停 1</span>
+          </div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>租户</th>
+              <th>套餐</th>
+              <th>到期日</th>
+              <th>商家数</th>
+              <th>食堂会员</th>
+              <th>本月订单</th>
+              <th>本月 GMV</th>
+              <th>状态</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><div class="row-school"><div class="school-ic">明</div><div><div class="school-n">明德中学</div><div class="school-sub">朝阳区 · 6/20 开通</div></div></div></td>
+              <td><span class="tag tag-pro">PRO</span> 旗舰版</td>
+              <td>2027-06-19</td>
+              <td>3</td>
+              <td>14</td>
+              <td>286</td>
+              <td><b>¥86,400</b></td>
+              <td><span class="tag tag-active">运营中</span></td>
+              <td><div class="act-btns"><button class="act-btn">详情</button><button class="act-btn">配置</button></div></td>
+            </tr>
+            <tr>
+              <td><div class="row-school"><div class="school-ic">实</div><div><div class="school-n">实验中学</div><div class="school-sub">海淀区 · 4/12 开通</div></div></div></td>
+              <td><span class="tag tag-pro">PRO</span> 旗舰版</td>
+              <td>2027-04-11</td>
+              <td>2</td>
+              <td>8</td>
+              <td>164</td>
+              <td><b>¥58,200</b></td>
+              <td><span class="tag tag-active">运营中</span></td>
+              <td><div class="act-btns"><button class="act-btn">详情</button><button class="act-btn">配置</button></div></td>
+            </tr>
+            <tr>
+              <td><div class="row-school"><div class="school-ic" style="background:linear-gradient(135deg,#16a34a,#0d4e30)">阳</div><div><div class="school-n">阳光幼儿园</div><div class="school-sub">海淀区 · 5/01 开通</div></div></div></td>
+              <td>标准版</td>
+              <td>2027-05-01</td>
+              <td>1</td>
+              <td>2</td>
+              <td>32</td>
+              <td><b>¥6,800</b></td>
+              <td><span class="tag tag-active">运营中</span></td>
+              <td><div class="act-btns"><button class="act-btn">详情</button><button class="act-btn">配置</button></div></td>
+            </tr>
+            <tr>
+              <td><div class="row-school"><div class="school-ic" style="background:linear-gradient(135deg,#dc2626,#991b1b)">城</div><div><div class="school-n">城南职业学院</div><div class="school-sub">西城区 · 3/15 开通</div></div></div></td>
+              <td><span class="tag tag-pro">PRO</span> 旗舰版</td>
+              <td>2027-03-14</td>
+              <td>4</td>
+              <td>22</td>
+              <td>312</td>
+              <td><b>¥124,600</b></td>
+              <td><span class="tag tag-active">运营中</span></td>
+              <td><div class="act-btns"><button class="act-btn">详情</button><button class="act-btn">配置</button></div></td>
+            </tr>
+            <tr>
+              <td><div class="row-school"><div class="school-ic" style="background:linear-gradient(135deg,#e8721b,#92400e)">五</div><div><div class="school-n">五一小学</div><div class="school-sub">朝阳区 · 5/18 开通</div></div></div></td>
+              <td>标准版</td>
+              <td>2027-05-17</td>
+              <td>1</td>
+              <td>3</td>
+              <td>48</td>
+              <td><b>¥12,400</b></td>
+              <td><span class="tag tag-active">运营中</span></td>
+              <td><div class="act-btns"><button class="act-btn">详情</button><button class="act-btn">配置</button></div></td>
+            </tr>
+            <tr>
+              <td><div class="row-school"><div class="school-ic" style="background:linear-gradient(135deg,#7c3aed,#5b21b6)">新</div><div><div class="school-n">新世纪国际学校</div><div class="school-sub">顺义区 · 5/18 开通</div></div></div></td>
+              <td><span class="tag tag-trial">TRIAL</span> 试用版</td>
+              <td>2026-06-17 <span style="color:#dc2626">⚠ 27 天</span></td>
+              <td>1</td>
+              <td>5</td>
+              <td>12</td>
+              <td><b>¥3,200</b></td>
+              <td><span class="tag tag-trial">试用</span></td>
+              <td><div class="act-btns"><button class="act-btn">详情</button><button class="act-btn">续费</button></div></td>
+            </tr>
+            <tr>
+              <td><div class="row-school"><div class="school-ic" style="background:linear-gradient(135deg,#0891b2,#0e7490)">东</div><div><div class="school-n">东方医院</div><div class="school-sub">朝阳区 · 5/20 开通</div></div></div></td>
+              <td><span class="tag tag-trial">TRIAL</span> 试用版</td>
+              <td>2026-06-19 <span style="color:#dc2626">⚠ 29 天</span></td>
+              <td>1</td>
+              <td>0</td>
+              <td>0</td>
+              <td><b>¥0</b></td>
+              <td><span class="tag tag-trial">试用</span></td>
+              <td><div class="act-btns"><button class="act-btn">详情</button><button class="act-btn">续费</button></div></td>
+            </tr>
+            <tr style="opacity:.55">
+              <td><div class="row-school"><div class="school-ic" style="background:#94a3b8">旧</div><div><div class="school-n">旧时光餐厅</div><div class="school-sub">朝阳区 · 1/10 停用</div></div></div></td>
+              <td>标准版</td>
+              <td>2026-01-10</td>
+              <td>1</td>
+              <td>0</td>
+              <td>0</td>
+              <td><b>¥0</b></td>
+              <td><span class="tag tag-stop">已停</span></td>
+              <td><div class="act-btns"><button class="act-btn">重启</button></div></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 图表 + TOP -->
+      <div class="row2">
+        <div class="chart">
+          <div class="chart-h">
+            <div class="chart-t">近 7 日平台 GMV (千元)</div>
+            <div style="font-size:11px;color:var(--mute)">合计 ¥486,400</div>
+          </div>
+          <div class="chart-body">
+            <div class="bar-wrap"><div class="bar" style="height:55%;"><div class="bar-v">52</div></div><div class="bar-l">05/16</div></div>
+            <div class="bar-wrap"><div class="bar" style="height:48%;"><div class="bar-v">45</div></div><div class="bar-l">05/17</div></div>
+            <div class="bar-wrap"><div class="bar" style="height:72%;"><div class="bar-v">68</div></div><div class="bar-l">05/18</div></div>
+            <div class="bar-wrap"><div class="bar" style="height:82%;"><div class="bar-v">78</div></div><div class="bar-l">05/19</div></div>
+            <div class="bar-wrap"><div class="bar" style="height:65%;"><div class="bar-v">62</div></div><div class="bar-l">05/20</div></div>
+            <div class="bar-wrap"><div class="bar" style="height:90%;"><div class="bar-v">85</div></div><div class="bar-l">05/21</div></div>
+            <div class="bar-wrap"><div class="bar" style="height:100%;"><div class="bar-v">96</div></div><div class="bar-l">05/22</div></div>
+          </div>
+        </div>
+        <div class="chart" style="height:280px">
+          <div class="chart-h">
+            <div class="chart-t">租户 GMV TOP 5</div>
+          </div>
+          <div class="top-list">
+            <div class="top-r-i"><div class="top-r-rank r1">1</div><div class="top-r-n">城南职业学院</div><div class="top-r-v">¥124.6K</div></div>
+            <div class="top-r-i"><div class="top-r-rank r2">2</div><div class="top-r-n">明德中学</div><div class="top-r-v">¥86.4K</div></div>
+            <div class="top-r-i"><div class="top-r-rank r3">3</div><div class="top-r-n">实验中学</div><div class="top-r-v">¥58.2K</div></div>
+            <div class="top-r-i"><div class="top-r-rank r4">4</div><div class="top-r-n">五一小学</div><div class="top-r-v">¥12.4K</div></div>
+            <div class="top-r-i"><div class="top-r-rank r5">5</div><div class="top-r-n">阳光幼儿园</div><div class="top-r-v">¥6.8K</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="hint">💡 你看到的「商家」 = 租户下挂的供货商档案（如学校自营食材库 / 学校超市等）；「食堂会员」 = 餐饮店扫码注册的 C 端账号</div>
+    </div>
+  </main>
+</div>
+</body>
+</html>

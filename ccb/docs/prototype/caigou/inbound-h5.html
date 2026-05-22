@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>收货员 H5 · 明德中学</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-font-smoothing:antialiased}
+  body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;background:#0f1115;min-height:100vh;padding:24px;display:flex;flex-wrap:wrap;gap:24px;justify-content:center}
+  :root{
+    --bg:#f5f6f4;--ink:#0e2218;--mute:#6d7c75;--mute2:#a3afa9;--line:#e3e7e4;
+    --blue:#2563eb;--blue-dk:#1e3a8a;--blue-lt:#e8efff;
+    --green:#16a34a;--green-lt:#dcfce7;
+    --orange:#e8721b;--red:#dc2626;--amber:#d99e2b;--amber-lt:#fef3cd;
+  }
+  .frame{width:390px;height:844px;background:var(--bg);border-radius:48px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.5);position:relative;display:flex;flex-direction:column}
+  .frame-label{position:absolute;top:-32px;left:50%;transform:translateX(-50%);color:#9ca3af;font-size:12px;font-weight:600;letter-spacing:2px;text-transform:uppercase}
+  .statusbar{height:44px;display:flex;justify-content:space-between;align-items:center;padding:0 28px;font-size:14px;font-weight:700;color:var(--ink);flex-shrink:0}
+  .body{flex:1;overflow-y:auto;padding-bottom:88px}
+  .body::-webkit-scrollbar{display:none}
+
+  .hd{padding:10px 20px 22px;background:linear-gradient(180deg,#1e3a8a,#0c1d4d);color:#fff;border-radius:0 0 24px 24px;position:relative;overflow:hidden}
+  .hd::after{content:'';position:absolute;top:-40%;right:-20%;width:240px;height:240px;background:radial-gradient(circle,rgba(255,255,255,.08),transparent 60%)}
+  .hd-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;position:relative}
+  .hd-u{display:flex;align-items:center;gap:10px}
+  .hd-av{width:38px;height:38px;border-radius:10px;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800}
+  .hd-n{font-size:15px;font-weight:800}
+  .hd-r{font-size:11px;opacity:.75;margin-top:2px}
+  .hd-r .role-pill{display:inline-block;padding:1px 6px;background:rgba(34,197,94,.3);color:#86efac;border-radius:4px;font-size:9px;font-weight:700;margin-left:4px}
+  .hd-ic{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:14px}
+
+  .hd-bigact{margin-top:14px;background:#fff;color:var(--blue-dk);border-radius:14px;padding:16px;display:flex;align-items:center;gap:14px;cursor:pointer;box-shadow:0 8px 20px rgba(0,0,0,.15);position:relative}
+  .ba-ic{width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,var(--blue),var(--blue-dk));color:#fff;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0}
+  .ba-m{flex:1}
+  .ba-t{font-size:16px;font-weight:800}
+  .ba-d{font-size:11px;color:var(--mute);margin-top:2px}
+  .ba-arr{font-size:18px;color:var(--mute2)}
+
+  .stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:14px 14px 0}
+  .st{background:#fff;border-radius:12px;padding:12px;text-align:center;border:1px solid var(--line)}
+  .st-l{font-size:10px;color:var(--mute);font-weight:600;letter-spacing:.5px}
+  .st-v{font-size:20px;font-weight:900;color:var(--ink);letter-spacing:-.5px;margin-top:4px;line-height:1}
+  .st-v small{font-size:11px;font-weight:600;color:var(--mute);margin-left:2px}
+  .st-v.warn{color:var(--orange)}
+
+  .sec-h{padding:18px 20px 10px;display:flex;justify-content:space-between;align-items:center}
+  .sec-t{font-size:15px;font-weight:800}
+  .sec-more{font-size:11px;color:var(--mute);font-weight:600}
+
+  .pend-list{padding:0 14px;display:flex;flex-direction:column;gap:10px;padding-bottom:24px}
+  .pend-card{background:#fff;border-radius:14px;border:1.5px solid #fde68a;overflow:hidden}
+  .pend-card.done{border:1px solid var(--line);opacity:.85}
+  .pend-h{padding:12px 14px;background:#fffbeb;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #fde68a}
+  .pend-card.done .pend-h{background:#f8faf9;border-bottom-color:var(--line)}
+  .pend-h-l{display:flex;align-items:center;gap:8px}
+  .pend-no{font-size:11px;color:var(--mute);font-weight:600;font-variant-numeric:tabular-nums}
+  .pend-tag{font-size:10px;background:var(--amber-lt);color:#8a5a00;padding:2px 7px;border-radius:5px;font-weight:700}
+  .pend-tag.done{background:var(--green-lt);color:#15803d}
+  .pend-time{font-size:11px;color:#8a5a00;font-weight:700}
+
+  .pend-supp{padding:10px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--line)}
+  .supp-ic{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--blue),var(--blue-dk));color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800}
+  .supp-meta{flex:1}
+  .supp-n{font-size:13px;font-weight:700}
+  .supp-d{font-size:10px;color:var(--mute);margin-top:1px}
+  .supp-call{padding:5px 10px;background:var(--bg);border-radius:999px;font-size:11px;color:var(--ink);font-weight:700}
+
+  .pend-items{padding:10px 14px;border-bottom:1px solid var(--line)}
+  .pi{display:flex;align-items:center;gap:10px;padding:5px 0;font-size:13px}
+  .pi-img{width:30px;height:30px;border-radius:8px;background:var(--blue-lt);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+  .pi-n{flex:1;color:var(--ink);font-weight:600}
+  .pi-q{color:var(--blue-dk);font-weight:800;font-variant-numeric:tabular-nums}
+
+  .pend-foot{padding:12px 14px;display:flex;justify-content:space-between;align-items:center;background:#fafbff}
+  .pend-amt{font-size:14px;font-weight:800;color:var(--ink)}
+  .pend-amt small{font-size:11px;color:var(--mute);font-weight:600;margin-left:3px}
+  .pend-acts{display:flex;gap:8px}
+  .pend-btn{padding:7px 14px;border-radius:999px;font-size:11px;font-weight:700;border:1px solid var(--line);color:var(--ink);background:#fff}
+  .pend-btn.primary{background:var(--blue);color:#fff;border-color:var(--blue);box-shadow:0 4px 12px rgba(37,99,235,.25)}
+  .pend-btn.scan{background:linear-gradient(135deg,var(--blue),var(--blue-dk));color:#fff;border:none;display:flex;align-items:center;gap:4px}
+
+  .tabbar{position:absolute;bottom:0;left:0;right:0;height:78px;background:rgba(255,255,255,.96);backdrop-filter:blur(20px);display:flex;border-top:1px solid var(--line);padding-bottom:14px}
+  .tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:10px;color:var(--mute);font-weight:600;position:relative}
+  .tab svg{width:22px;height:22px}
+  .tab.on{color:var(--blue)}
+  .tab .badge{position:absolute;top:8px;right:24px;min-width:16px;height:16px;padding:0 4px;background:#ef4444;color:#fff;border-radius:8px;font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center}
+
+  /* 入库详情 */
+  .det-hd{background:linear-gradient(180deg,#1e3a8a,#0c1d4d);color:#fff;padding:14px 20px 20px}
+  .det-back{width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:12px}
+  .det-t{font-size:18px;font-weight:800}
+  .det-no{font-size:12px;opacity:.8;margin-top:4px}
+  .det-tag{display:inline-block;margin-top:8px;padding:3px 10px;background:var(--amber-lt);color:#8a5a00;border-radius:5px;font-size:11px;font-weight:700}
+
+  .det-card{margin:16px;background:#fff;border-radius:14px;padding:16px;border:1px solid var(--line)}
+  .det-card-h{font-size:13px;font-weight:800;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+  .det-row{display:flex;justify-content:space-between;padding:7px 0;font-size:13px}
+  .det-row+.det-row{border-top:1px dashed var(--line)}
+  .det-k{color:var(--mute);font-weight:500}
+  .det-v{color:var(--ink);font-weight:700}
+
+  .det-items{margin:0 16px 16px;background:#fff;border-radius:14px;padding:14px;border:1px solid var(--line)}
+  .det-item{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line)}
+  .det-item:first-of-type{border-top:none}
+  .di-img{width:42px;height:42px;border-radius:10px;background:var(--blue-lt);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+  .di-m{flex:1}
+  .di-n{font-size:13px;font-weight:700}
+  .di-spec{font-size:10px;color:var(--mute);margin-top:2px}
+  .di-r{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+  .di-qty{font-size:14px;font-weight:800;color:var(--blue-dk)}
+  .di-chk{width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800}
+
+  .det-foot{position:absolute;bottom:0;left:0;right:0;background:#fff;padding:14px 20px;border-top:1px solid var(--line);display:flex;gap:10px}
+  .det-foot-btn{flex:1;height:48px;border-radius:12px;font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:6px}
+  .df-c{background:var(--bg);color:var(--ink)}
+  .df-ok{background:linear-gradient(135deg,var(--blue),var(--blue-dk));color:#fff;box-shadow:0 6px 18px rgba(37,99,235,.3)}
+
+  /* 扫码屏 */
+  .scan-overlay{background:#0c1d4d;position:relative;height:100%;padding:0}
+  .scan-hd{padding:14px 20px;display:flex;align-items:center;gap:10px;color:#fff}
+  .scan-frame{margin:60px auto;width:260px;height:260px;border-radius:18px;position:relative;background:rgba(255,255,255,.05)}
+  .scan-frame::before,.scan-frame::after{content:'';position:absolute;width:42px;height:42px;border:5px solid #22c55e;border-radius:6px}
+  .scan-frame::before{top:-3px;left:-3px;border-right:none;border-bottom:none}
+  .scan-frame::after{bottom:-3px;right:-3px;border-left:none;border-top:none}
+  .scan-frame .tr{position:absolute;top:-3px;right:-3px;width:42px;height:42px;border:5px solid #22c55e;border-radius:6px;border-left:none;border-bottom:none}
+  .scan-frame .bl{position:absolute;bottom:-3px;left:-3px;width:42px;height:42px;border:5px solid #22c55e;border-radius:6px;border-right:none;border-top:none}
+  .scan-line{position:absolute;left:10%;right:10%;top:50%;height:2px;background:linear-gradient(90deg,transparent,#22c55e,transparent);box-shadow:0 0 8px #22c55e}
+  .scan-tip{margin-top:32px;color:#fff;text-align:center;font-size:14px}
+  .scan-tip-sm{font-size:11px;opacity:.7;margin-top:6px}
+  .scan-opts{margin-top:40px;display:flex;justify-content:center;gap:14px}
+  .scan-opt{padding:12px 24px;background:rgba(255,255,255,.12);color:#fff;border-radius:999px;font-size:12px;font-weight:700;display:flex;align-items:center;gap:6px;backdrop-filter:blur(10px)}
+</style>
+</head>
+<body>
+
+<!-- 1. 入库工作台 -->
+<div class="frame">
+  <div class="frame-label">收货员 · 入库待办</div>
+  <div class="statusbar"><span>9:41</span><span>⚡4G ▮▮▮▮</span></div>
+  <div class="body">
+    <div class="hd">
+      <div class="hd-top">
+        <div class="hd-u">
+          <div class="hd-av">王</div>
+          <div>
+            <div class="hd-n">王仓管</div>
+            <div class="hd-r">明德中学 <span class="role-pill">收货员</span></div>
+          </div>
+        </div>
+        <div class="hd-ic">🔔</div>
+      </div>
+      <div class="hd-bigact">
+        <div class="ba-ic">📷</div>
+        <div class="ba-m">
+          <div class="ba-t">扫码入库</div>
+          <div class="ba-d">扫包裹 / 出库单条码自动匹配订单</div>
+        </div>
+        <div class="ba-arr">›</div>
+      </div>
+    </div>
+
+    <div class="stat-row">
+      <div class="st">
+        <div class="st-l">今日待入库</div>
+        <div class="st-v warn">3<small>单</small></div>
+      </div>
+      <div class="st">
+        <div class="st-l">已入库</div>
+        <div class="st-v">8<small>单</small></div>
+      </div>
+      <div class="st">
+        <div class="st-l">本月入库</div>
+        <div class="st-v">86</div>
+      </div>
+    </div>
+
+    <div class="sec-h">
+      <div class="sec-t">待入库订单</div>
+      <div class="sec-more">已入库历史 ›</div>
+    </div>
+    <div class="pend-list">
+
+      <div class="pend-card">
+        <div class="pend-h">
+          <div class="pend-h-l">
+            <div class="pend-no">#IN-20260522-001</div>
+            <div class="pend-tag">待入库</div>
+          </div>
+          <div class="pend-time">⚠ 等 4h25m</div>
+        </div>
+        <div class="pend-supp">
+          <div class="supp-ic">鑫</div>
+          <div class="supp-meta">
+            <div class="supp-n">鑫源食材批发</div>
+            <div class="supp-d">司机李师傅 · 京 P·12345 · 已到</div>
+          </div>
+          <div class="supp-call">📞</div>
+        </div>
+        <div class="pend-items">
+          <div class="pi"><div class="pi-img">🍚</div><div class="pi-n">东北大米 25kg</div><div class="pi-q">×50 袋</div></div>
+          <div class="pi"><div class="pi-img">🫒</div><div class="pi-n">调和食用油 5L</div><div class="pi-q">×30 桶</div></div>
+        </div>
+        <div class="pend-foot">
+          <div class="pend-amt">¥10,560<small>预估</small></div>
+          <div class="pend-acts">
+            <div class="pend-btn">详情</div>
+            <div class="pend-btn primary">确认入库</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="pend-card">
+        <div class="pend-h">
+          <div class="pend-h-l">
+            <div class="pend-no">#IN-20260522-002</div>
+            <div class="pend-tag">待入库</div>
+          </div>
+          <div class="pend-time">⚠ 等 2h10m</div>
+        </div>
+        <div class="pend-supp">
+          <div class="supp-ic" style="background:linear-gradient(135deg,#16a34a,#0d4e30)">绿</div>
+          <div class="supp-meta">
+            <div class="supp-n">绿野蔬菜直供</div>
+            <div class="supp-d">司机张师傅 · 京 Q·98765 · 已到</div>
+          </div>
+          <div class="supp-call">📞</div>
+        </div>
+        <div class="pend-items">
+          <div class="pi"><div class="pi-img">🥬</div><div class="pi-n">大白菜</div><div class="pi-q">×200 斤</div></div>
+          <div class="pi"><div class="pi-img">🥔</div><div class="pi-n">黄心土豆</div><div class="pi-q">×200 斤</div></div>
+          <div class="pi"><div class="pi-img">🥦</div><div class="pi-n">西兰花</div><div class="pi-q">×80 斤</div></div>
+        </div>
+        <div class="pend-foot">
+          <div class="pend-amt">¥1,830<small>预估</small></div>
+          <div class="pend-acts">
+            <div class="pend-btn scan">📷 扫</div>
+            <div class="pend-btn primary">确认入库</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="pend-card">
+        <div class="pend-h">
+          <div class="pend-h-l">
+            <div class="pend-no">#IN-20260522-003</div>
+            <div class="pend-tag">待入库</div>
+          </div>
+          <div class="pend-time" style="color:var(--mute);font-weight:600">到货 18min 前</div>
+        </div>
+        <div class="pend-supp">
+          <div class="supp-ic" style="background:linear-gradient(135deg,#e8721b,#92400e)">山</div>
+          <div class="supp-meta">
+            <div class="supp-n">山农蛋品</div>
+            <div class="supp-d">自提 · 仓库门口</div>
+          </div>
+          <div class="supp-call">📞</div>
+        </div>
+        <div class="pend-items">
+          <div class="pi"><div class="pi-img">🥚</div><div class="pi-n">土鸡蛋 30 枚</div><div class="pi-q">×50 板</div></div>
+        </div>
+        <div class="pend-foot">
+          <div class="pend-amt">¥1,500<small>预估</small></div>
+          <div class="pend-acts">
+            <div class="pend-btn">详情</div>
+            <div class="pend-btn primary">确认入库</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 已入库分隔 -->
+      <div style="text-align:center;padding:8px 0;font-size:10px;color:var(--mute2);letter-spacing:1px">— 今日已入库 —</div>
+
+      <div class="pend-card done">
+        <div class="pend-h">
+          <div class="pend-h-l">
+            <div class="pend-no">#IN-20260522-000</div>
+            <div class="pend-tag done">✓ 已入库</div>
+          </div>
+          <div class="pend-time" style="color:var(--mute);font-weight:600">完成 7:32</div>
+        </div>
+        <div class="pend-supp">
+          <div class="supp-ic">鑫</div>
+          <div class="supp-meta">
+            <div class="supp-n">鑫源食材批发</div>
+            <div class="supp-d">王仓管确认入库 · 库存已自动 +</div>
+          </div>
+        </div>
+        <div class="pend-items">
+          <div class="pi"><div class="pi-img">🥓</div><div class="pi-n">五花肉</div><div class="pi-q">×80 斤</div></div>
+          <div class="pi"><div class="pi-img">🍗</div><div class="pi-n">鸡腿肉</div><div class="pi-q">×40 斤</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="tabbar">
+    <div class="tab on"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 6h16v3H4zm0 5h16v8H4z"/></svg>待入库<span class="badge">3</span></div>
+    <div class="tab"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 21h6V11h5L12 4 4 11h5z"/></svg>扫码</div>
+    <div class="tab"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 5h18v3H3zM3 10h18v3H3zM3 15h18v3H3z"/></svg>历史</div>
+    <div class="tab"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 22c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>我的</div>
+  </div>
+</div>
+
+<!-- 2. 入库详情确认 -->
+<div class="frame">
+  <div class="frame-label">收货员 · 入库确认</div>
+  <div class="statusbar"><span>9:41</span><span>⚡4G ▮▮▮▮</span></div>
+  <div class="body" style="padding-bottom:80px">
+    <div class="det-hd">
+      <div class="det-back">‹</div>
+      <div class="det-t">入库确认</div>
+      <div class="det-no">#IN-20260522-002 · 绿野蔬菜直供</div>
+      <div class="det-tag">⚠ 等待 2h10m · 已到货</div>
+    </div>
+
+    <div class="det-card">
+      <div class="det-card-h">📋 上游订单信息</div>
+      <div class="det-row"><div class="det-k">采购订单</div><div class="det-v">#PO-20260520-0102</div></div>
+      <div class="det-row"><div class="det-k">下单人</div><div class="det-v">张校长 · 20 日 17:30</div></div>
+      <div class="det-row"><div class="det-k">司机 / 车牌</div><div class="det-v">张师傅 · 京 Q·98765</div></div>
+      <div class="det-row"><div class="det-k">到货时间</div><div class="det-v">今天 09:10</div></div>
+      <div class="det-row"><div class="det-k">订单金额</div><div class="det-v" style="color:var(--blue-dk);font-size:14px">¥1,830.00</div></div>
+    </div>
+
+    <div class="det-items">
+      <div class="det-card-h">📦 商品清单 · 核对数量后勾选</div>
+      <div class="det-item">
+        <div class="di-img">🥬</div>
+        <div class="di-m">
+          <div class="di-n">大白菜</div>
+          <div class="di-spec">¥1.6/斤 · 山东直发</div>
+        </div>
+        <div class="di-r">
+          <div class="di-qty">×200 斤</div>
+          <div class="di-chk">✓</div>
+        </div>
+      </div>
+      <div class="det-item">
+        <div class="di-img">🥔</div>
+        <div class="di-m">
+          <div class="di-n">黄心土豆</div>
+          <div class="di-spec">¥2.5/斤</div>
+        </div>
+        <div class="di-r">
+          <div class="di-qty">×200 斤</div>
+          <div class="di-chk">✓</div>
+        </div>
+      </div>
+      <div class="det-item">
+        <div class="di-img">🥦</div>
+        <div class="di-m">
+          <div class="di-n">西兰花</div>
+          <div class="di-spec">¥4.5/斤 · 50 斤阶梯</div>
+        </div>
+        <div class="di-r">
+          <div class="di-qty">×80 斤</div>
+          <div class="di-chk" style="background:var(--amber);">!</div>
+        </div>
+      </div>
+      <div style="margin-top:10px;padding:10px;background:var(--amber-lt);border-radius:8px;font-size:11px;color:#8a5a00;font-weight:600">
+        ⚠ 西兰花实到 78 斤（少 2 斤）- 已记录差异
+      </div>
+    </div>
+
+    <div class="det-card">
+      <div class="det-card-h">📷 拍照存档（可选）</div>
+      <div style="display:flex;gap:8px">
+        <div style="width:64px;height:64px;border-radius:10px;background:var(--blue-lt);display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--blue-dk)">📷</div>
+        <div style="width:64px;height:64px;border-radius:10px;background:var(--bg);border:2px dashed var(--mute2);display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--mute2)">＋</div>
+      </div>
+    </div>
+
+  </div>
+  <div class="det-foot">
+    <div class="det-foot-btn df-c">🚫 退货</div>
+    <div class="det-foot-btn df-ok">✓ 确认入库 · 库存自动 +</div>
+  </div>
+</div>
+
+<!-- 3. 扫码界面 -->
+<div class="frame">
+  <div class="frame-label">收货员 · 扫码入库</div>
+  <div class="statusbar" style="color:#fff"><span>9:41</span><span>⚡4G ▮▮▮▮</span></div>
+  <div class="body" style="padding:0;background:#0c1d4d">
+    <div class="scan-overlay">
+      <div class="scan-hd">
+        <div style="width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:18px">‹</div>
+        <div style="font-size:16px;font-weight:800">扫码识别</div>
+        <div style="margin-left:auto;width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:14px">⚡</div>
+      </div>
+
+      <div class="scan-frame">
+        <div class="tr"></div>
+        <div class="bl"></div>
+        <div class="scan-line"></div>
+      </div>
+
+      <div class="scan-tip">
+        将条码 / 二维码对准框内
+        <div class="scan-tip-sm">支持上游订单条码、SKU 条码、自定义二维码</div>
+      </div>
+
+      <div class="scan-opts">
+        <div class="scan-opt">🖼️ 相册</div>
+        <div class="scan-opt">⌨️ 手输单号</div>
+      </div>
+
+      <div style="position:absolute;bottom:24px;left:0;right:0;text-align:center;color:rgba(255,255,255,.7);font-size:11px">
+        💡 扫到 SKU 条码会自动累加数量，再次扫描可调整
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
