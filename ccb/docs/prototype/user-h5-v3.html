@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>用户端 H5 · v3 克制版</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
+  body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;background:#e5e6e8;min-height:100vh;padding:32px 24px;display:flex;flex-wrap:wrap;gap:32px;justify-content:center;color:#1c1f23}
+  :root{
+    --bg:#f7f6f3;          /* 米白底 */
+    --paper:#ffffff;       /* 卡片 */
+    --paper2:#faf9f6;
+    --ink:#1c1f23;         /* 主文字 */
+    --ink2:#3d4148;
+    --mute:#8a8e95;
+    --mute2:#b8bbc1;
+    --line:#ececec;
+    --line2:#e2e4e7;
+    --brand:#e8721b;       /* 主色：暖橙（克制版）*/
+    --brand-dk:#c45e10;
+    --brand-soft:#fdf1e3;
+    --ok:#16774a;          /* 收益绿 */
+    --ok-soft:#e8f0ea;
+    --warn:#b3801d;
+    --warn-soft:#fbf3df;
+    --danger:#c43d3d;
+  }
+  .frame{width:390px;height:844px;background:var(--bg);border-radius:48px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.18),0 0 0 1px rgba(0,0,0,.04);position:relative;display:flex;flex-direction:column}
+  .frame-label{position:absolute;top:-32px;left:50%;transform:translateX(-50%);color:#7a7d83;font-size:11px;font-weight:600;letter-spacing:2px;text-transform:uppercase}
+  .statusbar{height:44px;display:flex;justify-content:space-between;align-items:center;padding:0 28px;font-size:14px;font-weight:700;color:var(--ink);flex-shrink:0}
+  .body{flex:1;overflow-y:auto;padding-bottom:88px}
+  .body::-webkit-scrollbar{display:none}
+
+  /* 通用 */
+  .num{font-feature-settings:'tnum' 1}
+
+  /* ========== 首页 ========== */
+  .hd{padding:14px 22px 0;display:flex;justify-content:space-between;align-items:center}
+  .greet{display:flex;align-items:center;gap:10px}
+  .av{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#d4d4d8,#a1a1aa);flex-shrink:0}
+  .greet-n{font-size:14px;font-weight:700;color:var(--ink)}
+  .greet-s{font-size:11px;color:var(--mute);margin-top:2px}
+  .greet-s b{color:var(--brand);font-weight:700;background:var(--brand-soft);padding:1px 6px;border-radius:4px;margin-right:2px}
+  .head-ics{display:flex;gap:8px}
+  .head-ic{width:36px;height:36px;border-radius:12px;background:var(--paper);display:flex;align-items:center;justify-content:center;font-size:15px;border:1px solid var(--line);position:relative;color:var(--ink2)}
+  .head-dot{position:absolute;top:8px;right:8px;width:6px;height:6px;background:var(--brand);border-radius:50%}
+
+  /* 收益 hero 卡 — 米白卡片 + 橙色数字 */
+  .earn{margin:16px 14px 0;background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:20px}
+  .earn-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+  .earn-l{font-size:12px;color:var(--mute);font-weight:600;display:flex;align-items:center;gap:6px}
+  .earn-l::before{content:'';width:3px;height:14px;background:var(--brand);border-radius:2px}
+  .earn-link{font-size:11px;color:var(--brand);font-weight:600}
+  .earn-v{font-size:40px;font-weight:800;color:var(--ink);letter-spacing:-1px;line-height:1}
+  .earn-v small{font-size:18px;font-weight:600;color:var(--mute);margin-left:3px}
+  .earn-d{font-size:11px;color:var(--ok);font-weight:600;margin-top:6px;display:inline-flex;align-items:center;gap:4px}
+  .earn-mini{margin-top:18px;padding-top:16px;border-top:1px dashed var(--line);display:flex;justify-content:space-between}
+  .em{flex:1;text-align:left;position:relative}
+  .em+.em{padding-left:14px}
+  .em+.em::before{content:'';position:absolute;left:0;top:6px;bottom:6px;width:1px;background:var(--line)}
+  .em-l{font-size:10px;color:var(--mute);font-weight:600}
+  .em-v{font-size:15px;font-weight:800;color:var(--ink);margin-top:3px}
+  .em-v small{font-size:10px;color:var(--mute);font-weight:600;margin-left:2px}
+
+  /* 推 N 反 1 进度 */
+  .promo{margin:12px 14px 0;background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:16px}
+  .promo-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+  .promo-t{font-size:13px;font-weight:700;color:var(--ink);display:flex;align-items:center;gap:6px}
+  .promo-t .live{width:6px;height:6px;border-radius:50%;background:var(--ok)}
+  .promo-step{font-size:11px;color:var(--mute);font-weight:600}
+  .promo-step b{color:var(--ok);font-weight:800}
+  .pbar{display:flex;gap:6px;align-items:center}
+  .p-seg{flex:1;height:6px;background:#eee;border-radius:99px;overflow:hidden}
+  .p-seg.done{background:var(--brand)}
+  .p-seg.cur{background:linear-gradient(90deg,var(--brand) 60%,#eee 60%)}
+  .p-marks{display:flex;justify-content:space-between;margin-top:8px;font-size:10px;color:var(--mute);font-weight:600}
+  .p-marks .ok{color:var(--ok)}
+  .p-marks .cur{color:var(--brand);font-weight:800}
+  .promo-tip{margin-top:12px;padding:9px 12px;background:var(--ok-soft);border-radius:8px;font-size:11px;color:var(--ok);font-weight:600}
+  .promo-tip b{font-weight:800}
+
+  /* ticker — 静态低饱和 */
+  .ticker{margin:12px 14px 0;padding:10px 14px;background:var(--warn-soft);border-radius:10px;display:flex;align-items:center;gap:8px;font-size:11px;color:var(--warn);font-weight:600;overflow:hidden}
+  .ticker-i{font-size:14px}
+  .ticker-tx{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ticker-tx b{color:#8a5a00;font-weight:800}
+
+  /* 分类 */
+  .sec{padding:24px 22px 12px;display:flex;justify-content:space-between;align-items:flex-end}
+  .sec-t{font-size:18px;font-weight:800;color:var(--ink);letter-spacing:-.3px}
+  .sec-sub{font-size:11px;color:var(--mute);font-weight:500;margin-top:3px}
+  .sec-more{font-size:11px;color:var(--mute);font-weight:600}
+
+  .cats{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;padding:0 14px}
+  .cat-i{display:flex;flex-direction:column;align-items:center;gap:6px;padding:6px 0}
+  .cat-c{width:48px;height:48px;border-radius:16px;background:var(--paper);display:flex;align-items:center;justify-content:center;font-size:22px;border:1px solid var(--line)}
+  .cat-l{font-size:11px;color:var(--ink2);font-weight:600}
+
+  /* 精选大卡 */
+  .feat-list{padding:0 22px;display:flex;gap:12px;overflow-x:auto;scrollbar-width:none}
+  .feat-list::-webkit-scrollbar{display:none}
+  .fc{flex-shrink:0;width:260px;height:340px;border-radius:24px;position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;padding:22px;color:#fff}
+  .fc-1{background:linear-gradient(160deg,#3d2a1e 0%,#1c1f23 100%)}
+  .fc-2{background:linear-gradient(160deg,#2a3a35 0%,#1c1f23 100%)}
+  .fc::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 80% 20%,rgba(255,255,255,.08),transparent 50%);pointer-events:none}
+  .fc-tag{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;background:rgba(255,255,255,.12);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.15);border-radius:6px;font-size:10px;font-weight:700;align-self:flex-start;color:#fff}
+  .fc-name{font-size:22px;font-weight:800;line-height:1.2;letter-spacing:-.3px;margin-top:auto}
+  .fc-sub{font-size:11px;opacity:.7;margin-top:6px}
+  .fc-bot{margin-top:14px;display:flex;justify-content:space-between;align-items:flex-end}
+  .fc-meta{display:flex;flex-direction:column;gap:2px}
+  .fc-l{font-size:10px;opacity:.6;letter-spacing:.5px;text-transform:uppercase}
+  .fc-v{font-size:22px;font-weight:800;letter-spacing:-.3px}
+  .fc-cta{padding:9px 16px;background:#fff;color:var(--ink);border-radius:99px;font-size:11px;font-weight:700}
+
+  /* 商品 grid */
+  .grid{padding:0 14px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .p{background:var(--paper);border-radius:16px;padding:10px;border:1px solid var(--line);position:relative;overflow:hidden}
+  .p-pic{height:120px;border-radius:10px;background:var(--paper2);display:flex;align-items:center;justify-content:center;font-size:54px;margin-bottom:10px;position:relative}
+  .p-badge{position:absolute;top:8px;left:8px;padding:2px 7px;background:var(--brand);color:#fff;border-radius:4px;font-size:9px;font-weight:800;letter-spacing:.3px}
+  .p-badge.soft{background:var(--ok)}
+  .p-n{font-size:13px;font-weight:700;color:var(--ink);line-height:1.3;height:34px;overflow:hidden}
+  .p-meta{display:flex;justify-content:space-between;align-items:center;margin-top:8px}
+  .p-price{font-size:16px;font-weight:800;color:var(--ink);letter-spacing:-.3px}
+  .p-price small{font-size:10px;color:var(--mute);font-weight:600;margin-left:1px}
+  .p-earn{font-size:10px;color:var(--ok);font-weight:700;background:var(--ok-soft);padding:2px 7px;border-radius:5px}
+
+  /* 横滚热销 */
+  .hot{padding:0 14px;display:flex;gap:10px;overflow-x:auto;scrollbar-width:none}
+  .hot::-webkit-scrollbar{display:none}
+  .hp{flex-shrink:0;width:160px;background:var(--paper);border-radius:16px;padding:10px;border:1px solid var(--line)}
+  .hp-pic{height:120px;border-radius:10px;background:var(--paper2);display:flex;align-items:center;justify-content:center;font-size:48px;margin-bottom:8px;position:relative}
+  .hp-rank{position:absolute;top:0;left:0;width:28px;height:28px;border-radius:0 0 10px 0;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800}
+  .hp-rank.r2{background:#7a8a90}
+  .hp-rank.r3{background:#a87a3a}
+  .hp-n{font-size:12px;font-weight:700;height:32px;overflow:hidden;line-height:1.3;color:var(--ink)}
+  .hp-meta{display:flex;justify-content:space-between;align-items:center;margin-top:6px}
+  .hp-pr{font-size:15px;font-weight:800;color:var(--ink);letter-spacing:-.3px}
+  .hp-pr small{font-size:9px;color:var(--mute);font-weight:600}
+  .hp-sales{font-size:9px;color:var(--mute);font-weight:600}
+
+  /* Tab bar */
+  .tabbar{position:absolute;bottom:0;left:0;right:0;height:78px;background:rgba(255,255,255,.95);backdrop-filter:blur(20px);display:flex;border-top:1px solid var(--line);padding-bottom:14px}
+  .tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:10px;color:var(--mute);font-weight:600;position:relative}
+  .tab svg{width:22px;height:22px}
+  .tab.on{color:var(--brand)}
+  .tab .cart-circle{width:46px;height:46px;border-radius:50%;background:var(--brand);display:flex;align-items:center;justify-content:center;margin-top:-10px}
+  .tab .cart-circle svg{width:22px;height:22px;color:#fff}
+  .tab-badge{position:absolute;top:6px;right:24px;min-width:16px;height:16px;padding:0 4px;background:var(--brand);color:#fff;border-radius:8px;font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center}
+
+  /* ===== 钱包 ===== */
+  .wl-back{padding:14px 22px 0;display:flex;align-items:center;gap:14px}
+  .wl-back-btn{width:36px;height:36px;border-radius:12px;background:var(--paper);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--ink2)}
+  .wl-back-t{font-size:17px;font-weight:800}
+
+  .wl-hero{margin:16px 14px 0;background:var(--ink);color:#fff;border-radius:22px;padding:22px;position:relative;overflow:hidden}
+  .wl-hero::before{content:'';position:absolute;top:-30%;right:-15%;width:240px;height:240px;background:radial-gradient(circle,rgba(232,114,27,.18),transparent 60%);pointer-events:none}
+  .wl-l{font-size:11px;color:rgba(255,255,255,.65);font-weight:600;letter-spacing:.8px;text-transform:uppercase;position:relative}
+  .wl-v{font-size:42px;font-weight:800;letter-spacing:-1.5px;margin-top:8px;line-height:1;position:relative}
+  .wl-v small{font-size:16px;font-weight:600;opacity:.55;margin-left:4px}
+  .wl-grow{font-size:11px;color:#7adba5;font-weight:700;margin-top:6px;position:relative}
+  .wl-acts{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:18px;position:relative}
+  .wl-act{padding:12px 6px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);border-radius:12px;text-align:center}
+  .wl-act-i{font-size:18px;display:block;margin-bottom:4px}
+  .wl-act-t{font-size:11px;font-weight:600}
+
+  .wl-2{padding:14px 14px 0;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .wl-sub{background:var(--paper);border-radius:14px;padding:14px;border:1px solid var(--line)}
+  .wl-sub-l{font-size:10px;color:var(--mute);font-weight:700;letter-spacing:.5px}
+  .wl-sub-v{font-size:20px;font-weight:800;margin-top:4px;letter-spacing:-.3px;color:var(--ink)}
+  .wl-sub-v small{font-size:11px;color:var(--mute);font-weight:600;margin-left:2px}
+  .wl-sub-d{font-size:10px;color:var(--mute);margin-top:4px}
+
+  .wl-tabs{display:flex;padding:20px 22px 0;gap:24px;border-bottom:1px solid var(--line)}
+  .wl-tab{padding:8px 0 14px;font-size:13px;color:var(--mute);font-weight:600;position:relative}
+  .wl-tab.on{color:var(--ink);font-weight:800}
+  .wl-tab.on::after{content:'';position:absolute;bottom:-1px;left:0;right:0;height:2px;background:var(--brand);border-radius:2px}
+
+  .flow{padding:14px 22px}
+  .flow-d{font-size:10px;color:var(--mute);font-weight:700;letter-spacing:1px;margin:14px 0 8px;text-transform:uppercase}
+  .flow-i{display:flex;gap:12px;padding:14px;background:var(--paper);border:1px solid var(--line);border-radius:12px;margin-bottom:8px}
+  .flow-ic{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;background:var(--paper2);border:1px solid var(--line)}
+  .flow-ic.in{background:var(--ok-soft);border-color:#d4e4d8;color:var(--ok)}
+  .flow-ic.win{background:var(--warn-soft);border-color:#f0e2c0;color:#8a5a00}
+  .flow-m{flex:1;min-width:0}
+  .flow-n{font-size:13px;font-weight:700;color:var(--ink)}
+  .flow-n .chip{display:inline-block;padding:1px 6px;background:var(--warn-soft);color:#8a5a00;font-size:9px;font-weight:800;border-radius:4px;margin-left:5px;letter-spacing:.5px}
+  .flow-d2{font-size:11px;color:var(--mute);margin-top:3px}
+  .flow-v{text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:2px}
+  .flow-amt{font-size:16px;font-weight:800;letter-spacing:-.3px}
+  .flow-amt.in{color:var(--ok)}
+  .flow-amt.out{color:var(--mute)}
+  .flow-amt.win{color:#8a5a00}
+  .flow-bal{font-size:10px;color:var(--mute);font-weight:600}
+
+  /* ===== 中奖弹窗（克制版）===== */
+  .win-frame{background:#fafaf9}
+  .win-mask{position:absolute;inset:0;background:rgba(28,31,35,.4);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:30px}
+  .win-dialog{background:#fff;border-radius:22px;padding:28px 24px;width:100%;text-align:center;box-shadow:0 30px 60px rgba(0,0,0,.2)}
+  .win-medal{width:80px;height:80px;border-radius:50%;background:var(--brand-soft);display:flex;align-items:center;justify-content:center;font-size:38px;margin:0 auto 16px;border:1px solid #f3dec0}
+  .win-t{font-size:22px;font-weight:800;color:var(--ink);letter-spacing:-.3px}
+  .win-sub{font-size:12px;color:var(--mute);font-weight:600;margin-top:6px}
+  .win-amt-card{margin-top:22px;background:var(--brand-soft);border:1px solid #f3dec0;border-radius:16px;padding:18px}
+  .win-amt-l{font-size:10px;color:#8a5a00;font-weight:700;letter-spacing:1.5px;text-transform:uppercase}
+  .win-amt-v{font-size:40px;font-weight:800;color:var(--brand-dk);letter-spacing:-1.5px;line-height:1;margin-top:4px}
+  .win-amt-v small{font-size:14px;opacity:.6;margin-left:2px}
+  .win-amt-d{font-size:11px;color:#8a5a00;margin-top:8px}
+  .win-meta{margin-top:18px;padding:12px;background:var(--paper2);border-radius:12px;font-size:11px;color:var(--ink2);text-align:left;line-height:1.7}
+  .win-meta b{color:var(--ink);font-weight:700}
+  .win-cta{margin-top:20px;width:100%;padding:14px;background:var(--ink);color:#fff;border-radius:14px;font-size:14px;font-weight:700;border:none}
+  .win-close{margin-top:10px;width:100%;padding:12px;background:transparent;color:var(--mute);font-size:12px;font-weight:600;border:none}
+
+  /* ===== 派单进度 ===== */
+  .ship-hd{padding:14px 22px 0}
+  .ship-order{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+  .ship-no{font-size:11px;color:var(--mute);font-weight:600}
+  .ship-no b{display:block;color:var(--ink);font-weight:800;font-size:13px;margin-top:2px}
+  .ship-status{padding:5px 12px;background:var(--brand);color:#fff;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px}
+
+  .ship-eta-big{margin:0 14px;background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:22px;text-align:center}
+  .ship-eta-l{font-size:11px;color:var(--mute);font-weight:600;letter-spacing:.5px}
+  .ship-eta-v{font-size:48px;font-weight:800;color:var(--brand);letter-spacing:-1.5px;line-height:1;margin-top:4px}
+  .ship-eta-v small{font-size:18px;color:var(--ink2);font-weight:600;margin-left:4px}
+  .ship-eta-d{font-size:12px;color:var(--ink2);font-weight:600;margin-top:8px}
+  .ship-rider{margin-top:14px;padding:12px;background:var(--paper2);border-radius:12px;display:flex;align-items:center;gap:10px;text-align:left}
+  .rider-av{width:36px;height:36px;border-radius:50%;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;flex-shrink:0}
+  .rider-n{font-size:12px;font-weight:700}
+  .rider-d{font-size:10px;color:var(--mute);margin-top:2px}
+  .rider-call{padding:6px 12px;background:var(--paper);border:1px solid var(--line);border-radius:99px;font-size:11px;font-weight:600;color:var(--ink)}
+
+  .timeline{padding:20px 22px}
+  .tl-h{font-size:13px;font-weight:800;color:var(--ink);margin-bottom:14px}
+  .tl-i{display:flex;align-items:flex-start;gap:14px;padding:0 0 18px;position:relative}
+  .tl-i:last-child{padding-bottom:0}
+  .tl-i+.tl-i::before{content:'';position:absolute;top:-2px;left:14px;width:2px;height:18px;background:var(--line)}
+  .tl-i.done+.tl-i::before{background:var(--brand)}
+  .tl-dot{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;font-weight:800}
+  .tl-dot.done{background:var(--brand);color:#fff}
+  .tl-dot.cur{background:var(--brand);color:#fff;box-shadow:0 0 0 4px var(--brand-soft)}
+  .tl-dot.wait{background:#eee;color:var(--mute2);border:1px dashed var(--mute2)}
+  .tl-m{flex:1;padding-top:5px}
+  .tl-n{font-size:13px;font-weight:700;color:var(--ink)}
+  .tl-n.wait{color:var(--mute)}
+  .tl-d{font-size:11px;color:var(--mute);margin-top:3px}
+  .tl-d.cur{color:var(--brand);font-weight:600}
+
+  /* ===== 店铺主页 ===== */
+  .sh-hd{padding:14px 22px 0}
+  .sh-shop{display:flex;align-items:center;gap:12px}
+  .sh-logo{width:54px;height:54px;border-radius:16px;background:var(--brand-soft);border:1px solid #f3dec0;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:var(--brand-dk);flex-shrink:0}
+  .sh-meta{flex:1}
+  .sh-n{font-size:17px;font-weight:800;color:var(--ink);letter-spacing:-.3px}
+  .sh-s{font-size:11px;color:var(--mute);margin-top:4px;display:flex;gap:10px}
+  .sh-s b{color:var(--ink);font-weight:700}
+  .sh-s .rate{color:var(--brand)}
+  .sh-fav{width:36px;height:36px;border-radius:12px;background:var(--paper);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:14px}
+
+  /* 推 N 反 1 大卡 — 克制版（米卡 + 橙色重点）*/
+  .nback{margin:16px 14px 0;background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:20px;position:relative;overflow:hidden}
+  .nback-lbl{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;background:var(--brand-soft);color:var(--brand-dk);border-radius:5px;font-size:10px;font-weight:800;letter-spacing:.8px;text-transform:uppercase}
+  .nback-t{font-size:20px;font-weight:800;color:var(--ink);letter-spacing:-.3px;margin-top:10px;line-height:1.25}
+  .nback-t b{color:var(--brand)}
+  .nback-sub{font-size:11px;color:var(--mute);margin-top:6px}
+  .nback-row{margin-top:16px;display:flex;justify-content:space-between;align-items:flex-end}
+  .nback-money{flex:1}
+  .nback-l{font-size:10px;color:var(--mute);font-weight:600;letter-spacing:.5px;text-transform:uppercase}
+  .nback-v{font-size:30px;font-weight:800;color:var(--ok);letter-spacing:-1px;line-height:1;margin-top:2px}
+  .nback-v small{font-size:14px;color:var(--mute);font-weight:600;margin-left:3px}
+  .nback-cta{padding:10px 18px;background:var(--ink);color:#fff;border-radius:99px;font-size:12px;font-weight:700}
+
+  .nback-bar{margin-top:16px;height:8px;background:#eee;border-radius:99px;overflow:hidden;position:relative}
+  .nback-fill{height:100%;background:var(--brand);width:100%;border-radius:99px}
+  .nback-foot{margin-top:8px;display:flex;justify-content:space-between;font-size:10px;color:var(--mute);font-weight:600}
+  .nback-foot b{color:var(--ok)}
+
+  /* 承诺卡 */
+  .promise{margin:14px;padding:14px;background:var(--ok-soft);border:1px solid #d4e4d8;border-radius:14px;display:flex;gap:12px}
+  .promise-ic{font-size:18px;flex-shrink:0;line-height:1.2}
+  .promise-m{flex:1}
+  .promise-t{font-size:12px;font-weight:800;color:var(--ok)}
+  .promise-d{font-size:10px;color:var(--ok);margin-top:4px;line-height:1.6;opacity:.85}
+
+  /* 分类胶囊 */
+  .sub-cats{padding:0 14px;display:flex;gap:8px;overflow-x:auto;scrollbar-width:none}
+  .sub-cats::-webkit-scrollbar{display:none}
+  .sub-c{flex-shrink:0;padding:7px 14px;background:var(--paper);border:1px solid var(--line);border-radius:99px;font-size:11px;font-weight:700;color:var(--mute)}
+  .sub-c.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+
+  /* ===== 我的 ===== */
+  .me-hd{padding:20px 22px;background:linear-gradient(180deg,var(--paper) 0%,transparent 100%)}
+  .me-prof{display:flex;align-items:center;gap:14px}
+  .me-av{width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#d4d4d8,#a1a1aa);flex-shrink:0;border:3px solid #fff;box-shadow:0 4px 12px rgba(0,0,0,.08)}
+  .me-name-row{display:flex;align-items:center;gap:8px}
+  .me-name{font-size:18px;font-weight:800;color:var(--ink)}
+  .me-star{padding:2px 8px;background:var(--brand);color:#fff;border-radius:5px;font-size:10px;font-weight:800;letter-spacing:.5px}
+  .me-s{font-size:11px;color:var(--mute);margin-top:4px}
+  .me-s b{color:var(--ink);font-weight:700}
+  .me-set{width:34px;height:34px;border-radius:10px;background:var(--paper);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:14px}
+
+  .me-earn{margin:18px 14px 0;background:var(--ink);color:#fff;border-radius:20px;padding:22px;position:relative;overflow:hidden}
+  .me-earn::before{content:'';position:absolute;top:-40%;right:-15%;width:200px;height:200px;background:radial-gradient(circle,rgba(232,114,27,.15),transparent 60%);pointer-events:none}
+  .me-earn-l{font-size:11px;color:rgba(255,255,255,.6);font-weight:600;letter-spacing:.8px;text-transform:uppercase;position:relative}
+  .me-earn-v{font-size:40px;font-weight:800;color:#fff;letter-spacing:-1.5px;line-height:1;margin-top:6px;position:relative}
+  .me-earn-v small{font-size:16px;opacity:.55;font-weight:600;margin-left:4px}
+  .me-earn-sub{font-size:11px;color:rgba(255,255,255,.5);margin-top:6px;position:relative}
+  .me-earn-3{margin-top:18px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;position:relative}
+  .me-mi{padding:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:10px}
+  .me-mi-l{font-size:9px;color:rgba(255,255,255,.55);font-weight:600;letter-spacing:.5px}
+  .me-mi-v{font-size:15px;font-weight:800;color:#fff;margin-top:2px}
+
+  /* 升星卡 */
+  .me-up{margin:14px 14px 0;background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:16px}
+  .me-up-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+  .me-up-t{font-size:13px;font-weight:800;color:var(--ink)}
+  .me-up-t b{color:var(--brand);font-weight:800}
+  .me-up-s{font-size:11px;color:var(--mute);font-weight:600}
+  .me-up-bar{height:6px;background:#eee;border-radius:99px;overflow:hidden}
+  .me-up-fill{height:100%;background:var(--brand);width:64%;border-radius:99px}
+  .me-up-cond{margin-top:8px;display:flex;justify-content:space-between;font-size:10px;color:var(--mute);font-weight:600}
+  .me-up-cond b{color:var(--ink);font-weight:700}
+  .me-up-acts{margin-top:14px;display:flex;gap:8px}
+  .me-up-btn{flex:1;padding:10px;border-radius:10px;font-size:12px;font-weight:700;text-align:center}
+  .me-up-btn.p{background:var(--brand);color:#fff;border:none}
+  .me-up-btn.s{background:var(--paper);color:var(--ink);border:1px solid var(--line)}
+
+  /* 功能 grid */
+  .me-grid-card{margin:14px;background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:8px;display:grid;grid-template-columns:repeat(4,1fr)}
+  .me-g{padding:14px 6px;text-align:center}
+  .me-g-i{font-size:22px;display:block;margin-bottom:4px}
+  .me-g-l{font-size:10px;color:var(--ink2);font-weight:600}
+</style>
+</head>
+<body>
+
+<!-- ========== 1. 首页 ========== -->
+<div class="frame">
+  <div class="frame-label">首页 · 克制版</div>
+  <div class="statusbar"><span>9:41</span><span>⚡5G ▮▮▮▮</span></div>
+  <div class="body">
+    <div class="hd">
+      <div class="greet">
+        <div class="av"></div>
+        <div>
+          <div class="greet-n">下午好，小慧</div>
+          <div class="greet-s"><b>3 星</b>·海淀</div>
+        </div>
+      </div>
+      <div class="head-ics">
+        <div class="head-ic">🔍</div>
+        <div class="head-ic">🔔<div class="head-dot"></div></div>
+      </div>
+    </div>
+
+    <!-- 收益 hero -->
+    <div class="earn">
+      <div class="earn-top">
+        <div class="earn-l">本月已赚</div>
+        <div class="earn-link">流水 ›</div>
+      </div>
+      <div class="earn-v num">128.50<small> 元</small></div>
+      <div class="earn-d">↑ 较上月 +18.20 元</div>
+      <div class="earn-mini">
+        <div class="em"><div class="em-l">推广 12 单</div><div class="em-v num">86.40<small>元</small></div></div>
+        <div class="em"><div class="em-l">极差 5 单</div><div class="em-v num">32.10<small>元</small></div></div>
+        <div class="em"><div class="em-l">奖池中 1 次</div><div class="em-v num">10.00<small>元</small></div></div>
+      </div>
+    </div>
+
+    <!-- 推 N 反 1 进度 -->
+    <div class="promo">
+      <div class="promo-h">
+        <div class="promo-t"><span class="live"></span>红烧牛肉面 · 推 3 反 1</div>
+        <div class="promo-step"><b>3</b>/3 完成</div>
+      </div>
+      <div class="pbar">
+        <div class="p-seg done"></div>
+        <div class="p-seg done"></div>
+        <div class="p-seg done"></div>
+      </div>
+      <div class="p-marks">
+        <span class="ok">激活 ✓</span><span class="ok">+30% ✓</span><span class="ok">+50% ✓</span>
+      </div>
+      <div class="promo-tip">✓ <b>已完成</b>，第 4 件即免单。朋友再下你拿 ¥1，到账即提现。</div>
+    </div>
+
+    <!-- ticker -->
+    <div class="ticker">
+      <span class="ticker-i">📣</span>
+      <div class="ticker-tx"><b>***123</b> 拿了 ¥8.60 · <b>***456</b> 升 4 星 · <b>***789</b> 中奖 ¥30</div>
+    </div>
+
+    <!-- 分类 -->
+    <div class="sec">
+      <div><div class="sec-t">分类</div><div class="sec-sub">9 个常用分类</div></div>
+      <div class="sec-more">全部 ›</div>
+    </div>
+    <div class="cats">
+      <div class="cat-i"><div class="cat-c">🍱</div><div class="cat-l">外卖</div></div>
+      <div class="cat-i"><div class="cat-c">☕</div><div class="cat-l">咖啡</div></div>
+      <div class="cat-i"><div class="cat-c">🍜</div><div class="cat-l">面食</div></div>
+      <div class="cat-i"><div class="cat-c">🍰</div><div class="cat-l">甜品</div></div>
+      <div class="cat-i"><div class="cat-c">🛒</div><div class="cat-l">超市</div></div>
+    </div>
+
+    <!-- 精选 -->
+    <div class="sec">
+      <div><div class="sec-t">今日精选</div><div class="sec-sub">商家精选推荐</div></div>
+      <div class="sec-more">›</div>
+    </div>
+    <div class="feat-list">
+      <div class="fc fc-1">
+        <div class="fc-tag">推 3 反 1</div>
+        <div class="fc-name">爱家超市<br>红烧牛肉面</div>
+        <div class="fc-sub">3 件起返 · 朋友买也返</div>
+        <div class="fc-bot">
+          <div class="fc-meta"><div class="fc-l">¥/件</div><div class="fc-v num">10.00</div></div>
+          <div class="fc-cta">查看</div>
+        </div>
+      </div>
+      <div class="fc fc-2">
+        <div class="fc-tag">满 30 减 5</div>
+        <div class="fc-name">茶楼<br>菊花枸杞茶</div>
+        <div class="fc-sub">茶饮特色 · 实在不忽悠</div>
+        <div class="fc-bot">
+          <div class="fc-meta"><div class="fc-l">¥/份</div><div class="fc-v num">15.00</div></div>
+          <div class="fc-cta">查看</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 热销 -->
+    <div class="sec">
+      <div><div class="sec-t">热销榜</div><div class="sec-sub">今日实时</div></div>
+      <div class="sec-more">完整榜 ›</div>
+    </div>
+    <div class="hot">
+      <div class="hp">
+        <div class="hp-pic">🍜<div class="hp-rank">1</div></div>
+        <div class="hp-n">红烧牛肉面</div>
+        <div class="hp-meta"><div class="hp-pr num">¥10<small>.00</small></div><div class="hp-sales">售 2.4K</div></div>
+      </div>
+      <div class="hp">
+        <div class="hp-pic">🍝<div class="hp-rank r2">2</div></div>
+        <div class="hp-n">满小饱肥汁米线</div>
+        <div class="hp-meta"><div class="hp-pr num">¥5<small>.00</small></div><div class="hp-sales">售 1.8K</div></div>
+      </div>
+      <div class="hp">
+        <div class="hp-pic">🍚<div class="hp-rank r3">3</div></div>
+        <div class="hp-n">海福盛干贝粥</div>
+        <div class="hp-meta"><div class="hp-pr num">¥10<small>.00</small></div><div class="hp-sales">售 1.2K</div></div>
+      </div>
+    </div>
+
+    <!-- 猜你赚 -->
+    <div class="sec">
+      <div><div class="sec-t">猜你赚</div><div class="sec-sub">基于你的星级</div></div>
+    </div>
+    <div class="grid">
+      <div class="p">
+        <div class="p-pic">🥓<div class="p-badge">推 3 反 1</div></div>
+        <div class="p-n">五花肉 · 鲜切批发</div>
+        <div class="p-meta"><div class="p-price num">¥28<small>/斤</small></div><div class="p-earn">赚 ¥2.8</div></div>
+      </div>
+      <div class="p">
+        <div class="p-pic">🍳<div class="p-badge soft">星级 +2%</div></div>
+        <div class="p-n">土鸡蛋 30 枚装</div>
+        <div class="p-meta"><div class="p-price num">¥32<small>/板</small></div><div class="p-earn">3 星额外</div></div>
+      </div>
+      <div class="p">
+        <div class="p-pic">🎁<div class="p-badge">入池抽</div></div>
+        <div class="p-n">中秋月饼礼盒</div>
+        <div class="p-meta"><div class="p-price num">¥88<small>/盒</small></div><div class="p-earn">入池 5%</div></div>
+      </div>
+      <div class="p">
+        <div class="p-pic">🥬<div class="p-badge soft">满 50 减 5</div></div>
+        <div class="p-n">山东大白菜</div>
+        <div class="p-meta"><div class="p-price num">¥1.6<small>/斤</small></div><div class="p-earn">消费 +5</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="tabbar">
+    <div class="tab on"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3 4 9v12h5v-7h6v7h5V9z"/></svg>主页</div>
+    <div class="tab"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 5h18v2H3zm0 6h18v2H3zm0 6h18v2H3z"/></svg>分类</div>
+    <div class="tab"><div class="cart-circle"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4h-2l-3 6 4 11h12l4-11-3-6h-2zM9 21a1 1 0 1 1 0-2 1 1 0 0 1 0 2zm6 0a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/></svg></div>购物车<div class="tab-badge" style="top:0">9</div></div>
+    <div class="tab"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 5h18v3H3zM3 10h18v3H3zM3 15h18v3H3z"/></svg>订单</div>
+    <div class="tab"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 22c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>我的</div>
+  </div>
+</div>
+
+<!-- ========== 2. 钱包 ========== -->
+<div class="frame">
+  <div class="frame-label">钱包 · 双积分</div>
+  <div class="statusbar"><span>9:41</span><span>⚡5G ▮▮▮▮</span></div>
+  <div class="body">
+    <div class="wl-back">
+      <div class="wl-back-btn">‹</div>
+      <div class="wl-back-t">我的钱包</div>
+    </div>
+
+    <div class="wl-hero">
+      <div class="wl-l">推广积分 · 1:1 提现</div>
+      <div class="wl-v num">128.50<small>积分</small></div>
+      <div class="wl-grow">↑ 本月 +18.20</div>
+      <div class="wl-acts">
+        <div class="wl-act"><span class="wl-act-i">💰</span><div class="wl-act-t">提现</div></div>
+        <div class="wl-act"><span class="wl-act-i">🔄</span><div class="wl-act-t">转消费</div></div>
+        <div class="wl-act"><span class="wl-act-i">📋</span><div class="wl-act-t">账单</div></div>
+      </div>
+    </div>
+
+    <div class="wl-2">
+      <div class="wl-sub">
+        <div class="wl-sub-l">消费积分</div>
+        <div class="wl-sub-v num">8.40<small>积分</small></div>
+        <div class="wl-sub-d">可抵现 1:1</div>
+      </div>
+      <div class="wl-sub">
+        <div class="wl-sub-l">店铺余额</div>
+        <div class="wl-sub-v num">52.00<small>元</small></div>
+        <div class="wl-sub-d">爱家超市</div>
+      </div>
+    </div>
+
+    <div class="wl-tabs">
+      <div class="wl-tab on">全部</div>
+      <div class="wl-tab">收入</div>
+      <div class="wl-tab">支出</div>
+      <div class="wl-tab">中奖</div>
+    </div>
+
+    <div class="flow">
+      <div class="flow-d">今天 · 5/22</div>
+
+      <div class="flow-i">
+        <div class="flow-ic win">🎁</div>
+        <div class="flow-m">
+          <div class="flow-n">奖池中奖<span class="chip">中奖</span></div>
+          <div class="flow-d2">爱家超市 · 月饼礼盒 SPU 池 · 3 星抽中</div>
+        </div>
+        <div class="flow-v">
+          <div class="flow-amt win num">+10.00</div>
+          <div class="flow-bal num">余 128.50</div>
+        </div>
+      </div>
+
+      <div class="flow-i">
+        <div class="flow-ic in">⚡</div>
+        <div class="flow-m">
+          <div class="flow-n">朋友首单返利</div>
+          <div class="flow-d2">小红 在「爱家超市」首单 · 你拿 10%</div>
+        </div>
+        <div class="flow-v">
+          <div class="flow-amt in num">+1.00</div>
+          <div class="flow-bal num">余 118.50</div>
+        </div>
+      </div>
+
+      <div class="flow-i">
+        <div class="flow-ic in">🥩</div>
+        <div class="flow-m">
+          <div class="flow-n">自购返奖 · 第 3 件</div>
+          <div class="flow-d2">红烧牛肉面 · 件 3 完成期 +50%</div>
+        </div>
+        <div class="flow-v">
+          <div class="flow-amt in num">+5.00</div>
+          <div class="flow-bal num">余 117.50</div>
+        </div>
+      </div>
+
+      <div class="flow-d">昨天 · 5/21</div>
+
+      <div class="flow-i">
+        <div class="flow-ic in">🌟</div>
+        <div class="flow-m">
+          <div class="flow-n">团队极差奖</div>
+          <div class="flow-d2">下级小白下单 · 3 星拿 3% 实付</div>
+        </div>
+        <div class="flow-v">
+          <div class="flow-amt in num">+0.60</div>
+          <div class="flow-bal num">余 112.50</div>
+        </div>
+      </div>
+
+      <div class="flow-i">
+        <div class="flow-ic">⬇️</div>
+        <div class="flow-m">
+          <div class="flow-n">下单抵扣</div>
+          <div class="flow-d2">订单 #10118 · 推 N 反 1 自动抵 1 件</div>
+        </div>
+        <div class="flow-v">
+          <div class="flow-amt out num">−10.00</div>
+          <div class="flow-bal num">余 111.90</div>
+        </div>
+      </div>
+
+      <div class="flow-i">
+        <div class="flow-ic in">🎯</div>
+        <div class="flow-m">
+          <div class="flow-n">自然推队首奖</div>
+          <div class="flow-d2">新人下单 · 你排红烧牛肉面队首</div>
+        </div>
+        <div class="flow-v">
+          <div class="flow-amt in num">+3.00</div>
+          <div class="flow-bal num">余 121.90</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== 3. 中奖弹窗（克制版）========== -->
+<div class="frame win-frame">
+  <div class="frame-label">中奖弹窗</div>
+  <div class="statusbar"><span>9:41</span><span>⚡5G ▮▮▮▮</span></div>
+  <div class="body" style="padding-bottom:0">
+    <div class="win-mask">
+      <div class="win-dialog">
+        <div class="win-medal">🏅</div>
+        <div class="win-t">恭喜中奖</div>
+        <div class="win-sub">月饼礼盒 SPU 奖池 · 3 星抽中</div>
+
+        <div class="win-amt-card">
+          <div class="win-amt-l">本次奖励</div>
+          <div class="win-amt-v num">¥10<small>.00</small></div>
+          <div class="win-amt-d">已发到推广积分，1:1 可立即提现</div>
+        </div>
+
+        <div class="win-meta">
+          <div>本轮共 <b>24 人</b>中奖 · 你是 3 星等级随机抽中</div>
+          <div style="margin-top:4px">商家 <b>爱家超市</b> · 池余额 ¥420 / 已发 ¥240</div>
+        </div>
+
+        <button class="win-cta">查看奖池详情</button>
+        <button class="win-close">稍后再看</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== 4. 派单 / 订单进度（克制）========== -->
+<div class="frame">
+  <div class="frame-label">订单进度</div>
+  <div class="statusbar"><span>9:41</span><span>⚡5G ▮▮▮▮</span></div>
+  <div class="body">
+    <div class="ship-hd">
+      <div class="ship-order">
+        <div class="wl-back-btn">‹</div>
+        <div class="ship-no" style="text-align:center;flex:1">订单进度<b>#PO-20260522-0028</b></div>
+        <div class="ship-status">配送中</div>
+      </div>
+    </div>
+
+    <div class="ship-eta-big">
+      <div class="ship-eta-l">预计还有</div>
+      <div class="ship-eta-v num">12<small>分钟</small></div>
+      <div class="ship-eta-d">骑手正在赶来 · 距您 0.8km</div>
+
+      <div class="ship-rider">
+        <div class="rider-av">王</div>
+        <div style="flex:1;text-align:left">
+          <div class="rider-n">王师傅</div>
+          <div class="rider-d">京 P · 12345 · 评分 4.9</div>
+        </div>
+        <div class="rider-call">📞 通话</div>
+      </div>
+    </div>
+
+    <div class="timeline">
+      <div class="tl-h">订单时间轴</div>
+
+      <div class="tl-i done">
+        <div class="tl-dot done">✓</div>
+        <div class="tl-m">
+          <div class="tl-n">订单已确认</div>
+          <div class="tl-d">9:32 · 商家已接单 · 抵扣 ¥10，实付 ¥0</div>
+        </div>
+      </div>
+
+      <div class="tl-i done">
+        <div class="tl-dot done">✓</div>
+        <div class="tl-m">
+          <div class="tl-n">商品已打包</div>
+          <div class="tl-d">9:45 · 红烧牛肉面 ×1</div>
+        </div>
+      </div>
+
+      <div class="tl-i">
+        <div class="tl-dot cur">●</div>
+        <div class="tl-m">
+          <div class="tl-n">骑手取货 · 配送中</div>
+          <div class="tl-d cur">9:58 · 王师傅 · 距您 0.8km</div>
+        </div>
+      </div>
+
+      <div class="tl-i">
+        <div class="tl-dot wait">○</div>
+        <div class="tl-m">
+          <div class="tl-n wait">预计送达</div>
+          <div class="tl-d">10:18 · 您的地址</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="padding:0 22px 22px;display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <button class="me-up-btn s">📍 查看地图</button>
+      <button class="me-up-btn p">📞 联系骑手</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== 5. 店铺主页 ========== -->
+<div class="frame">
+  <div class="frame-label">店铺主页 · 推 N 反 1</div>
+  <div class="statusbar"><span>9:41</span><span>⚡5G ▮▮▮▮</span></div>
+  <div class="body">
+    <div class="sh-hd">
+      <div class="sh-shop">
+        <div class="sh-logo">爱</div>
+        <div class="sh-meta">
+          <div class="sh-n">爱家超市</div>
+          <div class="sh-s">
+            <span class="rate"><b>4.9</b> ★</span>
+            <span>月售 <b>2.4K</b></span>
+            <span><b>30</b> 分送达</span>
+          </div>
+        </div>
+        <div class="sh-fav">❤️</div>
+      </div>
+    </div>
+
+    <!-- 推 N 反 1 大卡 -->
+    <div class="nback">
+      <div class="nback-lbl">推 3 反 1</div>
+      <div class="nback-t">买够 4 件，<b>1 件免单</b><br>朋友再下你 +¥1</div>
+      <div class="nback-sub">推广积分 1:1 提现 · 进度全部记录</div>
+
+      <div class="nback-row">
+        <div class="nback-money">
+          <div class="nback-l">已 拿 / 可拿</div>
+          <div class="nback-v num">10.00<small>/¥10</small></div>
+        </div>
+        <div class="nback-cta">分享 +¥1</div>
+      </div>
+
+      <div class="nback-bar">
+        <div class="nback-fill"></div>
+      </div>
+      <div class="nback-foot">
+        <span>当前 <b>完成期</b> · 每件返 10%</span>
+        <span>进度 <b>3/3</b></span>
+      </div>
+    </div>
+
+    <!-- 承诺 -->
+    <div class="promise">
+      <div class="promise-ic">✓</div>
+      <div class="promise-m">
+        <div class="promise-t">我们的承诺</div>
+        <div class="promise-d">
+          • 推广积分 1:1 提现，门槛 ¥100<br>
+          • 进度真实记录，绝不"差一刀"<br>
+          • 中奖明细 + 链路可追溯
+        </div>
+      </div>
+    </div>
+
+    <!-- 分类胶囊 -->
+    <div class="sub-cats">
+      <div class="sub-c on">全部</div>
+      <div class="sub-c">面食</div>
+      <div class="sub-c">米粉</div>
+      <div class="sub-c">粥品</div>
+      <div class="sub-c">饮品</div>
+    </div>
+
+    <div class="sec">
+      <div><div class="sec-t">热销商品</div><div class="sec-sub">19 件</div></div>
+      <div class="sec-more">›</div>
+    </div>
+    <div class="grid">
+      <div class="p">
+        <div class="p-pic">🍜<div class="p-badge">推 3 反 1</div></div>
+        <div class="p-n">红烧牛肉面</div>
+        <div class="p-meta"><div class="p-price num">¥10<small>.00</small></div><div class="p-earn">最高 ¥10</div></div>
+      </div>
+      <div class="p">
+        <div class="p-pic">🍱<div class="p-badge soft">入池 5%</div></div>
+        <div class="p-n">麻辣牛肉面</div>
+        <div class="p-meta"><div class="p-price num">¥5<small>.00</small></div><div class="p-earn">入池抽奖</div></div>
+      </div>
+      <div class="p">
+        <div class="p-pic">🍝<div class="p-badge soft">星级 +3%</div></div>
+        <div class="p-n">肥汁米线</div>
+        <div class="p-meta"><div class="p-price num">¥5<small>.00</small></div><div class="p-earn">3 星额外</div></div>
+      </div>
+      <div class="p">
+        <div class="p-pic">🍚<div class="p-badge">老客 ¥2</div></div>
+        <div class="p-n">海福盛干贝粥</div>
+        <div class="p-meta"><div class="p-price num">¥10<small>.00</small></div><div class="p-earn">老客返 ¥2</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="tabbar">
+    <div class="tab on"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3 4 9v12h5v-7h6v7h5V9z"/></svg>店铺</div>
+    <div class="tab"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 5h18v2H3zm0 6h18v2H3zm0 6h18v2H3z"/></svg>分类</div>
+    <div class="tab"><div class="cart-circle"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4h-2l-3 6 4 11h12l4-11-3-6h-2zM9 21a1 1 0 1 1 0-2 1 1 0 0 1 0 2zm6 0a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/></svg></div>购物车<div class="tab-badge" style="top:0">2</div></div>
+    <div class="tab"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 5h18v3H3zM3 10h18v3H3zM3 15h18v3H3z"/></svg>订单</div>
+    <div class="tab"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 22c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>我的</div>
+  </div>
+</div>
+
+<!-- ========== 6. 我的 ========== -->
+<div class="frame">
+  <div class="frame-label">我的 · 收益中心</div>
+  <div class="statusbar"><span>9:41</span><span>⚡5G ▮▮▮▮</span></div>
+  <div class="body">
+    <div class="me-hd">
+      <div class="me-prof">
+        <div class="me-av"></div>
+        <div style="flex:1">
+          <div class="me-name-row">
+            <div class="me-name">小慧</div>
+            <div class="me-star">★ 3 星</div>
+          </div>
+          <div class="me-s">已邀请 <b>5</b> 位 · 累计赚 <b>¥386.40</b></div>
+        </div>
+        <div class="me-set">⚙️</div>
+      </div>
+    </div>
+
+    <!-- 收益 hero -->
+    <div class="me-earn">
+      <div class="me-earn-l">本月已赚</div>
+      <div class="me-earn-v num">¥128.50</div>
+      <div class="me-earn-sub">较上月 +¥18.20 · 含 1 次中奖 ¥10</div>
+      <div class="me-earn-3">
+        <div class="me-mi"><div class="me-mi-l">推广</div><div class="me-mi-v num">¥86.40</div></div>
+        <div class="me-mi"><div class="me-mi-l">极差</div><div class="me-mi-v num">¥32.10</div></div>
+        <div class="me-mi"><div class="me-mi-l">中奖</div><div class="me-mi-v num">¥10.00</div></div>
+      </div>
+    </div>
+
+    <!-- 升星 -->
+    <div class="me-up">
+      <div class="me-up-h">
+        <div class="me-up-t">距 <b>4 星</b> 还差</div>
+        <div class="me-up-s">3 → 5 星</div>
+      </div>
+      <div class="me-up-bar"><div class="me-up-fill"></div></div>
+      <div class="me-up-cond">
+        <span>邀请 <b>3/5</b> 人</span>
+        <span>团队 <b>¥640/¥1000</b></span>
+      </div>
+      <div class="me-up-acts">
+        <button class="me-up-btn p">分享邀请</button>
+        <button class="me-up-btn s">晋级规则</button>
+      </div>
+    </div>
+
+    <!-- 功能 -->
+    <div class="me-grid-card">
+      <div class="me-g"><span class="me-g-i">💎</span><div class="me-g-l">钱包</div></div>
+      <div class="me-g"><span class="me-g-i">🎫</span><div class="me-g-l">优惠券</div></div>
+      <div class="me-g"><span class="me-g-i">⭐</span><div class="me-g-l">星级</div></div>
+      <div class="me-g"><span class="me-g-i">📦</span><div class="me-g-l">队列</div></div>
+      <div class="me-g"><span class="me-g-i">📍</span><div class="me-g-l">地址</div></div>
+      <div class="me-g"><span class="me-g-i">❤️</span><div class="me-g-l">收藏</div></div>
+      <div class="me-g"><span class="me-g-i">🎁</span><div class="me-g-l">邀请</div></div>
+      <div class="me-g"><span class="me-g-i">💬</span><div class="me-g-l">客服</div></div>
+    </div>
+
+    <!-- 数据 -->
+    <div class="me-up">
+      <div class="me-up-h">
+        <div class="me-up-t">近 7 日收益</div>
+        <div class="me-up-s">5/22 更新</div>
+      </div>
+      <div style="display:flex;align-items:flex-end;justify-content:space-between;height:80px;gap:6px;margin-top:4px">
+        <div style="flex:1;background:var(--brand-soft);border-radius:3px 3px 0 0;height:35%"></div>
+        <div style="flex:1;background:var(--brand-soft);border-radius:3px 3px 0 0;height:55%"></div>
+        <div style="flex:1;background:var(--brand-soft);border-radius:3px 3px 0 0;height:40%"></div>
+        <div style="flex:1;background:var(--brand-soft);border-radius:3px 3px 0 0;height:62%"></div>
+        <div style="flex:1;background:var(--brand-soft);border-radius:3px 3px 0 0;height:75%"></div>
+        <div style="flex:1;background:var(--brand-soft);border-radius:3px 3px 0 0;height:48%"></div>
+        <div style="flex:1;background:var(--brand);border-radius:3px 3px 0 0;height:92%"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:9px;color:var(--mute);font-weight:600">
+        <span>5/16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>今</span>
+      </div>
+    </div>
+  </div>
+  <div class="tabbar">
+    <div class="tab"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3 4 9v12h5v-7h6v7h5V9z"/></svg>主页</div>
+    <div class="tab"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 5h18v2H3zm0 6h18v2H3zm0 6h18v2H3z"/></svg>分类</div>
+    <div class="tab"><div class="cart-circle"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4h-2l-3 6 4 11h12l4-11-3-6h-2zM9 21a1 1 0 1 1 0-2 1 1 0 0 1 0 2zm6 0a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/></svg></div>购物车</div>
+    <div class="tab"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 5h18v3H3zM3 10h18v3H3zM3 15h18v3H3z"/></svg>订单</div>
+    <div class="tab on"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 22c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>我的</div>
+  </div>
+</div>
+
+</body>
+</html>
