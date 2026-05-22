@@ -1,0 +1,1322 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>摊小二 · 用户端 H5 v5</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;font-variant-numeric:tabular-nums}
+:root{
+  --bg:#faf6f1;
+  --paper:#ffffff;
+  --paper2:#fdf8f3;
+  --ink:#1c1208;
+  --ink2:#3a2510;
+  --mute:#8a7060;
+  --mute2:#c4b5a5;
+  --line:#ede3d4;
+  --line2:#f5ece0;
+  --orange:#e8721b;
+  --orange-dk:#c45c0e;
+  --orange-dp:#8a3d08;
+  --orange-lt:#fff4e8;
+  --orange-soft:#fde8cf;
+  --orange-glow:rgba(232,114,27,.15);
+  --amber:#d4920a;
+  --amber-soft:#fef3d0;
+  --green:#1a7a4a;
+  --green-soft:#e3f2ea;
+  --red:#c93030;
+  --shadow-card:0 2px 12px rgba(60,30,10,.08),0 1px 3px rgba(60,30,10,.04);
+  --shadow-hero:0 8px 32px rgba(200,90,20,.18),0 2px 8px rgba(200,90,20,.1);
+  --radius-card:18px;
+  --radius-btn:10px;
+}
+body{
+  font-family:-apple-system,'PingFang SC','Noto Sans SC','Microsoft YaHei',sans-serif;
+  background:#d6c9b5;
+  min-height:100vh;
+  padding:40px 20px 60px;
+  display:flex;
+  flex-wrap:wrap;
+  gap:36px;
+  justify-content:center;
+  align-items:flex-start;
+}
+
+/* ── FRAME ── */
+.frame-wrap{display:flex;flex-direction:column;align-items:center;gap:10px}
+.frame-label{
+  font-size:10px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;
+  color:#7a6550;background:rgba(255,255,255,.45);padding:4px 12px;border-radius:99px;
+}
+.frame{
+  width:390px;height:844px;
+  background:var(--bg);
+  border-radius:46px;
+  overflow:hidden;
+  box-shadow:0 32px 80px rgba(60,30,10,.3),0 0 0 1px rgba(0,0,0,.06),inset 0 1px 0 rgba(255,255,255,.5);
+  position:relative;
+  display:flex;flex-direction:column;
+}
+.sb{/* statusbar */
+  height:48px;display:flex;justify-content:space-between;align-items:center;
+  padding:0 26px;font-size:13px;font-weight:700;color:var(--ink);flex-shrink:0;
+  background:var(--bg);position:relative;z-index:10;
+}
+.sb-time{font-size:15px;font-weight:800;letter-spacing:-.3px}
+.sb-icons{display:flex;align-items:center;gap:5px;font-size:12px}
+.scroll{flex:1;overflow-y:auto;padding-bottom:84px}
+.scroll::-webkit-scrollbar{display:none}
+
+/* ── TABBAR ── */
+.tabbar{
+  position:absolute;bottom:0;left:0;right:0;height:82px;
+  background:rgba(255,255,255,.95);backdrop-filter:blur(16px);
+  border-top:1px solid var(--line);
+  display:flex;align-items:flex-start;padding-top:10px;
+  z-index:100;
+}
+.tb-item{
+  flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
+  font-size:9.5px;font-weight:600;color:var(--mute2);cursor:pointer;position:relative;
+}
+.tb-item.active{color:var(--orange)}
+.tb-ic{font-size:20px;line-height:1}
+.tb-cart-wrap{
+  flex:1;display:flex;flex-direction:column;align-items:center;position:relative;
+}
+.tb-cart{
+  width:52px;height:52px;border-radius:50%;
+  background:linear-gradient(145deg,#f59030,var(--orange));
+  box-shadow:0 6px 20px rgba(232,114,27,.45);
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;margin-top:-20px;border:3px solid var(--bg);
+  position:relative;
+}
+.tb-cart-badge{
+  position:absolute;top:0;right:0;width:16px;height:16px;
+  background:#c93030;border-radius:50%;font-size:9px;font-weight:800;
+  color:#fff;display:flex;align-items:center;justify-content:center;
+  border:2px solid white;
+}
+.tb-cart-lbl{font-size:9.5px;font-weight:600;color:var(--mute2);margin-top:3px}
+
+/* ── SHARED COMPONENTS ── */
+.section-hd{
+  padding:0 18px;margin-bottom:10px;
+  display:flex;justify-content:space-between;align-items:center;
+}
+.section-t{font-size:14px;font-weight:800;color:var(--ink);display:flex;align-items:center;gap:6px}
+.section-t::before{content:'';width:3px;height:14px;background:var(--orange);border-radius:2px}
+.section-more{font-size:11px;color:var(--orange);font-weight:700}
+.card{background:var(--paper);border-radius:var(--radius-card);box-shadow:var(--shadow-card)}
+.tag{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:700;padding:3px 8px;border-radius:5px}
+.tag-orange{background:var(--orange-soft);color:var(--orange-dp)}
+.tag-green{background:var(--green-soft);color:var(--green)}
+.tag-amber{background:var(--amber-soft);color:var(--amber)}
+.badge-star{
+  display:inline-flex;align-items:center;gap:2px;
+  background:linear-gradient(135deg,#f7c95a,#e8a020);
+  color:#5a3500;font-size:10px;font-weight:800;
+  padding:2px 8px;border-radius:5px;
+}
+.divider{height:1px;background:var(--line);margin:0 18px}
+.btn-primary{
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  background:linear-gradient(145deg,#f59030,var(--orange));
+  color:#fff;font-size:14px;font-weight:800;
+  border-radius:var(--radius-btn);height:44px;
+  box-shadow:0 4px 14px rgba(232,114,27,.35);
+  border:none;width:100%;cursor:pointer;
+}
+.btn-ghost{
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  background:transparent;color:var(--orange);font-size:13px;font-weight:700;
+  border:1.5px solid var(--orange);border-radius:var(--radius-btn);height:38px;
+  cursor:pointer;
+}
+
+/* ══════════════════════════════════════
+   SCREEN 1 — HOME
+══════════════════════════════════════ */
+.home-nav{
+  padding:6px 18px 12px;
+  display:flex;justify-content:space-between;align-items:center;
+}
+.hn-loc{display:flex;align-items:center;gap:5px;font-size:14px;font-weight:700;color:var(--ink)}
+.hn-loc-dot{width:7px;height:7px;border-radius:50%;background:var(--orange);box-shadow:0 0 0 4px var(--orange-glow)}
+.hn-loc-arrow{color:var(--mute);font-size:10px}
+.hn-ics{display:flex;gap:6px}
+.hn-ic{
+  width:36px;height:36px;border-radius:11px;background:var(--paper);
+  display:flex;align-items:center;justify-content:center;font-size:16px;
+  border:1px solid var(--line);box-shadow:0 1px 4px rgba(60,30,10,.06);
+  position:relative;
+}
+.hn-ic-dot{position:absolute;top:6px;right:7px;width:6px;height:6px;background:var(--orange);border-radius:50%;border:1.5px solid white}
+
+/* EARN HERO */
+.earn-hero{
+  margin:0 14px 14px;
+  background:linear-gradient(150deg,#f5901a 0%,#e05a10 55%,#c44b0a 100%);
+  border-radius:22px;padding:20px;
+  box-shadow:var(--shadow-hero);
+  position:relative;overflow:hidden;
+}
+.earn-hero::before{
+  content:'';position:absolute;top:-40px;right:-40px;
+  width:200px;height:200px;border-radius:50%;
+  background:rgba(255,255,255,.07);
+  pointer-events:none;
+}
+.earn-hero::after{
+  content:'';position:absolute;bottom:-60px;left:-20px;
+  width:160px;height:160px;border-radius:50%;
+  background:rgba(255,255,255,.05);pointer-events:none;
+}
+.eh-eyebrow{font-size:10px;font-weight:700;color:rgba(255,255,255,.75);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px}
+.eh-num{font-size:52px;font-weight:900;color:#fff;letter-spacing:-2.5px;line-height:1}
+.eh-num sup{font-size:22px;font-weight:700;vertical-align:top;margin-top:8px;display:inline-block}
+.eh-up{
+  display:inline-flex;align-items:center;gap:4px;
+  font-size:11px;font-weight:700;color:rgba(255,255,255,.85);
+  background:rgba(255,255,255,.15);border-radius:6px;
+  padding:3px 8px;margin-top:8px;
+}
+.eh-break{
+  margin-top:16px;padding-top:14px;
+  border-top:1px solid rgba(255,255,255,.2);
+  display:flex;gap:0;
+}
+.eh-item{flex:1;position:relative}
+.eh-item+.eh-item::before{
+  content:'';position:absolute;left:0;top:3px;bottom:3px;
+  width:1px;background:rgba(255,255,255,.2);
+}
+.eh-item+.eh-item{padding-left:14px}
+.eh-lbl{font-size:9px;font-weight:700;color:rgba(255,255,255,.65);letter-spacing:1px;text-transform:uppercase;margin-bottom:3px}
+.eh-val{font-size:16px;font-weight:900;color:#fff;letter-spacing:-.5px}
+
+/* PROMO CARD */
+.promo-card{
+  margin:0 14px 14px;
+  background:var(--paper);border-radius:var(--radius-card);
+  padding:16px;box-shadow:var(--shadow-card);
+  border:1px solid var(--line2);
+}
+.pc-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.pc-t{font-size:13px;font-weight:800;color:var(--ink);display:flex;align-items:center;gap:8px}
+.pc-live{
+  width:6px;height:6px;border-radius:50%;background:var(--green);
+  box-shadow:0 0 0 3px rgba(26,122,74,.15);
+  animation:pulse 2s infinite;
+}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 3px rgba(26,122,74,.15)}50%{box-shadow:0 0 0 5px rgba(26,122,74,.08)}}
+.pc-ct{font-size:11px;color:var(--mute);font-weight:700}
+.pc-ct b{color:var(--green);font-weight:800}
+.pbar-track{height:8px;background:var(--line2);border-radius:99px;overflow:hidden;margin-bottom:6px}
+.pbar-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,#f59030,var(--orange));box-shadow:0 1px 4px rgba(232,114,27,.3);width:75%}
+.pbar-marks{display:flex;justify-content:space-between;font-size:9.5px;color:var(--mute2);font-weight:700}
+.pbar-marks .done{color:var(--green)}
+.pc-tip{
+  margin-top:12px;padding:9px 12px;
+  background:var(--orange-lt);border-left:3px solid var(--orange);
+  border-radius:7px;font-size:11px;color:var(--orange-dp);font-weight:600;
+}
+.pc-tip b{color:var(--orange-dk);font-weight:800}
+
+/* HOT LIST */
+.hot-scroll-wrap{overflow-x:auto;padding:0 18px 4px}
+.hot-scroll-wrap::-webkit-scrollbar{display:none}
+.hot-list{display:flex;gap:10px;width:max-content}
+.hot-item{
+  background:var(--paper);border-radius:14px;
+  padding:12px;width:130px;flex-shrink:0;
+  box-shadow:var(--shadow-card);border:1px solid var(--line2);
+}
+.hi-img{width:100%;height:76px;background:linear-gradient(135deg,#f8e8d0,#f2d5b0);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:32px;margin-bottom:8px}
+.hi-name{font-size:12px;font-weight:700;color:var(--ink);margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hi-price{font-size:15px;font-weight:900;color:var(--orange)}
+.hi-price small{font-size:10px;font-weight:700}
+.hi-shop{font-size:9.5px;color:var(--mute);margin-top:2px}
+.hi-rank{
+  position:absolute;top:8px;left:8px;
+  width:18px;height:18px;border-radius:6px;
+  background:var(--orange);color:#fff;
+  font-size:10px;font-weight:900;
+  display:flex;align-items:center;justify-content:center;
+}
+
+/* PRODUCT GRID */
+.prod-grid{padding:0 14px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.prod-item{
+  background:var(--paper);border-radius:14px;overflow:hidden;
+  box-shadow:var(--shadow-card);border:1px solid var(--line2);
+}
+.pi-img{height:110px;background:linear-gradient(135deg,#fbebd4,#f5d5b0);display:flex;align-items:center;justify-content:center;font-size:40px}
+.pi-body{padding:10px}
+.pi-name{font-size:12px;font-weight:700;color:var(--ink);margin-bottom:4px}
+.pi-shop{font-size:9.5px;color:var(--mute);margin-bottom:6px}
+.pi-foot{display:flex;justify-content:space-between;align-items:center}
+.pi-price{font-size:16px;font-weight:900;color:var(--orange)}
+.pi-price small{font-size:10px;font-weight:700}
+.pi-add{
+  width:26px;height:26px;border-radius:8px;
+  background:var(--orange);color:#fff;
+  font-size:18px;display:flex;align-items:center;justify-content:center;
+  font-weight:300;line-height:1;
+}
+
+/* ══════════════════════════════════════
+   SCREEN 2 — WALLET
+══════════════════════════════════════ */
+.wallet-hd{
+  padding:6px 18px 16px;
+  display:flex;justify-content:space-between;align-items:center;
+}
+.wh-title{font-size:17px;font-weight:900;color:var(--ink);letter-spacing:-.3px}
+.wh-more{font-size:12px;color:var(--orange);font-weight:700}
+
+.wallet-main{
+  margin:0 14px 14px;
+  background:linear-gradient(150deg,#f5901a 0%,#e05a10 55%,#c44b0a 100%);
+  border-radius:22px;padding:22px;
+  box-shadow:var(--shadow-hero);
+  position:relative;overflow:hidden;
+}
+.wallet-main::before{content:'';position:absolute;top:-50px;right:-30px;width:180px;height:180px;border-radius:50%;background:rgba(255,255,255,.06);pointer-events:none}
+.wm-lbl{font-size:10px;font-weight:700;color:rgba(255,255,255,.7);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px}
+.wm-num{font-size:52px;font-weight:900;color:#fff;letter-spacing:-2px;line-height:1}
+.wm-num sup{font-size:20px;font-weight:700;vertical-align:top;margin-top:8px;display:inline-block}
+.wm-sub{font-size:11px;color:rgba(255,255,255,.75);font-weight:600;margin-top:6px}
+.wm-actions{display:flex;gap:10px;margin-top:18px}
+.wm-btn{
+  flex:1;height:38px;border-radius:9px;
+  display:flex;align-items:center;justify-content:center;gap:5px;
+  font-size:13px;font-weight:800;cursor:pointer;
+}
+.wm-btn-solid{background:rgba(255,255,255,.95);color:var(--orange-dk)}
+.wm-btn-ghost{background:rgba(255,255,255,.15);color:#fff;border:1.5px solid rgba(255,255,255,.4)}
+
+/* DUAL POINTS */
+.dual{margin:0 14px 14px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.dual-card{
+  background:var(--paper);border-radius:14px;padding:14px;
+  box-shadow:var(--shadow-card);border:1px solid var(--line2);
+}
+.dc-lbl{font-size:10px;font-weight:700;color:var(--mute);letter-spacing:.8px;margin-bottom:6px;display:flex;align-items:center;gap:5px}
+.dc-num{font-size:22px;font-weight:900;color:var(--ink);letter-spacing:-.5px}
+.dc-unit{font-size:11px;font-weight:700;color:var(--mute);margin-left:2px}
+.dc-hint{font-size:9.5px;color:var(--green);font-weight:700;margin-top:4px}
+
+/* LEDGER */
+.ledger{margin:0 14px;padding:0}
+.ledger-item{
+  display:flex;align-items:flex-start;gap:12px;
+  padding:13px 0;border-bottom:1px solid var(--line2);
+  position:relative;
+}
+.ledger-item:last-child{border-bottom:none}
+.li-dot{
+  width:32px;height:32px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;flex-shrink:0;margin-top:1px;
+}
+.li-dot-orange{background:var(--orange-soft)}
+.li-dot-green{background:var(--green-soft)}
+.li-dot-amber{background:var(--amber-soft)}
+.li-dot-win{
+  background:linear-gradient(135deg,#f7c95a,#e8a020);
+  box-shadow:0 2px 8px rgba(216,154,40,.3);
+}
+.li-body{flex:1}
+.li-title{font-size:13px;font-weight:700;color:var(--ink);line-height:1.3}
+.li-sub{font-size:11px;color:var(--mute);margin-top:2px}
+.li-sub b{color:var(--orange);font-weight:700}
+.li-time{font-size:10px;color:var(--mute2);margin-top:2px}
+.li-amt{text-align:right;flex-shrink:0}
+.li-pos{font-size:15px;font-weight:900;color:var(--green);letter-spacing:-.3px}
+.li-neg{font-size:15px;font-weight:900;color:var(--mute);letter-spacing:-.3px}
+.li-win-badge{
+  display:inline-flex;align-items:center;gap:3px;
+  background:linear-gradient(135deg,#f7c95a,#e8a020);
+  color:#5a3500;font-size:9.5px;font-weight:800;
+  padding:2px 7px;border-radius:5px;margin-top:3px;
+}
+
+/* ══════════════════════════════════════
+   SCREEN 3 — WIN MODAL
+══════════════════════════════════════ */
+.modal-bg{
+  width:100%;height:100%;
+  background:rgba(10,5,2,.75);
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  padding:0 24px;
+  position:relative;
+}
+.modal-confetti{
+  position:absolute;top:0;left:0;right:0;height:60%;
+  pointer-events:none;overflow:hidden;
+}
+.conf{
+  position:absolute;width:6px;height:12px;border-radius:2px;
+  animation:fall 3.5s ease-in infinite;
+  opacity:.8;
+}
+@keyframes fall{0%{transform:translateY(-20px) rotate(0deg);opacity:1}100%{transform:translateY(400px) rotate(720deg);opacity:0}}
+.modal-card{
+  background:var(--paper);border-radius:28px;width:100%;
+  padding:28px 22px 22px;position:relative;
+  box-shadow:0 24px 60px rgba(0,0,0,.4);
+}
+.mc-glow{
+  position:absolute;top:-2px;left:50%;transform:translateX(-50%);
+  width:120px;height:4px;
+  background:linear-gradient(90deg,transparent,var(--orange),transparent);
+  border-radius:99px;
+}
+.mc-icon{font-size:56px;text-align:center;margin-bottom:8px;line-height:1.1}
+.mc-title{font-size:22px;font-weight:900;color:var(--ink);text-align:center;letter-spacing:-.5px;margin-bottom:4px}
+.mc-sub{font-size:13px;color:var(--mute);text-align:center;margin-bottom:20px}
+.mc-num-wrap{
+  background:linear-gradient(150deg,#fff7ec,#feebd4);
+  border:1.5px solid var(--orange-soft);
+  border-radius:18px;padding:18px;text-align:center;margin-bottom:18px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.8);
+}
+.mc-num{font-size:56px;font-weight:900;color:var(--orange-dk);letter-spacing:-2.5px;line-height:1}
+.mc-num sup{font-size:22px;font-weight:700;vertical-align:top;margin-top:10px;display:inline-block}
+.mc-note{font-size:11px;color:var(--green);font-weight:700;margin-top:8px;display:flex;align-items:center;justify-content:center;gap:4px}
+.mc-compare{
+  background:var(--green-soft);border-radius:10px;padding:10px 14px;
+  margin-bottom:18px;
+  display:flex;align-items:flex-start;gap:10px;
+}
+.mc-cmp-icon{font-size:18px;flex-shrink:0;margin-top:2px}
+.mc-cmp-t{font-size:12px;color:var(--green);font-weight:800;margin-bottom:2px}
+.mc-cmp-d{font-size:11px;color:var(--mute);line-height:1.5}
+.mc-cmp-d b{color:var(--green);font-weight:700}
+.mc-dismiss{
+  width:100%;height:46px;border-radius:12px;
+  background:linear-gradient(145deg,#f59030,var(--orange));
+  color:#fff;font-size:15px;font-weight:800;
+  box-shadow:0 4px 16px rgba(232,114,27,.4);
+  border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+}
+.mc-dismiss-sec{
+  margin-top:10px;font-size:12px;color:var(--mute);font-weight:600;
+  text-align:center;
+}
+
+/* ══════════════════════════════════════
+   SCREEN 4 — ORDER TRACKING
+══════════════════════════════════════ */
+.trk-hd{
+  padding:6px 18px 14px;
+  display:flex;align-items:center;gap:10px;
+}
+.trk-back{font-size:20px;color:var(--ink)}
+.trk-title{font-size:16px;font-weight:800;color:var(--ink)}
+.trk-no{font-size:11px;color:var(--mute);margin-left:auto;font-weight:600}
+
+.trk-eta{
+  margin:0 14px 14px;
+  background:linear-gradient(150deg,#f5901a 0%,#e05a10 60%,#c44b0a 100%);
+  border-radius:22px;padding:20px 22px;
+  box-shadow:var(--shadow-hero);
+  position:relative;overflow:hidden;
+}
+.trk-eta::before{content:'';position:absolute;top:-40px;right:-30px;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,.06);pointer-events:none}
+.te-lbl{font-size:10px;font-weight:700;color:rgba(255,255,255,.7);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px}
+.te-time{font-size:48px;font-weight:900;color:#fff;letter-spacing:-2px;line-height:1}
+.te-sub{font-size:12px;color:rgba(255,255,255,.8);font-weight:600;margin-top:6px}
+.te-progress{
+  margin-top:16px;height:4px;background:rgba(255,255,255,.2);border-radius:99px;overflow:hidden;
+}
+.te-prog-fill{height:100%;width:58%;background:rgba(255,255,255,.85);border-radius:99px}
+
+/* RIDER CARD */
+.rider-card{
+  margin:0 14px 14px;
+  background:var(--paper);border-radius:var(--radius-card);
+  padding:14px 16px;box-shadow:var(--shadow-card);
+  border:1px solid var(--line2);
+  display:flex;align-items:center;gap:12px;
+}
+.rider-av{
+  width:46px;height:46px;border-radius:50%;
+  background:linear-gradient(135deg,#f8d080,#e8a020);
+  display:flex;align-items:center;justify-content:center;font-size:22px;
+  flex-shrink:0;border:2px solid white;box-shadow:0 2px 8px rgba(200,140,20,.2);
+}
+.rider-info{flex:1}
+.rider-name{font-size:14px;font-weight:800;color:var(--ink)}
+.rider-plate{font-size:11px;color:var(--mute);font-weight:600;margin-top:1px}
+.rider-rating{font-size:11px;color:var(--amber);font-weight:700;margin-top:2px}
+.rider-call{
+  width:40px;height:40px;border-radius:50%;
+  background:var(--green-soft);border:1.5px solid rgba(26,122,74,.2);
+  display:flex;align-items:center;justify-content:center;font-size:18px;
+  flex-shrink:0;
+}
+
+/* TIMELINE */
+.timeline{margin:0 14px;padding-bottom:4px}
+.tl-item{display:flex;gap:14px;padding-bottom:18px;position:relative}
+.tl-item:last-child{padding-bottom:0}
+.tl-left{width:28px;display:flex;flex-direction:column;align-items:center;flex-shrink:0}
+.tl-dot{
+  width:28px;height:28px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;font-size:13px;
+  flex-shrink:0;position:relative;z-index:1;
+}
+.tl-dot-done{background:var(--green);box-shadow:0 2px 8px rgba(26,122,74,.3)}
+.tl-dot-active{background:var(--orange);box-shadow:0 2px 10px rgba(232,114,27,.4);animation:pop .5s ease}
+@keyframes pop{0%{transform:scale(.8)}60%{transform:scale(1.1)}100%{transform:scale(1)}}
+.tl-dot-future{background:var(--line);border:1px solid var(--mute2)}
+.tl-dot span{font-size:12px}
+.tl-line{width:2px;flex:1;margin:3px 0;border-radius:1px}
+.tl-line-done{background:var(--green)}
+.tl-line-future{background:var(--line)}
+.tl-body{flex:1;padding-top:2px}
+.tl-title{font-size:13px;font-weight:700;color:var(--ink)}
+.tl-title.active{color:var(--orange);font-weight:800}
+.tl-sub{font-size:11px;color:var(--mute);margin-top:2px;line-height:1.4}
+.tl-time{font-size:10px;color:var(--mute2);margin-top:2px}
+
+/* ══════════════════════════════════════
+   SCREEN 5 — SHOP
+══════════════════════════════════════ */
+.shop-banner{
+  height:140px;
+  background:linear-gradient(135deg,#fdf0e0 0%,#f8d8a8 50%,#f5c478 100%);
+  position:relative;display:flex;align-items:flex-end;
+  padding:0 18px 14px;
+}
+.shop-banner-emoji{position:absolute;right:18px;top:16px;font-size:60px;opacity:.4}
+.shop-back{
+  position:absolute;top:14px;left:14px;
+  width:32px;height:32px;border-radius:50%;
+  background:rgba(255,255,255,.8);backdrop-filter:blur(8px);
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;color:var(--ink);
+}
+.shop-av{
+  width:54px;height:54px;border-radius:16px;
+  background:linear-gradient(135deg,#f5b060,var(--orange));
+  display:flex;align-items:center;justify-content:center;font-size:28px;
+  border:3px solid white;box-shadow:0 4px 14px rgba(200,90,20,.25);
+  margin-right:12px;flex-shrink:0;
+}
+.shop-meta{flex:1}
+.shop-name{font-size:17px;font-weight:900;color:var(--ink);letter-spacing:-.3px}
+.shop-row{display:flex;align-items:center;gap:6px;margin-top:4px}
+.shop-score{font-size:11px;color:var(--amber);font-weight:700}
+.shop-sold{font-size:11px;color:var(--mute);font-weight:600}
+
+/* PROMISE PROMO CARD */
+.promo-hero{
+  margin:12px 14px;
+  background:linear-gradient(145deg,#fff4e8,#feebd4);
+  border:1.5px solid var(--orange-soft);
+  border-radius:20px;padding:18px;
+  box-shadow:0 4px 18px rgba(232,114,27,.12);
+}
+.ph-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.ph-title{font-size:15px;font-weight:900;color:var(--orange-dk);display:flex;align-items:center;gap:8px}
+.ph-tag{font-size:10px;font-weight:800;background:var(--orange);color:#fff;padding:2px 8px;border-radius:5px}
+.ph-sub{font-size:11px;color:var(--orange-dp);font-weight:600;margin-bottom:14px}
+.ph-pbar-track{height:10px;background:rgba(232,114,27,.12);border-radius:99px;overflow:hidden;margin-bottom:6px}
+.ph-pbar-fill{height:100%;width:75%;border-radius:99px;background:linear-gradient(90deg,#f59030,var(--orange));box-shadow:0 1px 4px rgba(232,114,27,.3)}
+.ph-marks{display:flex;justify-content:space-between;font-size:10px;color:var(--mute);font-weight:700;margin-bottom:12px}
+.ph-marks b{color:var(--orange)}
+.ph-cta{
+  height:38px;border-radius:9px;width:100%;
+  background:linear-gradient(145deg,#f59030,var(--orange));
+  color:#fff;font-size:13px;font-weight:800;
+  box-shadow:0 3px 10px rgba(232,114,27,.3);
+  border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:5px;
+}
+
+/* PROMISE CARD */
+.promise-card{
+  margin:0 14px 14px;
+  background:var(--paper);border-radius:var(--radius-card);
+  padding:14px 16px;box-shadow:var(--shadow-card);
+  border:1px solid var(--line2);
+}
+.promise-title{font-size:13px;font-weight:800;color:var(--ink);display:flex;align-items:center;gap:7px;margin-bottom:10px}
+.promise-title::before{content:'🤝';font-size:14px}
+.promise-list{display:flex;flex-direction:column;gap:7px}
+.pl-item{display:flex;align-items:flex-start;gap:8px;font-size:11px;color:var(--mute);line-height:1.4}
+.pl-icon{font-size:14px;flex-shrink:0;margin-top:-.5px}
+.pl-item b{color:var(--ink);font-weight:700}
+
+/* ══════════════════════════════════════
+   SCREEN 6 — MINE
+══════════════════════════════════════ */
+.mine-header{
+  background:linear-gradient(160deg,#f5901a 0%,#e05a10 55%,#c44b0a 100%);
+  padding:16px 18px 24px;position:relative;overflow:hidden;
+}
+.mh-glow{position:absolute;top:-60px;right:-40px;width:200px;height:200px;border-radius:50%;background:rgba(255,255,255,.06);pointer-events:none}
+.mh-glow2{position:absolute;bottom:-60px;left:-30px;width:150px;height:150px;border-radius:50%;background:rgba(255,255,255,.05);pointer-events:none}
+.mh-top{display:flex;align-items:center;gap:12px;margin-bottom:18px;position:relative}
+.mh-av{
+  width:56px;height:56px;border-radius:50%;
+  background:rgba(255,255,255,.2);
+  border:3px solid rgba(255,255,255,.6);
+  display:flex;align-items:center;justify-content:center;font-size:30px;
+  flex-shrink:0;
+}
+.mh-name{font-size:18px;font-weight:900;color:#fff;letter-spacing:-.3px}
+.mh-star-wrap{display:flex;align-items:center;gap:6px;margin-top:4px}
+.mh-star-badge{
+  display:inline-flex;align-items:center;gap:3px;
+  background:rgba(255,255,255,.2);color:#fff;
+  font-size:11px;font-weight:800;padding:3px 10px;border-radius:6px;
+}
+.mh-star-badge .s-star{color:#ffd060}
+.mh-settings{margin-left:auto;font-size:22px;opacity:.8}
+
+/* MINE EARN HERO */
+.mine-earn{
+  background:rgba(255,255,255,.12);border-radius:14px;
+  padding:14px;margin:0 4px 0;position:relative;
+  backdrop-filter:blur(4px);border:1px solid rgba(255,255,255,.2);
+}
+.me-lbl{font-size:10px;font-weight:700;color:rgba(255,255,255,.7);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px}
+.me-num{font-size:42px;font-weight:900;color:#fff;letter-spacing:-2px;line-height:1}
+.me-num sup{font-size:18px;font-weight:700;vertical-align:top;margin-top:7px;display:inline-block}
+.me-breakdown{display:flex;gap:0;margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,.2)}
+.meb-item{flex:1;position:relative}
+.meb-item+.meb-item::before{content:'';position:absolute;left:0;top:2px;bottom:2px;width:1px;background:rgba(255,255,255,.25)}
+.meb-item+.meb-item{padding-left:12px}
+.meb-lbl{font-size:9px;font-weight:700;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.8px}
+.meb-val{font-size:13px;font-weight:900;color:#fff;margin-top:2px}
+
+/* MINE BODY */
+.mine-body{background:var(--bg);border-radius:24px 24px 0 0;margin-top:-16px;padding:20px 14px 0;position:relative;z-index:2}
+
+/* STAR PROGRESS */
+.star-prog{
+  background:var(--paper);border-radius:var(--radius-card);
+  padding:14px 16px;box-shadow:var(--shadow-card);
+  border:1px solid var(--line2);margin-bottom:12px;
+}
+.sp-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.sp-t{font-size:13px;font-weight:800;color:var(--ink)}
+.sp-next{font-size:11px;color:var(--mute);font-weight:600}
+.sp-next b{color:var(--orange);font-weight:800}
+.star-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.star-ic{font-size:18px;opacity:.25}
+.star-ic.lit{opacity:1}
+.star-ic.cur{opacity:1;filter:drop-shadow(0 0 4px rgba(232,114,27,.6))}
+.sp-track{height:6px;background:var(--line2);border-radius:99px;overflow:hidden;margin-bottom:4px}
+.sp-fill{height:100%;width:65%;background:linear-gradient(90deg,#f59030,var(--orange));border-radius:99px}
+.sp-hint{font-size:10px;color:var(--mute);font-weight:600;text-align:center}
+.sp-hint b{color:var(--orange);font-weight:800}
+
+/* ASSET GRID */
+.asset-grid{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:8px;
+  margin-bottom:14px;
+}
+.ag-item{
+  background:var(--paper);border-radius:12px;padding:12px 6px;
+  display:flex;flex-direction:column;align-items:center;gap:5px;
+  box-shadow:var(--shadow-card);border:1px solid var(--line2);cursor:pointer;
+}
+.ag-icon{font-size:22px}
+.ag-label{font-size:10px;font-weight:700;color:var(--ink2)}
+.ag-val{font-size:11px;font-weight:800;color:var(--orange)}
+
+/* CHART */
+.chart-card{
+  background:var(--paper);border-radius:var(--radius-card);
+  padding:14px 16px;box-shadow:var(--shadow-card);
+  border:1px solid var(--line2);margin-bottom:12px;
+}
+.ch-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.ch-t{font-size:13px;font-weight:800;color:var(--ink)}
+.ch-ttl{font-size:13px;font-weight:900;color:var(--orange)}
+.bar-chart{display:flex;align-items:flex-end;gap:8px;height:72px}
+.bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px}
+.bar{border-radius:4px 4px 0 0;width:100%;min-height:4px;transition:height .3s}
+.bar-active{background:linear-gradient(180deg,#f59030,var(--orange));box-shadow:0 -2px 8px rgba(232,114,27,.3)}
+.bar-past{background:var(--line)}
+.bar-lbl{font-size:9px;font-weight:600;color:var(--mute2)}
+
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════
+     FRAME 1 — HOME
+══════════════════════════════════════ -->
+<div class="frame-wrap">
+  <div class="frame-label">01 · 首页</div>
+  <div class="frame">
+    <div class="sb"><span class="sb-time">9:41</span><span class="sb-icons">📶 🔋</span></div>
+    <div class="scroll">
+      <!-- NAV -->
+      <div class="home-nav">
+        <div class="hn-loc">
+          <div class="hn-loc-dot"></div>
+          爱家超市附近
+          <span class="hn-loc-arrow">▾</span>
+        </div>
+        <div class="hn-ics">
+          <div class="hn-ic">🔔<div class="hn-ic-dot"></div></div>
+          <div class="hn-ic">🔍</div>
+        </div>
+      </div>
+
+      <!-- EARN HERO -->
+      <div class="earn-hero">
+        <div class="eh-eyebrow">本月已赚</div>
+        <div class="eh-num"><sup>¥</sup>128<span style="font-size:32px;font-weight:900">.50</span></div>
+        <div class="eh-up">↑ 较上月 +23% &nbsp;·&nbsp; 周内可提现</div>
+        <div class="eh-break">
+          <div class="eh-item">
+            <div class="eh-lbl">推广积分</div>
+            <div class="eh-val">¥86.40</div>
+          </div>
+          <div class="eh-item">
+            <div class="eh-lbl">团队极差</div>
+            <div class="eh-val">¥32.10</div>
+          </div>
+          <div class="eh-item">
+            <div class="eh-lbl">奖池中奖</div>
+            <div class="eh-val">¥10.00</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PROMO PROGRESS -->
+      <div class="promo-card">
+        <div class="pc-hd">
+          <div class="pc-t">
+            <div class="pc-live"></div>
+            推 N 反 1 进度
+          </div>
+          <div class="pc-ct">已买 <b>6/8</b> 件</div>
+        </div>
+        <div class="pbar-track"><div class="pbar-fill" style="width:75%"></div></div>
+        <div class="pbar-marks">
+          <span class="done">✓ 已购 6</span>
+          <span>目标 8 件</span>
+          <span style="color:var(--orange)">🎁 免单</span>
+        </div>
+        <div class="pc-tip">还差 <b>2 件</b>即可免单首件 — 邀朋友一起买更快！</div>
+      </div>
+
+      <!-- HOT LIST -->
+      <div class="section-hd"><div class="section-t">热销榜</div><div class="section-more">更多 ›</div></div>
+      <div class="hot-scroll-wrap">
+        <div class="hot-list">
+          <div class="hot-item" style="position:relative">
+            <div class="hi-rank">1</div>
+            <div class="hi-img">🍜</div>
+            <div class="hi-name">红烧牛肉面</div>
+            <div class="hi-price"><small>¥</small>10</div>
+            <div class="hi-shop">🏪 爱家超市</div>
+          </div>
+          <div class="hot-item" style="position:relative">
+            <div class="hi-rank" style="background:var(--amber)">2</div>
+            <div class="hi-img">🍚</div>
+            <div class="hi-name">肥汁米线</div>
+            <div class="hi-price"><small>¥</small>5</div>
+            <div class="hi-shop">🍵 茶楼</div>
+          </div>
+          <div class="hot-item" style="position:relative">
+            <div class="hi-rank" style="background:#a08060">3</div>
+            <div class="hi-img">🥣</div>
+            <div class="hi-name">干贝粥</div>
+            <div class="hi-price"><small>¥</small>10</div>
+            <div class="hi-shop">🍵 茶楼</div>
+          </div>
+          <div class="hot-item" style="position:relative">
+            <div class="hi-rank" style="background:#a08060">4</div>
+            <div class="hi-img">🥮</div>
+            <div class="hi-name">月饼礼盒</div>
+            <div class="hi-price"><small>¥</small>88</div>
+            <div class="hi-shop">🏪 爱家超市</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PRODUCTS -->
+      <div class="section-hd" style="margin-top:14px"><div class="section-t">精选商品</div><div class="section-more">更多 ›</div></div>
+      <div class="prod-grid">
+        <div class="prod-item">
+          <div class="pi-img">🍜</div>
+          <div class="pi-body">
+            <div class="pi-name">红烧牛肉面</div>
+            <div class="pi-shop">爱家超市</div>
+            <div class="pi-foot"><div class="pi-price"><small>¥</small>10</div><div class="pi-add">+</div></div>
+          </div>
+        </div>
+        <div class="prod-item">
+          <div class="pi-img">🥣</div>
+          <div class="pi-body">
+            <div class="pi-name">干贝粥</div>
+            <div class="pi-shop">茶楼</div>
+            <div class="pi-foot"><div class="pi-price"><small>¥</small>10</div><div class="pi-add">+</div></div>
+          </div>
+        </div>
+        <div class="prod-item">
+          <div class="pi-img">🥮</div>
+          <div class="pi-body">
+            <div class="pi-name">月饼礼盒</div>
+            <div class="pi-shop">爱家超市</div>
+            <div class="pi-foot"><div class="pi-price"><small>¥</small>88</div><div class="pi-add">+</div></div>
+          </div>
+        </div>
+        <div class="prod-item">
+          <div class="pi-img">🍚</div>
+          <div class="pi-body">
+            <div class="pi-name">肥汁米线</div>
+            <div class="pi-shop">茶楼</div>
+            <div class="pi-foot"><div class="pi-price"><small>¥</small>5</div><div class="pi-add">+</div></div>
+          </div>
+        </div>
+      </div>
+      <div style="height:8px"></div>
+    </div>
+    <!-- TABBAR -->
+    <div class="tabbar">
+      <div class="tb-item active"><div class="tb-ic">🏠</div>主页</div>
+      <div class="tb-item"><div class="tb-ic">📂</div>分类</div>
+      <div class="tb-cart-wrap">
+        <div class="tb-cart">🛒<div class="tb-cart-badge">2</div></div>
+        <div class="tb-cart-lbl">购物车</div>
+      </div>
+      <div class="tb-item"><div class="tb-ic">📦</div>订单</div>
+      <div class="tb-item"><div class="tb-ic">👤</div>我的</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     FRAME 2 — WALLET
+══════════════════════════════════════ -->
+<div class="frame-wrap">
+  <div class="frame-label">02 · 钱包</div>
+  <div class="frame">
+    <div class="sb"><span class="sb-time">9:41</span><span class="sb-icons">📶 🔋</span></div>
+    <div class="scroll">
+      <div class="wallet-hd">
+        <div class="wh-title">我的钱包</div>
+        <div class="wh-more">明细 ›</div>
+      </div>
+
+      <!-- MAIN BALANCE -->
+      <div class="wallet-main">
+        <div class="wm-lbl">推广积分余额</div>
+        <div class="wm-num"><sup>¥</sup>86<span style="font-size:28px;font-weight:900">.40</span></div>
+        <div class="wm-sub">1 积分 = ¥1 · 可随时提现到微信/支付宝</div>
+        <div class="wm-actions">
+          <div class="wm-btn wm-btn-solid">💸 立即提现</div>
+          <div class="wm-btn wm-btn-ghost">📊 积分明细</div>
+        </div>
+      </div>
+
+      <!-- DUAL POINTS -->
+      <div class="dual">
+        <div class="dual-card">
+          <div class="dc-lbl">🎯 消费积分</div>
+          <div class="dc-num">2,380<span class="dc-unit">分</span></div>
+          <div class="dc-hint">≈ ¥23.80 下单可抵扣</div>
+        </div>
+        <div class="dual-card">
+          <div class="dc-lbl">🏪 店铺余额</div>
+          <div class="dc-num">¥15<span class="dc-unit">.00</span></div>
+          <div class="dc-hint">爱家超市专属余额</div>
+        </div>
+      </div>
+
+      <!-- LEDGER -->
+      <div class="section-hd" style="margin-bottom:8px"><div class="section-t">收益流水</div><div class="section-more">全部 ›</div></div>
+      <div class="ledger" style="margin:0 14px">
+        <div class="ledger-item">
+          <div class="li-dot li-dot-win">🏆</div>
+          <div class="li-body">
+            <div class="li-title">5 月奖池抽奖中奖</div>
+            <div class="li-sub">3 星会员 · 实际到账 <b>¥10.00</b></div>
+            <div class="li-time">2026-05-15 10:30</div>
+            <div class="li-win-badge">🎉 奖池中奖</div>
+          </div>
+          <div class="li-amt"><div class="li-pos">+¥10.00</div></div>
+        </div>
+        <div class="ledger-item">
+          <div class="li-dot li-dot-orange">👥</div>
+          <div class="li-body">
+            <div class="li-title">朋友 李明 购买返利</div>
+            <div class="li-sub">红烧牛肉面 × 3</div>
+            <div class="li-time">2026-05-18 14:22</div>
+          </div>
+          <div class="li-amt"><div class="li-pos">+¥6.00</div></div>
+        </div>
+        <div class="ledger-item">
+          <div class="li-dot li-dot-orange">🛍️</div>
+          <div class="li-body">
+            <div class="li-title">自购返奖</div>
+            <div class="li-sub">月饼礼盒 · 3% 返奖</div>
+            <div class="li-time">2026-05-19 09:15</div>
+          </div>
+          <div class="li-amt"><div class="li-pos">+¥2.64</div></div>
+        </div>
+        <div class="ledger-item">
+          <div class="li-dot li-dot-green">📈</div>
+          <div class="li-body">
+            <div class="li-title">团队极差收益</div>
+            <div class="li-sub">A 层团队 12 笔订单极差</div>
+            <div class="li-time">2026-05-20 08:00</div>
+          </div>
+          <div class="li-amt"><div class="li-pos">+¥12.50</div></div>
+        </div>
+        <div class="ledger-item">
+          <div class="li-dot li-dot-amber" style="font-size:14px;display:flex;align-items:center;justify-content:center">💳</div>
+          <div class="li-body">
+            <div class="li-title">消费积分抵扣</div>
+            <div class="li-sub">肥汁米线 × 2 · 500 分抵 ¥5</div>
+            <div class="li-time">2026-05-20 12:44</div>
+          </div>
+          <div class="li-amt"><div class="li-neg">-500分</div></div>
+        </div>
+        <div class="ledger-item">
+          <div class="li-dot li-dot-orange">👤</div>
+          <div class="li-body">
+            <div class="li-title">朋友 张薇 购买返利</div>
+            <div class="li-sub">干贝粥 × 2</div>
+            <div class="li-time">2026-05-21 08:30</div>
+          </div>
+          <div class="li-amt"><div class="li-pos">+¥4.00</div></div>
+        </div>
+      </div>
+      <div style="height:8px"></div>
+    </div>
+    <div class="tabbar">
+      <div class="tb-item"><div class="tb-ic">🏠</div>主页</div>
+      <div class="tb-item"><div class="tb-ic">📂</div>分类</div>
+      <div class="tb-cart-wrap">
+        <div class="tb-cart">🛒<div class="tb-cart-badge">2</div></div>
+        <div class="tb-cart-lbl">购物车</div>
+      </div>
+      <div class="tb-item"><div class="tb-ic">📦</div>订单</div>
+      <div class="tb-item active"><div class="tb-ic">👤</div>我的</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     FRAME 3 — WIN MODAL
+══════════════════════════════════════ -->
+<div class="frame-wrap">
+  <div class="frame-label">03 · 中奖弹窗</div>
+  <div class="frame">
+    <div class="sb" style="background:transparent;position:absolute;top:0;left:0;right:0;z-index:200"><span class="sb-time" style="color:#fff">9:41</span><span class="sb-icons" style="color:#fff">📶 🔋</span></div>
+    <!-- blurred background -->
+    <div style="position:absolute;inset:0;background:linear-gradient(160deg,#fdf6ec,#f5d5a8);z-index:0;filter:blur(2px)"></div>
+    <div class="modal-bg" style="position:relative;z-index:1;padding-top:48px">
+      <!-- confetti particles -->
+      <div class="modal-confetti">
+        <div class="conf" style="left:10%;background:#f59030;animation-delay:0s;animation-duration:3.2s"></div>
+        <div class="conf" style="left:25%;background:#e8721b;animation-delay:.4s;width:8px;height:8px;border-radius:50%"></div>
+        <div class="conf" style="left:40%;background:#ffd060;animation-delay:.8s;animation-duration:4s"></div>
+        <div class="conf" style="left:55%;background:#e8721b;animation-delay:.2s"></div>
+        <div class="conf" style="left:70%;background:#1a7a4a;animation-delay:1s;width:5px;height:10px"></div>
+        <div class="conf" style="left:82%;background:#f59030;animation-delay:.6s;animation-duration:3.8s"></div>
+        <div class="conf" style="left:18%;background:#ffd060;animation-delay:1.4s"></div>
+        <div class="conf" style="left:62%;background:#1a7a4a;animation-delay:.3s;width:7px;height:7px;border-radius:50%"></div>
+      </div>
+
+      <div class="modal-card">
+        <div class="mc-glow"></div>
+        <div class="mc-icon">🏆</div>
+        <div class="mc-title">恭喜中奖！</div>
+        <div class="mc-sub">5 月奖池抽奖 · 3 星会员专属奖励</div>
+
+        <div class="mc-num-wrap">
+          <div style="font-size:11px;font-weight:700;color:var(--orange-dp);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px">实际到账金额</div>
+          <div class="mc-num"><sup>¥</sup>10<span style="font-size:28px;font-weight:900">.00</span></div>
+          <div class="mc-note">✅ 已实时到账推广积分钱包</div>
+        </div>
+
+        <div class="mc-compare">
+          <div class="mc-cmp-icon">🆚</div>
+          <div>
+            <div class="mc-cmp-t">摊小二承诺：到账就是到账</div>
+            <div class="mc-cmp-d">我们不做「差一刀」<b>¥10 就是 ¥10</b>，无需拉新，无需分享，实打实到账，明细可查。</div>
+          </div>
+        </div>
+
+        <button class="mc-dismiss">🎉 查看收益明细</button>
+        <div class="mc-dismiss-sec">稍后查看 · 奖励已锁定到账</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     FRAME 4 — ORDER TRACKING
+══════════════════════════════════════ -->
+<div class="frame-wrap">
+  <div class="frame-label">04 · 派单进度</div>
+  <div class="frame">
+    <div class="sb"><span class="sb-time">9:41</span><span class="sb-icons">📶 🔋</span></div>
+    <div class="scroll">
+      <div class="trk-hd">
+        <div class="trk-back">‹</div>
+        <div class="trk-title">配送进度</div>
+        <div class="trk-no">#PO-20260522-0028</div>
+      </div>
+
+      <!-- ETA -->
+      <div class="trk-eta">
+        <div class="te-lbl">预计送达</div>
+        <div class="te-time">14:28</div>
+        <div class="te-sub">约 12 分钟后送达 · 爱家超市 → 您的位置</div>
+        <div class="te-progress"><div class="te-prog-fill"></div></div>
+      </div>
+
+      <!-- RIDER -->
+      <div class="rider-card">
+        <div class="rider-av">👨‍🦱</div>
+        <div class="rider-info">
+          <div class="rider-name">王师傅</div>
+          <div class="rider-plate">京 P·12345</div>
+          <div class="rider-rating">⭐ 4.9 · 配送 1,832 单</div>
+        </div>
+        <div class="rider-call">📞</div>
+      </div>
+
+      <!-- TIMELINE -->
+      <div class="section-hd" style="margin-bottom:10px"><div class="section-t">订单轨迹</div></div>
+      <div class="timeline">
+        <div class="tl-item">
+          <div class="tl-left">
+            <div class="tl-dot tl-dot-done"><span style="color:#fff">✓</span></div>
+            <div class="tl-line tl-line-done"></div>
+          </div>
+          <div class="tl-body">
+            <div class="tl-title">已下单确认</div>
+            <div class="tl-sub">订单 #PO-20260522-0028 已生成</div>
+            <div class="tl-time">14:05</div>
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-left">
+            <div class="tl-dot tl-dot-done"><span style="color:#fff">✓</span></div>
+            <div class="tl-line tl-line-done"></div>
+          </div>
+          <div class="tl-body">
+            <div class="tl-title">商家已打包</div>
+            <div class="tl-sub">爱家超市已备好商品</div>
+            <div class="tl-time">14:12</div>
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-left">
+            <div class="tl-dot tl-dot-active"><span style="color:#fff">🛵</span></div>
+            <div class="tl-line tl-line-future"></div>
+          </div>
+          <div class="tl-body">
+            <div class="tl-title active">配送中 · 当前</div>
+            <div class="tl-sub">王师傅正在前往您的位置<br>距您约 1.2 公里</div>
+            <div class="tl-time">14:16 出发</div>
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-left">
+            <div class="tl-dot tl-dot-future"><span style="color:var(--mute2)">📍</span></div>
+          </div>
+          <div class="tl-body">
+            <div class="tl-title" style="color:var(--mute2)">预计送达</div>
+            <div class="tl-sub" style="color:var(--mute2)">预计 14:28 前送达</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- EARN NOTICE -->
+      <div style="margin:14px 14px 4px;padding:10px 14px;background:var(--orange-lt);border-radius:12px;border:1px solid var(--orange-soft)">
+        <div style="font-size:11px;font-weight:700;color:var(--orange-dk);margin-bottom:3px">🎁 收货后推广奖励到账</div>
+        <div style="font-size:11px;color:var(--mute)">本单预计获得推广积分 <b style="color:var(--orange)">¥2.64</b>，确认收货后实时到账</div>
+      </div>
+      <div style="height:8px"></div>
+    </div>
+    <div class="tabbar">
+      <div class="tb-item"><div class="tb-ic">🏠</div>主页</div>
+      <div class="tb-item"><div class="tb-ic">📂</div>分类</div>
+      <div class="tb-cart-wrap">
+        <div class="tb-cart">🛒</div>
+        <div class="tb-cart-lbl">购物车</div>
+      </div>
+      <div class="tb-item active"><div class="tb-ic">📦</div>订单</div>
+      <div class="tb-item"><div class="tb-ic">👤</div>我的</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     FRAME 5 — SHOP HOME
+══════════════════════════════════════ -->
+<div class="frame-wrap">
+  <div class="frame-label">05 · 店铺主页</div>
+  <div class="frame">
+    <div class="sb" style="background:transparent;position:absolute;top:0;left:0;right:0;z-index:10"><span class="sb-time">9:41</span><span class="sb-icons">📶 🔋</span></div>
+    <div class="scroll" style="padding-bottom:84px">
+      <!-- BANNER -->
+      <div class="shop-banner" style="padding-top:48px">
+        <div class="shop-banner-emoji">🏪</div>
+        <div class="shop-back">‹</div>
+        <div class="shop-av">🏪</div>
+        <div class="shop-meta">
+          <div class="shop-name">爱家超市</div>
+          <div class="shop-row">
+            <span class="shop-score">⭐ 4.8</span>
+            <span class="shop-sold">· 月销 2,340 单</span>
+            <span class="tag tag-orange">已认证</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- PROMO HERO — most prominent -->
+      <div class="promo-hero">
+        <div class="ph-hd">
+          <div class="ph-title">🎁 推 8 反 1<span class="ph-tag">进行中</span></div>
+          <div style="font-size:11px;color:var(--mute);font-weight:600">本店专属</div>
+        </div>
+        <div class="ph-sub">买 8 件任意商品，最低价那件免单！邀请好友一起买更快达成。</div>
+        <div class="ph-pbar-track"><div class="ph-pbar-fill"></div></div>
+        <div class="ph-marks">已购 6 件 &nbsp;·&nbsp; <b>还差 2 件免单！</b>&nbsp;·&nbsp; 目标 8 件</div>
+        <button class="ph-cta">🚀 邀请好友一起买 · 更快免单</button>
+      </div>
+
+      <!-- PROMISE CARD -->
+      <div class="promise-card">
+        <div class="promise-title">摊小二的承诺</div>
+        <div class="promise-list">
+          <div class="pl-item"><div class="pl-icon">✅</div><div><b>所有收益明细透明可查</b> — 每笔奖励来源、金额、时间均可追溯</div></div>
+          <div class="pl-item"><div class="pl-icon">✅</div><div><b>奖到就是赚到</b> — 不做"差一刀"，¥10 就是 ¥10，无附加条件</div></div>
+          <div class="pl-item"><div class="pl-icon">✅</div><div><b>推广积分 1:1 提现</b> — 微信 / 支付宝 T+1 到账</div></div>
+          <div class="pl-item"><div class="pl-icon">🌟</div><div>本店参与<b>奖池计划</b>，每月按星级抽奖发奖</div></div>
+        </div>
+      </div>
+
+      <!-- PRODUCTS -->
+      <div class="section-hd"><div class="section-t">店铺商品</div><div class="section-more">全部 ›</div></div>
+      <div class="prod-grid">
+        <div class="prod-item">
+          <div class="pi-img">🍜</div>
+          <div class="pi-body">
+            <div class="pi-name">红烧牛肉面</div>
+            <div class="pi-shop">月销 680 件</div>
+            <div class="pi-foot"><div class="pi-price"><small>¥</small>10</div><div class="pi-add">+</div></div>
+          </div>
+        </div>
+        <div class="prod-item">
+          <div class="pi-img">🥮</div>
+          <div class="pi-body">
+            <div class="pi-name">月饼礼盒</div>
+            <div class="pi-shop">月销 320 件</div>
+            <div class="pi-foot"><div class="pi-price"><small>¥</small>88</div><div class="pi-add">+</div></div>
+          </div>
+        </div>
+        <div class="prod-item">
+          <div class="pi-img">🥛</div>
+          <div class="pi-body">
+            <div class="pi-name">鲜牛奶 1L</div>
+            <div class="pi-shop">月销 510 件</div>
+            <div class="pi-foot"><div class="pi-price"><small>¥</small>9</div><div class="pi-add">+</div></div>
+          </div>
+        </div>
+        <div class="prod-item">
+          <div class="pi-img">🍳</div>
+          <div class="pi-body">
+            <div class="pi-name">土鸡蛋 10 个</div>
+            <div class="pi-shop">月销 890 件</div>
+            <div class="pi-foot"><div class="pi-price"><small>¥</small>18</div><div class="pi-add">+</div></div>
+          </div>
+        </div>
+      </div>
+      <div style="height:8px"></div>
+    </div>
+    <div class="tabbar">
+      <div class="tb-item"><div class="tb-ic">🏠</div>主页</div>
+      <div class="tb-item active"><div class="tb-ic">📂</div>分类</div>
+      <div class="tb-cart-wrap">
+        <div class="tb-cart">🛒<div class="tb-cart-badge">2</div></div>
+        <div class="tb-cart-lbl">购物车</div>
+      </div>
+      <div class="tb-item"><div class="tb-ic">📦</div>订单</div>
+      <div class="tb-item"><div class="tb-ic">👤</div>我的</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     FRAME 6 — MINE
+══════════════════════════════════════ -->
+<div class="frame-wrap">
+  <div class="frame-label">06 · 我的</div>
+  <div class="frame">
+    <div class="sb" style="background:transparent;position:absolute;top:0;left:0;right:0;z-index:10"><span class="sb-time" style="color:#fff">9:41</span><span class="sb-icons" style="color:#fff">📶 🔋</span></div>
+    <div class="scroll">
+      <!-- HEADER (orange) -->
+      <div class="mine-header" style="padding-top:52px">
+        <div class="mh-glow"></div>
+        <div class="mh-glow2"></div>
+        <div class="mh-top">
+          <div class="mh-av">😊</div>
+          <div>
+            <div class="mh-name">小慧</div>
+            <div class="mh-star-wrap">
+              <div class="mh-star-badge"><span class="s-star">★★★</span> 3 星会员</div>
+              <span style="font-size:11px;color:rgba(255,255,255,.7);font-weight:600">ID 10086</span>
+            </div>
+          </div>
+          <div class="mh-settings">⚙️</div>
+        </div>
+        <!-- EARN HERO inside header -->
+        <div class="mine-earn">
+          <div class="me-lbl">本月已赚</div>
+          <div class="me-num"><sup>¥</sup>128<span style="font-size:26px;font-weight:900">.50</span></div>
+          <div class="me-breakdown">
+            <div class="meb-item">
+              <div class="meb-lbl">推广</div>
+              <div class="meb-val">¥86.40</div>
+            </div>
+            <div class="meb-item">
+              <div class="meb-lbl">极差</div>
+              <div class="meb-val">¥32.10</div>
+            </div>
+            <div class="meb-item">
+              <div class="meb-lbl">中奖</div>
+              <div class="meb-val">¥10.00</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BODY -->
+      <div class="mine-body">
+        <!-- STAR PROGRESS -->
+        <div class="star-prog">
+          <div class="sp-hd">
+            <div class="sp-t">升级进度</div>
+            <div class="sp-next">还差 <b>2 次邀请</b> 升 4 星</div>
+          </div>
+          <div class="star-row">
+            <span class="star-ic lit">⭐</span>
+            <span class="star-ic lit">⭐</span>
+            <span class="star-ic cur">⭐</span>
+            <span class="star-ic">⭐</span>
+            <span class="star-ic">⭐</span>
+          </div>
+          <div class="sp-track"><div class="sp-fill"></div></div>
+          <div class="sp-hint">已邀请 <b>13</b> 人 · 累计消费 <b>¥1,260</b></div>
+        </div>
+
+        <!-- ASSET GRID -->
+        <div class="asset-grid">
+          <div class="ag-item">
+            <div class="ag-icon">💰</div>
+            <div class="ag-label">推广积分</div>
+            <div class="ag-val">¥86.40</div>
+          </div>
+          <div class="ag-item">
+            <div class="ag-icon">🎯</div>
+            <div class="ag-label">消费积分</div>
+            <div class="ag-val">2,380分</div>
+          </div>
+          <div class="ag-item">
+            <div class="ag-icon">👥</div>
+            <div class="ag-label">我的团队</div>
+            <div class="ag-val">13 人</div>
+          </div>
+          <div class="ag-item">
+            <div class="ag-icon">🏆</div>
+            <div class="ag-label">奖池记录</div>
+            <div class="ag-val">3 次中奖</div>
+          </div>
+          <div class="ag-item">
+            <div class="ag-icon">🎫</div>
+            <div class="ag-label">优惠券</div>
+            <div class="ag-val">2 张可用</div>
+          </div>
+          <div class="ag-item">
+            <div class="ag-icon">📦</div>
+            <div class="ag-label">全部订单</div>
+            <div class="ag-val">查看</div>
+          </div>
+          <div class="ag-item">
+            <div class="ag-icon">📍</div>
+            <div class="ag-label">收货地址</div>
+            <div class="ag-val">管理</div>
+          </div>
+          <div class="ag-item">
+            <div class="ag-icon">💳</div>
+            <div class="ag-label">支付方式</div>
+            <div class="ag-val">设置</div>
+          </div>
+        </div>
+
+        <!-- CHART -->
+        <div class="chart-card">
+          <div class="ch-hd">
+            <div class="ch-t">近 7 日收益</div>
+            <div class="ch-ttl">合计 ¥43.20</div>
+          </div>
+          <div class="bar-chart">
+            <div class="bar-col">
+              <div class="bar bar-past" style="height:28px"></div>
+              <div class="bar-lbl">周三</div>
+            </div>
+            <div class="bar-col">
+              <div class="bar bar-past" style="height:36px"></div>
+              <div class="bar-lbl">周四</div>
+            </div>
+            <div class="bar-col">
+              <div class="bar bar-past" style="height:20px"></div>
+              <div class="bar-lbl">周五</div>
+            </div>
+            <div class="bar-col">
+              <div class="bar bar-past" style="height:52px"></div>
+              <div class="bar-lbl">周六</div>
+            </div>
+            <div class="bar-col">
+              <div class="bar bar-past" style="height:44px"></div>
+              <div class="bar-lbl">周日</div>
+            </div>
+            <div class="bar-col">
+              <div class="bar bar-past" style="height:30px"></div>
+              <div class="bar-lbl">周一</div>
+            </div>
+            <div class="bar-col">
+              <div class="bar bar-active" style="height:60px"></div>
+              <div class="bar-lbl" style="color:var(--orange)">今天</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="tabbar">
+      <div class="tb-item"><div class="tb-ic">🏠</div>主页</div>
+      <div class="tb-item"><div class="tb-ic">📂</div>分类</div>
+      <div class="tb-cart-wrap">
+        <div class="tb-cart">🛒</div>
+        <div class="tb-cart-lbl">购物车</div>
+      </div>
+      <div class="tb-item"><div class="tb-ic">📦</div>订单</div>
+      <div class="tb-item active"><div class="tb-ic">👤</div>我的</div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
