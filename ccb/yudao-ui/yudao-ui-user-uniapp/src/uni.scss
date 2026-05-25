@@ -51,6 +51,21 @@ $sh-3:    0 6px 16px rgba(15,23,42,.06), 0 24px 50px rgba(15,23,42,.10);
 $sh-warm: 0 8px 24px rgba(255,107,53,.28);
 $sh-gold: 0 8px 24px rgba(212,146,10,.28);
 
+/* —— 旧 merchant uniapp 命名兼容（port 商品详情/购物车/结算页用）—— */
+$bg-page:              $bg;
+$bg-card:              $card;
+$border-color:         $line;
+$brand-primary:        $o;
+$brand-primary-dark:   $o-d;
+$brand-primary-light:  $o-l;
+$text-primary:         $t1;
+$text-secondary:       $t2;
+$text-placeholder:     $t4;
+$radius-sm:            $r-sm;
+$radius-md:            $r-md;
+$radius-lg:            $r-lg;
+$warning:              $warn;
+
 /* —— uniapp 兼容 —— */
 $uni-color-primary: $o;
 $uni-color-success: $mint;
