@@ -33,42 +33,36 @@
       </view>
     </view>
 
-    <!-- ━━━━━━━━━━ 我今日刚到账 — 上拉负 margin 与 hero 重叠 ━━━━━━━━━━ -->
-    <view class="mae-card">
+    <!-- ━━━━━━━━━━ 我今日刚到账 — 仅登录后 + 有记录显示 ━━━━━━━━━━ -->
+    <view v-if="user.isLogin && todayRecords.length" class="mae-card">
       <view class="mae-head">
         <view class="mae-tag">💎 你今日刚到账</view>
         <text class="mae-more" @click="goWallet">明细 ›</text>
       </view>
       <view class="mae-list">
-        <view class="mae-row">
-          <view class="mae-ic">🏆</view>
+        <view v-for="r in todayRecords" :key="r.id" class="mae-row" :class="{ normal: !r.highlight }">
+          <view class="mae-ic" :class="r.cls">{{ r.icon }}</view>
           <view class="mae-body">
-            <view class="mae-name">爱家超市 派奖<view class="badge">中奖</view></view>
-            <view class="mae-d">月饼礼盒奖池 · <text class="b">14:23</text> · 推广积分</view>
+            <view class="mae-name">{{ r.title }}</view>
+            <view class="mae-d">{{ r.time }} · {{ r.sourceLabel }}</view>
           </view>
-          <view class="mae-amt">+10<text>.00</text></view>
-        </view>
-        <view class="mae-row normal">
-          <view class="mae-ic coin">💰</view>
-          <view class="mae-body">
-            <view class="mae-name">王师傅烤地瓜 · 推 N 反 1 返奖</view>
-            <view class="mae-d">第 3 件返奖 · <text class="b">11:08</text> · 推广积分</view>
-          </view>
-          <view class="mae-amt normal">+2.50</view>
-        </view>
-        <view class="mae-row normal">
-          <view class="mae-ic pt">⭐</view>
-          <view class="mae-body">
-            <view class="mae-name">王师傅烤地瓜 · 消费积分</view>
-            <view class="mae-d">¥10 消费 · <text class="b">10:42</text> · 1 元 = 1 分</view>
-          </view>
-          <view class="mae-amt normal">+10 分</view>
+          <view class="mae-amt" :class="{ normal: !r.highlight }">+¥{{ r.amount }}</view>
         </view>
       </view>
       <view class="mae-foot">
-        <view class="sum">今日合计入账 <text class="b">¥12.50</text> + <text class="b">10 分</text></view>
+        <view class="sum">今日合计入账 <text class="b">¥{{ todaySumYuan }}</text>
+          <text v-if="todayStat.consume > 0"> + <text class="b">{{ todaySumPoints }} 分</text></text></view>
         <view class="mae-btn" @click="goWithdraw">💸 提现 →</view>
       </view>
+    </view>
+    <!-- 未登录态：登录引导卡 -->
+    <view v-else-if="!user.isLogin" class="mae-card login-tip" @click="goLogin">
+      <view class="lt-em">👋</view>
+      <view class="lt-body">
+        <view class="lt-t">登录开启赚钱模式</view>
+        <view class="lt-d">商户实时派奖 / 推 N 反 1 / 1:1 提现</view>
+      </view>
+      <view class="lt-cta">登录 →</view>
     </view>
 
     <!-- ━━━━━━━━━━ 5 快入口 ━━━━━━━━━━ -->
@@ -80,11 +74,11 @@
       <view class="qk" @click="onScan"><view class="qk-ic">📜</view><view class="qk-text">扫码</view></view>
     </view>
 
-    <!-- ━━━━━━━━━━ 推 N 反 1 进行中提醒 ━━━━━━━━━━ -->
-    <view class="home-queue-tip" @click="goQueue">
+    <!-- ━━━━━━━━━━ 推 N 反 1 进行中提醒 — 仅有进行中队列时显示 ━━━━━━━━━━ -->
+    <view v-if="queueTip" class="home-queue-tip" @click="goQueue">
       <view class="hqt-ic">🔥</view>
       <view class="hqt-body">
-        <view class="hqt-t">老张水果摊 · 阳光玫瑰 <text class="b">还差 1 人即出队 +¥46.40</text></view>
+        <view class="hqt-t">{{ queueTip.shopName }} · {{ queueTip.spuName }} <text class="b">还差 {{ queueTip.gap }} 人即出队 +¥{{ queueTip.amount }}</text></view>
         <view class="hqt-d">分享给朋友扫码下单 → 你立即出队拿全额</view>
       </view>
       <view class="hqt-cta">分享 →</view>
@@ -112,7 +106,7 @@
           <view class="hf-sub">榜一排名 · 按店</view>
         </view>
         <view class="hf-bot">
-          <view class="hf-meta">今日派奖 <text>¥482</text></view>
+          <view class="hf-meta">今日派奖 <text>¥{{ stat.todayAward }}</text></view>
           <view class="hf-cta">查看榜单 →</view>
         </view>
       </view>
@@ -120,172 +114,101 @@
         <text class="em-bg">🔥</text>
         <view class="hf-tag">🔥 推 N 反 1</view>
         <view>
-          <view class="hf-title">买 4 件 免单 1 件</view>
+          <view class="hf-title">买 N 件 免单 1 件</view>
           <view class="hf-sub">朋友买你也得返</view>
         </view>
         <view class="hf-bot">
-          <view class="hf-meta">在队列 <text>3 个</text></view>
+          <view class="hf-meta">在队列 <text>{{ stat.myQueueCount }} 个</text></view>
           <view class="hf-cta">查看 →</view>
         </view>
       </view>
     </view>
 
-    <!-- ━━━━━━━━━━ 最近去过 横滚 ━━━━━━━━━━ -->
-    <view class="section-title">
-      <view class="h3">最近去过</view>
-      <text class="more" @click="goNearby">全部 ›</text>
-    </view>
-    <scroll-view scroll-x class="recent-scroll">
-      <view class="recent-card">
-        <view class="recent-cover"><view class="recent-tag">2 小时前</view></view>
-        <view class="recent-body"><view class="recent-name">王师傅烤地瓜</view>
-          <view class="recent-meta"><text>已下 <text class="b">5 单</text></text><view class="dot"></view><text>0.3km</text></view>
-        </view>
+    <!-- ━━━━━━━━━━ 最近去过 横滚 — 仅登录后 + 有数据 ━━━━━━━━━━ -->
+    <template v-if="recentShops.length">
+      <view class="section-title">
+        <view class="h3">最近去过</view>
+        <text class="more" @click="goNearby">全部 ›</text>
       </view>
-      <view class="recent-card">
-        <view class="recent-cover t2"><view class="recent-tag">昨天</view></view>
-        <view class="recent-body"><view class="recent-name">林家茶馆</view>
-          <view class="recent-meta"><text>已下 <text class="b">2 单</text></text><view class="dot"></view><text>1.1km</text></view>
+      <scroll-view scroll-x class="recent-scroll">
+        <view v-for="s in recentShops" :key="s.id" class="recent-card" @click="goShop(s)">
+          <view class="recent-cover" :class="s.coverTone"><view class="recent-tag">{{ s.lastVisit }}</view></view>
+          <view class="recent-body">
+            <view class="recent-name">{{ s.name }}</view>
+            <view class="recent-meta">
+              <text>已下 <text class="b">{{ s.orderCount }} 单</text></text>
+              <view class="dot"></view>
+              <text>{{ s.distance }}</text>
+            </view>
+          </view>
         </view>
-      </view>
-      <view class="recent-card">
-        <view class="recent-cover t3"><view class="recent-tag">3 天前</view></view>
-        <view class="recent-body"><view class="recent-name">老张水果摊</view>
-          <view class="recent-meta"><text>已下 <text class="b">1 单</text></text><view class="dot"></view><text>0.8km</text></view>
-        </view>
-      </view>
-      <view class="recent-card">
-        <view class="recent-cover t4"><view class="recent-tag">上周</view></view>
-        <view class="recent-body"><view class="recent-name">小陈奶茶店</view>
-          <view class="recent-meta"><text>已下 <text class="b">8 单</text></text><view class="dot"></view><text>2.0km</text></view>
-        </view>
-      </view>
-    </scroll-view>
+      </scroll-view>
+    </template>
 
-    <!-- ━━━━━━━━━━ 附近商家 — 3 个 shop-card with star-prod ━━━━━━━━━━ -->
+    <!-- ━━━━━━━━━━ 附近商家 — 真数据 ━━━━━━━━━━ -->
     <view class="section-title">
       <view class="h3">附近商家 <text class="small">店主推明星商品</text></view>
       <text class="more" @click="goNearby">全部 ›</text>
     </view>
+    <view v-if="loadingShops" class="loading">加载中…</view>
+    <empty-state v-else-if="!nearbyShops.length" icon="🏪" title="附近暂无店铺" desc="换个位置或允许定位试试" />
+    <view v-else>
+      <view v-for="(s, i) in nearbyShops" :key="s.id" class="shop-card has-promo" :class="{ 'with-star': s.starSpu }" @click="goShop(s)">
+        <view class="shop-head">
+          <view class="shop-pic" :class="['', 'alt-1', 'alt-2'][i % 3]">
+            <image v-if="s.shopLogo" :src="s.shopLogo" mode="aspectFill" class="pic-img" />
+            <text v-else>{{ (s.name || '店')[0] }}</text>
+          </view>
+          <view class="shop-info">
+            <view class="shop-row1">
+              <text class="shop-name">{{ s.name }}</text>
+              <view v-if="s.star" class="shop-badge gold">⭐ {{ s.star }} 星</view>
+              <view v-else-if="s.newTag" class="shop-badge">{{ s.newTag }}</view>
+            </view>
+            <view v-if="s.promoLine" class="shop-promo-row">{{ s.promoLine }}</view>
+            <view class="shop-meta">
+              <text v-if="s.rating" class="rating">★ {{ s.rating }}</text>
+              <text class="dist">📍 {{ s.distance }}</text>
+              <text v-if="s.monthSold != null">月售 {{ s.monthSold }}</text>
+            </view>
+          </view>
+        </view>
+        <view v-if="s.starSpu" class="star-prod" @click.stop="goStarSpu(s)">
+          <view class="sp-pic">{{ s.starSpu.em || '🛍' }}</view>
+          <view class="sp-info">
+            <view class="sp-name">{{ s.starSpu.name }}</view>
+            <view class="sp-tag-row">
+              <view v-if="s.starSpu.promo" class="sp-tag promo">{{ s.starSpu.promo }}</view>
+              <view v-if="s.starSpu.got" class="sp-tag got">{{ s.starSpu.got }}</view>
+            </view>
+          </view>
+          <view class="sp-price">
+            <view class="v">¥{{ s.starSpu.price }}</view>
+            <view class="enter">进店 →</view>
+          </view>
+        </view>
+      </view>
 
-    <!-- 店 ① 王师傅烤地瓜 + 推 N 反 1 -->
-    <view class="shop-card has-promo with-star">
-      <view class="shop-head">
-        <view class="shop-pic">王<view class="badge">🏆</view></view>
-        <view class="shop-info">
-          <view class="shop-row1">
-            <text class="shop-name">王师傅烤地瓜</text>
-            <view class="shop-badge gold">⭐ 3 星</view>
-          </view>
-          <view class="shop-promo-row">推 4 反 1 · 已 ¥5 / 共 ¥10</view>
-          <view class="shop-meta">
-            <text class="rating">★ 4.9</text>
-            <text class="dist">📍 0.3km</text>
-            <text>月售 1280</text>
-          </view>
+      <!-- 更多店铺入口 -->
+      <view class="more-shops" @click="goNearby">
+        <view class="ms-em">🏪</view>
+        <view class="ms-t">
+          <view class="t">查看附近所有店铺</view>
+          <view class="d">{{ nearbyShops.length > 0 ? '按距离 / 销量 / 推 N 反 1 排序' : '全部商家' }}</view>
         </view>
+        <view class="ms-arrow">›</view>
       </view>
-      <view class="star-prod">
-        <view class="sp-pic">🍠</view>
-        <view class="sp-info">
-          <view class="sp-name">现烤蜜薯（大）· 流糖心</view>
-          <view class="sp-tag-row">
-            <view class="sp-tag promo">推 4 反 1</view>
-            <view class="sp-tag got">你已得 ¥5</view>
-          </view>
-        </view>
-        <view class="sp-price">
-          <view class="v">¥10<text>.00</text></view>
-          <view class="enter">进店 →</view>
-        </view>
-      </view>
-    </view>
-
-    <!-- 店 ② 林家茶馆 + 派奖池 -->
-    <view class="shop-card has-promo with-star gold-star">
-      <view class="shop-head">
-        <view class="shop-pic alt-1">林</view>
-        <view class="shop-info">
-          <view class="shop-row1">
-            <text class="shop-name">林家茶馆</text>
-            <view class="shop-badge">新店送 ¥5</view>
-          </view>
-          <view class="shop-promo-row give">商户派奖中 · 今日已发 ¥120</view>
-          <view class="shop-meta">
-            <text class="rating">★ 4.7</text>
-            <text class="dist">📍 1.1km</text>
-            <text>月售 320</text>
-          </view>
-        </view>
-      </view>
-      <view class="star-prod">
-        <view class="sp-pic green">🍵</view>
-        <view class="sp-info">
-          <view class="sp-name">老白茶 100g 礼盒装 · 陈期 5 年</view>
-          <view class="sp-tag-row">
-            <view class="sp-tag promo gold">派奖池</view>
-            <view class="sp-tag got">下单进派奖名单</view>
-          </view>
-        </view>
-        <view class="sp-price">
-          <view class="v">¥168<text>.00</text></view>
-          <view class="enter">进店 →</view>
-        </view>
-      </view>
-    </view>
-
-    <!-- 店 ③ 老张水果摊 + 快出队 -->
-    <view class="shop-card has-promo with-star">
-      <view class="shop-head">
-        <view class="shop-pic alt-2">张</view>
-        <view class="shop-info">
-          <view class="shop-row1">
-            <text class="shop-name">老张水果摊</text>
-            <view class="shop-badge gold">⭐ 2 星</view>
-          </view>
-          <view class="shop-promo-row">推 5 反 1 · 还差 1 人出队</view>
-          <view class="shop-meta">
-            <text class="rating">★ 4.8</text>
-            <text class="dist">📍 0.8km</text>
-            <text>月售 2150</text>
-          </view>
-        </view>
-      </view>
-      <view class="star-prod">
-        <view class="sp-pic cream">🍇</view>
-        <view class="sp-info">
-          <view class="sp-name">阳光玫瑰葡萄 · 1.5 斤装</view>
-          <view class="sp-tag-row">
-            <view class="sp-tag promo">推 5 反 1</view>
-            <view class="sp-tag got">⚡ 你队列差 1 人出队</view>
-          </view>
-        </view>
-        <view class="sp-price">
-          <view class="v">¥58<text>.00</text></view>
-          <view class="enter">进店 →</view>
-        </view>
-      </view>
-    </view>
-
-    <!-- 更多店铺入口 -->
-    <view class="more-shops" @click="goNearby">
-      <view class="ms-em">🏪</view>
-      <view class="ms-t">
-        <view class="t">查看附近所有店铺</view>
-        <view class="d">本商圈共 18 家 · 按距离 / 销量 / 推 N 反 1 排序</view>
-      </view>
-      <view class="ms-arrow">›</view>
     </view>
 
     <view class="bottom-pad"></view>
 
-    <!-- 浮动收益球 -->
-    <view class="float-earn" @click="goWallet">
-      <view class="n">12.50</view>
+    <!-- 浮动收益球（仅登录后有今日入账时显示） -->
+    <view v-if="user.isLogin && todayStat.promo > 0" class="float-earn" @click="goWallet">
+      <view class="n">{{ todaySumYuan }}</view>
       <view class="l">今日</view>
     </view>
 
-    <bottom-nav active="index" :cart-count="3" />
+    <bottom-nav active="index" :cart-count="cartCount" />
   </view>
 </template>
 
@@ -295,7 +218,8 @@ import { onShow } from '@dcloudio/uni-app';
 import { useUserStore } from '@/store/user.js';
 import { listWinnersTicker, listMyQueues, listPromoRecords, getTodayStat } from '@/api/promo.js';
 import { listShops, listMyShops } from '@/api/shop.js';
-import { fen2yuan, fmtTime } from '@/utils/format.js';
+import { getCartCount } from '@/api/cart.js';
+import { fen2yuan, fmtTime, fmtDistance } from '@/utils/format.js';
 
 const user = useUserStore();
 const avatarText = computed(() => (user.nickname?.[0] || '客'));
@@ -322,10 +246,11 @@ async function loadTicker() {
   } catch {}
 }
 
-// 我今日刚到账 — 最近 3 条 + 今日合计
+// 我今日刚到账 — 最近 3 条 + 今日合计（未登录跳过）
 const todayRecords = ref([]);
 const todayStat = ref({ promo: 0, consume: 0, count: 0 });
 async function loadTodayMae() {
+  if (!user.isLogin) { todayRecords.value = []; todayStat.value = { promo: 0, consume: 0, count: 0 }; return; }
   try {
     const [page, stat] = await Promise.all([
       listPromoRecords(1, 3),
@@ -336,82 +261,118 @@ async function loadTodayMae() {
       consume: stat?.consumeAmountToday || 0,
       count: stat?.awardCountToday || 0,
     };
-    const rows = (page?.list || []).map((r) => {
-      let icon = '🏆', cls = '';
-      if (r.sourceType === 'QUEUE')   { icon = '💰'; cls = 'coin'; }
-      else if (r.sourceType === 'COMMISSION') { icon = '⭐'; cls = 'pt'; }
-      return {
-        id: r.id,
-        icon, cls,
-        title: r.remark || r.sourceLabel || '推广奖励',
-        time: fmtTime(r.createTime),
-        amount: fen2yuan(r.amount, false),
-        highlight: r.sourceType === 'POOL' || r.sourceType === 'QUEUE',
-      };
-    });
+    // 只保留今日的（接口已分页倒序，前端再按 createTime 过滤）
+    const today = new Date().toDateString();
+    const labelOf = (t) => ({
+      DIRECT: '直推返现', QUEUE: '推 N 反 1 出队', COMMISSION: '团队佣金',
+      POOL: '派奖池中奖', CONVERT: '积分转换', WITHDRAW: '提现',
+    }[t] || '推广奖励');
+    const rows = (page?.list || [])
+      .filter((r) => new Date(String(r.createTime).replace('T', ' ').replace(/-/g, '/')).toDateString() === today)
+      .map((r) => {
+        let icon = '🏆', cls = '';
+        if (r.sourceType === 'QUEUE')           { icon = '💰'; cls = 'coin'; }
+        else if (r.sourceType === 'COMMISSION') { icon = '⭐'; cls = 'pt'; }
+        return {
+          id: r.id,
+          icon, cls,
+          title: r.remark || labelOf(r.sourceType),
+          sourceLabel: labelOf(r.sourceType),
+          time: fmtTime(r.createTime),
+          amount: fen2yuan(r.amount, false),
+          highlight: r.sourceType === 'POOL' || r.sourceType === 'QUEUE',
+        };
+      });
     todayRecords.value = rows;
   } catch {}
 }
 const todaySumYuan = computed(() => fen2yuan(todayStat.value.promo, false));
-const todaySumPoints = computed(() => Math.round(todayStat.value.consume / 100)); // 消费积分按元(分)，显示为分数
+const todaySumPoints = computed(() => Math.round(todayStat.value.consume / 100));
 
-// 推 N 反 1 队列提醒（取第一个最接近出队的）
+// 推 N 反 1 队列提醒 + 在队列数（未登录跳过）
+const stat = ref({ todayAward: '0', myQueueCount: 0 });
 const queueTip = ref(null);
 async function loadQueueTip() {
+  if (!user.isLogin) { queueTip.value = null; stat.value.myQueueCount = 0; return; }
   try {
     const list = await listMyQueues();
+    stat.value.myQueueCount = (list || []).length;
     if (list && list.length) {
-      // 找还差最少的
-      const sorted = [...list].sort((a, b) => (a.requiredCount - a.currentCount) - (b.requiredCount - b.currentCount));
+      const sorted = [...list].sort((a, b) =>
+        ((a.requiredCount || 0) - (a.currentCount || 0)) -
+        ((b.requiredCount || 0) - (b.currentCount || 0)));
       const q = sorted[0];
       queueTip.value = {
         shopName: q.shopName || '店铺',
         spuName: q.spuName || '商品',
-        gap: q.requiredCount - q.currentCount,
+        gap: (q.requiredCount || 0) - (q.currentCount || 0),
         amount: fen2yuan(q.rewardAmount || 0, false),
         tenantId: q.tenantId,
       };
+    } else {
+      queueTip.value = null;
     }
   } catch {}
 }
 
-// 最近去过的店 — 取最近 4 个
+// 今日全网派奖（feat 卡 hero stat） — 跨店统计
+async function loadFeatStat() {
+  try {
+    const s = await getTodayStat();
+    if (s && s.promoAmountToday != null) {
+      stat.value.todayAward = fen2yuan(s.promoAmountToday, false);
+    }
+  } catch {}
+}
+
+// 最近去过的店 — 仅登录
 const recentShops = ref([]);
 async function loadRecent() {
+  if (!user.isLogin) { recentShops.value = []; return; }
   try {
     const list = await listMyShops();
     recentShops.value = (list || []).slice(0, 4).map((s, i) => ({
       id: s.id || s.tenantId,
       tenantId: s.tenantId,
-      name: s.shopName || s.name,
+      name: s.shopName || s.name || '店铺',
       coverTone: ['', 't2', 't3', 't4'][i],
-      lastVisit: s.lastVisitText || '最近',
+      lastVisit: s.lastVisitText || (s.lastVisitTime ? fmtTime(s.lastVisitTime) : '最近'),
       orderCount: s.orderCount || 0,
-      distance: s.distance || '—',
+      distance: s.distance != null ? fmtDistance(s.distance) : '—',
     }));
   } catch {}
 }
 
-// 附近店铺 — 取前 3 含店主推
+// 附近店铺 — 真接口，前 3 个展示
 const nearbyShops = ref([]);
+const loadingShops = ref(false);
 async function loadNearby() {
+  loadingShops.value = true;
   try {
-    const r = await listShops({ pageNo: 1, pageSize: 5 });
+    const r = await listShops({ pageNo: 1, pageSize: 10 });
     const items = r?.list || r || [];
-    nearbyShops.value = items.slice(0, 3).map((s, i) => ({
+    nearbyShops.value = items.slice(0, 3).map((s) => ({
       id: s.id || s.tenantId,
-      tenantId: s.tenantId,
-      name: s.shopName || s.name,
-      picTone: ['', 'alt-1', 'alt-2'][i] || '',
-      star: s.starLevel,
+      tenantId: s.tenantId || s.id,
+      name: s.shopName || s.name || '店铺',
+      shopLogo: s.shopLogo,
+      star: s.starLevel || s.star,
+      newTag: s.newShop ? '新店送 ¥5' : '',
       rating: s.rating || '4.8',
-      distance: s.distance != null ? `${(s.distance / 1000).toFixed(1)}km` : '—',
-      monthSold: s.monthSold ?? '—',
-      promoLine: s.promoLine || (s.starCount ? `推 ${s.starCount} 反 1` : ''),
-      starSpu: null, // 后续可扩展店主推
+      distance: s.distance != null ? fmtDistance(s.distance) : '—',
+      monthSold: s.monthSold != null ? s.monthSold : null,
+      promoLine: s.promoLine || (s.tuijianN ? `推 ${s.tuijianN} 反 1 进行中` : ''),
+      starSpu: null, // TODO: 接 /shop/star-spu 端点扩展
     }));
-  } catch {}
+  } catch {} finally { loadingShops.value = false; }
 }
+
+// 购物车角标
+async function loadCart() {
+  if (!user.isLogin) { cartCount.value = 0; return; }
+  try { cartCount.value = (await getCartCount()) || 0; } catch {}
+}
+const cartCount = ref(0);
 
 function goSearch() { uni.navigateTo({ url: '/pages/search/index' }); }
 function goNearby() { uni.navigateTo({ url: '/pages/nearby/index' }); }
@@ -421,7 +382,18 @@ function goCoupon() { uni.navigateTo({ url: '/pages/coupon/index' }); }
 function goWallet() { uni.navigateTo({ url: '/pages/wallet/index' }); }
 function goWithdraw() { uni.navigateTo({ url: '/pages/withdraw/index' }); }
 function goCategory(k) { uni.navigateTo({ url: `/pages/category/index?k=${k}` }); }
-function goShop(s) { uni.navigateTo({ url: `/pages/shop/home?id=${s.id}&tenantId=${s.tenantId}` }); }
+function goShop(s) {
+  const tid = s.tenantId || s.id;
+  uni.navigateTo({ url: `/pages/shop/home?id=${s.id || tid}&tenantId=${tid}` });
+}
+function goStarSpu(s) {
+  if (s.starSpu?.id) {
+    uni.navigateTo({ url: `/pages/product/detail?id=${s.starSpu.id}&tenantId=${s.tenantId}` });
+  } else {
+    goShop(s);
+  }
+}
+function goLogin() { uni.navigateTo({ url: '/pages/login/index' }); }
 function onScan() {
   // #ifdef MP-WEIXIN || APP-PLUS
   uni.scanCode({ success: (r) => uni.showToast({ title: r.result, icon: 'none' }) });
@@ -433,13 +405,15 @@ function onScan() {
 
 function refreshAll() {
   loadTicker();
+  loadFeatStat();
+  loadNearby();
+  loadCart();
   loadTodayMae();
   loadQueueTip();
   loadRecent();
-  loadNearby();
 }
 onMounted(refreshAll);
-onShow(() => { if (user.isLogin) refreshAll(); });
+onShow(refreshAll);
 </script>
 
 <style lang="scss" scoped>
@@ -544,6 +518,28 @@ onShow(() => { if (user.isLogin) refreshAll(); });
   animation: rollx 22s linear infinite;
 }
 @keyframes rollx { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
+
+/* ━━━━━━━━━━━━━━━ 未登录引导卡（取代 mae-card）━━━━━━━━━━━━━━━ */
+.mae-card.login-tip {
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px 16px;
+}
+.lt-em { font-size: 32px; }
+.lt-body { flex: 1; }
+.lt-t { font-size: 15px; font-weight: 800; color: $t1; }
+.lt-d { font-size: 11px; color: $t3; margin-top: 2px; }
+.lt-cta {
+  padding: 8px 16px; border-radius: 99px;
+  background: linear-gradient(135deg, $o, $o-d); color: #fff;
+  font-size: 12px; font-weight: 800;
+  box-shadow: $sh-warm;
+}
+
+/* 加载占位 */
+.loading { padding: 30px; text-align: center; color: $t4; font-size: 12px; }
+
+/* 店铺图 fallback */
+.pic-img { width: 100%; height: 100%; }
 
 /* ━━━━━━━━━━━━━━━ MAE 卡（上拉负 margin 与 hero 重叠）━━━━━━━━━━━━━━━ */
 .mae-card {
