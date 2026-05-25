@@ -50,13 +50,14 @@ export const useUserStore = defineStore('user', {
   },
   actions: {
     setLogin(payload) {
-      this.token = payload.token || '';
+      // 兼容字段名：yudao /sms-login 返 accessToken，merchant /apply 返 token
+      this.token = payload.accessToken || payload.token || '';
       this.refreshToken = payload.refreshToken || '';
       this.expiresTime = payload.expiresTime || 0;
       this.userId = payload.userId || 0;
       this.phone = payload.phone || payload.mobile || '';
       this.nickname = payload.nickname || '';
-      this.avatar = payload.avatar || '';
+      this.avatar = payload.avatar || payload.avatar || '';
       this.tenantId = payload.tenantId || '';
       this.roles = payload.roles || [];
       persist(this.$state);
