@@ -116,8 +116,9 @@
     <view v-else class="sh-grid">
       <view v-for="(p, i) in filteredSpus" :key="p.id" class="pcard" @click="goProduct(p)">
         <view class="ppic" :class="picTone(i)">
+          <!-- emoji 始终在底层；image 加载成功才显示并覆盖 emoji，失败不渲染避免 broken-image icon -->
+          <text class="ppic-em">{{ guessEmoji(p.name) }}</text>
           <image v-if="p.picUrl && !p.imgErr" :src="p.picUrl" mode="aspectFill" class="ppic-img" @error="onImgErr(p)" />
-          <text v-else class="ppic-em">{{ guessEmoji(p.name) }}</text>
           <view v-if="p.badge" class="pbadge" :class="p.badgeClass">{{ p.badge }}</view>
         </view>
         <view class="pname">{{ p.name }}</view>
@@ -133,7 +134,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, reactive, computed, onMounted } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
 import { getShopInfo, listShopProducts } from '@/api/shop.js';
 import { listWinners, getAccount, getTodayStat } from '@/api/promo.js';
@@ -175,12 +176,7 @@ const filteredSpus = computed(() => {
 function picTone(i) {
   return ['', 'green', 'purple', 'pink'][i % 4];
 }
-function onImgErr(p) {
-  // 直接 mutate p.imgErr 不会触发 Vue 重渲染（spus 数组 item 不是深响应式）
-  // 必须替换数组里这一项
-  const idx = spus.value.findIndex((x) => x.id === p.id);
-  if (idx >= 0) spus.value.splice(idx, 1, { ...spus.value[idx], imgErr: true });
-}
+function onImgErr(p) { p.imgErr = true; } // spus item 已 reactive 包装，可直接 mutate
 function guessEmoji(name) {
   const n = (name || '').toLowerCase();
   if (/茶|饮|奶|咖啡/.test(n)) return '🍵';
@@ -246,7 +242,7 @@ async function loadProducts() {
       }
       return { ...s, badge, badgeClass, earnText, earnClass };
     });
-    spus.value = list.map((p) => ({ ...p, imgErr: false }));
+    spus.value = list.map((p) => reactive({ ...p, imgErr: false }));
     // 聚合分类（无 categoryName 时用顺序编号「分类 1/2/...」而非「分类#20」）
     const catMap = new Map();
     let idx = 1;
@@ -620,8 +616,17 @@ onShow(refreshAll);
 .ppic.green  { background: linear-gradient(135deg, #D1FAE5, #6EE7B7); }
 .ppic.purple { background: linear-gradient(135deg, #E0D4FF, #C4B5FD); }
 .ppic.pink   { background: linear-gradient(135deg, #FCE7F3, #F9A8D4); }
-.ppic-img { width: 100%; height: 100%; }
-.ppic-em { font-size: 48px; line-height: 1; }
+/* emoji 永远在底层；image 加载成功覆盖 emoji，失败时 emoji 自然显示 */
+.ppic-em {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 48px; line-height: 1;
+}
+.ppic-img {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  z-index: 1;
+}
 .pbadge {
   position: absolute; top: 6px; left: 6px;
   padding: 3px 7px;
