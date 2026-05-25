@@ -290,11 +290,15 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
+import { onShow } from '@dcloudio/uni-app';
 import { useUserStore } from '@/store/user.js';
+import { listWinnersTicker, listMyQueues, listPromoRecords, getTodayStat } from '@/api/promo.js';
+import { listShops, listMyShops } from '@/api/shop.js';
+import { fen2yuan, fmtTime } from '@/utils/format.js';
 
 const user = useUserStore();
-const avatarText = computed(() => (user.nickname?.[0] || '小'));
+const avatarText = computed(() => (user.nickname?.[0] || '客'));
 
 const greeting = computed(() => {
   const h = new Date().getHours();
@@ -304,14 +308,110 @@ const greeting = computed(() => {
   if (h < 18) return '下午好';
   return '晚上好';
 });
-const greetTitle = computed(() => `想吃点什么，${user.nickname || '小明'}？`);
+const greetTitle = computed(() => `想吃点什么，${user.nickname || (user.phone ? user.phone.slice(-4) : '小客')}？`);
 
-const tickerText = ref([
-  '爱家超市 派奖给 138****6789 ¥10.00',
-  '王师傅烤地瓜 推 4 反 1 出队 156****1234 拿到 ¥10.00',
-  '老张水果摊 派奖给 186****0001 ¥58.00',
-  '林家茶馆 派奖给 139****8888 ¥5.00',
-]);
+// 滚动条：跨店最新派奖
+const tickerText = ref([]);
+async function loadTicker() {
+  try {
+    const list = await listWinnersTicker(8);
+    tickerText.value = (list || []).map((w) => {
+      const amt = fen2yuan(w.amount, false);
+      return `${w.shopName || '店铺'} ${w.sourceLabel || '派奖'} ${w.userMask || ''} ¥${amt}`;
+    });
+  } catch {}
+}
+
+// 我今日刚到账 — 最近 3 条 + 今日合计
+const todayRecords = ref([]);
+const todayStat = ref({ promo: 0, consume: 0, count: 0 });
+async function loadTodayMae() {
+  try {
+    const [page, stat] = await Promise.all([
+      listPromoRecords(1, 3),
+      getTodayStat(),
+    ]);
+    todayStat.value = {
+      promo: stat?.promoAmountToday || 0,
+      consume: stat?.consumeAmountToday || 0,
+      count: stat?.awardCountToday || 0,
+    };
+    const rows = (page?.list || []).map((r) => {
+      let icon = '🏆', cls = '';
+      if (r.sourceType === 'QUEUE')   { icon = '💰'; cls = 'coin'; }
+      else if (r.sourceType === 'COMMISSION') { icon = '⭐'; cls = 'pt'; }
+      return {
+        id: r.id,
+        icon, cls,
+        title: r.remark || r.sourceLabel || '推广奖励',
+        time: fmtTime(r.createTime),
+        amount: fen2yuan(r.amount, false),
+        highlight: r.sourceType === 'POOL' || r.sourceType === 'QUEUE',
+      };
+    });
+    todayRecords.value = rows;
+  } catch {}
+}
+const todaySumYuan = computed(() => fen2yuan(todayStat.value.promo, false));
+const todaySumPoints = computed(() => Math.round(todayStat.value.consume / 100)); // 消费积分按元(分)，显示为分数
+
+// 推 N 反 1 队列提醒（取第一个最接近出队的）
+const queueTip = ref(null);
+async function loadQueueTip() {
+  try {
+    const list = await listMyQueues();
+    if (list && list.length) {
+      // 找还差最少的
+      const sorted = [...list].sort((a, b) => (a.requiredCount - a.currentCount) - (b.requiredCount - b.currentCount));
+      const q = sorted[0];
+      queueTip.value = {
+        shopName: q.shopName || '店铺',
+        spuName: q.spuName || '商品',
+        gap: q.requiredCount - q.currentCount,
+        amount: fen2yuan(q.rewardAmount || 0, false),
+        tenantId: q.tenantId,
+      };
+    }
+  } catch {}
+}
+
+// 最近去过的店 — 取最近 4 个
+const recentShops = ref([]);
+async function loadRecent() {
+  try {
+    const list = await listMyShops();
+    recentShops.value = (list || []).slice(0, 4).map((s, i) => ({
+      id: s.id || s.tenantId,
+      tenantId: s.tenantId,
+      name: s.shopName || s.name,
+      coverTone: ['', 't2', 't3', 't4'][i],
+      lastVisit: s.lastVisitText || '最近',
+      orderCount: s.orderCount || 0,
+      distance: s.distance || '—',
+    }));
+  } catch {}
+}
+
+// 附近店铺 — 取前 3 含店主推
+const nearbyShops = ref([]);
+async function loadNearby() {
+  try {
+    const r = await listShops({ pageNo: 1, pageSize: 5 });
+    const items = r?.list || r || [];
+    nearbyShops.value = items.slice(0, 3).map((s, i) => ({
+      id: s.id || s.tenantId,
+      tenantId: s.tenantId,
+      name: s.shopName || s.name,
+      picTone: ['', 'alt-1', 'alt-2'][i] || '',
+      star: s.starLevel,
+      rating: s.rating || '4.8',
+      distance: s.distance != null ? `${(s.distance / 1000).toFixed(1)}km` : '—',
+      monthSold: s.monthSold ?? '—',
+      promoLine: s.promoLine || (s.starCount ? `推 ${s.starCount} 反 1` : ''),
+      starSpu: null, // 后续可扩展店主推
+    }));
+  } catch {}
+}
 
 function goSearch() { uni.navigateTo({ url: '/pages/search/index' }); }
 function goNearby() { uni.navigateTo({ url: '/pages/nearby/index' }); }
@@ -321,6 +421,7 @@ function goCoupon() { uni.navigateTo({ url: '/pages/coupon/index' }); }
 function goWallet() { uni.navigateTo({ url: '/pages/wallet/index' }); }
 function goWithdraw() { uni.navigateTo({ url: '/pages/withdraw/index' }); }
 function goCategory(k) { uni.navigateTo({ url: `/pages/category/index?k=${k}` }); }
+function goShop(s) { uni.navigateTo({ url: `/pages/shop/home?id=${s.id}&tenantId=${s.tenantId}` }); }
 function onScan() {
   // #ifdef MP-WEIXIN || APP-PLUS
   uni.scanCode({ success: (r) => uni.showToast({ title: r.result, icon: 'none' }) });
@@ -329,6 +430,16 @@ function onScan() {
   uni.showToast({ title: 'H5 不支持扫码，请用 APP/小程序', icon: 'none' });
   // #endif
 }
+
+function refreshAll() {
+  loadTicker();
+  loadTodayMae();
+  loadQueueTip();
+  loadRecent();
+  loadNearby();
+}
+onMounted(refreshAll);
+onShow(() => { if (user.isLogin) refreshAll(); });
 </script>
 
 <style lang="scss" scoped>

@@ -53,10 +53,10 @@
   "h5": {
     "title": "客小二",
     "template": "index.html",
-    "publicPath": "/u/",
+    "publicPath": "/",
     "router": {
       "mode": "hash",
-      "base": "/u/"
+      "base": "/"
     },
     "devServer": {
       "port": 5181,

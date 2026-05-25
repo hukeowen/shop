@@ -3,7 +3,7 @@ import uni from '@dcloudio/vite-plugin-uni';
 
 export default defineConfig(() => {
   return {
-    base: process.env.UNI_PLATFORM === 'h5' ? '/u/' : '/',
+    base: '/',
     plugins: [uni()],
     server: {
       host: true,

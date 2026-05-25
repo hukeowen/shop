@@ -1,17 +1,32 @@
-import { get } from '@/utils/request.js';
+import { get, post, del } from '@/utils/request.js';
 
-// SPU 详情
+// SPU 详情（含 SKU + 规格）
 export const getSpuDetail = (id, tenantId) =>
-  get(`/app-api/product/spu/get-detail?id=${id}`, { tenantId });
+  get(`/app-api/product/spu/get-detail?id=${id}`, tenantId ? { tenantId } : {});
 
-// 关键字搜索
-export const searchSpu = (keyword, tenantId, page = 1, size = 20) =>
-  get(`/app-api/product/spu/page?keyword=${encodeURIComponent(keyword)}&pageNo=${page}&pageSize=${size}`, { tenantId });
+// SPU 分页（支持 keyword / categoryId 过滤）
+export const pageSpu = (params = {}, tenantId) =>
+  get(`/app-api/product/spu/page?${new URLSearchParams(params).toString()}`, tenantId ? { tenantId } : {});
 
-// 分类列表
+// 按 ids 拉 SPU 列表
+export const listSpuByIds = (ids, tenantId) =>
+  get(`/app-api/product/spu/list-by-ids?ids=${ids.join(',')}`, tenantId ? { tenantId } : {});
+
+// 分类列表（树）
 export const listCategories = (tenantId) =>
-  get('/app-api/product/category/list', { tenantId });
+  get('/app-api/product/category/list', tenantId ? { tenantId } : {});
 
-// 按分类查商品
-export const listByCategory = (categoryId, tenantId, page = 1, size = 20) =>
-  get(`/app-api/product/spu/page?categoryId=${categoryId}&pageNo=${page}&pageSize=${size}`, { tenantId });
+// 商品收藏
+export const favoriteCreate = (spuId, tenantId) =>
+  post(`/app-api/product/favorite/create?spuId=${spuId}`, null, tenantId ? { tenantId } : {});
+export const favoriteDelete = (spuId, tenantId) =>
+  del(`/app-api/product/favorite/delete?spuId=${spuId}`, tenantId ? { tenantId } : {});
+export const favoriteExists = (spuId, tenantId) =>
+  get(`/app-api/product/favorite/exits?spuId=${spuId}`, tenantId ? { tenantId } : {});
+export const favoritePage = (pageNo = 1, pageSize = 20) =>
+  get(`/app-api/product/favorite/page?pageNo=${pageNo}&pageSize=${pageSize}`);
+export const favoriteCount = () => get('/app-api/product/favorite/get-count');
+
+// 商品评价
+export const pageComment = (spuId, pageNo = 1, pageSize = 20) =>
+  get(`/app-api/product/comment/page?spuId=${spuId}&pageNo=${pageNo}&pageSize=${pageSize}`);

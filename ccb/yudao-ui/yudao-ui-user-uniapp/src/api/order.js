@@ -1,28 +1,45 @@
-import { get, post } from '@/utils/request.js';
+import { get, post, put, del } from '@/utils/request.js';
 
-// 结算预览
-export const checkoutPreview = (body, tenantId) =>
-  post('/app-api/merchant/mini/checkout/preview', body, { tenantId });
+// 结算页（含优惠 / 运费）
+//   params: { shopId, items: [{skuId, count}], couponId? }
+export const settlement = (params) =>
+  get(`/app-api/trade/order/settlement?${new URLSearchParams(params).toString()}`);
 
-// 提交订单
-export const submitOrder = (body, tenantId) =>
-  post('/app-api/merchant/mini/checkout/submit', body, { tenantId });
+// 商品结算价格（参与活动后）
+export const settlementProduct = (spuIds) =>
+  get(`/app-api/trade/order/settlement-product?spuIds=${spuIds.join(',')}`);
 
-// 订单列表
-export const listOrders = (status = '', page = 1, size = 20) =>
-  get(`/app-api/merchant/mini/order/page?status=${status}&pageNo=${page}&pageSize=${size}`);
+// 创建订单
+export const createOrder = (body) =>
+  post('/app-api/trade/order/create', body);
+
+// 一体化结账（订单创建 + 余额/积分/优惠抵扣 + 改价）— C 端推荐
+export const checkoutSubmit = (body, tenantId) =>
+  post('/app-api/merchant/mini/checkout/submit', body, tenantId ? { tenantId } : {});
+
+// 订单列表分页
+export const pageOrders = (status, pageNo = 1, pageSize = 20) =>
+  get(`/app-api/trade/order/page?${status ? `status=${status}&` : ''}pageNo=${pageNo}&pageSize=${pageSize}`);
+
+// 各状态订单数量
+export const getOrderCount = () => get('/app-api/trade/order/get-count');
 
 // 订单详情
-export const getOrderDetail = (id) =>
-  get(`/app-api/merchant/mini/order/get?id=${id}`);
+export const getOrderDetail = (id, sync = false) =>
+  get(`/app-api/trade/order/get-detail?id=${id}${sync ? '&sync=true' : ''}`);
+
+// 物流轨迹
+export const getExpressTrack = (id) =>
+  get(`/app-api/trade/order/get-express-track-list?id=${id}`);
+
+// 确认收货
+export const receiveOrder = (id) =>
+  put(`/app-api/trade/order/receive?id=${id}`, null);
 
 // 取消订单
 export const cancelOrder = (id) =>
-  post('/app-api/merchant/mini/order/cancel', { id });
+  del(`/app-api/trade/order/cancel?id=${id}`);
 
-// 收藏（C 端收藏）
-export const listFavoriteSpus = (page = 1, size = 20) =>
-  get(`/app-api/product/favorite/page?pageNo=${page}&pageSize=${size}`);
-
-export const listFavoriteShops = (page = 1, size = 20) =>
-  get(`/app-api/merchant/mini/shop/favorite/page?pageNo=${page}&pageSize=${size}`);
+// 删除订单
+export const deleteOrder = (id) =>
+  del(`/app-api/trade/order/delete?id=${id}`);

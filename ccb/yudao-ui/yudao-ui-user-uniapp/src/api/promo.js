@@ -1,41 +1,57 @@
 import { get, post } from '@/utils/request.js';
 
-// 推广积分余额（C 端可跨店聚合 + 单店）
-export const getPromoAccount = (tenantId) =>
-  get('/app-api/merchant/mini/promo/account', { tenantId });
+// 营销配置（按 tenant-id header 决定店）
+export const getPromoConfig = (tenantId) =>
+  get('/app-api/merchant/mini/promo/config', { tenantId });
 
-// 推广积分流水
-export const listPromoRecords = (tenantId, page = 1, size = 20) =>
-  get(`/app-api/merchant/mini/promo/records?pageNo=${page}&pageSize=${size}`, { tenantId });
+// 我的账户（跨店聚合 / 单店：通过 tenantId 决定）
+//   tenantId 不传 → 跨店聚合（钱包/我的）
+//   tenantId 传 → 单店（checkout 抵扣展示）
+export const getAccount = (tenantId) =>
+  get('/app-api/merchant/mini/promo/account', tenantId ? { tenantId } : {});
 
-// 消费积分流水
-export const listConsumePoints = (tenantId, page = 1, size = 20) =>
-  get(`/app-api/merchant/mini/promo/consume-points?pageNo=${page}&pageSize=${size}`, { tenantId });
+// 推广积分流水（分页倒序，跨店）
+export const listPromoRecords = (pageNo = 1, pageSize = 20) =>
+  get(`/app-api/merchant/mini/promo/promo-records?pageNo=${pageNo}&pageSize=${pageSize}`);
 
-// 我的队列（推 N 反 1 当前进度）
-export const getMyQueue = (tenantId) =>
-  get('/app-api/merchant/mini/promo/my-queues', { tenantId });
+// 消费积分流水（分页倒序，跨店）
+export const listConsumeRecords = (pageNo = 1, pageSize = 20) =>
+  get(`/app-api/merchant/mini/promo/consume-records?pageNo=${pageNo}&pageSize=${pageSize}`);
 
-// 中奖公榜（店内最新中奖记录）
-export const getWinnerBoard = (tenantId) =>
-  get('/app-api/merchant/mini/promo/winners', { tenantId });
+// 我的所有队列（跨店聚合，QUEUEING 状态）
+export const listMyQueues = () =>
+  get('/app-api/merchant/mini/promo/my-queues');
 
-// 榜一排名（推广榜前 N）
-export const getRankTop = (tenantId, limit = 50) =>
-  get(`/app-api/merchant/mini/promo/rank?limit=${limit}`, { tenantId });
+// 我的推荐人（按当前 tenant）
+export const getReferralParent = (tenantId) =>
+  get('/app-api/merchant/mini/promo/referral/parent', { tenantId });
 
-// 钱包余额（balance + 可提现）
-export const getWallet = (tenantId) =>
-  get('/app-api/merchant/mini/promo/wallet', { tenantId });
+// 我的下级人数（按当前 tenant）
+export const getMyChildrenCount = (tenantId) =>
+  get('/app-api/merchant/mini/promo/referral/my-children-count', { tenantId });
 
-// 提现申请
-export const applyWithdraw = (body, tenantId) =>
-  post('/app-api/merchant/mini/promo/withdraw', body, { tenantId });
-
-// 优惠券列表
-export const listCoupons = (status = 'unused') =>
-  get(`/app-api/promotion/coupon/page?status=${status}&pageNo=1&pageSize=50`);
-
-// 推荐关系绑定
+// 绑定推荐关系
 export const bindReferral = (inviterUserId, tenantId) =>
   post(`/app-api/merchant/mini/promo/referral/bind?inviterUserId=${inviterUserId}`, null, { tenantId });
+
+// 我的 SPU 星级列表（按当前 tenant）
+export const listMySpuStars = (tenantId) =>
+  get('/app-api/merchant/mini/promo/my-spu-stars', { tenantId });
+
+// 推广积分 → 消费积分
+export const convertPromoToConsume = (promoAmount, idempotencyKey) =>
+  post(`/app-api/merchant/mini/promo/convert?promoAmount=${promoAmount}&idempotencyKey=${idempotencyKey}`);
+
+// === 以下需要后端新增 ===
+
+// 中奖公榜（实时滚动 / 列表） — TODO: 后端待加
+export const listWinners = (tenantId, limit = 50) =>
+  get(`/app-api/merchant/mini/promo/winners?limit=${limit}`, tenantId ? { tenantId } : {});
+
+// 首页 ticker（最新中奖滚动条）— TODO: 后端待加
+export const listWinnersTicker = (limit = 8) =>
+  get(`/app-api/merchant/mini/promo/winners-ticker?limit=${limit}`);
+
+// 今日入账汇总（今日合计 ¥X + N 分）— TODO: 后端待加
+export const getTodayStat = (tenantId) =>
+  get('/app-api/merchant/mini/promo/today-stat', tenantId ? { tenantId } : {});

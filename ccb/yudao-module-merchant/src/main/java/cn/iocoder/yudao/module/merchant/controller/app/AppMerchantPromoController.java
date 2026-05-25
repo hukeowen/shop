@@ -572,7 +572,7 @@ public class AppMerchantPromoController {
         boolean perTenant = headerTenant != null && headerTenant > 0;
 
         java.util.List<ShopPromoRecordDO> records;
-        java.util.function.Supplier<java.util.List<ShopPromoRecordDO>> q = () ->
+        java.util.concurrent.Callable<java.util.List<ShopPromoRecordDO>> q = () ->
                 promoRecordMapper.selectList(
                         new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<ShopPromoRecordDO>()
                                 .gt(ShopPromoRecordDO::getAmount, 0L)
@@ -673,7 +673,7 @@ public class AppMerchantPromoController {
         java.time.LocalDateTime start = java.time.LocalDate.now().atStartOfDay();
         java.time.LocalDateTime end = java.time.LocalDate.now().plusDays(1).atStartOfDay();
 
-        java.util.function.Supplier<long[]> agg = () -> {
+        java.util.concurrent.Callable<long[]> agg = () -> {
             // [promoSum, consumeSum, awardCount]
             long[] sums = new long[3];
             java.util.List<ShopPromoRecordDO> promo = promoRecordMapper.selectList(

@@ -13,8 +13,8 @@
     <!--app-context-->
     <script>
       // 店铺分享落地早期重定向（必须在 uniapp bundle 加载前同步跑）。
-      // https://ke.doupaidoudian.com/u/shop-home?tenantId=1010&inviter=99012
-      // → fallback /u/index.html → URL 留 ?tenantId — 直接 mount 首页 + 401 重定向会覆盖 shop-home。
+      // https://m.doupaidoudian.com/shop-home?tenantId=1010&inviter=99012
+      // → fallback /index.html → URL 留 ?tenantId — 直接 mount 首页 + 401 重定向会覆盖 shop-home。
       // 这里把 URL 改写成 #/pages/shop/home?tenantId=...&inviter=... hash 形式，绕开抢路由问题。
       (function () {
         try {
