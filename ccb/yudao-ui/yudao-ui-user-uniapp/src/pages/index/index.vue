@@ -302,13 +302,20 @@ async function loadQueueTip() {
         ((a.requiredCount || 0) - (a.currentCount || 0)) -
         ((b.requiredCount || 0) - (b.currentCount || 0)));
       const q = sorted[0];
-      queueTip.value = {
-        shopName: q.shopName || '店铺',
-        spuName: q.spuName || '商品',
-        gap: (q.requiredCount || 0) - (q.currentCount || 0),
-        amount: fen2yuan(q.rewardAmount || 0, false),
-        tenantId: q.tenantId,
-      };
+      const gap = (q.requiredCount || 0) - (q.currentCount || 0);
+      const amt = q.rewardAmount || 0;
+      // gap<=0 或 amount<=0 视为脏数据，不显示
+      if (gap > 0 && amt > 0) {
+        queueTip.value = {
+          shopName: q.shopName || '店铺',
+          spuName: q.spuName || '商品',
+          gap,
+          amount: fen2yuan(amt, false),
+          tenantId: q.tenantId,
+        };
+      } else {
+        queueTip.value = null;
+      }
     } else {
       queueTip.value = null;
     }
