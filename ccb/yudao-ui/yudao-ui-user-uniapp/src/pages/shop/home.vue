@@ -12,9 +12,9 @@
         </view>
       </view>
       <view v-if="shop" class="sh-info">
-        <view v-if="shop.tagRow" class="sh-tag-row">🔥 {{ shop.tagRow }}</view>
+        <view class="sh-tag-row">🔥 {{ shop.tagRow || '扫码下单 · 每单返推广积分' }}</view>
         <view class="sh-name">{{ shop.shopName || shop.name || '店铺' }}</view>
-        <view v-if="shop.slogan" class="sh-slogan">{{ shop.slogan }}</view>
+        <view class="sh-slogan">{{ shop.slogan || '商户实时派奖 · 1:1 现金提现' }}</view>
       </view>
     </view>
 
@@ -22,12 +22,12 @@
     <view class="sh-info-card">
       <view class="sh-stat-row">
         <view class="sh-stat">
-          <view class="v gold"><text class="star">★</text>{{ shop?.rating || '—' }}</view>
-          <view class="l">{{ shop?.ratingCount ? shop.ratingCount + ' 评分' : '评分' }}</view>
+          <view class="v gold"><text class="star">★</text>{{ shop?.rating || '5.0' }}</view>
+          <view class="l">{{ shop?.ratingCount ? shop.ratingCount + ' 评分' : '新店' }}</view>
         </view>
         <view class="sh-stat-divider"></view>
         <view class="sh-stat">
-          <view class="v">{{ shop?.monthSold ?? '—' }}</view>
+          <view class="v">{{ shop?.monthSold ?? '0' }}</view>
           <view class="l">月售</view>
         </view>
         <view class="sh-stat-divider"></view>
@@ -116,8 +116,8 @@
     <view v-else class="sh-grid">
       <view v-for="(p, i) in filteredSpus" :key="p.id" class="pcard" @click="goProduct(p)">
         <view class="ppic" :class="picTone(i)">
-          <image v-if="p.picUrl" :src="p.picUrl" mode="aspectFill" class="ppic-img" />
-          <text v-else>{{ p.em || '🛍' }}</text>
+          <image v-if="p.picUrl && !p.imgErr" :src="p.picUrl" mode="aspectFill" class="ppic-img" @error="onImgErr(p)" />
+          <text v-else class="ppic-em">{{ guessEmoji(p.name) }}</text>
           <view v-if="p.badge" class="pbadge" :class="p.badgeClass">{{ p.badge }}</view>
         </view>
         <view class="pname">{{ p.name }}</view>
@@ -175,6 +175,17 @@ const filteredSpus = computed(() => {
 function picTone(i) {
   return ['', 'green', 'purple', 'pink'][i % 4];
 }
+function onImgErr(p) { p.imgErr = true; }
+function guessEmoji(name) {
+  const n = (name || '').toLowerCase();
+  if (/茶|饮|奶|咖啡/.test(n)) return '🍵';
+  if (/粥|饭|面|汤/.test(n))   return '🍜';
+  if (/烤|肉|串|鸡|鸭/.test(n))return '🍖';
+  if (/果|蔬|菜|生鲜/.test(n)) return '🍇';
+  if (/糕|甜|烘焙|蛋糕/.test(n))return '🍰';
+  if (/酒|啤|红/.test(n))      return '🍷';
+  return '🍽';
+}
 
 function goBack() {
   const pages = getCurrentPages();
@@ -230,12 +241,16 @@ async function loadProducts() {
       }
       return { ...s, badge, badgeClass, earnText, earnClass };
     });
-    spus.value = list;
-    // 聚合分类
+    spus.value = list.map((p) => ({ ...p, imgErr: false }));
+    // 聚合分类（无 categoryName 时用顺序编号「分类 1/2/...」而非「分类#20」）
     const catMap = new Map();
+    let idx = 1;
     for (const s of list) {
       if (s.categoryId && !catMap.has(s.categoryId)) {
-        catMap.set(s.categoryId, { id: s.categoryId, name: s.categoryName || `分类#${s.categoryId}` });
+        catMap.set(s.categoryId, {
+          id: s.categoryId,
+          name: s.categoryName || `分类 ${idx++}`,
+        });
       }
     }
     cats.value = [...catMap.values()];
@@ -358,7 +373,7 @@ onShow(refreshAll);
   border: 1px solid rgba(255,255,255,.15);
 }
 .sh-info {
-  position: absolute; bottom: 18px; left: 18px; right: 18px;
+  position: absolute; bottom: 50px; left: 18px; right: 18px;
   color: #fff;
   z-index: 4;
 }
@@ -601,6 +616,7 @@ onShow(refreshAll);
 .ppic.purple { background: linear-gradient(135deg, #E0D4FF, #C4B5FD); }
 .ppic.pink   { background: linear-gradient(135deg, #FCE7F3, #F9A8D4); }
 .ppic-img { width: 100%; height: 100%; }
+.ppic-em { font-size: 48px; line-height: 1; }
 .pbadge {
   position: absolute; top: 6px; left: 6px;
   padding: 3px 7px;
