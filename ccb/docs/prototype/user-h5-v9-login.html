@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+<title>客小二 · 登录页 3 个 variant 原型</title>
+<style>
+  /* ━━━━━━━━ 全局 tokens（沿用 v9-wow） ━━━━━━━━ */
+  :root {
+    --bg:#FAFAF7; --bg-2:#F6F7F9; --bg-3:#FFF8F4; --card:#FFFFFF;
+    --o:#FF6B35; --o-d:#E25316; --o-l:#FF8857;
+    --o-50:#FFF1EB; --o-100:#FFE0D1; --o-200:#FFCDB0;
+    --gold:#D4920A; --gold-l:#F5B27A; --gold-d:#A66E00; --gold-50:#FEF3C7;
+    --mint:#10B981; --mint-l:#6EE7B7; --mint-50:#D1FAE5;
+    --purple:#6366F1;
+    --danger:#E63946; --warn:#F59E0B;
+    --t1:#1B1F23; --t2:#5A6577; --t3:#6F7785; --t4:#94A3B8;
+    --line:#EEF0F4; --line-d:#E2E5EB;
+    --sh-1:0 1px 2px rgba(15,23,42,.04),0 1px 3px rgba(15,23,42,.05);
+    --sh-2:0 2px 8px rgba(15,23,42,.04),0 8px 24px rgba(15,23,42,.06);
+    --sh-3:0 6px 16px rgba(15,23,42,.06),0 24px 50px rgba(15,23,42,.10);
+    --sh-warm:0 8px 24px rgba(255,107,53,.28);
+    --sh-gold:0 8px 24px rgba(212,146,10,.28);
+    --r-sm:8px; --r-md:12px; --r-lg:16px; --r-xl:22px; --r-2xl:28px; --r-pill:999px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body {
+    background:
+      radial-gradient(900px 500px at 20% 0%, rgba(255,107,53,.18), transparent 60%),
+      radial-gradient(700px 400px at 100% 100%, rgba(212,146,10,.12), transparent 60%),
+      linear-gradient(180deg, #18130E 0%, #0F0B07 100%);
+    font: 14px/1.5 -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    color: #fff;
+    min-height: 100vh;
+    padding: 40px 16px 80px;
+    overflow-x: hidden;
+  }
+  .page-head { max-width: 1300px; margin: 0 auto 32px; text-align: center; }
+  .page-head h1 {
+    font-size: 28px; font-weight: 900; letter-spacing: -.5px;
+    background: linear-gradient(135deg, #fff, #FFD8C0, var(--o-l));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .page-head .sub { margin-top: 8px; font-size: 13px; color: rgba(255,255,255,.55); }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(395px, 1fr));
+    gap: 36px 24px;
+    max-width: 1300px;
+    margin: 0 auto;
+  }
+  .phone-wrap { display: flex; flex-direction: column; align-items: center; }
+  .phone {
+    width: 375px; height: 812px;
+    background: var(--bg);
+    border-radius: 40px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 30px 80px rgba(0,0,0,.5), 0 0 0 8px #0F0B07;
+  }
+  .phone .view { height: 100%; overflow-y: auto; }
+  .phone .view::-webkit-scrollbar { display: none; }
+  .phone-label {
+    margin-top: 16px;
+    color: rgba(255,255,255,.7);
+    font-size: 14px; font-weight: 600;
+    text-align: center;
+  }
+  .phone-label b { color: var(--o-l); }
+  .status-bar {
+    height: 22px; padding: 0 16px;
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 11px; font-weight: 700; color: var(--t1);
+    background: rgba(255,255,255,.95);
+    position: relative; z-index: 10;
+  }
+
+  /* ━━━━━━━━━━━━━━━━━━ Variant A ━━━━━━━━━━━━━━━━━━ */
+  .va {
+    height: calc(100% - 22px);
+    background:
+      radial-gradient(500px 350px at 0% 0%, rgba(212,146,10,.4), transparent 60%),
+      linear-gradient(180deg, #18130E 0%, #2A1A0F 60%, #1F1208 100%);
+    color: #fff;
+    padding: 30px 18px 24px;
+    position: relative; overflow: hidden;
+  }
+  .va::before {
+    content: ''; position: absolute; inset: 0;
+    background-image: radial-gradient(rgba(255,255,255,.05) 1px, transparent 1px);
+    background-size: 22px 22px;
+  }
+  .va-hero { text-align: center; padding: 10px 0 16px; position: relative; }
+  .va-logo {
+    width: 60px; height: 60px; border-radius: 18px;
+    background: linear-gradient(135deg, var(--o), var(--o-d));
+    display: inline-grid; place-items: center;
+    font-size: 30px; line-height: 1;
+    box-shadow: var(--sh-warm), inset 0 1px 0 rgba(255,255,255,.3);
+  }
+  .va-brand {
+    margin-top: 12px; font-size: 32px; font-weight: 900; letter-spacing: -1px;
+    background: linear-gradient(135deg, #fff, var(--gold-l));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    text-shadow: 0 4px 24px rgba(255,107,53,.3);
+  }
+  .va-tag { margin-top: 6px; font-size: 13px; color: rgba(255,255,255,.7); letter-spacing: 1px; }
+  .va-stats {
+    margin-top: 14px;
+    display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;
+    position: relative;
+  }
+  .va-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 14px; border-radius: 99px;
+    background: rgba(255,107,53,.22);
+    border: 1px solid rgba(255,107,53,.4);
+    backdrop-filter: blur(10px);
+    font-size: 12px;
+  }
+  .va-pill.mint { background: rgba(16,185,129,.22); border-color: rgba(16,185,129,.4); }
+  .va-pill .em { font-size: 14px; }
+  .va-pill .hl { color: var(--gold-l); font-weight: 800; margin: 0 2px; }
+  .va-pill.mint .hl { color: var(--mint-l); }
+  .va-ticker {
+    margin-top: 14px;
+    padding: 10px 14px;
+    background: rgba(255,255,255,.06);
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 12px;
+    display: flex; align-items: center; gap: 10px;
+    overflow: hidden; position: relative;
+  }
+  .va-ticker .em { font-size: 14px; flex-shrink: 0; }
+  .va-ticker .roll { flex: 1; overflow: hidden; height: 16px; position: relative; }
+  .va-ticker .track {
+    position: absolute; white-space: nowrap;
+    font-size: 11.5px; color: rgba(255,255,255,.75);
+  }
+  .va-ticker .track .phone { color: var(--gold-l); font-weight: 700; }
+  .va-ticker .track .shop  { color: var(--o-l); font-weight: 700; }
+  .va-ticker .track .amt   { color: var(--mint-l); font-weight: 800; }
+  .va-sell {
+    margin: 14px 0 16px;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+    position: relative;
+  }
+  .va-card {
+    padding: 14px;
+    border-radius: var(--r-lg);
+    background: rgba(255,255,255,.08);
+    border: 1px solid rgba(255,255,255,.12);
+    backdrop-filter: blur(10px);
+  }
+  .va-card.warm   { background: linear-gradient(135deg, rgba(255,107,53,.28), rgba(255,107,53,.08)); border-color: rgba(255,107,53,.38); }
+  .va-card.gold   { background: linear-gradient(135deg, rgba(212,146,10,.28), rgba(212,146,10,.08)); border-color: rgba(212,146,10,.38); }
+  .va-card.mint   { background: linear-gradient(135deg, rgba(16,185,129,.28), rgba(16,185,129,.08)); border-color: rgba(16,185,129,.38); }
+  .va-card.purple { background: linear-gradient(135deg, rgba(99,102,241,.28), rgba(99,102,241,.08)); border-color: rgba(99,102,241,.38); }
+  .va-card .em { font-size: 26px; line-height: 1; }
+  .va-card .t { font-size: 14px; font-weight: 800; margin-top: 8px; }
+  .va-card .d { font-size: 11px; color: rgba(255,255,255,.7); margin-top: 3px; }
+  .va-form {
+    position: relative;
+    background: #fff; color: var(--t1);
+    border-radius: 22px;
+    padding: 22px 20px 18px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.4);
+  }
+  .va-form-t { font-size: 17px; font-weight: 900; text-align: center; color: var(--t1); }
+  .va-form-s { font-size: 11px; color: var(--o-d); text-align: center; margin-top: 4px; }
+  .va-field {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--line);
+    margin-top: 4px;
+  }
+  .va-field .l { width: 36px; font-size: 13px; color: var(--t2); font-weight: 600; }
+  .va-field input { flex: 1; font-size: 15px; border: 0; outline: 0; color: var(--t1); background: transparent; }
+  .va-send { padding: 7px 14px; border-radius: 99px; background: var(--o-50); color: var(--o); border: 1px solid var(--o-100); font-size: 12px; font-weight: 700; }
+  .va-submit {
+    margin-top: 18px;
+    padding: 14px;
+    background: linear-gradient(135deg, var(--o), var(--o-d));
+    color: #fff; text-align: center;
+    border-radius: 99px;
+    font-weight: 900; font-size: 16px; letter-spacing: 2px;
+    box-shadow: var(--sh-warm);
+  }
+  .va-agree { margin-top: 12px; text-align: center; font-size: 11px; color: var(--t4); }
+  .va-agree .link { color: var(--o); }
+
+  /* ━━━━━━━━━━━━━━━━━━ Variant B ━━━━━━━━━━━━━━━━━━ */
+  .vb {
+    height: calc(100% - 22px);
+    background: linear-gradient(180deg, #FFB174 0%, var(--o) 35%, var(--o-d) 100%);
+    color: #fff;
+    padding: 26px 18px 24px;
+    position: relative; overflow: hidden;
+  }
+  .vb::before {
+    content: ''; position: absolute; inset: 0;
+    background-image: radial-gradient(rgba(255,255,255,.06) 1px, transparent 1px);
+    background-size: 22px 22px;
+  }
+  .vb::after {
+    content: '🏆'; position: absolute;
+    top: -40px; right: -20px;
+    font-size: 200px; opacity: .12;
+    transform: rotate(-12deg);
+  }
+  .vb-stat-hero {
+    position: relative;
+    text-align: center;
+    padding: 18px 0 8px;
+  }
+  .vb-stat-tag {
+    display: inline-block;
+    padding: 4px 12px;
+    background: rgba(0,0,0,.25); backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,.2);
+    border-radius: 99px;
+    font-size: 11px; font-weight: 700; letter-spacing: 1.5px;
+  }
+  .vb-stat-tag::before { content: '💎 '; }
+  .vb-stat-num {
+    margin-top: 14px;
+    font-size: 64px; font-weight: 900; line-height: 1;
+    letter-spacing: -3px;
+    background: linear-gradient(135deg, #fff 30%, var(--gold-50));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    text-shadow: 0 8px 32px rgba(254,243,199,.4);
+  }
+  .vb-stat-num small { font-size: 22px; opacity: .8; margin-left: 4px; -webkit-text-fill-color: rgba(255,234,216,.9); }
+  .vb-stat-d {
+    margin-top: 8px;
+    font-size: 12px; color: rgba(255,255,255,.85);
+  }
+  .vb-stat-d b { color: var(--gold-50); font-weight: 800; }
+  .vb-brand-row {
+    margin-top: 22px;
+    display: flex; align-items: center; gap: 10px;
+    justify-content: center;
+    position: relative;
+  }
+  .vb-logo {
+    width: 38px; height: 38px; border-radius: 12px;
+    background: rgba(255,255,255,.95); color: var(--o-d);
+    display: grid; place-items: center;
+    font-size: 22px;
+  }
+  .vb-brand { font-size: 22px; font-weight: 900; letter-spacing: -.5px; }
+  .vb-tag { text-align: center; font-size: 12px; color: rgba(255,255,255,.7); margin-top: 4px; }
+
+  .vb-sells {
+    margin: 18px 0;
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;
+    position: relative;
+  }
+  .vb-sell {
+    padding: 10px 4px;
+    background: rgba(0,0,0,.18); backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,.15);
+    border-radius: 10px;
+    text-align: center;
+  }
+  .vb-sell .em { font-size: 20px; }
+  .vb-sell .t { font-size: 10.5px; font-weight: 800; margin-top: 4px; line-height: 1.2; }
+
+  .vb-form {
+    position: relative;
+    background: rgba(255,255,255,.96); color: var(--t1);
+    border-radius: 22px;
+    padding: 20px 18px 16px;
+    box-shadow: 0 20px 50px rgba(0,0,0,.3);
+  }
+  .vb-form-row {
+    display: flex; align-items: center; gap: 6px;
+    padding: 11px 12px;
+    background: var(--bg-2);
+    border-radius: 12px;
+    margin-top: 8px;
+  }
+  .vb-form-row .l { width: 28px; color: var(--t2); font-size: 13px; }
+  .vb-form-row input { flex: 1; border: 0; background: transparent; font-size: 14px; outline: 0; }
+  .vb-form-row .send { padding: 5px 12px; background: #fff; color: var(--o); border-radius: 99px; font-size: 11px; font-weight: 700; border: 1px solid var(--o-100); }
+  .vb-submit {
+    margin-top: 14px;
+    padding: 14px;
+    background: linear-gradient(135deg, var(--o), var(--o-d));
+    color: #fff; text-align: center;
+    border-radius: 99px;
+    font-weight: 900; font-size: 16px; letter-spacing: 2px;
+    box-shadow: var(--sh-warm);
+  }
+  .vb-agree { margin-top: 10px; text-align: center; font-size: 10.5px; color: var(--t4); }
+  .vb-agree .link { color: var(--o); }
+  .vb-other { margin-top: 14px; display: flex; gap: 20px; justify-content: center; }
+  .vb-other-btn {
+    width: 38px; height: 38px; border-radius: 50%;
+    background: var(--bg-2);
+    display: grid; place-items: center;
+    font-size: 18px;
+  }
+  .vb-ticker-mini {
+    margin-top: 16px;
+    padding: 8px 12px;
+    background: rgba(0,0,0,.2); backdrop-filter: blur(10px);
+    border-radius: 99px;
+    border: 1px solid rgba(255,255,255,.15);
+    font-size: 11px; color: rgba(255,255,255,.85);
+    display: flex; align-items: center; gap: 8px;
+    overflow: hidden;
+  }
+  .vb-ticker-mini .em { font-size: 12px; }
+  .vb-ticker-mini b { color: var(--gold-50); font-weight: 800; }
+
+  /* ━━━━━━━━━━━━━━━━━━ Variant C ━━━━━━━━━━━━━━━━━━ */
+  .vc {
+    height: calc(100% - 22px);
+    background: var(--bg);
+    color: var(--t1);
+    padding: 24px 18px 24px;
+    position: relative; overflow: hidden;
+  }
+  .vc-top {
+    position: relative;
+    height: 280px;
+    margin: -24px -18px 0;
+    background:
+      radial-gradient(400px 250px at 100% 0%, rgba(254,243,199,.5), transparent 60%),
+      linear-gradient(135deg, var(--o), var(--o-d));
+    color: #fff;
+    padding: 30px 22px;
+    border-bottom-left-radius: 30px; border-bottom-right-radius: 30px;
+    overflow: hidden;
+  }
+  .vc-top::before {
+    content: ''; position: absolute; inset: 0;
+    background-image: radial-gradient(rgba(255,255,255,.06) 1px, transparent 1px);
+    background-size: 22px 22px;
+  }
+  .vc-top::after {
+    content: '💎'; position: absolute;
+    bottom: -20px; right: -10px; font-size: 140px; opacity: .15;
+    transform: rotate(-15deg);
+  }
+  .vc-logo-row {
+    display: flex; align-items: center; gap: 10px; position: relative;
+  }
+  .vc-logo {
+    width: 44px; height: 44px; border-radius: 14px;
+    background: rgba(255,255,255,.95); color: var(--o-d);
+    display: grid; place-items: center;
+    font-size: 24px;
+    box-shadow: 0 4px 16px rgba(0,0,0,.15);
+  }
+  .vc-brand-block { flex: 1; }
+  .vc-brand { font-size: 24px; font-weight: 900; letter-spacing: -.5px; line-height: 1; }
+  .vc-tag { font-size: 11.5px; opacity: .85; margin-top: 4px; }
+  .vc-headline {
+    position: relative;
+    margin-top: 22px;
+    font-size: 30px; font-weight: 900; line-height: 1.15;
+    letter-spacing: -1px;
+  }
+  .vc-headline .h {
+    background: linear-gradient(135deg, var(--gold-50), #FFE0D1);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .vc-sub {
+    position: relative;
+    margin-top: 8px;
+    font-size: 12.5px; color: rgba(255,255,255,.85);
+  }
+  .vc-sells {
+    margin: 16px 0 0;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  }
+  .vc-sell {
+    padding: 14px;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    box-shadow: var(--sh-1);
+    position: relative; overflow: hidden;
+  }
+  .vc-sell.gold::before {
+    content: ''; position: absolute; top: 0; left: 0; bottom: 0; width: 3px;
+    background: linear-gradient(180deg, var(--gold), var(--gold-d));
+  }
+  .vc-sell.warm::before {
+    content: ''; position: absolute; top: 0; left: 0; bottom: 0; width: 3px;
+    background: linear-gradient(180deg, var(--o), var(--o-d));
+  }
+  .vc-sell.mint::before {
+    content: ''; position: absolute; top: 0; left: 0; bottom: 0; width: 3px;
+    background: linear-gradient(180deg, var(--mint), #0E9E6D);
+  }
+  .vc-sell.purple::before {
+    content: ''; position: absolute; top: 0; left: 0; bottom: 0; width: 3px;
+    background: linear-gradient(180deg, var(--purple), #4F46E5);
+  }
+  .vc-sell .em { font-size: 24px; line-height: 1; }
+  .vc-sell .t { font-size: 13.5px; font-weight: 800; color: var(--t1); margin-top: 6px; }
+  .vc-sell .d { font-size: 10.5px; color: var(--t3); margin-top: 3px; }
+
+  .vc-divider {
+    display: flex; align-items: center; gap: 10px;
+    margin: 18px 0 12px;
+    color: var(--t4); font-size: 11px;
+  }
+  .vc-divider::before, .vc-divider::after {
+    content: ''; flex: 1; height: 1px; background: var(--line);
+  }
+
+  .vc-form-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 12px 14px;
+    background: var(--bg-2);
+    border-radius: var(--r-lg);
+    margin-top: 8px;
+  }
+  .vc-form-row .l { width: 28px; color: var(--t2); font-size: 13px; }
+  .vc-form-row input { flex: 1; border: 0; background: transparent; font-size: 14px; outline: 0; }
+  .vc-form-row .send { padding: 6px 12px; background: var(--o); color: #fff; border-radius: 99px; font-size: 11px; font-weight: 700; }
+  .vc-submit {
+    margin-top: 14px;
+    padding: 14px;
+    background: linear-gradient(135deg, var(--o), var(--o-d));
+    color: #fff; text-align: center;
+    border-radius: 99px;
+    font-weight: 900; font-size: 16px; letter-spacing: 2px;
+    box-shadow: var(--sh-warm);
+  }
+  .vc-other-row {
+    margin-top: 16px;
+    display: flex; align-items: center; gap: 14px; justify-content: center;
+  }
+  .vc-other {
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    font-size: 11px; color: var(--t3);
+  }
+  .vc-other .em {
+    width: 42px; height: 42px; border-radius: 50%;
+    background: var(--bg-2);
+    display: grid; place-items: center;
+    font-size: 20px;
+  }
+  .vc-other.wechat .em { background: linear-gradient(135deg, var(--mint), #0E9E6D); color: #fff; }
+  .vc-agree {
+    margin-top: 14px; text-align: center; font-size: 10.5px; color: var(--t4); line-height: 1.7;
+  }
+  .vc-agree .link { color: var(--o); }
+</style>
+</head>
+<body>
+
+<div class="page-head">
+  <h1>客小二 · 登录页 3 个 variant 原型</h1>
+  <div class="sub">在 v9-wow 设计基础上，选你喜欢的方向，我用代码 1:1 实现</div>
+</div>
+
+<div class="grid">
+
+  <!-- ━━━━━━━━━━━━━━━ Variant A · 深色品牌门面（当前线上版接近）━━━━━━━━━━━━━━━ -->
+  <div class="phone-wrap">
+    <div class="phone">
+      <div class="status-bar"><span>9:41</span><span>📶 📡 🔋</span></div>
+      <div class="view">
+        <div class="va">
+          <div class="va-hero">
+            <div class="va-logo">🏆</div>
+            <div class="va-brand">客小二</div>
+            <div class="va-tag">商户派奖 · 推 N 反 1 · 1:1 提现</div>
+            <div class="va-stats">
+              <div class="va-pill"><span class="em">💎</span>今日全网派奖 <span class="hl">¥482</span></div>
+              <div class="va-pill mint"><span class="em">👥</span><span class="hl">42</span> 人到账</div>
+            </div>
+          </div>
+          <div class="va-ticker">
+            <span class="em">🔥</span>
+            <div class="roll"><div class="track"><span class="phone">138****6789</span> 在 <span class="shop">爱家超市</span> 派奖 <span class="amt">+¥10</span></div></div>
+          </div>
+          <div class="va-sell">
+            <div class="va-card warm"><div class="em">💰</div><div class="t">买东西也赚钱</div><div class="d">下单即返推广积分</div></div>
+            <div class="va-card gold"><div class="em">🎁</div><div class="t">商户派奖池</div><div class="d">每天 ¥100+ 现金</div></div>
+            <div class="va-card mint"><div class="em">🔥</div><div class="t">推 N 反 1</div><div class="d">买 N 件免 1 件</div></div>
+            <div class="va-card purple"><div class="em">💸</div><div class="t">1:1 提现</div><div class="d">微信秒到 · 满 1 元</div></div>
+          </div>
+          <div class="va-form">
+            <div class="va-form-t">手机号登录 / 注册</div>
+            <div class="va-form-s">登录享首单立减 + 推广积分赠送</div>
+            <div class="va-field"><span class="l">+86</span><input placeholder="手机号"/></div>
+            <div class="va-field"><span class="l">🔒</span><input placeholder="6 位短信验证码"/><div class="va-send">获取</div></div>
+            <div class="va-submit">登 录</div>
+            <div class="va-agree">登录即同意 <span class="link">《用户协议》</span> <span class="link">《隐私政策》</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="phone-label">Ⓐ <b>深色品牌门面</b> · 实时派奖 + 4 卖点 + 完整表单（当前线上接近）</div>
+  </div>
+
+  <!-- ━━━━━━━━━━━━━━━ Variant B · 大数字 hero（暖橙满铺）━━━━━━━━━━━━━━━ -->
+  <div class="phone-wrap">
+    <div class="phone">
+      <div class="status-bar"><span>9:41</span><span>📶 📡 🔋</span></div>
+      <div class="view">
+        <div class="vb">
+          <div class="vb-stat-hero">
+            <span class="vb-stat-tag">今日全网派奖</span>
+            <div class="vb-stat-num">¥482<small>.40</small></div>
+            <div class="vb-stat-d"><b>42</b> 人到账 · 实时滚动 · 1:1 现金提现</div>
+          </div>
+
+          <div class="vb-brand-row">
+            <div class="vb-logo">🏆</div>
+            <div class="vb-brand">客小二</div>
+          </div>
+          <div class="vb-tag">买东西也能赚钱 · 推 N 反 1 玩法</div>
+
+          <div class="vb-ticker-mini">
+            <span class="em">🔥</span>
+            <span>刚刚 <b>156****1234</b> 在 <b>王师傅烤地瓜</b> 推 4 反 1 出队 <b>+¥10</b></span>
+          </div>
+
+          <div class="vb-sells">
+            <div class="vb-sell"><div class="em">💰</div><div class="t">下单返积分</div></div>
+            <div class="vb-sell"><div class="em">🎁</div><div class="t">派奖池</div></div>
+            <div class="vb-sell"><div class="em">🔥</div><div class="t">推 N 反 1</div></div>
+            <div class="vb-sell"><div class="em">💸</div><div class="t">1:1 提现</div></div>
+          </div>
+
+          <div class="vb-form">
+            <div class="vb-form-row"><span class="l">+86</span><input placeholder="手机号"/></div>
+            <div class="vb-form-row"><span class="l">🔒</span><input placeholder="验证码"/><span class="send">获取</span></div>
+            <div class="vb-submit">登录 / 注册</div>
+            <div class="vb-other">
+              <div class="vb-other-btn">💚</div>
+              <div class="vb-other-btn">🅰</div>
+              <div class="vb-other-btn">📱</div>
+            </div>
+            <div class="vb-agree">未注册手机号验证后自动创建账号 <span class="link">《协议》</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="phone-label">Ⓑ <b>大数字 hero</b> · 64px 派奖大字主导 + 4 紧凑卖点 + 微信/支付宝/手机 三入口</div>
+  </div>
+
+  <!-- ━━━━━━━━━━━━━━━ Variant C · 半亮信任感（白底为主）━━━━━━━━━━━━━━━ -->
+  <div class="phone-wrap">
+    <div class="phone">
+      <div class="status-bar"><span>9:41</span><span>📶 📡 🔋</span></div>
+      <div class="view">
+        <div class="vc">
+          <div class="vc-top">
+            <div class="vc-logo-row">
+              <div class="vc-logo">🏆</div>
+              <div class="vc-brand-block">
+                <div class="vc-brand">客小二</div>
+                <div class="vc-tag">商户派奖 · 1:1 现金提现</div>
+              </div>
+            </div>
+            <div class="vc-headline">买东西<br/><span class="h">就能赚钱</span></div>
+            <div class="vc-sub">已有 <b>4.2 万</b>人在客小二每天赚 ¥3 ~ ¥58</div>
+          </div>
+
+          <div class="vc-sells">
+            <div class="vc-sell warm"><div class="em">💰</div><div class="t">下单返推广积分</div><div class="d">每单 5%-20%</div></div>
+            <div class="vc-sell gold"><div class="em">🎁</div><div class="t">商户每日派奖</div><div class="d">¥100+ 现金池</div></div>
+            <div class="vc-sell mint"><div class="em">🔥</div><div class="t">推 N 反 1</div><div class="d">买 N 件免 1 件</div></div>
+            <div class="vc-sell purple"><div class="em">💸</div><div class="t">1:1 微信秒到</div><div class="d">满 1 元提现</div></div>
+          </div>
+
+          <div class="vc-divider">登录开始赚钱</div>
+
+          <div class="vc-form-row"><span class="l">+86</span><input placeholder="手机号"/></div>
+          <div class="vc-form-row"><span class="l">🔒</span><input placeholder="验证码"/><span class="send">获取</span></div>
+          <div class="vc-submit">登 录</div>
+
+          <div class="vc-other-row">
+            <div class="vc-other wechat"><div class="em">💚</div><span>微信</span></div>
+            <div class="vc-other"><div class="em">📱</div><span>本机号</span></div>
+          </div>
+          <div class="vc-agree">登录即同意 <span class="link">《用户协议》</span> <span class="link">《隐私政策》</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="phone-label">Ⓒ <b>半亮信任感</b> · 280px 暖橙 hero + 白卡 4 卖点（边线品牌色）+ 微信/本机号一键登录</div>
+  </div>
+
+</div>
+
+</body>
+</html>

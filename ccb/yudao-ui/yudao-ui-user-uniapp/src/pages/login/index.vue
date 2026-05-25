@@ -1,94 +1,58 @@
 <template>
   <view class="page">
     <view class="bg-deco"></view>
-    <view class="bg-glow"></view>
+    <view class="bg-mark">🏆</view>
 
-    <!-- ━━━━━━━━━━ Brand hero ━━━━━━━━━━ -->
-    <view class="hero">
-      <view class="logo-row">
-        <view class="logo-em">🏆</view>
-        <view class="brand">客小二</view>
-      </view>
-      <view class="tagline">商户派奖 · 推 N 反 1 · 1:1 现金提现</view>
-
-      <!-- 全网今日派奖大数字 -->
-      <view v-if="stat" class="stat-row">
-        <view class="stat-pill">
-          <text class="em">💎</text>
-          今日全网派奖 <text class="hl">¥{{ stat.amount }}</text>
-        </view>
-        <view class="stat-pill mint">
-          <text class="em">👥</text>
-          <text class="hl">{{ stat.count }}</text> 人到账
-        </view>
-      </view>
+    <!-- ━━━━━━━━━━ 大数字 hero ━━━━━━━━━━ -->
+    <view class="stat-hero">
+      <view class="stat-tag">今日全网派奖</view>
+      <view class="stat-num">¥{{ stat.amount }}<text class="small">.{{ stat.cents }}</text></view>
+      <view class="stat-d"><text class="b">{{ stat.count }}</text> 人到账 · 实时滚动 · 1:1 现金提现</view>
     </view>
 
-    <!-- ━━━━━━━━━━ 实时中奖 ticker ━━━━━━━━━━ -->
-    <view v-if="winners.length" class="ticker">
+    <!-- ━━━━━━━━━━ Brand ━━━━━━━━━━ -->
+    <view class="brand-row">
+      <view class="brand-logo">🏆</view>
+      <view class="brand">客小二</view>
+    </view>
+    <view class="brand-tag">买东西也能赚钱 · 推 N 反 1 玩法</view>
+
+    <!-- ━━━━━━━━━━ Mini ticker ━━━━━━━━━━ -->
+    <view v-if="tickerLine" class="ticker-mini">
       <text class="em">🔥</text>
-      <view class="roll">
-        <view class="roll-track">
-          <text v-for="(w, i) in winners" :key="i">
-            <text class="phone">{{ w.userMask }}</text> 在 <text class="shop">{{ w.shopName }}</text> {{ w.sourceLabel }}
-            <text class="amt">+¥{{ w.amount }}</text> ·
-          </text>
-        </view>
+      <view class="ticker-roll">
+        <view class="ticker-track">{{ tickerLine }}</view>
       </view>
     </view>
 
-    <!-- ━━━━━━━━━━ 4 卖点卡片 ━━━━━━━━━━ -->
-    <view class="sell-grid">
-      <view class="sell-card warm">
-        <view class="sc-em">💰</view>
-        <view class="sc-t">买东西也赚钱</view>
-        <view class="sc-d">下单即返推广积分</view>
-      </view>
-      <view class="sell-card gold">
-        <view class="sc-em">🎁</view>
-        <view class="sc-t">商户派奖池</view>
-        <view class="sc-d">每天 ¥100+ 现金奖</view>
-      </view>
-      <view class="sell-card mint">
-        <view class="sc-em">🔥</view>
-        <view class="sc-t">推 N 反 1</view>
-        <view class="sc-d">买 N 件免单 1 件</view>
-      </view>
-      <view class="sell-card purple">
-        <view class="sc-em">💸</view>
-        <view class="sc-t">1:1 提现</view>
-        <view class="sc-d">微信秒到 · 满 1 元</view>
-      </view>
+    <!-- ━━━━━━━━━━ 4 紧凑卖点 ━━━━━━━━━━ -->
+    <view class="sells">
+      <view class="sell"><view class="em">💰</view><view class="t">下单返积分</view></view>
+      <view class="sell"><view class="em">🎁</view><view class="t">派奖池</view></view>
+      <view class="sell"><view class="em">🔥</view><view class="t">推 N 反 1</view></view>
+      <view class="sell"><view class="em">💸</view><view class="t">1:1 提现</view></view>
     </view>
 
-    <!-- ━━━━━━━━━━ 登录表单 ━━━━━━━━━━ -->
+    <!-- ━━━━━━━━━━ 白卡 Form ━━━━━━━━━━ -->
     <view class="form">
-      <view class="form-title">手机号登录 / 注册</view>
-      <view class="form-sub">登录即享首单立减 + 推广积分赠送</view>
-
-      <view class="field">
-        <text class="f-l">+86</text>
+      <view class="form-row">
+        <text class="l">+86</text>
         <input v-model="mobile" type="number" maxlength="11" placeholder="手机号" />
       </view>
-      <view class="field">
-        <text class="f-l">🔒</text>
-        <input v-model="code" type="number" maxlength="6" placeholder="6 位短信验证码" />
-        <view class="send" :class="{ disabled: cd > 0 }" @click="onSend">{{ cd > 0 ? `${cd}s 后重发` : '获取验证码' }}</view>
+      <view class="form-row">
+        <text class="l">🔒</text>
+        <input v-model="code" type="number" maxlength="6" placeholder="验证码" />
+        <view class="send" :class="{ disabled: cd > 0 }" @click="onSend">{{ cd > 0 ? `${cd}s` : '获取' }}</view>
       </view>
-
       <view class="submit" :class="{ loading: submitting }" @click="onLogin">
-        {{ submitting ? '登录中…' : '登 录' }}
+        {{ submitting ? '登录中…' : '登录 / 注册' }}
       </view>
-
-      <view class="agree">
-        登录即同意 <text class="link">《用户协议》</text> <text class="link">《隐私政策》</text>
+      <view class="other">
+        <view class="other-btn" @click="onThird('wechat')">💚</view>
+        <view class="other-btn" @click="onThird('alipay')">🅰</view>
+        <view class="other-btn" @click="onThird('mobile')">📱</view>
       </view>
-
-      <view class="trust">
-        <text class="trust-item">✓ 商户实名认证</text>
-        <text class="trust-item">✓ 资金流水可查</text>
-        <text class="trust-item">✓ 1:1 现金提现</text>
-      </view>
+      <view class="agree">未注册手机号验证后自动创建账号 <text class="link">《协议》</text></view>
     </view>
 
     <view class="bottom-pad"></view>
@@ -96,7 +60,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { sendSmsCode, smsLogin } from '@/api/auth.js';
 import { listWinnersTicker, getTodayStat } from '@/api/promo.js';
 import { useUserStore } from '@/store/user.js';
@@ -108,8 +72,15 @@ const code = ref('');
 const cd = ref(0);
 const submitting = ref(false);
 
-const stat = ref(null);
-const winners = ref([]);
+const rawStat = ref({ promo: 0, count: 0 });
+const stat = computed(() => {
+  const fen = rawStat.value.promo || 0;
+  const y = Math.floor(fen / 100);
+  const c = String(fen % 100).padStart(2, '0');
+  return { amount: y.toLocaleString('zh-CN'), cents: c, count: rawStat.value.count };
+});
+
+const tickerLine = ref('');
 
 async function onSend() {
   if (cd.value > 0) return;
@@ -121,7 +92,6 @@ async function onSend() {
     const t = setInterval(() => { cd.value--; if (cd.value <= 0) clearInterval(t); }, 1000);
   } catch {}
 }
-
 async function onLogin() {
   if (!/^1[3-9]\d{9}$/.test(mobile.value)) return uni.showToast({ title: '手机号格式错', icon: 'none' });
   if (!/^\d{4,6}$/.test(code.value)) return uni.showToast({ title: '验证码错', icon: 'none' });
@@ -135,20 +105,21 @@ async function onLogin() {
     setTimeout(() => uni.reLaunch({ url: redirect }), 600);
   } catch {} finally { submitting.value = false; }
 }
+function onThird(k) {
+  uni.showToast({ title: { wechat: '微信登录待接', alipay: '支付宝待接', mobile: '本机号一键待接' }[k] || '待加', icon: 'none' });
+}
 
 onMounted(async () => {
   try {
     const s = await getTodayStat();
-    if (s) stat.value = { amount: fen2yuan(s.promoAmountToday || 0, false), count: s.awardCountToday || 0 };
+    if (s) rawStat.value = { promo: s.promoAmountToday || 0, count: s.awardCountToday || 0 };
   } catch {}
   try {
-    const list = await listWinnersTicker(10);
-    winners.value = (list || []).map((w) => ({
-      userMask: w.userMask || '****',
-      shopName: w.shopName || '某店铺',
-      sourceLabel: w.sourceLabel || '派奖',
-      amount: fen2yuan(w.amount, false),
-    }));
+    const list = await listWinnersTicker(1);
+    if (list && list[0]) {
+      const w = list[0];
+      tickerLine.value = `刚刚 ${w.userMask || '****'} 在 ${w.shopName || '某店'} ${w.sourceLabel || '派奖'} +¥${fen2yuan(w.amount, false)}`;
+    }
   } catch {}
 });
 </script>
@@ -159,163 +130,142 @@ onMounted(async () => {
 .page {
   position: relative;
   min-height: 100vh;
-  padding: 40px 14px 30px;
-  background: linear-gradient(180deg, #18130E 0%, #2A1A0F 60%, #1F1208 100%);
+  padding: 26px 18px 24px;
+  background: linear-gradient(180deg, #FFB174 0%, $o 35%, $o-d 100%);
+  color: #fff;
   overflow: hidden;
 }
 .bg-deco {
   position: absolute; inset: 0;
-  background-image: radial-gradient(rgba(255,255,255,.04) 1px, transparent 1px);
+  background-image: radial-gradient(rgba(255,255,255,.06) 1px, transparent 1px);
   background-size: 22px 22px;
   pointer-events: none;
 }
-.bg-glow {
+.bg-mark {
   position: absolute;
-  top: -100px; left: -50px; width: 400px; height: 400px;
-  background: radial-gradient(circle, rgba(255,107,53,.4), transparent 60%);
+  top: -40px; right: -20px;
+  font-size: 200px; opacity: .12;
+  transform: rotate(-12deg);
   pointer-events: none;
+  line-height: 1;
 }
 
-/* ━━━━━━━━━━ Hero ━━━━━━━━━━ */
-.hero { text-align: center; color: #fff; padding: 20px 0 18px; position: relative; }
-.logo-row { display: flex; align-items: center; justify-content: center; gap: 8px; }
-.logo-em {
-  width: 56px; height: 56px; border-radius: 16px;
-  background: linear-gradient(135deg, $o, $o-d);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 30px;
-  box-shadow: $sh-warm, inset 0 1px 0 rgba(255,255,255,.3);
+/* ━━━━━━━━━━ 大数字 hero ━━━━━━━━━━ */
+.stat-hero { position: relative; text-align: center; padding: 18px 0 8px; }
+.stat-tag {
+  display: inline-block;
+  padding: 4px 12px;
+  background: rgba(0,0,0,.25);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,.2);
+  border-radius: 99px;
+  font-size: 11px; font-weight: 700; letter-spacing: 1.5px;
 }
-.brand {
-  font-size: 32px; font-weight: 900; letter-spacing: -1px;
-  background: linear-gradient(135deg, #fff, $gold-l);
+.stat-tag::before { content: '💎 '; }
+.stat-num {
+  margin-top: 14px;
+  font-size: 64px; font-weight: 900; line-height: 1;
+  letter-spacing: -3px;
+  background: linear-gradient(135deg, #fff 30%, $gold-50);
   -webkit-background-clip: text; background-clip: text; color: transparent;
-  text-shadow: 0 4px 24px rgba(255,107,53,.3);
+  text-shadow: 0 8px 32px rgba(254,243,199,.4);
 }
-.tagline {
-  margin-top: 10px;
-  font-size: 13px; color: rgba(255,255,255,.7);
-  letter-spacing: 1px;
-}
-.stat-row {
-  margin-top: 16px;
-  display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;
-}
-.stat-pill {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 6px 14px; border-radius: 99px;
-  background: rgba(255,107,53,.2);
-  border: 1px solid rgba(255,107,53,.4);
-  backdrop-filter: blur(10px);
-  color: rgba(255,255,255,.9);
-  font-size: 12px;
-}
-.stat-pill.mint {
-  background: rgba(16,185,129,.2);
-  border-color: rgba(16,185,129,.4);
-}
-.stat-pill .em { font-size: 14px; }
-.stat-pill .hl { color: $gold-l; font-weight: 800; margin: 0 2px; }
-.stat-pill.mint .hl { color: $mint-l; }
+.stat-num .small { font-size: 22px; opacity: .8; margin-left: 4px; -webkit-text-fill-color: rgba(255,234,216,.9); }
+.stat-d { margin-top: 8px; font-size: 12px; color: rgba(255,255,255,.85); }
+.stat-d .b { color: $gold-50; font-weight: 800; }
 
-/* ━━━━━━━━━━ Ticker ━━━━━━━━━━ */
-.ticker {
-  margin: 14px 0;
-  padding: 10px 14px;
-  background: rgba(255,255,255,.06);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255,255,255,.1);
-  border-radius: 12px;
+/* ━━━━━━━━━━ Brand ━━━━━━━━━━ */
+.brand-row {
+  margin-top: 22px;
   display: flex; align-items: center; gap: 10px;
-  overflow: hidden;
+  justify-content: center;
   position: relative;
 }
-.ticker .em { font-size: 14px; }
-.ticker .roll { flex: 1; overflow: hidden; height: 16px; position: relative; }
-.roll-track {
-  position: absolute; white-space: nowrap;
-  font-size: 11.5px; color: rgba(255,255,255,.75);
-  animation: rollx 28s linear infinite;
+.brand-logo {
+  width: 38px; height: 38px; border-radius: 12px;
+  background: rgba(255,255,255,.95); color: $o-d;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px;
 }
-.roll-track .phone { color: $gold-l; font-weight: 700; }
-.roll-track .shop  { color: $o-l; font-weight: 700; }
-.roll-track .amt   { color: $mint-l; font-weight: 800; }
+.brand { font-size: 22px; font-weight: 900; letter-spacing: -.5px; }
+.brand-tag { text-align: center; font-size: 12px; color: rgba(255,255,255,.7); margin-top: 4px; }
+
+/* ━━━━━━━━━━ Mini ticker ━━━━━━━━━━ */
+.ticker-mini {
+  margin-top: 16px;
+  padding: 8px 12px;
+  background: rgba(0,0,0,.2); backdrop-filter: blur(10px);
+  border-radius: 99px;
+  border: 1px solid rgba(255,255,255,.15);
+  font-size: 11px; color: rgba(255,255,255,.85);
+  display: flex; align-items: center; gap: 8px;
+  overflow: hidden; position: relative;
+}
+.ticker-mini .em { font-size: 12px; flex-shrink: 0; }
+.ticker-roll { flex: 1; overflow: hidden; height: 16px; position: relative; }
+.ticker-track {
+  position: absolute; white-space: nowrap;
+  animation: rollx 22s linear infinite;
+}
 @keyframes rollx { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
 
-/* ━━━━━━━━━━ 卖点 grid ━━━━━━━━━━ */
-.sell-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin: 8px 0 20px;
+/* ━━━━━━━━━━ 4 卖点 ━━━━━━━━━━ */
+.sells {
+  margin: 18px 0;
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;
   position: relative;
 }
-.sell-card {
-  padding: 14px;
-  border-radius: $r-lg;
-  background: rgba(255,255,255,.08);
-  border: 1px solid rgba(255,255,255,.12);
-  backdrop-filter: blur(10px);
-  color: #fff;
-  position: relative; overflow: hidden;
+.sell {
+  padding: 10px 4px;
+  background: rgba(0,0,0,.18); backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,.15);
+  border-radius: 10px;
+  text-align: center;
 }
-.sell-card.warm   { background: linear-gradient(135deg, rgba(255,107,53,.25), rgba(255,107,53,.08)); border-color: rgba(255,107,53,.35); }
-.sell-card.gold   { background: linear-gradient(135deg, rgba(212,146,10,.25), rgba(212,146,10,.08)); border-color: rgba(212,146,10,.35); }
-.sell-card.mint   { background: linear-gradient(135deg, rgba(16,185,129,.25), rgba(16,185,129,.08)); border-color: rgba(16,185,129,.35); }
-.sell-card.purple { background: linear-gradient(135deg, rgba(99,102,241,.25), rgba(99,102,241,.08)); border-color: rgba(99,102,241,.35); }
-.sc-em { font-size: 26px; line-height: 1; }
-.sc-t { font-size: 14px; font-weight: 800; margin-top: 8px; }
-.sc-d { font-size: 11px; color: rgba(255,255,255,.7); margin-top: 3px; }
+.sell .em { font-size: 20px; line-height: 1; }
+.sell .t { font-size: 10.5px; font-weight: 800; margin-top: 4px; line-height: 1.2; }
 
 /* ━━━━━━━━━━ Form ━━━━━━━━━━ */
 .form {
   position: relative;
-  background: #fff;
-  border-radius: $r-xl;
-  padding: 22px 20px 18px;
-  box-shadow: 0 20px 60px rgba(0,0,0,.4);
-  z-index: 2;
+  background: rgba(255,255,255,.96); color: $t1;
+  border-radius: 22px;
+  padding: 20px 18px 16px;
+  box-shadow: 0 20px 50px rgba(0,0,0,.3);
 }
-.form-title { font-size: 17px; font-weight: 900; color: $t1; text-align: center; }
-.form-sub { font-size: 11px; color: $o-d; text-align: center; margin-top: 4px; }
-.field {
-  display: flex; align-items: center; gap: 10px;
-  padding: 14px 0;
-  border-bottom: 1px solid $line;
-  margin-top: 6px;
+.form-row {
+  display: flex; align-items: center; gap: 6px;
+  padding: 11px 12px;
+  background: $bg-2;
+  border-radius: 12px;
+  margin-top: 8px;
 }
-.f-l { width: 36px; font-size: 13px; color: $t2; font-weight: 600; }
-.field input { flex: 1; font-size: 15px; color: $t1; }
-.send {
-  padding: 7px 14px; border-radius: $r-pill;
-  background: $o-50; color: $o; border: 1px solid $o-100;
-  font-size: 12px; font-weight: 700;
-  flex-shrink: 0;
-}
+.form-row .l { width: 28px; color: $t2; font-size: 13px; font-weight: 600; }
+.form-row input { flex: 1; font-size: 14px; color: $t1; }
+.send { padding: 5px 12px; background: #fff; color: $o; border-radius: 99px; font-size: 11px; font-weight: 700; border: 1px solid $o-100; flex-shrink: 0; }
 .send.disabled { background: $bg-2; color: $t4; border-color: $line; }
 
 .submit {
-  margin-top: 22px;
-  padding: 15px;
+  margin-top: 14px;
+  padding: 14px;
   background: linear-gradient(135deg, $o, $o-d);
   color: #fff; text-align: center;
-  border-radius: $r-pill;
-  font-weight: 900; font-size: 16px;
-  letter-spacing: 2px;
+  border-radius: 99px;
+  font-weight: 900; font-size: 16px; letter-spacing: 2px;
   box-shadow: $sh-warm;
 }
 .submit.loading { opacity: .7; }
 
-.agree { margin-top: 16px; text-align: center; font-size: 11px; color: $t4; }
-.agree .link { color: $o; }
-
-.trust {
-  margin-top: 16px;
-  padding-top: 14px;
-  border-top: 1px dashed $line;
-  display: flex; justify-content: space-around;
+.other { margin-top: 14px; display: flex; gap: 20px; justify-content: center; }
+.other-btn {
+  width: 38px; height: 38px; border-radius: 50%;
+  background: $bg-2;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
 }
-.trust-item { font-size: 10.5px; color: $mint; font-weight: 700; }
+
+.agree { margin-top: 10px; text-align: center; font-size: 10.5px; color: $t4; }
+.agree .link { color: $o; }
 
 .bottom-pad { height: 12px; }
 </style>
