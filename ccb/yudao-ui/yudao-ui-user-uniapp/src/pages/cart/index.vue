@@ -1,340 +1,481 @@
 <template>
   <view class="page">
-    <view class="topbar">
+    <view class="topbar safe-top">
       <text class="back" @click="goBack">‹</text>
-      <text class="title">购物车（{{ items.length }}）</text>
-      <text class="right">管理</text>
+      <text class="title">购物车（{{ totalCount }}）</text>
+      <text class="right" @click="toggleEdit">{{ editMode ? '完成' : '编辑' }}</text>
     </view>
 
-    <view v-if="loading" class="loading">加载中…</view>
-    <empty-state v-else-if="!items.length" icon="🛒" title="购物车空空" desc="逛逛去添点心仪好物" />
+    <view class="tip-bar">
+      ⚠ 一次只能在<text class="b">同一家店</text>结算（订单按店独立 + v8 营销 / 余额 / 积分都按店隔离）。
+    </view>
+
+    <view v-if="loading && !items.length" class="empty-tip">加载中...</view>
+    <view v-else-if="!items.length" class="empty-state">
+      <view class="empty-emoji">🛒</view>
+      <view class="empty-title">购物车是空的</view>
+      <view class="empty-sub">逛逛附近店铺，看到喜欢的就加进来</view>
+      <view class="empty-cta" @click="goHome">去逛附近店铺 ›</view>
+    </view>
+
     <view v-else>
-      <view v-for="g in groupedByShop" :key="g.shopId" class="cart-shop">
-        <view class="cart-shop-head">
-          <view class="cart-shop-check" :class="{ on: g.allSelected }" @click="toggleShop(g)"></view>
-          <view class="cart-shop-pic" :class="g.picTone">{{ g.shopName?.[0] || '店' }}</view>
-          <text class="cart-shop-name">{{ g.shopName || '店铺' }}</text>
-          <view v-if="g.promo" class="cart-shop-promo">{{ g.promo }}</view>
+      <!-- 当前结算店铺组（高亮） -->
+      <view v-if="currentGroup" class="cart-shop-grp current">
+        <view class="gh">
+          <view :class="['check', isAllSelected ? 'on' : 'off']" @click.stop="toggleAll">{{ isAllSelected ? '✓' : '○' }}</view>
+          <view class="pic" :style="picStyle(currentGroup)">{{ initial(currentGroup) }}</view>
+          <text class="name">{{ currentGroup.shopName }}</text>
+          <text class="tag">本次结算</text>
         </view>
-        <view v-for="it in g.items" :key="it.id" class="cart-i">
-          <view class="check" :class="{ on: it.selected }" @click="toggleItem(it)"></view>
-          <view class="cart-pic" :class="picTone(it)">
-            <image v-if="it.picUrl" :src="it.picUrl" mode="aspectFill" class="pic-img" />
-            <text v-else>🛍</text>
-          </view>
-          <view class="cart-info">
-            <view class="cart-name">{{ it.spuName }}</view>
-            <view v-if="it.skuName" class="cart-spec">{{ it.skuName }}</view>
-            <view class="cart-row3">
-              <view class="cart-pr">¥{{ fen2yuan(it.price, false) }}</view>
-              <view class="cart-num">
-                <view class="num-btn" @click="dec(it)">−</view>
-                <text class="n">{{ it.count }}</text>
-                <view class="num-btn" @click="inc(it)">+</view>
+        <view
+          v-for="item in currentGroup.items"
+          :key="item.id"
+          class="cart-row"
+        >
+          <view :class="['check', selected.has(item.id) ? 'on' : 'off']" @click.stop="toggleItem(item.id)">{{ selected.has(item.id) ? '✓' : '○' }}</view>
+          <image v-if="item.picUrl" class="pic-item-img" :src="item.picUrl" mode="aspectFill" />
+          <view v-else class="pic-item" :style="itemPicStyle(item)">{{ pickEmoji(item) }}</view>
+          <view class="info">
+            <view class="iname-row">
+              <text class="iname">{{ item.spuName || '商品' }}</text>
+              <view class="del-btn" @click.stop="removeItem(item)">×</view>
+            </view>
+            <view class="spec" v-if="item.skuName">{{ item.skuName }}</view>
+            <view class="row">
+              <view class="price">¥{{ fen2yuan(item.price) }}</view>
+              <view class="qty">
+                <view class="btn" @click="changeQty(item, -1)">−</view>
+                <text class="num">{{ item.count }}</text>
+                <view class="btn" @click="changeQty(item, +1)">+</view>
               </view>
             </view>
           </view>
         </view>
       </view>
 
-      <!-- 推 N 反 1 推进提示卡（如有匹配） -->
-      <view v-if="queueProgress" class="home-queue-tip">
-        <view class="hqt-ic">🔥</view>
-        <view class="hqt-body">
-          <view class="hqt-t">{{ queueProgress.shopName }} · <text class="b">本单 +1 步推进队列 {{ queueProgress.cur }} → {{ queueProgress.cur + 1 }}</text></view>
-          <view class="hqt-d">{{ queueProgress.desc }}</view>
+      <!-- 其他店铺（灰色，点击切换为当前结算店铺） -->
+      <view v-if="otherGroups.length" class="other-shops-title">其他店铺（点击切换）</view>
+      <view
+        v-for="grp in otherGroups"
+        :key="grp.tenantId"
+        class="cart-shop-grp other"
+        @click="switchCurrent(grp.tenantId)"
+      >
+        <view class="gh">
+          <view class="check off">○</view>
+          <view class="pic" :style="picStyle(grp)">{{ initial(grp) }}</view>
+          <text class="name">{{ grp.shopName }}</text>
+          <text class="tag-other">点此切换 ›</text>
         </view>
+        <view
+          v-for="item in grp.items.slice(0, 2)"
+          :key="item.id"
+          class="cart-row off"
+        >
+          <image v-if="item.picUrl" class="pic-item-img" :src="item.picUrl" mode="aspectFill" />
+          <view v-else class="pic-item" :style="itemPicStyle(item)">{{ pickEmoji(item) }}</view>
+          <view class="info">
+            <view class="iname">{{ item.spuName || '商品' }}</view>
+            <view class="row">
+              <view class="price">¥{{ fen2yuan(item.price) }}</view>
+              <view class="off-qty">x {{ item.count }}</view>
+            </view>
+          </view>
+        </view>
+        <view v-if="grp.items.length > 2" class="more-items">还有 {{ grp.items.length - 2 }} 件商品...</view>
       </view>
 
-      <view style="height: 12px;"></view>
+      <view class="bottom-space"></view>
     </view>
 
-    <view v-if="items.length" class="cart-bot">
-      <view class="all-check" :class="{ on: allSelected }" @click="toggleAll"></view>
-      <text class="all-lbl">全选</text>
+    <view v-if="items.length" class="cart-bottom">
+      <view :class="['check-all', isAllSelected ? 'on' : 'off']" @click="toggleAll">{{ isAllSelected ? '✓' : '○' }}</view>
+      <text class="label-all">全选本店</text>
       <view class="total">
-        <view class="t">合计</view>
-        <view class="v">¥{{ totalYuan }}</view>
+        <text class="label">{{ currentGroup?.shopName || '' }}</text>
+        <text class="price">¥{{ fen2yuan(selectedTotal) }}</text>
       </view>
-      <view class="checkout" @click="goCheckout">去结算（{{ selectedCount }}）</view>
+      <view class="checkout-btn" @click="goCheckout">结算（{{ selected.size }}）</view>
     </view>
+
+    <bottom-nav active="cart" :cart-count="totalCount" />
   </view>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
-import { listCart, updateCartCount, updateCartSelected } from '@/api/cart.js';
-import { listMyQueues } from '@/api/promo.js';
+import { request } from '@/utils/request.js';
 import { fen2yuan } from '@/utils/format.js';
 
-const loading = ref(true);
-const items = ref([]);
-const queues = ref([]);
+const items = ref([]); // 所有店铺购物车项扁平
+const loading = ref(false);
+const editMode = ref(false);
+const currentTenantId = ref(null);
+// 选中的 cart id 集合（仅本店生效；切店时重置为本店全选）
+const selected = ref(new Set());
 
-function picTone(it) {
-  const hash = (it.spuName || '').charCodeAt(0) || 0;
-  return ['', 'green', 'cream'][hash % 3];
-}
-
-const groupedByShop = computed(() => {
-  const m = new Map();
+// 按 tenantId 分组（前端聚合，后端 cart/list 返带 tenantId）
+const groups = computed(() => {
+  const map = new Map();
   for (const it of items.value) {
-    const sid = it.shopId || it.tenantId || 0;
-    if (!m.has(sid)) {
-      m.set(sid, {
-        shopId: sid,
-        shopName: it.shopName,
-        items: [],
-        picTone: ['', 'alt-1', 'alt-2'][Math.abs(sid) % 3],
-        promo: it.shopPromo || '',
-      });
+    const tid = it.tenantId || 0;
+    if (!map.has(tid)) {
+      map.set(tid, { tenantId: tid, shopName: it.shopName || `店铺 #${tid}`, items: [] });
     }
-    m.get(sid).items.push(it);
+    map.get(tid).items.push(it);
   }
-  return [...m.values()].map((g) => ({ ...g, allSelected: g.items.every((i) => i.selected) }));
+  return Array.from(map.values());
 });
-const allSelected = computed(() => items.value.length && items.value.every((i) => i.selected));
-const selectedItems = computed(() => items.value.filter((i) => i.selected));
-const selectedCount = computed(() => selectedItems.value.reduce((s, i) => s + i.count, 0));
-const totalYuan = computed(() => fen2yuan(selectedItems.value.reduce((s, i) => s + (i.price * i.count), 0), false));
-
-const queueProgress = computed(() => {
-  if (!selectedItems.value.length || !queues.value.length) return null;
-  // 匹配第一个 selectedItem 对应的 queue
-  for (const it of selectedItems.value) {
-    const q = queues.value.find((x) => x.spuId === it.spuId && x.tenantId === it.tenantId);
-    if (q) {
-      const cur = q.currentCount || 0;
-      const n = q.requiredCount || q.tuijianN || 1;
-      return {
-        shopName: q.shopName || it.shopName,
-        cur,
-        desc: cur + 1 >= n
-          ? `第 ${n} 件出队，立即返奖 +¥${fen2yuan(q.rewardAmount || 0, false)}`
-          : `还差 ${n - cur - 1} 件即出队 · 全额返`,
-      };
-    }
-  }
-  return null;
+const currentGroup = computed(() => groups.value.find(g => g.tenantId === currentTenantId.value) || groups.value[0]);
+const otherGroups = computed(() => groups.value.filter(g => g.tenantId !== currentGroup.value?.tenantId));
+const totalCount = computed(() => items.value.reduce((s, i) => s + (i.count || 0), 0));
+const currentTotal = computed(() => (currentGroup.value?.items || []).reduce((s, i) => s + (i.count || 0) * (i.price || 0), 0));
+const selectedTotal = computed(() => (currentGroup.value?.items || [])
+    .filter(i => selected.value.has(i.id))
+    .reduce((s, i) => s + (i.count || 0) * (i.price || 0), 0));
+const isAllSelected = computed(() => {
+  const list = currentGroup.value?.items || [];
+  return list.length > 0 && list.every(i => selected.value.has(i.id));
 });
 
-async function inc(it) {
-  it.count += 1;
-  try { await updateCartCount(it.id, it.count); } catch { it.count -= 1; }
+// 切换商品勾选
+function toggleItem(id) {
+  const next = new Set(selected.value);
+  if (next.has(id)) next.delete(id); else next.add(id);
+  selected.value = next;
 }
-async function dec(it) {
-  if (it.count <= 1) return;
-  it.count -= 1;
-  try { await updateCartCount(it.id, it.count); } catch { it.count += 1; }
+// 全选/取消本店所有商品
+function toggleAll() {
+  const list = currentGroup.value?.items || [];
+  const next = new Set(selected.value);
+  // 先把本店所有都从集合移除
+  for (const i of list) next.delete(i.id);
+  // 如果之前不是全选，则把本店所有加回去
+  if (!isAllSelected.value) {
+    for (const i of list) next.add(i.id);
+  }
+  selected.value = next;
 }
-async function toggleItem(it) {
-  it.selected = !it.selected;
-  try { await updateCartSelected([it.id], it.selected); } catch { it.selected = !it.selected; }
-}
-async function toggleShop(g) {
-  const v = !g.allSelected;
-  g.items.forEach((i) => (i.selected = v));
-  try { await updateCartSelected(g.items.map((i) => i.id), v); } catch {}
-}
-async function toggleAll() {
-  const v = !allSelected.value;
-  items.value.forEach((i) => (i.selected = v));
-  try { await updateCartSelected(items.value.map((i) => i.id), v); } catch {}
-}
+// 切店或加载新数据时，默认全选本店
+watch([() => currentGroup.value?.tenantId, () => currentGroup.value?.items?.length], () => {
+  const list = currentGroup.value?.items || [];
+  const next = new Set();
+  for (const i of list) next.add(i.id);
+  selected.value = next;
+});
 
-function goBack() {
-  const ps = getCurrentPages();
-  if (ps.length > 1) uni.navigateBack();
-  else uni.reLaunch({ url: '/pages/index/index' });
+const initial = (g) => (g.shopName || '店')[0];
+const picStyle = (g) => {
+  const palette = ['#ffd1ba,#ff6b35', '#c9e0ff,#6196f0', '#d3f4d3,#4cb84c', '#ffd0dc,#ee5a8b'];
+  const idx = (Number(g.tenantId) || 0) % palette.length;
+  return `background: linear-gradient(135deg, ${palette[idx]});`;
+};
+const itemPicStyle = (it) => {
+  const palette = ['#ffe1c8,#ffae74', '#d6e9ff,#80b3ff', '#d8f5d6,#6fcf6f', '#ffd6e0,#ff8aa7'];
+  const idx = (Number(it.skuId) || 0) % palette.length;
+  return `background: linear-gradient(135deg, ${palette[idx]});`;
+};
+function pickEmoji(it) {
+  const n = it.spuName || it.name || '';
+  if (/(地瓜|薯)/.test(n)) return '🍠';
+  if (/(玉米)/.test(n)) return '🌽';
+  if (/(茶|奶茶)/.test(n)) return '🍵';
+  if (/(果|莓|葡萄)/.test(n)) return '🍇';
+  if (/(肉|串|烧)/.test(n)) return '🍖';
+  if (/(咖啡)/.test(n)) return '☕';
+  return '🛍';
 }
-function goCheckout() {
-  if (!selectedCount.value) return uni.showToast({ title: '请选择商品', icon: 'none' });
-  const skus = selectedItems.value.map((i) => `${i.skuId}:${i.count}`).join(',');
-  const shopId = selectedItems.value[0]?.shopId || selectedItems.value[0]?.tenantId || '';
-  uni.navigateTo({ url: `/pages/checkout/index?type=cart&skus=${skus}&tenantId=${shopId}` });
+function itemSpec(it) {
+  if (!it.properties || !it.properties.length) return '';
+  return it.properties.map(p => p.valueName).join(' / ');
 }
 
 async function load() {
   loading.value = true;
   try {
-    const r = await listCart();
-    items.value = (r?.validList || r?.list || r || []).map((i) => ({
-      id: i.id,
-      skuId: i.skuId,
-      spuId: i.spuId,
-      spuName: i.spuName,
-      skuName: i.properties?.map((p) => p.valueName).join(' / ') || '',
-      picUrl: i.picUrl,
-      price: i.price,
-      count: i.count,
-      selected: !!i.selected,
-      shopId: i.shopId || i.tenantId,
-      shopName: i.shopName || i.merchantName,
-      shopPromo: i.shopPromo || i.tuijianN ? `推 ${i.tuijianN || ''} 反 1` : '',
-      tenantId: i.tenantId,
+    // 跨店购物车：调 cart/list 不带 tenantId，希望后端返扁平含 tenantId；如果后端只能按 tenantId 查，
+    // 前端循环各店调用合并
+    const res = await request({ url: '/app-api/trade/cart/list' });
+    let list = (res && res.validList) || (res && res.list) || (Array.isArray(res) ? res : []);
+    // trade/cart/list 返结构 { id, count, selected, spu: {...}, sku: {...} }
+    // 把嵌套字段拍到顶层方便模板用
+    list = list.map(it => ({
+      ...it,
+      tenantId: it.tenantId || it.spu?.tenantId,
+      spuName: it.spuName || it.spu?.name,
+      picUrl: it.picUrl || it.sku?.picUrl || it.spu?.picUrl,
+      // 优先 sku 价（多规格）然后 spu 价
+      price: it.price || it.sku?.price || it.spu?.price || 0,
+      skuName: it.skuName || it.sku?.properties?.map(p => p.valueName).join(' / '),
+      shopName: undefined, // 让 loadShopNames 异步填
     }));
-  } catch { items.value = []; }
-  finally { loading.value = false; }
-  try { queues.value = await listMyQueues() || []; } catch {}
+    items.value = list;
+    // 默认选中"最近一次访问的店铺"或第一组
+    const lastTid = uni.getStorageSync('lastShopTenantId');
+    if (lastTid && groups.value.find(g => g.tenantId === Number(lastTid))) {
+      currentTenantId.value = Number(lastTid);
+    } else {
+      currentTenantId.value = groups.value[0]?.tenantId || null;
+    }
+    // 异步拉每个 tenantId 的店铺名（不阻塞主路径，拿到后 reactive 更新）
+    loadShopNames();
+  } catch {
+    items.value = [];
+  } finally {
+    loading.value = false;
+  }
 }
+
+// 拉每个 tenantId 对应的 shopName（去重 + 并发）
+async function loadShopNames() {
+  const tids = Array.from(new Set(items.value.map(it => it.tenantId).filter(Boolean)));
+  if (!tids.length) return;
+  const results = await Promise.all(
+    tids.map(tid =>
+      request({ url: `/app-api/merchant/shop/public/info?tenantId=${tid}` })
+        .then(s => ({ tid, name: s?.shopName || `店铺 #${tid}` }))
+        .catch(() => ({ tid, name: `店铺 #${tid}` }))
+    )
+  );
+  const map = {};
+  results.forEach(({ tid, name }) => { map[tid] = name; });
+  // 反写到 items（响应式更新 groups computed）
+  items.value = items.value.map(it => ({ ...it, shopName: map[it.tenantId] || it.shopName }));
+}
+
+async function changeQty(item, delta) {
+  const next = (item.count || 0) + delta;
+  if (next <= 0) {
+    // 数量减到 0 时走通用 removeItem（带二次确认）
+    removeItem(item);
+    return;
+  }
+  try {
+    await request({
+      url: '/app-api/trade/cart/update-count',
+      method: 'PUT',
+      data: { id: item.id, count: next },
+    });
+    item.count = next;
+  } catch { uni.showToast({ title: '操作失败', icon: 'none' }); }
+}
+
+/** 显式删除购物车单项（右上角 × 按钮 + 数量减到 0 都走这里） */
+function removeItem(item) {
+  if (!item || !item.id) return;
+  uni.showModal({
+    title: '移除商品',
+    content: `确定将「${item.spuName || '该商品'}」从购物车移除？`,
+    confirmText: '移除',
+    confirmColor: '#EF4444',
+    success: async (r) => {
+      if (!r.confirm) return;
+      try {
+        // 后端 @DeleteMapping("/delete") 用 @RequestParam("ids")，必须走 query string，
+        // DELETE body 在很多代理 / 网关都不解析；用户购物车按 token tenant 走
+        await request({
+          url: `/app-api/trade/cart/delete?ids=${item.id}`,
+          method: 'DELETE',
+        });
+        // 本地立即移除（不等 load 重拉）
+        items.value = items.value.filter((x) => x.id !== item.id);
+        selected.value.delete(item.id);
+        uni.showToast({ title: '已移除', icon: 'success' });
+      } catch (e) {
+        uni.showToast({ title: e?.message || '操作失败', icon: 'none' });
+      }
+    },
+  });
+}
+
+function switchCurrent(tid) {
+  currentTenantId.value = tid;
+  uni.setStorageSync('lastShopTenantId', tid);
+}
+
+function goCheckout() {
+  if (!currentGroup.value) return;
+  // 只结算本店勾选的商品
+  const ids = currentGroup.value.items.filter(i => selected.value.has(i.id)).map(i => i.id);
+  if (!ids.length) {
+    uni.showToast({ title: '请勾选要结算的商品', icon: 'none' });
+    return;
+  }
+  uni.navigateTo({
+    url: `/pages/checkout/index?tenantId=${currentGroup.value.tenantId}&cartIds=${ids.join(',')}`,
+  });
+}
+
+function toggleEdit() { editMode.value = !editMode.value; }
+function goBack() { uni.navigateBack({ fail: () => goHome() }); }
+function goHome() { uni.reLaunch({ url: '/pages/user-home/index' }); }
+
 onMounted(load);
 onShow(load);
 </script>
 
 <style lang="scss" scoped>
-@import '@/uni.scss';
+@import '../../uni.scss';
 
-.page { min-height: 100vh; background: $bg-2; padding-bottom: 90px; }
+.page {
+  // 底部留出 RoleTabBar(100rpx) + 结算条(~120rpx) + safe-area 高度，避免商品被遮
+  min-height: 100vh; background: $bg-page;
+  padding-bottom: calc(240rpx + env(safe-area-inset-bottom));
+}
+.safe-top { padding-top: calc(env(safe-area-inset-top) + 16rpx); }
+.safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
 
-/* topbar */
 .topbar {
-  display: flex; align-items: center; padding: 12px 14px;
-  background: $card; border-bottom: 1px solid $line;
+  display: flex; align-items: center; padding: 16rpx 32rpx;
+  background: $bg-card; border-bottom: 1rpx solid $border-color;
 }
-.topbar .back { font-size: 22px; color: $t1; padding: 4px 10px; line-height: 1; }
-.topbar .title { flex: 1; text-align: center; font-size: 16px; font-weight: 700; color: $t1; }
-.topbar .right { font-size: 13px; color: $o-d; padding: 4px 10px; font-weight: 600; }
+.topbar .back { font-size: 44rpx; color: $text-primary; padding-right: 16rpx; }
+.topbar .title { flex: 1; text-align: center; font-size: 32rpx; font-weight: 600; color: $text-primary; }
+.topbar .right { font-size: 26rpx; color: $brand-primary; padding-left: 16rpx; }
 
-.loading { padding: 40px; text-align: center; color: $t4; }
+.tip-bar {
+  margin: 24rpx 32rpx 16rpx; padding: 20rpx 28rpx;
+  background: #FFF8EF; border-radius: $radius-md;
+  border-left: 6rpx solid $warning;
+  font-size: 24rpx; color: #B26A00; line-height: 1.5;
+}
+.tip-bar .b { font-weight: 700; }
 
-/* 店铺组 */
-.cart-shop {
-  margin: 12px 14px 0;
-  background: $card;
-  border: 1px solid $line;
-  border-radius: $r-lg;
-  overflow: hidden;
-}
-.cart-shop-head {
-  display: flex; align-items: center; gap: 8px;
-  padding: 12px 14px;
-  border-bottom: 1px dashed $line;
-  background: linear-gradient(90deg, $o-50, transparent);
-}
-.cart-shop-check {
-  width: 20px; height: 20px; border-radius: 99px;
-  border: 1.5px solid $line-d;
-  display: flex; align-items: center; justify-content: center;
-  color: transparent; font-size: 11px; font-weight: 900;
-  flex-shrink: 0;
-}
-.cart-shop-check.on { background: $o; border-color: $o; color: #fff; }
-.cart-shop-check.on::after { content: '✓'; font-size: 11px; }
-.cart-shop-pic {
-  width: 24px; height: 24px; border-radius: 6px;
-  background: linear-gradient(135deg, #FFD1BA, $o);
-  color: #fff; display: flex; align-items: center; justify-content: center;
-  font-size: 11px; font-weight: 800;
-}
-.cart-shop-pic.alt-1 { background: linear-gradient(135deg, #C9E0FF, #6196F0); }
-.cart-shop-pic.alt-2 { background: linear-gradient(135deg, #D3F4D3, #4CB84C); }
-.cart-shop-name { font-size: 13px; font-weight: 800; color: $t1; flex: 1; }
-.cart-shop-promo {
-  font-size: 10px; color: $o-d; font-weight: 700;
-  padding: 2px 7px; border-radius: 4px;
-  background: $o-50; border: 1px solid $o-100;
+.empty-tip { text-align: center; padding: 80rpx 0; color: $text-placeholder; font-size: 26rpx; }
+.empty-state { text-align: center; padding: 120rpx 60rpx; }
+.empty-state .empty-emoji { font-size: 96rpx; margin-bottom: 24rpx; opacity: .5; }
+.empty-state .empty-title { font-size: 32rpx; font-weight: 700; color: $text-primary; }
+.empty-state .empty-sub { margin-top: 12rpx; font-size: 24rpx; color: $text-placeholder; }
+.empty-state .empty-cta {
+  margin-top: 40rpx; display: inline-block;
+  padding: 16rpx 40rpx; background: $brand-primary; color: #fff;
+  border-radius: 999rpx; font-size: 26rpx; font-weight: 600;
 }
 
-.cart-i {
-  display: flex; align-items: center; gap: 10px;
-  padding: 12px 14px;
-  border-bottom: 1px solid $line;
+.cart-shop-grp {
+  margin: 24rpx 32rpx; background: $bg-card;
+  border-radius: $radius-lg; overflow: hidden;
+  box-shadow: 0 4rpx 16rpx rgba(15,23,42,.04);
 }
-.cart-i:last-child { border-bottom: 0; }
+.cart-shop-grp.current { border: 4rpx solid $brand-primary; }
+.cart-shop-grp.other { opacity: .65; }
+.gh {
+  padding: 24rpx 32rpx; display: flex; align-items: center; gap: 16rpx;
+  border-bottom: 1rpx solid $border-color;
+}
 .check {
-  width: 20px; height: 20px; border-radius: 99px;
-  border: 1.5px solid $line-d;
+  width: 36rpx; height: 36rpx; border-radius: 50%;
+  border: 4rpx solid $brand-primary;
+  font-size: 24rpx; line-height: 28rpx; text-align: center;
+  font-weight: 700; color: $brand-primary;
+}
+.check.on { background: $brand-primary; color: #fff; }
+.check.off { border-color: $text-placeholder; color: $text-placeholder; }
+.gh .pic {
+  width: 48rpx; height: 48rpx; border-radius: $radius-sm;
+  color: #fff; font-size: 22rpx; font-weight: 700;
   display: flex; align-items: center; justify-content: center;
-  color: transparent; font-size: 11px; font-weight: 900;
   flex-shrink: 0;
 }
-.check.on { background: $o; border-color: $o; color: #fff; }
-.check.on::after { content: '✓'; font-size: 11px; }
-.cart-pic {
-  width: 64px; height: 64px; border-radius: 10px;
-  background: linear-gradient(135deg, $o-100, $o-l);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 30px; flex-shrink: 0; overflow: hidden;
+.gh .name { flex: 1; font-size: 28rpx; font-weight: 700; color: $text-primary; }
+.gh .tag {
+  background: $brand-primary; color: #fff;
+  font-size: 20rpx; padding: 4rpx 16rpx; border-radius: 999rpx;
 }
-.cart-pic.green { background: linear-gradient(135deg, #D1FAE5, #6EE7B7); }
-.cart-pic.cream { background: linear-gradient(135deg, #FEF3C7, #FCD34D); }
-.pic-img { width: 100%; height: 100%; }
-.cart-info { flex: 1; min-width: 0; }
-.cart-name { font-size: 13px; font-weight: 700; color: $t1; line-height: 1.3; overflow: hidden; }
-.cart-spec {
-  font-size: 11px; color: $t3; margin-top: 4px;
-  background: $bg-2; padding: 2px 8px; border-radius: 4px;
-  display: inline-block;
+.gh .tag-other {
+  background: $bg-page; color: $text-placeholder;
+  font-size: 20rpx; padding: 4rpx 16rpx; border-radius: 999rpx;
 }
-.cart-row3 {
-  display: flex; justify-content: space-between; align-items: center;
-  margin-top: 8px;
-}
-.cart-pr { font-size: 16px; font-weight: 900; color: $o-d; }
-.cart-num { display: flex; align-items: center; gap: 6px; }
-.num-btn {
-  width: 24px; height: 24px; border-radius: 6px;
-  background: $bg-2; color: $t1;
-  display: flex; align-items: center; justify-content: center;
-  border: 1px solid $line; font-size: 13px;
-}
-.cart-num .n { width: 28px; text-align: center; font-size: 13px; font-weight: 800; }
 
-/* 推 N 反 1 提醒 */
-.home-queue-tip {
-  margin: 14px;
-  padding: 14px 16px;
-  border-radius: $r-lg;
-  background: linear-gradient(135deg, #FFF8F4 0%, #FFEFE3 100%);
-  border: 1px solid $o-100;
-  display: flex; align-items: center; gap: 12px;
+.cart-row {
+  display: flex; gap: 20rpx; padding: 24rpx 32rpx;
+  border-bottom: 1rpx solid $border-color;
 }
-.hqt-ic {
-  width: 40px; height: 40px; border-radius: 12px;
-  background: linear-gradient(135deg, $o, $o-d);
-  color: #fff;
+.cart-row:last-child { border-bottom: 0; }
+.cart-row .pic-item {
+  width: 128rpx; height: 128rpx; border-radius: $radius-md;
+  color: #fff; font-size: 56rpx;
   display: flex; align-items: center; justify-content: center;
-  font-size: 18px; flex-shrink: 0;
-  box-shadow: $sh-warm;
-}
-.hqt-body { flex: 1; }
-.hqt-t { font-size: 13px; font-weight: 800; color: $t1; }
-.hqt-t .b { color: $o-d; }
-.hqt-d { font-size: 11px; color: $t3; margin-top: 2px; }
-
-/* 底部结算 bar */
-.cart-bot {
-  position: fixed; bottom: 0; left: 0; right: 0;
-  padding: 12px 14px 18px;
-  padding-bottom: calc(18px + env(safe-area-inset-bottom));
-  background: rgba(255,255,255,.96);
-  backdrop-filter: blur(20px);
-  border-top: 1px solid $line;
-  display: flex; align-items: center; gap: 10px;
-  z-index: 50;
-}
-.all-check {
-  width: 22px; height: 22px; border-radius: 99px;
-  border: 1.5px solid $line-d;
-  display: flex; align-items: center; justify-content: center;
-  color: transparent; font-size: 12px; font-weight: 900;
   flex-shrink: 0;
 }
-.all-check.on { background: $o; border-color: $o; color: #fff; }
-.all-check.on::after { content: '✓'; font-size: 12px; }
-.all-lbl { font-size: 13px; color: $t1; font-weight: 600; }
-.cart-bot .total { flex: 1; text-align: right; }
-.cart-bot .total .t { font-size: 11px; color: $t3; }
-.cart-bot .total .v {
-  font-size: 22px; font-weight: 900; color: $o-d;
+.cart-row .pic-item-img {
+  width: 128rpx; height: 128rpx; border-radius: $radius-md;
+  flex-shrink: 0;
+  background: $bg-page;
+}
+.cart-row .info { flex: 1; min-width: 0; }
+.cart-row .iname-row {
+  display: flex; align-items: flex-start; gap: 12rpx;
+}
+.cart-row .iname {
+  flex: 1; min-width: 0;
+  font-size: 26rpx; color: $text-primary; font-weight: 500;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.cart-row .del-btn {
+  flex-shrink: 0;
+  width: 44rpx; height: 44rpx;
+  margin-top: -8rpx; margin-right: -8rpx;
+  display: flex; align-items: center; justify-content: center;
+  color: $text-placeholder;
+  font-size: 32rpx;
   line-height: 1;
 }
-.checkout {
-  height: 44px; padding: 0 22px; border-radius: 99px;
-  background: linear-gradient(135deg, $o, $o-d);
-  color: #fff; font-size: 14px; font-weight: 800;
-  display: flex; align-items: center;
-  box-shadow: $sh-warm;
+.cart-row .del-btn:active { color: $danger; }
+.cart-row .spec { margin-top: 8rpx; font-size: 22rpx; color: $text-placeholder; }
+.cart-row .row { margin-top: 16rpx; display: flex; align-items: center; justify-content: space-between; }
+.cart-row .price {
+  color: $brand-primary; font-weight: 800; font-size: 30rpx;
+  font-variant-numeric: tabular-nums;
+}
+.cart-row .qty {
+  display: flex; align-items: center; gap: 16rpx;
+  background: $bg-page; border-radius: 999rpx;
+  padding: 4rpx;
+}
+.cart-row .qty .btn {
+  width: 44rpx; height: 44rpx; border-radius: 50%;
+  background: $bg-card; color: $text-secondary; font-size: 28rpx;
+  line-height: 44rpx; text-align: center;
+}
+.cart-row .qty .num { font-size: 26rpx; font-weight: 700; min-width: 36rpx; text-align: center; }
+.cart-row .off-qty { font-size: 22rpx; color: $text-placeholder; }
+
+.other-shops-title {
+  margin: 24rpx 32rpx 8rpx;
+  font-size: 22rpx; color: $text-placeholder;
+}
+.more-items {
+  text-align: center; padding: 16rpx 0;
+  font-size: 22rpx; color: $text-placeholder;
+}
+
+.bottom-space { height: 40rpx; }
+
+.cart-bottom {
+  // 让结算条堆在 RoleTabBar 上面（RoleTabBar 高 100rpx + safe-area-inset-bottom）
+  position: fixed;
+  bottom: calc(100rpx + env(safe-area-inset-bottom));
+  left: 0; right: 0;
+  background: $bg-card; padding: 24rpx 32rpx;
+  box-shadow: 0 -4rpx 32rpx rgba(0,0,0,.06);
+  display: flex; align-items: center; gap: 20rpx; z-index: 60;
+}
+.check-all { flex-shrink: 0; }
+.label-all { font-size: 24rpx; color: $text-secondary; flex-shrink: 0; }
+.cart-bottom .total {
+  flex: 1; text-align: right;
+}
+.cart-bottom .total .label { font-size: 22rpx; color: $text-placeholder; margin-right: 8rpx; }
+.cart-bottom .total .price {
+  font-size: 40rpx; font-weight: 800; color: $brand-primary;
+  font-variant-numeric: tabular-nums;
+}
+.cart-bottom .checkout-btn {
+  background: $brand-primary; color: #fff;
+  height: 84rpx; padding: 0 44rpx;
+  border-radius: 42rpx; line-height: 84rpx;
+  font-size: 28rpx; font-weight: 700;
 }
 </style>
