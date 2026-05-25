@@ -4,7 +4,7 @@
     <view class="hero">
       <view class="hero-em">🎁</view>
       <view class="hero-t">邀请好友扫码下单</view>
-      <view class="hero-d">你拿推广分 · 朋友首单立减</view>
+      <view class="hero-d">你拿推广积分 · 朋友首单立减</view>
     </view>
     <view class="card">
       <view class="card-title">我的专属邀请链接</view>
@@ -12,14 +12,20 @@
       <view class="copy" @click="onCopy">复制链接</view>
     </view>
     <view class="card">
-      <view class="card-title">微信二维码</view>
-      <view class="qr">{{ inviteLink ? '🟦 (二维码占位)' : '生成中…' }}</view>
-      <view class="qr-tip">长按图片保存 → 微信朋友圈/对话</view>
+      <view class="card-title">我的推荐人</view>
+      <view v-if="parent" class="parent">
+        <view class="p-ava">{{ parent.nickname?.[0] || '上' }}</view>
+        <view class="p-body">
+          <view class="p-name">{{ parent.nickname || parent.phoneMask || '上级' }}</view>
+          <view class="p-d">ID: {{ parent.userId }}</view>
+        </view>
+      </view>
+      <view v-else class="empty-inline">暂未绑定</view>
     </view>
     <view class="card">
       <view class="card-title">我已邀请</view>
-      <view class="i-row"><text class="l">总邀请人数</text><text class="hl">{{ stat.invited }} 人</text></view>
-      <view class="i-row"><text class="l">他们累计为我贡献</text><text class="hl">¥{{ stat.contribution }}</text></view>
+      <view class="i-row"><text class="l">总邀请人数</text><text class="hl">{{ childrenCount }} 人</text></view>
+      <view class="i-row"><text class="l">我的累计推广积分</text><text class="hl">¥{{ totalEarn }}</text></view>
     </view>
   </view>
 </template>
@@ -27,16 +33,32 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useUserStore } from '@/store/user.js';
+import { getReferralParent, getMyChildrenCount, getAccount } from '@/api/promo.js';
+import { fen2yuan } from '@/utils/format.js';
+
 const user = useUserStore();
-const stat = ref({ invited: 0, contribution: '0.00' });
+const parent = ref(null);
+const childrenCount = ref(0);
+const totalEarn = ref('0.00');
+
 const inviteLink = computed(() => {
-  const base = typeof location !== 'undefined' ? location.origin : 'https://ke.doupaidoudian.com';
-  return `${base}/u/#/pages/shop/home?inviter=${user.userId || ''}`;
+  const base = typeof location !== 'undefined' ? location.origin : 'https://m.doupaidoudian.com';
+  // 落地到首页 + inviter 参数；用户分享时 tenantId 由具体店决定
+  return `${base}/#/pages/index/index?inviter=${user.userId || ''}`;
 });
+
 function onCopy() {
   uni.setClipboardData({ data: inviteLink.value, success: () => uni.showToast({ title: '已复制', icon: 'success' }) });
 }
-onMounted(() => { /* TODO: load invite stats */ });
+
+onMounted(async () => {
+  try { parent.value = await getReferralParent(user.tenantId); } catch {}
+  try { childrenCount.value = (await getMyChildrenCount(user.tenantId)) || 0; } catch {}
+  try {
+    const acct = await getAccount();
+    totalEarn.value = fen2yuan(acct?.promoPointBalance || 0, false);
+  } catch {}
+});
 </script>
 
 <style lang="scss" scoped>
@@ -50,8 +72,12 @@ onMounted(() => { /* TODO: load invite stats */ });
 .card-title { font-size: 14px; font-weight: 800; color: $t1; margin-bottom: 10px; }
 .link { padding: 10px; background: $bg-2; border-radius: $r-sm; font-size: 12px; color: $t3; word-break: break-all; }
 .copy { margin-top: 10px; padding: 10px; background: linear-gradient(135deg, $o, $o-d); color: #fff; text-align: center; border-radius: $r-pill; font-weight: 700; font-size: 13px; box-shadow: $sh-warm; }
-.qr { height: 160px; display: flex; align-items: center; justify-content: center; font-size: 16px; color: $t4; background: $bg-2; border-radius: $r-sm; }
-.qr-tip { margin-top: 8px; font-size: 11px; color: $t4; text-align: center; }
+.parent { display: flex; gap: 10px; align-items: center; }
+.p-ava { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, $o, $gold); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; }
+.p-body { flex: 1; }
+.p-name { font-size: 14px; font-weight: 700; color: $t1; }
+.p-d { font-size: 11px; color: $t3; margin-top: 2px; }
+.empty-inline { font-size: 12px; color: $t4; padding: 8px 0; }
 .i-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 13px; color: $t2; }
 .hl { color: $o; font-weight: 800; }
 </style>

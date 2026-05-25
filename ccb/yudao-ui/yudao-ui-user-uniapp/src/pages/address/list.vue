@@ -6,9 +6,8 @@
     <view v-else>
       <view v-for="a in list" :key="a.id" class="addr" @click="onSelect(a)">
         <view class="a-l">
-          <view class="a-name">{{ a.name }} <text class="a-mob">{{ a.mobile }}</text></view>
-          <view class="a-detail">{{ a.areaName }} {{ a.detailAddress }}</view>
-          <view v-if="a.defaultStatus" class="a-default">默认</view>
+          <view class="a-name">{{ a.name }} <text class="a-mob">{{ a.mobile }}</text> <text v-if="a.defaultStatus" class="a-default">默认</text></view>
+          <view class="a-detail">{{ a.areaName || '' }} {{ a.detailAddress }}</view>
         </view>
         <view class="a-edit" @click.stop="onEdit(a)">编辑</view>
       </view>
@@ -19,7 +18,8 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-// import { listAddresses } from '@/api/address.js';
+import { onShow } from '@dcloudio/uni-app';
+import { listAddresses } from '@/api/address.js';
 
 const loading = ref(true);
 const list = ref([]);
@@ -31,16 +31,19 @@ function onSelect(a) {
     uni.navigateBack();
   }
 }
-function onEdit(a) { uni.showToast({ title: '编辑功能 WIP', icon: 'none' }); }
-function onAdd() { uni.showToast({ title: '新增功能 WIP', icon: 'none' }); }
+function onEdit(a) { uni.showToast({ title: '编辑功能待加', icon: 'none' }); }
+function onAdd()    { uni.showToast({ title: '新增功能待加', icon: 'none' }); }
 
-onMounted(async () => {
+async function load() {
   const opts = (() => { try { const ps = getCurrentPages(); return ps[ps.length - 1]?.options || {}; } catch { return {}; } })();
   inSelectMode.value = opts.select === '1';
   loading.value = true;
-  try { list.value = []; /* list.value = await listAddresses(); */ }
+  try { list.value = await listAddresses() || []; }
+  catch { list.value = []; }
   finally { loading.value = false; }
-});
+}
+onMounted(load);
+onShow(load);
 </script>
 
 <style lang="scss" scoped>
@@ -51,8 +54,8 @@ onMounted(async () => {
 .a-l { flex: 1; min-width: 0; }
 .a-name { font-size: 15px; font-weight: 700; color: $t1; }
 .a-mob { color: $t3; font-weight: 500; font-size: 13px; margin-left: 6px; }
+.a-default { margin-left: 6px; padding: 2px 8px; background: $o; color: #fff; font-size: 10px; border-radius: 4px; font-weight: 700; }
 .a-detail { font-size: 12px; color: $t3; margin-top: 4px; }
-.a-default { display: inline-block; margin-top: 6px; padding: 2px 8px; background: $o; color: #fff; font-size: 10px; border-radius: 4px; font-weight: 700; }
 .a-edit { padding: 4px 10px; color: $o; font-size: 12px; font-weight: 700; align-self: center; }
 .add-btn { position: fixed; left: 14px; right: 14px; bottom: 14px; bottom: calc(14px + env(safe-area-inset-bottom)); padding: 14px; background: linear-gradient(135deg, $o, $o-d); color: #fff; text-align: center; border-radius: $r-pill; font-weight: 800; box-shadow: $sh-warm; }
 </style>

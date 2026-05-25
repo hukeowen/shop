@@ -9,12 +9,15 @@
     <empty-state v-else-if="!items.length" icon="❤️" title="还没有收藏" desc="商品/店铺右上角 ♡ 即可加入" />
     <view v-else>
       <view v-for="it in items" :key="it.id" class="row" @click="go(it)">
-        <view class="pic">{{ it.em || (tab === 'shop' ? '🏪' : '🛍') }}</view>
-        <view class="body">
-          <view class="name">{{ it.name }}</view>
-          <view class="meta">{{ it.metaText }}</view>
+        <view class="pic">
+          <image v-if="it.picUrl" :src="it.picUrl" mode="aspectFill" class="pic-img" />
+          <text v-else>{{ tab === 'shop' ? '🏪' : '🛍' }}</text>
         </view>
-        <view v-if="tab === 'spu'" class="price">¥{{ it.price }}</view>
+        <view class="body">
+          <view class="name">{{ it.spuName || it.shopName || it.name }}</view>
+          <view class="meta">{{ it.metaText || it.intro || '' }}</view>
+        </view>
+        <view v-if="tab === 'spu'" class="price">¥{{ fen2yuan(it.price || it.marketPrice || 0, false) }}</view>
       </view>
     </view>
   </view>
@@ -22,20 +25,33 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-// import { listFavoriteSpus, listFavoriteShops } from '@/api/order.js';
+import { onShow } from '@dcloudio/uni-app';
+import { favoritePage } from '@/api/product.js';
+import { fen2yuan } from '@/utils/format.js';
+
 const tab = ref('spu');
 const loading = ref(false);
 const items = ref([]);
+
 async function switchTab(k) {
   tab.value = k; loading.value = true;
-  try { items.value = []; }
+  try {
+    if (k === 'spu') {
+      const r = await favoritePage(1, 50);
+      items.value = r?.list || [];
+    } else {
+      // 店铺收藏接口暂无（后端待加），先返空
+      items.value = [];
+    }
+  } catch { items.value = []; }
   finally { loading.value = false; }
 }
 function go(it) {
-  if (tab.value === 'spu') uni.navigateTo({ url: `/pages/product/detail?id=${it.id}&tenantId=${it.tenantId}` });
-  else uni.navigateTo({ url: `/pages/shop/home?id=${it.id}&tenantId=${it.tenantId}` });
+  if (tab.value === 'spu') uni.navigateTo({ url: `/pages/product/detail?id=${it.spuId || it.id}&tenantId=${it.tenantId || ''}` });
+  else uni.navigateTo({ url: `/pages/shop/home?id=${it.id}&tenantId=${it.tenantId || it.id}` });
 }
 onMounted(() => switchTab('spu'));
+onShow(() => switchTab(tab.value));
 </script>
 
 <style lang="scss" scoped>
@@ -47,9 +63,10 @@ onMounted(() => switchTab('spu'));
 .tab.on::after { content: ''; position: absolute; left: 40%; right: 40%; bottom: 6px; height: 3px; border-radius: 2px; background: linear-gradient(90deg, $o, $gold); }
 .loading { padding: 40px; text-align: center; color: $t4; }
 .row { display: flex; align-items: center; gap: 10px; padding: 12px; background: #fff; margin: 8px 14px; border-radius: $r-md; box-shadow: $sh-1; }
-.pic { width: 56px; height: 56px; border-radius: 12px; background: $o-50; color: $o; display: flex; align-items: center; justify-content: center; font-size: 26px; }
+.pic { width: 56px; height: 56px; border-radius: 12px; background: $o-50; color: $o; display: flex; align-items: center; justify-content: center; font-size: 26px; overflow: hidden; flex-shrink: 0; }
+.pic-img { width: 100%; height: 100%; }
 .body { flex: 1; min-width: 0; }
-.name { font-size: 14px; font-weight: 700; color: $t1; }
-.meta { font-size: 11px; color: $t3; margin-top: 4px; }
-.price { font-size: 16px; font-weight: 800; color: $o; }
+.name { font-size: 14px; font-weight: 700; color: $t1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.meta { font-size: 11px; color: $t3; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.price { font-size: 16px; font-weight: 800; color: $o; flex-shrink: 0; }
 </style>

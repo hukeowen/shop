@@ -4,7 +4,7 @@
       <view class="me-row">
         <view class="me-avatar">{{ avatarText }}</view>
         <view class="me-body">
-          <view v-if="user.isLogin" class="me-name">{{ user.nickname || user.phone }}</view>
+          <view v-if="user.isLogin" class="me-name">{{ user.nickname || user.phone || '客小二用户' }}</view>
           <view v-else class="me-name" @click="goLogin">点我登录 ›</view>
           <view class="me-sub" v-if="user.isLogin">ID: {{ user.userId }}</view>
         </view>
@@ -27,8 +27,8 @@
             <view class="ec-v">{{ consumeBalance }}</view>
           </view>
           <view class="ec-col">
-            <view class="ec-l">可提现</view>
-            <view class="ec-v hl">¥{{ withdrawable }}</view>
+            <view class="ec-l">今日入账</view>
+            <view class="ec-v hl">¥{{ todayEarn }}</view>
           </view>
         </view>
       </view>
@@ -59,8 +59,13 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
+import { onShow } from '@dcloudio/uni-app';
 import { useUserStore } from '@/store/user.js';
-// import { getPromoAccount, getWallet } from '@/api/promo.js';
+import { getAccount, getTodayStat } from '@/api/promo.js';
+import { getCartCount } from '@/api/cart.js';
+import { getUnusedCouponCount } from '@/api/coupon.js';
+import { favoriteCount } from '@/api/product.js';
+import { fen2yuan } from '@/utils/format.js';
 
 const user = useUserStore();
 const avatarText = computed(() => (user.nickname?.[0] || user.phone?.[0] || '客'));
@@ -68,29 +73,29 @@ const avatarText = computed(() => (user.nickname?.[0] || user.phone?.[0] || '客
 const totalEarn = ref('0.00');
 const promoBalance = ref(0);
 const consumeBalance = ref(0);
-const withdrawable = ref('0.00');
+const todayEarn = ref('0.00');
 
-const grids = [
-  { k: 'orders', ic: '📋', label: '订单', url: '/pages/order/list' },
-  { k: 'cart',   ic: '🛒', label: '购物车', url: '/pages/cart/index' },
-  { k: 'coupon', ic: '🎟', label: '优惠券', url: '/pages/coupon/index' },
-  { k: 'fav',    ic: '❤️', label: '收藏', url: '/pages/favorites/index' },
-];
+const grids = ref([
+  { k: 'orders', ic: '📋', label: '订单',   url: '/pages/order/list',        badge: '' },
+  { k: 'cart',   ic: '🛒', label: '购物车', url: '/pages/cart/index',        badge: '' },
+  { k: 'coupon', ic: '🎟', label: '优惠券', url: '/pages/coupon/index',      badge: '' },
+  { k: 'fav',    ic: '❤️', label: '收藏',   url: '/pages/favorites/index',   badge: '' },
+]);
 
 const services = [
-  { k: 'wallet',   ic: '💰', label: '我的钱包', url: '/pages/wallet/index' },
-  { k: 'withdraw', ic: '💸', label: '提现申请', url: '/pages/withdraw/index' },
+  { k: 'wallet',   ic: '💰', label: '我的钱包',           url: '/pages/wallet/index' },
+  { k: 'withdraw', ic: '💸', label: '提现申请',           url: '/pages/withdraw/index' },
   { k: 'queue',    ic: '🔥', label: '我的队列（推 N 反 1）', url: '/pages/queue/index' },
-  { k: 'invite',   ic: '👥', label: '邀请好友', url: '/pages/invite/index' },
-  { k: 'promo-pt', ic: '⭐', label: '推广积分明细', url: '/pages/points/promo' },
-  { k: 'cons-pt',  ic: '🪙', label: '消费积分明细', url: '/pages/points/consume' },
-  { k: 'address',  ic: '📍', label: '收货地址', url: '/pages/address/list' },
+  { k: 'invite',   ic: '👥', label: '邀请好友',           url: '/pages/invite/index' },
+  { k: 'promo-pt', ic: '⭐', label: '推广积分明细',       url: '/pages/points/promo' },
+  { k: 'cons-pt',  ic: '🪙', label: '消费积分明细',       url: '/pages/points/consume' },
+  { k: 'address',  ic: '📍', label: '收货地址',           url: '/pages/address/list' },
 ];
 
 function goLogin() { uni.navigateTo({ url: '/pages/login/index' }); }
 function goWallet() { uni.navigateTo({ url: '/pages/wallet/index' }); }
 function go(g) {
-  if (!user.isLogin && g.k !== 'login') { return goLogin(); }
+  if (!user.isLogin) return goLogin();
   uni.navigateTo({ url: g.url });
 }
 function onLogout() {
@@ -99,11 +104,25 @@ function onLogout() {
   }});
 }
 
-onMounted(async () => {
+async function load() {
   if (!user.isLogin) return;
-  // try { const w = await getWallet(); withdrawable.value = (w.withdrawable/100).toFixed(2); } catch {}
-  // try { const a = await getPromoAccount(); promoBalance.value = a.promo; consumeBalance.value = a.consume; } catch {}
-});
+  try {
+    const acct = await getAccount();
+    promoBalance.value = acct?.promoPointBalance || 0;
+    consumeBalance.value = acct?.consumePointBalance || 0;
+    totalEarn.value = fen2yuan(promoBalance.value, false);
+  } catch {}
+  try {
+    const stat = await getTodayStat();
+    todayEarn.value = fen2yuan(stat?.promoAmountToday || 0, false);
+  } catch {}
+  // badge 数（购物车 / 优惠券 / 收藏）— 失败不影响主流程
+  try { const n = await getCartCount();          if (n) grids.value.find((g) => g.k === 'cart').badge = n; } catch {}
+  try { const n = await getUnusedCouponCount();  if (n) grids.value.find((g) => g.k === 'coupon').badge = n; } catch {}
+  try { const n = await favoriteCount();         if (n) grids.value.find((g) => g.k === 'fav').badge = n; } catch {}
+}
+onMounted(load);
+onShow(load);
 </script>
 
 <style lang="scss" scoped>

@@ -2,8 +2,8 @@
   <view class="page">
     <nav-bar title="我的钱包" bg="transparent" txt="#fff" />
     <view class="hero">
-      <view class="hero-tag">💎 余额</view>
-      <view class="hero-amt">¥{{ balance }}</view>
+      <view class="hero-tag">💎 推广积分（可提现）</view>
+      <view class="hero-amt">¥{{ balanceYuan }}</view>
       <view class="hero-row">
         <view class="hr-col">
           <view class="hr-l">推广积分</view>
@@ -13,10 +13,15 @@
           <view class="hr-l">消费积分</view>
           <view class="hr-v">{{ consumePoints }}</view>
         </view>
+        <view class="hr-col">
+          <view class="hr-l">今日入账</view>
+          <view class="hr-v">¥{{ todayYuan }}</view>
+        </view>
       </view>
       <view class="hero-actions">
         <view class="btn warm" @click="goWithdraw">提现</view>
-        <view class="btn ghost" @click="goRecords">流水</view>
+        <view class="btn ghost" @click="goPromoRecords">推广明细</view>
+        <view class="btn ghost" @click="goConsumeRecords">消费明细</view>
       </view>
     </view>
 
@@ -25,40 +30,77 @@
     <empty-state v-else-if="!records.length" title="暂无到账记录" />
     <view v-else>
       <view v-for="r in records" :key="r.id" class="row">
-        <view class="r-ic">{{ r.icon || '💰' }}</view>
+        <view class="r-ic">{{ iconFor(r.sourceType) }}</view>
         <view class="r-body">
-          <view class="r-t">{{ r.title }}</view>
-          <view class="r-d">{{ r.time }}</view>
+          <view class="r-t">{{ r.remark || labelFor(r.sourceType) }}</view>
+          <view class="r-d">{{ fmtTime(r.createTime) }}</view>
         </view>
-        <view class="r-amt">+¥{{ r.amount }}</view>
+        <view class="r-amt" :class="{ neg: r.amount < 0 }">{{ r.amount > 0 ? '+' : '' }}¥{{ fen2yuan(r.amount, false) }}</view>
       </view>
     </view>
   </view>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-// import { getWallet, listPromoRecords } from '@/api/promo.js';
+import { ref, computed, onMounted } from 'vue';
+import { onShow } from '@dcloudio/uni-app';
+import { getAccount, listPromoRecords, getTodayStat } from '@/api/promo.js';
+import { fen2yuan, fmtTime } from '@/utils/format.js';
 
-const balance = ref('0.00');
 const promoPoints = ref(0);
 const consumePoints = ref(0);
+const todayYuan = ref('0.00');
 const loading = ref(false);
 const records = ref([]);
 
-function goWithdraw() { uni.navigateTo({ url: '/pages/withdraw/index' }); }
-function goRecords() { uni.navigateTo({ url: '/pages/points/promo' }); }
+const balanceYuan = computed(() => fen2yuan(promoPoints.value, false));
 
-onMounted(async () => {
+function iconFor(t) {
+  if (t === 'POOL')       return '🏆';
+  if (t === 'QUEUE')      return '💰';
+  if (t === 'DIRECT')     return '👥';
+  if (t === 'COMMISSION') return '⭐';
+  if (t === 'WITHDRAW')   return '💸';
+  if (t === 'CONVERT')    return '🔄';
+  return '🪙';
+}
+function labelFor(t) {
+  if (t === 'POOL')       return '派奖池中奖';
+  if (t === 'QUEUE')      return '推 N 反 1 出队';
+  if (t === 'DIRECT')     return '直推返现';
+  if (t === 'COMMISSION') return '团队佣金';
+  if (t === 'WITHDRAW')   return '提现';
+  if (t === 'CONVERT')    return '积分转换';
+  return '推广奖励';
+}
+
+function goWithdraw()        { uni.navigateTo({ url: '/pages/withdraw/index' }); }
+function goPromoRecords()    { uni.navigateTo({ url: '/pages/points/promo' }); }
+function goConsumeRecords()  { uni.navigateTo({ url: '/pages/points/consume' }); }
+
+async function load() {
+  try {
+    const acct = await getAccount();
+    promoPoints.value = acct?.promoPointBalance || 0;
+    consumePoints.value = acct?.consumePointBalance || 0;
+  } catch {}
+  try {
+    const stat = await getTodayStat();
+    todayYuan.value = fen2yuan(stat?.promoAmountToday || 0, false);
+  } catch {}
   loading.value = true;
-  try { records.value = []; }
-  finally { loading.value = false; }
-});
+  try {
+    const page = await listPromoRecords(1, 20);
+    records.value = page?.list || [];
+  } finally { loading.value = false; }
+}
+onMounted(load);
+onShow(load);
 </script>
 
 <style lang="scss" scoped>
 @import '@/uni.scss';
-.page { min-height: 100vh; background: $bg-2; }
+.page { min-height: 100vh; background: $bg-2; padding-bottom: 30px; }
 .hero { padding: 24px 14px 20px; background: linear-gradient(135deg, #18130E, #2A1A0F); color: #fff; border-bottom-left-radius: 28px; border-bottom-right-radius: 28px; }
 .hero-tag { font-size: 12px; opacity: .7; }
 .hero-amt { font-size: 38px; font-weight: 900; margin-top: 4px; background: linear-gradient(135deg, #fff, $gold-l); -webkit-background-clip: text; background-clip: text; color: transparent; }
@@ -66,8 +108,8 @@ onMounted(async () => {
 .hr-col { flex: 1; }
 .hr-l { font-size: 11px; opacity: .6; }
 .hr-v { font-size: 18px; font-weight: 800; margin-top: 2px; }
-.hero-actions { display: flex; gap: 10px; margin-top: 20px; }
-.btn { flex: 1; padding: 12px 0; text-align: center; border-radius: $r-pill; font-weight: 800; font-size: 14px; }
+.hero-actions { display: flex; gap: 8px; margin-top: 20px; }
+.btn { flex: 1; padding: 12px 0; text-align: center; border-radius: $r-pill; font-weight: 800; font-size: 13px; }
 .btn.warm { background: linear-gradient(135deg, $o, $o-d); color: #fff; box-shadow: $sh-warm; }
 .btn.ghost { background: rgba(255,255,255,.12); color: #fff; }
 .section-title { padding: 18px 14px 8px; }
@@ -75,8 +117,9 @@ onMounted(async () => {
 .loading { padding: 40px; text-align: center; color: $t4; }
 .row { display: flex; gap: 10px; padding: 12px; background: #fff; margin: 6px 14px; border-radius: $r-md; align-items: center; box-shadow: $sh-1; }
 .r-ic { width: 36px; height: 36px; background: $o-50; color: $o; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
-.r-body { flex: 1; }
-.r-t { font-size: 13px; font-weight: 700; color: $t1; }
+.r-body { flex: 1; min-width: 0; }
+.r-t { font-size: 13px; font-weight: 700; color: $t1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .r-d { font-size: 11px; color: $t3; margin-top: 2px; }
-.r-amt { font-size: 16px; font-weight: 800; color: $o; }
+.r-amt { font-size: 16px; font-weight: 800; color: $o; flex-shrink: 0; }
+.r-amt.neg { color: $t3; }
 </style>

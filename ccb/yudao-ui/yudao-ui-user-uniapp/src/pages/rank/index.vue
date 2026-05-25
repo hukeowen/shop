@@ -4,19 +4,22 @@
     <view class="hero">
       <text class="t-em">🏆</text>
       <view class="hero-t">推广榜 · TOP {{ list.length }}</view>
-      <view class="hero-d">按当周推广积分排名</view>
+      <view class="hero-d">按当周分销佣金排名</view>
     </view>
     <view v-if="loading" class="loading">加载中…</view>
     <empty-state v-else-if="!list.length" title="暂无排名" />
     <view v-else class="board">
-      <view v-for="(u, i) in list" :key="u.id" class="row" :class="'r' + (i + 1)">
+      <view v-for="(u, i) in list" :key="u.id || i" class="row" :class="'r' + (i + 1)">
         <view class="rank">{{ i + 1 }}</view>
-        <view class="ava">{{ u.nickname?.[0] || '客' }}</view>
-        <view class="body">
-          <view class="name">{{ u.nickname || u.phoneMask }}</view>
-          <view class="d">推 {{ u.referrals }} 人 · {{ u.shopName }}</view>
+        <view class="ava">
+          <image v-if="u.avatar" :src="u.avatar" class="ava-img" mode="aspectFill" />
+          <text v-else>{{ (u.nickname || '客')?.[0] }}</text>
         </view>
-        <view class="amt">¥{{ u.amount }}</view>
+        <view class="body">
+          <view class="name">{{ u.nickname || u.userName || '匿名用户' }}</view>
+          <view class="d">直推 {{ u.brokerageUserCount || 0 }} 人</view>
+        </view>
+        <view class="amt">¥{{ fen2yuan(u.brokeragePrice || 0, false) }}</view>
       </view>
     </view>
   </view>
@@ -24,13 +27,17 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-// import { getRankTop } from '@/api/promo.js';
+import { rankByPrice } from '@/api/brokerage.js';
+import { fen2yuan } from '@/utils/format.js';
 
 const loading = ref(true);
 const list = ref([]);
 onMounted(async () => {
   loading.value = true;
-  try { list.value = []; /* list.value = await getRankTop(); */ }
+  try {
+    const r = await rankByPrice(1, 50);
+    list.value = r?.list || [];
+  } catch { list.value = []; }
   finally { loading.value = false; }
 });
 </script>
@@ -52,7 +59,8 @@ onMounted(async () => {
 .row.r1 .rank { background: linear-gradient(135deg, $gold, $gold-d); color: #fff; }
 .row.r2 .rank { background: #94A3B8; color: #fff; }
 .row.r3 .rank { background: #B97048; color: #fff; }
-.ava { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, $o, $gold); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; }
+.ava { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, $o, $gold); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; overflow: hidden; }
+.ava-img { width: 100%; height: 100%; }
 .body { flex: 1; min-width: 0; }
 .name { font-size: 13px; font-weight: 700; color: $t1; }
 .d { font-size: 11px; color: $t3; margin-top: 2px; }

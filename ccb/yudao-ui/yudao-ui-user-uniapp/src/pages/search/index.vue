@@ -10,11 +10,11 @@
       <view class="sb-go" @click="doSearch">搜索</view>
     </view>
     <view v-if="!searched" class="hist">
-      <view class="hist-title">
+      <view v-if="history.length" class="hist-title">
         <text>历史搜索</text>
         <text class="clear-hist" @click="clearHist">清空</text>
       </view>
-      <view class="hist-tags">
+      <view v-if="history.length" class="hist-tags">
         <view v-for="(h, i) in history" :key="i" class="hist-tag" @click="useHist(h)">{{ h }}</view>
       </view>
       <view class="hist-title"><text>热门搜索</text></view>
@@ -26,12 +26,15 @@
     <empty-state v-else-if="!results.length" title="没找到相关结果" desc="换个关键词试试" />
     <view v-else class="results">
       <view v-for="r in results" :key="r.id" class="r" @click="goProduct(r)">
-        <view class="r-pic">{{ r.em || '🛍' }}</view>
+        <view class="r-pic">
+          <image v-if="r.picUrl" :src="r.picUrl" mode="aspectFill" class="r-pic-img" />
+          <text v-else>🛍</text>
+        </view>
         <view class="r-body">
           <view class="r-name">{{ r.name }}</view>
-          <view class="r-shop">{{ r.shopName }}</view>
+          <view class="r-shop">{{ r.shopName || r.tenantName || '' }}</view>
         </view>
-        <view class="r-price">¥{{ r.price }}</view>
+        <view class="r-price">¥{{ fen2yuan(r.price, false) }}</view>
       </view>
     </view>
   </view>
@@ -39,7 +42,8 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-// import { searchSpu } from '@/api/product.js';
+import { pageSpu } from '@/api/product.js';
+import { fen2yuan } from '@/utils/format.js';
 
 const kw = ref('');
 const searched = ref(false);
@@ -52,17 +56,20 @@ const hot = ref(['烤地瓜', '阳光玫瑰', '老白茶', '推 N 反 1']);
 function clearHist() { history.value = []; uni.setStorageSync(HIST_KEY, []); }
 function useHist(h) { kw.value = h; doSearch(); }
 async function doSearch() {
-  if (!kw.value.trim()) return;
+  const k = kw.value.trim();
+  if (!k) return;
   searched.value = true;
   loading.value = true;
   try {
-    results.value = []; // results.value = await searchSpu(kw.value);
-    const s = new Set([kw.value, ...history.value]);
+    const r = await pageSpu({ pageNo: 1, pageSize: 30, keyword: k });
+    results.value = r?.list || [];
+    const s = new Set([k, ...history.value]);
     history.value = [...s].slice(0, 10);
     uni.setStorageSync(HIST_KEY, history.value);
-  } finally { loading.value = false; }
+  } catch { results.value = []; }
+  finally { loading.value = false; }
 }
-function goProduct(r) { uni.navigateTo({ url: `/pages/product/detail?id=${r.id}&tenantId=${r.tenantId}` }); }
+function goProduct(r) { uni.navigateTo({ url: `/pages/product/detail?id=${r.id}&tenantId=${r.tenantId || ''}` }); }
 onMounted(() => { history.value = uni.getStorageSync(HIST_KEY) || []; });
 </script>
 
@@ -84,9 +91,10 @@ onMounted(() => { history.value = uni.getStorageSync(HIST_KEY) || []; });
 .loading { padding: 40px; text-align: center; color: $t4; }
 .results { padding: 10px 14px; }
 .r { display: flex; gap: 10px; padding: 10px; background: #fff; border-radius: $r-md; margin-bottom: 8px; box-shadow: $sh-1; align-items: center; }
-.r-pic { width: 48px; height: 48px; border-radius: 10px; background: $o-50; color: $o; display: flex; align-items: center; justify-content: center; font-size: 22px; }
-.r-body { flex: 1; }
-.r-name { font-size: 13px; font-weight: 700; color: $t1; }
+.r-pic { width: 48px; height: 48px; border-radius: 10px; background: $o-50; color: $o; display: flex; align-items: center; justify-content: center; font-size: 22px; overflow: hidden; flex-shrink: 0; }
+.r-pic-img { width: 100%; height: 100%; }
+.r-body { flex: 1; min-width: 0; }
+.r-name { font-size: 13px; font-weight: 700; color: $t1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .r-shop { font-size: 11px; color: $t3; margin-top: 2px; }
-.r-price { font-size: 16px; font-weight: 800; color: $o; }
+.r-price { font-size: 16px; font-weight: 800; color: $o; flex-shrink: 0; }
 </style>

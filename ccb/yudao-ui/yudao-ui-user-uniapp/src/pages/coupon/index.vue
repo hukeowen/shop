@@ -7,17 +7,17 @@
     <view v-if="loading" class="loading">加载中…</view>
     <empty-state v-else-if="!coupons.length" icon="🎟" :title="`暂无${tabLabel}优惠券`" />
     <view v-else class="list">
-      <view v-for="c in coupons" :key="c.id" class="cp" :class="tab">
+      <view v-for="c in coupons" :key="c.id" class="cp" :class="statusClass">
         <view class="cp-l">
-          <view class="cp-amt">¥<text class="big">{{ c.value }}</text></view>
-          <view class="cp-cond">满 ¥{{ c.minSpend }} 用</view>
+          <view class="cp-amt">¥<text class="big">{{ valueYuan(c) }}</text></view>
+          <view class="cp-cond">{{ condText(c) }}</view>
         </view>
         <view class="cp-r">
-          <view class="cp-shop">{{ c.shopName }}</view>
+          <view class="cp-shop">{{ c.shopName || c.merchantName || '商城通用' }}</view>
           <view class="cp-name">{{ c.name }}</view>
-          <view class="cp-exp">{{ c.expireText }}</view>
+          <view class="cp-exp">{{ expireText(c) }}</view>
         </view>
-        <view v-if="tab === 'unused'" class="cp-cta">去使用</view>
+        <view v-if="tab === 1" class="cp-cta" @click="goUse(c)">去使用</view>
       </view>
     </view>
   </view>
@@ -25,22 +25,53 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-// import { listCoupons } from '@/api/promo.js';
-const tab = ref('unused');
+import { pageCoupons } from '@/api/coupon.js';
+import { fen2yuan, fmtTime } from '@/utils/format.js';
+
+const tab = ref(1); // yudao 约定：1=未使用 2=已使用 3=已过期
 const tabs = [
-  { k: 'unused', label: '未使用' },
-  { k: 'used',   label: '已使用' },
-  { k: 'expired',label: '已过期' },
+  { k: 1, label: '未使用' },
+  { k: 2, label: '已使用' },
+  { k: 3, label: '已过期' },
 ];
 const tabLabel = computed(() => tabs.find((x) => x.k === tab.value)?.label || '');
+const statusClass = computed(() => (tab.value === 1 ? 'unused' : tab.value === 2 ? 'used' : 'expired'));
 const loading = ref(false);
 const coupons = ref([]);
+
+function valueYuan(c) {
+  // discountType 1=满减(单位分) 2=折扣(unit:%)
+  if (c.discountType === 2) return c.discountPercent != null ? (c.discountPercent / 10) + '折' : '—';
+  return fen2yuan(c.discountPrice || 0, false);
+}
+function condText(c) {
+  if (!c.usePrice) return '无门槛';
+  return `满 ¥${fen2yuan(c.usePrice, false)} 用`;
+}
+function expireText(c) {
+  if (c.validEndTime) return `${fmtTime(c.validStartTime || '')} - ${fmtTime(c.validEndTime)}`;
+  return '长期有效';
+}
+
 async function switchTab(k) {
   tab.value = k; loading.value = true;
-  try { coupons.value = []; }
+  try {
+    const r = await pageCoupons(k);
+    coupons.value = r?.list || [];
+  } catch { coupons.value = []; }
   finally { loading.value = false; }
 }
-onMounted(() => switchTab('unused'));
+
+function goUse(c) {
+  // 未来可跳到 c.spuId 商品详情 或 店铺主页
+  if (c.tenantId) {
+    uni.navigateTo({ url: `/pages/shop/home?tenantId=${c.tenantId}` });
+  } else {
+    uni.switchTab?.({ url: '/pages/index/index' }) || uni.reLaunch({ url: '/pages/index/index' });
+  }
+}
+
+onMounted(() => switchTab(1));
 </script>
 
 <style lang="scss" scoped>

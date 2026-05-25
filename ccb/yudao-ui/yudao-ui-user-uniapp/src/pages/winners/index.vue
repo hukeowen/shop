@@ -7,21 +7,25 @@
         <text class="sub">商户实时派奖 · 1:1 现金提现</text>
       </view>
       <view class="tabs">
-        <view class="tab" :class="{ on: tab === 'live' }" @click="tab = 'live'">🔴 实时中奖</view>
+        <view class="tab" :class="{ on: tab === 'live' }" @click="switchTab('live')">🔴 实时中奖</view>
         <view class="tab" :class="{ on: tab === 'rank' }" @click="goRank">📊 榜一排名</view>
       </view>
+      <view v-if="todayAmt" class="hero-stat">今日全网派奖 <text class="hl">¥{{ todayAmt }}</text> · {{ todayCnt }} 笔</view>
     </view>
 
     <view v-if="loading" class="loading">加载中…</view>
     <empty-state v-else-if="!winners.length" icon="🪙" title="还没有中奖记录" desc="去店铺下单参与派奖" />
     <view v-else class="list">
       <view v-for="w in winners" :key="w.id" class="row">
-        <view class="row-ic">{{ w.icon || '🏆' }}</view>
+        <view class="row-ic">{{ iconFor(w.sourceType) }}</view>
         <view class="row-body">
-          <view class="row-t1">{{ w.shopName }} 派奖给 <text class="phone">{{ w.userMask }}</text></view>
-          <view class="row-t2">{{ w.spuName || '推广奖励' }} · {{ w.time }}</view>
+          <view class="row-t1">
+            <text class="shop">{{ w.shopName || '某店铺' }}</text>
+            派奖给 <text class="phone">{{ w.userMask || '****' }}</text>
+          </view>
+          <view class="row-t2">{{ w.sourceLabel || '推广奖励' }} · {{ fmtTime(w.createTime) }}</view>
         </view>
-        <view class="row-amt">+¥{{ w.amount }}</view>
+        <view class="row-amt">+¥{{ fen2yuan(w.amount, false) }}</view>
       </view>
     </view>
     <view class="bottom-pad"></view>
@@ -31,21 +35,43 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-// import { getWinnerBoard } from '@/api/promo.js';
+import { onShow } from '@dcloudio/uni-app';
+import { listWinners, getTodayStat } from '@/api/promo.js';
+import { fen2yuan, fmtTime } from '@/utils/format.js';
 
 const tab = ref('live');
 const loading = ref(false);
 const winners = ref([]);
+const todayAmt = ref('');
+const todayCnt = ref(0);
 
+function iconFor(t) {
+  if (t === 'POOL')       return '🏆';
+  if (t === 'QUEUE')      return '💰';
+  if (t === 'DIRECT')     return '👥';
+  if (t === 'COMMISSION') return '⭐';
+  return '🎁';
+}
+
+function switchTab(k) { tab.value = k; load(); }
 function goRank() { uni.navigateTo({ url: '/pages/rank/index' }); }
 
-onMounted(async () => {
+async function load() {
   loading.value = true;
   try {
-    // winners.value = await getWinnerBoard();
-    winners.value = [];
-  } finally { loading.value = false; }
-});
+    winners.value = await listWinners(null, 50) || [];
+  } catch { winners.value = []; }
+  finally { loading.value = false; }
+  try {
+    const stat = await getTodayStat();
+    if (stat) {
+      todayAmt.value = fen2yuan(stat.promoAmountToday || 0, false);
+      todayCnt.value = stat.awardCountToday || 0;
+    }
+  } catch {}
+}
+onMounted(load);
+onShow(load);
 </script>
 
 <style lang="scss" scoped>
@@ -67,7 +93,6 @@ onMounted(async () => {
   -webkit-background-clip: text; background-clip: text; color: transparent;
 }
 .sub { color: rgba(255,255,255,.55); font-size: 11px; }
-
 .tabs { display: flex; gap: 6px; margin-top: 14px; justify-content: center; }
 .tab {
   padding: 8px 18px; border-radius: $r-pill;
@@ -78,7 +103,8 @@ onMounted(async () => {
     color: #fff; box-shadow: $sh-gold;
   }
 }
-
+.hero-stat { margin-top: 12px; color: rgba(255,255,255,.7); font-size: 11px; }
+.hero-stat .hl { color: $gold-l; font-weight: 800; }
 .loading { padding: 40px; text-align: center; color: $t4; }
 .list { padding: 12px 14px; }
 .row {
@@ -95,12 +121,14 @@ onMounted(async () => {
 }
 .row-body { flex: 1; min-width: 0; }
 .row-t1 { font-size: 13px; color: $t1; font-weight: 700; }
-.row-t1 .phone { color: $o; }
+.row-t1 .shop { color: $t1; }
+.row-t1 .phone { color: $o; font-weight: 700; }
 .row-t2 { font-size: 11px; color: $t3; margin-top: 2px; }
 .row-amt {
   font-size: 18px; font-weight: 900;
   background: linear-gradient(135deg, $gold, $gold-d);
   -webkit-background-clip: text; background-clip: text; color: transparent;
+  flex-shrink: 0;
 }
 .bottom-pad { height: 30px; }
 </style>
