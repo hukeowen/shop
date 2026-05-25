@@ -94,6 +94,8 @@ public class AppMerchantPromoController {
     private cn.iocoder.yudao.module.merchant.dal.mysql.ShopInfoMapper shopInfoMapper;
     @Resource
     private cn.iocoder.yudao.module.merchant.dal.mysql.promo.ShopUserStarMapper userStarMapper;
+    @Resource
+    private cn.iocoder.yudao.module.member.api.user.MemberUserApi memberUserApi;
 
     // ==================== 商户级营销配置 ====================
 
@@ -535,6 +537,179 @@ public class AppMerchantPromoController {
             }
         }
         return success(aggregated);
+    }
+
+    // ==================== 中奖公榜 / 滚动条 / 今日入账 ====================
+
+    /** 手机号脱敏：138****6789 */
+    private static String maskMobile(String mobile) {
+        if (mobile == null || mobile.length() < 7) return mobile == null ? "" : mobile;
+        return mobile.substring(0, 3) + "****" + mobile.substring(mobile.length() - 4);
+    }
+
+    /** sourceType → 友好描述 */
+    private static String sourceTypeLabel(String t) {
+        if (t == null) return "派奖";
+        switch (t) {
+            case "DIRECT":     return "直推返现";
+            case "QUEUE":      return "推 N 反 1 出队";
+            case "COMMISSION": return "团队佣金";
+            case "POOL":       return "派奖池中奖";
+            case "CONVERT":    return "积分转换";
+            case "WITHDRAW":   return "提现";
+            default:           return "派奖";
+        }
+    }
+
+    @GetMapping("/winners")
+    @Operation(summary = "中奖公榜（最新派奖列表，按时间倒序）")
+    @Parameter(name = "limit", description = "返回条数，默认 50，最大 200")
+    @cn.iocoder.yudao.framework.tenant.core.aop.TenantIgnore
+    public CommonResult<List<Map<String, Object>>> listWinners(
+            @RequestParam(name = "limit", required = false, defaultValue = "50") Integer limit) {
+        int n = Math.min(Math.max(limit == null ? 50 : limit, 1), 200);
+        Long headerTenant = cn.iocoder.yudao.framework.tenant.core.context.TenantContextHolder.getTenantId();
+        boolean perTenant = headerTenant != null && headerTenant > 0;
+
+        java.util.List<ShopPromoRecordDO> records;
+        java.util.function.Supplier<java.util.List<ShopPromoRecordDO>> q = () ->
+                promoRecordMapper.selectList(
+                        new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<ShopPromoRecordDO>()
+                                .gt(ShopPromoRecordDO::getAmount, 0L)
+                                .orderByDesc(ShopPromoRecordDO::getId)
+                                .last("LIMIT " + n));
+        if (perTenant) {
+            records = cn.iocoder.yudao.framework.tenant.core.util.TenantUtils.execute(headerTenant, q);
+        } else {
+            records = cn.iocoder.yudao.framework.tenant.core.util.TenantUtils.executeIgnore(q);
+        }
+        return success(toWinnersVO(records));
+    }
+
+    @GetMapping("/winners-ticker")
+    @Operation(summary = "首页滚动条 — 跨店最新派奖 N 条")
+    @Parameter(name = "limit", description = "默认 8")
+    @cn.iocoder.yudao.framework.tenant.core.aop.TenantIgnore
+    public CommonResult<List<Map<String, Object>>> listWinnersTicker(
+            @RequestParam(name = "limit", required = false, defaultValue = "8") Integer limit) {
+        int n = Math.min(Math.max(limit == null ? 8 : limit, 1), 30);
+        java.util.List<ShopPromoRecordDO> records = cn.iocoder.yudao.framework.tenant.core.util.TenantUtils.executeIgnore(() ->
+                promoRecordMapper.selectList(
+                        new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<ShopPromoRecordDO>()
+                                .gt(ShopPromoRecordDO::getAmount, 0L)
+                                .orderByDesc(ShopPromoRecordDO::getId)
+                                .last("LIMIT " + n)));
+        return success(toWinnersVO(records));
+    }
+
+    /** ShopPromoRecordDO 批量补 shopName / userMask → VO Map */
+    private java.util.List<Map<String, Object>> toWinnersVO(java.util.List<ShopPromoRecordDO> records) {
+        java.util.List<Map<String, Object>> resp = new java.util.ArrayList<>();
+        if (records == null || records.isEmpty()) return resp;
+
+        java.util.Set<Long> tenantIds = new java.util.HashSet<>();
+        java.util.Set<Long> userIds = new java.util.HashSet<>();
+        for (ShopPromoRecordDO r : records) {
+            if (r.getTenantId() != null) tenantIds.add(r.getTenantId());
+            if (r.getUserId() != null) userIds.add(r.getUserId());
+        }
+        java.util.Map<Long, String> shopNameMap = new java.util.HashMap<>();
+        if (!tenantIds.isEmpty()) {
+            try {
+                java.util.List<cn.iocoder.yudao.module.merchant.dal.dataobject.ShopInfoDO> infos =
+                        shopInfoMapper.selectList(
+                                new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<cn.iocoder.yudao.module.merchant.dal.dataobject.ShopInfoDO>()
+                                        .in(cn.iocoder.yudao.module.merchant.dal.dataobject.ShopInfoDO::getTenantId, tenantIds));
+                for (cn.iocoder.yudao.module.merchant.dal.dataobject.ShopInfoDO i : infos) {
+                    if (i.getTenantId() != null && i.getShopName() != null) shopNameMap.put(i.getTenantId(), i.getShopName());
+                }
+            } catch (Exception e) {
+                log.warn("[toWinnersVO] 查 shop_info 失败：{}", e.getMessage());
+            }
+        }
+        java.util.Map<Long, String> userMobileMap = new java.util.HashMap<>();
+        if (!userIds.isEmpty()) {
+            try {
+                java.util.Map<Long, cn.iocoder.yudao.module.member.api.user.dto.MemberUserRespDTO> userMap =
+                        memberUserApi.getUserMap(userIds);
+                if (userMap != null) {
+                    for (java.util.Map.Entry<Long, cn.iocoder.yudao.module.member.api.user.dto.MemberUserRespDTO> e : userMap.entrySet()) {
+                        cn.iocoder.yudao.module.member.api.user.dto.MemberUserRespDTO u = e.getValue();
+                        if (u != null && u.getMobile() != null) {
+                            userMobileMap.put(e.getKey(), u.getMobile());
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                log.warn("[toWinnersVO] 批拉 member_user 失败：{}", e.getMessage());
+            }
+        }
+
+        for (ShopPromoRecordDO r : records) {
+            Map<String, Object> v = new HashMap<>();
+            v.put("id", r.getId());
+            v.put("userId", r.getUserId());
+            v.put("userMask", maskMobile(userMobileMap.get(r.getUserId())));
+            v.put("tenantId", r.getTenantId());
+            v.put("shopName", r.getTenantId() != null ? shopNameMap.get(r.getTenantId()) : null);
+            v.put("amount", r.getAmount());
+            v.put("sourceType", r.getSourceType());
+            v.put("sourceLabel", sourceTypeLabel(r.getSourceType()));
+            v.put("remark", r.getRemark());
+            v.put("createTime", r.getCreateTime());
+            resp.add(v);
+        }
+        return resp;
+    }
+
+    @GetMapping("/today-stat")
+    @Operation(summary = "今日入账汇总（推广积分 + 消费积分 + 派奖次数）")
+    @cn.iocoder.yudao.framework.tenant.core.aop.TenantIgnore
+    public CommonResult<Map<String, Object>> getTodayStat() {
+        Long userId = SecurityFrameworkUtils.getLoginUserId();
+        Long headerTenant = cn.iocoder.yudao.framework.tenant.core.context.TenantContextHolder.getTenantId();
+        boolean perTenant = headerTenant != null && headerTenant > 0;
+
+        java.time.LocalDateTime start = java.time.LocalDate.now().atStartOfDay();
+        java.time.LocalDateTime end = java.time.LocalDate.now().plusDays(1).atStartOfDay();
+
+        java.util.function.Supplier<long[]> agg = () -> {
+            // [promoSum, consumeSum, awardCount]
+            long[] sums = new long[3];
+            java.util.List<ShopPromoRecordDO> promo = promoRecordMapper.selectList(
+                    new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<ShopPromoRecordDO>()
+                            .eq(ShopPromoRecordDO::getUserId, userId)
+                            .gt(ShopPromoRecordDO::getAmount, 0L)
+                            .ge(ShopPromoRecordDO::getCreateTime, start)
+                            .lt(ShopPromoRecordDO::getCreateTime, end));
+            for (ShopPromoRecordDO r : promo) {
+                sums[0] += r.getAmount() == null ? 0 : r.getAmount();
+                sums[2] += 1;
+            }
+            java.util.List<ShopConsumePointRecordDO> consume = consumePointRecordMapper.selectList(
+                    new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<ShopConsumePointRecordDO>()
+                            .eq(ShopConsumePointRecordDO::getUserId, userId)
+                            .gt(ShopConsumePointRecordDO::getAmount, 0L)
+                            .ge(ShopConsumePointRecordDO::getCreateTime, start)
+                            .lt(ShopConsumePointRecordDO::getCreateTime, end));
+            for (ShopConsumePointRecordDO r : consume) {
+                sums[1] += r.getAmount() == null ? 0 : r.getAmount();
+            }
+            return sums;
+        };
+
+        long[] sums;
+        if (perTenant) {
+            sums = cn.iocoder.yudao.framework.tenant.core.util.TenantUtils.execute(headerTenant, agg);
+        } else {
+            sums = cn.iocoder.yudao.framework.tenant.core.util.TenantUtils.executeIgnore(agg);
+        }
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("promoAmountToday",   sums[0]);   // 推广积分(分)
+        result.put("consumeAmountToday", sums[1]);   // 消费积分(分)
+        result.put("awardCountToday",    sums[2]);   // 派奖笔数
+        return success(result);
     }
 
 }
