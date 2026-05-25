@@ -56,10 +56,15 @@ function iconFor(t) {
 function switchTab(k) { tab.value = k; load(); }
 function goRank() { uni.navigateTo({ url: '/pages/rank/index' }); }
 
+// 从路由读 tenantId — 从店铺主页 ticker 点过来会带，过滤本店派奖
+const routeTenantId = (() => {
+  try { const ps = getCurrentPages(); return ps[ps.length - 1]?.options?.tenantId || null; } catch { return null; }
+})();
+
 async function load() {
   loading.value = true;
   try {
-    winners.value = await listWinners(null, 50) || [];
+    winners.value = await listWinners(routeTenantId, 50) || [];
   } catch { winners.value = []; }
   finally { loading.value = false; }
   try {

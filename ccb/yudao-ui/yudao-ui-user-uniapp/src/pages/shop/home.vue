@@ -18,7 +18,7 @@
       </view>
     </view>
 
-    <!-- ━━━━━━━━━━ 3 列统计卡（上拉 -36px 与 cover 重叠） ━━━━━━━━━━ -->
+    <!-- ━━━━━━━━━━ 3 列统计卡 ━━━━━━━━━━ -->
     <view class="sh-info-card">
       <view class="sh-stat-row">
         <view class="sh-stat">
@@ -38,51 +38,81 @@
       </view>
     </view>
 
-    <!-- ━━━━━━━━━━ 商户派奖动态（永远显示，无数据时引导）━━━━━━━━━━ -->
-    <view class="shop-give-card" @click="goWinners">
-      <view class="sgc-em">🎁</view>
-      <view class="sgc-body">
-        <template v-if="giveStat.count > 0">
-          <view class="sgc-t">本店<text class="b">正在派奖</text> · 今日已发 ¥{{ giveStat.amount }} / {{ giveStat.count }} 人</view>
-          <view class="sgc-d">
-            <text class="live">派奖中</text>
-            <text>· 下单即纳入派奖名单</text>
+    <!-- ━━━━━━━━━━ 招牌商品大卡（推 N 反 1 进度嵌入）━━━━━━━━━━ -->
+    <view v-if="signatureSpu" class="signature-card" @click="goSignature">
+      <view class="sig-crown">👑 招牌 No.1{{ nback ? ` · 推 ${nback.n} 反 1` : '' }}</view>
+      <view class="sig-inner">
+        <view class="sig-pic">
+          <image v-if="signatureSpu.picUrl && !signatureSpu.imgErr" :src="signatureSpu.picUrl" mode="aspectFill" class="sig-pic-img" @error="signatureSpu.imgErr = true" />
+          <text v-else class="sig-pic-em">{{ guessEmoji(signatureSpu.name) }}</text>
+        </view>
+        <view class="sig-body">
+          <view class="sig-name">{{ signatureSpu.name }}</view>
+          <view class="sig-intro">{{ signatureSpu.introduction || '本店招牌 · 现做现卖' }}</view>
+          <view class="sig-tags">
+            <view v-if="nback" class="sig-tag promo">推 {{ nback.n }} 反 1</view>
+            <view v-if="nback && nback.cur > 0" class="sig-tag got">你已得 ¥{{ nback.gotYuan }}</view>
+            <view v-else-if="signatureSpu.starCount" class="sig-tag gold">派奖商品</view>
           </view>
-        </template>
-        <template v-else>
-          <view class="sgc-t">本店<text class="b">派奖玩法</text> · 下单即纳入派奖池</view>
-          <view class="sgc-d">
-            <text class="live">即将开奖</text>
-            <text>· 你也有机会拿现金奖</text>
+          <view class="sig-bot">
+            <view class="sig-price-block">
+              <view class="sig-price">¥{{ fen2yuan(signatureSpu.price, false) }}</view>
+              <view v-if="signatureSpu.marketPrice && signatureSpu.marketPrice > signatureSpu.price" class="sig-orig">¥{{ fen2yuan(signatureSpu.marketPrice, false) }}</view>
+            </view>
+            <view class="sig-add" @click.stop="onAddSignature">+ 加入</view>
           </view>
-        </template>
+        </view>
       </view>
-      <view class="sgc-cta">查看榜 →</view>
+      <view v-if="nback" class="sig-progress">
+        <view class="sig-fill" :style="{ width: nback.pct + '%' }"></view>
+        <view class="sig-progress-txt" v-if="nback.cur > 0">推 N 反 1 进度 {{ nback.cur }}/{{ nback.n }} · 还差 {{ nback.n - nback.cur }} 人出队 +¥{{ nback.gapYuan }}</view>
+        <view class="sig-progress-txt" v-else>下单参与 推 {{ nback.n }} 反 1 · 第 {{ nback.n }} 件立即免单</view>
+      </view>
     </view>
 
-    <!-- ━━━━━━━━━━ 推 N 反 1 主推大卡（永远显示）━━━━━━━━━━ -->
-    <view class="nback-card">
-      <view class="nb-deco">🔥</view>
-      <view class="nb-head">
-        <view class="nb-l">
-          <view class="nb-tag">推 {{ nback?.n || 4 }} 反 1 · 不会差一刀</view>
-          <view class="nb-t">买够 {{ nback?.n || 4 }} 件，<text class="h">1 件免单</text></view>
-          <view class="nb-sub">推广积分 1:1 提现 · 实在透明</view>
-        </view>
-        <view class="nb-money">
-          <view class="nb-mv">¥{{ nback?.gotYuan || '0.00' }}</view>
-          <view class="nb-ml">已 拿 / 共 ¥{{ nback?.totalYuan || '10.00' }}</view>
+    <!-- ━━━━━━━━━━ VIP 邀请条 ━━━━━━━━━━ -->
+    <view class="vip-strip" @click="onShare">
+      <view class="vip-em">🎁</view>
+      <view class="vip-body">
+        <view v-if="vip.myStar > 0" class="vip-t">你是 <text class="b">{{ vip.myStar }} 星会员</text>{{ vip.discountText ? `，享 ` : '' }}<text v-if="vip.discountText" class="b">{{ vip.discountText }}</text></view>
+        <view v-else class="vip-t"><text class="b">邀好友进店</text> · 每人下单你拿返奖</view>
+        <view class="vip-d">
+          <text v-if="vip.inviterCount > 0">已邀 {{ vip.inviterCount }} 位 · </text>
+          <text>在该店赚 ¥{{ vip.earnYuan }}</text>
         </view>
       </view>
-      <view class="nb-bar">
-        <view class="nb-fill" :style="{ width: (nback?.pct || 0) + '%' }"></view>
-        <view class="nb-txt" v-if="nback && nback.cur > 0">已完成 {{ nback.cur }} / {{ nback.n }} 件 · 第 {{ nback.n }} 件立即免单</view>
-        <view class="nb-txt" v-else>下单参与 · 第 {{ nback?.n || 4 }} 件立即免单</view>
+      <view class="vip-cta">邀请赚奖 ›</view>
+    </view>
+
+    <!-- ━━━━━━━━━━ 优惠券领取条（横滚）━━━━━━━━━━ -->
+    <scroll-view v-if="coupons.length" scroll-x class="coupon-strip">
+      <view v-for="c in coupons" :key="c.id" class="coupon-card" :class="{ taken: c.taken }" @click="onGrabCoupon(c)">
+        <view class="coupon-amt">
+          <view class="v"><text class="c">¥</text>{{ fen2yuan(c.discountAmount || c.discountPrice || 0, false) }}</view>
+          <view class="cond">{{ c.minAmount || c.usePrice ? `满 ${fen2yuan(c.minAmount || c.usePrice, false)} 可用` : '无门槛' }}</view>
+        </view>
+        <view class="coupon-divider"></view>
+        <view class="coupon-action">
+          <view class="grab">{{ c.taken ? '已领' : '领取' }}</view>
+        </view>
       </view>
-      <view class="nb-foot">
-        <view class="info">当前阶段 <text class="b">{{ nback?.phase || '即将开启' }}</text></view>
-        <view class="nb-cta" @click="onShare">🤝 分享朋友</view>
+    </scroll-view>
+
+    <!-- ━━━━━━━━━━ Social proof ━━━━━━━━━━ -->
+    <view v-if="visitorCount > 0" class="social-proof">
+      <text class="ic">👥</text>
+      <text><text class="num">{{ visitorCount }}</text> 位邻居近 30 天来过这家店</text>
+    </view>
+
+    <!-- ━━━━━━━━━━ 店内中奖滚动（点击进派奖详情）━━━━━━━━━━ -->
+    <view v-if="tickerText.length" class="sh-ticker" @click="goWinners">
+      <text class="em">🏆</text>
+      <view class="roll">
+        <view class="roll-track">
+          <text v-for="(t, i) in tickerText" :key="i">{{ t }} · </text>
+        </view>
       </view>
+      <text class="ticker-arrow">›</text>
     </view>
 
     <!-- ━━━━━━━━━━ 商家承诺 ━━━━━━━━━━ -->
@@ -90,43 +120,24 @@
       <view class="promise-ic">✓</view>
       <view class="promise-body">
         <view class="promise-t">我们的承诺</view>
-        <view class="promise-d">
-          ✓ 推广积分 <text class="b">1:1 提现</text>，满 100 起
-        </view>
-        <view class="promise-d">
-          ✓ 进度真实记录，<text class="b">不存在「差一刀」</text>
-        </view>
-        <view class="promise-d">
-          ✓ 派奖明细 + 链路全部可查
-        </view>
-      </view>
-    </view>
-
-    <!-- ━━━━━━━━━━ 店内中奖滚动 ━━━━━━━━━━ -->
-    <view v-if="tickerText.length" class="sh-ticker">
-      <text class="em">🏆</text>
-      <view class="roll">
-        <view class="roll-track">
-          <text v-for="(t, i) in tickerText" :key="i">{{ t }} · </text>
-        </view>
+        <view class="promise-d">✓ 推广积分 <text class="b">1:1 提现</text>，满 100 起</view>
+        <view class="promise-d">✓ 进度真实记录，<text class="b">不存在「差一刀」</text></view>
+        <view class="promise-d">✓ 派奖明细 + 链路全部可查</view>
       </view>
     </view>
 
     <!-- ━━━━━━━━━━ 分类 chips ━━━━━━━━━━ -->
     <scroll-view scroll-x class="sh-cats">
       <view class="sh-cat" :class="{ on: activeCat === 0 }" @click="activeCat = 0">全部</view>
-      <view v-for="c in cats" :key="c.id" class="sh-cat" :class="{ on: activeCat === c.id }" @click="activeCat = c.id">
-        {{ c.name }}
-      </view>
+      <view v-for="c in cats" :key="c.id" class="sh-cat" :class="{ on: activeCat === c.id }" @click="activeCat = c.id">{{ c.name }}</view>
     </scroll-view>
 
-    <!-- ━━━━━━━━━━ 商品 grid（2 列）━━━━━━━━━━ -->
+    <!-- ━━━━━━━━━━ 商品 grid ━━━━━━━━━━ -->
     <view v-if="loading" class="loading">加载中…</view>
     <empty-state v-else-if="!filteredSpus.length" title="该店暂无商品" />
     <view v-else class="sh-grid">
       <view v-for="(p, i) in filteredSpus" :key="p.id" class="pcard" @click="goProduct(p)">
         <view class="ppic" :class="picTone(i)">
-          <!-- emoji 始终在底层；image 加载成功才显示并覆盖 emoji，失败不渲染避免 broken-image icon -->
           <text class="ppic-em">{{ guessEmoji(p.name) }}</text>
           <image v-if="p.picUrl && !p.imgErr" :src="p.picUrl" mode="aspectFill" class="ppic-img" @error="onImgErr(p)" />
           <view v-if="p.badge" class="pbadge" :class="p.badgeClass">{{ p.badge }}</view>
@@ -134,20 +145,34 @@
         <view class="pname">{{ p.name }}</view>
         <view class="pmeta">
           <view class="pprice">¥{{ fen2yuan(p.price, false) }}</view>
-          <view v-if="p.earnText" class="pearn" :class="p.earnClass">{{ p.earnText }}</view>
+          <view class="padd" @click.stop="onAddCart(p)">+</view>
         </view>
       </view>
     </view>
 
     <view class="bottom-pad"></view>
+
+    <!-- ━━━━━━━━━━ 底部购物车浮条 ━━━━━━━━━━ -->
+    <view v-if="cartCount > 0" class="cart-bar">
+      <view class="cart-bar-ic" @click="goCart">
+        🛒<view class="badge">{{ cartCount }}</view>
+      </view>
+      <view class="cart-bar-info">
+        <view class="cart-bar-price">¥{{ cartTotalYuan }}</view>
+        <view v-if="cartHint" class="cart-bar-d">{{ cartHint }}</view>
+      </view>
+      <view class="cart-bar-pay" @click="goCart">去结算</view>
+    </view>
   </view>
 </template>
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
-import { getShopInfo, listShopProducts } from '@/api/shop.js';
-import { listWinners, getAccount, getTodayStat } from '@/api/promo.js';
+import { getShopInfo, listShopProducts, getShopVisitorCount, getMyRel } from '@/api/shop.js';
+import { listWinners, getAccount } from '@/api/promo.js';
+import { addCart, listCart, getCartCount } from '@/api/cart.js';
+import { listCouponTemplates, takeCoupon } from '@/api/coupon.js';
 import { request } from '@/utils/request.js';
 import { fen2yuan } from '@/utils/format.js';
 import { useUserStore } from '@/store/user.js';
@@ -164,10 +189,19 @@ const activeCat = ref(0);
 const spus = ref([]);
 const loading = ref(true);
 const isFav = ref(false);
+
 const myEarn = ref('0');
-const giveStat = ref({ amount: '0', count: 0 });
-const tickerText = ref([]);
+const signatureSpu = ref(null);
 const nback = ref(null);
+const vip = reactive({ myStar: 0, discountText: '', inviterCount: 0, earnYuan: '0' });
+const coupons = ref([]);
+const visitorCount = ref(0);
+const tickerText = ref([]);
+const cartCount = ref(0);
+const cartTotalFen = ref(0);
+const cartHint = ref('');
+
+const cartTotalYuan = computed(() => fen2yuan(cartTotalFen.value, false));
 
 const shopEmoji = computed(() => {
   const name = (shop.value?.shopName || shop.value?.name || '').toLowerCase();
@@ -179,22 +213,21 @@ const shopEmoji = computed(() => {
 });
 
 const filteredSpus = computed(() => {
-  if (activeCat.value === 0) return spus.value;
-  return spus.value.filter((p) => p.categoryId === activeCat.value);
+  const all = spus.value;
+  if (activeCat.value === 0) return all;
+  return all.filter((p) => p.categoryId === activeCat.value);
 });
 
-function picTone(i) {
-  return ['', 'green', 'purple', 'pink'][i % 4];
-}
-function onImgErr(p) { p.imgErr = true; } // spus item 已 reactive 包装，可直接 mutate
+function picTone(i) { return ['', 'green', 'purple', 'pink'][i % 4]; }
+function onImgErr(p) { p.imgErr = true; }
 function guessEmoji(name) {
   const n = (name || '').toLowerCase();
-  if (/茶|饮|奶|咖啡/.test(n)) return '🍵';
-  if (/粥|饭|面|汤/.test(n))   return '🍜';
-  if (/烤|肉|串|鸡|鸭/.test(n))return '🍖';
-  if (/果|蔬|菜|生鲜/.test(n)) return '🍇';
-  if (/糕|甜|烘焙|蛋糕/.test(n))return '🍰';
-  if (/酒|啤|红/.test(n))      return '🍷';
+  if (/茶|饮|奶|咖啡/.test(n))    return '🍵';
+  if (/粥|饭|面|汤/.test(n))      return '🍜';
+  if (/烤|肉|串|鸡|鸭/.test(n))   return '🍖';
+  if (/果|蔬|菜|生鲜/.test(n))    return '🍇';
+  if (/糕|甜|烘焙|蛋糕/.test(n))  return '🍰';
+  if (/酒|啤|红/.test(n))         return '🍷';
   return '🍽';
 }
 
@@ -204,21 +237,55 @@ function goBack() {
   else uni.reLaunch({ url: '/pages/index/index' });
 }
 function goProduct(p) {
-  uni.navigateTo({ url: `/pages/product/detail?id=${p.id}&tenantId=${route.tenantId || shop.value?.tenantId || ''}` });
+  uni.navigateTo({ url: `/pages/product/detail?id=${p.id}&tenantId=${route.tenantId || ''}` });
 }
-function goWinners() { uni.reLaunch({ url: '/pages/winners/index' }); }
+function goSignature() {
+  if (signatureSpu.value) goProduct(signatureSpu.value);
+}
+function goCart() { uni.navigateTo({ url: '/pages/cart/index' }); }
+function goWinners() {
+  // 跳中奖公榜（派奖详情），带 tenantId 让 winners 页过滤本店
+  uni.navigateTo({ url: `/pages/winners/index?tenantId=${route.tenantId || ''}` });
+}
 function toggleFav() {
-  if (!user.isLogin) {
-    try { localStorage.setItem('redirect:after-login', `/pages/shop/home?tenantId=${route.tenantId || ''}`); } catch {}
-    return uni.navigateTo({ url: '/pages/login/index' });
-  }
+  if (!user.isLogin) return requireLogin();
   isFav.value = !isFav.value;
-  uni.showToast({ title: isFav.value ? '已收藏' : '取消收藏', icon: 'none' });
+  uni.showToast({ title: isFav.value ? '已收藏' : '取消', icon: 'none' });
 }
 function onShare() {
   const base = typeof location !== 'undefined' ? location.origin : 'https://ke.doupaidoudian.com';
   const link = `${base}/#/pages/shop/home?tenantId=${route.tenantId}&inviter=${user.userId || ''}`;
   uni.setClipboardData({ data: link, success: () => uni.showToast({ title: '链接已复制', icon: 'success' }) });
+}
+async function onAddCart(p) {
+  if (!user.isLogin) return requireLogin();
+  if (!p.skuIds || !p.skuIds.length) return goProduct(p);
+  try {
+    await addCart(p.skuIds[0], 1);
+    uni.showToast({ title: '已加入', icon: 'success' });
+    await loadCart();
+  } catch {}
+}
+async function onAddSignature() {
+  if (!signatureSpu.value) return;
+  await onAddCart(signatureSpu.value);
+}
+async function onGrabCoupon(c) {
+  if (!user.isLogin) return requireLogin();
+  if (c.taken) return uni.showToast({ title: '已领取', icon: 'none' });
+  try {
+    await takeCoupon(c.id);
+    c.taken = true;
+    uni.showToast({ title: '领取成功', icon: 'success' });
+  } catch {}
+}
+function requireLogin() {
+  try {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('redirect:after-login', `/pages/shop/home?tenantId=${route.tenantId || ''}`);
+    }
+  } catch {}
+  uni.navigateTo({ url: '/pages/login/index' });
 }
 
 async function loadShop() {
@@ -238,45 +305,105 @@ async function loadProducts() {
   try {
     const r = await listShopProducts(route.tenantId, 1, 50);
     const list = (r?.list || []).map((s) => {
-      // 计算 badge / earnText 从 promoConfig（先简化按字段优先级判断）
-      let badge = '', badgeClass = '', earnText = '', earnClass = '';
-      if (s.tuijianN) {
-        badge = `推 ${s.tuijianN} 反 1`;
-        earnText = `最高 ¥${fen2yuan((s.price || 0) / s.tuijianN, false)}`;
-        earnClass = 'brand';
-      } else if (s.starCount) {
-        badge = '派奖商品';
-        badgeClass = 'gold';
-        earnText = '下单进派奖池';
-        earnClass = 'gold';
-      }
-      return { ...s, badge, badgeClass, earnText, earnClass };
+      let badge = '', badgeClass = '';
+      if (s.tuijianN) { badge = `推 ${s.tuijianN} 反 1`; }
+      else if (s.starCount) { badge = '派奖商品'; badgeClass = 'gold'; }
+      return reactive({ ...s, badge, badgeClass, imgErr: false });
     });
-    spus.value = list.map((p) => reactive({ ...p, imgErr: false }));
-    // 聚合分类（无 categoryName 时用顺序编号「分类 1/2/...」而非「分类#20」）
+    spus.value = list;
+
+    // 招牌：优先选 tuijianN>0 / 销量最高 / 价格最高
+    const sig = list.find((s) => s.tuijianN > 0)
+              || list.slice().sort((a, b) => (b.salesCount || 0) - (a.salesCount || 0))[0]
+              || list.slice().sort((a, b) => (b.price || 0) - (a.price || 0))[0];
+    signatureSpu.value = sig ? reactive({ ...sig, imgErr: false }) : null;
+
+    // 聚合分类
     const catMap = new Map();
     let idx = 1;
     for (const s of list) {
       if (s.categoryId && !catMap.has(s.categoryId)) {
-        catMap.set(s.categoryId, {
-          id: s.categoryId,
-          name: s.categoryName || `分类 ${idx++}`,
-        });
+        catMap.set(s.categoryId, { id: s.categoryId, name: s.categoryName || `分类 ${idx++}` });
       }
     }
     cats.value = [...catMap.values()];
   } catch {} finally { loading.value = false; }
 }
 
-async function loadGiveStat() {
-  try {
-    const stat = await getTodayStat();
-    if (stat?.promoAmountToday) {
-      giveStat.value = {
-        amount: fen2yuan(stat.promoAmountToday, false),
-        count: stat.awardCountToday || 0,
+async function loadNback() {
+  if (!user.isLogin || !route.tenantId || !signatureSpu.value) {
+    // 即使没登录，也展示骨架（基于 signature 的 tuijianN）
+    if (signatureSpu.value?.tuijianN) {
+      const n = signatureSpu.value.tuijianN;
+      const totalFen = signatureSpu.value.price || 0;
+      nback.value = {
+        n, cur: 0, pct: 0,
+        gotYuan: '0.00', gapYuan: fen2yuan(totalFen, false),
+        totalYuan: fen2yuan(totalFen, false),
       };
+    } else nback.value = null;
+    return;
+  }
+  try {
+    const list = await request({ url: `/app-api/merchant/mini/promo/my-spu-stars?tenantId=${route.tenantId}` });
+    const target = (Array.isArray(list) ? list : []).find((x) => x.spuId === signatureSpu.value.id);
+    if (target && target.tuijianN > 0) {
+      const n = target.tuijianN;
+      const cur = Math.min(target.directCount || 0, n);
+      const pct = Math.min(100, Math.round((cur / n) * 100));
+      const totalFen = signatureSpu.value.price || target.spuPrice || 0;
+      const gotFen = Math.floor(totalFen * cur / n);
+      const gapFen = totalFen - gotFen;
+      nback.value = {
+        n, cur, pct,
+        gotYuan: fen2yuan(gotFen, false),
+        gapYuan: fen2yuan(gapFen, false),
+        totalYuan: fen2yuan(totalFen, false),
+      };
+    } else if (signatureSpu.value.tuijianN) {
+      // 后端没有用户的 stars 记录但 signature 商品有 tuijianN → 骨架
+      const n = signatureSpu.value.tuijianN;
+      const totalFen = signatureSpu.value.price || 0;
+      nback.value = {
+        n, cur: 0, pct: 0,
+        gotYuan: '0.00', gapYuan: fen2yuan(totalFen, false),
+        totalYuan: fen2yuan(totalFen, false),
+      };
+    } else {
+      nback.value = null;
     }
+  } catch {}
+}
+
+async function loadVip() {
+  if (!user.isLogin || !route.tenantId) { vip.myStar = 0; vip.earnYuan = '0'; return; }
+  try {
+    const rel = await getMyRel(route.tenantId);
+    if (rel) {
+      vip.myStar = rel.star || 0;
+      vip.discountText = rel.discount ? `${(rel.discount * 10).toFixed(0)}` : '';
+      vip.earnYuan = fen2yuan(rel.balance || 0, false);
+      myEarn.value = vip.earnYuan;
+    }
+  } catch {}
+  try {
+    const ref = await request({ url: `/app-api/merchant/mini/promo/referral/my-children-count?tenantId=${route.tenantId}` });
+    vip.inviterCount = ref || 0;
+  } catch {}
+}
+
+async function loadCoupons() {
+  try {
+    const list = await listCouponTemplates({ count: 5 });
+    coupons.value = (list || []).slice(0, 5).map((c) => ({ ...c, taken: false }));
+  } catch {}
+}
+
+async function loadVisitor() {
+  if (!route.tenantId) return;
+  try {
+    const r = await getShopVisitorCount(route.tenantId);
+    visitorCount.value = r?.count || r || 0;
   } catch {}
 }
 
@@ -290,52 +417,30 @@ async function loadTicker() {
   } catch {}
 }
 
-async function loadMyEarn() {
-  if (!user.isLogin) { myEarn.value = '0'; return; }
+async function loadCart() {
+  if (!user.isLogin) { cartCount.value = 0; cartTotalFen.value = 0; return; }
   try {
-    const acct = await getAccount(route.tenantId);
-    myEarn.value = fen2yuan(acct?.promoPointBalance || 0, false);
-  } catch {}
-}
-
-async function loadNback() {
-  // 用 my-spu-stars 拿当前店里我已得 + 推 N 进度（简化版）
-  // 注：/my-spu-stars 要求 tenantId 走 query，不是 header
-  if (!user.isLogin || !route.tenantId) { nback.value = null; return; }
-  try {
-    const list = await request({ url: `/app-api/merchant/mini/promo/my-spu-stars?tenantId=${route.tenantId}` });
-    if (Array.isArray(list) && list.length) {
-      // 找进度最快的 SPU
-      const sorted = [...list]
-        .filter((x) => x.tuijianN > 0)
-        .sort((a, b) => (b.directCount / b.tuijianN) - (a.directCount / a.tuijianN));
-      const top = sorted[0];
-      if (top) {
-        const n = top.tuijianN;
-        const cur = Math.min(top.directCount || 0, n);
-        const pct = Math.min(100, Math.round((cur / n) * 100));
-        const totalFen = top.spuPrice || top.price || 0;
-        const gotFen = Math.floor(totalFen * cur / n);
-        nback.value = {
-          n,
-          cur,
-          pct,
-          gotYuan: fen2yuan(gotFen, false),
-          totalYuan: fen2yuan(totalFen, false),
-          phase: cur >= n ? '完成期' : (cur > 0 ? '进行中' : '即将开启'),
-        };
-      }
-    }
+    cartCount.value = (await getCartCount()) || 0;
+    if (cartCount.value === 0) { cartTotalFen.value = 0; cartHint.value = ''; return; }
+    const r = await listCart();
+    const items = (r?.validList || r?.list || []).filter((i) => i.selected !== false);
+    const total = items.reduce((s, i) => s + (i.price || 0) * (i.count || 1), 0);
+    cartTotalFen.value = total;
+    // 简单满减提示：差到 30/50/100 的最近门槛
+    const milestones = [3000, 5000, 10000]; // 30 / 50 / 100
+    const next = milestones.find((m) => total < m);
+    cartHint.value = next ? `差 ¥${fen2yuan(next - total, false)} 享满 ${next/100} 减优惠` : '';
   } catch {}
 }
 
 function refreshAll() {
   loadShop();
-  loadProducts();
-  loadGiveStat();
+  loadProducts().then(loadNback);
+  loadVip();
+  loadCoupons();
+  loadVisitor();
   loadTicker();
-  loadMyEarn();
-  loadNback();
+  loadCart();
 }
 
 onMounted(() => {
@@ -348,12 +453,11 @@ onShow(refreshAll);
 <style lang="scss" scoped>
 @import '@/uni.scss';
 
-.page { min-height: 100vh; background: $bg-2; padding-bottom: 30px; }
+.page { min-height: 100vh; background: $bg-2; padding-bottom: 90px; }
 
-/* ━━━━━━━━━━ Cover ━━━━━━━━━━ */
+/* ━━ Cover ━━ */
 .sh-cover {
-  position: relative;
-  height: 200px;
+  position: relative; height: 200px;
   background: linear-gradient(135deg, #FFB174 0%, $o 50%, $o-d 100%);
   overflow: hidden;
 }
@@ -365,8 +469,7 @@ onShow(refreshAll);
 .sh-cover-mark {
   position: absolute; bottom: -20px; right: -10px;
   font-size: 180px; opacity: .12;
-  transform: rotate(-15deg);
-  line-height: 1;
+  transform: rotate(-15deg); line-height: 1;
 }
 .sh-nav {
   position: absolute; top: 0; left: 0; right: 0;
@@ -386,24 +489,22 @@ onShow(refreshAll);
 }
 .sh-info {
   position: absolute; bottom: 50px; left: 18px; right: 18px;
-  color: #fff;
-  z-index: 4;
+  color: #fff; z-index: 4;
 }
 .sh-tag-row {
   display: inline-flex; align-items: center; gap: 6px;
   padding: 4px 10px; border-radius: 99px;
-  background: rgba(0,0,0,.3);
-  backdrop-filter: blur(10px);
+  background: rgba(0,0,0,.3); backdrop-filter: blur(10px);
   font-size: 10px; font-weight: 700;
   border: 1px solid rgba(255,255,255,.2);
 }
 .sh-name {
-  font-size: 24px; font-weight: 900; letter-spacing: -.5px;
-  margin-top: 8px; text-shadow: 0 2px 8px rgba(0,0,0,.15);
+  font-size: 24px; font-weight: 900; margin-top: 8px;
+  text-shadow: 0 2px 8px rgba(0,0,0,.15);
 }
 .sh-slogan { font-size: 13px; opacity: .9; margin-top: 2px; }
 
-/* ━━━━━━━━━━ Info card ━━━━━━━━━━ */
+/* ━━ Info card ━━ */
 .sh-info-card {
   margin: -36px 14px 0;
   background: $card; border-radius: $r-lg;
@@ -411,13 +512,10 @@ onShow(refreshAll);
   border: 1px solid $line;
   position: relative; z-index: 6;
 }
-.sh-stat-row { display: flex; align-items: center; gap: 0; }
+.sh-stat-row { display: flex; align-items: center; }
 .sh-stat { flex: 1; text-align: center; }
-.sh-stat .v {
-  font-size: 17px; font-weight: 800; color: $t1;
-  line-height: 1;
-}
-.sh-stat .v.gold  { color: $gold; }
+.sh-stat .v { font-size: 17px; font-weight: 800; color: $t1; line-height: 1; }
+.sh-stat .v.gold { color: $gold; }
 .sh-stat .v.brand {
   background: linear-gradient(135deg, $o, $o-d);
   -webkit-background-clip: text; background-clip: text; color: transparent;
@@ -426,127 +524,171 @@ onShow(refreshAll);
 .sh-stat .l { font-size: 11px; color: $t3; margin-top: 4px; font-weight: 500; }
 .sh-stat-divider { width: 1px; align-self: stretch; background: $line; }
 
-/* ━━━━━━━━━━ Give card ━━━━━━━━━━ */
-.shop-give-card {
+/* ━━ Signature card ━━ */
+.signature-card {
   margin: 14px 14px 0;
-  padding: 14px;
-  background: linear-gradient(135deg, $gold-50, #FFF8F4);
-  border: 1px solid rgba(212,146,10,.25);
-  border-radius: $r-lg;
-  display: flex; align-items: center; gap: 12px;
-  position: relative; overflow: hidden;
-  box-shadow: 0 4px 12px rgba(212,146,10,.1);
-}
-.sgc-em {
-  width: 44px; height: 44px; border-radius: 12px;
-  background: linear-gradient(135deg, $gold, $gold-l);
-  color: #fff;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 22px; flex-shrink: 0;
-  box-shadow: $sh-gold;
-}
-.sgc-body { flex: 1; }
-.sgc-t { font-size: 13px; font-weight: 800; color: $t1; }
-.sgc-t .b {
-  background: linear-gradient(135deg, $gold-d, $o);
-  -webkit-background-clip: text; background-clip: text; color: transparent;
-  margin: 0 2px;
-}
-.sgc-d { font-size: 11px; color: $t3; margin-top: 2px; display: flex; align-items: center; gap: 6px; }
-.sgc-d .live { color: $mint; font-weight: 700; }
-.sgc-cta {
-  padding: 7px 12px; border-radius: 99px;
-  background: $card; color: $gold-d;
-  font-size: 11px; font-weight: 800;
-  border: 1px solid rgba(212,146,10,.3);
-}
-
-/* ━━━━━━━━━━ Nback card ━━━━━━━━━━ */
-.nback-card {
-  margin: 12px 14px 0;
-  padding: 18px 20px;
-  background:
-    radial-gradient(400px 200px at 100% 0%, rgba(254,243,199,.35), transparent 60%),
-    linear-gradient(135deg, #FFF0E0, #FFE0C5);
+  background: linear-gradient(135deg, #FFF8F4 0%, #FFEFE3 100%);
+  border: 2px solid $o-100;
   border-radius: $r-xl;
-  border: 1px solid $o-100;
+  padding: 14px;
   position: relative; overflow: hidden;
-  box-shadow: 0 8px 24px rgba(255,107,53,.12);
+  box-shadow: 0 8px 24px rgba(255,107,53,.18);
 }
-.nb-deco {
-  position: absolute; top: -30px; right: -10px;
-  font-size: 100px; opacity: .08;
-  transform: rotate(15deg);
-  pointer-events: none;
+.sig-crown {
+  position: absolute; top: -2px; left: 14px;
+  padding: 5px 12px;
+  background: linear-gradient(135deg, $gold, $gold-d);
+  color: #fff; font-size: 10px; font-weight: 800;
+  border-radius: 0 0 8px 8px;
+  box-shadow: 0 4px 12px rgba(212,146,10,.4);
+  z-index: 2;
 }
-.nb-head { display: flex; justify-content: space-between; align-items: flex-start; position: relative; }
-.nb-l { flex: 1; }
-.nb-tag {
-  display: inline-flex; align-items: center; gap: 4px;
-  padding: 4px 10px;
-  background: linear-gradient(135deg, $gold, $gold-l);
-  color: #fff;
-  border-radius: 6px;
-  font-size: 10px; font-weight: 800; letter-spacing: .5px;
-  margin-bottom: 10px;
-  box-shadow: 0 4px 10px rgba(212,146,10,.3);
+.sig-inner {
+  margin-top: 14px;
+  display: flex; gap: 12px; align-items: stretch;
 }
-.nb-t {
+.sig-pic {
+  flex: 0 0 100px; width: 100px; height: 100px;
+  border-radius: $r-lg;
+  background: linear-gradient(135deg, #FFE0D1, $o-l);
+  display: flex; align-items: center; justify-content: center;
+  position: relative; overflow: hidden;
+  box-shadow: 0 4px 12px rgba(255,107,53,.25);
+}
+.sig-pic-em { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 56px; line-height: 1; }
+.sig-pic-img { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; }
+.sig-body { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.sig-name { font-size: 15px; font-weight: 800; color: $t1; line-height: 1.3; overflow: hidden; }
+.sig-intro { font-size: 11px; color: $t3; margin-top: 3px; }
+.sig-tags { margin-top: 6px; display: flex; gap: 4px; flex-wrap: wrap; }
+.sig-tag {
+  font-size: 10px; padding: 2px 7px; border-radius: 4px; font-weight: 700;
+}
+.sig-tag.promo { background: linear-gradient(135deg, $o, $o-d); color: #fff; }
+.sig-tag.gold  { background: linear-gradient(135deg, $gold, $gold-l); color: #fff; }
+.sig-tag.got   { background: $mint-50; color: $mint; }
+.sig-bot { margin-top: auto; display: flex; justify-content: space-between; align-items: flex-end; }
+.sig-price-block { display: flex; flex-direction: column; align-items: flex-start; }
+.sig-price {
   font-size: 22px; font-weight: 900;
-  letter-spacing: -.5px; line-height: 1.15; color: $t1;
-}
-.nb-t .h {
-  background: linear-gradient(135deg, $gold-d, $o, $o-d);
-  -webkit-background-clip: text; background-clip: text; color: transparent;
-}
-.nb-sub { font-size: 11px; color: $t2; margin-top: 6px; font-weight: 500; }
-.nb-money { text-align: right; flex-shrink: 0; }
-.nb-mv {
-  font-size: 30px; font-weight: 900; letter-spacing: -.5px;
-  background: linear-gradient(135deg, $mint, $gold);
+  background: linear-gradient(135deg, $o, $o-d);
   -webkit-background-clip: text; background-clip: text; color: transparent;
   line-height: 1;
 }
-.nb-ml { font-size: 9px; color: $t3; margin-top: 2px; letter-spacing: .5px; font-weight: 700; }
-.nb-bar {
-  margin-top: 16px;
-  height: 36px;
-  background: rgba(255,255,255,.5);
-  border-radius: 18px;
-  padding: 4px;
-  display: flex; align-items: center;
-  position: relative; overflow: hidden;
-  border: 1px solid $o-100;
-}
-.nb-fill {
-  height: 28px;
-  background: linear-gradient(90deg, $o, $o-l, $gold);
-  border-radius: 14px;
-  position: relative;
-  box-shadow: 0 0 16px rgba(255,107,53,.5);
-  transition: width .4s ease;
-}
-.nb-txt {
-  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
-  font-size: 11px; font-weight: 800; color: #fff;
-  text-shadow: 0 1px 2px rgba(0,0,0,.3);
-  letter-spacing: .3px; z-index: 2;
-}
-.nb-foot {
-  margin-top: 14px;
-  display: flex; justify-content: space-between; align-items: center;
-}
-.nb-foot .info { font-size: 11px; color: $t2; font-weight: 500; }
-.nb-foot .info .b { color: $o-d; font-weight: 800; }
-.nb-cta {
+.sig-orig { font-size: 11px; color: $t4; text-decoration: line-through; margin-top: 2px; }
+.sig-add {
   padding: 8px 16px;
   background: linear-gradient(135deg, $o, $o-d);
   color: #fff; border-radius: 99px;
-  font-size: 11px; font-weight: 800;
+  font-size: 12px; font-weight: 800;
   box-shadow: $sh-warm;
 }
+.sig-progress {
+  margin-top: 10px;
+  height: 28px;
+  background: rgba(255,255,255,.5);
+  border-radius: 14px;
+  padding: 3px;
+  position: relative; overflow: hidden;
+  border: 1px solid $o-100;
+}
+.sig-fill {
+  height: 22px;
+  background: linear-gradient(90deg, $o, $o-l, $gold);
+  border-radius: 11px;
+  box-shadow: 0 0 12px rgba(255,107,53,.5);
+  transition: width .4s;
+}
+.sig-progress-txt {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  font-size: 10.5px; font-weight: 800; color: #fff;
+  text-shadow: 0 1px 2px rgba(0,0,0,.3); z-index: 2;
+  white-space: nowrap;
+}
 
-/* ━━━━━━━━━━ Promise ━━━━━━━━━━ */
+/* ━━ VIP strip ━━ */
+.vip-strip {
+  margin: 12px 14px 0;
+  padding: 12px 14px;
+  background: linear-gradient(135deg, $gold-50, $o-50);
+  border: 1px solid rgba(212,146,10,.25);
+  border-radius: $r-lg;
+  display: flex; align-items: center; gap: 10px;
+}
+.vip-em {
+  width: 36px; height: 36px; border-radius: 10px;
+  background: linear-gradient(135deg, $gold, $gold-l);
+  color: #fff; display: flex; align-items: center; justify-content: center;
+  font-size: 18px; box-shadow: 0 4px 10px rgba(212,146,10,.3);
+}
+.vip-body { flex: 1; min-width: 0; }
+.vip-t { font-size: 13px; font-weight: 800; color: $t1; }
+.vip-t .b { color: $gold-d; }
+.vip-d { font-size: 11px; color: $t3; margin-top: 2px; }
+.vip-cta { color: $o-d; font-size: 11px; font-weight: 800; }
+
+/* ━━ Coupon strip ━━ */
+.coupon-strip {
+  margin: 12px 0 0;
+  padding: 0 14px;
+  white-space: nowrap;
+}
+.coupon-card {
+  display: inline-flex; vertical-align: top;
+  width: 160px; height: 64px;
+  margin-right: 8px;
+  background:
+    radial-gradient(circle at 76px center, transparent 6px, $card 6.5px);
+  border-radius: 8px;
+  border: 1px dashed $o-200;
+  align-items: center;
+}
+.coupon-card.taken { opacity: .6; }
+.coupon-amt { width: 76px; padding: 8px 4px; text-align: center; color: $o-d; }
+.coupon-amt .v { font-size: 22px; font-weight: 900; line-height: 1; }
+.coupon-amt .v .c { font-size: 12px; margin-right: 1px; }
+.coupon-amt .cond { font-size: 9px; margin-top: 2px; }
+.coupon-divider { width: 1px; height: 50%; border-left: 1px dashed $o-200; }
+.coupon-action { flex: 1; padding: 0 10px; }
+.coupon-action .grab {
+  background: $o; color: #fff;
+  padding: 4px 10px; border-radius: 99px;
+  font-size: 11px; font-weight: 700; text-align: center;
+}
+
+/* ━━ Social proof ━━ */
+.social-proof {
+  margin: 10px 14px 0;
+  padding: 8px 14px;
+  background: $mint-50;
+  border-left: 3px solid $mint;
+  border-radius: 0 8px 8px 0;
+  font-size: 11px; color: #064E3B;
+  display: flex; align-items: center; gap: 6px;
+}
+.social-proof .num { color: $mint; font-weight: 800; }
+
+/* ━━ Ticker ━━ */
+.sh-ticker {
+  margin: 12px 14px 0;
+  padding: 10px 14px;
+  background: linear-gradient(90deg, $gold-50, $o-50);
+  border: 1px solid $o-100;
+  border-radius: 12px;
+  display: flex; align-items: center; gap: 10px;
+  overflow: hidden;
+}
+.sh-ticker .em { font-size: 16px; flex-shrink: 0; }
+.ticker-arrow { color: $o-d; font-size: 16px; font-weight: 700; flex-shrink: 0; margin-left: 4px; }
+.sh-ticker .roll { flex: 1; overflow: hidden; height: 18px; position: relative; }
+.sh-ticker .roll-track {
+  position: absolute; white-space: nowrap;
+  font-size: 11.5px; color: $gold-d; font-weight: 600;
+  animation: rollx 22s linear infinite;
+}
+@keyframes rollx { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
+
+/* ━━ Promise ━━ */
 .promise-card {
   margin: 12px 14px 0;
   padding: 14px;
@@ -567,26 +709,7 @@ onShow(refreshAll);
 .promise-d { font-size: 11px; color: #047857; margin-top: 4px; line-height: 1.6; }
 .promise-d .b { font-weight: 800; }
 
-/* ━━━━━━━━━━ Ticker ━━━━━━━━━━ */
-.sh-ticker {
-  margin: 12px 14px 0;
-  padding: 10px 14px;
-  background: linear-gradient(90deg, $gold-50, $o-50);
-  border: 1px solid $o-100;
-  border-radius: 12px;
-  display: flex; align-items: center; gap: 10px;
-  overflow: hidden;
-}
-.sh-ticker .em { font-size: 16px; flex-shrink: 0; }
-.sh-ticker .roll { flex: 1; overflow: hidden; height: 18px; position: relative; }
-.sh-ticker .roll-track {
-  position: absolute; white-space: nowrap;
-  font-size: 11.5px; color: $gold-d; font-weight: 600;
-  animation: rollx 22s linear infinite;
-}
-@keyframes rollx { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
-
-/* ━━━━━━━━━━ Cats ━━━━━━━━━━ */
+/* ━━ Cats ━━ */
 .sh-cats {
   padding: 0 14px;
   white-space: nowrap;
@@ -602,12 +725,11 @@ onShow(refreshAll);
 }
 .sh-cat.on {
   background: linear-gradient(135deg, $o, $o-d);
-  color: #fff;
-  border-color: transparent;
+  color: #fff; border-color: transparent;
   box-shadow: $sh-warm;
 }
 
-/* ━━━━━━━━━━ Grid ━━━━━━━━━━ */
+/* ━━ Grid ━━ */
 .loading { padding: 40px; text-align: center; color: $t4; }
 .sh-grid {
   padding: 0 14px;
@@ -621,13 +743,12 @@ onShow(refreshAll);
 .ppic {
   height: 110px; border-radius: 10px;
   background: linear-gradient(135deg, #FFE0D1, $o-l);
-  display: flex; align-items: center; justify-content: center; font-size: 48px;
+  display: flex; align-items: center; justify-content: center;
   margin-bottom: 8px; position: relative; overflow: hidden;
 }
 .ppic.green  { background: linear-gradient(135deg, #D1FAE5, #6EE7B7); }
 .ppic.purple { background: linear-gradient(135deg, #E0D4FF, #C4B5FD); }
 .ppic.pink   { background: linear-gradient(135deg, #FCE7F3, #F9A8D4); }
-/* emoji 永远在底层；image 加载成功覆盖 emoji，失败时 emoji 自然显示 */
 .ppic-em {
   position: absolute; inset: 0;
   display: flex; align-items: center; justify-content: center;
@@ -635,8 +756,7 @@ onShow(refreshAll);
 }
 .ppic-img {
   position: absolute; inset: 0;
-  width: 100%; height: 100%;
-  z-index: 1;
+  width: 100%; height: 100%; z-index: 1;
 }
 .pbadge {
   position: absolute; top: 6px; left: 6px;
@@ -645,21 +765,57 @@ onShow(refreshAll);
   color: #fff; border-radius: 6px;
   font-size: 9px; font-weight: 800;
   box-shadow: 0 2px 6px rgba(255,107,53,.4);
+  z-index: 2;
 }
 .pbadge.gold { background: linear-gradient(135deg, $gold, $gold-l); box-shadow: 0 2px 6px rgba(212,146,10,.4); }
-.pbadge.mint { background: linear-gradient(135deg, $mint, $mint-l); box-shadow: 0 2px 6px rgba(16,185,129,.4); }
 .pname {
   font-size: 13px; font-weight: 700; color: $t1;
   line-height: 1.3; height: 34px; overflow: hidden;
 }
 .pmeta { display: flex; justify-content: space-between; align-items: center; margin-top: 6px; }
-.pprice { font-size: 16px; font-weight: 900; color: $o; }
-.pearn { font-size: 10px; color: $t3; font-weight: 700; }
-.pearn.brand {
-  background: linear-gradient(135deg, $o, $o-d);
-  -webkit-background-clip: text; background-clip: text; color: transparent;
+.pprice { font-size: 16px; font-weight: 900; color: $o-d; }
+.padd {
+  width: 24px; height: 24px; border-radius: 50%;
+  background: linear-gradient(135deg, $o, $o-d); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; box-shadow: $sh-warm;
 }
-.pearn.gold { color: $gold-d; }
+
+/* ━━ Cart bar ━━ */
+.cart-bar {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  padding: 10px 14px 18px;
+  padding-bottom: calc(18px + env(safe-area-inset-bottom));
+  background: rgba(255,255,255,.96);
+  backdrop-filter: blur(20px);
+  border-top: 1px solid $line;
+  display: flex; align-items: center; gap: 12px;
+  z-index: 50;
+}
+.cart-bar-ic {
+  width: 44px; height: 44px; border-radius: 50%;
+  background: $bg-2;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; position: relative;
+}
+.cart-bar-ic .badge {
+  position: absolute; top: -2px; right: -2px;
+  min-width: 18px; height: 18px; padding: 0 5px;
+  background: $danger; color: #fff;
+  border-radius: 99px;
+  font-size: 10px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+  border: 2px solid #fff;
+}
+.cart-bar-info { flex: 1; }
+.cart-bar-price { font-size: 18px; font-weight: 900; color: $o-d; }
+.cart-bar-d { font-size: 10px; color: $t3; margin-top: 2px; }
+.cart-bar-pay {
+  height: 42px; padding: 0 20px; border-radius: 99px;
+  background: linear-gradient(135deg, $o, $o-d); color: #fff;
+  display: flex; align-items: center; font-weight: 800; font-size: 14px;
+  box-shadow: $sh-warm;
+}
 
 .bottom-pad { height: 20px; }
 </style>
