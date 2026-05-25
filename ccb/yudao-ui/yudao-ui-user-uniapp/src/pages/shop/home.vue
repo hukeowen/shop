@@ -38,39 +38,49 @@
       </view>
     </view>
 
-    <!-- ━━━━━━━━━━ 商户派奖动态 ━━━━━━━━━━ -->
-    <view v-if="giveStat.amount > 0" class="shop-give-card" @click="goWinners">
+    <!-- ━━━━━━━━━━ 商户派奖动态（永远显示，无数据时引导）━━━━━━━━━━ -->
+    <view class="shop-give-card" @click="goWinners">
       <view class="sgc-em">🎁</view>
       <view class="sgc-body">
-        <view class="sgc-t">本店<text class="b">正在派奖</text> · 今日已发 ¥{{ giveStat.amount }} / {{ giveStat.count }} 人</view>
-        <view class="sgc-d">
-          <text class="live">派奖中</text>
-          <text>· 下单即纳入派奖名单</text>
-        </view>
+        <template v-if="giveStat.count > 0">
+          <view class="sgc-t">本店<text class="b">正在派奖</text> · 今日已发 ¥{{ giveStat.amount }} / {{ giveStat.count }} 人</view>
+          <view class="sgc-d">
+            <text class="live">派奖中</text>
+            <text>· 下单即纳入派奖名单</text>
+          </view>
+        </template>
+        <template v-else>
+          <view class="sgc-t">本店<text class="b">派奖玩法</text> · 下单即纳入派奖池</view>
+          <view class="sgc-d">
+            <text class="live">即将开奖</text>
+            <text>· 你也有机会拿现金奖</text>
+          </view>
+        </template>
       </view>
       <view class="sgc-cta">查看榜 →</view>
     </view>
 
-    <!-- ━━━━━━━━━━ 推 N 反 1 主推大卡 ━━━━━━━━━━ -->
-    <view v-if="nback" class="nback-card">
+    <!-- ━━━━━━━━━━ 推 N 反 1 主推大卡（永远显示）━━━━━━━━━━ -->
+    <view class="nback-card">
       <view class="nb-deco">🔥</view>
       <view class="nb-head">
         <view class="nb-l">
-          <view class="nb-tag">推 {{ nback.n }} 反 1 · 不会差一刀</view>
-          <view class="nb-t">买够 {{ nback.n }} 件，<text class="h">1 件免单</text></view>
+          <view class="nb-tag">推 {{ nback?.n || 4 }} 反 1 · 不会差一刀</view>
+          <view class="nb-t">买够 {{ nback?.n || 4 }} 件，<text class="h">1 件免单</text></view>
           <view class="nb-sub">推广积分 1:1 提现 · 实在透明</view>
         </view>
         <view class="nb-money">
-          <view class="nb-mv">¥{{ nback.gotYuan }}</view>
-          <view class="nb-ml">已 拿 / 共 ¥{{ nback.totalYuan }}</view>
+          <view class="nb-mv">¥{{ nback?.gotYuan || '0.00' }}</view>
+          <view class="nb-ml">已 拿 / 共 ¥{{ nback?.totalYuan || '10.00' }}</view>
         </view>
       </view>
       <view class="nb-bar">
-        <view class="nb-fill" :style="{ width: nback.pct + '%' }"></view>
-        <view class="nb-txt">已完成 {{ nback.cur }} / {{ nback.n }} 件 · 第 {{ nback.n }} 件立即免单</view>
+        <view class="nb-fill" :style="{ width: (nback?.pct || 0) + '%' }"></view>
+        <view class="nb-txt" v-if="nback && nback.cur > 0">已完成 {{ nback.cur }} / {{ nback.n }} 件 · 第 {{ nback.n }} 件立即免单</view>
+        <view class="nb-txt" v-else>下单参与 · 第 {{ nback?.n || 4 }} 件立即免单</view>
       </view>
       <view class="nb-foot">
-        <view class="info">当前阶段 <text class="b">{{ nback.phase }}</text></view>
+        <view class="info">当前阶段 <text class="b">{{ nback?.phase || '即将开启' }}</text></view>
         <view class="nb-cta" @click="onShare">🤝 分享朋友</view>
       </view>
     </view>
@@ -290,9 +300,10 @@ async function loadMyEarn() {
 
 async function loadNback() {
   // 用 my-spu-stars 拿当前店里我已得 + 推 N 进度（简化版）
-  if (!user.isLogin) { nback.value = null; return; }
+  // 注：/my-spu-stars 要求 tenantId 走 query，不是 header
+  if (!user.isLogin || !route.tenantId) { nback.value = null; return; }
   try {
-    const list = await request({ url: '/app-api/merchant/mini/promo/my-spu-stars', tenantId: route.tenantId });
+    const list = await request({ url: `/app-api/merchant/mini/promo/my-spu-stars?tenantId=${route.tenantId}` });
     if (Array.isArray(list) && list.length) {
       // 找进度最快的 SPU
       const sorted = [...list]
