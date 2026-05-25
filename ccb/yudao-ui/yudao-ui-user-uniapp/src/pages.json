@@ -1,0 +1,55 @@
+{
+  "easycom": {
+    "autoscan": true,
+    "custom": {
+      "^award-modal$": "@/components/AwardModal.vue",
+      "^empty-state$": "@/components/EmptyState.vue",
+      "^nav-bar$": "@/components/NavBar.vue",
+      "^bottom-nav$": "@/components/BottomNav.vue"
+    }
+  },
+  "pages": [
+    {
+      "path": "pages/index/index",
+      "style": { "navigationStyle": "custom", "navigationBarTitleText": "客小二" }
+    },
+    {
+      "path": "pages/nearby/index",
+      "style": { "navigationStyle": "custom", "navigationBarTitleText": "附近店铺" }
+    },
+    {
+      "path": "pages/winners/index",
+      "style": { "navigationStyle": "custom", "navigationBarTitleText": "中奖公榜" }
+    },
+    {
+      "path": "pages/me/index",
+      "style": { "navigationStyle": "custom", "navigationBarTitleText": "我的" }
+    },
+
+    { "path": "pages/category/index",     "style": { "navigationStyle": "custom", "navigationBarTitleText": "分类" } },
+    { "path": "pages/search/index",       "style": { "navigationStyle": "custom", "navigationBarTitleText": "搜索" } },
+    { "path": "pages/product/detail",     "style": { "navigationStyle": "custom", "navigationBarTitleText": "商品详情" } },
+    { "path": "pages/cart/index",         "style": { "navigationStyle": "custom", "navigationBarTitleText": "购物车" } },
+    { "path": "pages/checkout/index",     "style": { "navigationStyle": "custom", "navigationBarTitleText": "结算" } },
+    { "path": "pages/pay-success/index",  "style": { "navigationStyle": "custom", "navigationBarTitleText": "支付完成" } },
+    { "path": "pages/order/list",         "style": { "navigationStyle": "custom", "navigationBarTitleText": "我的订单" } },
+    { "path": "pages/shop/home",          "style": { "navigationStyle": "custom", "navigationBarTitleText": "店铺主页" } },
+    { "path": "pages/wallet/index",       "style": { "navigationStyle": "custom", "navigationBarTitleText": "我的钱包" } },
+    { "path": "pages/withdraw/index",     "style": { "navigationStyle": "custom", "navigationBarTitleText": "提现申请" } },
+    { "path": "pages/queue/index",        "style": { "navigationStyle": "custom", "navigationBarTitleText": "我的队列" } },
+    { "path": "pages/rank/index",         "style": { "navigationStyle": "custom", "navigationBarTitleText": "榜一排名" } },
+    { "path": "pages/points/promo",       "style": { "navigationStyle": "custom", "navigationBarTitleText": "推广积分明细" } },
+    { "path": "pages/points/consume",     "style": { "navigationStyle": "custom", "navigationBarTitleText": "消费积分明细" } },
+    { "path": "pages/invite/index",       "style": { "navigationStyle": "custom", "navigationBarTitleText": "邀请好友" } },
+    { "path": "pages/coupon/index",       "style": { "navigationStyle": "custom", "navigationBarTitleText": "优惠券" } },
+    { "path": "pages/favorites/index",    "style": { "navigationStyle": "custom", "navigationBarTitleText": "收藏" } },
+    { "path": "pages/address/list",       "style": { "navigationStyle": "custom", "navigationBarTitleText": "收货地址" } },
+    { "path": "pages/login/index",        "style": { "navigationStyle": "custom", "navigationBarTitleText": "登录" } }
+  ],
+  "globalStyle": {
+    "navigationBarTitleText": "客小二",
+    "navigationBarBackgroundColor": "#0F0B07",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#FAFAF7"
+  }
+}

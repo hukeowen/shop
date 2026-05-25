@@ -1,0 +1,81 @@
+{
+  "name": "客小二",
+  "appid": "",
+  "description": "客小二 SaaS C 端 — 扫码下单、推 N 反 1、中奖公榜、推广积分",
+  "versionName": "0.1.0",
+  "versionCode": "1",
+  "transformPx": false,
+  "app-plus": {
+    "usingComponents": true,
+    "nvueCompiler": "uni-app",
+    "compilerVersion": 3,
+    "splashscreen": {
+      "alwaysShowBeforeRender": true,
+      "waiting": true,
+      "autoclose": true,
+      "delay": 0
+    },
+    "modules": {},
+    "distribute": {
+      "android": {
+        "permissions": [
+          "<uses-permission android:name=\"android.permission.INTERNET\"/>",
+          "<uses-permission android:name=\"android.permission.ACCESS_NETWORK_STATE\"/>",
+          "<uses-permission android:name=\"android.permission.ACCESS_FINE_LOCATION\"/>",
+          "<uses-permission android:name=\"android.permission.ACCESS_COARSE_LOCATION\"/>",
+          "<uses-permission android:name=\"android.permission.CAMERA\"/>",
+          "<uses-permission android:name=\"android.permission.READ_EXTERNAL_STORAGE\"/>",
+          "<uses-permission android:name=\"android.permission.WRITE_EXTERNAL_STORAGE\"/>"
+        ],
+        "minSdkVersion": 21,
+        "targetSdkVersion": 30,
+        "abiFilters": ["armeabi-v7a", "arm64-v8a"]
+      },
+      "ios": {},
+      "sdkConfigs": {}
+    }
+  },
+  "mp-weixin": {
+    "appid": "",
+    "setting": {
+      "urlCheck": false,
+      "minified": true,
+      "postcss": true
+    },
+    "usingComponents": true,
+    "permission": {
+      "scope.userLocation": {
+        "desc": "用于查找附近商家"
+      }
+    },
+    "requiredPrivateInfos": ["getLocation", "chooseLocation"]
+  },
+  "h5": {
+    "title": "客小二",
+    "template": "index.html",
+    "publicPath": "/u/",
+    "router": {
+      "mode": "hash",
+      "base": "/u/"
+    },
+    "devServer": {
+      "port": 5181,
+      "https": false,
+      "proxy": {
+        "/app-api": {
+          "target": "http://localhost:48080",
+          "changeOrigin": true,
+          "secure": false
+        },
+        "/admin-api": {
+          "target": "http://localhost:48080",
+          "changeOrigin": true,
+          "secure": false
+        }
+      }
+    }
+  },
+  "vueVersion": "3",
+  "locale": "zh-Hans",
+  "fallbackLocale": "zh-Hans"
+}

@@ -1,0 +1,33 @@
+{
+  "name": "kexiaoer-user-app",
+  "displayName": "客小二（用户端 H5 / 小程序 / APP）",
+  "version": "0.1.0",
+  "description": "客小二 SaaS C 端：扫码下单 + 推 N 反 1 + 中奖公榜 + 推广积分。基于 v9-wow 设计，uniapp 同栈打包 H5 + 微信小程序 + Android APP。",
+  "private": true,
+  "scripts": {
+    "dev:h5": "uni",
+    "dev:mp-weixin": "uni -p mp-weixin",
+    "dev:app-android": "uni -p app-android",
+    "build:h5": "uni build",
+    "build:mp-weixin": "uni build -p mp-weixin",
+    "build:app-android": "uni build -p app-android"
+  },
+  "dependencies": {
+    "@dcloudio/uni-app": "3.0.0-alpha-5000820260420001",
+    "@dcloudio/uni-app-plus": "3.0.0-alpha-5000820260420001",
+    "@dcloudio/uni-components": "3.0.0-alpha-5000820260420001",
+    "@dcloudio/uni-h5": "3.0.0-alpha-5000820260420001",
+    "@dcloudio/uni-mp-weixin": "3.0.0-alpha-5000820260420001",
+    "pinia": "2.0.36",
+    "vue": "3.4.21"
+  },
+  "devDependencies": {
+    "@dcloudio/types": "^3.4.8",
+    "@dcloudio/uni-automator": "3.0.0-alpha-5000820260420001",
+    "@dcloudio/uni-cli-shared": "3.0.0-alpha-5000820260420001",
+    "@dcloudio/uni-stacktracey": "3.0.0-alpha-5000820260420001",
+    "@dcloudio/vite-plugin-uni": "3.0.0-alpha-5000820260420001",
+    "sass": "^1.77.8",
+    "vite": "5.2.8"
+  }
+}

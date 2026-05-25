@@ -1,0 +1,66 @@
+/* ━━━━━━━━━━━━━━━ 客小二 v9-wow 设计令牌 ━━━━━━━━━━━━━━━ */
+/* 与 docs/prototype/user-h5-v9-wow.html 完全对齐，每个 token 都可在页面 :root override */
+
+/* —— 色 —— */
+$bg:         #FAFAF7;
+$bg-2:       #F6F7F9;
+$bg-3:       #FFF8F4;
+$card:       #FFFFFF;
+
+$o:          #FF6B35;
+$o-d:        #E25316;
+$o-l:        #FF8857;
+$o-50:       #FFF1EB;
+$o-100:      #FFE0D1;
+$o-200:      #FFCDB0;
+
+$gold:       #D4920A;
+$gold-l:     #F5B27A;
+$gold-d:     #A66E00;
+$gold-50:    #FEF3C7;
+
+$mint:       #10B981;
+$mint-l:     #6EE7B7;
+$mint-50:    #D1FAE5;
+
+$purple:     #6366F1;
+$purple-50:  #EEF2FF;
+
+$danger:     #E63946;
+$warn:       #F59E0B;
+
+$t1:         #1B1F23;
+$t2:         #5A6577;
+$t3:         #6F7785;
+$t4:         #94A3B8;
+
+$line:       #EEF0F4;
+$line-d:     #E2E5EB;
+
+/* —— 圆角 / 阴影 —— */
+$r-sm:  8px;
+$r-md:  12px;
+$r-lg:  16px;
+$r-xl:  22px;
+$r-2xl: 28px;
+$r-pill: 999px;
+
+$sh-1:    0 1px 2px rgba(15,23,42,.04), 0 1px 3px rgba(15,23,42,.05);
+$sh-2:    0 2px 8px rgba(15,23,42,.04), 0 8px 24px rgba(15,23,42,.06);
+$sh-3:    0 6px 16px rgba(15,23,42,.06), 0 24px 50px rgba(15,23,42,.10);
+$sh-warm: 0 8px 24px rgba(255,107,53,.28);
+$sh-gold: 0 8px 24px rgba(212,146,10,.28);
+
+/* —— uniapp 兼容 —— */
+$uni-color-primary: $o;
+$uni-color-success: $mint;
+$uni-color-warning: $warn;
+$uni-color-error:   $danger;
+
+$uni-text-color: $t1;
+$uni-text-color-grey: $t3;
+$uni-text-color-placeholder: $t4;
+
+$uni-bg-color: $bg;
+$uni-bg-color-grey: $bg-2;
+$uni-border-color: $line;
