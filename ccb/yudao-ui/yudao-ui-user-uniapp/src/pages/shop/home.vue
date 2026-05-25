@@ -175,7 +175,12 @@ const filteredSpus = computed(() => {
 function picTone(i) {
   return ['', 'green', 'purple', 'pink'][i % 4];
 }
-function onImgErr(p) { p.imgErr = true; }
+function onImgErr(p) {
+  // 直接 mutate p.imgErr 不会触发 Vue 重渲染（spus 数组 item 不是深响应式）
+  // 必须替换数组里这一项
+  const idx = spus.value.findIndex((x) => x.id === p.id);
+  if (idx >= 0) spus.value.splice(idx, 1, { ...spus.value[idx], imgErr: true });
+}
 function guessEmoji(name) {
   const n = (name || '').toLowerCase();
   if (/茶|饮|奶|咖啡/.test(n)) return '🍵';
