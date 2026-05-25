@@ -117,7 +117,11 @@ public class SmsCodeServiceImpl implements SmsCodeService {
             throw exception(SMS_CODE_EXPIRED);
         }
         // 判断验证码是否已被使用
-        if (Boolean.TRUE.equals(lastSmsCode.getUsed())) {
+        //   demo-mode（固定 code，演示/测试场景）：跳过 SMS_CODE_USED 校验，
+        //   允许同一固定 code 重复登录，避免 H5 调试反复"已使用"。
+        //   正式模式严格按 used=true 拒绝重放。
+        if (Boolean.TRUE.equals(lastSmsCode.getUsed())
+                && !Boolean.TRUE.equals(smsCodeProperties.getDemoMode())) {
             throw exception(SMS_CODE_USED);
         }
         return lastSmsCode;
