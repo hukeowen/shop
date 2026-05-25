@@ -76,8 +76,8 @@ onMounted(async () => {
 <style lang="scss" scoped>
 @import '@/uni.scss';
 .page { min-height: 100vh; background: $bg-2; padding-bottom: 30px; }
-.hero { position: relative; padding: 14px; }
-.hero-bg { position: absolute; inset: 0; background: linear-gradient(135deg, $o-50, $bg-3); border-bottom-left-radius: 20px; border-bottom-right-radius: 20px; z-index: -1; }
+.hero { position: relative; padding: 14px; background: linear-gradient(135deg, $o-50, $bg-3); border-bottom-left-radius: 20px; border-bottom-right-radius: 20px; }
+.hero-bg { display: none; }
 .shop-head { display: flex; gap: 12px; align-items: center; }
 .shop-pic { width: 64px; height: 64px; border-radius: 16px; background: linear-gradient(135deg, $o, $o-d); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 800; }
 .shop-info { flex: 1; }

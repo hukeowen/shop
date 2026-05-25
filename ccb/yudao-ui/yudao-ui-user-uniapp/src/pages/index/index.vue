@@ -261,15 +261,11 @@ onMounted(async () => {
   position: relative;
   padding: 18px 14px 12px;
   margin-bottom: 12px;
-  &::before {
-    content: ''; position: absolute; inset: 0;
-    background:
-      radial-gradient(500px 200px at 30% 0%, rgba(255,107,53,.22), transparent 60%),
-      linear-gradient(180deg, #18130E 0%, #2A1A0F 100%);
-    z-index: -1;
-    border-bottom-left-radius: 28px;
-    border-bottom-right-radius: 28px;
-  }
+  background:
+    radial-gradient(500px 200px at 30% 0%, rgba(255,107,53,.22), transparent 60%),
+    linear-gradient(180deg, #18130E 0%, #2A1A0F 100%);
+  border-bottom-left-radius: 28px;
+  border-bottom-right-radius: 28px;
 }
 .greet-row { display: flex; align-items: center; gap: 12px; padding: 6px 4px; }
 .avatar {
