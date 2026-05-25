@@ -236,9 +236,10 @@ async function load() {
     const list = await listMyShopsEnriched();
     myShops.value = (list || []).map((s) => {
       const queue = queues.value.find((q) => q.tenantId === s.tenantId);
-      const queueBar = queue ? {
-        text: `${queue.spuName || '商品'} · 推 ${queue.requiredCount || queue.tuijianN} 反 1 进度`,
-        bold: `${queue.currentCount || 0}/${queue.requiredCount || queue.tuijianN}`,
+      const reqN = queue ? (queue.requiredCount || queue.tuijianN) : 0;
+      const queueBar = (queue && reqN > 0) ? {
+        text: `${queue.spuName || '商品'} · 推 ${reqN} 反 1 进度`,
+        bold: `${queue.currentCount || 0}/${reqN}`,
       } : null;
       return {
         ...s,
