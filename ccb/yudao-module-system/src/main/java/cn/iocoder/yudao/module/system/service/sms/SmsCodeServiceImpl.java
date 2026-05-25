@@ -105,6 +105,19 @@ public class SmsCodeServiceImpl implements SmsCodeService {
     }
 
     private SmsCodeDO validateSmsCode0(String mobile, String code, Integer scene) {
+        boolean demoMode = Boolean.TRUE.equals(smsCodeProperties.getDemoMode());
+        String demoCode = smsCodeProperties.getDemoCode();
+
+        // 演示模式 + 输入的就是 demoCode → 直接放行（绕过所有校验：
+        // 不存在 / 已过期 / 已使用 一律不再抛错；如 DB 无记录就造一条返回）。
+        // 用于 H5 调试场景反复登录，避免「过期/已使用」反复打断。
+        if (demoMode && demoCode != null && demoCode.equals(code)) {
+            SmsCodeDO any = smsCodeMapper.selectLastByMobile(mobile, code, scene);
+            if (any != null) return any;
+            // 返回一个临时对象兜底（仅 useSmsCode 拿来 updateById；id 必填，给个 0 无副作用）
+            return SmsCodeDO.builder().id(0L).mobile(mobile).code(code).scene(scene).used(false).build();
+        }
+
         // 校验验证码
         SmsCodeDO lastSmsCode = smsCodeMapper.selectLastByMobile(mobile, code, scene);
         // 若验证码不存在，抛出异常
@@ -113,15 +126,11 @@ public class SmsCodeServiceImpl implements SmsCodeService {
         }
         // 超过时间
         if (LocalDateTimeUtil.between(lastSmsCode.getCreateTime(), LocalDateTime.now()).toMillis()
-                >= smsCodeProperties.getExpireTimes().toMillis()) { // 验证码已过期
+                >= smsCodeProperties.getExpireTimes().toMillis()) {
             throw exception(SMS_CODE_EXPIRED);
         }
-        // 判断验证码是否已被使用
-        //   demo-mode（固定 code，演示/测试场景）：跳过 SMS_CODE_USED 校验，
-        //   允许同一固定 code 重复登录，避免 H5 调试反复"已使用"。
-        //   正式模式严格按 used=true 拒绝重放。
-        if (Boolean.TRUE.equals(lastSmsCode.getUsed())
-                && !Boolean.TRUE.equals(smsCodeProperties.getDemoMode())) {
+        // 已使用
+        if (Boolean.TRUE.equals(lastSmsCode.getUsed())) {
             throw exception(SMS_CODE_USED);
         }
         return lastSmsCode;
