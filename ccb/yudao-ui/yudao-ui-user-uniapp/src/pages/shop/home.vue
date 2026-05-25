@@ -56,6 +56,9 @@ import { ref, computed, onMounted } from 'vue';
 import { getShopInfo, listShopProducts } from '@/api/shop.js';
 import { addCart } from '@/api/cart.js';
 import { fen2yuan } from '@/utils/format.js';
+import { useUserStore } from '@/store/user.js';
+
+const user = useUserStore();
 
 const shop = ref(null);
 const cats = ref([]);
@@ -91,6 +94,14 @@ const filteredSpus = computed(() => {
 
 function goProduct(p) { uni.navigateTo({ url: `/pages/product/detail?id=${p.id}&tenantId=${route.tenantId}` }); }
 async function onAdd(p) {
+  if (!user.isLogin) {
+    try {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('redirect:after-login', `/pages/shop/home?tenantId=${route.tenantId || ''}`);
+      }
+    } catch {}
+    return uni.navigateTo({ url: '/pages/login/index' });
+  }
   if (!p.skuIds || !p.skuIds.length) {
     return uni.navigateTo({ url: `/pages/product/detail?id=${p.id}&tenantId=${route.tenantId}` });
   }

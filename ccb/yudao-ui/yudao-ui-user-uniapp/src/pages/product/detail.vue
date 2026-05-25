@@ -62,6 +62,18 @@ import { getSpuDetail, favoriteCreate, favoriteDelete, favoriteExists } from '@/
 import { addCart, getCartCount } from '@/api/cart.js';
 import { request } from '@/utils/request.js';
 import { fen2yuan } from '@/utils/format.js';
+import { useUserStore } from '@/store/user.js';
+
+const user = useUserStore();
+
+function requireLogin(returnUrl) {
+  try {
+    if (typeof localStorage !== 'undefined' && returnUrl) {
+      localStorage.setItem('redirect:after-login', returnUrl);
+    }
+  } catch {}
+  uni.navigateTo({ url: '/pages/login/index' });
+}
 
 const loading = ref(true);
 const spu = ref(null);
@@ -82,10 +94,17 @@ const promoTag = computed(() => {
 });
 const shopName = computed(() => spu.value?.shopName || spu.value?.tenantName || '本店');
 
+function curUrl() {
+  return `/pages/product/detail?id=${route.id || ''}&tenantId=${route.tenantId || ''}`;
+}
 function goShop()  { if (spu.value?.tenantId) uni.navigateTo({ url: `/pages/shop/home?tenantId=${spu.value.tenantId}` }); }
-function goCart()  { uni.navigateTo({ url: '/pages/cart/index' }); }
+function goCart()  {
+  if (!user.isLogin) return requireLogin(curUrl());
+  uni.navigateTo({ url: '/pages/cart/index' });
+}
 async function toggleFav() {
   if (!spu.value) return;
+  if (!user.isLogin) return requireLogin(curUrl());
   try {
     if (isFav.value) { await favoriteDelete(spu.value.id); isFav.value = false; }
     else            { await favoriteCreate(spu.value.id);  isFav.value = true; }
@@ -97,6 +116,7 @@ function pickSku() {
   return spu.value.skus[0];
 }
 async function onAddCart() {
+  if (!user.isLogin) return requireLogin(curUrl());
   const sku = pickSku();
   if (!sku) return uni.showToast({ title: '该商品暂无规格', icon: 'none' });
   try {
@@ -106,6 +126,7 @@ async function onAddCart() {
   } catch {}
 }
 function onBuyNow() {
+  if (!user.isLogin) return requireLogin(curUrl());
   const sku = pickSku();
   if (!sku) return uni.showToast({ title: '该商品暂无规格', icon: 'none' });
   // 直接跳 checkout，带 sku + 数量 + shop
