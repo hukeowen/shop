@@ -23,13 +23,14 @@ export const getShopPointConfig = (tenantId) =>
   get(`/app-api/merchant/shop/public/config?tenantId=${tenantId}`);
 
 // 我访问过的店铺列表（按访问时间倒序）
+//   实际控制器 AppMemberShopRelController @RequestMapping("/merchant/mini/member-rel")
 export const listMyShops = () =>
-  get('/app-api/merchant/shop/mini/member-rel/my-shops');
+  get('/app-api/merchant/mini/member-rel/my-shops');
 
 // 我加入的店铺（含余额 / 推广积分 / 消费积分）
 export const listMyShopsEnriched = () =>
-  get('/app-api/merchant/shop/mini/member-rel/my-shops-enriched');
+  get('/app-api/merchant/mini/member-rel/my-shops-enriched');
 
 // 当前 tenant 下我的余额 / 积分
 export const getMyRel = (tenantId) =>
-  get('/app-api/merchant/shop/mini/member-rel/my', { tenantId });
+  get('/app-api/merchant/mini/member-rel/my', { tenantId });
