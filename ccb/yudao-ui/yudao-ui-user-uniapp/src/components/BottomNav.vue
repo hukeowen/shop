@@ -3,12 +3,13 @@
     <view class="bn-item" :class="{ active: active === 'index' }" @click="go('index')">
       <view class="ic">🏠</view><text>首页</text>
     </view>
-    <view class="bn-item" :class="{ active: active === 'winners' }" @click="go('winners')">
-      <view class="ic">🏆</view><text>中奖榜</text>
+    <view class="bn-item" :class="{ active: active === 'cart' }" @click="go('cart')">
+      <view class="ic">🛒</view><text>购物车</text>
+      <view v-if="cartCount > 0" class="bn-tab-badge">{{ cartCount }}</view>
     </view>
-    <view class="bn-cart" @click="go('cart')">
-      🛒
-      <view v-if="cartCount > 0" class="bn-cart-badge">{{ cartCount }}</view>
+    <view class="bn-winners" :class="{ active: active === 'winners' }" @click="go('winners')">
+      🏆
+      <view class="bn-live-dot"></view>
     </view>
     <view class="bn-item" :class="{ active: active === 'order' }" @click="go('order')">
       <view class="ic">📋</view><text>订单</text>
@@ -21,14 +22,14 @@
 
 <script setup>
 const props = defineProps({
-  active: { type: String, default: 'index' }, // index | winners | order | me
+  active: { type: String, default: 'index' }, // index | cart | winners | order | me
   cartCount: { type: Number, default: 0 },
 });
 
 const ROUTE = {
   index:   '/pages/index/index',
-  winners: '/pages/winners/index',
   cart:    '/pages/cart/index',
+  winners: '/pages/winners/index',
   order:   '/pages/order/list',
   me:      '/pages/me/index',
 };
@@ -71,25 +72,44 @@ function go(k) {
   width: 4px; height: 4px; border-radius: 99px;
   background: $o; box-shadow: 0 0 8px $o;
 }
-.bn-cart {
+.bn-tab-badge {
+  position: absolute; top: 6px; right: 50%;
+  transform: translateX(18px);
+  min-width: 16px; height: 16px; padding: 0 4px;
+  background: $danger; color: #fff;
+  border-radius: 99px;
+  font-size: 9px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+  border: 2px solid #fff;
+}
+
+/* 中奖榜浮起按钮（金渐变 + 实时红点） */
+.bn-winners {
   width: 52px; height: 52px; border-radius: 50%;
-  background: linear-gradient(135deg, $o, $o-d);
+  background: linear-gradient(135deg, $gold, $gold-d);
   display: flex; align-items: center; justify-content: center;
   margin-top: -14px;
   margin-left: 6px; margin-right: 6px;
   align-self: center;
-  box-shadow: $sh-warm;
+  box-shadow: $sh-gold;
   color: #fff;
   font-size: 22px;
   position: relative;
 }
-.bn-cart-badge {
-  position: absolute; top: -2px; right: -2px;
-  min-width: 18px; height: 18px; padding: 0 5px;
-  background: $danger; color: #fff;
-  border-radius: 99px;
-  font-size: 10px; font-weight: 800;
-  display: flex; align-items: center; justify-content: center;
+.bn-winners.active {
+  transform: scale(1.05);
+  box-shadow: $sh-gold, 0 0 0 4px rgba(245,178,122,.3);
+}
+.bn-live-dot {
+  position: absolute; top: 4px; right: 4px;
+  width: 9px; height: 9px; border-radius: 50%;
+  background: $danger;
+  box-shadow: 0 0 6px $danger;
   border: 2px solid #fff;
+  animation: live-pulse 1.5s ease-in-out infinite;
+}
+@keyframes live-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: .6; transform: scale(.85); }
 }
 </style>
