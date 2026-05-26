@@ -376,13 +376,15 @@ async function loadNback() {
 }
 
 async function loadVip() {
-  if (!user.isLogin || !route.tenantId) { vip.myStar = 0; vip.earnYuan = '0'; return; }
+  if (!user.isLogin || !route.tenantId) { vip.myStar = 0; vip.earnYuan = '0.00'; return; }
   try {
     const rel = await getMyRel(route.tenantId);
     if (rel) {
       vip.myStar = rel.star || 0;
       vip.discountText = rel.discount ? `${(rel.discount * 10).toFixed(0)}` : '';
-      vip.earnYuan = fen2yuan(rel.balance || 0, false);
+      // "你已赚" / "在该店赚" = 推广积分（1 积分 = 1 分钱，本店累积，余额式：已发未提）
+      // 余额(balance)概念已下线，不再用；展示 promoPoints 即钱
+      vip.earnYuan = fen2yuan(rel.promoPoints || 0, false);
       myEarn.value = vip.earnYuan;
     }
   } catch {}
