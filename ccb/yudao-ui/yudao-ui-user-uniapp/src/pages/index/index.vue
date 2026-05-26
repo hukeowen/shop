@@ -84,13 +84,18 @@
       <view class="hqt-cta">分享 →</view>
     </view>
 
-    <!-- ━━━━━━━━━━ 5 分类 ━━━━━━━━━━ -->
+    <!-- ━━━━━━━━━━ 分类（与系统 BUSINESS_CONTEXT_MAP 编码对齐：snack/drink/bbq/restaurant/tea_house/fruit/super/bakery/beauty/other）━━━━━━━━━━ -->
     <view class="home-cats">
-      <view class="home-cat" @click="goCategory('food')"><view class="em">🍔</view><view class="l">餐饮</view></view>
-      <view class="home-cat" @click="goCategory('tea')"><view class="em">🍵</view><view class="l">茶饮</view></view>
-      <view class="home-cat" @click="goCategory('bake')"><view class="em">🍰</view><view class="l">烘焙</view></view>
-      <view class="home-cat" @click="goCategory('fresh')"><view class="em">🍇</view><view class="l">生鲜</view></view>
-      <view class="home-cat" @click="goCategory('beauty')"><view class="em">💆</view><view class="l">美容</view></view>
+      <view class="home-cat" @click="goCategory('snack')"><view class="em">🥟</view><view class="l">小吃</view></view>
+      <view class="home-cat" @click="goCategory('drink')"><view class="em">🧋</view><view class="l">奶茶</view></view>
+      <view class="home-cat" @click="goCategory('bbq')"><view class="em">🍢</view><view class="l">烧烤</view></view>
+      <view class="home-cat" @click="goCategory('restaurant')"><view class="em">🍽</view><view class="l">餐厅</view></view>
+      <view class="home-cat" @click="goCategory('tea_house')"><view class="em">🏯</view><view class="l">茶馆</view></view>
+      <view class="home-cat" @click="goCategory('fruit')"><view class="em">🍓</view><view class="l">水果</view></view>
+      <view class="home-cat" @click="goCategory('super')"><view class="em">🛒</view><view class="l">超市</view></view>
+      <view class="home-cat" @click="goCategory('bakery')"><view class="em">🥐</view><view class="l">烘焙</view></view>
+      <view class="home-cat" @click="goCategory('beauty')"><view class="em">💄</view><view class="l">美容</view></view>
+      <view class="home-cat" @click="goCategory('')"><view class="em">🏪</view><view class="l">全部</view></view>
     </view>
 
     <!-- ━━━━━━━━━━ 营销双卡 ━━━━━━━━━━ -->

@@ -58,14 +58,22 @@ import { fmtDistance } from '@/utils/format.js';
 const location = ref('');
 const loading = ref(false);
 const filter = ref('all');
+// 与系统 BUSINESS_CONTEXT_MAP（merchant 端 categories/index.vue）编码一一对应
 const filters = [
-  { k: 'all',    label: '全部' },
-  { k: 'food',   label: '餐饮' },
-  { k: 'tea',    label: '茶饮' },
-  { k: 'bake',   label: '烘焙' },
-  { k: 'fresh',  label: '生鲜' },
-  { k: 'beauty', label: '美容' },
-  { k: 'super',  label: '超市' },
+  { k: 'all',        label: '全部' },
+  { k: 'snack',      label: '小吃' },
+  { k: 'drink',      label: '奶茶' },
+  { k: 'bbq',        label: '烧烤' },
+  { k: 'restaurant', label: '餐厅' },
+  { k: 'tea_house',  label: '茶馆' },
+  { k: 'fruit',      label: '水果' },
+  { k: 'super',      label: '超市' },
+  { k: 'bakery',     label: '烘焙' },
+  { k: 'tea',        label: '茶叶' },
+  { k: 'clothing',   label: '服装' },
+  { k: 'massage',    label: '按摩' },
+  { k: 'beauty',     label: '美容' },
+  { k: 'other',      label: '其他' },
 ];
 const shops = ref([]);
 const userLng = ref(0);
