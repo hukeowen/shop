@@ -615,13 +615,17 @@ async function submitOrder() {
           icon: 'none',
           duration: 2000,
         });
-        setTimeout(() => uni.redirectTo({ url: '/pages/user-order/list' }), 1500);
+        setTimeout(() => uni.reLaunch({ url: '/pages/order/list' }), 1500);
       }
     } else {
-      // 余额抵扣全额或余额+积分付清 → 跳「支付完成」页（原型 ⑧ 邀请激励 引流）
-      setTimeout(() => uni.redirectTo({
-        url: `/pages/order/pay-done?orderId=${orderId}${tid ? `&tenantId=${tid}` : ''}`,
-      }), 600);
+      // 余额抵扣全额或余额+积分付清 → 跳支付完成页
+      try {
+        uni.setStorageSync('pay-success-amount', res?.payPrice || 0);
+        if (promoDeductFen > 0) {
+          uni.setStorageSync('pay-success-reward', { amount: promoDeductFen, source: '推广积分抵扣' });
+        }
+      } catch {}
+      setTimeout(() => uni.reLaunch({ url: '/pages/pay-success/index' }), 600);
     }
   } catch (e) {
     uni.hideLoading();
@@ -651,7 +655,7 @@ async function loadDefaultAddress() {
 // 点击地址卡片 → 跳到地址管理页（select 模式）
 function pickAddress() {
   uni.navigateTo({
-    url: '/pages/user-me/address?select=1',
+    url: '/pages/address/list?select=1',
     fail: () => uni.showToast({ title: '地址页打开失败', icon: 'none' }),
   });
 }

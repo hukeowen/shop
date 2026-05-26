@@ -309,7 +309,7 @@ function goCheckout() {
 
 function toggleEdit() { editMode.value = !editMode.value; }
 function goBack() { uni.navigateBack({ fail: () => goHome() }); }
-function goHome() { uni.reLaunch({ url: '/pages/user-home/index' }); }
+function goHome() { uni.reLaunch({ url: '/pages/index/index' }); }
 
 onMounted(load);
 onShow(load);

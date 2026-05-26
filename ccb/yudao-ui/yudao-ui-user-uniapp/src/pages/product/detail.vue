@@ -200,7 +200,8 @@ async function loadPoolPublic() {
 }
 
 function goPoolPublic() {
-  uni.navigateTo({ url: `/pages/user-me/pool-public?spuId=${spuId.value}` });
+  // 用 user uniapp 现有的中奖榜代替老 merchant 的奖池公示页
+  uni.navigateTo({ url: `/pages/winners/index?tenantId=${tenantId.value}` });
 }
 
 async function loadCartCount() {
@@ -243,7 +244,7 @@ function buyNow() {
 }
 
 function onShare() { uni.showToast({ title: '从店铺页 ↗ 分享', icon: 'none' }); }
-function goShop() { uni.navigateTo({ url: `/pages/shop-home/index?tenantId=${tenantId.value}` }); }
+function goShop() { uni.navigateTo({ url: `/pages/shop/home?tenantId=${tenantId.value}` }); }
 function goCart() { uni.navigateTo({ url: `/pages/cart/index?tenantId=${tenantId.value}` }); }
 function goBack() { uni.navigateBack(); }
 
