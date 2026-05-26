@@ -1,5 +1,5 @@
-// ¥ 分 → 元（保留 2 位，千分逗号）
-export function fen2yuan(fen, withSign = true) {
+// 分 → 元（保留 2 位，千分逗号）。默认 false，因 H5 模板已自带 ¥ 字面量，避免 ¥¥
+export function fen2yuan(fen, withSign = false) {
   if (fen == null || fen === '') return withSign ? '¥0.00' : '0.00';
   const n = Number(fen) / 100;
   const s = n.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
