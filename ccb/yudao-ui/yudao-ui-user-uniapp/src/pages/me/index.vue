@@ -96,7 +96,7 @@
           <view class="l">推广积分</view>
         </view>
         <view class="msb-stat" @click.stop="goShopRecords(s, 'consume')">
-          <view class="n purple">{{ s.consumePoint }}</view>
+          <view class="n purple">¥{{ s.consumeYuan }}</view>
           <view class="l">消费积分</view>
         </view>
         <view class="msb-stat">
@@ -246,8 +246,8 @@ async function load() {
       return {
         ...s,
         starLevel: star,                      // 兼容旧模板引用
-        promoYuan: fen2yuan(s.promoPoints || 0, false),   // 推广积分 → 显示成 ¥
-        consumePoint: s.points || 0,           // 消费积分 → 直接显示分数
+        promoYuan: fen2yuan(s.promoPoints || 0, false),   // 推广积分 → ¥
+        consumeYuan: fen2yuan(s.points || 0, false),      // 消费积分 → ¥（100 积分=¥1）
         lastVisitText: s.lastVisitAt ? `最近 ${fmtTime(s.lastVisitAt)}` : '',
         queueCount: queue ? 1 : 0,
         queueActive: !!queue,

@@ -3,7 +3,7 @@
     <nav-bar :title="shopName ? `${shopName} · 消费积分` : '消费积分明细'" />
     <view class="sum-card">
       <text class="l">{{ shopName ? `${shopName} · 消费积分` : '消费积分（跨店）' }}</text>
-      <view class="amt">{{ balance }}</view>
+      <view class="amt">¥{{ fen2yuan(balance, false) }}</view>
       <text class="d">100 消费积分 = ¥1 · 下单可抵扣</text>
     </view>
     <view v-if="loading && !records.length" class="loading">加载中…</view>
@@ -13,9 +13,9 @@
         <view class="r-ic">{{ iconFor(r.sourceType) }}</view>
         <view class="body">
           <view class="t">{{ r.remark || labelFor(r.sourceType) }}</view>
-          <view class="d">{{ fmtTime(r.createTime) }} · 余额 {{ r.balanceAfter || 0 }}</view>
+          <view class="d">{{ fmtTime(r.createTime) }} · 余额 ¥{{ fen2yuan(r.balanceAfter || 0, false) }}</view>
         </view>
-        <view class="amt" :class="{ neg: r.amount < 0 }">{{ r.amount > 0 ? '+' : '' }}{{ r.amount }}</view>
+        <view class="amt" :class="{ neg: r.amount < 0 }">{{ r.amount > 0 ? '+' : '' }}¥{{ fen2yuan(r.amount, false) }}</view>
       </view>
       <view v-if="loadingMore" class="more">加载中…</view>
       <view v-else-if="hasMore" class="more click" @click="loadMore">点击加载更多</view>
@@ -27,7 +27,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { getAccount, listConsumeRecords } from '@/api/promo.js';
-import { fmtTime } from '@/utils/format.js';
+import { fmtTime, fen2yuan } from '@/utils/format.js';
 
 // 路由参数：tenantId 按店过滤 + shopName 标题
 const route = (() => {

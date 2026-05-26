@@ -1,11 +1,14 @@
 <template>
   <view class="page">
-    <nav-bar title="附近店铺" bg="#0F0B07" txt="#fff" />
+    <nav-bar title="附近店铺" />
+
+    <!-- ━━━━━━━━━━ Hero：定位 + 搜索 + 筛选 ━━━━━━━━━━ -->
     <view class="hero">
+      <view class="hero-bg"></view>
       <view class="loc-row">
         <text class="loc-ic">📍</text>
         <text class="loc-name">{{ location || '正在定位…' }}</text>
-        <text class="loc-act" @click="onRelocate">重定位</text>
+        <view class="loc-act" @click="onRelocate">重定位</view>
       </view>
       <view class="search" @click="goSearch">
         <text class="ic">🔍</text>
@@ -16,24 +19,28 @@
       </scroll-view>
     </view>
 
+    <!-- ━━━━━━━━━━ 商家 2 列 grid（与首页统一）━━━━━━━━━━ -->
     <view v-if="loading" class="loading">加载中…</view>
-    <empty-state v-else-if="!shops.length" icon="🏪" title="附近暂无店铺" />
+    <empty-state v-else-if="!shops.length" icon="🏪" title="附近暂无店铺" desc="换个位置或允许定位试试" />
     <view v-else>
-      <view v-for="s in shops" :key="s.id || s.tenantId" class="shop-card" @click="goShop(s)">
-        <view class="shop-head">
-          <view class="shop-pic">
-            <image v-if="s.shopLogo" :src="s.shopLogo" class="pic-img" mode="aspectFill" />
-            <text v-else>{{ (s.shopName || s.name || '店')[0] }}</text>
-          </view>
-          <view class="shop-info">
-            <view class="shop-row1">
-              <text class="shop-name">{{ s.shopName || s.name }}</text>
-              <text v-if="s.businessStatus === 0" class="closed">已打烊</text>
+      <view class="result-bar">共找到 <text class="b">{{ shops.length }}</text> 家店</view>
+      <view class="shop-grid">
+        <view v-for="(s, i) in shops" :key="s.id || s.tenantId" class="shop-card-g" @click="goShop(s)">
+          <view class="shop-cover" :class="['', 'alt-1', 'alt-2'][i % 3]">
+            <image v-if="s.shopLogo" :src="s.shopLogo" mode="aspectFill" class="cover-img" />
+            <text v-else class="cover-em">{{ (s.shopName || s.name || '店')[0] }}</text>
+            <view class="shop-status-mini" :class="{ closed: !s.open }">
+              <text class="dot"></text>{{ s.open ? '营业中' : '休息中' }}
             </view>
-            <view class="shop-meta">
+            <view v-if="s.star" class="cover-star">★{{ s.star }}</view>
+          </view>
+          <view class="card-body">
+            <view class="card-name">{{ s.shopName || s.name }}</view>
+            <view v-if="s.promoLine" class="card-promo">{{ s.promoLine }}</view>
+            <view class="card-meta">
               <text v-if="s.rating" class="rating">★ {{ s.rating }}</text>
-              <text v-if="s.distance != null" class="dist">📍 {{ distText(s.distance) }}</text>
               <text v-if="s.monthSold != null">月售 {{ s.monthSold }}</text>
+              <text v-if="s.distance">· {{ s.distance }}</text>
             </view>
           </view>
         </view>
@@ -44,8 +51,9 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted } from 'vue';
 import { listShops } from '@/api/shop.js';
+import { fmtDistance } from '@/utils/format.js';
 
 const location = ref('');
 const loading = ref(false);
@@ -55,22 +63,17 @@ const filters = [
   { k: 'food',  label: '餐饮' },
   { k: 'tea',   label: '茶饮' },
   { k: 'fresh', label: '生鲜' },
+  { k: 'super', label: '超市' },
 ];
 const shops = ref([]);
 const userLng = ref(0);
 const userLat = ref(0);
 
-function distText(m) {
-  if (m == null) return '';
-  return m < 1000 ? `${Math.round(m)}m` : `${(m / 1000).toFixed(1)}km`;
-}
 function goSearch() { uni.navigateTo({ url: '/pages/search/index' }); }
 function goShop(s) { uni.navigateTo({ url: `/pages/shop/home?id=${s.id || s.tenantId}&tenantId=${s.tenantId || s.id}` }); }
 function setFilter(k) { filter.value = k; load(); }
 
 function onRelocate() {
-  // 浏览器 / 拒绝授权时 uni.getLocation 可能 success/fail 都不 fire；
-  // 设个 timeout，5s 内没回话就走 fail 路径
   location.value = '正在定位…';
   let settled = false;
   const timer = setTimeout(() => {
@@ -94,6 +97,7 @@ function onRelocate() {
     },
   });
 }
+
 async function load() {
   loading.value = true;
   try {
@@ -104,12 +108,21 @@ async function load() {
     }
     if (filter.value !== 'all') params.businessType = filter.value;
     const r = await listShops(params);
-    shops.value = r?.list || r || [];
+    const items = r?.list || r || [];
+    shops.value = items.map((s) => ({
+      ...s,
+      open: s.isOpenNow === true,
+      star: s.starLevel || s.star,
+      rating: s.avgRating,
+      monthSold: s.sales30d,
+      distance: s.distance != null && s.distance > 0 ? fmtDistance(s.distance) : '',
+      promoLine: s.tuijianN ? `推 ${s.tuijianN} 反 1 进行中` : '',
+    }));
   } catch { shops.value = []; }
   finally { loading.value = false; }
 }
+
 onMounted(() => {
-  // 不等定位，立即 load 一次保证不会卡住；定位回话后会再 load 一次带距离
   load();
   onRelocate();
 });
@@ -117,28 +130,157 @@ onMounted(() => {
 
 <style lang="scss" scoped>
 @import '@/uni.scss';
-.page { min-height: 100vh; padding-bottom: 30px; background: $bg; }
-.hero { padding: 12px 14px; background: linear-gradient(180deg, #18130E 0%, #2A1A0F 100%); border-bottom-left-radius: 24px; border-bottom-right-radius: 24px; }
-.loc-row { display: flex; align-items: center; gap: 6px; padding: 6px 4px; }
-.loc-ic { color: $o; }
-.loc-name { flex: 1; color: #fff; font-size: 13px; font-weight: 700; }
-.loc-act { color: $o-l; font-size: 12px; }
-.search { margin-top: 10px; display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,.96); border-radius: 14px; padding: 10px 14px; }
-.search .ic { color: $o; }
+
+.page { min-height: 100vh; padding-bottom: 30px; background: $bg-2; }
+
+/* ━━ Hero ━━ */
+.hero {
+  position: relative;
+  padding: 14px 14px 16px;
+  background:
+    radial-gradient(500px 250px at 0% 0%, rgba(212,146,10,.35), transparent 60%),
+    linear-gradient(180deg, #18130E 0%, #2A1A0F 100%);
+  color: #fff;
+}
+.hero-bg {
+  position: absolute; inset: 0;
+  background-image: radial-gradient(rgba(255,255,255,.05) 1px, transparent 1px);
+  background-size: 22px 22px;
+  pointer-events: none;
+}
+.loc-row {
+  display: flex; align-items: center; gap: 8px; padding: 4px 4px 0;
+  position: relative;
+}
+.loc-ic { font-size: 14px; }
+.loc-name { flex: 1; font-size: 13px; font-weight: 700; color: rgba(255,255,255,.95); }
+.loc-act {
+  padding: 5px 12px; border-radius: 99px;
+  background: rgba(255,255,255,.12);
+  font-size: 11.5px; font-weight: 700;
+  color: $gold-l;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,.15);
+}
+
+.search {
+  margin-top: 12px;
+  display: flex; align-items: center; gap: 8px;
+  background: rgba(255,255,255,.96);
+  border-radius: 99px;
+  padding: 10px 16px;
+  position: relative;
+  box-shadow: 0 4px 12px rgba(0,0,0,.15);
+}
+.search .ic { color: $o; font-size: 14px; }
 .search .ph { flex: 1; color: $t4; font-size: 13px; }
-.filter-scroll { white-space: nowrap; margin-top: 12px; }
-.f-tag { display: inline-block; padding: 6px 12px; border-radius: $r-pill; background: rgba(255,255,255,.08); color: rgba(255,255,255,.7); font-size: 11px; font-weight: 600; margin-right: 6px; }
-.f-tag.on { background: $o; color: #fff; box-shadow: $sh-warm; }
-.loading { padding: 30px; text-align: center; color: $t4; }
-.shop-card { margin: 10px 14px 0; padding: 12px; background: $card; border-radius: $r-lg; box-shadow: $sh-1; }
-.shop-head { display: flex; gap: 12px; }
-.shop-pic { width: 50px; height: 50px; border-radius: 12px; background: linear-gradient(135deg, $o, $o-d); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 18px; overflow: hidden; flex-shrink: 0; }
-.pic-img { width: 100%; height: 100%; }
-.shop-info { flex: 1; min-width: 0; }
-.shop-row1 { display: flex; align-items: center; gap: 6px; }
-.shop-name { font-size: 14px; font-weight: 800; color: $t1; flex: 1; }
-.closed { font-size: 10px; color: #fff; background: $t4; padding: 1px 6px; border-radius: 4px; }
-.shop-meta { display: flex; gap: 8px; margin-top: 6px; font-size: 11px; color: $t3; }
-.rating { color: $gold-d; font-weight: 700; }
-.bottom-pad { height: 30px; }
+
+.filter-scroll {
+  margin-top: 12px;
+  white-space: nowrap;
+  position: relative;
+}
+.f-tag {
+  display: inline-block;
+  padding: 6px 14px; border-radius: 99px;
+  background: rgba(255,255,255,.1);
+  color: rgba(255,255,255,.75);
+  font-size: 11.5px; font-weight: 700;
+  margin-right: 6px;
+  border: 1px solid rgba(255,255,255,.12);
+  backdrop-filter: blur(10px);
+}
+.f-tag.on {
+  background: linear-gradient(135deg, $o, $o-d);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: $sh-warm;
+}
+
+/* ━━ 结果条 ━━ */
+.result-bar {
+  margin: 14px 14px 8px;
+  font-size: 12px; color: $t3;
+}
+.result-bar .b { color: $o-d; font-weight: 800; margin: 0 2px; }
+
+/* ━━ Shop grid（与首页 shop-grid 一致）━━ */
+.shop-grid {
+  padding: 0 14px;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+}
+.shop-card-g {
+  background: $card;
+  border-radius: $r-lg;
+  border: 1px solid $line;
+  box-shadow: 0 1px 2px rgba(15,23,42,.04), 0 4px 12px rgba(15,23,42,.05);
+  overflow: hidden;
+  transition: transform .15s ease;
+}
+.shop-card-g:active { transform: scale(.98); }
+.shop-cover {
+  height: 96px;
+  position: relative;
+  background: linear-gradient(135deg, #FFD1BA, $o);
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+}
+.shop-cover.alt-1 { background: linear-gradient(135deg, #C9E0FF, #6196F0); }
+.shop-cover.alt-2 { background: linear-gradient(135deg, #D3F4D3, #4CB84C); }
+.cover-img { width: 100%; height: 100%; }
+.cover-em {
+  font-size: 42px; font-weight: 800; color: #fff;
+  text-shadow: 0 2px 8px rgba(0,0,0,.15);
+}
+.shop-status-mini {
+  position: absolute; top: 8px; right: 8px;
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 8px; border-radius: 99px;
+  background: rgba(16,185,129,.95);
+  color: #fff; font-size: 9.5px; font-weight: 800;
+  backdrop-filter: blur(8px);
+}
+.shop-status-mini .dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: #fff;
+  animation: shop-pulse 1.8s ease-in-out infinite;
+}
+.shop-status-mini.closed { background: rgba(100,116,139,.9); }
+.shop-status-mini.closed .dot { animation: none; }
+@keyframes shop-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: .5; transform: scale(.7); }
+}
+.cover-star {
+  position: absolute; top: 8px; left: 8px;
+  padding: 3px 8px; border-radius: 99px;
+  background: linear-gradient(135deg, $gold, $gold-d);
+  color: #fff; font-size: 10px; font-weight: 800;
+  box-shadow: 0 2px 8px rgba(212,146,10,.4);
+}
+.card-body { padding: 10px 12px 12px; }
+.card-name {
+  font-size: 14px; font-weight: 800; color: $t1;
+  letter-spacing: -.3px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.card-promo {
+  margin-top: 6px;
+  display: inline-block;
+  padding: 2px 7px;
+  background: linear-gradient(135deg, $o-50, $gold-50);
+  color: $o-d;
+  font-size: 10px; font-weight: 700;
+  border-radius: 4px;
+  border: 1px solid $o-100;
+}
+.card-meta {
+  margin-top: 6px;
+  display: flex; align-items: center; gap: 8px;
+  font-size: 11px; color: $t3;
+}
+.card-meta .rating { color: $gold-d; font-weight: 700; }
+
+.loading { padding: 40px; text-align: center; color: $t4; }
+.bottom-pad { height: 20px; }
 </style>
