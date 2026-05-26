@@ -562,12 +562,12 @@ public class AppMerchantPromoController {
     }
 
     @GetMapping("/winners")
-    @Operation(summary = "中奖公榜（最新派奖列表，按时间倒序）")
-    @Parameter(name = "limit", description = "返回条数，默认 50，最大 200")
+    @Operation(summary = "中奖公榜 Top N — 按派奖金额从大到小排，相同金额按时间倒序")
+    @Parameter(name = "limit", description = "返回条数，默认 100，最大 200")
     @cn.iocoder.yudao.framework.tenant.core.aop.TenantIgnore
     public CommonResult<List<Map<String, Object>>> listWinners(
-            @RequestParam(name = "limit", required = false, defaultValue = "50") Integer limit) {
-        int n = Math.min(Math.max(limit == null ? 50 : limit, 1), 200);
+            @RequestParam(name = "limit", required = false, defaultValue = "100") Integer limit) {
+        int n = Math.min(Math.max(limit == null ? 100 : limit, 1), 200);
         Long headerTenant = cn.iocoder.yudao.framework.tenant.core.context.TenantContextHolder.getTenantId();
         boolean perTenant = headerTenant != null && headerTenant > 0;
 
@@ -576,6 +576,7 @@ public class AppMerchantPromoController {
                 promoRecordMapper.selectList(
                         new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<ShopPromoRecordDO>()
                                 .gt(ShopPromoRecordDO::getAmount, 0L)
+                                .orderByDesc(ShopPromoRecordDO::getAmount)
                                 .orderByDesc(ShopPromoRecordDO::getId)
                                 .last("LIMIT " + n));
         if (perTenant) {

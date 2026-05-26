@@ -68,7 +68,7 @@
     <!-- ━━━━━━━━━━ 5 快入口 ━━━━━━━━━━ -->
     <view class="home-quick">
       <view class="qk" @click="goNearby"><view class="qk-ic">📍</view><view class="qk-text">附近</view></view>
-      <view class="qk" @click="goWinners"><view class="qk-ic">🏆<view class="live-dot"></view></view><view class="qk-text">中奖榜</view></view>
+      <view class="qk" @click="goWinners"><view class="qk-ic">🏆<view class="live-dot"></view></view><view class="qk-text">派奖公告</view></view>
       <view class="qk" @click="goQueue"><view class="qk-ic">🔥</view><view class="qk-text">我的队列</view></view>
       <view class="qk" @click="goCoupon"><view class="qk-ic">🎟</view><view class="qk-text">优惠券</view></view>
       <view class="qk" @click="onScan"><view class="qk-ic">📜</view><view class="qk-text">扫码</view></view>
@@ -105,7 +105,7 @@
     <view class="home-feats">
       <view class="home-feat rank" @click="goWinners">
         <text class="em-bg">🏆</text>
-        <view class="hf-tag">🏆 中奖公榜</view>
+        <view class="hf-tag">🏆 派奖公告</view>
         <view>
           <view class="hf-title">看谁刚拿到奖</view>
           <view class="hf-sub">榜一排名 · 按店</view>

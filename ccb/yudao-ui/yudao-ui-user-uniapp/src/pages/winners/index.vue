@@ -3,7 +3,7 @@
     <view class="hero">
       <view class="hero-title">
         <text class="trophy">🏆</text>
-        <text class="t">中奖公榜</text>
+        <text class="t">派奖公告</text>
         <text class="sub">商户实时派奖 · 1:1 现金提现</text>
       </view>
       <view class="tabs">
