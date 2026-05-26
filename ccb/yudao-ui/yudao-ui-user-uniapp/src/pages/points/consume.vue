@@ -12,7 +12,7 @@
       <view v-for="r in records" :key="r.id" class="row">
         <view class="r-ic">{{ iconFor(r.sourceType) }}</view>
         <view class="body">
-          <view class="t">{{ r.remark || labelFor(r.sourceType) }}</view>
+          <view class="t">{{ labelFor(r.sourceType) }}</view>
           <view class="d">{{ fmtTime(r.createTime) }} · 余额 ¥{{ fen2yuan(r.balanceAfter || 0, false) }}</view>
         </view>
         <view class="amt" :class="{ neg: r.amount < 0 }">{{ r.amount > 0 ? '+' : '' }}¥{{ fen2yuan(r.amount, false) }}</view>
