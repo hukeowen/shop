@@ -169,22 +169,33 @@
     </view>
     <view v-if="loadingShops" class="loading">加载中…</view>
     <empty-state v-else-if="!nearbyShops.length" icon="🏪" title="附近暂无店铺" desc="换个位置或允许定位试试" />
-    <view v-else class="shop-grid">
-      <view v-for="s in nearbyShops" :key="s.id" class="shop-card-g" @click="goShop(s)">
-        <view class="shop-cover">
-          <image v-if="s.coverUrl" :src="s.coverUrl" mode="aspectFill" class="cover-img" />
-          <text v-else class="cover-em">{{ (s.name || '店')[0] }}</text>
-          <view class="shop-status-mini" :class="{ closed: !s.open }">
-            <text class="dot"></text>{{ s.open ? '营业中' : '休息中' }}
-          </view>
-          <view v-if="s.star" class="cover-star">★{{ s.star }}</view>
+    <view v-else class="hshop-list">
+      <view v-for="s in nearbyShops" :key="s.id" class="hs-card" @click="goShop(s)">
+        <view class="hs-cover">
+          <image v-if="s.coverUrl" :src="s.coverUrl" mode="aspectFill" class="hs-cover-img" />
+          <text v-else class="hs-cover-em">{{ (s.name || '店')[0] }}</text>
         </view>
-        <view class="card-body">
-          <view class="card-name">{{ s.name }}</view>
-          <view v-if="s.promoLine" class="card-promo">{{ s.promoLine }}</view>
-          <view class="card-meta">
-            <text v-if="s.rating" class="rating">★ {{ s.rating }}</text>
-            <text v-if="s.monthSold != null">月售 {{ s.monthSold }}</text>
+        <view class="hs-body">
+          <view class="hs-row1">
+            <text class="hs-name">{{ s.name }}</text>
+            <view class="hs-status" :class="{ closed: !s.open }">
+              <text class="dot"></text>{{ s.open ? '营业中' : '休息中' }}
+            </view>
+          </view>
+          <view class="hs-row2">
+            <text v-if="s.rating" class="hs-rate">★ {{ s.rating }}</text>
+            <text v-if="s.monthSold != null" class="hs-sales">月售 {{ s.monthSold }}</text>
+            <text v-if="s.distance" class="hs-dist">· {{ s.distance }}</text>
+            <text v-if="s.star" class="hs-star">★{{ s.star }} 星店</text>
+          </view>
+          <view v-if="s.promoLine" class="hs-tags">
+            <view class="hs-tag promo">🔥 {{ s.promoLine }}</view>
+          </view>
+          <!-- 明星商品 / 招牌 -->
+          <view v-if="s.topSpu" class="hs-spu" @click.stop="goSpu(s)">
+            <text class="hs-spu-tag">⭐ 招牌</text>
+            <text class="hs-spu-name">{{ s.topSpu.name }}</text>
+            <text class="hs-spu-price">¥{{ fmtYuan(s.topSpu.price) }}</text>
           </view>
         </view>
       </view>
@@ -366,7 +377,8 @@ async function loadNearby() {
       // 营业状态：后端 /public/list 已计算 isOpenNow（综合 status / todayOpenAt / manualClosed / businessHours）
       open: s.isOpenNow === true,
       promoLine: s.promoLine || (s.tuijianN ? `推 ${s.tuijianN} 反 1 进行中` : ''),
-      starSpu: null,
+      // 后端 V043 注入：每店"明星商品"（推 N 反 1 启用 → 销量最高 / 兜底全店销量第一）
+      topSpu: s.topSpu || null,
     }));
   } catch {} finally { loadingShops.value = false; }
 }
@@ -390,6 +402,11 @@ function goCategory(k) { uni.navigateTo({ url: `/pages/nearby/index?bt=${k}` });
 function goShop(s) {
   const tid = s.tenantId || s.id;
   uni.navigateTo({ url: `/pages/shop/home?id=${s.id || tid}&tenantId=${tid}` });
+}
+const fmtYuan = (fen) => fen2yuan(fen, false);
+function goSpu(s) {
+  if (!s.topSpu?.id) return goShop(s);
+  uni.navigateTo({ url: `/pages/product/detail?id=${s.topSpu.id}&tenantId=${s.tenantId || s.id}` });
 }
 function goStarSpu(s) {
   if (s.starSpu?.id) {
@@ -823,85 +840,110 @@ onShow(refreshAll);
   box-shadow: 0 2px 6px rgba(212,146,10,.4);
 }
 
-/* ━━━━━━━━━━━━━━━ 附近商家 2 列 grid（紧凑）━━━━━━━━━━━━━━━ */
-.shop-grid {
-  padding: 0 14px;
-  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
-}
-.shop-card-g {
+/* ━━━━━━━━━━━━━━━ 附近商家 美团风 1 列密集卡 ━━━━━━━━━━━━━━━ */
+.hshop-list { padding: 0 12px; }
+.hs-card {
+  display: flex; gap: 12px;
+  padding: 12px;
+  margin-bottom: 10px;
   background: $card;
   border-radius: $r-lg;
   border: 1px solid $line;
-  box-shadow: 0 1px 2px rgba(15,23,42,.04), 0 4px 12px rgba(15,23,42,.05);
-  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(15,23,42,.04), 0 4px 12px rgba(15,23,42,.04);
   transition: transform .15s ease;
 }
-.shop-card-g:active { transform: scale(.98); }
-.shop-cover {
-  height: 96px;
-  position: relative;
-  /* 无照片时统一暖米色，告别红蓝绿乱跳；有照片优先用真照片 */
+.hs-card:active { transform: scale(.99); }
+.hs-cover {
+  width: 92px; height: 92px; flex-shrink: 0;
+  border-radius: $r-md;
+  overflow: hidden;
   background: linear-gradient(135deg, #FFF5EB, #FFE9D5);
   display: flex; align-items: center; justify-content: center;
-  overflow: hidden;
 }
-.cover-img { width: 100%; height: 100%; }
-.cover-em {
-  font-size: 42px; font-weight: 800;
+.hs-cover-img { width: 100%; height: 100%; }
+.hs-cover-em {
+  font-size: 36px; font-weight: 800;
   color: $o-d;
   text-shadow: 0 2px 4px rgba(255,107,53,.15);
   letter-spacing: -1px;
 }
-.shop-status-mini {
-  position: absolute; top: 8px; right: 8px;
-  display: inline-flex; align-items: center; gap: 4px;
-  padding: 3px 8px; border-radius: 99px;
-  background: rgba(16,185,129,.95);
-  color: #fff; font-size: 9.5px; font-weight: 800;
-  backdrop-filter: blur(8px);
+.hs-body {
+  flex: 1; min-width: 0;
+  display: flex; flex-direction: column; gap: 6px;
 }
-.shop-status-mini .dot {
-  width: 5px; height: 5px; border-radius: 50%;
-  background: #fff;
-  animation: shop-pulse 1.8s ease-in-out infinite;
-}
-.shop-status-mini.closed {
-  background: rgba(100,116,139,.9);
-}
-.shop-status-mini.closed .dot { animation: none; }
-@keyframes shop-pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: .5; transform: scale(.7); }
-}
-.cover-star {
-  position: absolute; top: 8px; left: 8px;
-  padding: 3px 8px; border-radius: 99px;
-  background: linear-gradient(135deg, $gold, $gold-d);
-  color: #fff; font-size: 10px; font-weight: 800;
-  box-shadow: 0 2px 8px rgba(212,146,10,.4);
-}
-.card-body { padding: 10px 12px 12px; }
-.card-name {
-  font-size: 14px; font-weight: 800; color: $t1;
+.hs-row1 { display: flex; align-items: center; gap: 8px; }
+.hs-name {
+  flex: 1; min-width: 0;
+  font-size: 15px; font-weight: 800; color: $t1;
   letter-spacing: -.3px;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.card-promo {
-  margin-top: 6px;
-  display: inline-block;
+.hs-status {
+  flex-shrink: 0;
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 7px; border-radius: 99px;
+  background: rgba(16,185,129,.95);
+  color: #fff; font-size: 10px; font-weight: 800;
+}
+.hs-status .dot {
+  width: 4px; height: 4px; border-radius: 50%;
+  background: #fff;
+  animation: hs-pulse 1.8s ease-in-out infinite;
+}
+.hs-status.closed { background: rgba(100,116,139,.9); }
+.hs-status.closed .dot { animation: none; }
+@keyframes hs-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: .5; transform: scale(.7); }
+}
+.hs-row2 {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
+  font-size: 12px; color: $t3;
+  font-variant-numeric: tabular-nums;
+}
+.hs-rate { color: $gold-d; font-weight: 800; }
+.hs-sales, .hs-dist { color: $t3; }
+.hs-star {
+  margin-left: auto;
+  font-size: 10.5px;
   padding: 2px 7px;
-  background: linear-gradient(135deg, $o-50, $gold-50);
-  color: $o-d;
-  font-size: 10px; font-weight: 700;
+  background: linear-gradient(135deg, $gold-50, $gold-l);
+  color: $gold-d;
   border-radius: 4px;
+  font-weight: 800;
+}
+.hs-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.hs-tag {
+  display: inline-block;
+  padding: 3px 8px;
+  font-size: 11px; font-weight: 700;
+  border-radius: 4px;
+}
+.hs-tag.promo {
+  background: linear-gradient(135deg, #FFF1EB, #FFE0D1);
+  color: $o-d;
   border: 1px solid $o-100;
 }
-.card-meta {
-  margin-top: 6px;
-  display: flex; align-items: center; gap: 8px;
-  font-size: 11px; color: $t3;
+.hs-spu {
+  display: flex; align-items: center; gap: 6px;
+  margin-top: 2px;
+  padding: 5px 8px;
+  background: linear-gradient(135deg, $gold-50, #FEF3C7);
+  border-radius: 6px;
+  border: 1px dashed $gold-l;
+  overflow: hidden;
 }
-.card-meta .rating { color: $gold-d; font-weight: 700; }
+.hs-spu-tag { flex-shrink: 0; font-size: 10px; font-weight: 800; color: $gold-d; }
+.hs-spu-name {
+  flex: 1; min-width: 0;
+  font-size: 11.5px; font-weight: 700; color: $t1;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.hs-spu-price {
+  flex-shrink: 0;
+  font-size: 12px; font-weight: 800; color: $o-d;
+  font-variant-numeric: tabular-nums;
+}
 
 /* ━━━━━━━━━━━━━━━ 旧 shop-card（仍在用于 with-star 等其它位置）━━━━━━━━━━━━━━━ */
 .shop-card {

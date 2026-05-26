@@ -40,6 +40,7 @@ import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
 @RestController
 @RequestMapping("/merchant/shop/public")
 @Validated
+@lombok.extern.slf4j.Slf4j
 public class AppShopPublicController {
 
     @Resource
@@ -54,6 +55,10 @@ public class AppShopPublicController {
     private cn.iocoder.yudao.module.product.service.spu.ProductSpuService productSpuService;
     @Resource
     private cn.iocoder.yudao.module.product.service.sku.ProductSkuService productSkuService;
+    @Resource
+    private cn.iocoder.yudao.module.product.dal.mysql.spu.ProductSpuMapper productSpuMapper;
+    @Resource
+    private cn.iocoder.yudao.module.merchant.dal.mysql.promo.ProductPromoConfigMapper productPromoConfigMapper;
 
     @GetMapping("/list")
     @Operation(summary = "分页查询店铺列表（V039 三层闸门过滤：今日未打卡/主动打烊的店不返回；营业时间外的店权重靠后）")
@@ -102,9 +107,67 @@ public class AppShopPublicController {
         // 内存排序完按外部 pageSize 截一段
         int from = 0;
         int to = Math.min(pageSize, list.size());
-        java.util.List<java.util.Map<String, Object>> slice = list.subList(from, to);
+        java.util.List<java.util.Map<String, Object>> slice = new java.util.ArrayList<>(list.subList(from, to));
+
+        // V043: 给每个店注入 topSpu（"明星商品"）— 优先选启用了"推 N 反 1"的销量最高商品，
+        // 兜底选全店销量最高商品。每店 1-2 次 SQL，N ≤ pageSize 可控。
+        for (java.util.Map<String, Object> shop : slice) {
+            Object tidObj = shop.get("tenantId");
+            if (!(tidObj instanceof Number)) continue;
+            Long tid = ((Number) tidObj).longValue();
+            try {
+                cn.iocoder.yudao.framework.tenant.core.util.TenantUtils.execute(tid, () -> {
+                    cn.iocoder.yudao.module.product.dal.dataobject.spu.ProductSpuDO chosen = null;
+                    // 1) 优先：推 N 反 1 启用 + 销量最高
+                    try {
+                        java.util.List<cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ProductPromoConfigDO> cfgs =
+                                productPromoConfigMapper.selectList(
+                                        new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ProductPromoConfigDO>()
+                                                .eq(cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ProductPromoConfigDO::getTuijianEnabled, true));
+                        java.util.Set<Long> promoSpuIds = new java.util.HashSet<>();
+                        if (cfgs != null) for (cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ProductPromoConfigDO c : cfgs) {
+                            if (c.getSpuId() != null) promoSpuIds.add(c.getSpuId());
+                        }
+                        if (!promoSpuIds.isEmpty()) {
+                            java.util.List<cn.iocoder.yudao.module.product.dal.dataobject.spu.ProductSpuDO> top =
+                                    productSpuMapper.selectList(
+                                            new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<cn.iocoder.yudao.module.product.dal.dataobject.spu.ProductSpuDO>()
+                                                    .in(cn.iocoder.yudao.module.product.dal.dataobject.spu.ProductSpuDO::getId, promoSpuIds)
+                                                    .eq(cn.iocoder.yudao.module.product.dal.dataobject.spu.ProductSpuDO::getStatus, 1)
+                                                    .orderByDesc(cn.iocoder.yudao.module.product.dal.dataobject.spu.ProductSpuDO::getSalesCount)
+                                                    .last("LIMIT 1"));
+                            if (top != null && !top.isEmpty()) chosen = top.get(0);
+                        }
+                    } catch (Exception ignore) {}
+                    // 2) 兜底：全店销量最高
+                    if (chosen == null) {
+                        try {
+                            java.util.List<cn.iocoder.yudao.module.product.dal.dataobject.spu.ProductSpuDO> top =
+                                    productSpuMapper.selectList(
+                                            new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<cn.iocoder.yudao.module.product.dal.dataobject.spu.ProductSpuDO>()
+                                                    .eq(cn.iocoder.yudao.module.product.dal.dataobject.spu.ProductSpuDO::getStatus, 1)
+                                                    .orderByDesc(cn.iocoder.yudao.module.product.dal.dataobject.spu.ProductSpuDO::getSalesCount)
+                                                    .last("LIMIT 1"));
+                            if (top != null && !top.isEmpty()) chosen = top.get(0);
+                        } catch (Exception ignore) {}
+                    }
+                    if (chosen != null) {
+                        java.util.Map<String, Object> topSpu = new java.util.HashMap<>(6);
+                        topSpu.put("id", chosen.getId());
+                        topSpu.put("name", chosen.getName());
+                        topSpu.put("picUrl", chosen.getPicUrl());
+                        topSpu.put("price", chosen.getPrice());
+                        topSpu.put("salesCount", chosen.getSalesCount());
+                        shop.put("topSpu", topSpu);
+                    }
+                });
+            } catch (Exception e) {
+                log.warn("[listShops] inject topSpu tenant={} 失败: {}", tid, e.getMessage());
+            }
+        }
+
         PageResult<java.util.Map<String, Object>> resp = new PageResult<>();
-        resp.setList(new java.util.ArrayList<>(slice));
+        resp.setList(slice);
         resp.setTotal(page.getTotal());
         return success(resp);
     }

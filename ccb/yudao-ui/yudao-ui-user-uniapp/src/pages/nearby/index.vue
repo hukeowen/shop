@@ -45,11 +45,14 @@
               <text v-if="s.distance" class="m-dist">· {{ s.distance }}</text>
               <text v-if="s.star" class="m-star">★{{ s.star }} 星店</text>
             </view>
-            <view v-if="s.promoLine" class="m-tags">
-              <view class="m-tag promo">🔥 {{ s.promoLine }}</view>
+            <view v-if="s.promoLine || s.tuijianN" class="m-tags">
+              <view class="m-tag promo">🔥 {{ s.promoLine || `推 ${s.tuijianN} 反 1` }}</view>
             </view>
-            <view v-else-if="s.tuijianN" class="m-tags">
-              <view class="m-tag promo">推 {{ s.tuijianN }} 反 1</view>
+            <!-- 明星商品 / 销量第一 -->
+            <view v-if="s.topSpu" class="m-spu" @click.stop="goSpu(s)">
+              <text class="m-spu-tag">⭐ 招牌</text>
+              <text class="m-spu-name">{{ s.topSpu.name }}</text>
+              <text class="m-spu-price">¥{{ fmtYuan(s.topSpu.price) }}</text>
             </view>
           </view>
         </view>
@@ -62,7 +65,9 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { listShops } from '@/api/shop.js';
-import { fmtDistance } from '@/utils/format.js';
+import { fmtDistance, fen2yuan } from '@/utils/format.js';
+
+const fmtYuan = (fen) => fen2yuan(fen, false);
 
 const location = ref('');
 const loading = ref(false);
@@ -90,6 +95,10 @@ const userLat = ref(0);
 
 function goSearch() { uni.navigateTo({ url: '/pages/search/index' }); }
 function goShop(s) { uni.navigateTo({ url: `/pages/shop/home?id=${s.id || s.tenantId}&tenantId=${s.tenantId || s.id}` }); }
+function goSpu(s) {
+  if (!s.topSpu?.id) return goShop(s);
+  uni.navigateTo({ url: `/pages/product/detail?id=${s.topSpu.id}&tenantId=${s.tenantId || s.id}` });
+}
 function setFilter(k) { filter.value = k; load(); }
 
 function onRelocate() {
@@ -322,6 +331,32 @@ onMounted(() => {
   background: linear-gradient(135deg, #FFF1EB, #FFE0D1);
   color: $o-d;
   border: 1px solid $o-100;
+}
+
+/* 明星商品 / 招牌 */
+.m-spu {
+  display: flex; align-items: center; gap: 6px;
+  margin-top: 2px;
+  padding: 5px 8px;
+  background: linear-gradient(135deg, $gold-50, #FEF3C7);
+  border-radius: 6px;
+  border: 1px dashed $gold-l;
+  overflow: hidden;
+}
+.m-spu-tag {
+  flex-shrink: 0;
+  font-size: 10px; font-weight: 800;
+  color: $gold-d;
+}
+.m-spu-name {
+  flex: 1; min-width: 0;
+  font-size: 11.5px; font-weight: 700; color: $t1;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.m-spu-price {
+  flex-shrink: 0;
+  font-size: 12px; font-weight: 800; color: $o-d;
+  font-variant-numeric: tabular-nums;
 }
 
 .loading { padding: 40px; text-align: center; color: $t4; }
