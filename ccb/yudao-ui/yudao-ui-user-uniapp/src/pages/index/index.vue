@@ -433,7 +433,7 @@ onShow(refreshAll);
 /* ━━━━━━━━━━━━━━━ HERO ━━━━━━━━━━━━━━━ */
 .home-hero {
   position: relative;
-  padding: 8px 18px 90px;
+  padding: 8px 18px 40px;  /* 美团风：紧凑 hero，不留大块底色空白 */
   background:
     radial-gradient(600px 400px at 100% 0%, rgba(255,178,121,.5), transparent 60%),
     linear-gradient(160deg, #FFB174 0%, $o 55%, $o-d 100%);
@@ -549,7 +549,7 @@ onShow(refreshAll);
 
 /* ━━━━━━━━━━━━━━━ MAE 卡（上拉负 margin 与 hero 重叠）━━━━━━━━━━━━━━━ */
 .mae-card {
-  margin: -76px 14px 0;
+  margin: -28px 14px 0;  /* 配合紧凑 hero 调小负 margin */
   background: linear-gradient(135deg, #fff 0%, #FFFBF6 100%);
   border-radius: $r-xl;
   padding: 16px 18px;
@@ -692,14 +692,35 @@ onShow(refreshAll);
   border: 1px solid $o-100;
 }
 
-/* ━━━━━━━━━━━━━━━ 分类 5 格 ━━━━━━━━━━━━━━━ */
+/* ━━━━━━━━━━━━━━━ 分类 5 格（美团风圆形彩色图标）━━━━━━━━━━━━━━━ */
 .home-cats {
-  display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px;
-  margin: 14px 14px 0; padding: 4px 0;
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px;
+  margin: 14px 10px 0; padding: 14px 4px;
+  background: #fff;
+  border-radius: $r-lg;
+  box-shadow: $sh-1;
 }
-.home-cat { text-align: center; padding: 8px 0; }
-.home-cat .em { font-size: 24px; }
-.home-cat .l { font-size: 11px; color: $t2; font-weight: 500; margin-top: 4px; }
+.home-cat { text-align: center; padding: 6px 0; }
+.home-cat .em {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 44px; height: 44px; border-radius: 50%;
+  font-size: 22px;
+  background: linear-gradient(135deg, $o-50, $o-100);
+  box-shadow: 0 2px 6px rgba(255,107,53,.12);
+  margin-bottom: 6px;
+}
+/* 每格不同色系，更鲜活（按 nth-child 给 grid item 上色，复用 emoji 圆形底） */
+.home-cat:nth-child(1) .em { background: linear-gradient(135deg, #FEF3C7, #FDE68A); }   /* 小吃 黄 */
+.home-cat:nth-child(2) .em { background: linear-gradient(135deg, #FCE7F3, #FBCFE8); }   /* 奶茶 粉 */
+.home-cat:nth-child(3) .em { background: linear-gradient(135deg, #FFEDD5, #FED7AA); }   /* 烧烤 橙 */
+.home-cat:nth-child(4) .em { background: linear-gradient(135deg, #FEE2E2, #FECACA); }   /* 餐厅 红 */
+.home-cat:nth-child(5) .em { background: linear-gradient(135deg, #EDE9FE, #DDD6FE); }   /* 茶馆 紫 */
+.home-cat:nth-child(6) .em { background: linear-gradient(135deg, #FCE7F3, #F9A8D4); }   /* 水果 桃 */
+.home-cat:nth-child(7) .em { background: linear-gradient(135deg, #DBEAFE, #BFDBFE); }   /* 超市 蓝 */
+.home-cat:nth-child(8) .em { background: linear-gradient(135deg, #FEF3C7, #FCD34D); }   /* 烘焙 金 */
+.home-cat:nth-child(9) .em { background: linear-gradient(135deg, #FCE7F3, #F9A8D4); }   /* 美容 粉 */
+.home-cat:nth-child(10) .em { background: linear-gradient(135deg, #F1F5F9, #E2E8F0); }  /* 全部 灰 */
+.home-cat .l { font-size: 11.5px; color: $t1; font-weight: 600; margin-top: 4px; }
 
 /* ━━━━━━━━━━━━━━━ 区块标题 ━━━━━━━━━━━━━━━ */
 .section-title {
