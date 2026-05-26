@@ -7,7 +7,7 @@
     </view>
 
     <view class="tip-bar">
-      ⚠ 一次只能在<text class="b">同一家店</text>结算（订单按店独立 + v8 营销 / 余额 / 积分都按店隔离）。
+      ⚠ 一次只能在<text class="b">同一家店</text>结算（各店订单 / 优惠 / 积分独立）。
     </view>
 
     <view v-if="loading && !items.length" class="empty-tip">加载中...</view>
@@ -451,12 +451,13 @@ onShow(load);
   font-size: 22rpx; color: $text-placeholder;
 }
 
-.bottom-space { height: 40rpx; }
+/* 给底部固定的"结算条 + BottomNav"让出滚动空间，避免最后一件商品被遮 */
+.bottom-space { height: 220rpx; }
 
 .cart-bottom {
-  // 让结算条堆在 RoleTabBar 上面（RoleTabBar 高 100rpx + safe-area-inset-bottom）
+  // 让结算条堆在 BottomNav 上面（BottomNav 实际高度 76px + safe-area-inset-bottom）
   position: fixed;
-  bottom: calc(100rpx + env(safe-area-inset-bottom));
+  bottom: calc(76px + env(safe-area-inset-bottom));
   left: 0; right: 0;
   background: $bg-card; padding: 24rpx 32rpx;
   box-shadow: 0 -4rpx 32rpx rgba(0,0,0,.06);
