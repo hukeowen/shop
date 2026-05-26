@@ -155,49 +155,26 @@
     </view>
     <view v-if="loadingShops" class="loading">加载中…</view>
     <empty-state v-else-if="!nearbyShops.length" icon="🏪" title="附近暂无店铺" desc="换个位置或允许定位试试" />
-    <view v-else>
-      <view v-for="(s, i) in nearbyShops" :key="s.id" class="shop-card has-promo" :class="{ 'with-star': s.starSpu }" @click="goShop(s)">
-        <view class="shop-head">
-          <view class="shop-pic" :class="['', 'alt-1', 'alt-2'][i % 3]">
-            <image v-if="s.shopLogo" :src="s.shopLogo" mode="aspectFill" class="pic-img" />
-            <text v-else>{{ (s.name || '店')[0] }}</text>
+    <view v-else class="shop-grid">
+      <view v-for="(s, i) in nearbyShops" :key="s.id" class="shop-card-g" @click="goShop(s)">
+        <view class="shop-cover" :class="['', 'alt-1', 'alt-2'][i % 3]">
+          <image v-if="s.shopLogo" :src="s.shopLogo" mode="aspectFill" class="cover-img" />
+          <text v-else class="cover-em">{{ (s.name || '店')[0] }}</text>
+          <view class="shop-status-mini" :class="{ closed: !s.open }">
+            <text class="dot"></text>{{ s.open ? '营业中' : '休息中' }}
           </view>
-          <view class="shop-info">
-            <view class="shop-row1">
-              <text class="shop-name">{{ s.name }}</text>
-              <view v-if="s.star" class="shop-badge gold">⭐ {{ s.star }} 星</view>
-              <view v-else-if="s.newTag" class="shop-badge">{{ s.newTag }}</view>
-            </view>
-            <view v-if="s.promoLine" class="shop-promo-row">{{ s.promoLine }}</view>
-            <view class="shop-meta">
-              <text v-if="s.rating" class="rating">★ {{ s.rating }}</text>
-              <text v-if="s.monthSold != null">月售 {{ s.monthSold }}</text>
-              <text v-if="s.distance">· {{ s.distance }}</text>
-            </view>
-          </view>
-          <view class="shop-status" :class="{ closed: !s.open }">
-            <text class="dot"></text>
-            <text>{{ s.open ? '营业中' : '休息中' }}</text>
-          </view>
+          <view v-if="s.star" class="cover-star">★{{ s.star }}</view>
         </view>
-        <view v-if="s.starSpu" class="star-prod" @click.stop="goStarSpu(s)">
-          <view class="sp-pic">{{ s.starSpu.em || '🛍' }}</view>
-          <view class="sp-info">
-            <view class="sp-name">{{ s.starSpu.name }}</view>
-            <view class="sp-tag-row">
-              <view v-if="s.starSpu.promo" class="sp-tag promo">{{ s.starSpu.promo }}</view>
-              <view v-if="s.starSpu.got" class="sp-tag got">{{ s.starSpu.got }}</view>
-            </view>
-          </view>
-          <view class="sp-price">
-            <view class="v">¥{{ s.starSpu.price }}</view>
-            <view class="enter">进店 →</view>
+        <view class="card-body">
+          <view class="card-name">{{ s.name }}</view>
+          <view v-if="s.promoLine" class="card-promo">{{ s.promoLine }}</view>
+          <view class="card-meta">
+            <text v-if="s.rating" class="rating">★ {{ s.rating }}</text>
+            <text v-if="s.monthSold != null">月售 {{ s.monthSold }}</text>
           </view>
         </view>
       </view>
-
     </view>
-
     <view class="bottom-pad"></view>
 
     <!-- 浮动收益球（仅登录后有今日入账时显示） -->
@@ -809,7 +786,86 @@ onShow(refreshAll);
   box-shadow: 0 2px 6px rgba(212,146,10,.4);
 }
 
-/* ━━━━━━━━━━━━━━━ 店铺卡（含 with-star 店主推商品）━━━━━━━━━━━━━━━ */
+/* ━━━━━━━━━━━━━━━ 附近商家 2 列 grid（紧凑）━━━━━━━━━━━━━━━ */
+.shop-grid {
+  padding: 0 14px;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+}
+.shop-card-g {
+  background: $card;
+  border-radius: $r-lg;
+  border: 1px solid $line;
+  box-shadow: 0 1px 2px rgba(15,23,42,.04), 0 4px 12px rgba(15,23,42,.05);
+  overflow: hidden;
+  transition: transform .15s ease;
+}
+.shop-card-g:active { transform: scale(.98); }
+.shop-cover {
+  height: 96px;
+  position: relative;
+  background: linear-gradient(135deg, #FFD1BA, $o);
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+}
+.shop-cover.alt-1 { background: linear-gradient(135deg, #C9E0FF, #6196F0); }
+.shop-cover.alt-2 { background: linear-gradient(135deg, #D3F4D3, #4CB84C); }
+.cover-img { width: 100%; height: 100%; }
+.cover-em {
+  font-size: 42px; font-weight: 800; color: #fff;
+  text-shadow: 0 2px 8px rgba(0,0,0,.15);
+}
+.shop-status-mini {
+  position: absolute; top: 8px; right: 8px;
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 8px; border-radius: 99px;
+  background: rgba(16,185,129,.95);
+  color: #fff; font-size: 9.5px; font-weight: 800;
+  backdrop-filter: blur(8px);
+}
+.shop-status-mini .dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: #fff;
+  animation: shop-pulse 1.8s ease-in-out infinite;
+}
+.shop-status-mini.closed {
+  background: rgba(100,116,139,.9);
+}
+.shop-status-mini.closed .dot { animation: none; }
+@keyframes shop-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: .5; transform: scale(.7); }
+}
+.cover-star {
+  position: absolute; top: 8px; left: 8px;
+  padding: 3px 8px; border-radius: 99px;
+  background: linear-gradient(135deg, $gold, $gold-d);
+  color: #fff; font-size: 10px; font-weight: 800;
+  box-shadow: 0 2px 8px rgba(212,146,10,.4);
+}
+.card-body { padding: 10px 12px 12px; }
+.card-name {
+  font-size: 14px; font-weight: 800; color: $t1;
+  letter-spacing: -.3px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.card-promo {
+  margin-top: 6px;
+  display: inline-block;
+  padding: 2px 7px;
+  background: linear-gradient(135deg, $o-50, $gold-50);
+  color: $o-d;
+  font-size: 10px; font-weight: 700;
+  border-radius: 4px;
+  border: 1px solid $o-100;
+}
+.card-meta {
+  margin-top: 6px;
+  display: flex; align-items: center; gap: 8px;
+  font-size: 11px; color: $t3;
+}
+.card-meta .rating { color: $gold-d; font-weight: 700; }
+
+/* ━━━━━━━━━━━━━━━ 旧 shop-card（仍在用于 with-star 等其它位置）━━━━━━━━━━━━━━━ */
 .shop-card {
   display: flex; gap: 12px; padding: 12px 14px 12px 18px;
   align-items: center;
