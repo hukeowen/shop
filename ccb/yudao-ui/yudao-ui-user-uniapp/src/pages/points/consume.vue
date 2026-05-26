@@ -1,8 +1,8 @@
 <template>
   <view class="page">
-    <nav-bar title="消费积分明细" />
+    <nav-bar :title="shopName ? `${shopName} · 消费积分` : '消费积分明细'" />
     <view class="sum-card">
-      <text class="l">消费积分余额</text>
+      <text class="l">{{ shopName ? `${shopName} · 消费积分` : '消费积分（跨店）' }}</text>
       <view class="amt">{{ balance }}</view>
       <text class="d">100 消费积分 = ¥1 · 下单可抵扣</text>
     </view>
@@ -29,6 +29,13 @@ import { ref, computed, onMounted } from 'vue';
 import { getAccount, listConsumeRecords } from '@/api/promo.js';
 import { fmtTime } from '@/utils/format.js';
 
+// 路由参数：tenantId 按店过滤 + shopName 标题
+const route = (() => {
+  try { const ps = getCurrentPages(); return ps[ps.length - 1]?.options || {}; } catch { return {}; }
+})();
+const tenantId = route.tenantId ? Number(route.tenantId) : null;
+const shopName = route.shopName ? decodeURIComponent(route.shopName) : '';
+
 const balance = ref(0);
 const loading = ref(false);
 const loadingMore = ref(false);
@@ -54,7 +61,7 @@ async function load(reset = true) {
   if (reset) { page.value = 1; records.value = []; }
   loading.value = true;
   try {
-    const r = await listConsumeRecords(page.value, 20);
+    const r = await listConsumeRecords(page.value, 20, tenantId);
     if (r) {
       const list = r.list || [];
       records.value = reset ? list : [...records.value, ...list];
@@ -67,13 +74,16 @@ async function loadMore() {
   loadingMore.value = true;
   page.value++;
   try {
-    const r = await listConsumeRecords(page.value, 20);
+    const r = await listConsumeRecords(page.value, 20, tenantId);
     if (r) records.value.push(...(r.list || []));
   } finally { loadingMore.value = false; }
 }
 
 onMounted(async () => {
-  try { balance.value = (await getAccount())?.consumePointBalance || 0; } catch {}
+  try {
+    const acct = await getAccount(tenantId);
+    balance.value = acct?.consumePointBalance || 0;
+  } catch {}
   await load();
 });
 </script>

@@ -1,8 +1,8 @@
 <template>
   <view class="page">
-    <nav-bar title="推广积分明细" />
+    <nav-bar :title="shopName ? `${shopName} · 推广积分` : '推广积分明细'" />
     <view class="sum-card">
-      <text class="l">推广积分余额（可提现）</text>
+      <text class="l">{{ shopName ? `${shopName} · 推广积分` : '推广积分（跨店）' }}</text>
       <view class="amt">¥{{ balanceYuan }}</view>
       <text class="d">1 推广积分 = ¥0.01 · 1:1 现金提现</text>
     </view>
@@ -28,6 +28,13 @@
 import { ref, computed, onMounted } from 'vue';
 import { getAccount, listPromoRecords } from '@/api/promo.js';
 import { fen2yuan, fmtTime } from '@/utils/format.js';
+
+// 路由参数：tenantId（按店过滤）+ shopName（标题显示）
+const route = (() => {
+  try { const ps = getCurrentPages(); return ps[ps.length - 1]?.options || {}; } catch { return {}; }
+})();
+const tenantId = route.tenantId ? Number(route.tenantId) : null;
+const shopName = route.shopName ? decodeURIComponent(route.shopName) : '';
 
 const promoBalance = ref(0);
 const balanceYuan = computed(() => fen2yuan(promoBalance.value, false));
@@ -61,7 +68,7 @@ async function load(reset = true) {
   if (reset) { page.value = 1; records.value = []; }
   loading.value = true;
   try {
-    const r = await listPromoRecords(page.value, 20);
+    const r = await listPromoRecords(page.value, 20, tenantId);
     if (r) {
       const list = r.list || [];
       records.value = reset ? list : [...records.value, ...list];
@@ -74,13 +81,16 @@ async function loadMore() {
   loadingMore.value = true;
   page.value++;
   try {
-    const r = await listPromoRecords(page.value, 20);
+    const r = await listPromoRecords(page.value, 20, tenantId);
     if (r) records.value.push(...(r.list || []));
   } finally { loadingMore.value = false; }
 }
 
 onMounted(async () => {
-  try { promoBalance.value = (await getAccount())?.promoPointBalance || 0; } catch {}
+  try {
+    const acct = await getAccount(tenantId);
+    promoBalance.value = acct?.promoPointBalance || 0;
+  } catch {}
   await load();
 });
 </script>

@@ -28,13 +28,13 @@
             <view class="em">💸</view>
             <view class="l">提现</view>
           </view>
-          <view class="me-earn-act" @click="goConvert">
-            <view class="em">🔄</view>
-            <view class="l">转余额</view>
-          </view>
           <view class="me-earn-act" @click="goPromoRecords">
             <view class="em">📊</view>
-            <view class="l">明细</view>
+            <view class="l">推广明细</view>
+          </view>
+          <view class="me-earn-act" @click="goConsumeRecords">
+            <view class="em">🪙</view>
+            <view class="l">消费明细</view>
           </view>
         </view>
       </view>
@@ -66,7 +66,7 @@
 
     <!-- 资产隔离 tip-bar -->
     <view v-if="myShops.length" class="me-tip-bar">
-      💡 资产按<text class="b">店铺独立</text>：余额 / 推广积分 / 消费积分 / 星级 都隔离在每家店账户
+      💡 资产按<text class="b">店铺独立</text>：推广积分 / 消费积分 / 星级 都隔离在每家店账户
     </view>
 
     <!-- 我加入的店铺 (大卡) -->
@@ -84,23 +84,18 @@
             <view v-else class="msb-star empty">☆ 暂无</view>
           </view>
           <view class="msb-meta">
-            <text>订单 <text class="b">{{ s.orderCount || 0 }}</text></text>
-            <text>消费 <text class="b">¥{{ s.consumeYuan }}</text></text>
+            <text v-if="s.lastVisitText">{{ s.lastVisitText }}</text>
             <text v-if="s.starExtraText" class="ok">{{ s.starExtraText }}</text>
           </view>
         </view>
         <view class="msb-enter" @click="goShop(s)">›</view>
       </view>
       <view class="msb-stats">
-        <view class="msb-stat">
-          <view class="n orange">¥{{ s.balanceYuan }}</view>
-          <view class="l">余额</view>
-        </view>
-        <view class="msb-stat">
-          <view class="n gold">{{ s.promoPoint }}</view>
+        <view class="msb-stat" @click.stop="goShopRecords(s, 'promo')">
+          <view class="n gold">¥{{ s.promoYuan }}</view>
           <view class="l">推广积分</view>
         </view>
-        <view class="msb-stat">
+        <view class="msb-stat" @click.stop="goShopRecords(s, 'consume')">
           <view class="n purple">{{ s.consumePoint }}</view>
           <view class="l">消费积分</view>
         </view>
@@ -116,9 +111,9 @@
         <text class="go" @click="goQueue">看队列 ›</text>
       </view>
       <view class="msb-acts">
-        <view class="msb-act primary" @click="goWithdraw"><text class="em">💸</text>提现</view>
-        <view class="msb-act" @click="goPromoRecords"><text class="em">📊</text>明细</view>
-        <view class="msb-act" @click="goInvite"><text class="em">🤝</text>邀请</view>
+        <view class="msb-act primary" @click.stop="goShopRecords(s, 'promo')"><text class="em">📊</text>积分明细</view>
+        <view class="msb-act" @click.stop="goShop(s)"><text class="em">🏪</text>进店</view>
+        <view class="msb-act" @click.stop="goInvite"><text class="em">🤝</text>邀请</view>
       </view>
     </view>
 
@@ -164,7 +159,7 @@ import { listMyShopsEnriched } from '@/api/shop.js';
 import { getCartCount } from '@/api/cart.js';
 import { getUnusedCouponCount } from '@/api/coupon.js';
 import { favoriteCount } from '@/api/product.js';
-import { fen2yuan } from '@/utils/format.js';
+import { fen2yuan, fmtTime } from '@/utils/format.js';
 
 const user = useUserStore();
 const avatarText = computed(() => (user.nickname?.[0] || user.phone?.[0] || '客'));
@@ -198,7 +193,12 @@ function goLogin()         { uni.navigateTo({ url: '/pages/login/index' }); }
 function goWallet()        { user.isLogin ? uni.navigateTo({ url: '/pages/wallet/index' })   : goLogin(); }
 function goWithdraw()      { user.isLogin ? uni.navigateTo({ url: '/pages/withdraw/index' }) : goLogin(); }
 function goPromoRecords()  { user.isLogin ? uni.navigateTo({ url: '/pages/points/promo' })   : goLogin(); }
-function goConvert()       { uni.showToast({ title: '转余额功能待加', icon: 'none' }); }
+function goConsumeRecords(){ user.isLogin ? uni.navigateTo({ url: '/pages/points/consume' }) : goLogin(); }
+function goShopRecords(s, tab) {
+  if (!user.isLogin) return goLogin();
+  const url = `/pages/points/${tab || 'promo'}?tenantId=${s.tenantId}&shopName=${encodeURIComponent(s.shopName || s.name || '')}`;
+  uni.navigateTo({ url });
+}
 function goQueue()         { user.isLogin ? uni.navigateTo({ url: '/pages/queue/index' })    : goLogin(); }
 function goInvite()        { user.isLogin ? uni.navigateTo({ url: '/pages/invite/index' })   : goLogin(); }
 function goFav()           { user.isLogin ? uni.navigateTo({ url: '/pages/favorites/index' }): goLogin(); }
@@ -241,17 +241,19 @@ async function load() {
         text: `${queue.spuName || '商品'} · 推 ${reqN} 反 1 进度`,
         bold: `${queue.currentCount || 0}/${reqN}`,
       } : null;
+      // VO 字段：promoPoints (Long 分) / points (Long 分，消费积分) / star (Integer) / lastVisitAt
+      const star = s.star || s.starLevel || 0;
       return {
         ...s,
-        balanceYuan: fen2yuan(s.balance || 0, false),
-        consumeYuan: fen2yuan(s.consumeAmount || 0, false),
-        promoPoint: s.promoPointBalance || 0,
-        consumePoint: s.consumePointBalance || 0,
+        starLevel: star,                      // 兼容旧模板引用
+        promoYuan: fen2yuan(s.promoPoints || 0, false),   // 推广积分 → 显示成 ¥
+        consumePoint: s.points || 0,           // 消费积分 → 直接显示分数
+        lastVisitText: s.lastVisitAt ? `最近 ${fmtTime(s.lastVisitAt)}` : '',
         queueCount: queue ? 1 : 0,
         queueActive: !!queue,
         hasQueue: !!queue,
         queueBar,
-        starExtraText: s.starLevel >= 3 ? `${s.starLevel} 星额外 +${s.starLevel}%` : '',
+        starExtraText: star >= 3 ? `${star} 星额外 +${star}%` : '',
       };
     });
   } catch {}

@@ -10,13 +10,13 @@ export const getPromoConfig = (tenantId) =>
 export const getAccount = (tenantId) =>
   get('/app-api/merchant/mini/promo/account', tenantId ? { tenantId } : {});
 
-// 推广积分流水（分页倒序，跨店）
-export const listPromoRecords = (pageNo = 1, pageSize = 20) =>
-  get(`/app-api/merchant/mini/promo/promo-records?pageNo=${pageNo}&pageSize=${pageSize}`);
+// 推广积分流水（分页倒序）— 传 tenantId 则只看该店；不传 = 跨店
+export const listPromoRecords = (pageNo = 1, pageSize = 20, tenantId) =>
+  get(`/app-api/merchant/mini/promo/promo-records?pageNo=${pageNo}&pageSize=${pageSize}`, tenantId ? { tenantId } : {});
 
-// 消费积分流水（分页倒序，跨店）
-export const listConsumeRecords = (pageNo = 1, pageSize = 20) =>
-  get(`/app-api/merchant/mini/promo/consume-records?pageNo=${pageNo}&pageSize=${pageSize}`);
+// 消费积分流水（分页倒序）— 同上
+export const listConsumeRecords = (pageNo = 1, pageSize = 20, tenantId) =>
+  get(`/app-api/merchant/mini/promo/consume-records?pageNo=${pageNo}&pageSize=${pageSize}`, tenantId ? { tenantId } : {});
 
 // 我的所有队列（跨店聚合，QUEUEING 状态）
 export const listMyQueues = () =>
