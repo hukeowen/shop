@@ -16,8 +16,13 @@
     <view v-if="loading" class="loading">加载中…</view>
     <empty-state v-else-if="!winners.length" icon="🪙" title="还没有中奖记录" desc="去店铺下单参与派奖" />
     <view v-else class="list">
-      <view v-for="(w, i) in winners" :key="w.id" class="row" @click="goSource(w)">
-        <view class="rank" :class="rankClass(i)">{{ i + 1 }}</view>
+      <view v-for="(w, i) in winners" :key="w.id" class="row" :class="rankRowClass(i)" @click="goSource(w)">
+        <view class="rank" :class="rankClass(i)">
+          <text v-if="i === 0" class="crown">👑</text>
+          <text v-else-if="i === 1" class="crown">🥈</text>
+          <text v-else-if="i === 2" class="crown">🥉</text>
+          <text class="rank-n">{{ i + 1 }}</text>
+        </view>
         <view class="row-ic">{{ iconFor(w.sourceType) }}</view>
         <view class="row-body">
           <view class="row-t1">
@@ -74,6 +79,12 @@ function rankClass(i) {
   if (i === 0) return 'r1';
   if (i === 1) return 'r2';
   if (i === 2) return 'r3';
+  return '';
+}
+function rankRowClass(i) {
+  if (i === 0) return 'row-top1';
+  if (i === 1) return 'row-top2';
+  if (i === 2) return 'row-top3';
   return '';
 }
 
@@ -161,15 +172,31 @@ onShow(load);
   transition: transform .15s ease;
 }
 .row:active { transform: scale(.99); }
+/* Top 3 行整体高亮：暖橙渐变描边 + 浅金底 */
+.row-top1 {
+  background: linear-gradient(135deg, #FFF8E7, #FFEFD0) !important;
+  border: 1.5px solid #F0B400;
+  box-shadow: 0 4px 14px rgba(240,180,0,.25), 0 0 0 4px rgba(240,180,0,.06) !important;
+}
+.row-top2 {
+  background: linear-gradient(135deg, #F8FAFC, #E5E7EB) !important;
+  border: 1.5px solid #9CA3AF;
+}
+.row-top3 {
+  background: linear-gradient(135deg, #FEF3C7, #FDE68A) !important;
+  border: 1.5px solid #D97706;
+}
 .rank {
-  width: 26px; flex-shrink: 0;
-  font-size: 13px; font-weight: 800; color: $t4;
-  text-align: center;
+  width: 36px; flex-shrink: 0;
+  display: flex; flex-direction: column; align-items: center; gap: 0;
+  font-size: 12px; font-weight: 800; color: $t4;
   font-variant-numeric: tabular-nums;
 }
-.rank.r1 { color: #D97706; font-size: 18px; }
-.rank.r2 { color: #6B7280; font-size: 16px; }
-.rank.r3 { color: #A16207; font-size: 15px; }
+.rank .crown { font-size: 22px; line-height: 1; }
+.rank .rank-n { font-size: 11px; margin-top: 1px; }
+.rank.r1 .rank-n { color: #D97706; font-weight: 900; font-size: 12px; }
+.rank.r2 .rank-n { color: #6B7280; font-weight: 900; font-size: 12px; }
+.rank.r3 .rank-n { color: #A16207; font-weight: 900; font-size: 12px; }
 .row-ic {
   width: 38px; height: 38px; border-radius: 10px;
   background: $gold-50; color: $gold-d;
