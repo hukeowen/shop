@@ -132,13 +132,16 @@
       </view>
       <scroll-view scroll-x class="recent-scroll">
         <view v-for="s in recentShops" :key="s.id" class="recent-card" @click="goShop(s)">
-          <view class="recent-cover" :class="s.coverTone"><view class="recent-tag">{{ s.lastVisit }}</view></view>
+          <view class="recent-cover" :class="s.coverTone">
+            <view class="recent-tag">{{ s.lastVisit }}</view>
+            <view v-if="s.star > 0" class="recent-star">★{{ s.star }}</view>
+          </view>
           <view class="recent-body">
             <view class="recent-name">{{ s.name }}</view>
             <view class="recent-meta">
-              <text>已下 <text class="b">{{ s.orderCount }} 单</text></text>
-              <view class="dot"></view>
-              <text>{{ s.distance }}</text>
+              <text>余 <text class="b">¥{{ s.balanceYuan }}</text></text>
+              <view v-if="s.promoPoint > 0" class="dot"></view>
+              <text v-if="s.promoPoint > 0">推 <text class="b">{{ s.promoPoint }}</text></text>
             </view>
           </view>
         </view>
@@ -164,7 +167,7 @@
               <text class="shop-name">{{ s.name }}</text>
               <view v-if="s.star" class="shop-badge gold">⭐ {{ s.star }} 星</view>
               <view v-else-if="s.newTag" class="shop-badge">{{ s.newTag }}</view>
-              <view v-if="!s.open" class="shop-badge closed">已打烊</view>
+              <view v-if="!s.open" class="shop-badge closed">休息中</view>
             </view>
             <view v-if="s.promoLine" class="shop-promo-row">{{ s.promoLine }}</view>
             <view class="shop-meta">
@@ -340,8 +343,9 @@ async function loadRecent() {
       name: s.shopName || s.name || `店铺 #${s.tenantId}`,
       coverTone: ['', 't2', 't3', 't4'][i],
       lastVisit: s.lastVisitAt ? fmtTime(s.lastVisitAt) : '最近',
-      orderCount: s.orderCount || 0,
-      distance: s.distance != null && s.distance > 0 ? fmtDistance(s.distance) : '',
+      star: s.star || 0,
+      balanceYuan: fen2yuan(s.balance || 0, false),
+      promoPoint: s.promoPoints || 0,
     }));
   } catch {}
 }
@@ -795,19 +799,33 @@ onShow(refreshAll);
 }
 .recent-meta .b { color: $o-d; font-weight: 800; }
 .recent-meta .dot { width: 3px; height: 3px; background: $t4; border-radius: 50%; }
+.recent-star {
+  position: absolute; top: 6px; right: 6px;
+  padding: 2px 7px; border-radius: 99px;
+  background: linear-gradient(135deg, $gold, $gold-d);
+  color: #fff; font-size: 10px; font-weight: 800;
+  box-shadow: 0 2px 6px rgba(212,146,10,.4);
+}
 
 /* ━━━━━━━━━━━━━━━ 店铺卡（含 with-star 店主推商品）━━━━━━━━━━━━━━━ */
 .shop-card {
-  display: flex; gap: 12px; padding: 14px;
+  display: flex; gap: 14px; padding: 14px 14px 14px 18px;
   background: $card; border-radius: $r-lg;
   margin: 0 14px 10px;
-  box-shadow: $sh-1;
+  box-shadow: 0 1px 2px rgba(15,23,42,.04), 0 4px 12px rgba(15,23,42,.05);
   position: relative; overflow: hidden;
+  border: 1px solid $line;
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+.shop-card:active {
+  transform: scale(.985);
+  box-shadow: 0 1px 2px rgba(15,23,42,.06), 0 2px 6px rgba(15,23,42,.04);
 }
 .shop-card.has-promo::before {
   content: ''; position: absolute;
-  top: 0; left: 0; bottom: 0; width: 3px;
+  top: 12px; left: 0; bottom: 12px; width: 3px;
   background: linear-gradient(180deg, $o, $gold);
+  border-radius: 0 3px 3px 0;
 }
 .shop-card.with-star {
   flex-direction: column;
@@ -820,13 +838,18 @@ onShow(refreshAll);
   align-items: center;
 }
 .shop-pic {
-  flex: 0 0 70px; width: 70px; height: 70px; border-radius: $r-md;
+  flex: 0 0 72px; width: 72px; height: 72px; border-radius: 14px;
   background: linear-gradient(135deg, #FFD1BA, $o);
   color: #fff;
   display: flex; align-items: center; justify-content: center;
-  font-size: 28px; font-weight: 800;
-  position: relative;
-  box-shadow: 0 4px 12px rgba(255,107,53,.25);
+  font-size: 30px; font-weight: 800;
+  position: relative; overflow: hidden;
+  box-shadow: 0 6px 16px rgba(255,107,53,.28), inset 0 1px 0 rgba(255,255,255,.25);
+}
+.shop-pic::after {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(circle at 30% 20%, rgba(255,255,255,.35), transparent 50%);
+  pointer-events: none;
 }
 .shop-pic.alt-1 { background: linear-gradient(135deg, #C9E0FF, #6196F0); box-shadow: 0 4px 12px rgba(97,150,240,.25); }
 .shop-pic.alt-2 { background: linear-gradient(135deg, #D3F4D3, #4CB84C); box-shadow: 0 4px 12px rgba(76,184,76,.25); }
@@ -842,7 +865,8 @@ onShow(refreshAll);
 .shop-info { flex: 1; min-width: 0; }
 .shop-row1 { display: flex; align-items: center; gap: 6px; }
 .shop-name {
-  font-size: 15px; font-weight: 700; color: $t1; flex: 1;
+  font-size: 16px; font-weight: 800; color: $t1; flex: 1;
+  letter-spacing: -.3px;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .shop-badge {
@@ -869,8 +893,8 @@ onShow(refreshAll);
   border: 1px solid $o-100;
 }
 .shop-meta {
-  margin-top: 6px; display: flex; align-items: center; gap: 10px;
-  font-size: 11px; color: $t3;
+  margin-top: 8px; display: flex; align-items: center; gap: 10px;
+  font-size: 11.5px; color: $t3; font-weight: 500;
 }
 .shop-meta .rating { color: $gold; font-weight: 700; }
 .shop-meta .dist { color: $mint; font-weight: 700; }
