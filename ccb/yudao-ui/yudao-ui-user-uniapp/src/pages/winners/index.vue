@@ -21,9 +21,8 @@
           <text v-if="i === 0" class="crown">👑</text>
           <text v-else-if="i === 1" class="crown">🥈</text>
           <text v-else-if="i === 2" class="crown">🥉</text>
-          <text class="rank-n">{{ i + 1 }}</text>
+          <text v-else class="rank-n">{{ i + 1 }}</text>
         </view>
-        <view class="row-ic">{{ iconFor(w.sourceType) }}</view>
         <view class="row-body">
           <view class="row-t1">
             <text class="shop">{{ w.shopName || '某店铺' }}</text>
@@ -188,22 +187,12 @@ onShow(load);
 }
 .rank {
   width: 36px; flex-shrink: 0;
-  display: flex; flex-direction: column; align-items: center; gap: 0;
-  font-size: 12px; font-weight: 800; color: $t4;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 800; color: $t3;
   font-variant-numeric: tabular-nums;
 }
-.rank .crown { font-size: 22px; line-height: 1; }
-.rank .rank-n { font-size: 11px; margin-top: 1px; }
-.rank.r1 .rank-n { color: #D97706; font-weight: 900; font-size: 12px; }
-.rank.r2 .rank-n { color: #6B7280; font-weight: 900; font-size: 12px; }
-.rank.r3 .rank-n { color: #A16207; font-weight: 900; font-size: 12px; }
-.row-ic {
-  width: 38px; height: 38px; border-radius: 10px;
-  background: $gold-50; color: $gold-d;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 18px;
-  flex-shrink: 0;
-}
+.rank .crown { font-size: 26px; line-height: 1; }
+.rank .rank-n { font-size: 14px; }
 .row-body { flex: 1; min-width: 0; }
 .row-t1 { font-size: 13px; color: $t1; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .row-t1 .shop { color: $t1; }
