@@ -25,4 +25,11 @@ public interface ShopPromoRecordMapper extends BaseMapperX<ShopPromoRecordDO> {
                 .eq(ShopPromoRecordDO::getSourceId, sourceId)) > 0;
     }
 
+    /** 用户在某店累计获得的推广积分（lifetime earned，仅正向流水之和，单位分） */
+    @org.apache.ibatis.annotations.Select(
+            "SELECT IFNULL(SUM(amount), 0) FROM shop_promo_record " +
+            "WHERE user_id = #{userId} AND tenant_id = #{tenantId} AND amount > 0 AND deleted = 0")
+    Long sumPositiveByUserAndTenant(@org.apache.ibatis.annotations.Param("userId") Long userId,
+                                    @org.apache.ibatis.annotations.Param("tenantId") Long tenantId);
+
 }

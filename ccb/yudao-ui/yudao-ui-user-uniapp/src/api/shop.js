@@ -34,3 +34,7 @@ export const listMyShopsEnriched = () =>
 // 当前 tenant 下我的余额 / 积分
 export const getMyRel = (tenantId) =>
   get('/app-api/merchant/mini/member-rel/my', { tenantId });
+
+// 当前用户在某店"累计已赚"的推广积分（lifetime，单位分）
+export const getMyPromoEarned = (tenantId) =>
+  get(`/app-api/merchant/mini/member-rel/my-promo-earned?tenantId=${tenantId}`, { tenantId });

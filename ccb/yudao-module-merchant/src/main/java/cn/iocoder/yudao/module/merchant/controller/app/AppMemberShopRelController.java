@@ -59,6 +59,8 @@ public class AppMemberShopRelController {
     private cn.iocoder.yudao.module.trade.service.order.TradeOrderQueryService tradeOrderQueryService;
     @Resource
     private cn.iocoder.yudao.module.merchant.dal.mysql.promo.ShopQueuePositionMapper shopQueuePositionMapper;
+    @Resource
+    private cn.iocoder.yudao.module.merchant.dal.mysql.promo.ShopPromoRecordMapper shopPromoRecordMapper;
 
     /**
      * 列出当前用户访问过的所有店铺（设计 9.2 节"店铺级收藏"语义，按 lastVisitAt 倒序）。
@@ -225,6 +227,24 @@ public class AppMemberShopRelController {
                     .build();
         }
         return success(rel);
+    }
+
+    /**
+     * 当前用户在某店"累计已赚"的推广积分（lifetime earned）。
+     * shop_promo_record 中所有 amount > 0 的流水之和，不扣抵扣/转换/提现等出账。
+     * 用于 C 端店铺主页"你已赚"统计。
+     */
+    @GetMapping("/my-promo-earned")
+    @Operation(summary = "当前用户在某店累计获得的推广积分（lifetime，分）")
+    @Parameter(name = "tenantId", description = "商户租户 id", required = true)
+    @TenantIgnore
+    public CommonResult<java.util.Map<String, Object>> getMyPromoEarned(
+            @RequestParam("tenantId") @NotNull Long tenantId) {
+        Long userId = SecurityFrameworkUtils.getLoginUserId();
+        Long sum = shopPromoRecordMapper.sumPositiveByUserAndTenant(userId, tenantId);
+        java.util.Map<String, Object> out = new java.util.HashMap<>(2);
+        out.put("lifetimeEarnedFen", sum == null ? 0L : sum);
+        return success(out);
     }
 
     /**

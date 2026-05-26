@@ -169,7 +169,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
-import { getShopInfo, listShopProducts, getShopVisitorCount, getMyRel } from '@/api/shop.js';
+import { getShopInfo, listShopProducts, getShopVisitorCount, getMyRel, getMyPromoEarned } from '@/api/shop.js';
 import { listWinners, getAccount } from '@/api/promo.js';
 import { addCart, listCart, getCartCount } from '@/api/cart.js';
 import { listCouponTemplates, takeCoupon } from '@/api/coupon.js';
@@ -382,12 +382,19 @@ async function loadVip() {
     if (rel) {
       vip.myStar = rel.star || 0;
       vip.discountText = rel.discount ? `${(rel.discount * 10).toFixed(0)}` : '';
-      // "你已赚" / "在该店赚" = 推广积分（1 积分 = 1 分钱，本店累积，余额式：已发未提）
-      // 余额(balance)概念已下线，不再用；展示 promoPoints 即钱
-      vip.earnYuan = fen2yuan(rel.promoPoints || 0, false);
-      myEarn.value = vip.earnYuan;
     }
   } catch {}
+  // "你已赚" / "在该店赚" = 推广积分 lifetime（累计 amount > 0 的流水，含已抵扣/转换/提现），
+  // 而非剩余余额；按 fen 转 ¥ 显示
+  try {
+    const earn = await getMyPromoEarned(route.tenantId);
+    const fen = earn?.lifetimeEarnedFen || 0;
+    vip.earnYuan = fen2yuan(fen, false);
+    myEarn.value = vip.earnYuan;
+  } catch {
+    vip.earnYuan = '0.00';
+    myEarn.value = '0.00';
+  }
   try {
     const ref = await request({ url: `/app-api/merchant/mini/promo/referral/my-children-count?tenantId=${route.tenantId}` });
     vip.inviterCount = ref || 0;
