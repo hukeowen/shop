@@ -84,112 +84,158 @@
       radial-gradient(500px 350px at 0% 0%, rgba(212,146,10,.4), transparent 60%),
       linear-gradient(180deg, #18130E 0%, #2A1A0F 60%, #1F1208 100%);
     color: #fff;
-    padding: 30px 18px 24px;
+    padding: 24px 22px 20px;
     position: relative; overflow: hidden;
+    display: flex; flex-direction: column;
   }
   .va::before {
     content: ''; position: absolute; inset: 0;
     background-image: radial-gradient(rgba(255,255,255,.05) 1px, transparent 1px);
     background-size: 22px 22px;
+    pointer-events: none;
   }
-  .va-hero { text-align: center; padding: 10px 0 16px; position: relative; }
+
+  /* ── 顶部紧凑品牌行 ── */
+  .va-hero { text-align: center; padding: 4px 0 0; position: relative; }
   .va-logo {
-    width: 60px; height: 60px; border-radius: 18px;
+    width: 56px; height: 56px; border-radius: 18px;
     background: linear-gradient(135deg, var(--o), var(--o-d));
     display: inline-grid; place-items: center;
-    font-size: 30px; line-height: 1;
+    font-size: 28px; line-height: 1;
     box-shadow: var(--sh-warm), inset 0 1px 0 rgba(255,255,255,.3);
   }
   .va-brand {
-    margin-top: 12px; font-size: 32px; font-weight: 900; letter-spacing: -1px;
+    margin-top: 10px; font-size: 26px; font-weight: 900; letter-spacing: -.5px;
     background: linear-gradient(135deg, #fff, var(--gold-l));
     -webkit-background-clip: text; background-clip: text; color: transparent;
     text-shadow: 0 4px 24px rgba(255,107,53,.3);
   }
-  .va-tag { margin-top: 6px; font-size: 13px; color: rgba(255,255,255,.7); letter-spacing: 1px; }
+  .va-tag { margin-top: 4px; font-size: 12px; color: rgba(255,255,255,.7); letter-spacing: .8px; }
+
   .va-stats {
-    margin-top: 14px;
+    margin-top: 12px;
     display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;
     position: relative;
   }
   .va-pill {
     display: inline-flex; align-items: center; gap: 6px;
-    padding: 6px 14px; border-radius: 99px;
+    padding: 5px 12px; border-radius: 99px;
     background: rgba(255,107,53,.22);
     border: 1px solid rgba(255,107,53,.4);
     backdrop-filter: blur(10px);
-    font-size: 12px;
+    font-size: 11.5px;
   }
   .va-pill.mint { background: rgba(16,185,129,.22); border-color: rgba(16,185,129,.4); }
-  .va-pill .em { font-size: 14px; }
+  .va-pill .em { font-size: 13px; }
   .va-pill .hl { color: var(--gold-l); font-weight: 800; margin: 0 2px; }
   .va-pill.mint .hl { color: var(--mint-l); }
+
+  /* ── 中部居中表单区（flex:1 顶撑） ── */
+  .va-form-wrap {
+    flex: 1;
+    display: flex; align-items: center; justify-content: center;
+    padding: 18px 0;
+    position: relative;
+  }
+  .va-form {
+    width: 100%;
+    background: #fff; color: var(--t1);
+    border-radius: 22px;
+    padding: 26px 22px 22px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.4);
+  }
+  .va-form-t {
+    font-size: 18px; font-weight: 900; text-align: center; color: var(--t1);
+    letter-spacing: .5px;
+  }
+  .va-form-s {
+    font-size: 11.5px; color: var(--o-d); text-align: center;
+    margin-top: 6px;
+  }
+  .va-field {
+    display: flex; align-items: center; gap: 10px;
+    padding: 14px 14px;
+    background: var(--bg-2);
+    border-radius: 12px;
+    margin-top: 12px;
+    border: 1px solid transparent;
+    transition: border-color .15s, background .15s;
+  }
+  .va-field:focus-within {
+    border-color: var(--o-200);
+    background: var(--o-50);
+  }
+  .va-field .l {
+    flex-shrink: 0;
+    font-size: 13px; color: var(--t2); font-weight: 700;
+    min-width: 30px; text-align: center;
+  }
+  .va-field input {
+    flex: 1; font-size: 15px; border: 0; outline: 0;
+    color: var(--t1); background: transparent;
+    text-align: center;
+    letter-spacing: 1px;
+  }
+  .va-field input::placeholder { color: var(--t4); letter-spacing: normal; }
+  .va-send {
+    flex-shrink: 0;
+    padding: 7px 14px; border-radius: 99px;
+    background: var(--o-50); color: var(--o);
+    border: 1px solid var(--o-100);
+    font-size: 12px; font-weight: 700;
+  }
+  .va-submit {
+    margin-top: 18px;
+    padding: 15px;
+    background: linear-gradient(135deg, var(--o), var(--o-d));
+    color: #fff; text-align: center;
+    border-radius: 99px;
+    font-weight: 900; font-size: 16px; letter-spacing: 4px;
+    box-shadow: var(--sh-warm);
+  }
+  .va-agree { margin-top: 14px; text-align: center; font-size: 11px; color: var(--t4); }
+  .va-agree .link { color: var(--o); }
+
+  /* ── 底部社会证明（细滚动条 + 4 卖点）── */
+  .va-bottom {
+    position: relative;
+    margin-top: auto;
+  }
   .va-ticker {
-    margin-top: 14px;
-    padding: 10px 14px;
+    padding: 8px 12px;
     background: rgba(255,255,255,.06);
     border: 1px solid rgba(255,255,255,.1);
-    border-radius: 12px;
-    display: flex; align-items: center; gap: 10px;
-    overflow: hidden; position: relative;
+    border-radius: 99px;
+    display: flex; align-items: center; gap: 8px;
+    overflow: hidden;
   }
-  .va-ticker .em { font-size: 14px; flex-shrink: 0; }
-  .va-ticker .roll { flex: 1; overflow: hidden; height: 16px; position: relative; }
+  .va-ticker .em { font-size: 12px; flex-shrink: 0; }
+  .va-ticker .roll { flex: 1; overflow: hidden; height: 14px; position: relative; }
   .va-ticker .track {
     position: absolute; white-space: nowrap;
-    font-size: 11.5px; color: rgba(255,255,255,.75);
+    font-size: 11px; color: rgba(255,255,255,.75);
   }
   .va-ticker .track .phone { color: var(--gold-l); font-weight: 700; }
   .va-ticker .track .shop  { color: var(--o-l); font-weight: 700; }
   .va-ticker .track .amt   { color: var(--mint-l); font-weight: 800; }
   .va-sell {
-    margin: 14px 0 16px;
-    display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
-    position: relative;
+    margin-top: 10px;
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;
   }
   .va-card {
-    padding: 14px;
-    border-radius: var(--r-lg);
+    padding: 10px 4px;
+    border-radius: 12px;
     background: rgba(255,255,255,.08);
     border: 1px solid rgba(255,255,255,.12);
     backdrop-filter: blur(10px);
+    text-align: center;
   }
   .va-card.warm   { background: linear-gradient(135deg, rgba(255,107,53,.28), rgba(255,107,53,.08)); border-color: rgba(255,107,53,.38); }
   .va-card.gold   { background: linear-gradient(135deg, rgba(212,146,10,.28), rgba(212,146,10,.08)); border-color: rgba(212,146,10,.38); }
   .va-card.mint   { background: linear-gradient(135deg, rgba(16,185,129,.28), rgba(16,185,129,.08)); border-color: rgba(16,185,129,.38); }
   .va-card.purple { background: linear-gradient(135deg, rgba(99,102,241,.28), rgba(99,102,241,.08)); border-color: rgba(99,102,241,.38); }
-  .va-card .em { font-size: 26px; line-height: 1; }
-  .va-card .t { font-size: 14px; font-weight: 800; margin-top: 8px; }
-  .va-card .d { font-size: 11px; color: rgba(255,255,255,.7); margin-top: 3px; }
-  .va-form {
-    position: relative;
-    background: #fff; color: var(--t1);
-    border-radius: 22px;
-    padding: 22px 20px 18px;
-    box-shadow: 0 20px 60px rgba(0,0,0,.4);
-  }
-  .va-form-t { font-size: 17px; font-weight: 900; text-align: center; color: var(--t1); }
-  .va-form-s { font-size: 11px; color: var(--o-d); text-align: center; margin-top: 4px; }
-  .va-field {
-    display: flex; align-items: center; gap: 10px;
-    padding: 12px 0;
-    border-bottom: 1px solid var(--line);
-    margin-top: 4px;
-  }
-  .va-field .l { width: 36px; font-size: 13px; color: var(--t2); font-weight: 600; }
-  .va-field input { flex: 1; font-size: 15px; border: 0; outline: 0; color: var(--t1); background: transparent; }
-  .va-send { padding: 7px 14px; border-radius: 99px; background: var(--o-50); color: var(--o); border: 1px solid var(--o-100); font-size: 12px; font-weight: 700; }
-  .va-submit {
-    margin-top: 18px;
-    padding: 14px;
-    background: linear-gradient(135deg, var(--o), var(--o-d));
-    color: #fff; text-align: center;
-    border-radius: 99px;
-    font-weight: 900; font-size: 16px; letter-spacing: 2px;
-    box-shadow: var(--sh-warm);
-  }
-  .va-agree { margin-top: 12px; text-align: center; font-size: 11px; color: var(--t4); }
-  .va-agree .link { color: var(--o); }
+  .va-card .em { font-size: 18px; line-height: 1; }
+  .va-card .t { font-size: 11px; font-weight: 800; margin-top: 4px; line-height: 1.2; }
 
   /* ━━━━━━━━━━━━━━━━━━ Variant B ━━━━━━━━━━━━━━━━━━ */
   .vb {
@@ -475,32 +521,38 @@
             <div class="va-brand">客小二</div>
             <div class="va-tag">商户派奖 · 推 N 反 1 · 1:1 提现</div>
             <div class="va-stats">
-              <div class="va-pill"><span class="em">💎</span>今日全网派奖 <span class="hl">¥482</span></div>
+              <div class="va-pill"><span class="em">💎</span>今日派奖 <span class="hl">¥482</span></div>
               <div class="va-pill mint"><span class="em">👥</span><span class="hl">42</span> 人到账</div>
             </div>
           </div>
-          <div class="va-ticker">
-            <span class="em">🔥</span>
-            <div class="roll"><div class="track"><span class="phone">138****6789</span> 在 <span class="shop">爱家超市</span> 派奖 <span class="amt">+¥10</span></div></div>
+
+          <div class="va-form-wrap">
+            <div class="va-form">
+              <div class="va-form-t">手机号登录 / 注册</div>
+              <div class="va-form-s">登录享首单立减 + 推广积分赠送</div>
+              <div class="va-field"><span class="l">+86</span><input placeholder="请输入手机号"/></div>
+              <div class="va-field"><span class="l">🔒</span><input placeholder="6 位短信验证码"/><div class="va-send">获取</div></div>
+              <div class="va-submit">登 录</div>
+              <div class="va-agree">登录即同意 <span class="link">《用户协议》</span> <span class="link">《隐私政策》</span></div>
+            </div>
           </div>
-          <div class="va-sell">
-            <div class="va-card warm"><div class="em">💰</div><div class="t">买东西也赚钱</div><div class="d">下单即返推广积分</div></div>
-            <div class="va-card gold"><div class="em">🎁</div><div class="t">商户派奖池</div><div class="d">每天 ¥100+ 现金</div></div>
-            <div class="va-card mint"><div class="em">🔥</div><div class="t">推 N 反 1</div><div class="d">买 N 件免 1 件</div></div>
-            <div class="va-card purple"><div class="em">💸</div><div class="t">1:1 提现</div><div class="d">微信秒到 · 满 1 元</div></div>
-          </div>
-          <div class="va-form">
-            <div class="va-form-t">手机号登录 / 注册</div>
-            <div class="va-form-s">登录享首单立减 + 推广积分赠送</div>
-            <div class="va-field"><span class="l">+86</span><input placeholder="手机号"/></div>
-            <div class="va-field"><span class="l">🔒</span><input placeholder="6 位短信验证码"/><div class="va-send">获取</div></div>
-            <div class="va-submit">登 录</div>
-            <div class="va-agree">登录即同意 <span class="link">《用户协议》</span> <span class="link">《隐私政策》</span></div>
+
+          <div class="va-bottom">
+            <div class="va-ticker">
+              <span class="em">🔥</span>
+              <div class="roll"><div class="track"><span class="phone">138****6789</span> 在 <span class="shop">爱家超市</span> 派奖 <span class="amt">+¥10</span></div></div>
+            </div>
+            <div class="va-sell">
+              <div class="va-card warm"><div class="em">💰</div><div class="t">下单返积分</div></div>
+              <div class="va-card gold"><div class="em">🎁</div><div class="t">派奖池</div></div>
+              <div class="va-card mint"><div class="em">🔥</div><div class="t">推N反1</div></div>
+              <div class="va-card purple"><div class="em">💸</div><div class="t">1:1提现</div></div>
+            </div>
           </div>
         </div>
       </div>
     </div>
-    <div class="phone-label">Ⓐ <b>深色品牌门面</b> · 实时派奖 + 4 卖点 + 完整表单（当前线上接近）</div>
+    <div class="phone-label">Ⓐ <b>深色品牌门面</b> · 紧凑品牌头 + 居中表单 + 底部社会证明</div>
   </div>
 
   <!-- ━━━━━━━━━━━━━━━ Variant B · 大数字 hero（暖橙满铺）━━━━━━━━━━━━━━━ -->
