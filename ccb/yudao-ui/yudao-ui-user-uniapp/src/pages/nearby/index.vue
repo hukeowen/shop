@@ -25,9 +25,9 @@
     <view v-else>
       <view class="result-bar">共找到 <text class="b">{{ shops.length }}</text> 家店</view>
       <view class="shop-grid">
-        <view v-for="(s, i) in shops" :key="s.id || s.tenantId" class="shop-card-g" @click="goShop(s)">
-          <view class="shop-cover" :class="['', 'alt-1', 'alt-2'][i % 3]">
-            <image v-if="s.shopLogo" :src="s.shopLogo" mode="aspectFill" class="cover-img" />
+        <view v-for="s in shops" :key="s.id || s.tenantId" class="shop-card-g" @click="goShop(s)">
+          <view class="shop-cover">
+            <image v-if="s.coverUrl" :src="s.coverUrl" mode="aspectFill" class="cover-img" />
             <text v-else class="cover-em">{{ (s.shopName || s.name || '店')[0] }}</text>
             <view class="shop-status-mini" :class="{ closed: !s.open }">
               <text class="dot"></text>{{ s.open ? '营业中' : '休息中' }}
@@ -236,16 +236,17 @@ onMounted(() => {
 .shop-cover {
   height: 96px;
   position: relative;
-  background: linear-gradient(135deg, #FFD1BA, $o);
+  /* 无照片统一暖米色，告别红蓝绿乱跳 */
+  background: linear-gradient(135deg, #FFF5EB, #FFE9D5);
   display: flex; align-items: center; justify-content: center;
   overflow: hidden;
 }
-.shop-cover.alt-1 { background: linear-gradient(135deg, #C9E0FF, #6196F0); }
-.shop-cover.alt-2 { background: linear-gradient(135deg, #D3F4D3, #4CB84C); }
 .cover-img { width: 100%; height: 100%; }
 .cover-em {
-  font-size: 42px; font-weight: 800; color: #fff;
-  text-shadow: 0 2px 8px rgba(0,0,0,.15);
+  font-size: 42px; font-weight: 800;
+  color: $o-d;
+  text-shadow: 0 2px 4px rgba(255,107,53,.15);
+  letter-spacing: -1px;
 }
 .shop-status-mini {
   position: absolute; top: 8px; right: 8px;

@@ -170,9 +170,9 @@
     <view v-if="loadingShops" class="loading">加载中…</view>
     <empty-state v-else-if="!nearbyShops.length" icon="🏪" title="附近暂无店铺" desc="换个位置或允许定位试试" />
     <view v-else class="shop-grid">
-      <view v-for="(s, i) in nearbyShops" :key="s.id" class="shop-card-g" @click="goShop(s)">
-        <view class="shop-cover" :class="['', 'alt-1', 'alt-2'][i % 3]">
-          <image v-if="s.shopLogo" :src="s.shopLogo" mode="aspectFill" class="cover-img" />
+      <view v-for="s in nearbyShops" :key="s.id" class="shop-card-g" @click="goShop(s)">
+        <view class="shop-cover">
+          <image v-if="s.coverUrl" :src="s.coverUrl" mode="aspectFill" class="cover-img" />
           <text v-else class="cover-em">{{ (s.name || '店')[0] }}</text>
           <view class="shop-status-mini" :class="{ closed: !s.open }">
             <text class="dot"></text>{{ s.open ? '营业中' : '休息中' }}
@@ -356,7 +356,7 @@ async function loadNearby() {
       id: s.id || s.tenantId,
       tenantId: s.tenantId || s.id,
       name: s.shopName || s.name || '店铺',
-      shopLogo: s.shopLogo,
+      coverUrl: s.coverUrl || s.shopLogo || '',
       star: s.starLevel || s.star,
       newTag: s.newShop ? '新店送 ¥5' : '',
       rating: s.avgRating || s.rating,
@@ -840,16 +840,17 @@ onShow(refreshAll);
 .shop-cover {
   height: 96px;
   position: relative;
-  background: linear-gradient(135deg, #FFD1BA, $o);
+  /* 无照片时统一暖米色，告别红蓝绿乱跳；有照片优先用真照片 */
+  background: linear-gradient(135deg, #FFF5EB, #FFE9D5);
   display: flex; align-items: center; justify-content: center;
   overflow: hidden;
 }
-.shop-cover.alt-1 { background: linear-gradient(135deg, #C9E0FF, #6196F0); }
-.shop-cover.alt-2 { background: linear-gradient(135deg, #D3F4D3, #4CB84C); }
 .cover-img { width: 100%; height: 100%; }
 .cover-em {
-  font-size: 42px; font-weight: 800; color: #fff;
-  text-shadow: 0 2px 8px rgba(0,0,0,.15);
+  font-size: 42px; font-weight: 800;
+  color: $o-d;
+  text-shadow: 0 2px 4px rgba(255,107,53,.15);
+  letter-spacing: -1px;
 }
 .shop-status-mini {
   position: absolute; top: 8px; right: 8px;
