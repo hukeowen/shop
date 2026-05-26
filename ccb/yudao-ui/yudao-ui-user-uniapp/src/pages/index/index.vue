@@ -64,6 +64,15 @@
       </view>
       <view class="lt-cta">登录 →</view>
     </view>
+    <!-- 已登录但今日还没到账：兜底空状态卡（同样上拉与 hero 重叠，避免大块橙色空白） -->
+    <view v-else class="mae-card empty-today" @click="goNearby">
+      <view class="lt-em">🌅</view>
+      <view class="lt-body">
+        <view class="lt-t">今日还没到账</view>
+        <view class="lt-d">逛逛附近店铺 · 下单参与「推 N 反 1」立即赚</view>
+      </view>
+      <view class="lt-cta">去赚 →</view>
+    </view>
 
     <!-- ━━━━━━━━━━ 5 快入口 ━━━━━━━━━━ -->
     <view class="home-quick">
@@ -515,8 +524,9 @@ onShow(refreshAll);
 }
 @keyframes rollx { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
 
-/* ━━━━━━━━━━━━━━━ 未登录引导卡（取代 mae-card）━━━━━━━━━━━━━━━ */
-.mae-card.login-tip {
+/* ━━━━━━━━━━━━━━━ 未登录引导卡 / 已登录空状态卡（取代 mae-card）━━━━━━━━━━━━━━━ */
+.mae-card.login-tip,
+.mae-card.empty-today {
   display: flex; align-items: center; gap: 14px;
   padding: 14px 16px;
 }
