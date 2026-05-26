@@ -305,7 +305,7 @@ onMounted(() => {
   margin-left: auto;
   font-size: 10.5px;
   padding: 2px 7px;
-  background: linear-gradient(135deg, $gold-50, $gold-100);
+  background: linear-gradient(135deg, $gold-50, $gold-l);
   color: $gold-d;
   border-radius: 4px;
   font-weight: 800;
