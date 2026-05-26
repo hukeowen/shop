@@ -663,10 +663,11 @@ public class AppMerchantPromoController {
     }
 
     @GetMapping("/today-stat")
-    @Operation(summary = "今日入账汇总（推广积分 + 消费积分 + 派奖次数）")
+    @Operation(summary = "今日入账汇总（推广积分 + 消费积分 + 派奖次数）；未登录 = 全网汇总，登录 = 当前用户")
     @cn.iocoder.yudao.framework.tenant.core.aop.TenantIgnore
     public CommonResult<Map<String, Object>> getTodayStat() {
-        Long userId = SecurityFrameworkUtils.getLoginUserId();
+        // 未登录场景：登录页 hero 要展示"全网今日派奖"，userId=null 时不加 userId 过滤
+        final Long userId = SecurityFrameworkUtils.getLoginUserId();
         Long headerTenant = cn.iocoder.yudao.framework.tenant.core.context.TenantContextHolder.getTenantId();
         boolean perTenant = headerTenant != null && headerTenant > 0;
 
@@ -674,11 +675,10 @@ public class AppMerchantPromoController {
         java.time.LocalDateTime end = java.time.LocalDate.now().plusDays(1).atStartOfDay();
 
         java.util.concurrent.Callable<long[]> agg = () -> {
-            // [promoSum, consumeSum, awardCount]
             long[] sums = new long[3];
             java.util.List<ShopPromoRecordDO> promo = promoRecordMapper.selectList(
                     new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<ShopPromoRecordDO>()
-                            .eq(ShopPromoRecordDO::getUserId, userId)
+                            .eq(userId != null, ShopPromoRecordDO::getUserId, userId)
                             .gt(ShopPromoRecordDO::getAmount, 0L)
                             .ge(ShopPromoRecordDO::getCreateTime, start)
                             .lt(ShopPromoRecordDO::getCreateTime, end));
@@ -688,7 +688,7 @@ public class AppMerchantPromoController {
             }
             java.util.List<ShopConsumePointRecordDO> consume = consumePointRecordMapper.selectList(
                     new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<ShopConsumePointRecordDO>()
-                            .eq(ShopConsumePointRecordDO::getUserId, userId)
+                            .eq(userId != null, ShopConsumePointRecordDO::getUserId, userId)
                             .gt(ShopConsumePointRecordDO::getAmount, 0L)
                             .ge(ShopConsumePointRecordDO::getCreateTime, start)
                             .lt(ShopConsumePointRecordDO::getCreateTime, end));
