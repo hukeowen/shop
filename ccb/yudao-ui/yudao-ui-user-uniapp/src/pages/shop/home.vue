@@ -126,28 +126,46 @@
       </view>
     </view>
 
-    <!-- ━━━━━━━━━━ 分类 chips ━━━━━━━━━━ -->
-    <scroll-view scroll-x class="sh-cats">
-      <view class="sh-cat" :class="{ on: activeCat === 0 }" @click="activeCat = 0">全部</view>
-      <view v-for="c in cats" :key="c.id" class="sh-cat" :class="{ on: activeCat === c.id }" @click="activeCat = c.id">{{ c.name }}</view>
-    </scroll-view>
-
-    <!-- ━━━━━━━━━━ 商品 grid ━━━━━━━━━━ -->
+    <!-- ━━━━━━━━━━ 商品列表（美团风：左侧分类 tab + 右侧商品大卡）━━━━━━━━━━ -->
     <view v-if="loading" class="loading">加载中…</view>
-    <empty-state v-else-if="!filteredSpus.length" title="该店暂无商品" />
-    <view v-else class="sh-grid">
-      <view v-for="(p, i) in filteredSpus" :key="p.id" class="pcard" @click="goProduct(p)">
-        <view class="ppic" :class="picTone(i)">
-          <text class="ppic-em">{{ guessEmoji(p.name) }}</text>
-          <image v-if="p.picUrl && !p.imgErr" :src="p.picUrl" mode="aspectFill" class="ppic-img" @error="onImgErr(p)" />
-          <view v-if="p.badge" class="pbadge" :class="p.badgeClass">{{ p.badge }}</view>
+    <empty-state v-else-if="!spus.length" title="该店暂无商品" />
+    <view v-else class="mt-products">
+      <!-- 左侧分类 -->
+      <scroll-view scroll-y class="mt-side">
+        <view class="mt-side-item" :class="{ on: activeCat === 0 }" @click="activeCat = 0">
+          <text class="dot" v-if="activeCat === 0"></text>全部
         </view>
-        <view class="pname">{{ p.name }}</view>
-        <view class="pmeta">
-          <view class="pprice">¥{{ fen2yuan(p.price, false) }}</view>
-          <view class="padd" @click.stop="onAddCart(p)">+</view>
+        <view v-for="c in cats" :key="c.id" class="mt-side-item" :class="{ on: activeCat === c.id }" @click="activeCat = c.id">
+          <text class="dot" v-if="activeCat === c.id"></text>{{ c.name }}
         </view>
-      </view>
+      </scroll-view>
+      <!-- 右侧商品大卡 -->
+      <scroll-view scroll-y class="mt-main">
+        <view v-if="!filteredSpus.length" class="mt-empty">该分类暂无商品</view>
+        <view v-for="p in filteredSpus" :key="p.id" class="mt-card" @click="goProduct(p)">
+          <view class="mt-pic">
+            <image v-if="p.picUrl && !p.imgErr" :src="p.picUrl" mode="aspectFill" class="mt-pic-img" @error="onImgErr(p)" />
+            <text v-else class="mt-pic-em">{{ guessEmoji(p.name) }}</text>
+            <view v-if="p.badge" class="mt-badge" :class="p.badgeClass">{{ p.badge }}</view>
+          </view>
+          <view class="mt-info">
+            <view class="mt-name">{{ p.name }}</view>
+            <view v-if="p.introduction" class="mt-intro">{{ p.introduction }}</view>
+            <view class="mt-meta">
+              <text v-if="p.salesCount" class="mt-sales">月售 {{ p.salesCount }}</text>
+              <text v-if="p.rating" class="mt-rate">★ {{ Number(p.rating).toFixed(1) }}</text>
+            </view>
+            <view class="mt-foot">
+              <view class="mt-price-block">
+                <text class="mt-cny">¥</text>
+                <text class="mt-price">{{ fen2yuan(p.price, false) }}</text>
+                <text v-if="p.marketPrice && p.marketPrice > p.price" class="mt-mkt">¥{{ fen2yuan(p.marketPrice, false) }}</text>
+              </view>
+              <view class="mt-add" @click.stop="onAddCart(p)">+ 加购</view>
+            </view>
+          </view>
+        </view>
+      </scroll-view>
     </view>
 
     <view class="bottom-pad"></view>
@@ -170,6 +188,7 @@
 import { ref, reactive, computed, onMounted } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
 import { getShopInfo, listShopProducts, getShopVisitorCount, getMyRel, getMyPromoEarned } from '@/api/shop.js';
+import { listCategories } from '@/api/product.js';
 import { listWinners, getAccount } from '@/api/promo.js';
 import { addCart, listCart, getCartCount } from '@/api/cart.js';
 import { listCouponTemplates, takeCoupon } from '@/api/coupon.js';
@@ -318,15 +337,32 @@ async function loadProducts() {
               || list.slice().sort((a, b) => (b.price || 0) - (a.price || 0))[0];
     signatureSpu.value = sig ? reactive({ ...sig, imgErr: false }) : null;
 
-    // 聚合分类
-    const catMap = new Map();
-    let idx = 1;
-    for (const s of list) {
-      if (s.categoryId && !catMap.has(s.categoryId)) {
-        catMap.set(s.categoryId, { id: s.categoryId, name: s.categoryName || `分类 ${idx++}` });
-      }
+    // 聚合分类 — 先拿出商品涉及的 categoryId 集合
+    const idsInUse = new Set();
+    for (const s of list) if (s.categoryId) idsInUse.add(s.categoryId);
+
+    // 拉本店真实分类树（带 tenantId 走本店命名空间，避免跨租户取错名）
+    let nameMap = {};
+    try {
+      const tree = await listCategories(route.tenantId);
+      const flat = [];
+      const walk = (arr) => {
+        if (!Array.isArray(arr)) return;
+        for (const n of arr) {
+          flat.push(n);
+          if (n.children) walk(n.children);
+        }
+      };
+      walk(tree);
+      for (const n of flat) if (n.id && n.name) nameMap[n.id] = n.name;
+    } catch {}
+
+    // 拼真名 + 兜底
+    const catList = [];
+    for (const id of idsInUse) {
+      catList.push({ id, name: nameMap[id] || `分类 ${id}` });
     }
-    cats.value = [...catMap.values()];
+    cats.value = catList;
   } catch {} finally { loading.value = false; }
 }
 
@@ -718,76 +754,112 @@ onShow(refreshAll);
 .promise-d { font-size: 11px; color: #047857; margin-top: 4px; line-height: 1.6; }
 .promise-d .b { font-weight: 800; }
 
-/* ━━ Cats ━━ */
-.sh-cats {
-  padding: 0 14px;
-  white-space: nowrap;
-  margin: 14px 0 12px;
+/* ━━ 商品区：美团风 左侧分类 tab + 右侧商品大卡 ━━ */
+.loading { padding: 40px; text-align: center; color: $t4; }
+.mt-products {
+  margin: 14px 14px 0;
+  display: flex;
+  background: $card;
+  border-radius: $r-lg;
+  overflow: hidden;
+  box-shadow: $sh-1;
+  height: 600px;  /* 撑出滚动区，足够展示一段商品 */
 }
-.sh-cat {
-  display: inline-block;
-  padding: 7px 16px; border-radius: 99px;
-  background: $bg-2; color: $t2;
-  font-size: 12px; font-weight: 700;
-  border: 1px solid $line;
-  margin-right: 8px;
+.mt-side {
+  width: 90px; flex-shrink: 0;
+  background: $bg-2;
+  border-right: 1px solid $line;
 }
-.sh-cat.on {
-  background: linear-gradient(135deg, $o, $o-d);
-  color: #fff; border-color: transparent;
-  box-shadow: $sh-warm;
+.mt-side-item {
+  position: relative;
+  padding: 14px 6px;
+  text-align: center;
+  font-size: 12.5px; color: $t2;
+  font-weight: 600;
+  word-break: break-all;
+}
+.mt-side-item.on {
+  background: $card;
+  color: $o-d;
+  font-weight: 800;
+}
+.mt-side-item .dot {
+  position: absolute; left: 0; top: 50%;
+  transform: translateY(-50%);
+  width: 3px; height: 20px;
+  background: linear-gradient(180deg, $o, $o-d);
+  border-radius: 0 2px 2px 0;
 }
 
-/* ━━ Grid ━━ */
-.loading { padding: 40px; text-align: center; color: $t4; }
-.sh-grid {
-  padding: 0 14px;
-  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+.mt-main { flex: 1; padding: 10px 12px; min-width: 0; }
+.mt-empty { padding: 60px 0; text-align: center; color: $t4; font-size: 13px; }
+
+.mt-card {
+  display: flex; gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px dashed $line;
 }
-.pcard {
-  background: $card; border-radius: $r-md;
-  padding: 8px; border: 1px solid $line;
+.mt-card:last-child { border-bottom: none; }
+
+.mt-pic {
+  width: 88px; height: 88px;
+  flex-shrink: 0;
+  border-radius: $r-md;
+  background: linear-gradient(135deg, #FFF5EB, #FFE9D5);
   position: relative; overflow: hidden;
-}
-.ppic {
-  height: 110px; border-radius: 10px;
-  background: linear-gradient(135deg, #FFE0D1, $o-l);
   display: flex; align-items: center; justify-content: center;
-  margin-bottom: 8px; position: relative; overflow: hidden;
 }
-.ppic.green  { background: linear-gradient(135deg, #D1FAE5, #6EE7B7); }
-.ppic.purple { background: linear-gradient(135deg, #E0D4FF, #C4B5FD); }
-.ppic.pink   { background: linear-gradient(135deg, #FCE7F3, #F9A8D4); }
-.ppic-em {
-  position: absolute; inset: 0;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 48px; line-height: 1;
-}
-.ppic-img {
-  position: absolute; inset: 0;
-  width: 100%; height: 100%; z-index: 1;
-}
-.pbadge {
-  position: absolute; top: 6px; left: 6px;
-  padding: 3px 7px;
+.mt-pic-img { width: 100%; height: 100%; }
+.mt-pic-em { font-size: 36px; }
+.mt-badge {
+  position: absolute; top: 4px; left: 4px;
+  padding: 2px 6px;
   background: linear-gradient(135deg, $o, $o-d);
-  color: #fff; border-radius: 6px;
+  color: #fff; border-radius: 4px;
   font-size: 9px; font-weight: 800;
-  box-shadow: 0 2px 6px rgba(255,107,53,.4);
-  z-index: 2;
+  box-shadow: 0 2px 4px rgba(255,107,53,.3);
 }
-.pbadge.gold { background: linear-gradient(135deg, $gold, $gold-l); box-shadow: 0 2px 6px rgba(212,146,10,.4); }
-.pname {
-  font-size: 13px; font-weight: 700; color: $t1;
-  line-height: 1.3; height: 34px; overflow: hidden;
+.mt-badge.gold { background: linear-gradient(135deg, $gold, $gold-l); }
+
+.mt-info {
+  flex: 1; min-width: 0;
+  display: flex; flex-direction: column; gap: 4px;
 }
-.pmeta { display: flex; justify-content: space-between; align-items: center; margin-top: 6px; }
-.pprice { font-size: 16px; font-weight: 900; color: $o-d; }
-.padd {
-  width: 24px; height: 24px; border-radius: 50%;
+.mt-name {
+  font-size: 14px; font-weight: 800; color: $t1;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.mt-intro {
+  font-size: 11px; color: $t3;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.mt-meta {
+  display: flex; gap: 8px; font-size: 11px; color: $t3;
+  font-variant-numeric: tabular-nums;
+}
+.mt-rate { color: $gold-d; font-weight: 700; }
+
+.mt-foot {
+  margin-top: auto;
+  display: flex; align-items: flex-end; justify-content: space-between; gap: 6px;
+}
+.mt-price-block { display: flex; align-items: baseline; gap: 4px; }
+.mt-cny { font-size: 12px; font-weight: 800; color: $o-d; }
+.mt-price {
+  font-size: 18px; font-weight: 900; color: $o-d;
+  font-variant-numeric: tabular-nums;
+}
+.mt-mkt {
+  font-size: 11px; color: $t4; text-decoration: line-through;
+  font-variant-numeric: tabular-nums;
+}
+.mt-add {
+  flex-shrink: 0;
+  padding: 5px 12px;
   background: linear-gradient(135deg, $o, $o-d); color: #fff;
-  display: flex; align-items: center; justify-content: center;
-  font-weight: 800; box-shadow: $sh-warm;
+  border-radius: 99px;
+  font-size: 11.5px; font-weight: 800;
+  box-shadow: $sh-warm;
 }
 
 /* ━━ Cart bar ━━ */
