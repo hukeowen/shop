@@ -164,12 +164,14 @@
               <text class="shop-name">{{ s.name }}</text>
               <view v-if="s.star" class="shop-badge gold">⭐ {{ s.star }} 星</view>
               <view v-else-if="s.newTag" class="shop-badge">{{ s.newTag }}</view>
+              <view v-if="!s.open" class="shop-badge closed">已打烊</view>
             </view>
             <view v-if="s.promoLine" class="shop-promo-row">{{ s.promoLine }}</view>
             <view class="shop-meta">
               <text v-if="s.rating" class="rating">★ {{ s.rating }}</text>
-              <text class="dist">📍 {{ s.distance }}</text>
+              <text v-if="s.distance" class="dist">📍 {{ s.distance }}</text>
               <text v-if="s.monthSold != null">月售 {{ s.monthSold }}</text>
+              <text v-if="s.open" class="open">营业中</text>
             </view>
           </view>
         </view>
@@ -189,15 +191,6 @@
         </view>
       </view>
 
-      <!-- 更多店铺入口 -->
-      <view class="more-shops" @click="goNearby">
-        <view class="ms-em">🏪</view>
-        <view class="ms-t">
-          <view class="t">查看附近所有店铺</view>
-          <view class="d">{{ nearbyShops.length > 0 ? '按距离 / 销量 / 推 N 反 1 排序' : '全部商家' }}</view>
-        </view>
-        <view class="ms-arrow">›</view>
-      </view>
     </view>
 
     <view class="bottom-pad"></view>
@@ -217,7 +210,7 @@ import { ref, computed, onMounted } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
 import { useUserStore } from '@/store/user.js';
 import { listWinnersTicker, listMyQueues, listPromoRecords, getTodayStat } from '@/api/promo.js';
-import { listShops, listMyShops } from '@/api/shop.js';
+import { listShops, listMyShopsEnriched } from '@/api/shop.js';
 import { getCartCount } from '@/api/cart.js';
 import { fen2yuan, fmtTime, fmtDistance } from '@/utils/format.js';
 
@@ -337,15 +330,18 @@ const recentShops = ref([]);
 async function loadRecent() {
   if (!user.isLogin) { recentShops.value = []; return; }
   try {
-    const list = await listMyShops();
-    recentShops.value = (list || []).slice(0, 4).map((s, i) => ({
+    // /my-shops 只返关系（无 shopName）→ 改用 /my-shops-enriched 拿名字 + 余额
+    const list = await listMyShopsEnriched();
+    // 按最后访问时间倒序
+    const sorted = [...(list || [])].sort((a, b) => (b.lastVisitAt || 0) - (a.lastVisitAt || 0));
+    recentShops.value = sorted.slice(0, 4).map((s, i) => ({
       id: s.id || s.tenantId,
       tenantId: s.tenantId,
-      name: s.shopName || s.name || '店铺',
+      name: s.shopName || s.name || `店铺 #${s.tenantId}`,
       coverTone: ['', 't2', 't3', 't4'][i],
-      lastVisit: s.lastVisitText || (s.lastVisitTime ? fmtTime(s.lastVisitTime) : '最近'),
+      lastVisit: s.lastVisitAt ? fmtTime(s.lastVisitAt) : '最近',
       orderCount: s.orderCount || 0,
-      distance: s.distance != null ? fmtDistance(s.distance) : '—',
+      distance: s.distance != null && s.distance > 0 ? fmtDistance(s.distance) : '',
     }));
   } catch {}
 }
@@ -356,20 +352,24 @@ const loadingShops = ref(false);
 async function loadNearby() {
   loadingShops.value = true;
   try {
-    const r = await listShops({ pageNo: 1, pageSize: 10 });
+    // 默认 20 个 → 取前 10 展示；无坐标 / 未开业 都展示，让用户知道有哪些店
+    const r = await listShops({ pageNo: 1, pageSize: 20 });
     const items = r?.list || r || [];
-    nearbyShops.value = items.slice(0, 3).map((s) => ({
+    nearbyShops.value = items.slice(0, 10).map((s) => ({
       id: s.id || s.tenantId,
       tenantId: s.tenantId || s.id,
       name: s.shopName || s.name || '店铺',
       shopLogo: s.shopLogo,
       star: s.starLevel || s.star,
       newTag: s.newShop ? '新店送 ¥5' : '',
-      rating: s.rating || '4.8',
-      distance: s.distance != null ? fmtDistance(s.distance) : '—',
-      monthSold: s.monthSold != null ? s.monthSold : null,
+      rating: s.avgRating || s.rating,
+      // 距离仅在后端真返了 distance（用户给了坐标）才显示，否则不占位
+      distance: s.distance != null && s.distance > 0 ? fmtDistance(s.distance) : '',
+      monthSold: s.sales30d != null ? s.sales30d : (s.monthSold != null ? s.monthSold : null),
+      // 营业状态：status=1 + businessStatus !== 0 + !manualClosed 才算开门
+      open: (s.status === 1 || s.status === undefined) && s.businessStatus !== 0 && !s.manualClosed,
       promoLine: s.promoLine || (s.tuijianN ? `推 ${s.tuijianN} 反 1 进行中` : ''),
-      starSpu: null, // TODO: 接 /shop/star-spu 端点扩展
+      starSpu: null,
     }));
   } catch {} finally { loadingShops.value = false; }
 }
@@ -855,6 +855,10 @@ onShow(refreshAll);
   background: $gold-50; color: $gold-d;
   border-color: rgba(212,146,10,.25);
 }
+.shop-badge.closed {
+  background: $bg-2; color: $t4;
+  border-color: $line-d;
+}
 .shop-promo-row {
   margin-top: 6px;
   display: inline-flex; align-items: center; gap: 4px;
@@ -870,6 +874,7 @@ onShow(refreshAll);
 }
 .shop-meta .rating { color: $gold; font-weight: 700; }
 .shop-meta .dist { color: $mint; font-weight: 700; }
+.shop-meta .open { color: $mint; font-weight: 700; margin-left: auto; }
 
 /* with-star: 店主推商品 */
 .shop-card.with-star .star-prod {
