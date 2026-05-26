@@ -69,14 +69,29 @@ function goShop(s) { uni.navigateTo({ url: `/pages/shop/home?id=${s.id || s.tena
 function setFilter(k) { filter.value = k; load(); }
 
 function onRelocate() {
+  // 浏览器 / 拒绝授权时 uni.getLocation 可能 success/fail 都不 fire；
+  // 设个 timeout，5s 内没回话就走 fail 路径
+  location.value = '正在定位…';
+  let settled = false;
+  const timer = setTimeout(() => {
+    if (settled) return;
+    settled = true;
+    location.value = '定位失败 / 未授权';
+    load();
+  }, 5000);
   uni.getLocation({
     type: 'gcj02',
     success: (r) => {
+      if (settled) return; settled = true; clearTimeout(timer);
       userLng.value = r.longitude; userLat.value = r.latitude;
       location.value = `${r.latitude.toFixed(4)}, ${r.longitude.toFixed(4)}`;
       load();
     },
-    fail: () => { location.value = '定位失败 / 未授权'; load(); },
+    fail: () => {
+      if (settled) return; settled = true; clearTimeout(timer);
+      location.value = '定位失败 / 未授权';
+      load();
+    },
   });
 }
 async function load() {
@@ -93,7 +108,11 @@ async function load() {
   } catch { shops.value = []; }
   finally { loading.value = false; }
 }
-onMounted(() => { onRelocate(); });
+onMounted(() => {
+  // 不等定位，立即 load 一次保证不会卡住；定位回话后会再 load 一次带距离
+  load();
+  onRelocate();
+});
 </script>
 
 <style lang="scss" scoped>
