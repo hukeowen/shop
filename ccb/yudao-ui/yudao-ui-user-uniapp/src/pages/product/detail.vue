@@ -248,7 +248,9 @@ function goCart() { uni.navigateTo({ url: `/pages/cart/index?tenantId=${tenantId
 function goBack() { uni.navigateBack(); }
 
 onLoad((q) => {
-  spuId.value = q.spuId ? Number(q.spuId) : null;
+  // 兼容两种参数名：spuId（老 merchant 项目）和 id（新 user uniapp shop/home 跳法）
+  const sid = q.spuId || q.id;
+  spuId.value = sid ? Number(sid) : null;
   tenantId.value = q.tenantId ? Number(q.tenantId) : null;
   loadProduct();
   loadPromoConfig();
