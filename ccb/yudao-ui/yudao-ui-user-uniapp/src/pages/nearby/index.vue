@@ -1,6 +1,6 @@
 <template>
   <view class="page">
-    <nav-bar title="附近店铺" :back="false" bg="#0F0B07" txt="#fff" />
+    <nav-bar title="附近店铺" bg="#0F0B07" txt="#fff" />
     <view class="hero">
       <view class="loc-row">
         <text class="loc-ic">📍</text>
