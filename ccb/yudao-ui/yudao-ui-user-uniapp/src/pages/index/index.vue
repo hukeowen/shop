@@ -167,15 +167,17 @@
               <text class="shop-name">{{ s.name }}</text>
               <view v-if="s.star" class="shop-badge gold">⭐ {{ s.star }} 星</view>
               <view v-else-if="s.newTag" class="shop-badge">{{ s.newTag }}</view>
-              <view v-if="!s.open" class="shop-badge closed">休息中</view>
             </view>
             <view v-if="s.promoLine" class="shop-promo-row">{{ s.promoLine }}</view>
             <view class="shop-meta">
               <text v-if="s.rating" class="rating">★ {{ s.rating }}</text>
-              <text v-if="s.distance" class="dist">📍 {{ s.distance }}</text>
               <text v-if="s.monthSold != null">月售 {{ s.monthSold }}</text>
-              <text v-if="s.open" class="open">营业中</text>
+              <text v-if="s.distance">· {{ s.distance }}</text>
             </view>
+          </view>
+          <view class="shop-status" :class="{ closed: !s.open }">
+            <text class="dot"></text>
+            <text>{{ s.open ? '营业中' : '休息中' }}</text>
           </view>
         </view>
         <view v-if="s.starSpu" class="star-prod" @click.stop="goStarSpu(s)">
@@ -370,8 +372,8 @@ async function loadNearby() {
       // 距离仅在后端真返了 distance（用户给了坐标）才显示，否则不占位
       distance: s.distance != null && s.distance > 0 ? fmtDistance(s.distance) : '',
       monthSold: s.sales30d != null ? s.sales30d : (s.monthSold != null ? s.monthSold : null),
-      // 营业状态：status=1 + businessStatus !== 0 + !manualClosed 才算开门
-      open: (s.status === 1 || s.status === undefined) && s.businessStatus !== 0 && !s.manualClosed,
+      // 营业状态：后端 /public/list 已计算 isOpenNow（综合 status / todayOpenAt / manualClosed / businessHours）
+      open: s.isOpenNow === true,
       promoLine: s.promoLine || (s.tuijianN ? `推 ${s.tuijianN} 反 1 进行中` : ''),
       starSpu: null,
     }));
@@ -809,7 +811,8 @@ onShow(refreshAll);
 
 /* ━━━━━━━━━━━━━━━ 店铺卡（含 with-star 店主推商品）━━━━━━━━━━━━━━━ */
 .shop-card {
-  display: flex; gap: 14px; padding: 14px 14px 14px 18px;
+  display: flex; gap: 12px; padding: 12px 14px 12px 18px;
+  align-items: center;
   background: $card; border-radius: $r-lg;
   margin: 0 14px 10px;
   box-shadow: 0 1px 2px rgba(15,23,42,.04), 0 4px 12px rgba(15,23,42,.05);
@@ -838,13 +841,13 @@ onShow(refreshAll);
   align-items: center;
 }
 .shop-pic {
-  flex: 0 0 72px; width: 72px; height: 72px; border-radius: 14px;
+  flex: 0 0 60px; width: 60px; height: 60px; border-radius: 14px;
   background: linear-gradient(135deg, #FFD1BA, $o);
   color: #fff;
   display: flex; align-items: center; justify-content: center;
-  font-size: 30px; font-weight: 800;
+  font-size: 26px; font-weight: 800;
   position: relative; overflow: hidden;
-  box-shadow: 0 6px 16px rgba(255,107,53,.28), inset 0 1px 0 rgba(255,255,255,.25);
+  box-shadow: 0 4px 12px rgba(255,107,53,.25), inset 0 1px 0 rgba(255,255,255,.25);
 }
 .shop-pic::after {
   content: ''; position: absolute; inset: 0;
@@ -898,7 +901,32 @@ onShow(refreshAll);
 }
 .shop-meta .rating { color: $gold; font-weight: 700; }
 .shop-meta .dist { color: $mint; font-weight: 700; }
-.shop-meta .open { color: $mint; font-weight: 700; margin-left: auto; }
+
+/* 右侧营业状态 pill */
+.shop-status {
+  flex-shrink: 0;
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 10px;
+  border-radius: 99px;
+  font-size: 10.5px; font-weight: 800;
+  background: $mint-50; color: #047857;
+}
+.shop-status .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: $mint;
+  box-shadow: 0 0 6px $mint;
+  animation: shop-pulse 1.8s ease-in-out infinite;
+}
+.shop-status.closed {
+  background: $bg-2; color: $t4;
+}
+.shop-status.closed .dot {
+  background: $t4; box-shadow: none; animation: none;
+}
+@keyframes shop-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: .5; transform: scale(.8); }
+}
 
 /* with-star: 店主推商品 */
 .shop-card.with-star .star-prod {
