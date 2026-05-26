@@ -5,6 +5,11 @@
     <view v-if="loading" class="loading">加载中…</view>
     <empty-state v-else-if="!queues.length" icon="🔥" title="还没有在排队的商品" desc="到店购买开通「推 N 反 1」的商品自动入队" />
 
+    <view v-if="queues.length" class="rule-tip">
+      💡 <text class="b">出队条件</text>：本商品被你<text class="b">推荐 N 次</text>（或自购 N 件）后自动出队。
+      <text class="dim">店铺的中奖派发 / 团队分润等其他奖励，会进入你的"推广积分"但不影响出队进度。</text>
+    </view>
+
     <view v-else>
       <view v-for="(q, i) in queues" :key="`${q.tenantId}-${q.spuId}-${i}`" class="qcard">
         <view class="q-head">
@@ -32,7 +37,7 @@
         <view class="q-stats">
           <view class="q-stat">
             <text class="v">¥{{ fen2yuan(q.accumulatedAmount || 0, false) }}</text>
-            <text class="l">已累计反奖</text>
+            <text class="l">本队反奖</text>
           </view>
           <view class="q-stat-divider"></view>
           <view class="q-stat">
@@ -107,6 +112,19 @@ onShow(load);
 .page { min-height: 100vh; background: $bg-2; padding-bottom: 20px; }
 .loading { padding: 40px; text-align: center; color: $t4; }
 .bottom-pad { height: 30px; }
+
+.rule-tip {
+  margin: 10px 14px;
+  padding: 10px 12px;
+  background: $o-50;
+  color: $t2;
+  border-radius: $r-md;
+  border: 1px solid $o-100;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.rule-tip .b { color: $o-d; font-weight: 800; }
+.rule-tip .dim { color: $t3; font-size: 11px; display: block; margin-top: 4px; }
 
 .qcard {
   background: #fff;
