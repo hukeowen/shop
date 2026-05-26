@@ -166,6 +166,12 @@ async function loadProduct() {
     if (product.value?.skus?.length) {
       selectedSkuId.value = product.value.skus[0].id;
     }
+    // 兜底：URL 未传 tenantId 时（如首页搜索点进来），用 spu.tenantId
+    if (!tenantId.value && product.value?.tenantId) {
+      tenantId.value = product.value.tenantId;
+      // 拉到 tenantId 后再补两个依赖 tenantId 的请求
+      loadPromoConfig();
+    }
   } catch { product.value = null; }
   finally { loading.value = false; }
 }

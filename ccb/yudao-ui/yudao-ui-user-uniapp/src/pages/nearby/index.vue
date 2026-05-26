@@ -59,11 +59,13 @@ const location = ref('');
 const loading = ref(false);
 const filter = ref('all');
 const filters = [
-  { k: 'all',   label: '全部' },
-  { k: 'food',  label: '餐饮' },
-  { k: 'tea',   label: '茶饮' },
-  { k: 'fresh', label: '生鲜' },
-  { k: 'super', label: '超市' },
+  { k: 'all',    label: '全部' },
+  { k: 'food',   label: '餐饮' },
+  { k: 'tea',    label: '茶饮' },
+  { k: 'bake',   label: '烘焙' },
+  { k: 'fresh',  label: '生鲜' },
+  { k: 'beauty', label: '美容' },
+  { k: 'super',  label: '超市' },
 ];
 const shops = ref([]);
 const userLng = ref(0);
@@ -123,6 +125,11 @@ async function load() {
 }
 
 onMounted(() => {
+  // 支持 URL bt= 参数从首页带筛选过来（首页"餐饮/茶饮…"按钮跳进来时自动选中对应 tab）
+  try {
+    const opts = getCurrentPages().slice(-1)[0]?.options || {};
+    if (opts.bt && filters.find((f) => f.k === opts.bt)) filter.value = opts.bt;
+  } catch {}
   load();
   onRelocate();
 });

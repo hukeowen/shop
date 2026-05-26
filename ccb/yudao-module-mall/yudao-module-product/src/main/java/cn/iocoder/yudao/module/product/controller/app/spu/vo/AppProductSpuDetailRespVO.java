@@ -13,6 +13,9 @@ public class AppProductSpuDetailRespVO {
     @Schema(description = "商品 SPU 编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
     private Long id;
 
+    @Schema(description = "所属商户 tenantId（详情页 tenantId 未传时由此兜底）", example = "1010")
+    private Long tenantId;
+
     // ========== 基本信息 =========
 
     @Schema(description = "商品名称", requiredMode = Schema.RequiredMode.REQUIRED, example = "芋道")

@@ -51,14 +51,21 @@ async function selectCat(id) {
 function goProduct(p) { uni.navigateTo({ url: `/pages/product/detail?id=${p.id}&tenantId=${p.tenantId || ''}` }); }
 
 onMounted(async () => {
+  // 兼容老链接：?k=food/tea/bake/fresh/beauty/super 是商家 businessType，重定向到附近店铺筛选
+  const o = (() => { try { const ps = getCurrentPages(); return ps[ps.length - 1]?.options || {}; } catch { return {}; } })();
+  const BIZ_TYPES = ['food', 'tea', 'bake', 'fresh', 'beauty', 'super'];
+  if (o.k && BIZ_TYPES.includes(o.k)) {
+    uni.redirectTo({ url: `/pages/nearby/index?bt=${o.k}` });
+    return;
+  }
   try {
     const list = await listCategories();
     cats.value = (list || []).map((c) => ({ id: c.id, name: c.name }));
   } catch {}
   if (cats.value.length) {
-    const o = (() => { try { const ps = getCurrentPages(); return ps[ps.length - 1]?.options || {}; } catch { return {}; } })();
     const initId = o.k ? Number(o.k) : cats.value[0].id;
-    if (initId) selectCat(initId);
+    if (initId && !Number.isNaN(initId)) selectCat(initId);
+    else selectCat(cats.value[0].id);
   }
 });
 </script>

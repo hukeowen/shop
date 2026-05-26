@@ -371,7 +371,8 @@ function goQueue() { uni.navigateTo({ url: '/pages/queue/index' }); }
 function goCoupon() { uni.navigateTo({ url: '/pages/coupon/index' }); }
 function goWallet() { uni.navigateTo({ url: '/pages/wallet/index' }); }
 function goWithdraw() { uni.navigateTo({ url: '/pages/withdraw/index' }); }
-function goCategory(k) { uni.navigateTo({ url: `/pages/category/index?k=${k}` }); }
+// 首页"餐饮/茶饮/烘焙/生鲜/美容"是商家业务类型（不是商品分类），跳附近店铺并自动按 businessType 筛选
+function goCategory(k) { uni.navigateTo({ url: `/pages/nearby/index?bt=${k}` }); }
 function goShop(s) {
   const tid = s.tenantId || s.id;
   uni.navigateTo({ url: `/pages/shop/home?id=${s.id || tid}&tenantId=${tid}` });
