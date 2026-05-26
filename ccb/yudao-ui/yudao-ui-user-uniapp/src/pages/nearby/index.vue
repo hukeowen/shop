@@ -19,28 +19,37 @@
       </scroll-view>
     </view>
 
-    <!-- ━━━━━━━━━━ 商家 2 列 grid（与首页统一）━━━━━━━━━━ -->
+    <!-- ━━━━━━━━━━ 商家 1 列密集卡（美团风：左封面 + 右信息）━━━━━━━━━━ -->
     <view v-if="loading" class="loading">加载中…</view>
     <empty-state v-else-if="!shops.length" icon="🏪" title="附近暂无店铺" desc="换个位置或允许定位试试" />
     <view v-else>
       <view class="result-bar">共找到 <text class="b">{{ shops.length }}</text> 家店</view>
-      <view class="shop-grid">
-        <view v-for="s in shops" :key="s.id || s.tenantId" class="shop-card-g" @click="goShop(s)">
-          <view class="shop-cover">
-            <image v-if="s.coverUrl" :src="s.coverUrl" mode="aspectFill" class="cover-img" />
-            <text v-else class="cover-em">{{ (s.shopName || s.name || '店')[0] }}</text>
-            <view class="shop-status-mini" :class="{ closed: !s.open }">
-              <text class="dot"></text>{{ s.open ? '营业中' : '休息中' }}
-            </view>
-            <view v-if="s.star" class="cover-star">★{{ s.star }}</view>
+      <view class="shop-list">
+        <view v-for="s in shops" :key="s.id || s.tenantId" class="m-card" @click="goShop(s)">
+          <!-- 左封面 -->
+          <view class="m-cover">
+            <image v-if="s.coverUrl" :src="s.coverUrl" mode="aspectFill" class="m-cover-img" />
+            <text v-else class="m-cover-em">{{ (s.shopName || s.name || '店')[0] }}</text>
           </view>
-          <view class="card-body">
-            <view class="card-name">{{ s.shopName || s.name }}</view>
-            <view v-if="s.promoLine" class="card-promo">{{ s.promoLine }}</view>
-            <view class="card-meta">
-              <text v-if="s.rating" class="rating">★ {{ s.rating }}</text>
-              <text v-if="s.monthSold != null">月售 {{ s.monthSold }}</text>
-              <text v-if="s.distance">· {{ s.distance }}</text>
+          <!-- 右信息密集 -->
+          <view class="m-body">
+            <view class="m-row1">
+              <text class="m-name">{{ s.shopName || s.name }}</text>
+              <view class="m-status" :class="{ closed: !s.open }">
+                <text class="dot"></text>{{ s.open ? '营业中' : '休息中' }}
+              </view>
+            </view>
+            <view class="m-row2">
+              <text v-if="s.rating" class="m-rate">★ {{ s.rating }}</text>
+              <text v-if="s.monthSold != null" class="m-sales">月售 {{ s.monthSold }}</text>
+              <text v-if="s.distance" class="m-dist">· {{ s.distance }}</text>
+              <text v-if="s.star" class="m-star">★{{ s.star }} 星店</text>
+            </view>
+            <view v-if="s.promoLine" class="m-tags">
+              <view class="m-tag promo">🔥 {{ s.promoLine }}</view>
+            </view>
+            <view v-else-if="s.tuijianN" class="m-tags">
+              <view class="m-tag promo">推 {{ s.tuijianN }} 反 1</view>
             </view>
           </view>
         </view>
@@ -219,83 +228,101 @@ onMounted(() => {
 }
 .result-bar .b { color: $o-d; font-weight: 800; margin: 0 2px; }
 
-/* ━━ Shop grid（与首页 shop-grid 一致）━━ */
-.shop-grid {
-  padding: 0 14px;
-  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
-}
-.shop-card-g {
+/* ━━ Shop list（美团风：1 列密集卡，左封面 + 右信息）━━ */
+.shop-list { padding: 0 12px; }
+.m-card {
+  display: flex; gap: 12px;
+  padding: 12px;
+  margin-bottom: 10px;
   background: $card;
   border-radius: $r-lg;
   border: 1px solid $line;
-  box-shadow: 0 1px 2px rgba(15,23,42,.04), 0 4px 12px rgba(15,23,42,.05);
-  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(15,23,42,.04), 0 4px 12px rgba(15,23,42,.04);
   transition: transform .15s ease;
 }
-.shop-card-g:active { transform: scale(.98); }
-.shop-cover {
-  height: 96px;
-  position: relative;
-  /* 无照片统一暖米色，告别红蓝绿乱跳 */
+.m-card:active { transform: scale(.99); }
+
+/* 左封面：正方形 ~92px */
+.m-cover {
+  width: 92px; height: 92px;
+  flex-shrink: 0;
+  border-radius: $r-md;
+  overflow: hidden;
   background: linear-gradient(135deg, #FFF5EB, #FFE9D5);
   display: flex; align-items: center; justify-content: center;
-  overflow: hidden;
+  position: relative;
 }
-.cover-img { width: 100%; height: 100%; }
-.cover-em {
-  font-size: 42px; font-weight: 800;
+.m-cover-img { width: 100%; height: 100%; }
+.m-cover-em {
+  font-size: 36px; font-weight: 800;
   color: $o-d;
   text-shadow: 0 2px 4px rgba(255,107,53,.15);
   letter-spacing: -1px;
 }
-.shop-status-mini {
-  position: absolute; top: 8px; right: 8px;
-  display: inline-flex; align-items: center; gap: 4px;
-  padding: 3px 8px; border-radius: 99px;
-  background: rgba(16,185,129,.95);
-  color: #fff; font-size: 9.5px; font-weight: 800;
-  backdrop-filter: blur(8px);
+
+/* 右信息密集 */
+.m-body {
+  flex: 1; min-width: 0;
+  display: flex; flex-direction: column; gap: 6px;
 }
-.shop-status-mini .dot {
-  width: 5px; height: 5px; border-radius: 50%;
-  background: #fff;
-  animation: shop-pulse 1.8s ease-in-out infinite;
+.m-row1 {
+  display: flex; align-items: center; gap: 8px;
 }
-.shop-status-mini.closed { background: rgba(100,116,139,.9); }
-.shop-status-mini.closed .dot { animation: none; }
-@keyframes shop-pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: .5; transform: scale(.7); }
-}
-.cover-star {
-  position: absolute; top: 8px; left: 8px;
-  padding: 3px 8px; border-radius: 99px;
-  background: linear-gradient(135deg, $gold, $gold-d);
-  color: #fff; font-size: 10px; font-weight: 800;
-  box-shadow: 0 2px 8px rgba(212,146,10,.4);
-}
-.card-body { padding: 10px 12px 12px; }
-.card-name {
-  font-size: 14px; font-weight: 800; color: $t1;
+.m-name {
+  flex: 1; min-width: 0;
+  font-size: 15px; font-weight: 800; color: $t1;
   letter-spacing: -.3px;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.card-promo {
-  margin-top: 6px;
-  display: inline-block;
+.m-status {
+  flex-shrink: 0;
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 7px; border-radius: 99px;
+  background: rgba(16,185,129,.95);
+  color: #fff; font-size: 10px; font-weight: 800;
+}
+.m-status .dot {
+  width: 4px; height: 4px; border-radius: 50%;
+  background: #fff;
+  animation: m-pulse 1.8s ease-in-out infinite;
+}
+.m-status.closed { background: rgba(100,116,139,.9); }
+.m-status.closed .dot { animation: none; }
+@keyframes m-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: .5; transform: scale(.7); }
+}
+
+.m-row2 {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
+  font-size: 12px; color: $t3;
+  font-variant-numeric: tabular-nums;
+}
+.m-rate { color: $gold-d; font-weight: 800; }
+.m-sales { color: $t3; }
+.m-dist { color: $t4; }
+.m-star {
+  margin-left: auto;
+  font-size: 10.5px;
   padding: 2px 7px;
-  background: linear-gradient(135deg, $o-50, $gold-50);
-  color: $o-d;
-  font-size: 10px; font-weight: 700;
+  background: linear-gradient(135deg, $gold-50, $gold-100);
+  color: $gold-d;
   border-radius: 4px;
+  font-weight: 800;
+}
+
+.m-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.m-tag {
+  display: inline-block;
+  padding: 3px 8px;
+  font-size: 11px; font-weight: 700;
+  border-radius: 4px;
+}
+.m-tag.promo {
+  background: linear-gradient(135deg, #FFF1EB, #FFE0D1);
+  color: $o-d;
   border: 1px solid $o-100;
 }
-.card-meta {
-  margin-top: 6px;
-  display: flex; align-items: center; gap: 8px;
-  font-size: 11px; color: $t3;
-}
-.card-meta .rating { color: $gold-d; font-weight: 700; }
 
 .loading { padding: 40px; text-align: center; color: $t4; }
 .bottom-pad { height: 20px; }
