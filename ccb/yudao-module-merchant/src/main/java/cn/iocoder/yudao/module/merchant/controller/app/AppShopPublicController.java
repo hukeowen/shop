@@ -64,18 +64,15 @@ public class AppShopPublicController {
             @RequestParam(value = "pageSize", defaultValue = "10") Integer pageSize,
             @RequestParam(value = "kw", required = false) String kw,
             @RequestParam(value = "businessType", required = false) String businessType) {
-        // V039 改造：分页 + 营业判定。先按 status=1 + 今日已打卡 + !manual_closed 在 SQL 层过滤
-        // 掉 HIDDEN 店；剩下 OPEN / OUTSIDE_HOURS 在内存里算后按 isOpenNow DESC + sales30d DESC 排序。
-        // 内存排序对 page_size=10 OK；店铺基数大时迁到 SQL ORDER BY CASE 表达式更优。
+        // V042 改造：放开「今日已打卡 + 未主动打烊」硬过滤，未营业店也显示但排最后。
+        // SQL 层只过 status=1（HIDDEN/已删 不显示）；OPEN / OUTSIDE_HOURS / CLOSED 都返。
+        // 内存排序：OPEN 优先 → OUTSIDE_HOURS / CLOSED 之后，按 sales30d DESC。
         PageParam pageParam = new PageParam();
         pageParam.setPageNo(pageNo);
-        // 多拉一倍样本做内存排序：避免分页边界两个 OPEN 店被排到第二页之后
+        // 多拉样本做内存排序：避免分页边界两个 OPEN 店被排到第二页之后
         pageParam.setPageSize(Math.max(pageSize * 3, 30));
-        java.time.LocalDate today = java.time.LocalDate.now();
         LambdaQueryWrapper<ShopInfoDO> w = new LambdaQueryWrapper<ShopInfoDO>()
-                .eq(ShopInfoDO::getStatus, 1)
-                .eq(ShopInfoDO::getTodayOpenAt, today)
-                .ne(ShopInfoDO::getManualClosed, true); // bit 字段 != 1
+                .eq(ShopInfoDO::getStatus, 1);
         if (kw != null && !kw.trim().isEmpty()) {
             w.like(ShopInfoDO::getShopName, kw.trim());
         }
