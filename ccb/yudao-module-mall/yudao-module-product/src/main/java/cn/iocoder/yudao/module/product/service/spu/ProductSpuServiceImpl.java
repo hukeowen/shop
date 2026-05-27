@@ -56,6 +56,8 @@ public class ProductSpuServiceImpl implements ProductSpuService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Long createSpu(ProductSpuSaveReqVO createReqVO) {
+        // V044 合规：商品名/简介/描述敏感词扫描
+        validateContentCompliance(createReqVO.getName(), createReqVO.getIntroduction(), createReqVO.getDescription());
         // 校验分类、品牌
         validateCategory(createReqVO.getCategoryId());
         brandService.validateProductBrand(createReqVO.getBrandId());
@@ -77,6 +79,8 @@ public class ProductSpuServiceImpl implements ProductSpuService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void updateSpu(ProductSpuSaveReqVO updateReqVO) {
+        // V044 合规：商品名/简介/描述敏感词扫描
+        validateContentCompliance(updateReqVO.getName(), updateReqVO.getIntroduction(), updateReqVO.getDescription());
         // 校验 SPU 是否存在
         ProductSpuDO spu = validateSpuExists(updateReqVO.getId());
         // 校验分类、品牌
@@ -86,12 +90,51 @@ public class ProductSpuServiceImpl implements ProductSpuService {
         List<ProductSkuSaveReqVO> skuSaveReqList = updateReqVO.getSkus();
         productSkuService.validateSkuList(skuSaveReqList, updateReqVO.getSpecType());
 
+        // V044 合规：商户修改商品后强制重新审核（除非平台管理员通过 update-status 接口操作）
+        // 关键字段变化即重审：名称/简介/描述/价格/分类
+        Integer newStatus = spu.getStatus();
+        boolean coreChanged = !java.util.Objects.equals(spu.getName(), updateReqVO.getName())
+                || !java.util.Objects.equals(spu.getIntroduction(), updateReqVO.getIntroduction())
+                || !java.util.Objects.equals(spu.getDescription(), updateReqVO.getDescription())
+                || !java.util.Objects.equals(spu.getCategoryId(), updateReqVO.getCategoryId());
+        if (coreChanged) {
+            newStatus = ProductSpuStatusEnum.PENDING_REVIEW.getStatus();
+        }
+
         // 更新 SPU
-        ProductSpuDO updateObj = BeanUtils.toBean(updateReqVO, ProductSpuDO.class).setStatus(spu.getStatus());
+        ProductSpuDO updateObj = BeanUtils.toBean(updateReqVO, ProductSpuDO.class).setStatus(newStatus);
         initSpuFromSkus(updateObj, skuSaveReqList);
         productSpuMapper.updateById(updateObj);
         // 批量更新 SKU
         productSkuService.updateSkuList(updateObj.getId(), updateReqVO.getSkus());
+    }
+
+    /**
+     * V044 合规：商品文案敏感词扫描。
+     * 触发立即拒绝保存，阻断违规话术从源头进入系统。
+     */
+    private static final String[] BANNED_KEYWORDS = {
+            "投资", "回本", "躺赚", "暴富", "日入过万", "月入百万",
+            "推广资格", "激活资格", "购买激活", "加入资格", "会员资格",
+            "团队佣金", "团队收益", "团队分润", "极差", "上下线",
+            "拉人头", "拉新提成", "下线分润",
+            "金融产品", "理财", "保本", "稳赚", "无风险高回报",
+            "加盟费", "门槛费", "保证金", "入会费"
+    };
+
+    private void validateContentCompliance(String... fields) {
+        if (fields == null) return;
+        for (String text : fields) {
+            if (text == null || text.isEmpty()) continue;
+            for (String banned : BANNED_KEYWORDS) {
+                if (text.contains(banned)) {
+                    throw cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception0(
+                            1_008_001_999,
+                            "商品文案含违规敏感词「" + banned + "」，请修改后再提交。"
+                                    + "禁止使用涉及投资/团队分润/会员资格类用语，详见《商户服务协议》。");
+                }
+            }
+        }
     }
 
     /**
@@ -110,9 +153,10 @@ public class ProductSpuServiceImpl implements ProductSpuService {
         spu.setCostPrice(getMinValue(skus, ProductSkuSaveReqVO::getCostPrice));
         // skus 库存总数
         spu.setStock(getSumValue(skus, ProductSkuSaveReqVO::getStock, Math::addExact));
-        // 若是 spu 已有状态则不处理
+        // V044 合规整改：商品默认强制进入"审核中"状态，需平台审核通过后才能上架
+        // 防止商户随意上架道具型 / 高溢价 / 敏感词商品 → 命中入门费 / 传销红线
         if (spu.getStatus() == null) {
-            spu.setStatus(ProductSpuStatusEnum.ENABLE.getStatus()); // 默认状态为上架
+            spu.setStatus(ProductSpuStatusEnum.PENDING_REVIEW.getStatus()); // 强制审核
             spu.setSalesCount(0); // 默认商品销量
             spu.setBrowseCount(0); // 默认商品浏览量
         }
