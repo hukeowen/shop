@@ -195,11 +195,11 @@ public class AppShopPublicController {
         m.put("status", shop.getStatus());
         m.put("manualClosed", shop.getManualClosed());
         m.put("todayOpenAt", shop.getTodayOpenAt());
-        m.put("starLevel", shop.getStarLevel());
         m.put("avgRating", shop.getAvgRating());
-        m.put("commentCount", shop.getCommentCount());
         m.put("sales30d", shop.getSales30d());
-        m.put("ratingCount", shop.getRatingCount());
+        m.put("featureTags", shop.getFeatureTags());
+        m.put("mobile", shop.getMobile());
+        m.put("businessHours", shop.getBusinessHours());
         // 排除以下敏感字段（不暴露给 C 端 / 公开接口）：
         //   - balance（商户余额）
         //   - tlMchId / tlAppId / tlRsaPrivateKey / tlSm2PrivateKey / tlSm2PublicKey
