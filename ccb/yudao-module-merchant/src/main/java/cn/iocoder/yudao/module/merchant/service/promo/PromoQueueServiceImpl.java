@@ -98,6 +98,8 @@ public class PromoQueueServiceImpl implements PromoQueueService {
     private ProductSpuService productSpuService;
     @Resource
     private cn.iocoder.yudao.module.merchant.dal.mysql.ShopInfoMapper shopInfoMapper;
+    @Resource
+    private cn.iocoder.yudao.module.merchant.dal.mysql.promo.ShopUserStarMapper userStarMapper;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -255,14 +257,18 @@ public class PromoQueueServiceImpl implements PromoQueueService {
         BigDecimal usedRatio;
 
         if (STATE_COMPLETED.equals(parentPos.getState())) {
-            // 终态：订单实付总额 × directCommissionRatio%
-            BigDecimal commissionRatio = loadDirectCommissionRatio();
+            // 终态：邀请奖按"推荐人自身星级"差异化比例
+            // V044 合规：复用闲置的 starRatios 字段（团队极差已禁用），语义改为
+            // "推荐人 N 星时的邀请奖比例"。这是按"个人 KPI"差异化的单层 CPS，合规。
+            // 兜底：starRatios 未配 / parent 无星级时 fallback 到商户级单一 directCommissionRatio
+            BigDecimal commissionRatio = resolveParentStarRatio(parentId, spuId, config);
             award = computeRatioAmount(paidAmount, commissionRatio);
             eventType = EVT_REFERRAL_COMMISSION;
             usedRatio = commissionRatio;
             if (award > 0) {
                 promoPointService.addPromoPoint(parentId, award, eventType, orderId,
-                        "终态下级首单间推 child=" + childId + " spu=" + spuId);
+                        "邀请奖（终态）child=" + childId + " spu=" + spuId
+                                + " parentStar=" + getParentStar(parentId, spuId) + " rate=" + commissionRatio + "%");
             }
         } else {
             // IN_PROGRESS：单件实付 × (1/N)，按 parent 当前 cumulated 取下一比例
@@ -376,6 +382,60 @@ public class PromoQueueServiceImpl implements PromoQueueService {
                 .multiply(ratioPercent)
                 .divide(BigDecimal.valueOf(100), 0, RoundingMode.DOWN)
                 .longValueExact();
+    }
+
+    /**
+     * V044：取推荐人当前在该 SPU 上的星级。
+     * 0 = 普通会员（无星级）。
+     */
+    private int getParentStar(Long parentId, Long spuId) {
+        try {
+            cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopUserStarDO acct =
+                    userStarMapper.selectByUserAndSpu(parentId, spuId);
+            if (acct != null && acct.getCurrentStar() != null) {
+                return acct.getCurrentStar();
+            }
+        } catch (Exception ignored) {}
+        return 0;
+    }
+
+    /**
+     * V044 合规：按推荐人星级取邀请奖比例。
+     * 复用闲置的 starRatios 字段（团队极差已禁用）：starRatios[N-1] = 推荐人 N 星时邀请奖 %。
+     * starRatios 为空 / parent 无星级时，fallback 到商户级单一 directCommissionRatio。
+     *
+     * <p>合规依据：差异化依据是 parent 自身星级（个人 KPI），不是"下级业绩"，单层 CPS，
+     * 合规先例：拼多多多多达人 / 京东推客 / 抖音星图同型。</p>
+     */
+    private BigDecimal resolveParentStarRatio(Long parentId, Long spuId, ProductPromoConfigDO config) {
+        int star = getParentStar(parentId, spuId);
+        if (star > 0 && config != null && config.getStarRatios() != null && !config.getStarRatios().isEmpty()) {
+            try {
+                java.util.List<?> arr = cn.iocoder.yudao.framework.common.util.json.JsonUtils.parseArray(
+                        config.getStarRatios(), Object.class);
+                if (arr != null && star <= arr.size()) {
+                    Object v = arr.get(star - 1);
+                    if (v != null) {
+                        BigDecimal r = new BigDecimal(v.toString());
+                        if (r.signum() > 0) {
+                            // 上限 35% 硬约束兜底
+                            if (r.compareTo(new BigDecimal("35")) > 0) {
+                                log.warn("[resolveParentStarRatio] starRatios[{}]={} 超过 35% 上限，截断为 35",
+                                        star - 1, r);
+                                r = new BigDecimal("35");
+                            }
+                            return r;
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                log.warn("[resolveParentStarRatio] 解析 starRatios 失败 spu={} parent={}: {}",
+                        spuId, parentId, e.getMessage());
+            }
+        }
+        // Fallback：商户级单一 directCommissionRatio
+        BigDecimal fallback = loadDirectCommissionRatio();
+        return fallback == null ? BigDecimal.ZERO : fallback;
     }
 
     private void writeEvent(String eventType, Long spuId, Long beneficiary, Long sourceUser,
