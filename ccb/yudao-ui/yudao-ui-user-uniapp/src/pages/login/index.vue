@@ -6,9 +6,9 @@
     <view class="va-hero">
       <view class="va-logo">🏆</view>
       <view class="va-brand">客小二</view>
-      <view class="va-tag">商户派奖 · 推 N 反 1 · 1:1 提现</view>
+      <view class="va-tag">商户让利 · 推 N 反 1 · 1:1 提现</view>
       <view class="va-stats">
-        <view class="va-pill"><text class="em">💎</text>今日派奖 <text class="hl">¥{{ stat.amount }}</text></view>
+        <view class="va-pill"><text class="em">💎</text>今日商户让利 <text class="hl">¥{{ stat.amount }}</text></view>
         <view class="va-pill mint"><text class="em">👥</text><text class="hl">{{ stat.count }}</text> 人到账</view>
       </view>
     </view>
@@ -46,7 +46,7 @@
       </view>
       <view class="va-sell">
         <view class="va-card warm"><view class="em">💰</view><view class="t">下单返积分</view></view>
-        <view class="va-card gold"><view class="em">🎁</view><view class="t">派奖池</view></view>
+        <view class="va-card gold"><view class="em">🎁</view><view class="t">让利池</view></view>
         <view class="va-card mint"><view class="em">🔥</view><view class="t">推N反1</view></view>
         <view class="va-card purple"><view class="em">💸</view><view class="t">1:1提现</view></view>
       </view>
@@ -103,7 +103,7 @@ onMounted(async () => {
     const list = await listWinnersTicker(1);
     if (list && list[0]) {
       const w = list[0];
-      tickerLine.value = `${w.userMask || '****'} 在 ${w.shopName || '某店'} ${w.sourceLabel || '派奖'} +¥${fen2yuan(w.amount, false)}`;
+      tickerLine.value = `${w.userMask || '****'} 在 ${w.shopName || '某店'} ${w.sourceLabel || '促销让利'} +¥${fen2yuan(w.amount, false)}`;
     }
   } catch {}
 });

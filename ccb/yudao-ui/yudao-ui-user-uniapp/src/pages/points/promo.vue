@@ -24,7 +24,7 @@
     <!-- ━━━━━━━ 明细列表 ━━━━━━━ -->
     <view class="list-title">明细 <text class="cnt">· {{ total || 0 }} 条</text></view>
     <view v-if="loading && !records.length" class="loading">加载中…</view>
-    <empty-state v-else-if="!records.length" title="暂无积分明细" desc="逛逛该店参与活动赚积分" />
+    <empty-state v-else-if="!records.length" title="暂无积分明细" desc="逛逛该店参与营销活动获积分" />
     <scroll-view v-else scroll-y class="list" @scrolltolower="loadMore">
       <view v-for="r in records" :key="r.id" class="row">
         <view class="r-ic" :class="`ic-${kindOf(r.sourceType)}`">{{ iconFor(r.sourceType) }}</view>
@@ -102,8 +102,8 @@ function labelFor(t) {
     POOL_V8: '中奖派发', POOL: '中奖派发',
     QUEUE: '排队中奖',
     REFERRAL_PROGRESS: '推荐奖励',
-    REFERRAL_COMMISSION: '推荐分润', DIRECT: '推荐分润',
-    COMMISSION: '团队分润',
+    REFERRAL_COMMISSION: '分享感谢奖', DIRECT: '邀请有礼',
+    COMMISSION: '分享激励',
     WITHDRAW: '提现',
     CONVERT: '兑换消费积分',
     MANUAL_PATCH: '账户调整',

@@ -59,8 +59,8 @@
     <view v-else-if="!user.isLogin" class="mae-card login-tip" @click="goLogin">
       <view class="lt-em">👋</view>
       <view class="lt-body">
-        <view class="lt-t">登录开启赚钱模式</view>
-        <view class="lt-d">商户实时派奖 / 推 N 反 1 / 1:1 提现</view>
+        <view class="lt-t">登录享老客分享激励</view>
+        <view class="lt-d">商户营销让利 · 邀请有礼 · 推广积分提现</view>
       </view>
       <view class="lt-cta">登录 →</view>
     </view>
@@ -69,15 +69,15 @@
       <view class="lt-em">🌅</view>
       <view class="lt-body">
         <view class="lt-t">今日还没到账</view>
-        <view class="lt-d">逛逛附近店铺 · 下单参与「推 N 反 1」立即赚</view>
+        <view class="lt-d">逛逛附近店铺 · 下单参与「推 N 反 1」立即领</view>
       </view>
-      <view class="lt-cta">去赚 →</view>
+      <view class="lt-cta">去看看 →</view>
     </view>
 
     <!-- ━━━━━━━━━━ 5 快入口 ━━━━━━━━━━ -->
     <view class="home-quick">
       <view class="qk" @click="goNearby"><view class="qk-ic">📍</view><view class="qk-text">附近</view></view>
-      <view class="qk" @click="goWinners"><view class="qk-ic">🏆<view class="live-dot"></view></view><view class="qk-text">派奖公告</view></view>
+      <view class="qk" @click="goWinners"><view class="qk-ic">🏆<view class="live-dot"></view></view><view class="qk-text">商户让利公告</view></view>
       <view class="qk" @click="goQueue"><view class="qk-ic">🔥</view><view class="qk-text">我的队列</view></view>
       <view class="qk" @click="goCoupon"><view class="qk-ic">🎟</view><view class="qk-text">优惠券</view></view>
       <view class="qk" @click="onScan"><view class="qk-ic">📜</view><view class="qk-text">扫码</view></view>
@@ -109,18 +109,18 @@
 
     <!-- ━━━━━━━━━━ 营销双卡 ━━━━━━━━━━ -->
     <view class="section-title">
-      <view class="h3">玩法专区 <text class="small">商户派奖 · 1:1 提现</text></view>
+      <view class="h3">玩法专区 <text class="small">商户让利 · 1:1 提现</text></view>
     </view>
     <view class="home-feats">
       <view class="home-feat rank" @click="goWinners">
         <text class="em-bg">🏆</text>
-        <view class="hf-tag">🏆 派奖公告</view>
+        <view class="hf-tag">🏆 商户让利公告</view>
         <view>
           <view class="hf-title">看谁刚拿到奖</view>
           <view class="hf-sub">榜一排名 · 按店</view>
         </view>
         <view class="hf-bot">
-          <view class="hf-meta">今日派奖 <text>¥{{ stat.todayAward }}</text></view>
+          <view class="hf-meta">今日让利 <text>¥{{ stat.todayAward }}</text></view>
           <view class="hf-cta">查看榜单 →</view>
         </view>
       </view>
@@ -234,14 +234,14 @@ const greeting = computed(() => {
 });
 const greetTitle = computed(() => `想吃点什么，${user.nickname || (user.phone ? user.phone.slice(-4) : '小客')}？`);
 
-// 滚动条：跨店最新派奖
+// 滚动条：跨店最新让利
 const tickerText = ref([]);
 async function loadTicker() {
   try {
     const list = await listWinnersTicker(8);
     tickerText.value = (list || []).map((w) => {
       const amt = fen2yuan(w.amount, false);
-      return `${w.shopName || '店铺'} ${w.sourceLabel || '派奖'} ${w.userMask || ''} ¥${amt}`;
+      return `${w.shopName || '店铺'} ${w.sourceLabel || '促销让利'} ${w.userMask || ''} ¥${amt}`;
     });
   } catch {}
 }

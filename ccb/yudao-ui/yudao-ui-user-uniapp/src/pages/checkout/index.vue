@@ -92,7 +92,7 @@
           <view class="m-info">
             <view class="m-name">{{ shopName }} · 店铺余额</view>
             <view class="m-sub" v-if="balanceEnabled">余 ¥{{ fen2yuan(userBalance) }} · 最多抵 ¥{{ fen2yuan(balanceDeductCap) }}</view>
-            <view class="m-sub" v-else>该店余额为 0，请先去"我的钱包"充值或推荐好友赚积分</view>
+            <view class="m-sub" v-else>该店余额为 0，请先去"我的钱包"充值或邀请好友获积分</view>
           </view>
           <view class="m-trail">
             <text class="amt" :class="{ off: !useBalance }">{{ useBalance ? `-¥${fen2yuan(balanceDeductFen)}` : '未使用' }}</text>

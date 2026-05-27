@@ -547,17 +547,26 @@ public class AppMerchantPromoController {
         return mobile.substring(0, 3) + "****" + mobile.substring(mobile.length() - 4);
     }
 
-    /** sourceType → 友好描述 */
+    /** V044 合规整改：sourceType → 商业化友好描述（去敏感词） */
     private static String sourceTypeLabel(String t) {
-        if (t == null) return "派奖";
+        if (t == null) return "促销奖励";
         switch (t) {
-            case "DIRECT":     return "直推返现";
-            case "QUEUE":      return "推 N 反 1 出队";
-            case "COMMISSION": return "团队佣金";
-            case "POOL":       return "派奖池中奖";
-            case "CONVERT":    return "积分转换";
-            case "WITHDRAW":   return "提现";
-            default:           return "派奖";
+            case "DIRECT":              return "邀请有礼";
+            case "QUEUE":               return "邀请累积奖";
+            case "COMMISSION":          return "分享激励";       // 原"团队佣金"已下线（V044）
+            case "POOL":
+            case "POOL_V8":             return "促销让利抽中";
+            case "SELF_BATCH":
+            case "SELF_PROGRESS":
+            case "SELF_COMMISSION":     return "复购感谢奖";
+            case "REFERRAL_PROGRESS":
+            case "REFERRAL_COMMISSION": return "分享感谢奖";
+            case "CONVERT":             return "积分兑换";
+            case "WITHDRAW":            return "提现";
+            case "MANUAL_PATCH":        return "账户调整";
+            case "REDEEM_ORDER":        return "订单抵扣";
+            case "ORDER_DEDUCT":        return "订单使用";
+            default:                    return "促销奖励";
         }
     }
 

@@ -14,7 +14,7 @@
       <view v-if="shop" class="sh-info">
         <view class="sh-tag-row">🔥 {{ shop.tagRow || '扫码下单 · 每单返推广积分' }}</view>
         <view class="sh-name">{{ shop.shopName || shop.name || '店铺' }}</view>
-        <view class="sh-slogan">{{ shop.slogan || '商户实时派奖 · 1:1 现金提现' }}</view>
+        <view class="sh-slogan">{{ shop.slogan || '商户实时让利 · 1:1 现金提现' }}</view>
       </view>
     </view>
 
@@ -52,7 +52,7 @@
           <view class="sig-tags">
             <view v-if="nback" class="sig-tag promo">推 {{ nback.n }} 反 1</view>
             <view v-if="nback && nback.cur > 0" class="sig-tag got">你已得 ¥{{ nback.gotYuan }}</view>
-            <view v-else-if="signatureSpu.starCount" class="sig-tag gold">派奖商品</view>
+            <view v-else-if="signatureSpu.starCount" class="sig-tag gold">让利商品</view>
           </view>
           <view class="sig-bot">
             <view class="sig-price-block">
@@ -81,7 +81,7 @@
           <text>在该店赚 ¥{{ vip.earnYuan }}</text>
         </view>
       </view>
-      <view class="vip-cta">邀请赚奖 ›</view>
+      <view class="vip-cta">邀请有礼 ›</view>
     </view>
 
     <!-- ━━━━━━━━━━ 优惠券领取条（横滚）━━━━━━━━━━ -->
@@ -115,16 +115,7 @@
       <text class="ticker-arrow">›</text>
     </view>
 
-    <!-- ━━━━━━━━━━ 商家承诺 ━━━━━━━━━━ -->
-    <view class="promise-card">
-      <view class="promise-ic">✓</view>
-      <view class="promise-body">
-        <view class="promise-t">我们的承诺</view>
-        <view class="promise-d">✓ 推广积分 <text class="b">1:1 提现</text>，满 100 起</view>
-        <view class="promise-d">✓ 进度真实记录，<text class="b">不存在「差一刀」</text></view>
-        <view class="promise-d">✓ 派奖明细 + 链路全部可查</view>
-      </view>
-    </view>
+    <!-- V044 合规：删除"我们的承诺" 卡片 — 平台为纯技术中介，营销规则与兑付由商户独立负责，平台不承担担保 -->
 
     <!-- ━━━━━━━━━━ 商品列表（美团风：左侧分类 tab + 右侧商品大卡）━━━━━━━━━━ -->
     <view v-if="loading" class="loading">加载中…</view>

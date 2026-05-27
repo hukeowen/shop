@@ -14,7 +14,7 @@
           <view v-if="user.isLogin" class="me-phone">
             {{ maskedPhone }} · 已加入 <text class="b">{{ myShops.length }}</text> 家店
           </view>
-          <view v-else class="me-phone">登录即解锁推广积分 / 派奖 / 提现</view>
+          <view v-else class="me-phone">登录即解锁推广积分 / 商户让利 / 提现</view>
         </view>
         <view class="me-set">⚙</view>
       </view>
@@ -124,7 +124,7 @@
       <view class="me-row" @click="goPromoRecords"><view class="me-row-icon alt-1">📊</view><text class="me-row-name">推广积分明细</text><text class="me-row-arrow">›</text></view>
       <view class="me-row" @click="goQueue"><view class="me-row-icon alt-2">🔥</view><text class="me-row-name">我的队列（推 N 反 1）</text><text v-if="queueTotal" class="me-row-tag">{{ queueTotal }} 个</text><text class="me-row-arrow">›</text></view>
       <view class="me-row" @click="goWinners"><view class="me-row-icon alt-3">⭐</view><text class="me-row-name">店铺星级</text><text class="me-row-arrow">›</text></view>
-      <view class="me-row" @click="goWinners"><view class="me-row-icon">🏆</view><text class="me-row-name">派奖公告 / 榜一排名</text><text class="me-row-arrow">›</text></view>
+      <view class="me-row" @click="goWinners"><view class="me-row-icon">🏆</view><text class="me-row-name">商户让利公告 / 榜一排名</text><text class="me-row-arrow">›</text></view>
       <view class="me-row" @click="goInvite"><view class="me-row-icon alt-1">🤝</view><text class="me-row-name">邀请好友（先选店铺）</text><text v-if="totalInvited" class="me-row-tag">已邀 {{ totalInvited }} 人</text><text class="me-row-arrow">›</text></view>
     </view>
 
