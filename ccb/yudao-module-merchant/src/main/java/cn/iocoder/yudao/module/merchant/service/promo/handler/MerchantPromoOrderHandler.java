@@ -154,14 +154,18 @@ public class MerchantPromoOrderHandler implements TradeOrderHandler {
             }
         }
 
-        // 3. v8 团队极差奖（按 SPU 独立 + 沿链就近递增）
-        if (config != null) {
-            try {
-                commissionService.handleOrderPaidV8(config, buyerId, spuId, paidAmount, orderId);
-            } catch (Exception e) {
-                log.error("[afterPayOrder v8] 极差奖失败 order={} spu={}", orderId, spuId, e);
-            }
-        }
+        // 3. v8 团队极差奖 —— V044 合规整改：彻底禁用
+        // 原逻辑沿推荐链向上多层 ancestors 按各自星级抽水 → 命中《禁止传销条例》
+        // 第七条 (三) 团队计酬 + 《刑法》224 之一组织领导传销活动罪。
+        // 已从订单流程中移除调用，CommissionServiceImpl.handleOrderPaidV8 入口也加 return 兜底。
+        // 任何商品级 starRatios 配置数据仍保留，但不再产生 COMMISSION 流水。
+        // if (config != null) {
+        //     try {
+        //         commissionService.handleOrderPaidV8(config, buyerId, spuId, paidAmount, orderId);
+        //     } catch (Exception e) {
+        //         log.error("[afterPayOrder v8] 极差奖失败 order={} spu={}", orderId, spuId, e);
+        //     }
+        // }
 
         // 4. v8 入池（按商品级 pool_ratio）
         if (config != null) {

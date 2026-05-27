@@ -59,6 +59,14 @@ public class CommissionServiceImpl implements CommissionService {
     @Transactional(rollbackFor = Exception.class)
     public void handleOrderPaidV8(ProductPromoConfigDO config, Long buyerUserId, Long spuId,
                                   long paidAmount, Long orderId) {
+        // ============ V044 合规整改：团队极差奖永久禁用 ============
+        // 原算法沿推荐链向上多层 ancestors 按各自星级抽水 = 团队计酬 = 触线
+        // 此入口直接 return 兜底，任何来源调用都不再产生 COMMISSION 流水
+        log.warn("[CommissionService] V044 合规整改后团队极差已禁用，跳过调用 buyer={} spu={} order={}",
+                buyerUserId, spuId, orderId);
+        return;
+        // ============ 以下原逻辑保留代码但永不执行 ============
+        /*
         if (config == null || buyerUserId == null || paidAmount <= 0 || orderId == null) return;
         Integer starCount = config.getStarCount();
         if (starCount == null || starCount <= 0) return;
@@ -95,6 +103,7 @@ public class CommissionServiceImpl implements CommissionService {
             }
             lastStar = s;
         }
+        */
     }
 
     private long computeAmount(long paidAmount, BigDecimal ratePercent) {
