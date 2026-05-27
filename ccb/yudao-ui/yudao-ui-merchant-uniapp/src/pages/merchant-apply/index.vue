@@ -89,19 +89,29 @@
       </view>
 
 
+      <!-- V044 合规：强制勾选三份协议 -->
+      <view class="agreement-row" @click="agreedAll = !agreedAll">
+        <view :class="['agree-box', agreedAll ? 'on' : '']">{{ agreedAll ? '✓' : '' }}</view>
+        <view class="agreement-text">
+          本人作为商户法定代表人 / 实际控制人，已阅读并同意
+          <text class="agreement-link" @click.stop="goAgree('merchant')">《商户服务协议》</text>
+          、<text class="agreement-link" @click.stop="goAgree('user')">《用户服务协议》</text>
+          、<text class="agreement-link" @click.stop="goAgree('privacy')">《隐私协议》</text>
+          ，承诺<text class="agreement-warn">不发布道具型/违规商品</text>，
+          <text class="agreement-warn">个人承担连带责任</text>，
+          营销规则<text class="agreement-warn">最终解释权归本商户</text>。
+        </view>
+      </view>
+
       <button
         class="submit-btn"
-        :class="{ active: canSubmit, loading: submitting }"
-        :disabled="submitting || !canSubmit"
+        :class="{ active: canSubmit && agreedAll, loading: submitting }"
+        :disabled="submitting || !canSubmit || !agreedAll"
         @click="submit"
       >
         <text v-if="!submitting">立即申请入驻</text>
         <text v-else>申请中…</text>
       </button>
-
-      <view class="agreement">
-        提交即同意 <text class="agreement-link">《拓小二商户服务协议》</text>
-      </view>
     </view>
 
     <!-- 底部链接 -->
@@ -160,6 +170,14 @@ const BIZ_TYPES = [
   { key: 'other', label: '其他', emoji: '🏪' },
 ];
 const submitting = ref(false);
+// V044 合规：强制勾选三份协议 + 个人连带责任承诺
+const agreedAll = ref(false);
+function goAgree(type) {
+  // 跳转协议查看页（merchant 端复用 user-h5 的协议页域名）
+  const base = typeof location !== 'undefined' ? location.origin : '';
+  const url = `${base}/user/#/pages/agreement/index?type=${type}`;
+  try { window.open(url, '_blank'); } catch { uni.navigateTo({ url: `/pages/agreement/index?type=${type}` }); }
+}
 const smsCooldown = ref(0);
 let cooldownTimer = null;
 
@@ -539,6 +557,37 @@ function goUserLogin() {
 }
 .agreement-link {
   color: #FF6B35;
+}
+
+/* V044 合规：强制勾选协议 */
+.agreement-row {
+  display: flex; align-items: flex-start; gap: 14rpx;
+  margin: 24rpx 0 16rpx;
+  padding: 24rpx 24rpx;
+  background: rgba(255,107,53,.06);
+  border: 1rpx solid rgba(255,107,53,.25);
+  border-radius: 16rpx;
+}
+.agree-box {
+  width: 36rpx; height: 36rpx;
+  border: 2rpx solid #909399;
+  border-radius: 8rpx;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24rpx; color: #fff;
+  flex-shrink: 0;
+  margin-top: 4rpx;
+}
+.agree-box.on {
+  background: #FF6B35; border-color: #FF6B35;
+  font-weight: 800;
+}
+.agreement-text {
+  flex: 1;
+  font-size: 22rpx; line-height: 1.65;
+  color: #303133;
+}
+.agreement-warn {
+  color: #DC2626; font-weight: 700;
 }
 
 /* ── 底部链接 ─────────────────────────────── */
