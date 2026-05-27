@@ -219,6 +219,16 @@ export const ProductSpuStatusEnum = {
   ENABLE: {
     status: 1,
     name: '上架'
+  },
+  // V044 合规：商户创建/修改商品后强制进入此态，需平台管理员审核通过才能 ENABLE
+  PENDING_REVIEW: {
+    status: 2,
+    name: '审核中'
+  },
+  // V044 合规：审核拒绝，商户可整改重新提交
+  REJECTED: {
+    status: 3,
+    name: '审核拒绝'
   }
 }
 

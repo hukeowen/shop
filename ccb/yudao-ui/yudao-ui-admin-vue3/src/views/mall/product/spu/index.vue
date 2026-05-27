@@ -154,9 +154,33 @@
       <el-table-column align="center" label="销量" min-width="90" prop="salesCount" />
       <el-table-column align="center" label="库存" min-width="90" prop="stock" />
       <el-table-column align="center" label="排序" min-width="70" prop="sort" />
-      <el-table-column align="center" label="销售状态" min-width="80">
+      <el-table-column align="center" label="销售状态" min-width="120">
         <template #default="{ row }">
-          <template v-if="row.status >= 0">
+          <!-- V044 合规：审核中 / 审核拒绝 状态 -->
+          <template v-if="row.status === 2">
+            <el-tag type="warning">审核中</el-tag>
+            <el-button
+              v-hasPermi="['product:spu:update']"
+              size="small" type="success" link
+              style="margin-left: 4px;"
+              @click="handleApprove(row)"
+            >通过</el-button>
+            <el-button
+              v-hasPermi="['product:spu:update']"
+              size="small" type="danger" link
+              @click="handleReject(row)"
+            >拒绝</el-button>
+          </template>
+          <template v-else-if="row.status === 3">
+            <el-tag type="danger">审核拒绝</el-tag>
+            <el-button
+              v-hasPermi="['product:spu:update']"
+              size="small" type="success" link
+              style="margin-left: 4px;"
+              @click="handleApprove(row)"
+            >通过</el-button>
+          </template>
+          <template v-else-if="row.status >= 0">
             <el-switch
               v-model="row.status"
               :active-value="1"
@@ -329,6 +353,35 @@ const handleStatus02Change = async (row: any, newStatus: number) => {
     // 刷新 tabs 数据
     await getTabsCount()
     // 刷新列表
+    await getList()
+  } catch {}
+}
+
+/** V044 合规：审核通过商品 → 上架 */
+const handleApprove = async (row: any) => {
+  try {
+    await message.confirm(
+      `确认审核通过"${row.name}"？\n\n` +
+      `平台管理员承担审核责任，请确认商品定价合理、文案合规、属真实使用价值的商品。\n` +
+      `通过后商品进入"上架"状态，用户可见。`
+    )
+    await ProductSpuApi.updateStatus({ id: row.id, status: ProductSpuStatusEnum.ENABLE.status })
+    message.success('审核通过，商品已上架')
+    await getTabsCount()
+    await getList()
+  } catch {}
+}
+
+/** V044 合规：审核拒绝 */
+const handleReject = async (row: any) => {
+  try {
+    await message.confirm(
+      `确认拒绝"${row.name}"？\n\n` +
+      `请商户整改后重新提交（价格虚高 / 文案违规 / 道具型商品 等）。`
+    )
+    await ProductSpuApi.updateStatus({ id: row.id, status: ProductSpuStatusEnum.REJECTED.status })
+    message.success('已拒绝，请通知商户整改')
+    await getTabsCount()
     await getList()
   } catch {}
 }

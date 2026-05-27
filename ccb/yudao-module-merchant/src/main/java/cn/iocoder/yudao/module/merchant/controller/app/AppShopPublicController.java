@@ -89,7 +89,9 @@ public class AppShopPublicController {
         // 加 isOpenNow 字段 + 排序：OPEN 优先 OUTSIDE_HOURS 之后
         java.util.List<java.util.Map<String, Object>> list = new java.util.ArrayList<>(page.getList().size());
         for (ShopInfoDO shop : page.getList()) {
-            java.util.Map<String, Object> m = cn.hutool.core.bean.BeanUtil.beanToMap(shop, false, true);
+            // V044 安全整改：白名单字段，杜绝 tlRsaPrivateKey / tlSm2PrivateKey 等支付密钥
+            // + balance / creator / updater 等敏感字段从公开接口泄漏
+            java.util.Map<String, Object> m = toPublicShopMap(shop);
             cn.iocoder.yudao.module.merchant.util.ShopOperatingUtils.OperatingStatus st =
                     cn.iocoder.yudao.module.merchant.util.ShopOperatingUtils.computeStatus(shop);
             m.put("isOpenNow", st == cn.iocoder.yudao.module.merchant.util.ShopOperatingUtils.OperatingStatus.OPEN);
@@ -170,6 +172,41 @@ public class AppShopPublicController {
         resp.setList(slice);
         resp.setTotal(page.getTotal());
         return success(resp);
+    }
+
+    /**
+     * V044 安全：店铺信息白名单序列化。
+     * 仅暴露 C 端展示所需字段，杜绝商户支付密钥 / 金融字段 / 内部 ID 泄漏。
+     */
+    private static java.util.Map<String, Object> toPublicShopMap(ShopInfoDO shop) {
+        java.util.Map<String, Object> m = new java.util.HashMap<>(20);
+        m.put("id", shop.getId());
+        m.put("tenantId", shop.getTenantId());
+        m.put("shopName", shop.getShopName());
+        m.put("coverUrl", shop.getCoverUrl());
+        m.put("description", shop.getDescription());
+        m.put("notice", shop.getNotice());
+        m.put("address", shop.getAddress());
+        m.put("longitude", shop.getLongitude());
+        m.put("latitude", shop.getLatitude());
+        m.put("businessHoursJson", shop.getBusinessHoursJson());
+        m.put("categoryId", shop.getCategoryId());
+        m.put("businessType", shop.getBusinessType());
+        m.put("status", shop.getStatus());
+        m.put("manualClosed", shop.getManualClosed());
+        m.put("todayOpenAt", shop.getTodayOpenAt());
+        m.put("starLevel", shop.getStarLevel());
+        m.put("avgRating", shop.getAvgRating());
+        m.put("commentCount", shop.getCommentCount());
+        m.put("sales30d", shop.getSales30d());
+        m.put("ratingCount", shop.getRatingCount());
+        // 排除以下敏感字段（不暴露给 C 端 / 公开接口）：
+        //   - balance（商户余额）
+        //   - tlMchId / tlAppId / tlRsaPrivateKey / tlSm2PrivateKey / tlSm2PublicKey
+        //     / tlNotifyUrl / tlSignType / tlEnabled（通联支付配置 + 私钥）
+        //   - onlinePayEnabled（仅 checkout 用 /info 取，列表用不上）
+        //   - creator / updater / createTime / updateTime / deleted（内部审计字段）
+        return m;
     }
 
     @GetMapping("/info")

@@ -51,9 +51,21 @@ public class ProductPromoConfigDO extends TenantBaseDO {
     private BigDecimal directRate;
 
     // ========== v8 团队极差奖（按商品独立配置） ==========
-    /** 星级数量 (0 = 不启用团队极差奖) */
+    // ⚠️ V044 合规整改后，团队极差奖已永久禁用（CommissionServiceImpl.handleOrderPaidV8 入口 return 兜底）。
+    // 下方字段保留兼容旧数据，starRatios 字段**语义重定义**为"邀请奖按推荐人星级差异化比例"（V044 复用）。
+    // 长期计划：新增独立字段 directCommissionRatiosByStar 取代 starRatios 语义复用。
+    /** 星级数量 (V044 后表示 VIP 等级数；不再启用团队极差) */
     private Integer starCount;
-    /** 各星级团队极差返奖比例 JSON 数组(%)，长度 = starCount，例：[1,2,3] */
+    /**
+     * V044 重定义：邀请奖按"推荐人自身星级"差异化比例 JSON 数组(%)，长度 = starCount。
+     * 例：[20, 22, 25, 30, 35] = 1 星 20% / 2 星 22% / ... / 5 星 35%。
+     * 上限 35% 硬约束（PromoQueueServiceImpl.resolveParentStarRatio 服务端截断）。
+     *
+     * <p>历史语义（已废）：团队极差返奖比例（按 ancestor 星级抽水）。
+     * V044 整改后该路径已禁用，字段保留兼容旧数据，但读取端 (CommissionServiceImpl)
+     * 已 return 不执行。</p>
+     */
+    @Deprecated  // 字段名 starRatios 含义已变；新代码建议用专属字段命名（待迁移）
     private String starRatios;
     /** 升星规则 JSON：[{"star":1,"directCount":2,"teamSales":30000},...] (teamSales 单位：分) */
     private String starUpgradeRules;
