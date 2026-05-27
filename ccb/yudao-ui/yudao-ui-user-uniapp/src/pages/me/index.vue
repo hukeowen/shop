@@ -141,8 +141,17 @@
       <view class="me-grid-title">平台 · 设置</view>
       <view class="me-row" @click="goAddress"><view class="me-row-icon alt-3">📍</view><text class="me-row-name">收货地址</text><text class="me-row-arrow">›</text></view>
       <view class="me-row"><view class="me-row-icon alt-2">❓</view><text class="me-row-name">帮助与反馈</text><text class="me-row-arrow">›</text></view>
+      <view class="me-row" @click="goAgreement('user')"><view class="me-row-icon alt-1">📄</view><text class="me-row-name">用户服务协议</text><text class="me-row-arrow">›</text></view>
+      <view class="me-row" @click="goAgreement('privacy')"><view class="me-row-icon alt-1">🔒</view><text class="me-row-name">隐私协议</text><text class="me-row-arrow">›</text></view>
       <view class="me-row"><view class="me-row-icon alt-1">ℹ</view><text class="me-row-name">关于客小二</text><text class="me-row-arrow">›</text></view>
       <view v-if="user.isLogin" class="me-row logout-row" @click="onLogout"><view class="me-row-icon danger">⏻</view><text class="me-row-name danger">退出登录</text><text class="me-row-arrow">›</text></view>
+    </view>
+
+    <!-- V044 合规：底部声明 -->
+    <view class="legal-footer">
+      <text class="legal-line">本平台为商户营销服务工具，商品由商户独立经营销售。</text>
+      <text class="legal-line">营销奖励严格单层，仅奖励直接邀请人；商户保留<text class="b">最终解释权</text>。</text>
+      <text class="legal-line">奖励来自商户自费让利预算，<text class="b">不构成投资</text>。</text>
     </view>
 
     <view class="bottom-pad"></view>
@@ -204,6 +213,7 @@ function goInvite()        { user.isLogin ? uni.navigateTo({ url: '/pages/invite
 function goFav()           { user.isLogin ? uni.navigateTo({ url: '/pages/favorites/index' }): goLogin(); }
 function goCoupon()        { user.isLogin ? uni.navigateTo({ url: '/pages/coupon/index' })   : goLogin(); }
 function goAddress()       { user.isLogin ? uni.navigateTo({ url: '/pages/address/list' })   : goLogin(); }
+function goAgreement(type) { uni.navigateTo({ url: `/pages/agreement/index?type=${type}` }); }
 function goWinners()       { uni.reLaunch({ url: '/pages/winners/index' }); }
 function goShop(s) { uni.navigateTo({ url: `/pages/shop/home?id=${s.id || s.tenantId}&tenantId=${s.tenantId || s.id}` }); }
 
@@ -546,6 +556,23 @@ onShow(load);
 }
 .msb-act .em { font-size: 14px; }
 .msb-act.primary { color: $o-d; }
+
+/* V044 合规：底部声明 */
+.legal-footer {
+  margin: 24px 14px 80px;
+  padding: 14px 16px;
+  background: $bg-2;
+  border-radius: $r-md;
+  border: 1px dashed $line;
+}
+.legal-line {
+  display: block;
+  font-size: 11px;
+  color: $t4;
+  line-height: 1.7;
+  text-align: center;
+}
+.legal-line .b { color: $t2; font-weight: 700; }
 
 /* me-grid 列表 */
 .me-grid {
