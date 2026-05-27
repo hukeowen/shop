@@ -60,6 +60,15 @@ public class PromoConfigServiceImpl implements PromoConfigService {
 
     @Override
     public void saveConfig(PromoConfigSaveReqVO reqVO) {
+        // V044 合规整改：directCommissionRatio 上限 35%
+        // 业内合规 CPS 上限通常 ≤ 35%，超出难解释为"商户营销让利"
+        if (reqVO.getDirectCommissionRatio() != null
+                && reqVO.getDirectCommissionRatio().compareTo(new java.math.BigDecimal("35")) > 0) {
+            throw cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception0(
+                    1_031_001_001,
+                    "邀请奖比例 " + reqVO.getDirectCommissionRatio() + "% 超过合规上限 35%，"
+                            + "请调整后再保存。详见《商户服务协议》P0-4 约束。");
+        }
         log.info("[saveConfig] reqVO directCommissionRatio={} naturalPushEnabled={}",
                 reqVO.getDirectCommissionRatio(), reqVO.getNaturalPushEnabled());
         PromoConfigDO existing = promoConfigMapper.selectCurrent();

@@ -23,6 +23,8 @@ public class ProductPromoConfigServiceImpl implements ProductPromoConfigService 
 
     @Resource
     private ProductPromoConfigMapper mapper;
+    @Resource
+    private cn.iocoder.yudao.module.merchant.dal.mysql.promo.PromoConfigMapper shopPromoConfigMapper;
 
     @Override
     public ProductPromoConfigDO getBySpuId(Long spuId) {
@@ -74,6 +76,27 @@ public class ProductPromoConfigServiceImpl implements ProductPromoConfigService 
             if (sum.compareTo(new BigDecimal("100")) > 0) {
                 throw ServiceExceptionUtil.exception0(1_031_002_003,
                         "tuijianRatios 加总 = " + sum + " 不可 > 100");
+            }
+            // V044 合规整改 P0-3：sum + 商户级 directCommissionRatio ≤ 100
+            // 防止单笔订单返奖总额超过商品单价 → 资金跨订单庞氏
+            try {
+                cn.iocoder.yudao.module.merchant.dal.dataobject.promo.PromoConfigDO shopCfg =
+                        cn.iocoder.yudao.framework.tenant.core.util.TenantUtils.executeIgnore(
+                                () -> shopPromoConfigMapper.selectCurrent());
+                if (shopCfg != null && shopCfg.getDirectCommissionRatio() != null) {
+                    BigDecimal direct = shopCfg.getDirectCommissionRatio();
+                    BigDecimal total = sum.add(direct);
+                    if (total.compareTo(new BigDecimal("100")) > 0) {
+                        throw ServiceExceptionUtil.exception0(1_031_002_011,
+                                "推 N 反 1 累积返奖 (" + sum + "%) + 邀请奖比例 (" + direct + "%) "
+                                        + "= " + total + "% 超过 100%，单笔订单返奖将超过商品单价，"
+                                        + "违反合规硬约束 P0-3。请商户调整 邀请奖比例 或 推 N 反 1 配置。");
+                    }
+                }
+            } catch (cn.iocoder.yudao.framework.common.exception.ServiceException ex) {
+                throw ex;
+            } catch (Exception ignore) {
+                // 跨租户拉商户配置失败不致命，仅放过本次校验
             }
         }
         // 团队极差启用时校验 starRatios / starUpgradeRules 长度 = starCount
