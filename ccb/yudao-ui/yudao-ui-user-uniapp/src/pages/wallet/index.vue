@@ -65,13 +65,20 @@ function iconFor(t) {
   return '🪙';
 }
 function labelFor(t) {
-  if (t === 'POOL')       return '派奖池中奖';
-  if (t === 'QUEUE')      return '推 N 反 1 出队';
-  if (t === 'DIRECT')     return '直推返现';
-  if (t === 'COMMISSION') return '团队佣金';
-  if (t === 'WITHDRAW')   return '提现';
-  if (t === 'CONVERT')    return '积分转换';
-  return '推广奖励';
+  if (t === 'POOL' || t === 'POOL_V8')              return '促销让利抽中';
+  if (t === 'QUEUE')                                 return '邀请累积奖';
+  if (t === 'DIRECT')                                return '邀请有礼';
+  if (t === 'COMMISSION')                            return '分享激励';
+  if (t === 'SELF_BATCH' || t === 'SELF_PROGRESS')   return '复购感谢奖';
+  if (t === 'SELF_COMMISSION')                       return '复购感谢奖';
+  if (t === 'REFERRAL_PROGRESS' ||
+      t === 'REFERRAL_COMMISSION')                   return '分享感谢奖';
+  if (t === 'WITHDRAW')                              return '提现';
+  if (t === 'CONVERT')                               return '积分兑换';
+  if (t === 'MANUAL_PATCH')                          return '账户调整';
+  if (t === 'REDEEM_ORDER')                          return '订单抵扣';
+  if (t === 'ORDER_DEDUCT')                          return '订单使用';
+  return '分享奖励';
 }
 
 function goWithdraw()        { uni.navigateTo({ url: '/pages/withdraw/index' }); }

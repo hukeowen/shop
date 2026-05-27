@@ -166,7 +166,7 @@
       <view v-if="!funnel.activatedUsers" class="funnel-empty">
         <text class="empty-emoji">🎯</text>
         <text class="empty-title">暂无激活用户</text>
-        <text class="empty-sub">用户在此店首次下单买邀请激励 商品后将激活推广资格</text>
+        <text class="empty-sub">老顾客首次购买后，可分享给好友享老客专属感谢奖</text>
       </view>
       <view v-else class="funnel">
         <view class="funnel-row" v-for="(row, i) in funnelRows" :key="i">

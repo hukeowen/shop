@@ -264,9 +264,13 @@ async function loadTodayMae() {
     // 只保留今日的（接口已分页倒序，前端再按 createTime 过滤）
     const today = new Date().toDateString();
     const labelOf = (t) => ({
-      DIRECT: '直推返现', QUEUE: '推 N 反 1 出队', COMMISSION: '团队佣金',
-      POOL: '派奖池中奖', CONVERT: '积分转换', WITHDRAW: '提现',
-    }[t] || '推广奖励');
+      DIRECT: '邀请有礼', QUEUE: '邀请累积奖', COMMISSION: '分享激励',
+      POOL_V8: '促销让利抽中', POOL: '促销让利抽中',
+      SELF_BATCH: '复购感谢奖', SELF_PROGRESS: '复购感谢奖', SELF_COMMISSION: '复购感谢奖',
+      REFERRAL_PROGRESS: '分享感谢奖', REFERRAL_COMMISSION: '分享感谢奖',
+      CONVERT: '积分兑换', WITHDRAW: '提现', MANUAL_PATCH: '账户调整',
+      REDEEM_ORDER: '订单抵扣',
+    }[t] || '分享奖励');
     const rows = (page?.list || [])
       .filter((r) => new Date(String(r.createTime).replace('T', ' ').replace(/-/g, '/')).toDateString() === today)
       .map((r) => {

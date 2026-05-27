@@ -301,7 +301,7 @@
         <view v-if="false" class="switch-row">
           <view class="switch-body">
             <view class="switch-title">参与返利</view>
-            <view class="switch-desc">分享后下单，按全局比例给上线分成</view>
+            <view class="switch-desc">分享后下单，按比例给推荐人分享激励</view>
           </view>
           <switch
             :checked="form.brokerageEnabled"
