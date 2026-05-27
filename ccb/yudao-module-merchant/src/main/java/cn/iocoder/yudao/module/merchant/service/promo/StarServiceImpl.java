@@ -195,41 +195,40 @@ public class StarServiceImpl implements StarService {
     }
 
     /**
-     * v8 升星判定（链式规则）：
-     *   rules 按 index 0..N 对应升到 1..N 星，每条 rule = {requiredCount, teamSales}
-     *   升 N 星需要：
-     *     - 直推下级中达到 (N-1) 星及以上的人数 ≥ requiredCount
-     *     - 团队链路销售实付累计 ≥ teamSales 分
+     * v8.2 升星判定（V044 合规整改 — 纯个人 KPI）：
+     *   rules 按 index 0..N 对应升到 1..N 星，每条 rule = {requiredCount, selfPurchaseAmount}
+     *   升 N 星需要（任一达标即升）：
+     *     - 我的直推付费会员数 ≥ requiredCount（不区分下级星级！）
+     *     - **或** 我的自购累计实付 ≥ selfPurchaseAmount 分
      *
-     * <p>例：升 1 星 = 任意付费下级 ≥ X 个（requiredStar=0）；
-     *    升 2 星 = 1 星下级 ≥ X 个；
-     *    升 3 星 = 2 星下级 ≥ X 个 …</p>
-     *
-     * <p>requiredStar 字段保留作为前端可覆盖的入口；为空时按 index 自动推断 = i（即 target-1）。</p>
+     * <p>V044 合规改造说明：</p>
+     * <ul>
+     *   <li>❌ 删除旧"链式星级"分支（升 N 星需要 (N-1) 星下级 X 个）— 触线 团队计酬</li>
+     *   <li>❌ 删除 teamSalesAmount（间接下级团队销售）判定 — 触线 团队计酬</li>
+     *   <li>❌ 删除 countDirectChildrenByStar（按下级星级桶分布）— 读下级星级 = 触线</li>
+     *   <li>✅ 升星仅依据个人 KPI：自购金额 OR 直推付费数</li>
+     *   <li>✅ 类比合规先例：京东 PLUS / 美团 VIP / 拼多多达人</li>
+     * </ul>
      */
     private void attemptUpgradeV8(Long userId, Long spuId, List<RuleV8> rules) {
         ShopUserStarDO acct = userStarMapper.selectByUserAndSpu(userId, spuId);
         if (acct == null) return;
         int target = acct.getCurrentStar() == null ? 0 : acct.getCurrentStar();
-        long teamSalesAmount = acct.getTeamSalesAmount() == null ? 0L : acct.getTeamSalesAmount();
         long selfPurchaseAmount = acct.getSelfPurchaseAmount() == null ? 0L : acct.getSelfPurchaseAmount();
-
-        int[] starHisto = countDirectChildrenByStar(userId, spuId, rules);
+        // V044：仅用 directCount（直推付费会员数，不读其星级）— 严格单层 KPI
+        int directPaidCount = acct.getDirectCount() == null ? 0 : acct.getDirectCount();
 
         while (target < rules.size()) {
             RuleV8 r = rules.get(target);
-            // 链式规则：升 (target+1) 星，需要 target 星下级 X 个
-            // 若 requiredStar 显式 ≥0 用之；否则按 index 推断
-            int needStar = r.getRequiredStar() > 0 ? r.getRequiredStar() : target;
             int needCount = Math.max(0, effectiveCount(r));
-            int matched = 0;
-            for (int s = needStar; s < starHisto.length; s++) matched += starHisto[s];
-            boolean teamBranch = matched >= needCount && teamSalesAmount >= r.getTeamSales();
-            // v8.1 OR 分支：自购累计达标也升（仅 rule.selfPurchaseAmount > 0 时启用）
+            // V044：直推分支 — 仅看个人直推付费数，不读下级星级
+            boolean directBranch = needCount > 0 && directPaidCount >= needCount;
+            // V044：自购分支 — 个人自购累计达标
             boolean selfBranch = r.getSelfPurchaseAmount() != null
                     && r.getSelfPurchaseAmount() > 0
                     && selfPurchaseAmount >= r.getSelfPurchaseAmount();
-            if (teamBranch || selfBranch) {
+            // 任一个人 KPI 达标即升
+            if (directBranch || selfBranch) {
                 target++;
             } else {
                 break;
