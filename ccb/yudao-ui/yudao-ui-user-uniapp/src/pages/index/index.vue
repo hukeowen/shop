@@ -1,5 +1,24 @@
 <template>
   <view class="page">
+    <!-- V044 合规：首次访问强制阅读合规警告（已阅记 localStorage 不再弹） -->
+    <view v-if="showCompliance" class="cmp-mask" @click.stop>
+      <view class="cmp-card">
+        <view class="cmp-h">📢 平台使用提示</view>
+        <view class="cmp-body">
+          <view class="cmp-p"><text class="b">1. 平台定位</text>：本平台为「商户营销服务工具」，性质为<text class="hl">纯技术信息中介</text>。平台<text class="hl">不销售商品</text>、不沉淀资金，不对商户经营行为及结果承担任何责任。</view>
+          <view class="cmp-p"><text class="b">2. 交易关系</text>：您在平台购买的商品/享受的服务，均由独立经营的<text class="hl">商户提供</text>。您与商户之间形成独立买卖合同关系，与平台无关。</view>
+          <view class="cmp-p"><text class="b">3. 营销激励</text>：您参与的「分享激励」「邀请有礼」等活动，奖励来自<text class="hl">商户自费</text>营销让利预算，严格单层奖励直接邀请人，<text class="hl">不构成投资</text>，不存在保证收益。</view>
+          <view class="cmp-p"><text class="b">4. 解释权</text>：商户对营销活动具体规则保留<text class="hl">「最终解释权」</text>。任何争议<text class="hl">请直接联系商户</text>处理，平台不承担兑付保证责任。</view>
+          <view class="cmp-p"><text class="b">5. 禁止行为</text>：禁止在第三方平台传播"投资/躺赚/暴富"等误导性话术，禁止任何形式的传销/资金盘。违规者平台有权封号 + 移交司法机关。</view>
+        </view>
+        <view class="cmp-foot">
+          <view class="cmp-link" @click="goCmpAgreement('user')">查看《用户服务协议》</view>
+          <view class="cmp-link" @click="goCmpAgreement('privacy')">查看《隐私协议》</view>
+        </view>
+        <view class="cmp-cta" @click="acceptCompliance">我已阅读并同意</view>
+      </view>
+    </view>
+
     <!-- ━━━━━━━━━━ HERO（暖橙渐变 + 圆点底纹 + 右上柔光球）━━━━━━━━━━ -->
     <view class="home-hero">
       <view class="hero-deco-dots"></view>
@@ -439,6 +458,23 @@ function refreshAll() {
   loadRecent();
 }
 onMounted(refreshAll);
+
+// V044 合规：首次访问强制阅读合规警告
+const COMPLIANCE_KEY = 'ke-compliance-accepted-v1';
+const showCompliance = ref(false);
+onMounted(() => {
+  try {
+    const accepted = uni.getStorageSync(COMPLIANCE_KEY);
+    if (!accepted) showCompliance.value = true;
+  } catch {}
+});
+function acceptCompliance() {
+  try { uni.setStorageSync(COMPLIANCE_KEY, String(Date.now())); } catch {}
+  showCompliance.value = false;
+}
+function goCmpAgreement(type) {
+  uni.navigateTo({ url: `/pages/agreement/index?type=${type}` });
+}
 onShow(refreshAll);
 </script>
 
@@ -449,6 +485,51 @@ onShow(refreshAll);
   min-height: 100vh;
   background: $bg;
   padding-bottom: 90px;
+}
+
+/* V044 合规警告弹窗 */
+.cmp-mask {
+  position: fixed; inset: 0; z-index: 9999;
+  background: rgba(0,0,0,.55);
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+  backdrop-filter: blur(4px);
+}
+.cmp-card {
+  width: 100%; max-width: 360px;
+  background: #fff; border-radius: 16px;
+  padding: 22px 20px;
+  max-height: 80vh; overflow-y: auto;
+  box-shadow: 0 20px 50px rgba(0,0,0,.25);
+}
+.cmp-h {
+  font-size: 17px; font-weight: 900; color: $t1;
+  text-align: center;
+  padding-bottom: 12px;
+  border-bottom: 1px solid $line;
+}
+.cmp-body { padding: 14px 0; }
+.cmp-p {
+  font-size: 12.5px; color: $t2; line-height: 1.7;
+  margin-bottom: 10px;
+}
+.cmp-p .b { color: $t1; font-weight: 800; }
+.cmp-p .hl { color: $o-d; font-weight: 700; }
+.cmp-foot {
+  display: flex; gap: 12px; justify-content: center;
+  padding: 6px 0 14px;
+}
+.cmp-link {
+  font-size: 12px; color: $o; text-decoration: underline;
+}
+.cmp-cta {
+  padding: 12px 0;
+  background: linear-gradient(135deg, $o, $o-d);
+  color: #fff;
+  border-radius: 99px;
+  font-size: 14px; font-weight: 800;
+  text-align: center;
+  box-shadow: $sh-warm;
 }
 
 /* ━━━━━━━━━━━━━━━ HERO ━━━━━━━━━━━━━━━ */
