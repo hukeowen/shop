@@ -6,16 +6,16 @@
       <view class="hero-d">每店一条专属链接 · 朋友首单立减 · 你拿推广积分</view>
     </view>
 
-    <!-- 资格门槛：必须先在某店完成「邀 N 累积」商品购买 -->
+    <!-- 资格门槛：必须先在某店完成「推 N 免费商品」商品购买 -->
     <view v-if="!loading && !eligible" class="gate">
       <view class="gate-em">🔒</view>
-      <view class="gate-t">先完成「邀 N 累积」购买，才能开启邀请</view>
+      <view class="gate-t">先完成「推 N 免费商品」购买，才能开启邀请</view>
       <view class="gate-d">
-        平台规则：只有在某个店铺成功购买过「邀 N 累积」商品后，你才有资格分享该店的邀请链接。
+        平台规则：只有在某个店铺成功购买过「推 N 免费商品」商品后，你才有资格分享该店的邀请链接。
         这样一来你和朋友都在同一店铺内，你的邀请奖励才能从该店派发。
       </view>
       <view class="gate-list">
-        <view class="gate-step"><text class="n">1</text>选一家本地店，挑一个「邀 N 累积」商品</view>
+        <view class="gate-step"><text class="n">1</text>选一家本地店，挑一个「推 N 免费商品」商品</view>
         <view class="gate-step"><text class="n">2</text>完成下单（首单还能用券）</view>
         <view class="gate-step"><text class="n">3</text>回到本页，按店分享专属链接</view>
       </view>
@@ -86,7 +86,7 @@
                 <text class="v">{{ fen2yuan(posterShop.topTuijianSpu.price || 0, false) }}</text>
                 <text v-if="posterShop.topTuijianSpu.marketPrice && posterShop.topTuijianSpu.marketPrice > posterShop.topTuijianSpu.price" class="orig">¥{{ fen2yuan(posterShop.topTuijianSpu.marketPrice, false) }}</text>
               </view>
-              <view class="poster-spu-badge">邀 {{ posterShop.topTuijianSpu.tuijianN }} 累积</view>
+              <view class="poster-spu-badge">推 {{ posterShop.topTuijianSpu.tuijianN }} 免费</view>
             </view>
           </view>
           <view v-else class="poster-spu empty">
@@ -96,10 +96,10 @@
             </view>
           </view>
           <view v-if="posterRule" class="poster-rule">
-            <view class="poster-rule-title">📖 邀 {{ posterRule.n }} 累积积分 活动规则</view>
+            <view class="poster-rule-title">📖 推 {{ posterRule.n }} 免费商品 活动规则</view>
             <view class="poster-rule-line">推荐 1 位朋友本店首单 → 你获 <text class="hl">{{ posterRule.stepPoints }}</text> 积分</view>
-            <view class="poster-rule-line">累计推荐 <text class="hl">{{ posterRule.n }}</text> 位 → 活动总积分 <text class="hl">{{ posterRule.totalPoints }}</text></view>
-            <view class="poster-rule-line">积分可：① 本店消费抵扣 ② 向商户申请兑付（商户独立审批）</view>
+            <view class="poster-rule-line">累计推 <text class="hl">{{ posterRule.n }}</text> 位 → 积分可兑换 <text class="hl">1 件本商品</text></view>
+            <view class="poster-rule-line">奖励：商户营销凭证 · 非货币 · 商户独立审批兑付</view>
           </view>
           <view class="poster-qr">
             <image v-if="posterShop.qrUrl" :src="posterShop.qrUrl" mode="aspectFit" class="poster-qr-img" />

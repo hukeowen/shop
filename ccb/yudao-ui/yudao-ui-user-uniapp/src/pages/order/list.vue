@@ -132,7 +132,7 @@ async function switchTab(k) {
       if (o.rewardAmount > 0 || o.promoAmount > 0) {
         const amt = fen2yuan(o.rewardAmount || o.promoAmount || 0, false);
         if (o.rewardType === 'POOL') rewardTag = { em: '🏆', text: '本单触发商户让利到账', amount: amt };
-        else if (o.rewardType === 'QUEUE') rewardTag = { em: '🎁', text: '邀请累积奖 · 完成本期', amount: amt, cls: 'gold' };
+        else if (o.rewardType === 'QUEUE') rewardTag = { em: '🎁', text: '活动完成奖 · 本期完成', amount: amt, cls: 'gold' };
         else if (amt !== '0.00') rewardTag = { em: '💎', text: '本单推广积分到账', amount: amt };
       }
       return { ...o, rewardTag };

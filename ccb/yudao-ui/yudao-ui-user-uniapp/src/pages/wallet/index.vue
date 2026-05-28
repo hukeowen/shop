@@ -65,7 +65,7 @@ function iconFor(t) {
 }
 function labelFor(t) {
   if (t === 'POOL' || t === 'POOL_V8')              return '促销让利抽中';
-  if (t === 'QUEUE')                                 return '邀请累积奖';
+  if (t === 'QUEUE')                                 return '活动完成奖';
   if (t === 'DIRECT')                                return '邀请有礼';
   if (t === 'COMMISSION')                            return '分享激励';
   if (t === 'SELF_BATCH' || t === 'SELF_PROGRESS')   return '复购感谢奖';

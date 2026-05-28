@@ -88,7 +88,7 @@
       <view class="lt-em">🌅</view>
       <view class="lt-body">
         <view class="lt-t">今日还没到账</view>
-        <view class="lt-d">逛逛附近店铺 · 下单参与「邀 N 累积」立即领</view>
+        <view class="lt-d">逛逛附近店铺 · 下单参与「推 N 免费商品」立即领</view>
       </view>
       <view class="lt-cta">去看看 →</view>
     </view>
@@ -102,7 +102,7 @@
       <view class="qk" @click="onScan"><view class="qk-ic">📜</view><view class="qk-text">扫码</view></view>
     </view>
 
-    <!-- ━━━━━━━━━━ 邀 N 累积 进行中提醒 — 仅有进行中队列时显示 ━━━━━━━━━━ -->
+    <!-- ━━━━━━━━━━ 推 N 免费商品 进行中提醒 — 仅有进行中队列时显示 ━━━━━━━━━━ -->
     <view v-if="queueTip" class="home-queue-tip" @click="goQueue">
       <view class="hqt-ic">🔥</view>
       <view class="hqt-body">
@@ -145,7 +145,7 @@
       </view>
       <view class="home-feat nback" @click="goQueue">
         <text class="em-bg">🔥</text>
-        <view class="hf-tag">🔥 邀 N 累积</view>
+        <view class="hf-tag">🔥 推 N 免费商品</view>
         <view>
           <view class="hf-title">买 N 件 免单 1 件</view>
           <view class="hf-sub">朋友买你也得返</view>
@@ -283,7 +283,7 @@ async function loadTodayMae() {
     // 只保留今日的（接口已分页倒序，前端再按 createTime 过滤）
     const today = new Date().toDateString();
     const labelOf = (t) => ({
-      DIRECT: '邀请有礼', QUEUE: '邀请累积奖', COMMISSION: '分享激励',
+      DIRECT: '邀请有礼', QUEUE: '活动完成奖', COMMISSION: '分享激励',
       POOL_V8: '促销让利抽中', POOL: '促销让利抽中',
       SELF_BATCH: '复购感谢奖', SELF_PROGRESS: '复购感谢奖', SELF_COMMISSION: '复购感谢奖',
       REFERRAL_PROGRESS: '分享感谢奖', REFERRAL_COMMISSION: '分享感谢奖',
@@ -312,7 +312,7 @@ async function loadTodayMae() {
 const todaySumYuan = computed(() => fen2yuan(todayStat.value.promo, false));
 const todaySumPoints = computed(() => Math.round(todayStat.value.consume / 100));
 
-// 邀 N 累积 队列提醒 + 在队列数（未登录跳过）
+// 推 N 免费商品 队列提醒 + 在队列数（未登录跳过）
 const stat = ref({ todayAward: '0', myQueueCount: 0 });
 const queueTip = ref(null);
 async function loadQueueTip() {
@@ -399,8 +399,8 @@ async function loadNearby() {
       monthSold: s.sales30d != null ? s.sales30d : (s.monthSold != null ? s.monthSold : null),
       // 营业状态：后端 /public/list 已计算 isOpenNow（综合 status / todayOpenAt / manualClosed / businessHours）
       open: s.isOpenNow === true,
-      promoLine: s.promoLine || (s.tuijianN ? `邀 ${s.tuijianN} 累积 进行中` : ''),
-      // 后端 V043 注入：每店"明星商品"（邀 N 累积 启用 → 销量最高 / 兜底全店销量第一）
+      promoLine: s.promoLine || (s.tuijianN ? `推 ${s.tuijianN} 免费 进行中` : ''),
+      // 后端 V043 注入：每店"明星商品"（推 N 免费商品 启用 → 销量最高 / 兜底全店销量第一）
       topSpu: s.topSpu || null,
     }));
   } catch {} finally { loadingShops.value = false; }
@@ -765,7 +765,7 @@ onShow(refreshAll);
 }
 .qk-text { font-size: 11px; color: $t1; font-weight: 600; }
 
-/* ━━━━━━━━━━━━━━━ 邀 N 累积 提醒 ━━━━━━━━━━━━━━━ */
+/* ━━━━━━━━━━━━━━━ 推 N 免费商品 提醒 ━━━━━━━━━━━━━━━ */
 .home-queue-tip {
   margin: 14px 14px 0;
   padding: 14px 16px;

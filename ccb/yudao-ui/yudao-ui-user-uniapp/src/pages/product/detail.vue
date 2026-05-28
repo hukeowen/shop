@@ -17,7 +17,7 @@
         <view class="price-row">
           <text class="price"><text class="cny">¥</text>{{ fen2yuan(currentPrice) }}</text>
           <text v-if="originalPrice && originalPrice > currentPrice" class="original">¥{{ fen2yuan(originalPrice) }}</text>
-          <text v-if="promoConfig?.tuijianEnabled" class="promo-tag">邀 {{ promoConfig.tuijianN }} 累积</text>
+          <text v-if="promoConfig?.tuijianEnabled" class="promo-tag">推 {{ promoConfig.tuijianN }} 免费</text>
         </view>
         <view class="name">{{ product.name }}</view>
         <view class="intro" v-if="product.introduction">{{ product.introduction }}</view>
