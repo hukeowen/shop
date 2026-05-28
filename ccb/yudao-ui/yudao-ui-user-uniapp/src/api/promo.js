@@ -22,6 +22,11 @@ export const listConsumeRecords = (pageNo = 1, pageSize = 20, tenantId) =>
 export const listMyQueues = () =>
   get('/app-api/merchant/mini/promo/my-queues');
 
+// 邀请资格（只有完成购买「推 N 反 1」商品的店才可分享）
+// 返回 { eligible:boolean, shops:[{tenantId, shopName, queueingCount, completedCount}] }
+export const getInviteEligibility = () =>
+  get('/app-api/merchant/mini/promo/invite-eligibility');
+
 // 我的推荐人（按当前 tenant）
 export const getReferralParent = (tenantId) =>
   get('/app-api/merchant/mini/promo/referral/parent', { tenantId });

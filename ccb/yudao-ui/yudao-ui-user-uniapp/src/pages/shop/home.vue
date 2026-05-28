@@ -38,7 +38,7 @@
       </view>
     </view>
 
-    <!-- ━━━━━━━━━━ 招牌商品大卡（推 N 反 1 进度嵌入）━━━━━━━━━━ -->
+    <!-- ━━━━━━━━━━ 招牌商品大卡（推 N 反 1 进度 + 规则说明）━━━━━━━━━━ -->
     <view v-if="signatureSpu" class="signature-card" @click="goSignature">
       <view class="sig-crown">👑 招牌 No.1{{ nback ? ` · 推 ${nback.n} 反 1` : '' }}</view>
       <view class="sig-inner">
@@ -51,6 +51,7 @@
           <view class="sig-intro">{{ signatureSpu.introduction || '本店招牌 · 现做现卖' }}</view>
           <view class="sig-tags">
             <view v-if="nback" class="sig-tag promo">推 {{ nback.n }} 反 1</view>
+            <view v-if="nback" class="sig-tag amount">单次返 ¥{{ nback.stepYuan }}</view>
             <view v-if="nback && nback.cur > 0" class="sig-tag got">你已得 ¥{{ nback.gotYuan }}</view>
             <view v-else-if="signatureSpu.starCount" class="sig-tag gold">让利商品</view>
           </view>
@@ -65,8 +66,51 @@
       </view>
       <view v-if="nback" class="sig-progress">
         <view class="sig-fill" :style="{ width: nback.pct + '%' }"></view>
-        <view class="sig-progress-txt" v-if="nback.cur > 0">推 N 反 1 进度 {{ nback.cur }}/{{ nback.n }} · 还差 {{ nback.n - nback.cur }} 人出队 +¥{{ nback.gapYuan }}</view>
-        <view class="sig-progress-txt" v-else>下单参与 推 {{ nback.n }} 反 1 · 第 {{ nback.n }} 件立即免单</view>
+        <view class="sig-progress-txt" v-if="nback.cur > 0">推 N 反 1 进度 {{ nback.cur }}/{{ nback.n }} · 还差 {{ nback.n - nback.cur }} 人 · 累计可返 ¥{{ nback.totalYuan }}</view>
+        <view class="sig-progress-txt" v-else>下单后开启「推 {{ nback.n }} 反 1」 · 邀 {{ nback.n }} 人累计返还本品价</view>
+      </view>
+
+      <!-- ━━━ 规则说明（4 步图解）━━━ -->
+      <view v-if="nback" class="sig-rule" @click.stop="ruleExpanded = !ruleExpanded">
+        <view class="sig-rule-head">
+          <text class="em">📖</text>
+          <text class="t">推 {{ nback.n }} 反 1 怎么玩？</text>
+          <text class="arr">{{ ruleExpanded ? '收起 ▲' : '点击展开 ▼' }}</text>
+        </view>
+        <view v-if="ruleExpanded" class="sig-rule-body">
+          <view class="step-grid">
+            <view class="step">
+              <view class="step-em">🛒</view>
+              <view class="step-t">1. 自己下单</view>
+              <view class="step-d">买本商品激活资格</view>
+            </view>
+            <view class="step">
+              <view class="step-em">👥</view>
+              <view class="step-t">2. 邀朋友买</view>
+              <view class="step-d">每位朋友在本店首单</view>
+            </view>
+            <view class="step">
+              <view class="step-em">💰</view>
+              <view class="step-t">3. 自动返</view>
+              <view class="step-d">每人入队你得 ¥{{ nback.stepYuan }}</view>
+            </view>
+            <view class="step">
+              <view class="step-em">🏆</view>
+              <view class="step-t">4. 满 {{ nback.n }} 完成</view>
+              <view class="step-d">累计共得 ¥{{ nback.totalYuan }}</view>
+            </view>
+          </view>
+          <view class="rule-list">
+            <view class="rule-item"><text class="b">推几反 1</text>：本品 N = <text class="hl">{{ nback.n }}</text>，邀请 {{ nback.n }} 位朋友在本店成功下单</view>
+            <view class="rule-item"><text class="b">每次反多少</text>：每位朋友首单结算时，按本品单价 × 配置比例返还到你的「推广积分」</view>
+            <view class="rule-item"><text class="b">怎么反</text>：朋友支付完成即刻入账，无人工审核；订单 30 天内退款自动扣回</view>
+            <view class="rule-item"><text class="b">积分用途</text>：
+              <text class="usage">① 本店消费抵扣</text> ·
+              <text class="usage">② 找商户申请提现（线下兑付）</text>
+            </view>
+          </view>
+          <view class="rule-foot">营销规则与兑付由商户独立负责 · 平台不承担担保</view>
+        </view>
       </view>
     </view>
 
@@ -204,6 +248,7 @@ const isFav = ref(false);
 const myEarn = ref('0');
 const signatureSpu = ref(null);
 const nback = ref(null);
+const ruleExpanded = ref(false);
 const vip = reactive({ myStar: 0, discountText: '', inviterCount: 0, earnYuan: '0' });
 const coupons = ref([]);
 const visitorCount = ref(0);
@@ -315,15 +360,35 @@ async function loadProducts() {
   loading.value = true;
   try {
     const r = await listShopProducts(route.tenantId, 1, 50);
-    const list = (r?.list || []).map((s) => {
+    const raw = (r?.list || []);
+
+    // 批量补 tuijianN / tuijianRatios / starCount —— ProductSpuDO 不含营销字段
+    const spuIds = raw.map((s) => s.id).filter(Boolean);
+    let cfgMap = {};
+    if (spuIds.length) {
+      try {
+        const cfgs = await request({
+          url: `/app-api/merchant/mini/promo/product-configs?spuIds=${spuIds.join(',')}`,
+        });
+        if (Array.isArray(cfgs)) {
+          for (const c of cfgs) { if (c && c.spuId) cfgMap[c.spuId] = c; }
+        }
+      } catch {}
+    }
+
+    const list = raw.map((s) => {
+      const cfg = cfgMap[s.id] || {};
+      const tuijianN = cfg.tuijianN || 0;
+      const tuijianRatios = cfg.tuijianRatios || null;
+      const starCount = cfg.starCount || 0;
       let badge = '', badgeClass = '';
-      if (s.tuijianN) { badge = `推 ${s.tuijianN} 反 1`; }
-      else if (s.starCount) { badge = '让利商品'; badgeClass = 'gold'; }
-      return reactive({ ...s, badge, badgeClass, imgErr: false });
+      if (tuijianN > 0) { badge = `推 ${tuijianN} 反 1`; }
+      else if (starCount) { badge = '让利商品'; badgeClass = 'gold'; }
+      return reactive({ ...s, tuijianN, tuijianRatios, starCount, badge, badgeClass, imgErr: false });
     });
     spus.value = list;
 
-    // 招牌：优先选 tuijianN>0 / 销量最高 / 价格最高
+    // 招牌：优先 tuijianN>0，否则销量/价格
     const sig = list.find((s) => s.tuijianN > 0)
               || list.slice().sort((a, b) => (b.salesCount || 0) - (a.salesCount || 0))[0]
               || list.slice().sort((a, b) => (b.price || 0) - (a.price || 0))[0];
@@ -358,17 +423,41 @@ async function loadProducts() {
   } catch {} finally { loading.value = false; }
 }
 
+// 构造 nback 视图模型；优先用真实 ratios 数组，没有就按 1/N 均分
+function buildNback(n, cur, totalFen, ratiosJson) {
+  let ratios = [];
+  try { ratios = ratiosJson ? JSON.parse(ratiosJson) : []; } catch {}
+  if (!Array.isArray(ratios) || ratios.length !== n) {
+    // 兜底：均匀分布
+    ratios = Array.from({ length: n }, () => 100 / n);
+  }
+  // 单步均值 = totalFen × 平均比例 / 100
+  const avgRatio = ratios.reduce((s, r) => s + Number(r || 0), 0) / n;
+  const stepFen = Math.floor(totalFen * avgRatio / 100);
+  // 累计已得 = 前 cur 个比例之和 × totalFen
+  let gotFen = 0;
+  for (let i = 0; i < cur && i < ratios.length; i++) {
+    gotFen += Math.floor(totalFen * Number(ratios[i] || 0) / 100);
+  }
+  const sumRatio = ratios.reduce((s, r) => s + Number(r || 0), 0);
+  const totalRebateFen = Math.floor(totalFen * sumRatio / 100);
+  const gapFen = Math.max(0, totalRebateFen - gotFen);
+  const pct = n > 0 ? Math.min(100, Math.round((cur / n) * 100)) : 0;
+  return {
+    n, cur, pct,
+    stepYuan: fen2yuan(stepFen, false),
+    gotYuan: fen2yuan(gotFen, false),
+    gapYuan: fen2yuan(gapFen, false),
+    totalYuan: fen2yuan(totalRebateFen, false),
+  };
+}
+
 async function loadNback() {
   if (!user.isLogin || !route.tenantId || !signatureSpu.value) {
-    // 即使没登录，也展示骨架（基于 signature 的 tuijianN）
+    // 即使没登录，也展示骨架（基于 signature 的 tuijianN / tuijianRatios）
     if (signatureSpu.value?.tuijianN) {
-      const n = signatureSpu.value.tuijianN;
       const totalFen = signatureSpu.value.price || 0;
-      nback.value = {
-        n, cur: 0, pct: 0,
-        gotYuan: '0.00', gapYuan: fen2yuan(totalFen, false),
-        totalYuan: fen2yuan(totalFen, false),
-      };
+      nback.value = buildNback(signatureSpu.value.tuijianN, 0, totalFen, signatureSpu.value.tuijianRatios);
     } else nback.value = null;
     return;
   }
@@ -378,25 +467,11 @@ async function loadNback() {
     if (target && target.tuijianN > 0) {
       const n = target.tuijianN;
       const cur = Math.min(target.directCount || 0, n);
-      const pct = Math.min(100, Math.round((cur / n) * 100));
       const totalFen = signatureSpu.value.price || target.spuPrice || 0;
-      const gotFen = Math.floor(totalFen * cur / n);
-      const gapFen = totalFen - gotFen;
-      nback.value = {
-        n, cur, pct,
-        gotYuan: fen2yuan(gotFen, false),
-        gapYuan: fen2yuan(gapFen, false),
-        totalYuan: fen2yuan(totalFen, false),
-      };
+      nback.value = buildNback(n, cur, totalFen, target.tuijianRatios);
     } else if (signatureSpu.value.tuijianN) {
-      // 后端没有用户的 stars 记录但 signature 商品有 tuijianN → 骨架
-      const n = signatureSpu.value.tuijianN;
       const totalFen = signatureSpu.value.price || 0;
-      nback.value = {
-        n, cur: 0, pct: 0,
-        gotYuan: '0.00', gapYuan: fen2yuan(totalFen, false),
-        totalYuan: fen2yuan(totalFen, false),
-      };
+      nback.value = buildNback(signatureSpu.value.tuijianN, 0, totalFen, signatureSpu.value.tuijianRatios);
     } else {
       nback.value = null;
     }
@@ -610,9 +685,10 @@ onShow(refreshAll);
 .sig-tag {
   font-size: 10px; padding: 2px 7px; border-radius: 4px; font-weight: 700;
 }
-.sig-tag.promo { background: linear-gradient(135deg, $o, $o-d); color: #fff; }
-.sig-tag.gold  { background: linear-gradient(135deg, $gold, $gold-l); color: #fff; }
-.sig-tag.got   { background: $mint-50; color: $mint; }
+.sig-tag.promo  { background: linear-gradient(135deg, $o, $o-d); color: #fff; }
+.sig-tag.gold   { background: linear-gradient(135deg, $gold, $gold-l); color: #fff; }
+.sig-tag.got    { background: $mint-50; color: $mint; }
+.sig-tag.amount { background: $o-50; color: $o-d; border: 1px solid $o-100; }
 .sig-bot { margin-top: auto; display: flex; justify-content: space-between; align-items: flex-end; }
 .sig-price-block { display: flex; flex-direction: column; align-items: flex-start; }
 .sig-price {
@@ -650,6 +726,59 @@ onShow(refreshAll);
   font-size: 10.5px; font-weight: 800; color: #fff;
   text-shadow: 0 1px 2px rgba(0,0,0,.3); z-index: 2;
   white-space: nowrap;
+}
+
+/* ━━ 规则说明（展开式）━━ */
+.sig-rule {
+  margin-top: 10px;
+  background: rgba(255,255,255,.7);
+  border: 1px dashed $o-200;
+  border-radius: $r-md;
+  overflow: hidden;
+}
+.sig-rule-head {
+  display: flex; align-items: center; gap: 6px;
+  padding: 9px 12px;
+  font-size: 11.5px; font-weight: 800;
+  color: $t1;
+}
+.sig-rule-head .em { font-size: 14px; }
+.sig-rule-head .t { flex: 1; }
+.sig-rule-head .arr { font-size: 10.5px; color: $o-d; font-weight: 700; }
+
+.sig-rule-body {
+  padding: 0 12px 12px;
+  border-top: 1px dashed $o-100;
+}
+.step-grid {
+  margin-top: 10px;
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;
+}
+.step {
+  padding: 8px 4px;
+  background: #fff;
+  border: 1px solid $o-100;
+  border-radius: $r-md;
+  text-align: center;
+}
+.step-em { font-size: 22px; line-height: 1; }
+.step-t  { font-size: 10.5px; font-weight: 800; color: $t1; margin-top: 4px; }
+.step-d  { font-size: 9.5px; color: $t3; margin-top: 2px; line-height: 1.25; }
+
+.rule-list { margin-top: 10px; }
+.rule-item {
+  font-size: 11px; color: $t2; line-height: 1.55;
+  padding: 4px 0;
+}
+.rule-item .b { color: $t1; font-weight: 800; }
+.rule-item .hl { color: $o; font-weight: 900; }
+.rule-item .usage { color: $o-d; font-weight: 700; }
+
+.rule-foot {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed $o-100;
+  font-size: 10px; color: $t4; text-align: center;
 }
 
 /* ━━ VIP strip ━━ */

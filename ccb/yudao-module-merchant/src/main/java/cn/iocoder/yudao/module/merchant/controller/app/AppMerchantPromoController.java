@@ -96,6 +96,8 @@ public class AppMerchantPromoController {
     private cn.iocoder.yudao.module.merchant.dal.mysql.promo.ShopUserStarMapper userStarMapper;
     @Resource
     private cn.iocoder.yudao.module.member.api.user.MemberUserApi memberUserApi;
+    @Resource
+    private cn.iocoder.yudao.module.merchant.dal.mysql.promo.ShopQueuePositionMapper shopQueuePositionMapper;
 
     // ==================== 商户级营销配置 ====================
 
@@ -376,6 +378,8 @@ public class AppMerchantPromoController {
                     v.put("starUpgradeRules", cfg.getStarUpgradeRules());
                     v.put("starRatios", cfg.getStarRatios());
                     v.put("tuijianN", cfg.getTuijianN());
+                    v.put("tuijianRatios", cfg.getTuijianRatios());
+                    v.put("spuPrice", s != null ? s.getPrice() : null);
                 }
                 resp.add(v);
             }
@@ -537,6 +541,82 @@ public class AppMerchantPromoController {
             }
         }
         return success(aggregated);
+    }
+
+    // ==================== 邀请资格（仅完成购买推 N 反 1 商品的用户才能分享）====================
+
+    /**
+     * 邀请资格查询：当前用户在哪些店买过「推 N 反 1」商品（shop_queue_position 存在即激活）。
+     *
+     * 返回：
+     * - eligible：是否有任意店激活（true 才允许分享）
+     * - shops：[{ tenantId, shopName, queueingCount, completedCount }]
+     *   前端按 shop 生成各自的 invite 链接（必须带正确 tenantId 才能正确绑定 referral）
+     */
+    @GetMapping("/invite-eligibility")
+    @Operation(summary = "邀请资格：列出当前用户已激活的店铺列表（购买过推 N 反 1 商品）")
+    @cn.iocoder.yudao.framework.tenant.core.aop.TenantIgnore
+    public CommonResult<Map<String, Object>> getInviteEligibility() {
+        Long userId = SecurityFrameworkUtils.getLoginUserId();
+        Map<String, Object> result = new HashMap<>();
+        java.util.List<Map<String, Object>> shopList = new java.util.ArrayList<>();
+        if (userId == null) {
+            result.put("eligible", false);
+            result.put("shops", shopList);
+            return success(result);
+        }
+        // 跨租户聚合用户的 shop_queue_position
+        java.util.List<cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopQueuePositionDO> all =
+                cn.iocoder.yudao.framework.tenant.core.util.TenantUtils.executeIgnore(() ->
+                        shopQueuePositionMapper.selectList(
+                                new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopQueuePositionDO>()
+                                        .eq(cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopQueuePositionDO::getUserId, userId)));
+        // 按 tenant 聚合
+        Map<Long, int[]> tenantAgg = new java.util.LinkedHashMap<>();
+        if (all != null) {
+            for (cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopQueuePositionDO p : all) {
+                if (p == null || p.getTenantId() == null) continue;
+                int[] cnt = tenantAgg.computeIfAbsent(p.getTenantId(), k -> new int[2]);
+                if ("QUEUEING".equalsIgnoreCase(p.getStatus())) {
+                    cnt[0]++;
+                } else {
+                    cnt[1]++;
+                }
+            }
+        }
+        if (tenantAgg.isEmpty()) {
+            result.put("eligible", false);
+            result.put("shops", shopList);
+            return success(result);
+        }
+        // 一次性批量查 shopName
+        java.util.Map<Long, String> shopNameMap = new java.util.HashMap<>();
+        try {
+            java.util.List<cn.iocoder.yudao.module.merchant.dal.dataobject.ShopInfoDO> infos =
+                    shopInfoMapper.selectList(
+                            new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<cn.iocoder.yudao.module.merchant.dal.dataobject.ShopInfoDO>()
+                                    .in(cn.iocoder.yudao.module.merchant.dal.dataobject.ShopInfoDO::getTenantId, tenantAgg.keySet()));
+            if (infos != null) {
+                for (cn.iocoder.yudao.module.merchant.dal.dataobject.ShopInfoDO info : infos) {
+                    if (info != null && info.getTenantId() != null) {
+                        shopNameMap.put(info.getTenantId(), info.getShopName());
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.warn("[getInviteEligibility] 批量查 shop_info 失败：{}", e.getMessage());
+        }
+        for (Map.Entry<Long, int[]> e : tenantAgg.entrySet()) {
+            Map<String, Object> shop = new HashMap<>();
+            shop.put("tenantId", e.getKey());
+            shop.put("shopName", shopNameMap.getOrDefault(e.getKey(), "店铺 #" + e.getKey()));
+            shop.put("queueingCount", e.getValue()[0]);
+            shop.put("completedCount", e.getValue()[1]);
+            shopList.add(shop);
+        }
+        result.put("eligible", true);
+        result.put("shops", shopList);
+        return success(result);
     }
 
     // ==================== 中奖公榜 / 滚动条 / 今日入账 ====================
