@@ -252,11 +252,7 @@
         </view>
       </template>
 
-      <view class="promo-actions">
-        <button class="btn ghost-brand" :disabled="promoSaving" @click="onSavePromo">
-          {{ promoSaving ? '保存中…' : '保存营销配置' }}
-        </button>
-      </view>
+      <!-- 营销配置无单独按钮 — 与底部"保存"一并提交 -->
 
       <!-- v8: 当前 SPU 池余额 + 结算入口（编辑模式 + 入池比例 > 0 才显示） -->
       <view v-if="isEdit && parseFloat(promo.poolRatio) > 0" class="pool-ops">
@@ -388,7 +384,6 @@ const form = reactive({
 
 // v7 商品级营销配置（独立于 SPU 主表）
 const promoLoaded = ref(false);
-const promoSaving = ref(false);
 const promo = reactive({
   consumePointRatio: '0',
   tuijianEnabled: false,
@@ -530,108 +525,88 @@ const ratiosSum = computed(() => {
   return s;
 });
 
-async function onSavePromo() {
+/**
+ * 校验营销策略 — 通过返 { ok: true, poolDistJson }，失败返 { ok: false }（toast 已弹）。
+ * 拆出来是因为底部"保存"按钮要在 updateSpu 前先校验，避免商品改了但营销没过校验导致状态不一致。
+ */
+function validatePromo() {
   syncTuijianN();
   const n = parseInt(promo.tuijianN) || 0;
   if (promo.tuijianEnabled && n <= 0) {
     uni.showToast({ title: '邀请激励 启用时 N 必须 > 0', icon: 'none' });
-    return;
+    return { ok: false };
   }
-  // v7 文档：N 个比例加总不能超过 100%（会把商品价超额返出去）
   if (promo.tuijianEnabled && ratiosSum.value > 100) {
-    uni.showToast({
-      title: `N 个比例加总 ${ratiosSum.value.toFixed(1)}% > 100%，请调整`,
-      icon: 'none',
-      duration: 2500,
-    });
-    return;
+    uni.showToast({ title: `N 个比例加总 ${ratiosSum.value.toFixed(1)}% > 100%，请调整`, icon: 'none', duration: 2500 });
+    return { ok: false };
   }
-  // V044 合规 P0-4：directRate ≤ 35%
   if ((parseFloat(promo.directRate) || 0) > 35) {
     uni.showToast({ title: '出队后邀请感谢奖 ≤ 35%（合规上限）', icon: 'none', duration: 2500 });
-    return;
+    return { ok: false };
   }
-  // V044 合规：各 VIP 等级邀请奖 starRatios[i] 必须 ≤ 35%
   const sc = parseInt(promo.starCount) || 0;
   if (sc > 0) {
     for (let i = 0; i < sc && i < promo.starRatios.length; i++) {
       const r = parseFloat(promo.starRatios[i]) || 0;
       if (r > 35) {
-        uni.showToast({
-          title: `${i + 1} 星邀请奖 ${r}% > 35%（合规上限）`,
-          icon: 'none',
-          duration: 2500,
-        });
-        return;
+        uni.showToast({ title: `${i + 1} 星邀请奖 ${r}% > 35%（合规上限）`, icon: 'none', duration: 2500 });
+        return { ok: false };
       }
     }
   }
-  // 奖池分配规则校验：入池比例 > 0 时才校验；强 sum=100
   const poolEnabled = (parseFloat(promo.poolRatio) || 0) > 0;
   let poolDistJson = '';
   if (poolEnabled && parseInt(promo.starCount) > 0) {
     const filled = promo.poolDistList
       .filter((d) => Number(d.ratio) > 0)
       .map((d) => {
-        const o = {
-          star: Number(d.star),
-          ratio: Number(d.ratio) || 0,
-          mode: d.mode || 'EQUAL',
-        };
+        const o = { star: Number(d.star), ratio: Number(d.ratio) || 0, mode: d.mode || 'EQUAL' };
         if (o.mode === 'LOTTERY') o.winners = parseInt(d.winners) || 1;
         return o;
       });
     if (filled.length > 0) {
       const sum = filled.reduce((s, x) => s + Number(x.ratio), 0);
       if (Math.abs(sum - 100) > 0.001) {
-        uni.showToast({
-          title: `奖池分配 ${sum.toFixed(1)}% ≠ 100%，请调整`,
-          icon: 'none',
-          duration: 2500,
-        });
-        return;
+        uni.showToast({ title: `奖池分配 ${sum.toFixed(1)}% ≠ 100%，请调整`, icon: 'none', duration: 2500 });
+        return { ok: false };
       }
       for (const x of filled) {
         if (x.mode === 'LOTTERY' && (!x.winners || x.winners < 1)) {
           uni.showToast({ title: `${x.star} 星抽奖名额必须 ≥ 1`, icon: 'none' });
-          return;
+          return { ok: false };
         }
       }
       poolDistJson = JSON.stringify(filled);
     }
   }
+  return { ok: true, poolDistJson };
+}
 
-  promoSaving.value = true;
-  try {
-    syncStarCount();
-    const sc = parseInt(promo.starCount) || 0;
-    await saveProductPromoConfig({
-      spuId: editingId.value,
-      // UI 输入元 → 后端存「分钱/元」单位，×100
-      consumePointRatio: Math.round(((parseFloat(promo.consumePointRatio) || 0) * 100) * 100) / 100,
-      tuijianEnabled: !!promo.tuijianEnabled,
-      tuijianN: n,
-      tuijianRatios: JSON.stringify(promo.tuijianRatios.map((r) => Number(r) || 0)),
-      // v8 字段
-      directRate: parseFloat(promo.directRate) || 0,
-      starCount: sc,
-      starRatios: sc > 0 ? JSON.stringify(promo.starRatios.slice(0, sc).map(r => Number(r) || 0)) : '[]',
-      starUpgradeRules: sc > 0 ? JSON.stringify(promo.starUpgradeRules.slice(0, sc).map((r, i) => ({
-        star: i + 1,
-        // V044 合规：升星仅看个人 KPI — 直推付费数 OR 自购累计；不再依赖下级星级或团队业绩
-        requiredStar: 0,            // 已废，固定 0（后端忽略）
-        requiredCount: parseInt(r.requiredCount) || 0,  // 直推付费人数
-        teamSales: 0,               // V044 合规：永远 0（后端 attemptUpgradeV8 已不读）
-        selfPurchaseAmount: Math.round((parseFloat(r.selfPurchaseYuan) || 0) * 100),  // 个人自购阈值（分）
-      }))) : '[]',
-      poolRatio: parseFloat(promo.poolRatio) || 0,
-      poolEnabled: !!promo.poolEnabled,
-      poolDistRules: poolDistJson,
-    });
-    uni.showToast({ title: '营销配置已保存', icon: 'success' });
-  } finally {
-    promoSaving.value = false;
-  }
+/** 仅持久化营销配置（不做校验，调用前必须 validatePromo 通过）。 */
+async function persistPromo(poolDistJson) {
+  syncStarCount();
+  const n = parseInt(promo.tuijianN) || 0;
+  const sc = parseInt(promo.starCount) || 0;
+  await saveProductPromoConfig({
+    spuId: editingId.value,
+    consumePointRatio: Math.round(((parseFloat(promo.consumePointRatio) || 0) * 100) * 100) / 100,
+    tuijianEnabled: !!promo.tuijianEnabled,
+    tuijianN: n,
+    tuijianRatios: JSON.stringify(promo.tuijianRatios.map((r) => Number(r) || 0)),
+    directRate: parseFloat(promo.directRate) || 0,
+    starCount: sc,
+    starRatios: sc > 0 ? JSON.stringify(promo.starRatios.slice(0, sc).map(r => Number(r) || 0)) : '[]',
+    starUpgradeRules: sc > 0 ? JSON.stringify(promo.starUpgradeRules.slice(0, sc).map((r, i) => ({
+      star: i + 1,
+      requiredStar: 0,
+      requiredCount: parseInt(r.requiredCount) || 0,
+      teamSales: 0,
+      selfPurchaseAmount: Math.round((parseFloat(r.selfPurchaseYuan) || 0) * 100),
+    }))) : '[]',
+    poolRatio: parseFloat(promo.poolRatio) || 0,
+    poolEnabled: !!promo.poolEnabled,
+    poolDistRules: poolDistJson || '',
+  });
 }
 
 // v8 拉池余额
@@ -790,6 +765,12 @@ async function loadIfEdit(id) {
 
 async function onSubmit() {
   if (!canSubmit.value) return;
+  // 编辑态：先校验营销策略，避免商品改了但营销没过校验导致状态不一致
+  let promoCheck = null;
+  if (isEdit.value) {
+    promoCheck = validatePromo();
+    if (!promoCheck.ok) return;
+  }
   uni.showLoading({ title: isEdit.value ? '保存中' : '上架中' });
   const payload = {
     ...form,
@@ -798,8 +779,16 @@ async function onSubmit() {
   try {
     if (isEdit.value) {
       await updateSpu({ id: editingId.value, ...payload });
+      // 商品保存成功后立即持久化营销策略（一并保存语义）
+      try {
+        await persistPromo(promoCheck.poolDistJson);
+      } catch (e) {
+        uni.hideLoading();
+        uni.showToast({ title: '商品已保存，但营销策略保存失败：' + (e?.msg || e?.message || ''), icon: 'none', duration: 2500 });
+        return;
+      }
       uni.hideLoading();
-      uni.showToast({ title: '已保存', icon: 'success' });
+      uni.showToast({ title: '已保存（含营销策略）', icon: 'success' });
     } else {
       const newId = await createSpu(payload);
       uni.hideLoading();
