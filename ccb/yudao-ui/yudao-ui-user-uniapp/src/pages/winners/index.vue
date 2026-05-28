@@ -72,7 +72,7 @@ function labelFor(t) {
     REFERRAL_PROGRESS: '分享感谢奖',
     REFERRAL_COMMISSION: '分享感谢奖', DIRECT: '邀请有礼',
     COMMISSION: '分享激励',
-  }[t] || '推广奖励';
+  }[t] || '推广积分';
 }
 function rankClass(i) {
   if (i === 0) return 'r1';

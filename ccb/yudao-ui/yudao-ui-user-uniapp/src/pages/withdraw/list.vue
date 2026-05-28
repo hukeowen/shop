@@ -1,9 +1,9 @@
 <template>
   <view class="page">
-    <nav-bar title="我的提现记录" />
+    <nav-bar title="我的兑付申请记录" />
 
     <view v-if="loading" class="loading">加载中…</view>
-    <empty-state v-else-if="!records.length" title="暂无提现记录" desc="去申请提现把推广奖励换成现金" />
+    <empty-state v-else-if="!records.length" title="暂无兑付申请记录" desc="去申请商户兑付推广积分" />
 
     <view v-else class="list">
       <view v-for="r in records" :key="r.id" class="card">
@@ -12,8 +12,8 @@
           <text class="val">#{{ r.id }}</text>
         </view>
         <view class="row big">
-          <text class="lbl">提现金额</text>
-          <text class="val amt">¥{{ fen2yuan(r.amount, false) }}</text>
+          <text class="lbl">申请积分</text>
+          <text class="val amt">{{ r.amount }} 积分</text>
         </view>
         <view class="row">
           <text class="lbl">申请时间</text>
@@ -60,14 +60,14 @@
           ✓ 已完成（您已确认收款）
         </view>
         <view v-else-if="r.status === 'REJECTED'" class="rej-row">
-          申请被驳回 · 推广奖励已退回
+          申请被驳回 · 推广积分已退回到您的账户
         </view>
       </view>
     </view>
 
     <view class="footer-tip">
-      平台为技术中介，提现由商户线下转账并标记，<text class="b">您与商户共同确认完成</text>。
-      平台不承担兑付保证责任。
+      平台仅提供技术信息撮合，兑付形式与额度由<text class="b">商户独立审批</text>，您与商户共同确认完成。
+      <text class="b">平台不构成兑付承诺、不承担担保责任</text>。
     </view>
     <view class="bottom-pad"></view>
   </view>
@@ -77,7 +77,7 @@
 import { ref, onMounted } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
 import { request } from '@/utils/request.js';
-import { fen2yuan, fmtTime } from '@/utils/format.js';
+import { fmtTime } from '@/utils/format.js';
 
 const loading = ref(true);
 const records = ref([]);
@@ -117,7 +117,7 @@ async function load() {
 async function onConfirm(r) {
   uni.showModal({
     title: '确认已收到打款',
-    content: `您确认已经收到商户线下转账的 ¥${fen2yuan(r.amount, false)} 吗？\n\n确认后本次提现完成，无法撤销。`,
+    content: `您确认已收到商户对应 ${r.amount} 积分的线下兑付吗？\n\n确认后本次申请完成，无法撤销。`,
     success: async (res) => {
       if (!res.confirm) return;
       try {

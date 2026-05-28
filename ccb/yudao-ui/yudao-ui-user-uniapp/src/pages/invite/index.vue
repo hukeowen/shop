@@ -3,19 +3,19 @@
     <view class="hero">
       <view class="hero-em">🎁</view>
       <view class="hero-t">邀请好友进店下单</view>
-      <view class="hero-d">每店一条专属链接 · 朋友首单立减 · 你拿推广奖励</view>
+      <view class="hero-d">每店一条专属链接 · 朋友首单立减 · 你拿推广积分</view>
     </view>
 
-    <!-- 资格门槛：必须先在某店完成「推 N 反 1」商品购买 -->
+    <!-- 资格门槛：必须先在某店完成「邀 N 累积」商品购买 -->
     <view v-if="!loading && !eligible" class="gate">
       <view class="gate-em">🔒</view>
-      <view class="gate-t">先完成「推 N 反 1」购买，才能开启邀请</view>
+      <view class="gate-t">先完成「邀 N 累积」购买，才能开启邀请</view>
       <view class="gate-d">
-        平台规则：只有在某个店铺成功购买过「推 N 反 1」商品后，你才有资格分享该店的邀请链接。
+        平台规则：只有在某个店铺成功购买过「邀 N 累积」商品后，你才有资格分享该店的邀请链接。
         这样一来你和朋友都在同一店铺内，你的邀请奖励才能从该店派发。
       </view>
       <view class="gate-list">
-        <view class="gate-step"><text class="n">1</text>选一家本地店，挑一个「推 N 反 1」商品</view>
+        <view class="gate-step"><text class="n">1</text>选一家本地店，挑一个「邀 N 累积」商品</view>
         <view class="gate-step"><text class="n">2</text>完成下单（首单还能用券）</view>
         <view class="gate-step"><text class="n">3</text>回到本页，按店分享专属链接</view>
       </view>
@@ -58,9 +58,10 @@
     <view v-if="!loading && eligible" class="stat-card">
       <view class="stat-title">我的累计</view>
       <view class="stat-row"><text class="l">已邀朋友（跨店）</text><text class="hl">{{ totalChildren }} 人</text></view>
-      <view class="stat-row"><text class="l">推广奖励余额</text><text class="hl">¥{{ totalEarn }}</text></view>
+      <view class="stat-row"><text class="l">推广积分余额</text><text class="hl">{{ totalEarn }} 积分</text></view>
       <view class="stat-foot">
-        推广奖励用途：① 该店内消费抵扣 ② 申请向商户提现（线下兑付）
+        推广积分用途：① 本店消费抵扣 ② 向商户申请兑付（商户独立审批）<br>
+        积分为商户营销活动凭证 · 不构成货币 · 平台仅提供技术服务
       </view>
     </view>
 
@@ -85,20 +86,20 @@
                 <text class="v">{{ fen2yuan(posterShop.topTuijianSpu.price || 0, false) }}</text>
                 <text v-if="posterShop.topTuijianSpu.marketPrice && posterShop.topTuijianSpu.marketPrice > posterShop.topTuijianSpu.price" class="orig">¥{{ fen2yuan(posterShop.topTuijianSpu.marketPrice, false) }}</text>
               </view>
-              <view class="poster-spu-badge">推 {{ posterShop.topTuijianSpu.tuijianN }} 反 1</view>
+              <view class="poster-spu-badge">邀 {{ posterShop.topTuijianSpu.tuijianN }} 累积</view>
             </view>
           </view>
           <view v-else class="poster-spu empty">
             <view class="poster-spu-body">
               <view class="poster-spu-name">本店推广商品</view>
-              <view class="poster-spu-badge">推广奖励活动</view>
+              <view class="poster-spu-badge">推广积分活动</view>
             </view>
           </view>
           <view v-if="posterRule" class="poster-rule">
-            <view class="poster-rule-title">📖 推 {{ posterRule.n }} 反 1 规则</view>
-            <view class="poster-rule-line">每邀 1 位朋友首单 → 返本品价 <text class="hl">¥{{ posterRule.stepYuan }}</text> 推广奖励</view>
-            <view class="poster-rule-line">累计邀 <text class="hl">{{ posterRule.n }}</text> 位 → 总返 <text class="hl">¥{{ posterRule.totalYuan }}</text></view>
-            <view class="poster-rule-line">积分可：① 本店消费抵扣 ② 找商户提现</view>
+            <view class="poster-rule-title">📖 邀 {{ posterRule.n }} 累积积分 活动规则</view>
+            <view class="poster-rule-line">推荐 1 位朋友本店首单 → 你获 <text class="hl">{{ posterRule.stepPoints }}</text> 积分</view>
+            <view class="poster-rule-line">累计推荐 <text class="hl">{{ posterRule.n }}</text> 位 → 活动总积分 <text class="hl">{{ posterRule.totalPoints }}</text></view>
+            <view class="poster-rule-line">积分可：① 本店消费抵扣 ② 向商户申请兑付（商户独立审批）</view>
           </view>
           <view class="poster-qr">
             <image v-if="posterShop.qrUrl" :src="posterShop.qrUrl" mode="aspectFit" class="poster-qr-img" />
@@ -133,7 +134,7 @@ const eligible = ref(false);
 const shops = ref([]);
 const activeIdx = ref(0);
 const totalChildren = ref(0);
-const totalEarn = ref('0.00');
+const totalEarn = ref(0);
 const posterShop = ref(null);
 
 const baseOrigin = computed(() => (typeof location !== 'undefined' ? location.origin : 'https://ke.doupaidoudian.com'));
@@ -172,8 +173,8 @@ const posterRule = computed(() => {
   const totalRebateFen = Math.floor(totalFen * sumRatio / 100);
   return {
     n,
-    stepYuan: fen2yuan(stepFen, false),
-    totalYuan: fen2yuan(totalRebateFen, false),
+    stepPoints: stepFen,
+    totalPoints: totalRebateFen,
   };
 });
 
@@ -202,7 +203,7 @@ onMounted(async () => {
   } catch {}
   try {
     const acct = await getAccount();
-    totalEarn.value = fen2yuan(acct?.promoPointBalance || 0, false);
+    totalEarn.value = acct?.promoPointBalance || 0;
   } catch {}
   loading.value = false;
 });

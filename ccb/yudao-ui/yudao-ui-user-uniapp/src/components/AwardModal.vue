@@ -4,7 +4,7 @@
       <view class="aw-confetti">🎉</view>
       <view class="aw-title">恭喜！让利到账</view>
       <view class="aw-amount">+ ¥{{ (amount/100).toFixed(2) }}</view>
-      <view class="aw-source">{{ source || '推广奖励' }}</view>
+      <view class="aw-source">{{ source || '推广积分' }}</view>
       <view v-if="hint" class="aw-hint">{{ hint }}</view>
       <view class="aw-actions">
         <view class="aw-btn aw-btn-ghost" @click="onClose">知道了</view>

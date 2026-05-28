@@ -10,7 +10,7 @@ export const getPromoConfig = (tenantId) =>
 export const getAccount = (tenantId) =>
   get('/app-api/merchant/mini/promo/account', tenantId ? { tenantId } : {});
 
-// 推广奖励流水（分页倒序）— 传 tenantId 则只看该店；不传 = 跨店
+// 推广积分流水（分页倒序）— 传 tenantId 则只看该店；不传 = 跨店
 export const listPromoRecords = (pageNo = 1, pageSize = 20, tenantId) =>
   get(`/app-api/merchant/mini/promo/promo-records?pageNo=${pageNo}&pageSize=${pageSize}`, tenantId ? { tenantId } : {});
 
@@ -22,7 +22,7 @@ export const listConsumeRecords = (pageNo = 1, pageSize = 20, tenantId) =>
 export const listMyQueues = () =>
   get('/app-api/merchant/mini/promo/my-queues');
 
-// 邀请资格（只有完成购买「推 N 反 1」商品的店才可分享）
+// 邀请资格（只有完成购买「邀 N 累积」商品的店才可分享）
 // 返回 { eligible:boolean, shops:[{tenantId, shopName, queueingCount, completedCount}] }
 export const getInviteEligibility = () =>
   get('/app-api/merchant/mini/promo/invite-eligibility');
@@ -43,7 +43,7 @@ export const bindReferral = (inviterUserId, tenantId) =>
 export const listMySpuStars = (tenantId) =>
   get('/app-api/merchant/mini/promo/my-spu-stars', { tenantId });
 
-// 推广奖励 → 消费积分
+// 推广积分 → 消费积分
 export const convertPromoToConsume = (promoAmount, idempotencyKey) =>
   post(`/app-api/merchant/mini/promo/convert?promoAmount=${promoAmount}&idempotencyKey=${idempotencyKey}`);
 

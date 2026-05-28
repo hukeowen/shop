@@ -17,7 +17,7 @@
     <view class="va-form-wrap">
       <view class="va-form">
         <view class="va-form-t">手机号登录 / 注册</view>
-        <view class="va-form-s">登录享首单立减 + 推广奖励赠送</view>
+        <view class="va-form-s">登录享首单立减 + 推广积分赠送</view>
         <view class="va-field">
           <text class="l">+86</text>
           <input v-model="mobile" type="number" maxlength="11" placeholder="请输入手机号" />
@@ -47,7 +47,7 @@
       <view class="va-sell">
         <view class="va-card warm"><view class="em">💰</view><view class="t">下单返积分</view></view>
         <view class="va-card gold"><view class="em">🎁</view><view class="t">让利池</view></view>
-        <view class="va-card mint"><view class="em">🔥</view><view class="t">推N反1</view></view>
+        <view class="va-card mint"><view class="em">🔥</view><view class="t">邀N累积</view></view>
         <view class="va-card purple"><view class="em">💸</view><view class="t">支持提现</view></view>
       </view>
     </view>

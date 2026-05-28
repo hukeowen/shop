@@ -23,7 +23,7 @@
         </view>
         <view v-if="o.rewardTag" class="order-win-tag" :class="o.rewardTag.cls">
           <text class="em">{{ o.rewardTag.em }}</text>
-          <text>{{ o.rewardTag.text }} <text class="b">+¥{{ o.rewardTag.amount }}</text> · 已入推广奖励</text>
+          <text>{{ o.rewardTag.text }} <text class="b">+¥{{ o.rewardTag.amount }}</text> · 已入推广积分</text>
         </view>
         <view v-for="(it, i) in (o.items || []).slice(0, 3)" :key="it.id || i" class="order-prod">
           <view class="order-prod-pic" :class="prodTone(i)">
@@ -133,7 +133,7 @@ async function switchTab(k) {
         const amt = fen2yuan(o.rewardAmount || o.promoAmount || 0, false);
         if (o.rewardType === 'POOL') rewardTag = { em: '🏆', text: '本单触发商户让利到账', amount: amt };
         else if (o.rewardType === 'QUEUE') rewardTag = { em: '🎁', text: '邀请累积奖 · 完成本期', amount: amt, cls: 'gold' };
-        else if (amt !== '0.00') rewardTag = { em: '💎', text: '本单推广奖励到账', amount: amt };
+        else if (amt !== '0.00') rewardTag = { em: '💎', text: '本单推广积分到账', amount: amt };
       }
       return { ...o, rewardTag };
     });

@@ -1,22 +1,22 @@
 <template>
   <view class="page">
-    <nav-bar :title="shopName ? `${shopName} · 推广奖励` : '推广奖励明细'" />
+    <nav-bar :title="shopName ? `${shopName} · 推广积分` : '推广积分明细'" />
 
     <!-- ━━━━━━━ Hero：累计已获（大字）+ 当前余额（小字） ━━━━━━━ -->
     <view class="hero">
       <view class="hero-bg"></view>
-      <view class="hero-tag">{{ shopName ? `${shopName} · 推广奖励` : '推广奖励（跨店）' }}</view>
-      <view class="hero-amt">{{ fen2yuan(lifetimeFen, false) }} <text class="unit">元</text></view>
-      <view class="hero-sub">累计已获 · 提现申请由商户审批兑付</view>
+      <view class="hero-tag">{{ shopName ? `${shopName} · 推广积分` : '推广积分（跨店）' }}</view>
+      <view class="hero-amt">{{ lifetimeFen }} <text class="unit">积分</text></view>
+      <view class="hero-sub">累计已获 · 积分为商户营销凭证 · 兑付由商户独立审批</view>
       <view class="hero-row">
         <view class="hero-stat">
-          <text class="v">{{ fen2yuan(promoBalance, false) }} <text class="u">元</text></text>
+          <text class="v">{{ promoBalance }} <text class="u">积分</text></text>
           <text class="l">当前可用</text>
         </view>
         <view class="hero-divider"></view>
         <view class="hero-stat">
-          <text class="v">{{ fen2yuan(usedPoints, false) }} <text class="u">元</text></text>
-          <text class="l">已抵扣/提现</text>
+          <text class="v">{{ usedPoints }} <text class="u">积分</text></text>
+          <text class="l">已抵扣 / 已兑付</text>
         </view>
       </view>
     </view>
@@ -35,11 +35,11 @@
           </view>
           <view class="d">
             <text>{{ fmtTime(r.createTime) }}</text>
-            <text v-if="r.balanceAfter != null"> · 余额 {{ fen2yuan(r.balanceAfter, false) }} 元</text>
+            <text v-if="r.balanceAfter != null"> · 余额 {{ r.balanceAfter }} 积分</text>
             <text v-if="explainOf(r)" class="exp"> · {{ explainOf(r) }}</text>
           </view>
         </view>
-        <view class="amt" :class="{ neg: r.amount < 0 }">{{ r.amount > 0 ? '+' : '' }}{{ fen2yuan(r.amount, false) }} <text class="u">元</text></view>
+        <view class="amt" :class="{ neg: r.amount < 0 }">{{ r.amount > 0 ? '+' : '' }}{{ r.amount }} <text class="u">积分</text></view>
       </view>
       <view v-if="loadingMore" class="more">加载中…</view>
       <view v-else-if="hasMore" class="more click" @click="loadMore">点击加载更多</view>
@@ -53,7 +53,7 @@ import { ref, computed, onMounted } from 'vue';
 import { getAccount, listPromoRecords } from '@/api/promo.js';
 import { getMyPromoEarned } from '@/api/shop.js';
 import { listSpuByIds } from '@/api/product.js';
-import { fen2yuan, fmtTime } from '@/utils/format.js';
+import { fmtTime } from '@/utils/format.js';
 
 // 路由参数：tenantId（按店过滤）+ shopName（标题）
 const route = (() => {
@@ -106,7 +106,7 @@ function labelFor(t) {
     CONVERT: '兑换消费积分',
     MANUAL_PATCH: '账户调整',
     REDEEM_ORDER: '优惠抵扣',
-  }[t] || '推广奖励';
+  }[t] || '推广积分';
 }
 // 行图标的彩色样式归类（暖橙 / 蓝 / 绿 / 紫）
 function kindOf(t) {

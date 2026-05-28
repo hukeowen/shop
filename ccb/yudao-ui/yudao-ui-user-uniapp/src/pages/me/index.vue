@@ -14,15 +14,15 @@
           <view v-if="user.isLogin" class="me-phone">
             {{ maskedPhone }} · 已加入 <text class="b">{{ myShops.length }}</text> 家店
           </view>
-          <view v-else class="me-phone">登录即解锁推广奖励 / 商户让利 / 提现</view>
+          <view v-else class="me-phone">登录即解锁推广积分 / 商户让利 / 提现</view>
         </view>
         <view class="me-set">⚙</view>
       </view>
 
       <view class="me-earn">
-        <view class="me-earn-l">累计推广奖励（按店申请兑付）</view>
-        <view class="me-earn-v">{{ fen2yuan(earnPoints, false) }} <text class="me-earn-u">元</text></view>
-        <view v-if="user.isLogin" class="me-earn-grow">↑ 今日 +{{ fen2yuan(todayEarnPoints, false) }} 元</view>
+        <view class="me-earn-l">累计推广积分（按店申请兑付）</view>
+        <view class="me-earn-v">{{ earnPoints }} <text class="me-earn-u">积分</text></view>
+        <view v-if="user.isLogin" class="me-earn-grow">↑ 今日 +{{ todayEarnPoints }} 积分</view>
         <view class="me-earn-acts">
           <view class="me-earn-act primary" @click="goWithdraw">
             <view class="em">💸</view>
@@ -66,7 +66,7 @@
 
     <!-- 资产隔离 tip-bar -->
     <view v-if="myShops.length" class="me-tip-bar">
-      💡 资产按<text class="b">店铺独立</text>：推广奖励 / 消费积分 / 星级 都隔离在每家店账户
+      💡 资产按<text class="b">店铺独立</text>：推广积分 / 消费积分 / 星级 都隔离在每家店账户
     </view>
 
     <!-- 我加入的店铺 (大卡) -->
@@ -92,16 +92,16 @@
       </view>
       <view class="msb-stats">
         <view class="msb-stat" @click.stop="goShopRecords(s, 'promo')">
-          <view class="n gold">{{ s.promoYuan }} <text class="u">元</text></view>
-          <view class="l">推广奖励</view>
+          <view class="n gold">{{ s.promoPointsRaw }} <text class="u">积分</text></view>
+          <view class="l">推广积分</view>
         </view>
         <view class="msb-stat" @click.stop="goShopRecords(s, 'consume')">
-          <view class="n purple">{{ s.consumeYuan }} <text class="u">元</text></view>
+          <view class="n purple">{{ s.consumePointsRaw }} <text class="u">积分</text></view>
           <view class="l">消费积分</view>
         </view>
         <view class="msb-stat">
           <view class="n" :class="s.queueActive ? 'orange' : 'mute'">{{ s.queueCount || 0 }}</view>
-          <view class="l">推 N 反 1</view>
+          <view class="l">邀 N 累积</view>
           <text v-if="s.queueActive" class="micro warn">活跃</text>
         </view>
       </view>
@@ -142,20 +142,20 @@
                 <text class="v">{{ fen2yuan(posterShop.topTuijianSpu.price || 0, false) }}</text>
                 <text v-if="posterShop.topTuijianSpu.marketPrice && posterShop.topTuijianSpu.marketPrice > posterShop.topTuijianSpu.price" class="orig">¥{{ fen2yuan(posterShop.topTuijianSpu.marketPrice, false) }}</text>
               </view>
-              <view class="poster-spu-badge">推 {{ posterShop.topTuijianSpu.tuijianN }} 反 1</view>
+              <view class="poster-spu-badge">邀 {{ posterShop.topTuijianSpu.tuijianN }} 累积</view>
             </view>
           </view>
           <view v-else class="poster-spu empty">
             <view class="poster-spu-body">
               <view class="poster-spu-name">本店推广商品</view>
-              <view class="poster-spu-badge">推广奖励活动</view>
+              <view class="poster-spu-badge">推广积分活动</view>
             </view>
           </view>
           <view v-if="posterRule" class="poster-rule">
-            <view class="poster-rule-title">📖 推 {{ posterRule.n }} 反 1 规则</view>
-            <view class="poster-rule-line">每邀 1 位朋友在本店首单 → 返本品价 <text class="hl">{{ posterRule.stepYuan }}</text> 元推广奖励</view>
-            <view class="poster-rule-line">累计邀 <text class="hl">{{ posterRule.n }}</text> 位 → 总返 <text class="hl">¥{{ posterRule.totalYuan }}</text></view>
-            <view class="poster-rule-line">积分可：① 本店消费抵扣 ② 找商户提现</view>
+            <view class="poster-rule-title">📖 邀 {{ posterRule.n }} 累积 规则</view>
+            <view class="poster-rule-line">推荐 1 位朋友本店首单 → 你获 <text class="hl">{{ posterRule.stepPoints }}</text> 积分</view>
+            <view class="poster-rule-line">累计推荐 <text class="hl">{{ posterRule.n }}</text> 位 → 活动总积分 <text class="hl">{{ posterRule.totalPoints }}</text></view>
+            <view class="poster-rule-line">积分可：① 本店消费抵扣 ② 向商户申请兑付（商户独立审批）</view>
           </view>
           <view class="poster-qr">
             <image v-if="posterShop.qrUrl" :src="posterShop.qrUrl" mode="aspectFit" class="poster-qr-img" />
@@ -178,8 +178,8 @@
     <view class="me-grid">
       <view class="me-grid-title">资产 · 推广</view>
       <view class="me-row" @click="goWallet"><view class="me-row-icon">💰</view><text class="me-row-name">我的钱包（按店铺）</text><text class="me-row-tag">{{ myShops.length }} 家</text><text class="me-row-arrow">›</text></view>
-      <view class="me-row" @click="goPromoRecords"><view class="me-row-icon alt-1">📊</view><text class="me-row-name">推广奖励明细</text><text class="me-row-arrow">›</text></view>
-      <view class="me-row" @click="goQueue"><view class="me-row-icon alt-2">🔥</view><text class="me-row-name">我的队列（推 N 反 1）</text><text v-if="queueTotal" class="me-row-tag">{{ queueTotal }} 个</text><text class="me-row-arrow">›</text></view>
+      <view class="me-row" @click="goPromoRecords"><view class="me-row-icon alt-1">📊</view><text class="me-row-name">推广积分明细</text><text class="me-row-arrow">›</text></view>
+      <view class="me-row" @click="goQueue"><view class="me-row-icon alt-2">🔥</view><text class="me-row-name">我的队列（邀 N 累积）</text><text v-if="queueTotal" class="me-row-tag">{{ queueTotal }} 个</text><text class="me-row-arrow">›</text></view>
       <view class="me-row" @click="goWinners"><view class="me-row-icon alt-3">⭐</view><text class="me-row-name">店铺星级</text><text class="me-row-arrow">›</text></view>
       <view class="me-row" @click="goWinners"><view class="me-row-icon">🏆</view><text class="me-row-name">商户让利公告 / 榜一排名</text><text class="me-row-arrow">›</text></view>
       <view class="me-row" @click="goInvite"><view class="me-row-icon alt-1">🤝</view><text class="me-row-name">邀请好友（先选店铺）</text><text v-if="totalInvited" class="me-row-tag">已邀 {{ totalInvited }} 人</text><text class="me-row-arrow">›</text></view>
@@ -277,12 +277,12 @@ function goWinners()       { uni.reLaunch({ url: '/pages/winners/index' }); }
 function goShop(s) { uni.navigateTo({ url: `/pages/shop/home?id=${s.id || s.tenantId}&tenantId=${s.tenantId || s.id}` }); }
 
 // 跨店海报：按店邀请入口 ——
-//   有资格（购买过推 N 反 1）→ 弹出海报；
+//   有资格（购买过邀 N 累积）→ 弹出海报；
 //   无资格 → 弹 toast 引导先购买。
 function onShopInvite(s) {
   if (!user.isLogin) return goLogin();
   if (!s.inviteEligible) {
-    uni.showToast({ title: '先在本店完成「推 N 反 1」购买才能开启邀请', icon: 'none', duration: 2200 });
+    uni.showToast({ title: '先在本店完成「邀 N 累积」购买才能开启邀请', icon: 'none', duration: 2200 });
     return;
   }
   // 构造海报数据 + QR 链接
@@ -322,8 +322,8 @@ const posterRule = computed(() => {
   const totalRebateFen = Math.floor(totalFen * sumRatio / 100);
   return {
     n,
-    stepYuan: fen2yuan(stepFen, false),
-    totalYuan: fen2yuan(totalRebateFen, false),
+    stepPoints: stepFen,
+    totalPoints: totalRebateFen,
   };
 });
 
@@ -352,7 +352,7 @@ async function load() {
     queues.value = await listMyQueues() || [];
     queueTotal.value = queues.value.length;
   } catch {}
-  // 邀请资格：按店判断 — 只有在该店买过推 N 反 1 才能分享
+  // 邀请资格：按店判断 — 只有在该店买过邀 N 累积 才能分享
   try {
     const r = await getInviteEligibility();
     const map = {};
@@ -369,7 +369,7 @@ async function load() {
       const queue = queues.value.find((q) => q.tenantId === s.tenantId);
       const reqN = queue ? (queue.requiredCount || queue.tuijianN) : 0;
       const queueBar = (queue && reqN > 0) ? {
-        text: `${queue.spuName || '商品'} · 推 ${reqN} 反 1 进度`,
+        text: `${queue.spuName || '商品'} · 邀 ${reqN} 累积进度`,
         bold: `${queue.currentCount || 0}/${reqN}`,
       } : null;
       // VO 字段：promoPoints (Long 分) / points (Long 分，消费积分) / star (Integer) / lastVisitAt
@@ -378,15 +378,15 @@ async function load() {
       return {
         ...s,
         starLevel: star,                      // 兼容旧模板引用
-        promoYuan: fen2yuan(s.promoPoints || 0, false),   // 推广奖励 → 元（100 fen=¥1）
-        consumeYuan: fen2yuan(s.points || 0, false),      // 消费积分 → 元（100 fen=¥1）
+        promoPointsRaw: s.promoPoints || 0,                // 推广积分 (单位"积分")
+        consumePointsRaw: s.points || 0,                  // 消费积分 (单位"积分")
         lastVisitText: s.lastVisitAt ? `最近 ${fmtTime(s.lastVisitAt)}` : '',
         queueCount: queue ? 1 : 0,
         queueActive: !!queue,
         hasQueue: !!queue,
         queueBar,
         starExtraText: star >= 3 ? `${star} 星额外 +${star}%` : '',
-        // 邀请门槛：购买过推 N 反 1 商品（queueing OR completed 均算）
+        // 邀请门槛：购买过邀 N 累积 商品（queueing OR completed 均算）
         inviteEligible: !!elig,
         topTuijianSpu: elig?.topTuijianSpu || null,
       };

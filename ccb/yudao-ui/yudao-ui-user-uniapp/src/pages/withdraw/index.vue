@@ -1,20 +1,20 @@
 <template>
   <view class="page">
-    <nav-bar title="提现申请" />
+    <nav-bar title="积分兑付申请" />
     <view class="card">
       <view class="card-row">
-        <text class="l">可申请提现积分</text>
-        <text class="hl">¥{{ withdrawable }}</text>
+        <text class="l">可申请兑付积分</text>
+        <text class="hl">{{ promoBalance }} 积分</text>
       </view>
     </view>
     <view class="card">
-      <view class="card-title">提现金额（元）</view>
+      <view class="card-title">申请兑付积分数</view>
       <view class="amt-input">
-        <text class="symbol">¥</text>
-        <input v-model="amount" type="digit" placeholder="0.00" @input="onAmountInput" />
-        <text class="all" @click="amount = withdrawable">全部</text>
+        <input v-model="amount" type="number" placeholder="请输入积分数" @input="onAmountInput" />
+        <text class="unit">积分</text>
+        <text class="all" @click="amount = String(promoBalance)">全部</text>
       </view>
-      <view v-if="amtFenInt > 0 && amtFenInt > promoBalance" class="warn">超出可提现余额</view>
+      <view v-if="amtFenInt > 0 && amtFenInt > promoBalance" class="warn">超出可兑付余额</view>
     </view>
     <view class="card">
       <view class="card-title">收款方式</view>
@@ -36,8 +36,10 @@
       <view class="field"><text class="f-l">账号</text><input v-model="bankAccount" placeholder="手机号 / 邮箱" /></view>
     </view>
 
-    <view class="tip">说明：1 推广奖励 = ¥0.01。<text class="b">提现申请由商户审批兑付</text>，到账时间以商户处理为准。平台为技术中介，<text class="b">不承担兑付保证</text>。</view>
-    <view class="submit" :class="{ disabled: !canSubmit }" @click="onSubmit">{{ submitting ? '提交中…' : '申请提现' }}</view>
+    <view class="tip">
+      说明：积分为商户营销活动凭证。<text class="b">兑付申请由商户独立审批</text>，兑付额度、形式（现金 / 优惠券 / 实物）与到账时间均由商户决定。平台仅提供技术信息撮合，<text class="b">不构成兑付承诺 / 担保</text>。
+    </view>
+    <view class="submit" :class="{ disabled: !canSubmit }" @click="onSubmit">{{ submitting ? '提交中…' : '提交申请' }}</view>
   </view>
 </template>
 
@@ -45,15 +47,13 @@
 import { ref, computed, onMounted } from 'vue';
 import { getAccount } from '@/api/promo.js';
 import { applyWithdraw } from '@/api/brokerage.js';
-import { fen2yuan } from '@/utils/format.js';
-
 const promoBalance = ref(0);
-const withdrawable = computed(() => fen2yuan(promoBalance.value, false));
 const amount = ref('');
+// 入参为积分整数，等同于底层 fen 数值
 const amtFenInt = computed(() => {
   const v = Number(amount.value);
   if (Number.isNaN(v) || v <= 0) return 0;
-  return Math.round(v * 100);
+  return Math.round(v);
 });
 function onAmountInput(e) { /* v-model already syncs */ }
 
@@ -71,7 +71,7 @@ const bankBank = ref('');
 const submitting = ref(false);
 const canSubmit = computed(() => {
   if (submitting.value) return false;
-  if (amtFenInt.value < 100) return false; // 最低 ¥1
+  if (amtFenInt.value < 100) return false; // 最低 100 积分
   if (amtFenInt.value > promoBalance.value) return false;
   if (method.value === 'bank' && (!bankName.value || !bankAccount.value || !bankBank.value)) return false;
   if (method.value === 'alipay' && (!bankName.value || !bankAccount.value)) return false;
@@ -115,8 +115,8 @@ onMounted(async () => {
 .l { font-size: 13px; color: $t2; }
 .hl { font-size: 20px; font-weight: 900; color: $o; }
 .amt-input { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid $line; }
-.symbol { font-size: 24px; color: $o; font-weight: 800; }
 .amt-input input { flex: 1; font-size: 24px; font-weight: 800; color: $t1; }
+.amt-input .unit { font-size: 14px; color: $o; font-weight: 700; }
 .all { color: $o; font-size: 12px; font-weight: 700; }
 .warn { color: $danger; font-size: 11px; margin-top: 6px; }
 .m { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid $line; }

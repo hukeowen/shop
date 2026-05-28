@@ -51,7 +51,7 @@ const loading = ref(false);
 const results = ref([]);
 const HIST_KEY = 'kexiaoer-search-history';
 const history = ref([]);
-const hot = ref(['烤地瓜', '阳光玫瑰', '老白茶', '推 N 反 1']);
+const hot = ref(['烤地瓜', '阳光玫瑰', '老白茶', '邀 N 累积']);
 
 function clearHist() { history.value = []; uni.setStorageSync(HIST_KEY, []); }
 function useHist(h) { kw.value = h; doSearch(); }

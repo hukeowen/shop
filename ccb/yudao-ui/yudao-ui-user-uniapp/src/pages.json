@@ -38,7 +38,7 @@
     { "path": "pages/withdraw/index",     "style": { "navigationStyle": "custom", "navigationBarTitleText": "提现申请" } },
     { "path": "pages/queue/index",        "style": { "navigationStyle": "custom", "navigationBarTitleText": "我的队列" } },
     { "path": "pages/rank/index",         "style": { "navigationStyle": "custom", "navigationBarTitleText": "榜一排名" } },
-    { "path": "pages/points/promo",       "style": { "navigationStyle": "custom", "navigationBarTitleText": "推广奖励明细" } },
+    { "path": "pages/points/promo",       "style": { "navigationStyle": "custom", "navigationBarTitleText": "推广积分明细" } },
     { "path": "pages/points/consume",     "style": { "navigationStyle": "custom", "navigationBarTitleText": "消费积分明细" } },
     { "path": "pages/invite/index",       "style": { "navigationStyle": "custom", "navigationBarTitleText": "邀请好友" } },
     { "path": "pages/coupon/index",       "style": { "navigationStyle": "custom", "navigationBarTitleText": "优惠券" } },

@@ -12,7 +12,7 @@
         </view>
       </view>
       <view v-if="shop" class="sh-info">
-        <view class="sh-tag-row">🔥 {{ shop.tagRow || '扫码下单 · 每单返推广奖励' }}</view>
+        <view class="sh-tag-row">🔥 {{ shop.tagRow || '扫码下单 · 每单返推广积分' }}</view>
         <view class="sh-name">{{ shop.shopName || shop.name || '店铺' }}</view>
         <view class="sh-slogan">{{ shop.slogan || '商户营销让利活动' }}</view>
       </view>
@@ -38,9 +38,9 @@
       </view>
     </view>
 
-    <!-- ━━━━━━━━━━ 招牌商品大卡（推 N 反 1 进度 + 规则说明）━━━━━━━━━━ -->
+    <!-- ━━━━━━━━━━ 招牌商品大卡（邀 N 累积积分 活动）━━━━━━━━━━ -->
     <view v-if="signatureSpu" class="signature-card" @click="goSignature">
-      <view class="sig-crown">👑 招牌 No.1{{ nback ? ` · 推 ${nback.n} 反 1` : '' }}</view>
+      <view class="sig-crown">👑 招牌 No.1{{ nback ? ` · 邀 ${nback.n} 累积` : '' }}</view>
       <view class="sig-inner">
         <view class="sig-pic">
           <image v-if="signatureSpu.picUrl && !signatureSpu.imgErr" :src="signatureSpu.picUrl" mode="aspectFill" class="sig-pic-img" @error="signatureSpu.imgErr = true" />
@@ -50,9 +50,9 @@
           <view class="sig-name">{{ signatureSpu.name }}</view>
           <view class="sig-intro">{{ signatureSpu.introduction || '本店招牌 · 现做现卖' }}</view>
           <view class="sig-tags">
-            <view v-if="nback" class="sig-tag promo">推 {{ nback.n }} 反 1</view>
-            <view v-if="nback" class="sig-tag amount">单次返 ¥{{ nback.stepYuan }}</view>
-            <view v-if="nback && nback.cur > 0" class="sig-tag got">你已得 ¥{{ nback.gotYuan }}</view>
+            <view v-if="nback" class="sig-tag promo">邀 {{ nback.n }} 累积</view>
+            <view v-if="nback" class="sig-tag amount">每位约 {{ nback.stepPoints }} 积分</view>
+            <view v-if="nback && nback.cur > 0" class="sig-tag got">你已累积 {{ nback.gotPoints }} 积分</view>
             <view v-else-if="signatureSpu.starCount" class="sig-tag gold">让利商品</view>
           </view>
           <view class="sig-bot">
@@ -66,15 +66,15 @@
       </view>
       <view v-if="nback" class="sig-progress">
         <view class="sig-fill" :style="{ width: nback.pct + '%' }"></view>
-        <view class="sig-progress-txt" v-if="nback.cur > 0">推 N 反 1 进度 {{ nback.cur }}/{{ nback.n }} · 还差 {{ nback.n - nback.cur }} 人 · 累计可返 ¥{{ nback.totalYuan }}</view>
-        <view class="sig-progress-txt" v-else>下单后开启「推 {{ nback.n }} 反 1」 · 邀 {{ nback.n }} 人累计返还本品价</view>
+        <view class="sig-progress-txt" v-if="nback.cur > 0">邀请累积进度 {{ nback.cur }}/{{ nback.n }} · 还差 {{ nback.n - nback.cur }} 位 · 活动总积分 {{ nback.totalPoints }}</view>
+        <view class="sig-progress-txt" v-else>下单激活「邀 {{ nback.n }} 累积」活动 · 满 {{ nback.n }} 位获 {{ nback.totalPoints }} 积分</view>
       </view>
 
       <!-- ━━━ 规则说明（4 步图解）━━━ -->
       <view v-if="nback" class="sig-rule" @click.stop="ruleExpanded = !ruleExpanded">
         <view class="sig-rule-head">
           <text class="em">📖</text>
-          <text class="t">推 {{ nback.n }} 反 1 怎么玩？</text>
+          <text class="t">邀 {{ nback.n }} 累积积分 怎么参与？</text>
           <text class="arr">{{ ruleExpanded ? '收起 ▲' : '点击展开 ▼' }}</text>
         </view>
         <view v-if="ruleExpanded" class="sig-rule-body">
@@ -82,34 +82,35 @@
             <view class="step">
               <view class="step-em">🛒</view>
               <view class="step-t">1. 自己下单</view>
-              <view class="step-d">买本商品激活资格</view>
+              <view class="step-d">购买激活活动资格</view>
             </view>
             <view class="step">
               <view class="step-em">👥</view>
-              <view class="step-t">2. 邀朋友买</view>
-              <view class="step-d">每位朋友在本店首单</view>
+              <view class="step-t">2. 推荐朋友</view>
+              <view class="step-d">朋友在本店首单</view>
             </view>
             <view class="step">
-              <view class="step-em">💰</view>
-              <view class="step-t">3. 自动返</view>
-              <view class="step-d">每人入队你得 ¥{{ nback.stepYuan }}</view>
+              <view class="step-em">💎</view>
+              <view class="step-t">3. 积分入账</view>
+              <view class="step-d">每位约 {{ nback.stepPoints }} 积分</view>
             </view>
             <view class="step">
               <view class="step-em">🏆</view>
               <view class="step-t">4. 满 {{ nback.n }} 完成</view>
-              <view class="step-d">累计共得 ¥{{ nback.totalYuan }}</view>
+              <view class="step-d">总计 {{ nback.totalPoints }} 积分</view>
             </view>
           </view>
           <view class="rule-list">
-            <view class="rule-item"><text class="b">推几反 1</text>：本品 N = <text class="hl">{{ nback.n }}</text>，邀请 {{ nback.n }} 位朋友在本店成功下单</view>
-            <view class="rule-item"><text class="b">每次反多少</text>：每位朋友首单结算时，按本品单价 × 配置比例返还到你的「推广奖励」</view>
-            <view class="rule-item"><text class="b">怎么反</text>：朋友支付完成即刻入账，无人工审核；订单 30 天内退款自动扣回</view>
+            <view class="rule-item"><text class="b">活动名称</text>：邀 <text class="hl">{{ nback.n }}</text> 累积积分（商户独立设定的营销活动）</view>
+            <view class="rule-item"><text class="b">如何参与</text>：在本店购买激活后，推荐 {{ nback.n }} 位新客户在本店首单消费即完成</view>
+            <view class="rule-item"><text class="b">积分发放</text>：每位新客户首单按商户配置比例发放对应积分，活动完成后停止</view>
+            <view class="rule-item"><text class="b">积分性质</text>：积分为商户独立营销活动凭证，<text class="b">非货币、非证券、非投资品</text></view>
             <view class="rule-item"><text class="b">积分用途</text>：
               <text class="usage">① 本店消费抵扣</text> ·
-              <text class="usage">② 找商户申请提现（线下兑付）</text>
+              <text class="usage">② 向商户申请兑付（商户独立审批）</text>
             </view>
           </view>
-          <view class="rule-foot">营销规则与兑付由商户独立负责 · 平台不承担担保</view>
+          <view class="rule-foot">营销活动与积分兑付由商户独立负责 · 平台仅提供技术服务 · 不构成担保 / 投资邀约</view>
         </view>
       </view>
     </view>
@@ -382,7 +383,7 @@ async function loadProducts() {
       const tuijianRatios = cfg.tuijianRatios || null;
       const starCount = cfg.starCount || 0;
       let badge = '', badgeClass = '';
-      if (tuijianN > 0) { badge = `推 ${tuijianN} 反 1`; }
+      if (tuijianN > 0) { badge = `邀 ${tuijianN} 累积`; }
       else if (starCount) { badge = '让利商品'; badgeClass = 'gold'; }
       return reactive({ ...s, tuijianN, tuijianRatios, starCount, badge, badgeClass, imgErr: false });
     });
@@ -445,10 +446,11 @@ function buildNback(n, cur, totalFen, ratiosJson) {
   const pct = n > 0 ? Math.min(100, Math.round((cur / n) * 100)) : 0;
   return {
     n, cur, pct,
-    stepYuan: fen2yuan(stepFen, false),
-    gotYuan: fen2yuan(gotFen, false),
-    gapYuan: fen2yuan(gapFen, false),
-    totalYuan: fen2yuan(totalRebateFen, false),
+    // V044 合规：以"积分"为单位（fen 数值 = 1 积分），不再用 ¥ 元 显示
+    stepPoints: stepFen,
+    gotPoints: gotFen,
+    gapPoints: gapFen,
+    totalPoints: totalRebateFen,
   };
 }
 
@@ -487,7 +489,7 @@ async function loadVip() {
       vip.discountText = rel.discount ? `${(rel.discount * 10).toFixed(0)}` : '';
     }
   } catch {}
-  // "你已赚" / "在该店赚" = 推广奖励 lifetime（累计 amount > 0 的流水，含已抵扣/转换/提现），
+  // "你已赚" / "在该店赚" = 推广积分 lifetime（累计 amount > 0 的流水，含已抵扣/转换/提现），
   // 而非剩余余额；按 fen 转 ¥ 显示
   try {
     const earn = await getMyPromoEarned(route.tenantId);
