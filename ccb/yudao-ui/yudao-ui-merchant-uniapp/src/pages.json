@@ -33,6 +33,13 @@
       }
     },
     {
+      "path": "pages/withdraw-review/index",
+      "style": {
+        "navigationBarTitleText": "用户提现审批",
+        "navigationStyle": "custom"
+      }
+    },
+    {
       "path": "pages/login/index",
       "style": {
         "navigationBarTitleText": "登录",

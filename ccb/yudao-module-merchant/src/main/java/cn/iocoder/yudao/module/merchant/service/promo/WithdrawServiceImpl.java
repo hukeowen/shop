@@ -28,6 +28,8 @@ public class WithdrawServiceImpl implements WithdrawService {
     private static final String STATUS_APPROVED = "APPROVED";
     private static final String STATUS_REJECTED = "REJECTED";
     private static final String STATUS_PAID = "PAID";
+    /** V044 商家用户双确认工作流：商家标记 PAID 后，用户确认收到 → COMPLETED */
+    private static final String STATUS_COMPLETED = "COMPLETED";
 
     @Resource
     private ShopPromoWithdrawMapper withdrawMapper;
@@ -136,6 +138,24 @@ public class WithdrawServiceImpl implements WithdrawService {
     @Override
     public List<ShopPromoWithdrawDO> listByUserId(Long userId) {
         return withdrawMapper.selectListByUserId(userId);
+    }
+
+    /**
+     * V044：用户确认收款。
+     * 状态机：PAID → COMPLETED；仅本人申请可调；幂等。
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void confirmReceived(Long applyId, Long userId) {
+        ShopPromoWithdrawDO record = mustGet(applyId);
+        if (!userId.equals(record.getUserId())) {
+            throw new IllegalStateException("只能确认本人的提现申请");
+        }
+        int rows = withdrawMapper.transitionStatus(applyId, STATUS_PAID, STATUS_COMPLETED, userId,
+                "用户确认已收款");
+        if (rows != 1) {
+            throw new IllegalStateException("当前状态不可确认（仅 PAID 状态可确认）：申请 #" + applyId);
+        }
     }
 
     @Override

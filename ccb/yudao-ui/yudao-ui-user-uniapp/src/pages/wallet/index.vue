@@ -19,9 +19,9 @@
         </view>
       </view>
       <view class="hero-actions">
-        <view class="btn warm" @click="goWithdraw">提现</view>
+        <view class="btn warm" @click="goWithdraw">申请提现</view>
+        <view class="btn ghost" @click="goWithdrawList">提现记录</view>
         <view class="btn ghost" @click="goPromoRecords">推广明细</view>
-        <view class="btn ghost" @click="goConsumeRecords">消费明细</view>
       </view>
     </view>
 
@@ -82,6 +82,7 @@ function labelFor(t) {
 }
 
 function goWithdraw()        { uni.navigateTo({ url: '/pages/withdraw/index' }); }
+function goWithdrawList()    { uni.navigateTo({ url: '/pages/withdraw/list' }); }
 function goPromoRecords()    { uni.navigateTo({ url: '/pages/points/promo' }); }
 function goConsumeRecords()  { uni.navigateTo({ url: '/pages/points/consume' }); }
 

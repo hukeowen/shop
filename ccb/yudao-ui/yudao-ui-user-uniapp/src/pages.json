@@ -45,6 +45,7 @@
     { "path": "pages/favorites/index",    "style": { "navigationStyle": "custom", "navigationBarTitleText": "收藏" } },
     { "path": "pages/address/list",       "style": { "navigationStyle": "custom", "navigationBarTitleText": "收货地址" } },
     { "path": "pages/agreement/index",    "style": { "navigationStyle": "custom", "navigationBarTitleText": "协议" } },
+    { "path": "pages/withdraw/list",      "style": { "navigationStyle": "custom", "navigationBarTitleText": "我的提现记录" } },
     { "path": "pages/login/index",        "style": { "navigationStyle": "custom", "navigationBarTitleText": "登录" } }
   ],
   "globalStyle": {

@@ -79,7 +79,11 @@
         <text class="arrow">›</text>
       </view>
       <view class="menu-item" @click="goProducts">
-        <view class="mi-l"><text class="mi-ic">🛍</text><text>商品营销（推 N 反 1 / 星级 / 积分池）</text></view>
+        <view class="mi-l"><text class="mi-ic">🛍</text><text>商品营销（推 N 反 1 / VIP 等级 / 让利池）</text></view>
+        <text class="arrow">›</text>
+      </view>
+      <view class="menu-item" @click="goWithdrawReview">
+        <view class="mi-l"><text class="mi-ic">💸</text><text>用户提现审批</text></view>
         <text class="arrow">›</text>
       </view>
     </view>
@@ -253,6 +257,10 @@ function goQuota() {
 
 function goProducts() {
   uni.navigateTo({ url: '/pages/product/list' });
+}
+
+function goWithdrawReview() {
+  uni.navigateTo({ url: '/pages/withdraw-review/index' });
 }
 
 function goCoupon() {

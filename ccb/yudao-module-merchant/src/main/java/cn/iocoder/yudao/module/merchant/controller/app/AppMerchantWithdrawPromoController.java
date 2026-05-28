@@ -70,6 +70,16 @@ public class AppMerchantWithdrawPromoController {
         return success(withdrawService.listByUserId(userId));
     }
 
+    @PostMapping("/confirm-received")
+    @Operation(summary = "V044 用户确认已收款 — PAID → COMPLETED")
+    @Parameter(name = "id", description = "提现申请 ID", required = true)
+    @TenantIgnore
+    public CommonResult<Boolean> confirmReceived(@RequestParam("id") @NotNull Long id) {
+        Long userId = SecurityFrameworkUtils.getLoginUserId();
+        withdrawService.confirmReceived(id, userId);
+        return success(true);
+    }
+
     // ==================== 商户审批端（在小程序里也能审）====================
 
     @GetMapping("/page")

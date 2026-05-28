@@ -38,6 +38,9 @@ public interface WithdrawService {
     /** 商户线下打款后标记。状态 APPROVED → PAID。 */
     void markPaid(Long applyId, Long processorId, String remark);
 
+    /** V044：用户确认已收款。状态 PAID → COMPLETED。商家用户双确认工作流终态。 */
+    void confirmReceived(Long applyId, Long userId);
+
     /** 当前用户的提现申请列表（倒序）。 */
     List<ShopPromoWithdrawDO> listByUserId(Long userId);
 
