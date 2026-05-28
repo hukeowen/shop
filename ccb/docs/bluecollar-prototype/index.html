@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>蓝工平台 · 原型导航</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  body { font-family: 'Inter', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif; }
+  .grad { background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 50%, #EC4899 100%); }
+  .card { transition: all .25s ease; }
+  .card:hover { transform: translateY(-4px); box-shadow: 0 20px 40px -10px rgba(79,70,229,.25); }
+  .num-font { font-feature-settings: "tnum"; font-variant-numeric: tabular-nums; }
+  .new-badge { display:inline-block; padding:1px 5px; border-radius:3px; font-size:9px; font-weight:700; background:linear-gradient(135deg,#EC4899,#F59E0B); color:#fff; vertical-align:middle; margin-left:4px; }
+  .star-badge { color:#F59E0B; font-weight:700; }
+</style>
+</head>
+<body class="bg-slate-50 min-h-screen">
+
+<header class="grad text-white relative overflow-hidden">
+  <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,.18),transparent_50%)]"></div>
+  <div class="relative max-w-6xl mx-auto px-6 py-16">
+    <div class="flex items-center gap-3 mb-4">
+      <div class="w-10 h-10 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center font-bold">蓝</div>
+      <span class="text-sm tracking-widest opacity-80">BLUECOLLAR PLATFORM · PROTOTYPE v0.3</span>
+    </div>
+    <h1 class="text-5xl font-extrabold tracking-tight mb-3">蓝工平台 · 千亿目标 MVP 原型</h1>
+    <p class="text-xl opacity-90 max-w-2xl">蓝领招聘 BOSS + 派遣行业钉钉 + 蓝领芝麻信用 + 蓝领支付宝 — 四合一</p>
+    <div class="mt-6 flex flex-wrap gap-3 text-sm">
+      <span class="px-3 py-1 rounded-full bg-white/15">47 页面</span>
+      <span class="px-3 py-1 rounded-full bg-white/15">三端打通</span>
+      <span class="px-3 py-1 rounded-full bg-white/15">飞轮闭环</span>
+      <span class="px-3 py-1 rounded-full bg-white/15">融资演示就绪</span>
+      <span class="px-3 py-1 rounded-full bg-yellow-400/30 border border-yellow-400/50">⭐ AI 职业规划</span>
+    </div>
+    <div class="mt-8 grid grid-cols-4 gap-4 max-w-3xl text-white/95">
+      <div class="bg-white/10 backdrop-blur rounded-xl p-3"><div class="text-2xl font-extrabold num-font">5.23M</div><div class="text-[10px] opacity-80">注册工人</div></div>
+      <div class="bg-white/10 backdrop-blur rounded-xl p-3"><div class="text-2xl font-extrabold num-font">8,234</div><div class="text-[10px] opacity-80">合作甲方</div></div>
+      <div class="bg-white/10 backdrop-blur rounded-xl p-3"><div class="text-2xl font-extrabold num-font">¥328M</div><div class="text-[10px] opacity-80">月度 GMV</div></div>
+      <div class="bg-white/10 backdrop-blur rounded-xl p-3"><div class="text-2xl font-extrabold num-font">12.8 亿</div><div class="text-[10px] opacity-80">月 API 调用</div></div>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-6xl mx-auto px-6 -mt-12 pb-16">
+  <div class="grid md:grid-cols-3 gap-6">
+
+    <a href="./worker/home.html" class="card block bg-white rounded-2xl p-6 shadow-md border border-slate-100">
+      <div class="w-12 h-12 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center mb-4">
+        <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="6" y="2" width="12" height="20" rx="2"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+      </div>
+      <div class="text-xs text-blue-600 font-semibold mb-2">C 端 · H5 移动 · 17 页</div>
+      <h3 class="text-xl font-bold text-slate-900 mb-2">蓝领工人 APP</h3>
+      <p class="text-sm text-slate-500 mb-4">求职 · 工分 · IM · 入职 · 考勤 · 工资 · 工友圈 · AI规划 · 培训 · 保险 · 法务 · 健康 · 老乡</p>
+      <div class="text-blue-600 text-sm font-medium">进入 H5 原型 →</div>
+    </a>
+
+    <a href="./dispatch/dashboard.html" class="card block bg-white rounded-2xl p-6 shadow-md border border-slate-100">
+      <div class="w-12 h-12 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center mb-4">
+        <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      </div>
+      <div class="text-xs text-indigo-600 font-semibold mb-2">B 端 · 桌面 SaaS · 16 页</div>
+      <h3 class="text-xl font-bold text-slate-900 mb-2">派遣公司管家</h3>
+      <p class="text-sm text-slate-500 mb-4">招聘 · 人才 · IM · 在岗 · 合同 · 薪酬 · 社保 · 个税 · 对账 · 发票 · 甲方 · 数据 · 合规</p>
+      <div class="text-indigo-600 text-sm font-medium">进入桌面端 →</div>
+    </a>
+
+    <a href="./admin/dashboard.html" class="card block bg-white rounded-2xl p-6 shadow-md border border-slate-100">
+      <div class="w-12 h-12 rounded-xl bg-fuchsia-100 text-fuchsia-600 flex items-center justify-center mb-4">
+        <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33"/></svg>
+      </div>
+      <div class="text-xs text-fuchsia-600 font-semibold mb-2">平台 · 桌面 后台 · 14 页</div>
+      <h3 class="text-xl font-bold text-slate-900 mb-2">平台管理后台</h3>
+      <p class="text-sm text-slate-500 mb-4">驾驶舱 · 工人 · 派遣 · 甲方 · 招聘审核 · 工分 · 风控 · 审计 · 财务 · 客服 · 运营 · 通知 · 权限 · API</p>
+      <div class="text-fuchsia-600 text-sm font-medium">进入后台 →</div>
+    </a>
+
+  </div>
+
+  <!-- 飞轮卡 -->
+  <section class="mt-10 bg-gradient-to-br from-slate-900 via-indigo-900 to-purple-900 rounded-2xl p-8 text-white relative overflow-hidden">
+    <div class="absolute -top-20 -right-20 w-72 h-72 bg-pink-500/15 rounded-full blur-3xl"></div>
+    <div class="absolute -bottom-32 -left-20 w-72 h-72 bg-cyan-500/15 rounded-full blur-3xl"></div>
+    <div class="relative">
+      <h2 class="text-2xl font-bold mb-4">🚀 四大飞轮 · 千亿故事讲给 VC 听</h2>
+      <div class="grid md:grid-cols-2 gap-5 text-sm">
+        <div class="bg-white/5 backdrop-blur border border-white/10 rounded-xl p-4">
+          <div class="text-pink-300 font-bold mb-2">① 工分信用飞轮（蓝领芝麻信用）</div>
+          <p class="opacity-90">工人攒分 → 派遣公司付费看高分 → 金融机构付费查工分 → 工人更想攒分 → 数据资产指数增长</p>
+        </div>
+        <div class="bg-white/5 backdrop-blur border border-white/10 rounded-xl p-4">
+          <div class="text-cyan-300 font-bold mb-2">② SaaS 网络效应（派遣行业钉钉）</div>
+          <p class="opacity-90">中小派遣公司用 SaaS → 接入工分体系 → 接入金融服务 → 客户黏性极强 → 行业标准制定者</p>
+        </div>
+        <div class="bg-white/5 backdrop-blur border border-white/10 rounded-xl p-4">
+          <div class="text-amber-300 font-bold mb-2">③ C 端社交飞轮（蓝领抖音）</div>
+          <p class="opacity-90">工友圈 + 老乡 + 邀请 → 自传播获客 → 派遣公司点评双向制约 → 工人离不开平台</p>
+        </div>
+        <div class="bg-white/5 backdrop-blur border border-white/10 rounded-xl p-4">
+          <div class="text-emerald-300 font-bold mb-2">④ AI 增量价值（蓝领私人导师）</div>
+          <p class="opacity-90">AI 职业规划 → 推荐课程 → 工分上涨 → 跳到更好工作 → 平台抽成 → AI 训练数据更好</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 页面索引 -->
+  <section class="mt-10 bg-white rounded-2xl p-8 shadow-sm border border-slate-100">
+    <h2 class="text-2xl font-bold text-slate-900 mb-6">全部页面索引（47 页）</h2>
+    <div class="grid md:grid-cols-3 gap-8 text-sm">
+
+      <div>
+        <div class="text-blue-600 font-bold mb-3 flex items-center justify-between">
+          <span>🔵 蓝领工人 APP (H5)</span><span class="text-xs text-slate-400 font-normal">17 页</span>
+        </div>
+        <div class="text-[10px] text-slate-400 uppercase tracking-widest mb-1.5">基础流程</div>
+        <ul class="space-y-1.5 text-slate-600 mb-3">
+          <li>· <a class="hover:text-blue-600" href="./worker/login.html">登录 / 注册</a></li>
+          <li>· <a class="hover:text-blue-600" href="./worker/home.html">首页（求职大厅）</a></li>
+          <li>· <a class="hover:text-blue-600" href="./worker/job-detail.html">职位详情</a></li>
+          <li>· <a class="hover:text-blue-600" href="./worker/chat.html">IM 对话（防跳单）</a></li>
+          <li>· <a class="hover:text-blue-600" href="./worker/profile.html">我的</a></li>
+        </ul>
+        <div class="text-[10px] text-slate-400 uppercase tracking-widest mb-1.5">⭐ 灵魂功能</div>
+        <ul class="space-y-1.5 text-slate-600 mb-3">
+          <li>· <a class="hover:text-blue-600" href="./worker/credit.html"><span class="star-badge">⭐</span> 工分中心</a></li>
+          <li>· <a class="hover:text-blue-600" href="./worker/career.html"><span class="star-badge">⭐</span> AI 职业规划<span class="new-badge">NEW</span></a></li>
+          <li>· <a class="hover:text-blue-600" href="./worker/invite.html">邀请工友（拉新核武器）</a></li>
+        </ul>
+        <div class="text-[10px] text-slate-400 uppercase tracking-widest mb-1.5">入职后</div>
+        <ul class="space-y-1.5 text-slate-600 mb-3">
+          <li>· <a class="hover:text-blue-600" href="./worker/contract.html">电子合同</a></li>
+          <li>· <a class="hover:text-blue-600" href="./worker/attendance.html">考勤打卡</a></li>
+          <li>· <a class="hover:text-blue-600" href="./worker/salary.html">工资条 + 借支</a></li>
+        </ul>
+        <div class="text-[10px] text-slate-400 uppercase tracking-widest mb-1.5">增值服务</div>
+        <ul class="space-y-1.5 text-slate-600">
+          <li>· <a class="hover:text-blue-600" href="./worker/circle.html">工友圈 · 派遣点评</a></li>
+          <li>· <a class="hover:text-blue-600" href="./worker/training.html">培训学习中心<span class="new-badge">NEW</span></a></li>
+          <li>· <a class="hover:text-blue-600" href="./worker/insurance.html">保险中心<span class="new-badge">NEW</span></a></li>
+          <li>· <a class="hover:text-blue-600" href="./worker/legal.html">维权 / 法务咨询<span class="new-badge">NEW</span></a></li>
+          <li>· <a class="hover:text-blue-600" href="./worker/health.html">健康档案<span class="new-badge">NEW</span></a></li>
+          <li>· <a class="hover:text-blue-600" href="./worker/local.html">老乡 / 找房<span class="new-badge">NEW</span></a></li>
+        </ul>
+      </div>
+
+      <div>
+        <div class="text-indigo-600 font-bold mb-3 flex items-center justify-between">
+          <span>🔷 派遣公司 SaaS</span><span class="text-xs text-slate-400 font-normal">16 页</span>
+        </div>
+        <div class="text-[10px] text-slate-400 uppercase tracking-widest mb-1.5">驾驶舱 / 招聘</div>
+        <ul class="space-y-1.5 text-slate-600 mb-3">
+          <li>· <a class="hover:text-indigo-600" href="./dispatch/dashboard.html">工作台 / 驾驶舱</a></li>
+          <li>· <a class="hover:text-indigo-600" href="./dispatch/jobs.html">招聘管理</a></li>
+          <li>· <a class="hover:text-indigo-600" href="./dispatch/job-create.html">发布职位</a></li>
+        </ul>
+        <div class="text-[10px] text-slate-400 uppercase tracking-widest mb-1.5">人才 / 沟通 / 用工</div>
+        <ul class="space-y-1.5 text-slate-600 mb-3">
+          <li>· <a class="hover:text-indigo-600" href="./dispatch/talents.html"><span class="star-badge">⭐</span> 人才搜索（按工分）</a></li>
+          <li>· <a class="hover:text-indigo-600" href="./dispatch/talent-detail.html">人才详情</a></li>
+          <li>· <a class="hover:text-indigo-600" href="./dispatch/chat.html">IM 沟通</a></li>
+          <li>· <a class="hover:text-indigo-600" href="./dispatch/onboarding.html">在岗管理（AI流失预警）</a></li>
+          <li>· <a class="hover:text-indigo-600" href="./dispatch/contract-mgmt.html">合同管理库<span class="new-badge">NEW</span></a></li>
+        </ul>
+        <div class="text-[10px] text-slate-400 uppercase tracking-widest mb-1.5">⭐ 财务管理（你最关心）</div>
+        <ul class="space-y-1.5 text-slate-600 mb-3">
+          <li>· <a class="hover:text-indigo-600" href="./dispatch/salary.html"><span class="star-badge">⭐</span> 薪酬发放<span class="new-badge">NEW</span></a></li>
+          <li>· <a class="hover:text-indigo-600" href="./dispatch/social.html">社保公积金<span class="new-badge">NEW</span></a></li>
+          <li>· <a class="hover:text-indigo-600" href="./dispatch/tax.html">个税申报<span class="new-badge">NEW</span></a></li>
+          <li>· <a class="hover:text-indigo-600" href="./dispatch/reconciliation.html">对账中心<span class="new-badge">NEW</span></a></li>
+          <li>· <a class="hover:text-indigo-600" href="./dispatch/invoice.html">发票管理<span class="new-badge">NEW</span></a></li>
+        </ul>
+        <div class="text-[10px] text-slate-400 uppercase tracking-widest mb-1.5">客户 / 数据 / 合规</div>
+        <ul class="space-y-1.5 text-slate-600">
+          <li>· <a class="hover:text-indigo-600" href="./dispatch/clients.html">甲方管理 CRM<span class="new-badge">NEW</span></a></li>
+          <li>· <a class="hover:text-indigo-600" href="./dispatch/analytics.html">数据分析</a></li>
+          <li>· <a class="hover:text-indigo-600" href="./dispatch/compliance.html">风控合规<span class="new-badge">NEW</span></a></li>
+        </ul>
+      </div>
+
+      <div>
+        <div class="text-fuchsia-600 font-bold mb-3 flex items-center justify-between">
+          <span>🟣 平台管理后台</span><span class="text-xs text-slate-400 font-normal">14 页</span>
+        </div>
+        <div class="text-[10px] text-slate-400 uppercase tracking-widest mb-1.5">驾驶舱 / 用户</div>
+        <ul class="space-y-1.5 text-slate-600 mb-3">
+          <li>· <a class="hover:text-fuchsia-600" href="./admin/dashboard.html">数据驾驶舱</a></li>
+          <li>· <a class="hover:text-fuchsia-600" href="./admin/workers.html">工人管理 (5.2M)</a></li>
+          <li>· <a class="hover:text-fuchsia-600" href="./admin/dispatches.html">派遣公司 (8,932)</a></li>
+          <li>· <a class="hover:text-fuchsia-600" href="./admin/clients.html"><span class="star-badge">⭐</span> 甲方 / 用工单位 (8,234)<span class="new-badge">NEW</span></a></li>
+        </ul>
+        <div class="text-[10px] text-slate-400 uppercase tracking-widest mb-1.5">业务 / 风控 / 财务</div>
+        <ul class="space-y-1.5 text-slate-600 mb-3">
+          <li>· <a class="hover:text-fuchsia-600" href="./admin/jobs-audit.html">招聘审核</a></li>
+          <li>· <a class="hover:text-fuchsia-600" href="./admin/credit.html"><span class="star-badge">⭐</span> 工分管理</a></li>
+          <li>· <a class="hover:text-fuchsia-600" href="./admin/risk.html">风控告警（实时）</a></li>
+          <li>· <a class="hover:text-fuchsia-600" href="./admin/audit.html">审计日志<span class="new-badge">NEW</span></a></li>
+          <li>· <a class="hover:text-fuchsia-600" href="./admin/finance.html">财务对账</a></li>
+        </ul>
+        <div class="text-[10px] text-slate-400 uppercase tracking-widest mb-1.5">客服 / 运营</div>
+        <ul class="space-y-1.5 text-slate-600 mb-3">
+          <li>· <a class="hover:text-fuchsia-600" href="./admin/tickets.html"><span class="star-badge">⭐</span> 客服工单<span class="new-badge">NEW</span></a></li>
+          <li>· <a class="hover:text-fuchsia-600" href="./admin/campaigns.html">运营活动<span class="new-badge">NEW</span></a></li>
+          <li>· <a class="hover:text-fuchsia-600" href="./admin/notifications.html">公告通知中心<span class="new-badge">NEW</span></a></li>
+        </ul>
+        <div class="text-[10px] text-slate-400 uppercase tracking-widest mb-1.5">系统 / 开放</div>
+        <ul class="space-y-1.5 text-slate-600">
+          <li>· <a class="hover:text-fuchsia-600" href="./admin/roles.html">权限管理 RBAC<span class="new-badge">NEW</span></a></li>
+          <li>· <a class="hover:text-fuchsia-600" href="./admin/api.html"><span class="star-badge">⭐</span> API 开放平台 (¥3.85M/月)<span class="new-badge">NEW</span></a></li>
+        </ul>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 演示路径 -->
+  <section class="mt-10 bg-white rounded-2xl p-8 shadow-sm border border-slate-100">
+    <h2 class="text-xl font-bold text-slate-900 mb-4">🎬 推荐的 VC 演示路径（5 分钟讲完故事）</h2>
+    <ol class="space-y-3 text-sm text-slate-600">
+      <li class="flex gap-3"><span class="flex-shrink-0 w-7 h-7 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold">1</span><div><b class="text-slate-900">蓝领工人首页 → 工分中心 → AI 职业规划</b>（30 秒）→ 让 VC 感受到"这不是招聘工具，是蓝领的私人成长管家"</div></li>
+      <li class="flex gap-3"><span class="flex-shrink-0 w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold">2</span><div><b class="text-slate-900">派遣公司管家 → 人才搜索 → 薪酬发放 → 对账中心</b>（90 秒）→ 让 VC 理解"我们是派遣行业的钉钉，不是新增对手"</div></li>
+      <li class="flex gap-3"><span class="flex-shrink-0 w-7 h-7 rounded-full bg-fuchsia-100 text-fuchsia-700 flex items-center justify-center font-bold">3</span><div><b class="text-slate-900">平台后台 → 驾驶舱 → 工分管理 → API 开放平台</b>（90 秒）→ 让 VC 看到"千亿想象空间"（5.2M 工人 + 12.8 亿 API 调用 + 蓝领信用是央行盲区）</div></li>
+      <li class="flex gap-3"><span class="flex-shrink-0 w-7 h-7 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">4</span><div><b class="text-slate-900">回到工人端 → 邀请工友 + 工友圈</b>（30 秒）→ 让 VC 看见"获客成本被压到行业 1/3 的飞轮"</div></li>
+      <li class="flex gap-3"><span class="flex-shrink-0 w-7 h-7 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center font-bold">5</span><div><b class="text-slate-900">合规与防御</b>（60 秒）→ 工人正规劳动合同、派遣端合规中心、平台审计日志 — 告诉 VC "我们不是灰色生意"</div></li>
+    </ol>
+  </section>
+
+  <p class="text-center text-xs text-slate-400 mt-8">
+    Prototype v0.3 · HTML + Tailwind CDN · 无需安装 · 双击 HTML 文件即可预览 · 47 页全套
+  </p>
+</main>
+
+</body>
+</html>

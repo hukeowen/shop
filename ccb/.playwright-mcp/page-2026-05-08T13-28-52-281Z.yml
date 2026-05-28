@@ -1,0 +1,48 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e87]:
+    - generic [ref=e91]: 我的订单
+    - generic [ref=e95]:
+      - generic [ref=e96]:
+        - generic [ref=e97]: 我的订单
+        - generic [ref=e98]:
+          - generic [ref=e99]: 全部
+          - generic [ref=e100]: 待付款
+          - generic [ref=e101]: 待发货
+          - generic [ref=e102]: 待收货
+          - generic [ref=e103]: 已完成
+      - generic [ref=e105]:
+        - generic [ref=e106]:
+          - generic [ref=e107]: 加
+          - generic [ref=e108]: 加载中...
+          - generic [ref=e109]: 1 单
+          - generic [ref=e110]: ›
+        - generic [ref=e111]:
+          - generic [ref=e112]:
+            - generic [ref=e113]: "#o202605082128501"
+            - generic [ref=e114]: 待付款
+          - generic [ref=e115]:
+            - img [ref=e118]
+            - generic [ref=e120]: 海福盛干贝炖鸡粥
+            - generic [ref=e121]:
+              - generic [ref=e122]: ¥5.50
+              - generic [ref=e123]: x 1
+          - generic [ref=e124]:
+            - generic [ref=e125]: 5-8 21:28
+            - generic [ref=e127]: 立即付款
+      - generic [ref=e129]:
+        - generic [ref=e130]:
+          - generic [ref=e131]: 🏠
+          - generic [ref=e132]: 首页
+        - generic [ref=e133]:
+          - generic [ref=e134]: 📋
+          - generic [ref=e135]: 订单
+        - generic [ref=e136]:
+          - generic [ref=e137]: 🛒
+          - generic [ref=e138]: 购物车
+        - generic [ref=e139]:
+          - generic [ref=e140]: 👤
+          - generic [ref=e141]: 我的
+  - generic:
+    - generic:
+      - generic:
+        - paragraph: 还需线上支付 ¥5.50

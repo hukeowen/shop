@@ -1,0 +1,35 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e69]:
+    - generic [ref=e70]:
+      - generic [ref=e72]: ‹
+      - generic [ref=e73]: 商品管理
+      - generic [ref=e74]:
+        - generic [ref=e75]: ＋
+        - text: 新增
+    - generic [ref=e76]:
+      - generic [ref=e77]:
+        - text: 全部
+        - generic [ref=e78]: (1)
+      - generic [ref=e79]:
+        - text: 在售
+        - generic [ref=e80]: (1)
+      - generic [ref=e81]:
+        - text: 已下架
+        - generic [ref=e82]: (0)
+    - generic [ref=e84]:
+      - generic [ref=e88]:
+        - generic [ref=e89]: v8测试商品-推5反1
+        - generic [ref=e90]: 分类：其他
+        - generic [ref=e91]:
+          - generic [ref=e92]: ¥100.00
+          - generic [ref=e93]: 已售 15
+      - generic [ref=e94]:
+        - generic [ref=e95] [cursor=pointer]: 下架
+        - generic [ref=e96] [cursor=pointer]: 编辑
+        - generic [ref=e97] [cursor=pointer]: 删除
+  - generic [ref=e101]:
+    - strong [ref=e103]: 提示
+    - generic [ref=e104]: 确认下架"v8测试商品-推5反1"？
+    - generic [ref=e105]:
+      - generic [ref=e106] [cursor=pointer]: 取消
+      - generic [ref=e107] [cursor=pointer]: 确定

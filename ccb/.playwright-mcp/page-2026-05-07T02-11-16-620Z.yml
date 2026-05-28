@@ -1,0 +1,16 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e93]:
+    - generic [ref=e94]:
+      - generic [ref=e95]: 摊
+      - generic [ref=e96]: 摊小二
+      - generic [ref=e97]: 小摊主的生意伙伴
+    - generic [ref=e98]:
+      - generic [ref=e99]: 欢迎
+      - generic [ref=e100]: 已登录 · 你可以继续
+      - generic [ref=e101] [cursor=pointer]: 开始逛店
+      - generic [ref=e102] [cursor=pointer]: 我是商户，去申请
+    - generic [ref=e104]: Phase 0.2 · 微信小程序登录接后端 BFF
+  - generic:
+    - generic:
+      - generic:
+        - paragraph: 登录失败：login:fail method 'uni.login' not supported

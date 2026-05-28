@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>蓝工 · 我的</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="../shared/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body class="bg-slate-100 min-h-screen pb-10">
+
+<div class="text-center pt-6">
+  <a href="../index.html" class="text-sm text-slate-500 hover:text-blue-600">← 返回原型导航</a>
+</div>
+
+<div class="phone-frame">
+  <div class="phone-notch"></div>
+  <div class="phone-screen">
+    <div class="status-bar"><span>9:41</span><span class="flex gap-1 items-center"><span>●●●●●</span><span class="text-xs">5G</span><span class="text-xs">100%</span></span></div>
+
+    <div class="phone-content">
+
+      <!-- 顶部用户区 -->
+      <div class="grad-blue px-5 pt-3 pb-8 text-white relative overflow-hidden">
+        <div class="absolute -top-12 -right-12 w-48 h-48 bg-white/10 rounded-full"></div>
+        <div class="absolute -bottom-16 -left-10 w-40 h-40 bg-white/5 rounded-full"></div>
+
+        <div class="flex items-center justify-end gap-3 relative">
+          <button>
+            <svg width="22" height="22" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+          <button class="relative">
+            <svg width="22" height="22" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            <span class="absolute -top-1 -right-1 w-2 h-2 bg-red-400 rounded-full"></span>
+          </button>
+        </div>
+
+        <!-- 头像 + 名字 -->
+        <div class="mt-2 flex items-center gap-3 relative">
+          <div class="relative">
+            <div class="w-16 h-16 rounded-full bg-white p-0.5">
+              <div class="w-full h-full rounded-full bg-gradient-to-br from-amber-300 to-orange-500 flex items-center justify-center text-white text-2xl font-extrabold">王</div>
+            </div>
+            <span class="absolute -bottom-1 -right-1 w-5 h-5 badge-gold rounded-full flex items-center justify-center text-[9px] font-bold border-2 border-white">金</span>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-1.5">
+              <span class="text-lg font-extrabold">王伟</span>
+              <span class="bg-emerald-400 text-white text-[10px] px-1.5 py-0.5 rounded font-bold flex items-center gap-0.5">
+                <svg width="10" height="10" fill="currentColor" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" fill="none" stroke="currentColor" stroke-width="3"/></svg>
+                已实名
+              </span>
+            </div>
+            <div class="text-xs opacity-90 mt-1">ID: BLC2026 0001 · 杭州 · 男 28岁</div>
+            <a href="credit.html" class="inline-flex items-center gap-1 mt-2 bg-white/20 backdrop-blur px-2 py-0.5 rounded-full text-xs">
+              <span>工分 782 · 黄金 III</span>
+              <svg width="10" height="10" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+            </a>
+          </div>
+        </div>
+
+        <!-- 数据栏 -->
+        <div class="mt-5 bg-white/15 backdrop-blur rounded-2xl p-3 grid grid-cols-3 relative">
+          <div class="text-center border-r border-white/20">
+            <div class="text-lg font-extrabold">¥82,560</div>
+            <div class="text-[10px] opacity-80 mt-0.5">累计收入</div>
+          </div>
+          <div class="text-center border-r border-white/20">
+            <div class="text-lg font-extrabold">386 天</div>
+            <div class="text-[10px] opacity-80 mt-0.5">在岗时长</div>
+          </div>
+          <div class="text-center">
+            <div class="text-lg font-extrabold">4 家</div>
+            <div class="text-[10px] opacity-80 mt-0.5">服务公司</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 我的简历卡 -->
+      <div class="px-4 -mt-4 relative">
+        <div class="bg-white rounded-2xl shadow-md p-4">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
+                <svg width="20" height="20" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              </div>
+              <div>
+                <div class="text-sm font-bold text-slate-900">我的简历</div>
+                <div class="text-[11px] text-slate-400 mt-0.5">最近 3 天被 12 家派遣公司查看</div>
+              </div>
+            </div>
+            <button class="text-xs bg-blue-50 text-blue-600 font-bold px-3 py-1.5 rounded-lg">完善</button>
+          </div>
+          <div class="mt-3 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+            <div class="h-full bg-gradient-to-r from-blue-500 to-blue-400" style="width:78%"></div>
+          </div>
+          <div class="flex justify-between text-[10px] text-slate-400 mt-1">
+            <span>完成度 78%</span>
+            <span>补全简历 +5 工分</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 常用功能 Grid -->
+      <div class="px-4 mt-4">
+        <div class="bg-white rounded-2xl shadow-sm p-4">
+          <h3 class="font-bold text-slate-900 text-sm mb-3">常用功能</h3>
+          <div class="grid grid-cols-4 gap-3">
+            <a href="contract.html" class="flex flex-col items-center gap-1">
+              <div class="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
+                <svg width="22" height="22" fill="none" stroke="#1677FF" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              </div>
+              <span class="text-xs text-slate-700">我的合同</span>
+            </a>
+            <a href="attendance.html" class="flex flex-col items-center gap-1">
+              <div class="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center">
+                <svg width="22" height="22" fill="none" stroke="#10B981" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              </div>
+              <span class="text-xs text-slate-700">我的考勤</span>
+            </a>
+            <a href="salary.html" class="flex flex-col items-center gap-1">
+              <div class="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center">
+                <svg width="22" height="22" fill="none" stroke="#F59E0B" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              </div>
+              <span class="text-xs text-slate-700">我的工资</span>
+            </a>
+            <a href="job-detail.html" class="flex flex-col items-center gap-1">
+              <div class="w-12 h-12 rounded-xl bg-pink-100 flex items-center justify-center">
+                <svg width="22" height="22" fill="none" stroke="#EC4899" stroke-width="2" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+              </div>
+              <span class="text-xs text-slate-700">收藏职位</span>
+            </a>
+            <a href="#" class="flex flex-col items-center gap-1">
+              <div class="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center relative">
+                <svg width="22" height="22" fill="none" stroke="#A855F7" stroke-width="2" viewBox="0 0 24 24"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+                <span class="absolute -top-1 -right-1 bg-rose-500 text-white text-[9px] px-1 rounded">NEW</span>
+              </div>
+              <span class="text-xs text-slate-700">技能认证</span>
+            </a>
+            <a href="#" class="flex flex-col items-center gap-1">
+              <div class="w-12 h-12 rounded-xl bg-rose-100 flex items-center justify-center">
+                <svg width="22" height="22" fill="none" stroke="#F43F5E" stroke-width="2" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+              </div>
+              <span class="text-xs text-slate-700">健康证</span>
+            </a>
+            <a href="#" class="flex flex-col items-center gap-1">
+              <div class="w-12 h-12 rounded-xl bg-cyan-100 flex items-center justify-center">
+                <svg width="22" height="22" fill="none" stroke="#06B6D4" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              </div>
+              <span class="text-xs text-slate-700">紧急联系人</span>
+            </a>
+            <a href="invite.html" class="flex flex-col items-center gap-1 relative">
+              <div class="w-12 h-12 rounded-xl bg-orange-100 flex items-center justify-center">
+                <svg width="22" height="22" fill="none" stroke="#F97316" stroke-width="2" viewBox="0 0 24 24"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+              </div>
+              <span class="text-xs text-slate-700">邀请工友</span>
+              <span class="absolute -top-1 right-1 text-[9px] bg-rose-500 text-white px-1.5 py-0.5 rounded-full font-bold">¥500</span>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- 工分特权快捷区 -->
+      <div class="px-4 mt-4">
+        <a href="credit.html" class="block bg-gradient-to-br from-amber-500 via-orange-500 to-purple-600 rounded-2xl p-4 text-white relative overflow-hidden">
+          <div class="absolute -top-8 -right-8 w-32 h-32 bg-white/10 rounded-full"></div>
+          <div class="flex items-center justify-between relative">
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="badge-gold text-[10px] px-2 py-0.5 rounded-full font-bold">黄金 III</span>
+                <span class="text-xs opacity-90">已享 5 项特权</span>
+              </div>
+              <div class="text-base font-bold mt-1.5">距钻石仅 118 分 · 解锁 8 项特权</div>
+              <div class="text-[11px] opacity-90 mt-0.5">优先派单 · 借支上限翻倍 · 专属客服</div>
+            </div>
+            <svg width="24" height="24" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+          </div>
+        </a>
+      </div>
+
+      <!-- 增值服务 -->
+      <div class="px-4 mt-4">
+        <div class="bg-white rounded-2xl shadow-sm p-4">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="font-bold text-slate-900 text-sm">增值服务</h3>
+            <span class="text-[10px] text-slate-400">为蓝领量身定制</span>
+          </div>
+          <div class="grid grid-cols-4 gap-2">
+            <a href="#" class="text-center">
+              <div class="w-11 h-11 mx-auto rounded-xl bg-rose-100 flex items-center justify-center mb-1">
+                <svg width="20" height="20" fill="none" stroke="#F43F5E" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              </div>
+              <div class="text-[11px] text-slate-700">意外险</div>
+              <div class="text-[9px] text-rose-500">¥9/月起</div>
+            </a>
+            <a href="salary.html" class="text-center">
+              <div class="w-11 h-11 mx-auto rounded-xl bg-blue-100 flex items-center justify-center mb-1">
+                <svg width="20" height="20" fill="none" stroke="#1677FF" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+              </div>
+              <div class="text-[11px] text-slate-700">工资贷</div>
+              <div class="text-[9px] text-blue-600">日息 0.02%</div>
+            </a>
+            <a href="#" class="text-center">
+              <div class="w-11 h-11 mx-auto rounded-xl bg-emerald-100 flex items-center justify-center mb-1">
+                <svg width="20" height="20" fill="none" stroke="#10B981" stroke-width="2" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+              </div>
+              <div class="text-[11px] text-slate-700">体检套餐</div>
+              <div class="text-[9px] text-emerald-600">¥99 优惠</div>
+            </a>
+            <a href="#" class="text-center">
+              <div class="w-11 h-11 mx-auto rounded-xl bg-purple-100 flex items-center justify-center mb-1">
+                <svg width="20" height="20" fill="none" stroke="#A855F7" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12s4-8 10-8 10 8 10 8-4 8-10 8-10-8-10-8z"/></svg>
+              </div>
+              <div class="text-[11px] text-slate-700">老乡社群</div>
+              <div class="text-[9px] text-purple-600">3.2 万人</div>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- 设置入口 -->
+      <div class="px-4 mt-4 mb-4">
+        <div class="bg-white rounded-2xl shadow-sm divide-y divide-slate-100">
+          <a href="#" class="flex items-center gap-3 px-4 py-3">
+            <svg width="18" height="18" fill="none" stroke="#475569" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <span class="flex-1 text-sm text-slate-700">账户安全</span>
+            <span class="text-[10px] text-emerald-500">已绑定</span>
+            <svg width="14" height="14" fill="none" stroke="#94A3B8" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+          </a>
+          <a href="#" class="flex items-center gap-3 px-4 py-3">
+            <svg width="18" height="18" fill="none" stroke="#475569" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            <span class="flex-1 text-sm text-slate-700">隐私设置</span>
+            <svg width="14" height="14" fill="none" stroke="#94A3B8" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+          </a>
+          <a href="#" class="flex items-center gap-3 px-4 py-3">
+            <svg width="18" height="18" fill="none" stroke="#475569" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <span class="flex-1 text-sm text-slate-700">帮助与反馈</span>
+            <svg width="14" height="14" fill="none" stroke="#94A3B8" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+          </a>
+          <a href="#" class="flex items-center gap-3 px-4 py-3">
+            <svg width="18" height="18" fill="none" stroke="#475569" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <span class="flex-1 text-sm text-slate-700">关于蓝工</span>
+            <span class="text-[10px] text-slate-400">v 0.1.0</span>
+            <svg width="14" height="14" fill="none" stroke="#94A3B8" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+          </a>
+          <a href="login.html" class="flex items-center gap-3 px-4 py-3 text-rose-500">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            <span class="flex-1 text-sm">退出登录</span>
+          </a>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 底部 Tab -->
+    <div class="bg-white border-t border-slate-100 grid grid-cols-5 py-2">
+      <a href="home.html" class="flex flex-col items-center gap-0.5 text-slate-400">
+        <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+        <span class="text-[10px]">首页</span>
+      </a>
+      <a href="job-detail.html" class="flex flex-col items-center gap-0.5 text-slate-400">
+        <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <span class="text-[10px]">找活</span>
+      </a>
+      <a href="credit.html" class="flex flex-col items-center gap-0.5 text-slate-400">
+        <div class="w-10 h-10 -mt-4 rounded-full grad-credit flex items-center justify-center shadow-lg">
+          <span class="text-white text-xs font-bold">工分</span>
+        </div>
+      </a>
+      <a href="chat.html" class="flex flex-col items-center gap-0.5 text-slate-400 relative">
+        <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <span class="text-[10px]">消息</span>
+        <span class="absolute top-0 right-7 w-4 h-4 bg-red-500 text-white text-[9px] rounded-full flex items-center justify-center">3</span>
+      </a>
+      <a href="profile.html" class="flex flex-col items-center gap-0.5 text-blue-600">
+        <svg width="22" height="22" fill="currentColor" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span class="text-[10px] font-medium">我的</span>
+      </a>
+    </div>
+
+  </div>
+</div>
+</body>
+</html>

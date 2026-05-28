@@ -1,0 +1,27 @@
+- generic [ref=e71]:
+  - generic [ref=e73]:
+    - img [ref=e76] [cursor=pointer]
+    - generic [ref=e79]: 购物车
+  - generic [ref=e83]:
+    - generic [ref=e84]:
+      - generic [ref=e85]: ‹
+      - generic [ref=e86]: 购物车（0）
+      - generic [ref=e87]: 编辑
+    - generic [ref=e88]:
+      - text: ⚠ 一次只能在
+      - generic [ref=e89]: 同一家店
+      - text: 结算（订单按店独立 + v7 营销 / 余额 / 积分都按店隔离）。
+    - generic [ref=e90]: 加载中...
+    - generic [ref=e91]:
+      - generic [ref=e92]:
+        - generic [ref=e93]: 🏠
+        - generic [ref=e94]: 首页
+      - generic [ref=e95]:
+        - generic [ref=e96]: 📋
+        - generic [ref=e97]: 订单
+      - generic [ref=e98]:
+        - generic [ref=e99]: 🛒
+        - generic [ref=e100]: 购物车
+      - generic [ref=e101]:
+        - generic [ref=e102]: 👤
+        - generic [ref=e103]: 我的

@@ -1,0 +1,41 @@
+- generic [ref=e344]:
+  - generic [ref=e346]:
+    - img [ref=e349] [cursor=pointer]
+    - generic [ref=e352]: 商品详情
+  - generic [ref=e356]:
+    - generic [ref=e357]:
+      - generic [ref=e358]:
+        - generic [ref=e359]: ‹
+        - generic [ref=e360]: ↗
+      - generic [ref=e363]:
+        - generic [ref=e364]:
+          - generic [ref=e366]:
+            - generic [ref=e367]: ¥
+            - text: "100.00"
+          - generic [ref=e368]: 推 5 反 1
+        - generic [ref=e369]: v8测试商品-推5反1
+        - generic [ref=e370]:
+          - generic [ref=e372]:
+            - text: 已售
+            - generic [ref=e373]: "0"
+          - generic [ref=e375]:
+            - text: 评分
+            - generic [ref=e376]: "5.0"
+          - generic [ref=e378]:
+            - text: 库存
+            - generic [ref=e379]: "1000"
+      - generic [ref=e380]:
+        - generic [ref=e381]: 🎯
+        - generic [ref=e382]:
+          - text: 推 5 个朋友买 → 你拿
+          - generic [ref=e383]: 100% 商品价 ¥100.00
+          - generic [ref=e384]: 20% / 20% / 20% / 20% / 20% 累积，满 5 次出队
+    - generic [ref=e386]:
+      - generic [ref=e387]:
+        - generic [ref=e388]: 🏪
+        - generic [ref=e389]: 店铺
+      - generic [ref=e390]:
+        - generic [ref=e391]: 🛒
+        - generic [ref=e392]: 购物车
+      - generic [ref=e393]: 加入购物车
+      - generic [ref=e394]: 立即购买

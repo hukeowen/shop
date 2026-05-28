@@ -1,0 +1,97 @@
+- generic [ref=e8]:
+  - generic [ref=e10]:
+    - generic [ref=e11]:
+      - generic [ref=e12]:
+        - text: 中午好，
+        - generic [ref=e13]: 🌤
+      - generic [ref=e14]: 水果店
+      - generic [ref=e15]:
+        - generic [ref=e16]: 5月13日
+        - generic [ref=e17]: ·
+        - generic [ref=e18]: 周三
+    - generic [ref=e19]: 水
+  - generic [ref=e21]:
+    - generic [ref=e114]: 🟢
+    - generic [ref=e115]:
+      - generic [ref=e116]: 营业中
+      - generic [ref=e117]: 今日 今日 已打卡 · 顾客可下单
+    - generic [ref=e118]: 打烊
+  - generic [ref=e27]:
+    - generic [ref=e28]:
+      - generic [ref=e30]: 🎬
+      - generic [ref=e31]: 一键成片
+    - generic [ref=e32]:
+      - generic [ref=e34]: ＋
+      - generic [ref=e35]: AI 上架
+    - generic [ref=e36]:
+      - generic [ref=e38]: 📷
+      - generic [ref=e39]: 扫码核销
+    - generic [ref=e40]:
+      - generic [ref=e42]: 📋
+      - generic [ref=e43]: 订单
+  - generic [ref=e44]:
+    - generic [ref=e45]: 今日数据
+    - generic [ref=e46]: 查看完整 ›
+  - generic [ref=e47]:
+    - generic [ref=e48]:
+      - generic [ref=e49]: 🛍
+      - generic [ref=e50]:
+        - generic [ref=e51]: 订单数
+        - generic [ref=e52]: "0"
+    - generic [ref=e53]:
+      - generic [ref=e54]: 💰
+      - generic [ref=e55]:
+        - generic [ref=e56]: 销售额
+        - generic [ref=e57]: ¥0
+    - generic [ref=e58]:
+      - generic [ref=e59]: 👥
+      - generic [ref=e60]:
+        - generic [ref=e61]: 新会员
+        - generic [ref=e62]: "2"
+    - generic [ref=e63]:
+      - generic [ref=e64]: ⏳
+      - generic [ref=e65]:
+        - generic [ref=e66]: 待处理
+        - generic [ref=e67]: "0"
+  - generic [ref=e68]:
+    - generic [ref=e70]: 最近 7 天销售趋势
+    - generic [ref=e71]:
+      - generic:
+        - generic [ref=e93]: ¥0
+        - generic [ref=e95]: 05-07
+      - generic:
+        - generic [ref=e96]: ¥0
+        - generic [ref=e98]: 05-08
+      - generic:
+        - generic [ref=e99]: ¥0
+        - generic [ref=e101]: 05-09
+      - generic:
+        - generic [ref=e102]: ¥0
+        - generic [ref=e104]: 05-10
+      - generic:
+        - generic [ref=e105]: ¥0
+        - generic [ref=e107]: 05-11
+      - generic:
+        - generic [ref=e108]: ¥0
+        - generic [ref=e110]: 05-12
+      - generic:
+        - generic [ref=e111]: ¥0
+        - generic [ref=e113]: 05-13
+  - generic [ref=e72]:
+    - generic [ref=e73]:
+      - generic [ref=e74]: 🏆 热销商品 Top 3
+      - generic [ref=e75]: 完整排行 ›
+    - generic [ref=e77]: 暂无销售数据
+  - generic [ref=e79]:
+    - generic [ref=e80]:
+      - generic [ref=e81]: 🏠
+      - generic [ref=e82]: 工作台
+    - generic [ref=e83]:
+      - generic [ref=e84]: 🎬
+      - generic [ref=e85]: 成片
+    - generic [ref=e86]:
+      - generic [ref=e87]: 📋
+      - generic [ref=e88]: 订单
+    - generic [ref=e89]:
+      - generic [ref=e90]: 👤
+      - generic [ref=e91]: 我的

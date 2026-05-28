@@ -1,0 +1,9 @@
+- generic [ref=e4]:
+  - generic [ref=e6]:
+    - img [ref=e9] [cursor=pointer]
+    - generic [ref=e12]: 结算
+  - generic [ref=e16]:
+    - generic [ref=e17]:
+      - generic [ref=e18]: ‹
+      - generic [ref=e19]: 订单结算
+    - generic [ref=e20]: 加载中...

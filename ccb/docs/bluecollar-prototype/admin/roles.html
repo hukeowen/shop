@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>蓝工平台 · 权限管理</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="../shared/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>body{background:#F8FAFC;font-family:'Inter','PingFang SC',sans-serif}.num-font{font-feature-settings:"tnum";font-variant-numeric:tabular-nums}.chip{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:9999px;font-size:11px;font-weight:600}.role-item{padding:10px 12px;border-radius:8px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:between;gap:8px}.role-item:hover{background:#F1F5F9}.role-item.active{background:linear-gradient(90deg,rgba(80,70,229,.1),transparent);border-left:3px solid #5046E5;padding-left:9px}.perm-cell{padding:6px 8px;text-align:center;border-right:1px solid #F1F5F9;border-bottom:1px solid #F1F5F9;font-size:11px}</style>
+</head>
+<body>
+<div class="flex min-h-screen">
+  <aside class="w-60 bg-[#0F172A] text-white flex-shrink-0 flex flex-col">
+    <div class="px-5 pt-5 pb-4 border-b border-white/5"><div class="flex items-center gap-2.5"><div class="w-9 h-9 rounded-lg bg-gradient-to-br from-[#5046E5] to-[#7C3AED] flex items-center justify-center font-extrabold text-[15px]">蓝</div><div><div class="text-[13px] font-bold leading-tight">蓝工平台</div><div class="text-[10px] text-slate-400 tracking-wider">运营后台 · ADMIN</div></div></div></div>
+    <nav class="flex-1 px-3 py-2 overflow-y-auto text-sm">
+      <div class="px-3 pt-2 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">驾驶舱</div>
+      <a href="dashboard.html" class="sidebar-link">📊 数据驾驶舱</a>
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">用户</div>
+      <a href="workers.html" class="sidebar-link">👷 工人</a><a href="dispatches.html" class="sidebar-link">🏢 派遣公司</a><a href="clients.html" class="sidebar-link">🏛️ 甲方</a>
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">业务 / 风控 / 财务</div>
+      <a href="jobs-audit.html" class="sidebar-link">📋 招聘审核</a><a href="credit.html" class="sidebar-link">⭐ 工分管理</a><a href="risk.html" class="sidebar-link">🚨 风控告警</a><a href="audit.html" class="sidebar-link">📜 审计日志</a><a href="finance.html" class="sidebar-link">💰 财务对账</a>
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">客服 / 运营</div>
+      <a href="tickets.html" class="sidebar-link">🎫 客服工单</a><a href="campaigns.html" class="sidebar-link">🎯 运营活动</a><a href="notifications.html" class="sidebar-link">📢 公告通知</a>
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">系统</div>
+      <a href="roles.html" class="sidebar-link active">🔐 权限管理</a><a href="api.html" class="sidebar-link">🔌 API 开放</a>
+    </nav>
+    <div class="px-4 py-3 border-t border-white/5 text-xs text-slate-500 flex justify-between"><a href="../index.html" class="hover:text-white">← 原型导航</a><span>v3.2.1</span></div>
+  </aside>
+
+  <main class="flex-1 min-w-0">
+    <header class="h-14 bg-white border-b border-slate-200 flex items-center px-6 sticky top-0 z-20"><div class="flex items-center gap-2.5"><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-red-50 text-red-600 border border-red-200">生产环境</span><h1 class="text-[15px] font-semibold">权限/角色管理</h1><span class="text-xs text-slate-400">RBAC 模型</span></div><div class="ml-auto flex gap-2"><button class="px-3 py-1.5 text-xs border border-slate-200 rounded">📥 导出</button><button class="px-3 py-1.5 text-xs bg-violet-600 text-white rounded font-bold">+ 新建角色</button></div></header>
+
+    <div class="p-6 space-y-5">
+      <div class="grid grid-cols-4 gap-4">
+        <div class="bg-white border border-slate-200 rounded-xl p-5"><div class="text-xs text-slate-500">内部用户总数</div><div class="text-2xl font-extrabold num-font mt-1">1,238</div><div class="text-xs text-emerald-600 mt-2">本月 +28</div></div>
+        <div class="bg-white border border-slate-200 rounded-xl p-5"><div class="text-xs text-slate-500">角色数</div><div class="text-2xl font-extrabold num-font mt-1">23</div><div class="text-xs text-slate-400 mt-2">12 部门</div></div>
+        <div class="bg-white border border-slate-200 rounded-xl p-5"><div class="text-xs text-slate-500">权限点</div><div class="text-2xl font-extrabold num-font mt-1">386</div><div class="text-xs text-slate-400 mt-2">细粒度控制</div></div>
+        <div class="bg-white border border-amber-200 rounded-xl p-5"><div class="text-xs text-amber-600">敏感权限</div><div class="text-2xl font-extrabold text-amber-600 num-font mt-1">42</div><div class="text-xs text-amber-600 mt-2">需双人复核</div></div>
+      </div>
+
+      <div class="grid grid-cols-12 gap-5">
+        <!-- 左：角色树 -->
+        <div class="col-span-3 bg-white rounded-xl border border-slate-200 p-4">
+          <div class="flex items-center justify-between mb-3"><h3 class="font-bold text-sm">角色树（23）</h3><button class="text-xs text-blue-600">+ 新角色</button></div>
+          <div class="space-y-0.5">
+            <div class="role-item active"><span class="flex-1">👑 超级管理员</span><span class="num-font text-slate-500">3</span></div>
+            <div class="text-[10px] text-slate-400 px-3 pt-3 pb-1 uppercase">运营部门</div>
+            <div class="role-item"><span class="flex-1">📊 运营总监</span><span class="num-font text-slate-500">2</span></div>
+            <div class="role-item"><span class="flex-1">📊 运营经理</span><span class="num-font text-slate-500">12</span></div>
+            <div class="role-item"><span class="flex-1">📊 运营专员</span><span class="num-font text-slate-500">68</span></div>
+            <div class="text-[10px] text-slate-400 px-3 pt-3 pb-1 uppercase">客服部门</div>
+            <div class="role-item"><span class="flex-1">🎫 客服主管</span><span class="num-font text-slate-500">8</span></div>
+            <div class="role-item"><span class="flex-1">🎫 客服</span><span class="num-font text-slate-500">186</span></div>
+            <div class="role-item"><span class="flex-1">🎫 高级客服</span><span class="num-font text-slate-500">32</span></div>
+            <div class="text-[10px] text-slate-400 px-3 pt-3 pb-1 uppercase">财务部门</div>
+            <div class="role-item"><span class="flex-1">💰 财务总监</span><span class="num-font text-slate-500">1</span></div>
+            <div class="role-item"><span class="flex-1">💰 财务经理</span><span class="num-font text-slate-500">5</span></div>
+            <div class="role-item"><span class="flex-1">💰 会计</span><span class="num-font text-slate-500">23</span></div>
+            <div class="role-item"><span class="flex-1">💰 出纳</span><span class="num-font text-slate-500">12</span></div>
+            <div class="text-[10px] text-slate-400 px-3 pt-3 pb-1 uppercase">风控法务</div>
+            <div class="role-item"><span class="flex-1">🚨 风控总监</span><span class="num-font text-slate-500">1</span></div>
+            <div class="role-item"><span class="flex-1">🚨 风控专员</span><span class="num-font text-slate-500">28</span></div>
+            <div class="role-item"><span class="flex-1">⚖ 法务</span><span class="num-font text-slate-500">15</span></div>
+            <div class="text-[10px] text-slate-400 px-3 pt-3 pb-1 uppercase">商务 / 销售</div>
+            <div class="role-item"><span class="flex-1">🤝 销售总监</span><span class="num-font text-slate-500">3</span></div>
+            <div class="role-item"><span class="flex-1">🤝 销售经理</span><span class="num-font text-slate-500">38</span></div>
+            <div class="role-item"><span class="flex-1">🤝 销售代表</span><span class="num-font text-slate-500">128</span></div>
+            <div class="text-[10px] text-slate-400 px-3 pt-3 pb-1 uppercase">技术 / 数据</div>
+            <div class="role-item"><span class="flex-1">🔧 系统管理员</span><span class="num-font text-slate-500">8</span></div>
+            <div class="role-item"><span class="flex-1">🤖 数据分析师</span><span class="num-font text-slate-500">14</span></div>
+            <div class="role-item"><span class="flex-1">🔌 API 管理员</span><span class="num-font text-slate-500">6</span></div>
+          </div>
+        </div>
+
+        <!-- 右：权限矩阵 -->
+        <div class="col-span-9 bg-white rounded-xl border border-slate-200 p-5">
+          <div class="flex items-start justify-between mb-4">
+            <div>
+              <div class="flex items-center gap-2"><h2 class="text-lg font-bold">👑 超级管理员</h2><span class="chip" style="background:#FEE2E2;color:#B91C1C">最高权限</span></div>
+              <p class="text-xs text-slate-500 mt-1">拥有平台所有权限，含敏感操作（账户冻结、工分修改、批量发薪）</p>
+              <p class="text-xs text-slate-400 mt-1">当前持有：admin@bluework, ceo@bluework, cto@bluework（3 人）</p>
+            </div>
+            <div class="flex gap-2"><button class="px-3 py-1.5 text-xs border border-slate-200 rounded">复制角色</button><button class="px-3 py-1.5 text-xs bg-violet-600 text-white rounded font-bold">保存修改</button></div>
+          </div>
+
+          <!-- 权限矩阵表 -->
+          <div class="border border-slate-200 rounded-lg overflow-hidden">
+            <table class="w-full text-xs">
+              <thead class="bg-slate-50"><tr><th class="text-left p-3 font-semibold text-slate-600 w-1/3">模块 / 资源</th><th class="font-semibold text-slate-600">查看</th><th class="font-semibold text-slate-600">创建</th><th class="font-semibold text-slate-600">编辑</th><th class="font-semibold text-slate-600 text-rose-700">删除</th><th class="font-semibold text-slate-600 text-amber-700">导出</th><th class="font-semibold text-slate-600 text-violet-700">敏感操作</th></tr></thead>
+              <tbody>
+                <tr><td class="p-2.5 font-medium">📊 数据驾驶舱</td><td class="perm-cell">✓</td><td class="perm-cell">—</td><td class="perm-cell">—</td><td class="perm-cell">—</td><td class="perm-cell text-emerald-600">✓</td><td class="perm-cell">—</td></tr>
+                <tr><td class="p-2.5 font-medium">👷 工人管理</td><td class="perm-cell text-emerald-600">✓</td><td class="perm-cell text-emerald-600">✓</td><td class="perm-cell text-emerald-600">✓</td><td class="perm-cell text-rose-600">✓</td><td class="perm-cell text-emerald-600">✓</td><td class="perm-cell text-violet-600">⚠ 冻结/黑名单</td></tr>
+                <tr><td class="p-2.5 font-medium">🏢 派遣公司管理</td><td class="perm-cell text-emerald-600">✓</td><td class="perm-cell text-emerald-600">✓</td><td class="perm-cell text-emerald-600">✓</td><td class="perm-cell text-rose-600">✓</td><td class="perm-cell text-emerald-600">✓</td><td class="perm-cell text-violet-600">⚠ 暂停/信用调整</td></tr>
+                <tr><td class="p-2.5 font-medium">🏛️ 甲方管理</td><td class="perm-cell text-emerald-600">✓</td><td class="perm-cell text-emerald-600">✓</td><td class="perm-cell text-emerald-600">✓</td><td class="perm-cell text-rose-600">✓</td><td class="perm-cell text-emerald-600">✓</td><td class="perm-cell">—</td></tr>
+                <tr><td class="p-2.5 font-medium">📋 招聘审核</td><td class="perm-cell text-emerald-600">✓</td><td class="perm-cell">—</td><td class="perm-cell text-emerald-600">✓</td><td class="perm-cell text-rose-600">✓</td><td class="perm-cell text-emerald-600">✓</td><td class="perm-cell">—</td></tr>
+                <tr class="bg-violet-50/30"><td class="p-2.5 font-medium">⭐ 工分管理</td><td class="perm-cell text-emerald-600">✓</td><td class="perm-cell text-emerald-600">✓</td><td class="perm-cell text-emerald-600">✓</td><td class="perm-cell text-rose-600">✓</td><td class="perm-cell text-emerald-600">✓</td><td class="perm-cell text-violet-600 font-bold">⚠⚠ 规则修改</td></tr>
+                <tr><td class="p-2.5 font-medium">🚨 风控告警</td><td class="perm-cell text-emerald-600">✓</td><td class="perm-cell text-emerald-600">✓</td><td class="perm-cell text-emerald-600">✓</td><td class="perm-cell">—</td><td class="perm-cell text-emerald-600">✓</td><td class="perm-cell text-violet-600">⚠ 账户冻结</td></tr>
+                <tr><td class="p-2.5 font-medium">📜 审计日志</td><td class="perm-cell text-emerald-600">✓</td><td class="perm-cell">—</td><td class="perm-cell">—</td><td class="perm-cell">—</td><td class="perm-cell text-emerald-600">✓</td><td class="perm-cell">—</td></tr>
+                <tr class="bg-violet-50/30"><td class="p-2.5 font-medium">💰 财务对账</td><td class="perm-cell text-emerald-600">✓</td><td class="perm-cell text-emerald-600">✓</td><td class="perm-cell text-emerald-600">✓</td><td class="perm-cell">—</td><td class="perm-cell text-emerald-600">✓</td><td class="perm-cell text-violet-600 font-bold">⚠⚠ 批量发薪</td></tr>
+                <tr><td class="p-2.5 font-medium">🎫 客服工单</td><td class="perm-cell text-emerald-600">✓</td><td class="perm-cell text-emerald-600">✓</td><td class="perm-cell text-emerald-600">✓</td><td class="perm-cell">—</td><td class="perm-cell text-emerald-600">✓</td><td class="perm-cell text-violet-600">⚠ 工单升级</td></tr>
+                <tr><td class="p-2.5 font-medium">🎯 运营活动</td><td class="perm-cell text-emerald-600">✓</td><td class="perm-cell text-emerald-600">✓</td><td class="perm-cell text-emerald-600">✓</td><td class="perm-cell text-rose-600">✓</td><td class="perm-cell text-emerald-600">✓</td><td class="perm-cell text-violet-600">⚠ 预算分配</td></tr>
+                <tr><td class="p-2.5 font-medium">📢 公告通知</td><td class="perm-cell text-emerald-600">✓</td><td class="perm-cell text-emerald-600">✓</td><td class="perm-cell text-emerald-600">✓</td><td class="perm-cell text-rose-600">✓</td><td class="perm-cell">—</td><td class="perm-cell text-violet-600">⚠ 全站推送</td></tr>
+                <tr><td class="p-2.5 font-medium">🔐 权限管理</td><td class="perm-cell text-emerald-600">✓</td><td class="perm-cell text-emerald-600">✓</td><td class="perm-cell text-emerald-600">✓</td><td class="perm-cell text-rose-600">✓</td><td class="perm-cell">—</td><td class="perm-cell text-violet-600 font-bold">⚠⚠ 角色变更</td></tr>
+                <tr><td class="p-2.5 font-medium">🔌 API 开放平台</td><td class="perm-cell text-emerald-600">✓</td><td class="perm-cell text-emerald-600">✓</td><td class="perm-cell text-emerald-600">✓</td><td class="perm-cell text-rose-600">✓</td><td class="perm-cell text-emerald-600">✓</td><td class="perm-cell text-violet-600">⚠ 限流/封禁</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- 用户列表 -->
+          <div class="mt-5">
+            <h3 class="font-bold text-sm mb-3">隶属用户（3 人）</h3>
+            <div class="space-y-2">
+              <div class="flex items-center justify-between p-3 bg-slate-50 rounded-lg"><div class="flex items-center gap-3"><div class="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 text-white flex items-center justify-center text-xs font-bold">A</div><div><div class="text-sm font-medium">admin@bluework.cn</div><div class="text-[10px] text-slate-500">最后登录 10:23 · IP 10.0.2.18</div></div></div><div class="flex items-center gap-2"><span class="chip" style="background:#DCFCE7;color:#15803D">● 在线</span><button class="text-xs text-blue-600">编辑</button></div></div>
+              <div class="flex items-center justify-between p-3 bg-slate-50 rounded-lg"><div class="flex items-center gap-3"><div class="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center text-xs font-bold">C</div><div><div class="text-sm font-medium">ceo@bluework.cn</div><div class="text-[10px] text-slate-500">最后登录 昨天 18:45</div></div></div><div class="flex items-center gap-2"><span class="chip" style="background:#F1F5F9;color:#475569">离线</span><button class="text-xs text-blue-600">编辑</button></div></div>
+              <div class="flex items-center justify-between p-3 bg-slate-50 rounded-lg"><div class="flex items-center gap-3"><div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center text-xs font-bold">T</div><div><div class="text-sm font-medium">cto@bluework.cn</div><div class="text-[10px] text-slate-500">最后登录 09:36</div></div></div><div class="flex items-center gap-2"><span class="chip" style="background:#DCFCE7;color:#15803D">● 在线</span><button class="text-xs text-blue-600">编辑</button></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+</body>
+</html>

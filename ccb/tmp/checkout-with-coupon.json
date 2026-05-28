@@ -1,0 +1,11 @@
+{
+  "tenantId":163,
+  "order":{
+    "items":[{"cartId":8,"skuId":8001,"count":1}],
+    "pointStatus":false,
+    "deliveryType":2
+  },
+  "useShopBalance":false,
+  "balanceFen":0,
+  "couponUserId":1
+}

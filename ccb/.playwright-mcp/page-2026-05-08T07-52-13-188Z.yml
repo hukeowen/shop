@@ -1,0 +1,154 @@
+- generic [ref=e121]:
+  - generic [ref=e123]:
+    - img [ref=e126] [cursor=pointer]
+    - generic [ref=e129]: 营销配置（v6）
+  - generic [ref=e133]:
+    - generic [ref=e134]:
+      - generic [ref=e135]: 营销配置（v6）
+      - generic [ref=e136]: 双积分 · 极差递减 · 推 N 反 1 · 星级积分池
+    - generic [ref=e137]:
+      - generic [ref=e138]: 平台星级
+      - generic [ref=e139]:
+        - generic [ref=e140]: 星级数量（1–10）
+        - spinbutton [ref=e143]: "5"
+      - generic [ref=e144]: 下面为每个星级配置：极差抽成 % + 升星门槛（直推人数 + 团队销售额，元）
+      - generic [ref=e145]:
+        - generic [ref=e146]: 1星
+        - generic [ref=e147]:
+          - generic [ref=e148]:
+            - generic [ref=e149]: 极差抽成 %
+            - spinbutton [ref=e152]: "1"
+          - generic [ref=e153]:
+            - generic [ref=e154]: 直推人数
+            - spinbutton [ref=e157]: "2"
+          - generic [ref=e158]:
+            - generic [ref=e159]: 团队销售额（元）
+            - spinbutton [ref=e162]: "3"
+          - generic [ref=e163]:
+            - generic [ref=e164]: 会员折扣（折，10=原价）
+            - generic [ref=e166]:
+              - generic: 如 9.5（不打折留空）
+              - spinbutton [ref=e167]
+      - generic [ref=e168]:
+        - generic [ref=e169]: 2星
+        - generic [ref=e170]:
+          - generic [ref=e171]:
+            - generic [ref=e172]: 极差抽成 %
+            - spinbutton [ref=e175]: "2"
+          - generic [ref=e176]:
+            - generic [ref=e177]: 直推人数
+            - spinbutton [ref=e180]: "3"
+          - generic [ref=e181]:
+            - generic [ref=e182]: 团队销售额（元）
+            - spinbutton [ref=e185]: "9"
+          - generic [ref=e186]:
+            - generic [ref=e187]: 会员折扣（折，10=原价）
+            - generic [ref=e189]:
+              - generic: 如 9.5（不打折留空）
+              - spinbutton [ref=e190]
+      - generic [ref=e191]:
+        - generic [ref=e192]: 3星
+        - generic [ref=e193]:
+          - generic [ref=e194]:
+            - generic [ref=e195]: 极差抽成 %
+            - spinbutton [ref=e198]: "3"
+          - generic [ref=e199]:
+            - generic [ref=e200]: 直推人数
+            - spinbutton [ref=e203]: "5"
+          - generic [ref=e204]:
+            - generic [ref=e205]: 团队销售额（元）
+            - spinbutton [ref=e208]: "27"
+          - generic [ref=e209]:
+            - generic [ref=e210]: 会员折扣（折，10=原价）
+            - generic [ref=e212]:
+              - generic: 如 9.5（不打折留空）
+              - spinbutton [ref=e213]
+      - generic [ref=e214]:
+        - generic [ref=e215]: 4星
+        - generic [ref=e216]:
+          - generic [ref=e217]:
+            - generic [ref=e218]: 极差抽成 %
+            - spinbutton [ref=e221]: "4"
+          - generic [ref=e222]:
+            - generic [ref=e223]: 直推人数
+            - spinbutton [ref=e226]: "8"
+          - generic [ref=e227]:
+            - generic [ref=e228]: 团队销售额（元）
+            - spinbutton [ref=e231]: "81"
+          - generic [ref=e232]:
+            - generic [ref=e233]: 会员折扣（折，10=原价）
+            - generic [ref=e235]:
+              - generic: 如 9.5（不打折留空）
+              - spinbutton [ref=e236]
+      - generic [ref=e237]:
+        - generic [ref=e238]: 5星
+        - generic [ref=e239]:
+          - generic [ref=e240]:
+            - generic [ref=e241]: 极差抽成 %
+            - spinbutton [ref=e244]: "5"
+          - generic [ref=e245]:
+            - generic [ref=e246]: 直推人数
+            - spinbutton [ref=e249]: "12"
+          - generic [ref=e250]:
+            - generic [ref=e251]: 团队销售额（元）
+            - spinbutton [ref=e254]: "243"
+          - generic [ref=e255]:
+            - generic [ref=e256]: 会员折扣（折，10=原价）
+            - generic [ref=e258]:
+              - generic: 如 9.5（不打折留空）
+              - spinbutton [ref=e259]
+      - generic [ref=e260]: 「会员折扣」仅在店铺详情页文案展示，不参与结算。
+    - generic [ref=e261]:
+      - generic [ref=e262]: 推广积分
+      - generic [ref=e263]:
+        - generic [ref=e264]: 推广积分 → 消费积分 转换比例
+        - spinbutton [ref=e267]: "1"
+      - generic [ref=e268]:
+        - generic [ref=e269]: 提现门槛（元）
+        - spinbutton [ref=e272]: "100"
+        - generic [ref=e273]: 后端按分存储；输入元自动 ×100。
+    - generic [ref=e274]:
+      - generic [ref=e275]: 推广奖励（推 N 反 1 v7）
+      - generic [ref=e276]: 用户必须先自购该商品才有资格享受推 N 反 1，完成 N 次累计后进入「终态」。
+      - generic [ref=e277]:
+        - generic [ref=e278]: 间推百分比（%）
+        - spinbutton [ref=e281]: "22"
+        - generic [ref=e282]: 完成推 N 反 1 后，自购或下级首单都按订单实付总额 × 此 % 返推广积分。
+      - generic [ref=e283]:
+        - generic [ref=e284]: 自然推开关
+        - generic [ref=e288]: 仅作用于「无上级的真自然用户」订单：开 = 走旧 A/B 队列分配；关 = 奖励吞掉。
+    - generic [ref=e289]:
+      - generic [ref=e290]: 满减规则
+      - generic [ref=e291]: 商户在店铺详情页底部购物车展示「满 X 立减 Y · 还差 ¥N」。两项同时填才生效；不启用请留空。
+      - generic [ref=e292]:
+        - generic [ref=e293]: 满减门槛（元）
+        - generic [ref=e295]:
+          - generic: 如 30（不启用留空）
+          - spinbutton [ref=e296]
+      - generic [ref=e297]:
+        - generic [ref=e298]: 减免金额（元）
+        - generic [ref=e300]:
+          - generic: 如 5
+          - spinbutton [ref=e301]
+    - generic [ref=e302]:
+      - generic [ref=e303]: 星级积分池
+      - generic [ref=e305]: 开启积分池
+    - generic [ref=e309]:
+      - generic [ref=e310]: 积分池运营
+      - generic [ref=e311]:
+        - generic [ref=e312]:
+          - generic [ref=e313]: 当前池余额
+          - generic [ref=e315]:
+            - text: "0"
+            - generic [ref=e316]: 分
+          - generic [ref=e317]: ≈ 0.00 元
+        - generic [ref=e318]:
+          - generic [ref=e319]: 最近结算
+          - generic [ref=e320]: 从未结算
+      - generic [ref=e321]:
+        - generic [ref=e322]: 全员均分结算
+        - generic [ref=e323]: 抽奖结算
+      - generic [ref=e324]: FULL 全员瓜分；LOTTERY 按上方"抽奖中奖占比"抽出部分用户瓜分。结算后池清零。
+      - generic [ref=e325]: 结算历史（近 0 轮）
+      - generic [ref=e326]: 暂无
+    - generic [ref=e328] [cursor=pointer]: 保存配置

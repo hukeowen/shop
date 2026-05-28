@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>蓝工 · 健康档案</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="../shared/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  .grad-green { background: linear-gradient(135deg,#059669 0%,#10B981 40%,#34D399 100%); }
+  .grad-green-deep { background: linear-gradient(135deg,#064E3B 0%,#047857 50%,#059669 100%); }
+  .pulse-ring { animation: pulseRing 2s infinite; }
+  @keyframes pulseRing { 0% { box-shadow: 0 0 0 0 rgba(16,185,129,.7); } 70% { box-shadow: 0 0 0 14px rgba(16,185,129,0); } 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); } }
+  .heart-beat { animation: heartBeat 1.2s infinite; }
+  @keyframes heartBeat { 0%,100% { transform: scale(1); } 14% { transform: scale(1.15); } 28% { transform: scale(1); } 42% { transform: scale(1.15); } 70% { transform: scale(1); } }
+  .health-score-ring { background: conic-gradient(#10B981 0deg 317deg, rgba(255,255,255,.15) 317deg 360deg); }
+  .trend-line { stroke-dasharray: 240; stroke-dashoffset: 0; }
+</style>
+</head>
+<body class="bg-slate-100 min-h-screen pb-10">
+
+<div class="text-center pt-6"><a href="../index.html" class="text-sm text-slate-500 hover:text-blue-600">← 返回原型导航</a></div>
+
+<div class="phone-frame">
+  <div class="phone-notch"></div>
+  <div class="phone-screen">
+    <div class="status-bar"><span>9:41</span><span class="flex gap-1 items-center"><span>●●●●●</span><span class="text-xs">5G</span><span class="text-xs">100%</span></span></div>
+
+    <div class="phone-content">
+
+      <!-- Hero -->
+      <div class="grad-green-deep px-5 pt-3 pb-7 text-white relative overflow-hidden">
+        <div class="absolute -top-10 -right-10 w-44 h-44 bg-white/10 rounded-full"></div>
+        <div class="absolute -bottom-16 -left-16 w-52 h-52 bg-white/5 rounded-full"></div>
+
+        <div class="relative flex items-center justify-between">
+          <a href="home.html" class="w-8 h-8 flex items-center justify-center">
+            <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+          </a>
+          <div class="text-base font-bold">健康档案</div>
+          <button class="w-8 h-8 flex items-center justify-center">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          </button>
+        </div>
+
+        <!-- 健康分 -->
+        <div class="relative mt-5 flex items-center gap-4">
+          <div class="health-score-ring w-28 h-28 rounded-full p-2 pulse-ring relative">
+            <div class="w-full h-full bg-emerald-900 rounded-full flex flex-col items-center justify-center">
+              <div class="text-3xl font-extrabold leading-none">88</div>
+              <div class="text-[10px] opacity-90 mt-0.5">健康分</div>
+            </div>
+          </div>
+          <div class="flex-1">
+            <div class="text-xs opacity-90">王建国 · 男 · 35 岁</div>
+            <div class="text-lg font-extrabold leading-tight mt-0.5">你比 <span class="text-amber-300">87%</span><br/>同龄工友更健康 👍</div>
+            <div class="text-[11px] opacity-80 mt-1">上次评估 2025-11-08 · 上升 +6</div>
+          </div>
+        </div>
+
+        <!-- 关键指标 -->
+        <div class="relative mt-5 grid grid-cols-4 gap-2">
+          <div class="bg-white/15 backdrop-blur rounded-xl p-2 text-center">
+            <div class="heart-beat text-rose-300 inline-block">
+              <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            </div>
+            <div class="text-sm font-bold mt-0.5">72</div>
+            <div class="text-[9px] opacity-80">心率</div>
+          </div>
+          <div class="bg-white/15 backdrop-blur rounded-xl p-2 text-center">
+            <div class="text-amber-300">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" class="mx-auto"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            </div>
+            <div class="text-sm font-bold mt-0.5">125/82</div>
+            <div class="text-[9px] opacity-80">血压</div>
+          </div>
+          <div class="bg-white/15 backdrop-blur rounded-xl p-2 text-center">
+            <div class="text-emerald-300">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" class="mx-auto"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+            <div class="text-sm font-bold mt-0.5">22.4</div>
+            <div class="text-[9px] opacity-80">BMI</div>
+          </div>
+          <div class="bg-white/15 backdrop-blur rounded-xl p-2 text-center">
+            <div class="text-cyan-300">
+              <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24" class="mx-auto"><path d="M12 7c-3.31 0-6 3-6 6.5C6 17 8 19 12 19s6-2 6-5.5C18 10 15.31 7 12 7z"/></svg>
+            </div>
+            <div class="text-sm font-bold mt-0.5">5.0</div>
+            <div class="text-[9px] opacity-80">视力</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 我的证件 -->
+      <div class="px-5 mt-4">
+        <div class="bg-white rounded-2xl p-4 shadow-sm">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="font-bold text-slate-900">我的健康证件</h3>
+            <span class="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">3 项齐全</span>
+          </div>
+          <div class="space-y-2.5">
+            <div class="flex items-center gap-3 p-2.5 bg-emerald-50 rounded-xl border border-emerald-100">
+              <div class="w-10 h-10 rounded-lg bg-emerald-500 flex items-center justify-center flex-shrink-0">
+                <svg width="20" height="20" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="text-sm font-bold text-slate-900">身份证 <span class="text-[9px] text-emerald-700 ml-1">已实名</span></div>
+                <div class="text-[10px] text-slate-500">3705**********1828 · 长期有效</div>
+              </div>
+              <a href="#" class="text-[10px] text-emerald-700 font-bold">查看</a>
+            </div>
+            <div class="flex items-center gap-3 p-2.5 bg-emerald-50 rounded-xl border border-emerald-100">
+              <div class="w-10 h-10 rounded-lg bg-emerald-500 flex items-center justify-center flex-shrink-0">
+                <svg width="20" height="20" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="text-sm font-bold text-slate-900">健康证 <span class="text-[9px] text-amber-600 ml-1">90 天后到期</span></div>
+                <div class="text-[10px] text-slate-500">浙大附属一院 · 至 2026-08-15</div>
+              </div>
+              <a href="#" class="text-[10px] text-amber-600 font-bold">续办</a>
+            </div>
+            <div class="flex items-center gap-3 p-2.5 bg-blue-50 rounded-xl border border-blue-100">
+              <div class="w-10 h-10 rounded-lg bg-blue-500 flex items-center justify-center flex-shrink-0">
+                <svg width="20" height="20" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/></svg>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="text-sm font-bold text-slate-900">体检报告</div>
+                <div class="text-[10px] text-slate-500">浙江省人民医院 · 2025-11-08</div>
+              </div>
+              <a href="#" class="text-[10px] text-blue-700 font-bold">查看</a>
+            </div>
+            <div class="flex items-center gap-3 p-2.5 bg-slate-50 rounded-xl border border-slate-100 opacity-80">
+              <div class="w-10 h-10 rounded-lg bg-slate-300 flex items-center justify-center flex-shrink-0">
+                <svg width="20" height="20" fill="none" stroke="#475569" stroke-width="2" viewBox="0 0 24 24"><polygon points="12 2 15 8.5 22 9.5 17 14.5 18.5 22 12 18.5 5.5 22 7 14.5 2 9.5 9 8.5"/></svg>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="text-sm font-bold text-slate-600">疫苗接种记录</div>
+                <div class="text-[10px] text-slate-500">未关联 · 可一键同步</div>
+              </div>
+              <a href="#" class="text-[10px] text-slate-600 font-bold">同步</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 体检套餐 -->
+      <div class="px-5 mt-4">
+        <div class="bg-white rounded-2xl p-4 shadow-sm">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="font-bold text-slate-900">体检套餐</h3>
+            <span class="text-[10px] bg-rose-100 text-rose-600 px-2 py-0.5 rounded-full font-bold">今年该体检了</span>
+          </div>
+          <div class="grid grid-cols-3 gap-2">
+            <a href="#" class="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-3 border border-blue-100 card-hover">
+              <div class="text-[10px] text-blue-600 font-bold mb-1">基础</div>
+              <div class="text-sm font-bold text-slate-900">入职体检</div>
+              <div class="text-[10px] text-slate-500 mt-0.5">12 项 · 当天出</div>
+              <div class="mt-2 flex items-baseline gap-1">
+                <span class="text-rose-600 font-extrabold">¥99</span>
+                <span class="text-[10px] text-slate-400 line-through">¥168</span>
+              </div>
+            </a>
+            <a href="#" class="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-3 border border-amber-200 card-hover relative">
+              <span class="absolute -top-1.5 -right-1.5 bg-rose-500 text-white text-[9px] px-1.5 py-0.5 rounded-full font-bold">推荐</span>
+              <div class="text-[10px] text-amber-600 font-bold mb-1">工种专属</div>
+              <div class="text-sm font-bold text-slate-900">职业病体检</div>
+              <div class="text-[10px] text-slate-500 mt-0.5">28 项 · 含肺部</div>
+              <div class="mt-2 flex items-baseline gap-1">
+                <span class="text-rose-600 font-extrabold">¥168</span>
+                <span class="text-[10px] text-slate-400 line-through">¥298</span>
+              </div>
+            </a>
+            <a href="#" class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-3 border border-purple-100 card-hover">
+              <div class="text-[10px] text-purple-600 font-bold mb-1">高端</div>
+              <div class="text-sm font-bold text-slate-900">全面体检</div>
+              <div class="text-[10px] text-slate-500 mt-0.5">58 项 · 含 CT</div>
+              <div class="mt-2 flex items-baseline gap-1">
+                <span class="text-rose-600 font-extrabold">¥598</span>
+                <span class="text-[10px] text-slate-400 line-through">¥1,280</span>
+              </div>
+            </a>
+          </div>
+
+          <!-- 合作医院 -->
+          <div class="mt-3 pt-3 border-t border-slate-100">
+            <div class="text-[10px] text-slate-400 mb-2">合作机构 · 杭州地区</div>
+            <div class="flex gap-2 overflow-x-auto -mx-1 px-1" style="scrollbar-width:none;">
+              <div class="flex-shrink-0 bg-slate-50 rounded-lg px-2.5 py-1.5 text-[10px] text-slate-700 whitespace-nowrap">浙大一院</div>
+              <div class="flex-shrink-0 bg-slate-50 rounded-lg px-2.5 py-1.5 text-[10px] text-slate-700 whitespace-nowrap">浙江省人民医院</div>
+              <div class="flex-shrink-0 bg-slate-50 rounded-lg px-2.5 py-1.5 text-[10px] text-slate-700 whitespace-nowrap">爱康国宾</div>
+              <div class="flex-shrink-0 bg-slate-50 rounded-lg px-2.5 py-1.5 text-[10px] text-slate-700 whitespace-nowrap">美年大健康</div>
+              <div class="flex-shrink-0 bg-slate-50 rounded-lg px-2.5 py-1.5 text-[10px] text-slate-700 whitespace-nowrap">慈铭体检</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 健康数据趋势 -->
+      <div class="px-5 mt-4">
+        <div class="bg-white rounded-2xl p-4 shadow-sm">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="font-bold text-slate-900">健康趋势</h3>
+            <div class="flex gap-1">
+              <button class="text-[10px] px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 font-medium">血压</button>
+              <button class="text-[10px] px-2 py-0.5 rounded text-slate-400">体重</button>
+              <button class="text-[10px] px-2 py-0.5 rounded text-slate-400">视力</button>
+            </div>
+          </div>
+
+          <!-- 趋势图 -->
+          <div class="relative">
+            <svg viewBox="0 0 300 120" class="w-full h-32">
+              <!-- 网格 -->
+              <g stroke="#E2E8F0" stroke-width="0.5">
+                <line x1="0" y1="30" x2="300" y2="30"/>
+                <line x1="0" y1="60" x2="300" y2="60"/>
+                <line x1="0" y1="90" x2="300" y2="90"/>
+              </g>
+              <!-- 阈值带 -->
+              <rect x="0" y="30" width="300" height="40" fill="#10B981" opacity="0.05"/>
+              <text x="2" y="28" font-size="8" fill="#94A3B8">140</text>
+              <text x="2" y="58" font-size="8" fill="#94A3B8">120</text>
+              <text x="2" y="88" font-size="8" fill="#94A3B8">100</text>
+              <!-- 数据折线 -->
+              <polyline points="25,70 70,55 115,50 160,48 205,52 250,45 290,50"
+                fill="none" stroke="#10B981" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" class="trend-line"/>
+              <polyline points="25,70 70,55 115,50 160,48 205,52 250,45 290,50" fill="url(#g)" opacity="0.4"/>
+              <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#10B981" stop-opacity="0.4"/><stop offset="100%" stop-color="#10B981" stop-opacity="0"/></linearGradient></defs>
+              <!-- 数据点 -->
+              <g fill="#10B981">
+                <circle cx="25" cy="70" r="3"/>
+                <circle cx="70" cy="55" r="3"/>
+                <circle cx="115" cy="50" r="3"/>
+                <circle cx="160" cy="48" r="3" stroke="#fff" stroke-width="2"/>
+                <circle cx="205" cy="52" r="3"/>
+                <circle cx="250" cy="45" r="3"/>
+                <circle cx="290" cy="50" r="3"/>
+              </g>
+              <!-- X 轴 -->
+              <g font-size="8" fill="#94A3B8" text-anchor="middle">
+                <text x="25" y="115">5月</text>
+                <text x="70" y="115">6月</text>
+                <text x="115" y="115">7月</text>
+                <text x="160" y="115">8月</text>
+                <text x="205" y="115">9月</text>
+                <text x="250" y="115">10月</text>
+                <text x="290" y="115">11月</text>
+              </g>
+            </svg>
+          </div>
+
+          <div class="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-slate-100">
+            <div class="text-center">
+              <div class="text-xs text-slate-500">最近</div>
+              <div class="text-sm font-bold text-emerald-600">125/82</div>
+            </div>
+            <div class="text-center border-x border-slate-100">
+              <div class="text-xs text-slate-500">7 月平均</div>
+              <div class="text-sm font-bold text-slate-700">120/78</div>
+            </div>
+            <div class="text-center">
+              <div class="text-xs text-slate-500">健康范围</div>
+              <div class="text-sm font-bold text-emerald-600">✓ 正常</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 工伤记录 & 健康提醒 -->
+      <div class="px-5 mt-4 grid grid-cols-2 gap-3">
+        <div class="bg-white rounded-2xl p-3.5 shadow-sm">
+          <div class="flex items-center gap-2 mb-2">
+            <div class="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
+              <svg width="16" height="16" fill="none" stroke="#059669" stroke-width="2" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </div>
+            <div class="text-sm font-bold text-slate-900">工伤记录</div>
+          </div>
+          <div class="text-2xl font-extrabold text-emerald-600">0 次</div>
+          <div class="text-[10px] text-slate-500 mt-1">入职 86 天 · 工分 +20</div>
+        </div>
+        <div class="bg-white rounded-2xl p-3.5 shadow-sm">
+          <div class="flex items-center gap-2 mb-2">
+            <div class="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center">
+              <svg width="16" height="16" fill="none" stroke="#D97706" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/></svg>
+            </div>
+            <div class="text-sm font-bold text-slate-900">提醒</div>
+          </div>
+          <div class="text-2xl font-extrabold text-amber-600">3 项</div>
+          <div class="text-[10px] text-slate-500 mt-1">体检 · 健康证 · 流感针</div>
+        </div>
+      </div>
+
+      <!-- 健康提醒详情 -->
+      <div class="px-5 mt-4">
+        <div class="bg-white rounded-2xl p-4 shadow-sm">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="font-bold text-slate-900">健康提醒</h3>
+            <a href="#" class="text-xs text-slate-400">全部 →</a>
+          </div>
+          <ul class="space-y-2">
+            <li class="flex items-center gap-2.5 p-2.5 rounded-xl bg-rose-50 border border-rose-100">
+              <div class="w-9 h-9 rounded-lg bg-rose-500 flex items-center justify-center flex-shrink-0">
+                <svg width="16" height="16" fill="none" stroke="#fff" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="text-sm font-medium text-slate-900">健康证 90 天后到期</div>
+                <div class="text-[10px] text-rose-600">建议提前 30 天换证</div>
+              </div>
+              <button class="text-[10px] bg-rose-500 text-white font-bold px-2.5 py-1 rounded-full">续办</button>
+            </li>
+            <li class="flex items-center gap-2.5 p-2.5 rounded-xl bg-amber-50 border border-amber-100">
+              <div class="w-9 h-9 rounded-lg bg-amber-500 flex items-center justify-center flex-shrink-0">
+                <svg width="16" height="16" fill="none" stroke="#fff" stroke-width="2.5" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="text-sm font-medium text-slate-900">本年度体检该做了</div>
+                <div class="text-[10px] text-amber-700">距上次 188 天</div>
+              </div>
+              <button class="text-[10px] bg-amber-500 text-white font-bold px-2.5 py-1 rounded-full">预约</button>
+            </li>
+            <li class="flex items-center gap-2.5 p-2.5 rounded-xl bg-blue-50 border border-blue-100">
+              <div class="w-9 h-9 rounded-lg bg-blue-500 flex items-center justify-center flex-shrink-0">
+                <svg width="16" height="16" fill="none" stroke="#fff" stroke-width="2.5" viewBox="0 0 24 24"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7z"/></svg>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="text-sm font-medium text-slate-900">流感疫苗接种季</div>
+                <div class="text-[10px] text-blue-700">10-12 月 · 工友 9 折</div>
+              </div>
+              <button class="text-[10px] bg-blue-500 text-white font-bold px-2.5 py-1 rounded-full">预约</button>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- 健康知识 -->
+      <div class="px-5 mt-4">
+        <div class="bg-white rounded-2xl p-4 shadow-sm">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="font-bold text-slate-900">健康小知识</h3>
+            <span class="text-[10px] text-slate-400">为工友定制</span>
+          </div>
+          <div class="grid grid-cols-2 gap-2.5">
+            <a href="#" class="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-3 card-hover">
+              <div class="w-9 h-9 rounded-lg bg-blue-500 flex items-center justify-center mb-2">
+                <span class="text-base">🦴</span>
+              </div>
+              <div class="text-sm font-bold text-slate-900">分拣工颈椎护理</div>
+              <div class="text-[10px] text-slate-500 mt-0.5">5 个动作 · 3 分钟</div>
+            </a>
+            <a href="#" class="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-3 card-hover">
+              <div class="w-9 h-9 rounded-lg bg-amber-500 flex items-center justify-center mb-2">
+                <span class="text-base">😷</span>
+              </div>
+              <div class="text-sm font-bold text-slate-900">工厂粉尘 · 防尘肺</div>
+              <div class="text-[10px] text-slate-500 mt-0.5">必看 · 12,839 阅读</div>
+            </a>
+            <a href="#" class="bg-gradient-to-br from-rose-50 to-pink-50 rounded-xl p-3 card-hover">
+              <div class="w-9 h-9 rounded-lg bg-rose-500 flex items-center justify-center mb-2">
+                <span class="text-base">☀️</span>
+              </div>
+              <div class="text-sm font-bold text-slate-900">夏季高温防中暑</div>
+              <div class="text-[10px] text-slate-500 mt-0.5">户外工种必看</div>
+            </a>
+            <a href="#" class="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl p-3 card-hover">
+              <div class="w-9 h-9 rounded-lg bg-emerald-500 flex items-center justify-center mb-2">
+                <span class="text-base">🥗</span>
+              </div>
+              <div class="text-sm font-bold text-slate-900">夜班工人饮食</div>
+              <div class="text-[10px] text-slate-500 mt-0.5">营养师建议</div>
+            </a>
+            <a href="#" class="bg-gradient-to-br from-purple-50 to-violet-50 rounded-xl p-3 card-hover">
+              <div class="w-9 h-9 rounded-lg bg-purple-500 flex items-center justify-center mb-2">
+                <span class="text-base">💪</span>
+              </div>
+              <div class="text-sm font-bold text-slate-900">腰肌劳损 5 招</div>
+              <div class="text-[10px] text-slate-500 mt-0.5">搬运工必看</div>
+            </a>
+            <a href="#" class="bg-gradient-to-br from-cyan-50 to-blue-50 rounded-xl p-3 card-hover">
+              <div class="w-9 h-9 rounded-lg bg-cyan-500 flex items-center justify-center mb-2">
+                <span class="text-base">🧘</span>
+              </div>
+              <div class="text-sm font-bold text-slate-900">压力大睡不着？</div>
+              <div class="text-[10px] text-slate-500 mt-0.5">免费心理咨询</div>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- 紧急联系人 -->
+      <div class="px-5 mt-4">
+        <div class="bg-white rounded-2xl p-4 shadow-sm">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-2">
+              <h3 class="font-bold text-slate-900">紧急医疗信息</h3>
+              <span class="text-[9px] bg-rose-100 text-rose-600 px-1.5 py-0.5 rounded font-bold">紧急可见</span>
+            </div>
+            <a href="#" class="text-xs text-blue-600">编辑</a>
+          </div>
+          <div class="space-y-2 text-xs">
+            <div class="flex justify-between py-1.5 border-b border-slate-100">
+              <span class="text-slate-500">血型</span>
+              <span class="text-slate-900 font-bold">B 型 RH+</span>
+            </div>
+            <div class="flex justify-between py-1.5 border-b border-slate-100">
+              <span class="text-slate-500">过敏药物</span>
+              <span class="text-slate-900 font-bold">青霉素</span>
+            </div>
+            <div class="flex justify-between py-1.5 border-b border-slate-100">
+              <span class="text-slate-500">慢性疾病</span>
+              <span class="text-slate-900 font-bold">无</span>
+            </div>
+            <div class="flex justify-between py-1.5 border-b border-slate-100">
+              <span class="text-slate-500">紧急联系人 1</span>
+              <span class="text-slate-900 font-bold">王秀英 (妻子) · 138****6829</span>
+            </div>
+            <div class="flex justify-between py-1.5">
+              <span class="text-slate-500">紧急联系人 2</span>
+              <span class="text-slate-900 font-bold">王志宏 (儿子) · 156****3204</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 一键叫救护车 -->
+      <div class="px-5 mt-4 mb-4">
+        <div class="grid grid-cols-2 gap-3">
+          <button class="bg-gradient-to-br from-rose-500 to-red-600 rounded-2xl p-4 text-white shadow-lg active:scale-95 transition-transform">
+            <div class="flex items-center justify-center mb-1.5">
+              <svg width="28" height="28" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="11" width="14" height="8" rx="1"/><circle cx="7" cy="20" r="2"/><circle cx="17" cy="20" r="2"/><path d="M17 11V8a2 2 0 0 0-2-2H8L3 11"/><line x1="10" y1="14" x2="13" y2="14"/><line x1="11.5" y1="12.5" x2="11.5" y2="15.5"/></svg>
+            </div>
+            <div class="font-extrabold text-sm">一键叫救护车</div>
+            <div class="text-[10px] opacity-90 mt-0.5">120 + 自动定位</div>
+          </button>
+          <button class="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl p-4 text-white shadow-lg active:scale-95 transition-transform">
+            <div class="flex items-center justify-center mb-1.5">
+              <svg width="28" height="28" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            </div>
+            <div class="font-extrabold text-sm">附近医院</div>
+            <div class="text-[10px] opacity-90 mt-0.5">最近 1.2km · 24h 急诊</div>
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 底部 Tab -->
+    <div class="bg-white border-t border-slate-100 grid grid-cols-5 py-2">
+      <a href="home.html" class="flex flex-col items-center gap-0.5 text-slate-400">
+        <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+        <span class="text-[10px]">首页</span>
+      </a>
+      <a href="job-detail.html" class="flex flex-col items-center gap-0.5 text-slate-400">
+        <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <span class="text-[10px]">找活</span>
+      </a>
+      <a href="credit.html" class="flex flex-col items-center gap-0.5 text-slate-400">
+        <div class="w-10 h-10 -mt-4 rounded-full grad-credit flex items-center justify-center shadow-lg">
+          <span class="text-white text-xs font-bold">工分</span>
+        </div>
+      </a>
+      <a href="chat.html" class="flex flex-col items-center gap-0.5 text-slate-400">
+        <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <span class="text-[10px]">消息</span>
+      </a>
+      <a href="profile.html" class="flex flex-col items-center gap-0.5 text-slate-400">
+        <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span class="text-[10px]">我的</span>
+      </a>
+    </div>
+
+  </div>
+</div>
+</body>
+</html>

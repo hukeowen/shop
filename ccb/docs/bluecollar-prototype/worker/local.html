@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>蓝工 · 老乡 / 找房</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="../shared/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  .grad-orange { background: linear-gradient(135deg,#EA580C 0%,#F97316 40%,#FB923C 100%); }
+  .grad-orange-deep { background: linear-gradient(135deg,#7C2D12 0%,#C2410C 50%,#EA580C 100%); }
+  .heatmap-grid { display: grid; grid-template-columns: repeat(12,1fr); gap: 2px; }
+  .heatmap-cell { aspect-ratio: 1/1; border-radius: 2px; }
+  .city-pin { animation: cityPinPulse 2s infinite; }
+  @keyframes cityPinPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.2); } }
+  .ring-shandong { box-shadow: 0 0 0 3px rgba(234,88,12,.3); }
+  .verified-house { background: linear-gradient(135deg,#10B981,#059669); }
+</style>
+</head>
+<body class="bg-slate-100 min-h-screen pb-10">
+
+<div class="text-center pt-6"><a href="../index.html" class="text-sm text-slate-500 hover:text-blue-600">← 返回原型导航</a></div>
+
+<div class="phone-frame">
+  <div class="phone-notch"></div>
+  <div class="phone-screen">
+    <div class="status-bar"><span>9:41</span><span class="flex gap-1 items-center"><span>●●●●●</span><span class="text-xs">5G</span><span class="text-xs">100%</span></span></div>
+
+    <div class="phone-content">
+
+      <!-- Hero -->
+      <div class="grad-orange-deep px-5 pt-3 pb-7 text-white relative overflow-hidden">
+        <div class="absolute -top-12 -right-12 w-44 h-44 bg-amber-300/15 rounded-full"></div>
+        <div class="absolute -bottom-16 -left-16 w-56 h-56 bg-yellow-200/10 rounded-full"></div>
+
+        <div class="relative flex items-center justify-between">
+          <a href="home.html" class="w-8 h-8 flex items-center justify-center">
+            <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+          </a>
+          <div class="text-base font-bold">蓝工同乡</div>
+          <button class="w-8 h-8 flex items-center justify-center">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+          </button>
+        </div>
+
+        <div class="relative mt-5">
+          <div class="flex items-center gap-2 text-xs opacity-90">
+            <span>🏮</span><span>异乡不孤单</span>
+          </div>
+          <div class="text-2xl font-extrabold leading-tight mt-1">家乡的味道<br/>就在你身边</div>
+          <div class="mt-2 inline-flex items-center gap-2 bg-white/15 backdrop-blur rounded-full px-3 py-1 text-xs">
+            <span>📍</span><span>杭州 · 山东老乡 <b>12,345</b> 人 在线</span>
+          </div>
+        </div>
+
+        <!-- 老乡圈卡 -->
+        <div class="relative mt-5 bg-white/95 rounded-2xl p-4 shadow-2xl text-slate-900">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-xs text-slate-500">我的老乡圈</span>
+            <a href="#" class="text-xs text-orange-600 font-medium">切换地区 →</a>
+          </div>
+          <div class="grid grid-cols-3 gap-2">
+            <div class="text-center bg-orange-50 rounded-xl p-2.5">
+              <div class="text-base font-extrabold text-orange-600">12,345</div>
+              <div class="text-[10px] text-slate-500 mt-0.5">山东老乡</div>
+              <div class="flex justify-center -space-x-1 mt-1.5">
+                <div class="w-4 h-4 rounded-full bg-amber-400 ring-1 ring-white"></div>
+                <div class="w-4 h-4 rounded-full bg-cyan-400 ring-1 ring-white"></div>
+                <div class="w-4 h-4 rounded-full bg-rose-400 ring-1 ring-white"></div>
+              </div>
+            </div>
+            <div class="text-center bg-blue-50 rounded-xl p-2.5">
+              <div class="text-base font-extrabold text-blue-600">287</div>
+              <div class="text-[10px] text-slate-500 mt-0.5">济宁同县</div>
+              <div class="text-[9px] text-blue-600 mt-1.5 font-bold">+38 本周</div>
+            </div>
+            <div class="text-center bg-rose-50 rounded-xl p-2.5">
+              <div class="text-base font-extrabold text-rose-600">12</div>
+              <div class="text-[10px] text-slate-500 mt-0.5">梁山同村</div>
+              <div class="text-[9px] text-rose-600 mt-1.5 font-bold">3 人在线</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 快捷功能 -->
+      <div class="px-5 mt-4">
+        <div class="bg-white rounded-2xl p-4 shadow-sm">
+          <div class="grid grid-cols-4 gap-3">
+            <a href="#" class="text-center">
+              <div class="w-11 h-11 mx-auto rounded-xl bg-orange-100 flex items-center justify-center mb-1">
+                <svg width="22" height="22" fill="none" stroke="#EA580C" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+              </div>
+              <span class="text-[10px] text-slate-700">找房</span>
+            </a>
+            <a href="#" class="text-center">
+              <div class="w-11 h-11 mx-auto rounded-xl bg-blue-100 flex items-center justify-center mb-1">
+                <svg width="22" height="22" fill="none" stroke="#1677FF" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
+              </div>
+              <span class="text-[10px] text-slate-700">顺风车</span>
+            </a>
+            <a href="#" class="text-center">
+              <div class="w-11 h-11 mx-auto rounded-xl bg-emerald-100 flex items-center justify-center mb-1">
+                <svg width="22" height="22" fill="none" stroke="#10B981" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+              </div>
+              <span class="text-[10px] text-slate-700">老乡聚会</span>
+            </a>
+            <a href="#" class="text-center">
+              <div class="w-11 h-11 mx-auto rounded-xl bg-purple-100 flex items-center justify-center mb-1">
+                <svg width="22" height="22" fill="none" stroke="#A855F7" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              </div>
+              <span class="text-[10px] text-slate-700">寻人</span>
+            </a>
+            <a href="#" class="text-center">
+              <div class="w-11 h-11 mx-auto rounded-xl bg-rose-100 flex items-center justify-center mb-1">
+                <svg width="22" height="22" fill="none" stroke="#F43F5E" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/></svg>
+              </div>
+              <span class="text-[10px] text-slate-700">二手转让</span>
+            </a>
+            <a href="#" class="text-center">
+              <div class="w-11 h-11 mx-auto rounded-xl bg-amber-100 flex items-center justify-center mb-1">
+                <svg width="22" height="22" fill="none" stroke="#F59E0B" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              </div>
+              <span class="text-[10px] text-slate-700">借支</span>
+            </a>
+            <a href="legal.html" class="text-center">
+              <div class="w-11 h-11 mx-auto rounded-xl bg-yellow-100 flex items-center justify-center mb-1">
+                <svg width="22" height="22" fill="none" stroke="#CA8A04" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="3" x2="12" y2="21"/><path d="M3 7l9-2 9 2"/></svg>
+              </div>
+              <span class="text-[10px] text-slate-700">维权</span>
+            </a>
+            <a href="invite.html" class="text-center">
+              <div class="w-11 h-11 mx-auto rounded-xl bg-cyan-100 flex items-center justify-center mb-1">
+                <svg width="22" height="22" fill="none" stroke="#0891B2" stroke-width="2" viewBox="0 0 24 24"><path d="M21 16v-2a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v2"/><polyline points="17 11 12 6 7 11"/><line x1="12" y1="6" x2="12" y2="18"/></svg>
+              </div>
+              <span class="text-[10px] text-slate-700">介绍工作</span>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- 老乡帖子流 -->
+      <div class="px-5 mt-4">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-bold text-slate-900 text-lg">老乡动态</h3>
+          <div class="flex gap-1 text-[10px]">
+            <button class="bg-orange-500 text-white px-2 py-0.5 rounded font-medium">关注</button>
+            <button class="text-slate-400 px-2 py-0.5">推荐</button>
+            <button class="text-slate-400 px-2 py-0.5">附近</button>
+          </div>
+        </div>
+
+        <!-- 帖子 1 - 顺风车 -->
+        <div class="bg-white rounded-2xl p-3.5 mb-2.5 shadow-sm">
+          <div class="flex items-center gap-2 mb-2">
+            <div class="w-9 h-9 rounded-full bg-amber-500 text-white flex items-center justify-center text-sm font-bold flex-shrink-0">张</div>
+            <div class="flex-1 min-w-0">
+              <div class="text-sm font-bold text-slate-900">张大军 <span class="text-[9px] bg-orange-100 text-orange-700 px-1.5 rounded ml-1">济宁同县</span></div>
+              <div class="text-[10px] text-slate-500">浙江睿才人力 · 38 分钟前 · 距你 2.3km</div>
+            </div>
+            <span class="text-[10px] bg-rose-100 text-rose-600 px-2 py-0.5 rounded-full font-bold">🚗 顺风车</span>
+          </div>
+          <div class="text-sm text-slate-800 leading-relaxed">
+            <b>1月20日</b> 从滨江出发回济宁 (邹城方向)，自驾，<b>能带 2 个老乡</b>，AA 油费约 ¥350/人。有需要的留言~
+          </div>
+          <div class="mt-2 bg-orange-50 rounded-lg p-2 text-[11px] text-orange-700 border border-orange-100">
+            📍 路线：杭州滨江 → 南京 → 徐州 → 济宁 · 全程约 12 小时
+          </div>
+          <div class="flex items-center justify-between mt-3 pt-2 border-t border-slate-100 text-xs">
+            <div class="flex gap-4">
+              <button class="text-slate-500 flex items-center gap-1"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg><span>18</span></button>
+              <button class="text-slate-500 flex items-center gap-1"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg><span>42</span></button>
+            </div>
+            <button class="bg-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full">我要拼车</button>
+          </div>
+        </div>
+
+        <!-- 帖子 2 - 合租 -->
+        <div class="bg-white rounded-2xl p-3.5 mb-2.5 shadow-sm">
+          <div class="flex items-center gap-2 mb-2">
+            <div class="w-9 h-9 rounded-full bg-pink-500 text-white flex items-center justify-center text-sm font-bold flex-shrink-0">王</div>
+            <div class="flex-1 min-w-0">
+              <div class="text-sm font-bold text-slate-900">王秀英 <span class="text-[9px] bg-rose-100 text-rose-700 px-1.5 rounded ml-1">梁山同村</span></div>
+              <div class="text-[10px] text-slate-500">海底捞员工 · 2 小时前</div>
+            </div>
+            <span class="text-[10px] bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full font-bold">🏠 求合租</span>
+          </div>
+          <div class="text-sm text-slate-800 leading-relaxed">
+            求老乡合租！本人女，35岁，在<b>海底捞西湖店</b>上班，想找西湖区合租，<b>预算 ¥800-1200/月</b>，能做饭，干净不抽烟。有意私聊~
+          </div>
+          <div class="flex items-center justify-between mt-3 pt-2 border-t border-slate-100 text-xs">
+            <div class="flex gap-4">
+              <button class="text-slate-500 flex items-center gap-1"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8"/></svg><span>32</span></button>
+              <button class="text-rose-500 flex items-center gap-1"><svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg><span>67</span></button>
+            </div>
+            <button class="bg-blue-500 text-white text-xs font-bold px-3 py-1 rounded-full">我有房</button>
+          </div>
+        </div>
+
+        <!-- 帖子 3 - 商会聚会 -->
+        <div class="bg-gradient-to-br from-rose-50 to-orange-50 rounded-2xl p-3.5 mb-2.5 border border-orange-100">
+          <div class="flex items-center gap-2 mb-2">
+            <div class="w-9 h-9 rounded-full bg-orange-500 text-white flex items-center justify-center text-sm font-bold flex-shrink-0">商</div>
+            <div class="flex-1 min-w-0">
+              <div class="text-sm font-bold text-slate-900">山东商会·杭州分会 <span class="text-[9px] bg-amber-100 text-amber-700 px-1.5 rounded ml-1">官方</span></div>
+              <div class="text-[10px] text-slate-500">主办方 · 1 天前</div>
+            </div>
+            <span class="text-[10px] bg-orange-500 text-white px-2 py-0.5 rounded-full font-bold">🎉 活动</span>
+          </div>
+          <div class="text-base font-extrabold text-slate-900 mb-1">2026 山东老乡春节联谊晚会</div>
+          <div class="grid grid-cols-3 gap-2 mt-2 text-xs">
+            <div class="bg-white rounded-lg p-2 text-center">
+              <div class="text-[10px] text-slate-500">时间</div>
+              <div class="font-bold text-slate-900 text-[11px]">2.6 周六 18:00</div>
+            </div>
+            <div class="bg-white rounded-lg p-2 text-center">
+              <div class="text-[10px] text-slate-500">地点</div>
+              <div class="font-bold text-slate-900 text-[11px]">西湖区华联酒店</div>
+            </div>
+            <div class="bg-white rounded-lg p-2 text-center">
+              <div class="text-[10px] text-slate-500">费用</div>
+              <div class="font-bold text-rose-600">¥88/人</div>
+            </div>
+          </div>
+          <div class="flex items-center justify-between mt-3 pt-2 border-t border-orange-200">
+            <div class="flex items-center gap-2 text-[11px] text-slate-600">
+              <div class="flex -space-x-1.5">
+                <div class="w-5 h-5 rounded-full bg-amber-400 ring-1 ring-white"></div>
+                <div class="w-5 h-5 rounded-full bg-cyan-400 ring-1 ring-white"></div>
+                <div class="w-5 h-5 rounded-full bg-rose-400 ring-1 ring-white"></div>
+              </div>
+              <span>已 <b>168</b> 人报名 · 余 <b>32</b> 席</span>
+            </div>
+            <button class="bg-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full">立即报名</button>
+          </div>
+        </div>
+
+        <!-- 帖子 4 - 二手 -->
+        <div class="bg-white rounded-2xl p-3.5 mb-2.5 shadow-sm">
+          <div class="flex items-center gap-2 mb-2">
+            <div class="w-9 h-9 rounded-full bg-emerald-500 text-white flex items-center justify-center text-sm font-bold flex-shrink-0">李</div>
+            <div class="flex-1 min-w-0">
+              <div class="text-sm font-bold text-slate-900">李建国 <span class="text-[9px] bg-orange-100 text-orange-700 px-1.5 rounded ml-1">济宁同县</span></div>
+              <div class="text-[10px] text-slate-500">京东亚一仓 · 5 小时前 · 余杭</div>
+            </div>
+            <span class="text-[10px] bg-emerald-100 text-emerald-600 px-2 py-0.5 rounded-full font-bold">💸 二手</span>
+          </div>
+          <div class="text-sm text-slate-800 leading-relaxed mb-2">回老家了，这些东西低价转让~ 自取优先：</div>
+          <div class="grid grid-cols-3 gap-2">
+            <div class="bg-slate-100 rounded-lg p-2 text-center">
+              <div class="h-12 bg-gradient-to-br from-slate-300 to-slate-400 rounded mb-1 flex items-center justify-center text-2xl">🚲</div>
+              <div class="text-[10px] font-bold text-slate-900">自行车</div>
+              <div class="text-rose-600 text-xs font-extrabold">¥80</div>
+            </div>
+            <div class="bg-slate-100 rounded-lg p-2 text-center">
+              <div class="h-12 bg-gradient-to-br from-rose-300 to-rose-400 rounded mb-1 flex items-center justify-center text-2xl">🍳</div>
+              <div class="text-[10px] font-bold text-slate-900">电饭锅</div>
+              <div class="text-rose-600 text-xs font-extrabold">¥30</div>
+            </div>
+            <div class="bg-slate-100 rounded-lg p-2 text-center">
+              <div class="h-12 bg-gradient-to-br from-blue-300 to-blue-400 rounded mb-1 flex items-center justify-center text-2xl">🛏️</div>
+              <div class="text-[10px] font-bold text-slate-900">单人床垫</div>
+              <div class="text-rose-600 text-xs font-extrabold">¥50</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 帖子 5 - 寻人 -->
+        <div class="bg-white rounded-2xl p-3.5 mb-3 shadow-sm">
+          <div class="flex items-center gap-2 mb-2">
+            <div class="w-9 h-9 rounded-full bg-purple-500 text-white flex items-center justify-center text-sm font-bold flex-shrink-0">赵</div>
+            <div class="flex-1 min-w-0">
+              <div class="text-sm font-bold text-slate-900">赵明亮 <span class="text-[9px] bg-blue-100 text-blue-700 px-1.5 rounded ml-1">山东老乡</span></div>
+              <div class="text-[10px] text-slate-500">立讯精密 · 昨天</div>
+            </div>
+            <span class="text-[10px] bg-purple-100 text-purple-600 px-2 py-0.5 rounded-full font-bold">🔍 寻人</span>
+          </div>
+          <div class="text-sm text-slate-800 leading-relaxed">
+            找我哥<b>赵明强</b>，48岁，2024年来杭州打工，电话停机半年了，听说在<b>萧山区某印刷厂</b>上班。家里老人病重，看到的老乡帮忙转告下 🙏
+          </div>
+        </div>
+      </div>
+
+      <!-- 找房专区 -->
+      <div class="px-5 mt-4">
+        <div class="flex items-center justify-between mb-3">
+          <div>
+            <h3 class="font-bold text-slate-900 text-lg">老乡找房</h3>
+            <div class="text-[10px] text-slate-400 mt-0.5">老乡担保 · 真实房源 · 月付/日付均可</div>
+          </div>
+          <a href="#" class="text-xs text-orange-600">更多 →</a>
+        </div>
+
+        <!-- 房源 1 -->
+        <a href="#" class="block bg-white rounded-2xl overflow-hidden card-hover mb-2.5 shadow-sm">
+          <div class="flex">
+            <div class="w-28 h-24 bg-gradient-to-br from-amber-200 via-orange-300 to-rose-300 flex-shrink-0 relative">
+              <span class="absolute top-1.5 left-1.5 bg-emerald-500 text-white text-[9px] px-1.5 py-0.5 rounded font-bold">老乡房</span>
+              <span class="absolute bottom-1.5 left-1.5 text-white text-[9px] bg-black/40 px-1.5 py-0.5 rounded">12 图</span>
+            </div>
+            <div class="flex-1 p-2.5 min-w-0">
+              <div class="flex items-center gap-1.5">
+                <span class="text-sm font-bold text-slate-900 truncate">西湖区 · 留下镇精装单间</span>
+              </div>
+              <div class="text-[10px] text-slate-500 mt-0.5">距京东亚一仓 2.3km · 含 WiFi 独卫</div>
+              <div class="flex gap-1.5 mt-1.5 flex-wrap">
+                <span class="text-[9px] bg-blue-50 text-blue-600 px-1.5 rounded">月付</span>
+                <span class="text-[9px] bg-emerald-50 text-emerald-600 px-1.5 rounded">押一付一</span>
+                <span class="text-[9px] bg-amber-50 text-amber-600 px-1.5 rounded">山东房东</span>
+              </div>
+              <div class="flex items-end justify-between mt-1.5">
+                <div>
+                  <span class="text-rose-600 font-extrabold text-base">¥1,200</span>
+                  <span class="text-[10px] text-slate-400">/月</span>
+                </div>
+                <span class="text-[10px] text-slate-500">老张 · ★4.9</span>
+              </div>
+            </div>
+          </div>
+        </a>
+
+        <!-- 房源 2 -->
+        <a href="#" class="block bg-white rounded-2xl overflow-hidden card-hover mb-2.5 shadow-sm">
+          <div class="flex">
+            <div class="w-28 h-24 bg-gradient-to-br from-blue-200 via-cyan-300 to-teal-300 flex-shrink-0 relative">
+              <span class="absolute top-1.5 left-1.5 bg-blue-500 text-white text-[9px] px-1.5 py-0.5 rounded font-bold">合租</span>
+              <span class="absolute bottom-1.5 left-1.5 text-white text-[9px] bg-black/40 px-1.5 py-0.5 rounded">8 图</span>
+            </div>
+            <div class="flex-1 p-2.5 min-w-0">
+              <div class="text-sm font-bold text-slate-900 truncate">余杭区 · 仁和镇 6 人合租房</div>
+              <div class="text-[10px] text-slate-500 mt-0.5">距亚一仓 800m · 通水电包 WiFi</div>
+              <div class="flex gap-1.5 mt-1.5 flex-wrap">
+                <span class="text-[9px] bg-emerald-50 text-emerald-600 px-1.5 rounded">免押金</span>
+                <span class="text-[9px] bg-blue-50 text-blue-600 px-1.5 rounded">日付</span>
+                <span class="text-[9px] bg-rose-50 text-rose-600 px-1.5 rounded">余 2 床位</span>
+              </div>
+              <div class="flex items-end justify-between mt-1.5">
+                <div>
+                  <span class="text-rose-600 font-extrabold text-base">¥800</span>
+                  <span class="text-[10px] text-slate-400">/月</span>
+                </div>
+                <span class="text-[10px] text-slate-500">京东自营宿舍 ✓</span>
+              </div>
+            </div>
+          </div>
+        </a>
+
+        <!-- 房源 3 -->
+        <a href="#" class="block bg-white rounded-2xl overflow-hidden card-hover mb-2.5 shadow-sm">
+          <div class="flex">
+            <div class="w-28 h-24 bg-gradient-to-br from-purple-200 via-pink-300 to-rose-300 flex-shrink-0 relative">
+              <span class="absolute top-1.5 left-1.5 verified-house text-white text-[9px] px-1.5 py-0.5 rounded font-bold">老乡担保</span>
+              <span class="absolute bottom-1.5 left-1.5 text-white text-[9px] bg-black/40 px-1.5 py-0.5 rounded">15 图</span>
+            </div>
+            <div class="flex-1 p-2.5 min-w-0">
+              <div class="text-sm font-bold text-slate-900 truncate">滨江区 · 长河单间 朝南</div>
+              <div class="text-[10px] text-slate-500 mt-0.5">海底捞滨江店 1.2km · 独立厨房</div>
+              <div class="flex gap-1.5 mt-1.5 flex-wrap">
+                <span class="text-[9px] bg-amber-50 text-amber-600 px-1.5 rounded">月付</span>
+                <span class="text-[9px] bg-emerald-50 text-emerald-600 px-1.5 rounded">家电齐全</span>
+                <span class="text-[9px] bg-purple-50 text-purple-600 px-1.5 rounded">河南老乡</span>
+              </div>
+              <div class="flex items-end justify-between mt-1.5">
+                <div>
+                  <span class="text-rose-600 font-extrabold text-base">¥1,500</span>
+                  <span class="text-[10px] text-slate-400">/月</span>
+                </div>
+                <span class="text-[10px] text-slate-500">老乡担保 · 蓝工兜底</span>
+              </div>
+            </div>
+          </div>
+        </a>
+
+        <!-- 房源 4 -->
+        <a href="#" class="block bg-white rounded-2xl overflow-hidden card-hover mb-2.5 shadow-sm">
+          <div class="flex">
+            <div class="w-28 h-24 bg-gradient-to-br from-emerald-200 via-teal-300 to-cyan-300 flex-shrink-0 relative">
+              <span class="absolute top-1.5 left-1.5 bg-rose-500 text-white text-[9px] px-1.5 py-0.5 rounded font-bold">急租</span>
+              <span class="absolute bottom-1.5 left-1.5 text-white text-[9px] bg-black/40 px-1.5 py-0.5 rounded">9 图</span>
+            </div>
+            <div class="flex-1 p-2.5 min-w-0">
+              <div class="text-sm font-bold text-slate-900 truncate">萧山区 · 立讯精密员工宿舍</div>
+              <div class="text-[10px] text-slate-500 mt-0.5">厂区 200m · 4 人间 含被褥</div>
+              <div class="flex gap-1.5 mt-1.5 flex-wrap">
+                <span class="text-[9px] bg-emerald-50 text-emerald-600 px-1.5 rounded">免房租</span>
+                <span class="text-[9px] bg-blue-50 text-blue-600 px-1.5 rounded">工厂提供</span>
+                <span class="text-[9px] bg-amber-50 text-amber-600 px-1.5 rounded">含饭卡</span>
+              </div>
+              <div class="flex items-end justify-between mt-1.5">
+                <div>
+                  <span class="text-emerald-600 font-extrabold text-base">免费</span>
+                  <span class="text-[10px] text-slate-400">需入职</span>
+                </div>
+                <span class="text-[10px] text-slate-500">立即上岗</span>
+              </div>
+            </div>
+          </div>
+        </a>
+
+        <!-- 房源 5 -->
+        <a href="#" class="block bg-white rounded-2xl overflow-hidden card-hover mb-3 shadow-sm">
+          <div class="flex">
+            <div class="w-28 h-24 bg-gradient-to-br from-yellow-200 via-amber-300 to-orange-300 flex-shrink-0 relative">
+              <span class="absolute top-1.5 left-1.5 bg-purple-500 text-white text-[9px] px-1.5 py-0.5 rounded font-bold">夫妻房</span>
+              <span class="absolute bottom-1.5 left-1.5 text-white text-[9px] bg-black/40 px-1.5 py-0.5 rounded">11 图</span>
+            </div>
+            <div class="flex-1 p-2.5 min-w-0">
+              <div class="text-sm font-bold text-slate-900 truncate">拱墅区 · 大关一室一厅</div>
+              <div class="text-[10px] text-slate-500 mt-0.5">地铁 5 号线 500m · 适合夫妻</div>
+              <div class="flex gap-1.5 mt-1.5 flex-wrap">
+                <span class="text-[9px] bg-blue-50 text-blue-600 px-1.5 rounded">月付</span>
+                <span class="text-[9px] bg-emerald-50 text-emerald-600 px-1.5 rounded">配空调</span>
+                <span class="text-[9px] bg-amber-50 text-amber-600 px-1.5 rounded">中介免费</span>
+              </div>
+              <div class="flex items-end justify-between mt-1.5">
+                <div>
+                  <span class="text-rose-600 font-extrabold text-base">¥1,800</span>
+                  <span class="text-[10px] text-slate-400">/月</span>
+                </div>
+                <span class="text-[10px] text-slate-500">山东房东 · ★5.0</span>
+              </div>
+            </div>
+          </div>
+        </a>
+      </div>
+
+      <!-- 用工地图 -->
+      <div class="px-5 mt-4">
+        <div class="bg-white rounded-2xl p-4 shadow-sm">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <h3 class="font-bold text-slate-900">山东老乡在杭州</h3>
+              <div class="text-[10px] text-slate-400 mt-0.5">用工分布热力图 · 实时更新</div>
+            </div>
+            <span class="text-[10px] bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-bold">12,345 人</span>
+          </div>
+
+          <!-- 热力图 -->
+          <div class="bg-slate-50 rounded-xl p-3 relative">
+            <div class="heatmap-grid mb-2">
+              <!-- 12x6 = 72 个色块 -->
+              <div class="heatmap-cell" style="background:#fef3c7"></div>
+              <div class="heatmap-cell" style="background:#fed7aa"></div>
+              <div class="heatmap-cell" style="background:#fdba74"></div>
+              <div class="heatmap-cell" style="background:#fb923c"></div>
+              <div class="heatmap-cell" style="background:#f97316"></div>
+              <div class="heatmap-cell" style="background:#ea580c"></div>
+              <div class="heatmap-cell" style="background:#f97316"></div>
+              <div class="heatmap-cell" style="background:#fb923c"></div>
+              <div class="heatmap-cell" style="background:#fdba74"></div>
+              <div class="heatmap-cell" style="background:#fed7aa"></div>
+              <div class="heatmap-cell" style="background:#fef3c7"></div>
+              <div class="heatmap-cell" style="background:#fffbeb"></div>
+
+              <div class="heatmap-cell" style="background:#fed7aa"></div>
+              <div class="heatmap-cell" style="background:#fdba74"></div>
+              <div class="heatmap-cell" style="background:#fb923c"></div>
+              <div class="heatmap-cell" style="background:#ea580c"></div>
+              <div class="heatmap-cell" style="background:#c2410c"></div>
+              <div class="heatmap-cell" style="background:#9a3412"></div>
+              <div class="heatmap-cell" style="background:#c2410c"></div>
+              <div class="heatmap-cell" style="background:#ea580c"></div>
+              <div class="heatmap-cell" style="background:#f97316"></div>
+              <div class="heatmap-cell" style="background:#fdba74"></div>
+              <div class="heatmap-cell" style="background:#fed7aa"></div>
+              <div class="heatmap-cell" style="background:#fef3c7"></div>
+
+              <div class="heatmap-cell" style="background:#fdba74"></div>
+              <div class="heatmap-cell" style="background:#fb923c"></div>
+              <div class="heatmap-cell" style="background:#ea580c"></div>
+              <div class="heatmap-cell" style="background:#c2410c"></div>
+              <div class="heatmap-cell" style="background:#9a3412"></div>
+              <div class="heatmap-cell" style="background:#7c2d12"></div>
+              <div class="heatmap-cell" style="background:#9a3412"></div>
+              <div class="heatmap-cell" style="background:#c2410c"></div>
+              <div class="heatmap-cell" style="background:#ea580c"></div>
+              <div class="heatmap-cell" style="background:#fb923c"></div>
+              <div class="heatmap-cell" style="background:#fdba74"></div>
+              <div class="heatmap-cell" style="background:#fed7aa"></div>
+
+              <div class="heatmap-cell" style="background:#fb923c"></div>
+              <div class="heatmap-cell" style="background:#ea580c"></div>
+              <div class="heatmap-cell" style="background:#c2410c"></div>
+              <div class="heatmap-cell" style="background:#9a3412"></div>
+              <div class="heatmap-cell" style="background:#7c2d12"></div>
+              <div class="heatmap-cell" style="background:#9a3412"></div>
+              <div class="heatmap-cell" style="background:#c2410c"></div>
+              <div class="heatmap-cell" style="background:#ea580c"></div>
+              <div class="heatmap-cell" style="background:#fb923c"></div>
+              <div class="heatmap-cell" style="background:#fdba74"></div>
+              <div class="heatmap-cell" style="background:#fed7aa"></div>
+              <div class="heatmap-cell" style="background:#fef3c7"></div>
+
+              <div class="heatmap-cell" style="background:#fdba74"></div>
+              <div class="heatmap-cell" style="background:#fb923c"></div>
+              <div class="heatmap-cell" style="background:#ea580c"></div>
+              <div class="heatmap-cell" style="background:#c2410c"></div>
+              <div class="heatmap-cell" style="background:#9a3412"></div>
+              <div class="heatmap-cell" style="background:#c2410c"></div>
+              <div class="heatmap-cell" style="background:#ea580c"></div>
+              <div class="heatmap-cell" style="background:#fb923c"></div>
+              <div class="heatmap-cell" style="background:#fdba74"></div>
+              <div class="heatmap-cell" style="background:#fed7aa"></div>
+              <div class="heatmap-cell" style="background:#fef3c7"></div>
+              <div class="heatmap-cell" style="background:#fffbeb"></div>
+
+              <div class="heatmap-cell" style="background:#fed7aa"></div>
+              <div class="heatmap-cell" style="background:#fdba74"></div>
+              <div class="heatmap-cell" style="background:#fb923c"></div>
+              <div class="heatmap-cell" style="background:#ea580c"></div>
+              <div class="heatmap-cell" style="background:#fb923c"></div>
+              <div class="heatmap-cell" style="background:#fdba74"></div>
+              <div class="heatmap-cell" style="background:#fed7aa"></div>
+              <div class="heatmap-cell" style="background:#fef3c7"></div>
+              <div class="heatmap-cell" style="background:#fffbeb"></div>
+              <div class="heatmap-cell" style="background:#fffbeb"></div>
+              <div class="heatmap-cell" style="background:#fffbeb"></div>
+              <div class="heatmap-cell" style="background:#fffbeb"></div>
+            </div>
+
+            <!-- 城区标签 -->
+            <div class="space-y-1 text-[10px]">
+              <div class="flex items-center justify-between">
+                <span class="flex items-center gap-1"><span class="city-pin">📍</span><span class="text-slate-700 font-bold">余杭区 (亚一仓)</span></span>
+                <span class="text-orange-700 font-bold">3,820 人</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="flex items-center gap-1"><span>📍</span><span class="text-slate-700">萧山区 (立讯片区)</span></span>
+                <span class="text-orange-600 font-bold">2,936 人</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="flex items-center gap-1"><span>📍</span><span class="text-slate-700">西湖区</span></span>
+                <span class="text-orange-500 font-bold">2,108 人</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="flex items-center gap-1"><span>📍</span><span class="text-slate-700">滨江区</span></span>
+                <span class="text-orange-400 font-bold">1,648 人</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="flex items-center gap-1"><span>📍</span><span class="text-slate-700">拱墅区 + 其他</span></span>
+                <span class="text-orange-400 font-bold">1,833 人</span>
+              </div>
+            </div>
+
+            <!-- 色阶图例 -->
+            <div class="mt-3 pt-3 border-t border-slate-200 flex items-center gap-2 text-[10px] text-slate-500">
+              <span>少</span>
+              <div class="flex gap-0.5">
+                <div class="w-3 h-2 rounded-sm" style="background:#fef3c7"></div>
+                <div class="w-3 h-2 rounded-sm" style="background:#fdba74"></div>
+                <div class="w-3 h-2 rounded-sm" style="background:#fb923c"></div>
+                <div class="w-3 h-2 rounded-sm" style="background:#ea580c"></div>
+                <div class="w-3 h-2 rounded-sm" style="background:#9a3412"></div>
+                <div class="w-3 h-2 rounded-sm" style="background:#7c2d12"></div>
+              </div>
+              <span>多</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 老乡互助 -->
+      <div class="px-5 mt-4 mb-4">
+        <div class="bg-gradient-to-br from-orange-50 to-amber-50 rounded-2xl p-4 border border-orange-100">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="text-base">🤝</span>
+            <h3 class="font-bold text-slate-900">老乡互助 · 你不是一个人</h3>
+          </div>
+          <div class="grid grid-cols-4 gap-3">
+            <a href="legal.html" class="bg-white rounded-xl p-2.5 text-center">
+              <div class="text-2xl mb-1">⚖️</div>
+              <div class="text-[10px] font-bold text-slate-900">维权援助</div>
+              <div class="text-[9px] text-slate-500">8.6万 工友受助</div>
+            </a>
+            <a href="#" class="bg-white rounded-xl p-2.5 text-center">
+              <div class="text-2xl mb-1">🔍</div>
+              <div class="text-[10px] font-bold text-slate-900">寻人启事</div>
+              <div class="text-[9px] text-slate-500">128 条进行中</div>
+            </a>
+            <a href="credit.html" class="bg-white rounded-xl p-2.5 text-center">
+              <div class="text-2xl mb-1">💰</div>
+              <div class="text-[10px] font-bold text-slate-900">急用借支</div>
+              <div class="text-[9px] text-slate-500">凭工分 1 万</div>
+            </a>
+            <a href="invite.html" class="bg-white rounded-xl p-2.5 text-center">
+              <div class="text-2xl mb-1">📢</div>
+              <div class="text-[10px] font-bold text-slate-900">介绍工作</div>
+              <div class="text-[9px] text-slate-500">¥500/人</div>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- 发帖浮按 -->
+      <div class="px-5 mb-4">
+        <button class="w-full grad-orange text-white font-bold py-3 rounded-xl shadow-lg flex items-center justify-center gap-2">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          <span>发布老乡动态</span>
+        </button>
+      </div>
+
+    </div>
+
+    <!-- 底部 Tab -->
+    <div class="bg-white border-t border-slate-100 grid grid-cols-5 py-2">
+      <a href="home.html" class="flex flex-col items-center gap-0.5 text-slate-400">
+        <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+        <span class="text-[10px]">首页</span>
+      </a>
+      <a href="job-detail.html" class="flex flex-col items-center gap-0.5 text-slate-400">
+        <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <span class="text-[10px]">找活</span>
+      </a>
+      <a href="credit.html" class="flex flex-col items-center gap-0.5 text-slate-400">
+        <div class="w-10 h-10 -mt-4 rounded-full grad-credit flex items-center justify-center shadow-lg">
+          <span class="text-white text-xs font-bold">工分</span>
+        </div>
+      </a>
+      <a href="chat.html" class="flex flex-col items-center gap-0.5 text-slate-400">
+        <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <span class="text-[10px]">消息</span>
+      </a>
+      <a href="profile.html" class="flex flex-col items-center gap-0.5 text-slate-400">
+        <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span class="text-[10px]">我的</span>
+      </a>
+    </div>
+
+  </div>
+</div>
+</body>
+</html>

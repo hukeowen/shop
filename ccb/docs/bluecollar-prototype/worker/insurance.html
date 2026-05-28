@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>蓝工 · 保险中心</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="../shared/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  .grad-blue-deep { background: linear-gradient(135deg,#1E3A8A 0%,#1E40AF 40%,#2563EB 100%); }
+  .grad-blue-shield { background: linear-gradient(135deg,#0EA5E9 0%,#1D4ED8 100%); }
+  .shield-glow { box-shadow: 0 0 30px rgba(59,130,246,.45); }
+  .policy-stripe { background: repeating-linear-gradient(135deg,rgba(255,255,255,.06) 0,rgba(255,255,255,.06) 10px,transparent 10px,transparent 20px); }
+  .badge-active { background: linear-gradient(135deg,#10B981,#059669); }
+  .badge-pending { background: linear-gradient(135deg,#94A3B8,#475569); }
+  .badge-soon { background: linear-gradient(135deg,#F59E0B,#D97706); }
+  .insurance-card { background: linear-gradient(135deg,#1E3A8A 0%,#3B82F6 100%); }
+  .insurance-card-2 { background: linear-gradient(135deg,#0F766E 0%,#14B8A6 100%); }
+  .insurance-card-3 { background: linear-gradient(135deg,#7C2D12 0%,#EA580C 100%); }
+</style>
+</head>
+<body class="bg-slate-100 min-h-screen pb-10">
+
+<div class="text-center pt-6"><a href="../index.html" class="text-sm text-slate-500 hover:text-blue-600">← 返回原型导航</a></div>
+
+<div class="phone-frame">
+  <div class="phone-notch"></div>
+  <div class="phone-screen">
+    <div class="status-bar"><span>9:41</span><span class="flex gap-1 items-center"><span>●●●●●</span><span class="text-xs">5G</span><span class="text-xs">100%</span></span></div>
+
+    <div class="phone-content">
+
+      <!-- Hero -->
+      <div class="grad-blue-deep px-5 pt-3 pb-7 text-white relative overflow-hidden">
+        <div class="absolute inset-0 policy-stripe"></div>
+        <div class="absolute -top-16 -right-16 w-56 h-56 bg-white/10 rounded-full"></div>
+        <div class="absolute -bottom-20 -left-12 w-60 h-60 bg-white/5 rounded-full"></div>
+
+        <div class="relative flex items-center justify-between">
+          <a href="home.html" class="w-8 h-8 flex items-center justify-center">
+            <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+          </a>
+          <div class="text-base font-bold">蓝工保障</div>
+          <button class="w-8 h-8 flex items-center justify-center">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+          </button>
+        </div>
+
+        <div class="relative mt-5 flex items-center gap-4">
+          <div class="shield-glow w-16 h-16 rounded-2xl bg-white/15 backdrop-blur flex items-center justify-center">
+            <svg width="34" height="34" fill="none" stroke="#fff" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+          </div>
+          <div>
+            <div class="text-xs opacity-90">为蓝领工人定制</div>
+            <div class="text-2xl font-extrabold leading-tight mt-0.5">蓝工保障<br/>给家人安心</div>
+            <div class="text-[11px] opacity-80 mt-1">已为 <b>286万</b> 蓝领工人投保</div>
+          </div>
+        </div>
+
+        <!-- 保障总览 -->
+        <div class="relative mt-5 bg-white/95 rounded-2xl p-4 shadow-2xl text-slate-900">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-xs text-slate-500">我的保障总额</span>
+            <a href="#" class="text-xs text-blue-600 font-medium">详情 →</a>
+          </div>
+          <div class="flex items-end gap-2">
+            <span class="text-3xl font-extrabold text-slate-900">¥98<span class="text-base">万</span></span>
+            <span class="text-[10px] text-emerald-600 bg-emerald-50 px-1.5 rounded mb-1.5">3 份生效中</span>
+          </div>
+          <div class="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-slate-100">
+            <div class="text-center">
+              <div class="text-sm font-extrabold text-blue-600">3</div>
+              <div class="text-[10px] text-slate-500">在保保单</div>
+            </div>
+            <div class="text-center border-x border-slate-100">
+              <div class="text-sm font-extrabold text-emerald-600">¥0</div>
+              <div class="text-[10px] text-slate-500">理赔进行中</div>
+            </div>
+            <div class="text-center">
+              <div class="text-sm font-extrabold text-amber-600">98天</div>
+              <div class="text-[10px] text-slate-500">已守护</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 我的保单 -->
+      <div class="px-5 mt-4">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-bold text-slate-900 text-lg">我的保单</h3>
+          <a href="#" class="text-xs text-slate-400">全部 3 张 →</a>
+        </div>
+
+        <!-- 卡 1 -->
+        <div class="insurance-card rounded-2xl p-4 text-white mb-3 relative overflow-hidden shadow-md">
+          <div class="absolute -right-10 -top-10 w-32 h-32 bg-white/10 rounded-full"></div>
+          <div class="absolute right-3 top-3">
+            <span class="badge-active text-[10px] px-2 py-0.5 rounded-full font-bold">● 保障中</span>
+          </div>
+          <div class="relative">
+            <div class="flex items-center gap-2 text-xs opacity-90">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              <span>意外伤害险 · 中国人保</span>
+            </div>
+            <div class="text-xl font-extrabold mt-1">蓝工意外险 · 30万保障</div>
+            <div class="flex items-center gap-3 mt-3 pt-3 border-t border-white/20">
+              <div>
+                <div class="text-[10px] opacity-80">每日保费</div>
+                <div class="text-base font-bold">¥3<span class="text-[10px] font-normal opacity-80">/天</span></div>
+              </div>
+              <div>
+                <div class="text-[10px] opacity-80">最高赔付</div>
+                <div class="text-base font-bold">¥30 万</div>
+              </div>
+              <div>
+                <div class="text-[10px] opacity-80">保障至</div>
+                <div class="text-base font-bold">2026.08.15</div>
+              </div>
+            </div>
+            <div class="mt-3 flex gap-2">
+              <button class="flex-1 bg-white/20 backdrop-blur text-xs py-1.5 rounded-lg font-medium">保单详情</button>
+              <button class="flex-1 bg-white text-blue-700 text-xs py-1.5 rounded-lg font-bold">续保</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 卡 2 -->
+        <div class="insurance-card-2 rounded-2xl p-4 text-white mb-3 relative overflow-hidden shadow-md">
+          <div class="absolute -right-10 -bottom-10 w-32 h-32 bg-white/10 rounded-full"></div>
+          <div class="absolute right-3 top-3">
+            <span class="badge-active text-[10px] px-2 py-0.5 rounded-full font-bold">● 保障中</span>
+          </div>
+          <div class="relative">
+            <div class="flex items-center gap-2 text-xs opacity-90">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              <span>工伤补充险 · 平安产险</span>
+            </div>
+            <div class="text-xl font-extrabold mt-1">工伤补充 · 50万保障</div>
+            <div class="text-[11px] opacity-90 mt-1">由 浙江睿才人力 投保 · 在职期间有效</div>
+            <div class="flex items-center gap-3 mt-3 pt-3 border-t border-white/20">
+              <div>
+                <div class="text-[10px] opacity-80">保费</div>
+                <div class="text-base font-bold">公司承担</div>
+              </div>
+              <div>
+                <div class="text-[10px] opacity-80">起赔时间</div>
+                <div class="text-base font-bold">入职即生效</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 卡 3 -->
+        <div class="insurance-card-3 rounded-2xl p-4 text-white mb-3 relative overflow-hidden shadow-md">
+          <div class="absolute -right-10 -top-10 w-32 h-32 bg-white/10 rounded-full"></div>
+          <div class="absolute right-3 top-3">
+            <span class="badge-active text-[10px] px-2 py-0.5 rounded-full font-bold">● 已加入</span>
+          </div>
+          <div class="relative">
+            <div class="flex items-center gap-2 text-xs opacity-90">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>
+              <span>大病互助 · 蓝工平台</span>
+            </div>
+            <div class="text-xl font-extrabold mt-1">大病互助 · 18万救助</div>
+            <div class="text-[11px] opacity-90 mt-1">已 12.6 万工友加入 · 互助金池 ¥3,860 万</div>
+            <div class="mt-3 pt-3 border-t border-white/20 flex items-center justify-between">
+              <div class="flex -space-x-1.5">
+                <div class="w-6 h-6 rounded-full bg-rose-400 ring-2 ring-orange-600 flex items-center justify-center text-[9px] font-bold">郭</div>
+                <div class="w-6 h-6 rounded-full bg-cyan-400 ring-2 ring-orange-600 flex items-center justify-center text-[9px] font-bold">刘</div>
+                <div class="w-6 h-6 rounded-full bg-emerald-400 ring-2 ring-orange-600 flex items-center justify-center text-[9px] font-bold">何</div>
+                <div class="w-6 h-6 rounded-full bg-white/30 ring-2 ring-orange-600 flex items-center justify-center text-[9px]">+12w</div>
+              </div>
+              <div class="text-[11px] opacity-90">最近月分摊 ¥2.3</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 推荐保险 -->
+      <div class="px-5 mt-4">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-bold text-slate-900 text-lg">为你推荐</h3>
+          <span class="text-[10px] text-slate-400">基于工种 + 工分 + 家庭</span>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <a href="#" class="bg-white rounded-2xl p-3 card-hover shadow-sm">
+            <div class="flex items-start justify-between mb-2">
+              <div class="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
+                <svg width="20" height="20" fill="none" stroke="#1D4ED8" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              </div>
+              <span class="text-[9px] bg-rose-100 text-rose-600 px-1.5 py-0.5 rounded font-bold">爆款</span>
+            </div>
+            <div class="text-sm font-bold text-slate-900">蓝工意外险 Pro</div>
+            <div class="text-[10px] text-slate-500 mt-0.5">最高 100 万 · 含猝死责任</div>
+            <div class="flex items-baseline gap-1 mt-2">
+              <span class="text-rose-600 font-extrabold">¥7</span>
+              <span class="text-[10px] text-slate-400">/天起</span>
+            </div>
+            <button class="mt-2 w-full bg-blue-600 text-white text-xs font-bold py-1.5 rounded-lg">立即升级</button>
+          </a>
+
+          <a href="#" class="bg-white rounded-2xl p-3 card-hover shadow-sm">
+            <div class="flex items-start justify-between mb-2">
+              <div class="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center">
+                <svg width="20" height="20" fill="none" stroke="#047857" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v3"/></svg>
+              </div>
+              <span class="text-[9px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded font-bold">企业版</span>
+            </div>
+            <div class="text-sm font-bold text-slate-900">雇主责任险</div>
+            <div class="text-[10px] text-slate-500 mt-0.5">派遣公司必备 · 给老板看</div>
+            <div class="flex items-baseline gap-1 mt-2">
+              <span class="text-rose-600 font-extrabold">¥168</span>
+              <span class="text-[10px] text-slate-400">/年/人</span>
+            </div>
+            <button class="mt-2 w-full bg-emerald-600 text-white text-xs font-bold py-1.5 rounded-lg">了解详情</button>
+          </a>
+
+          <a href="#" class="bg-white rounded-2xl p-3 card-hover shadow-sm">
+            <div class="flex items-start justify-between mb-2">
+              <div class="w-10 h-10 rounded-xl bg-rose-100 flex items-center justify-center">
+                <svg width="20" height="20" fill="none" stroke="#BE123C" stroke-width="2" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+              </div>
+              <span class="text-[9px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded font-bold">长期</span>
+            </div>
+            <div class="text-sm font-bold text-slate-900">蓝工重疾险</div>
+            <div class="text-[10px] text-slate-500 mt-0.5">100 种重疾 · 保 50 万</div>
+            <div class="flex items-baseline gap-1 mt-2">
+              <span class="text-rose-600 font-extrabold">¥38</span>
+              <span class="text-[10px] text-slate-400">/月起</span>
+            </div>
+            <button class="mt-2 w-full bg-rose-500 text-white text-xs font-bold py-1.5 rounded-lg">查看方案</button>
+          </a>
+
+          <a href="#" class="bg-white rounded-2xl p-3 card-hover shadow-sm">
+            <div class="flex items-start justify-between mb-2">
+              <div class="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center">
+                <svg width="20" height="20" fill="none" stroke="#B45309" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+              </div>
+              <span class="text-[9px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-bold">孝心</span>
+            </div>
+            <div class="text-sm font-bold text-slate-900">父母防癌险</div>
+            <div class="text-[10px] text-slate-500 mt-0.5">50-80 岁可投 · 5万-30万</div>
+            <div class="flex items-baseline gap-1 mt-2">
+              <span class="text-rose-600 font-extrabold">¥199</span>
+              <span class="text-[10px] text-slate-400">/年起</span>
+            </div>
+            <button class="mt-2 w-full bg-amber-500 text-white text-xs font-bold py-1.5 rounded-lg">给爸妈买</button>
+          </a>
+        </div>
+
+        <!-- 一键投保 -->
+        <div class="mt-3 bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-100 rounded-xl p-3 flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center flex-shrink-0">
+            <svg width="22" height="22" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="text-sm font-bold text-slate-900">一键投保 · 30 秒生效</div>
+            <div class="text-[10px] text-slate-500">实名 + 身份证号已自动带入</div>
+          </div>
+          <button class="bg-blue-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg">去投保</button>
+        </div>
+      </div>
+
+      <!-- 理赔通道 -->
+      <div class="px-5 mt-4">
+        <div class="bg-white rounded-2xl p-4 shadow-sm">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="font-bold text-slate-900">理赔通道</h3>
+            <span class="text-[10px] text-emerald-600 font-bold">⚡ 平均 3 天到账</span>
+          </div>
+          <div class="grid grid-cols-3 gap-3">
+            <a href="#" class="bg-rose-50 rounded-xl p-3 text-center border border-rose-100">
+              <div class="w-11 h-11 mx-auto rounded-full bg-rose-500 flex items-center justify-center mb-1.5">
+                <svg width="22" height="22" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              </div>
+              <div class="text-xs font-bold text-slate-900">在线报案</div>
+              <div class="text-[10px] text-slate-500">3 步极速</div>
+            </a>
+            <a href="#" class="bg-blue-50 rounded-xl p-3 text-center border border-blue-100">
+              <div class="w-11 h-11 mx-auto rounded-full bg-blue-500 flex items-center justify-center mb-1.5">
+                <svg width="22" height="22" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              </div>
+              <div class="text-xs font-bold text-slate-900">理赔进度</div>
+              <div class="text-[10px] text-slate-500">实时查询</div>
+            </a>
+            <a href="#" class="bg-emerald-50 rounded-xl p-3 text-center border border-emerald-100">
+              <div class="w-11 h-11 mx-auto rounded-full bg-emerald-500 flex items-center justify-center mb-1.5">
+                <svg width="22" height="22" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+              </div>
+              <div class="text-xs font-bold text-slate-900">24h 客服</div>
+              <div class="text-[10px] text-slate-500">95588 转 9</div>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- 理赔案例 -->
+      <div class="px-5 mt-4">
+        <div class="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl p-4 text-white relative overflow-hidden">
+          <div class="absolute -right-8 -bottom-10 w-36 h-36 bg-white/10 rounded-full"></div>
+          <div class="relative">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="bg-white/20 backdrop-blur text-[10px] px-2 py-0.5 rounded-full">真实案例</span>
+              <span class="text-[10px] opacity-90">2025.11.18 已结案</span>
+            </div>
+            <div class="text-base font-extrabold leading-snug">
+              「叉车作业意外砸伤右腿，蓝工保险<br/>3 天到账 ¥18.6 万，没让家里垮掉」
+            </div>
+            <div class="mt-3 flex items-center justify-between pt-3 border-t border-white/20">
+              <div class="flex items-center gap-2">
+                <div class="w-9 h-9 rounded-full bg-amber-300 text-amber-900 flex items-center justify-center font-bold">李</div>
+                <div>
+                  <div class="text-sm font-bold">李建华 · 山东菏泽</div>
+                  <div class="text-[10px] opacity-90">京东亚一仓 叉车工 · 投保 ¥3/天</div>
+                </div>
+              </div>
+              <a href="#" class="text-[11px] bg-white text-emerald-700 font-bold px-3 py-1.5 rounded-full">查看故事</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- 更多案例 -->
+        <div class="grid grid-cols-2 gap-2 mt-3">
+          <div class="bg-white rounded-xl p-2.5 flex gap-2">
+            <div class="w-8 h-8 rounded-full bg-blue-200 text-blue-700 flex items-center justify-center text-xs font-bold flex-shrink-0">陈</div>
+            <div class="flex-1 min-w-0">
+              <div class="text-[11px] font-bold text-slate-900 truncate">陈大姐脑梗</div>
+              <div class="text-[10px] text-emerald-600">赔付 ¥12 万</div>
+            </div>
+          </div>
+          <div class="bg-white rounded-xl p-2.5 flex gap-2">
+            <div class="w-8 h-8 rounded-full bg-rose-200 text-rose-700 flex items-center justify-center text-xs font-bold flex-shrink-0">王</div>
+            <div class="flex-1 min-w-0">
+              <div class="text-[11px] font-bold text-slate-900 truncate">王师傅工伤</div>
+              <div class="text-[10px] text-emerald-600">赔付 ¥8.5 万</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 保险知识 -->
+      <div class="px-5 mt-4 mb-4">
+        <div class="bg-white rounded-2xl p-4 shadow-sm">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="font-bold text-slate-900">保险小课堂</h3>
+            <a href="training.html" class="text-xs text-blue-600">去学院 →</a>
+          </div>
+          <ul class="space-y-2.5">
+            <li class="flex items-center gap-3">
+              <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-100 to-cyan-100 flex items-center justify-center text-xl">📋</div>
+              <div class="flex-1 min-w-0">
+                <div class="text-sm font-medium text-slate-900">五险一金 vs 商业保险 区别？</div>
+                <div class="text-[10px] text-slate-400">5 分钟读懂 · 8,652 人学过</div>
+              </div>
+              <svg width="14" height="14" fill="none" stroke="#94A3B8" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+            </li>
+            <li class="flex items-center gap-3">
+              <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center text-xl">⚠️</div>
+              <div class="flex-1 min-w-0">
+                <div class="text-sm font-medium text-slate-900">工伤了第一步该做什么？</div>
+                <div class="text-[10px] text-slate-400">8 个救命知识点 · 12,389 人学过</div>
+              </div>
+              <svg width="14" height="14" fill="none" stroke="#94A3B8" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+            </li>
+            <li class="flex items-center gap-3">
+              <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-emerald-100 to-teal-100 flex items-center justify-center text-xl">💡</div>
+              <div class="flex-1 min-w-0">
+                <div class="text-sm font-medium text-slate-900">老家爸妈也能买的保险</div>
+                <div class="text-[10px] text-slate-400">3 款好用清单 · 6,127 人学过</div>
+              </div>
+              <svg width="14" height="14" fill="none" stroke="#94A3B8" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+            </li>
+            <li class="flex items-center gap-3">
+              <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-rose-100 to-pink-100 flex items-center justify-center text-xl">🩹</div>
+              <div class="flex-1 min-w-0">
+                <div class="text-sm font-medium text-slate-900">异地工伤如何申报赔偿</div>
+                <div class="text-[10px] text-slate-400">5 步流程图 · 4,892 人学过</div>
+              </div>
+              <svg width="14" height="14" fill="none" stroke="#94A3B8" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- 平台承诺 -->
+      <div class="px-5 mb-4">
+        <div class="bg-slate-50 rounded-xl p-3 text-[11px] text-slate-500 leading-relaxed border border-slate-200">
+          <div class="flex items-center gap-1 text-slate-700 font-semibold mb-1.5">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+            <span>蓝工保障承诺</span>
+          </div>
+          所有保险产品均由<b>中国人保 / 平安产险</b>等持牌机构承保。蓝工平台仅作为代理渠道，
+          赔付由保险公司直接支付到您本人银行账户。<b>拒赔 · 拖赔 · 砍价</b>，平台先行垫付。
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 底部 Tab -->
+    <div class="bg-white border-t border-slate-100 grid grid-cols-5 py-2">
+      <a href="home.html" class="flex flex-col items-center gap-0.5 text-slate-400">
+        <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+        <span class="text-[10px]">首页</span>
+      </a>
+      <a href="job-detail.html" class="flex flex-col items-center gap-0.5 text-slate-400">
+        <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <span class="text-[10px]">找活</span>
+      </a>
+      <a href="credit.html" class="flex flex-col items-center gap-0.5 text-slate-400">
+        <div class="w-10 h-10 -mt-4 rounded-full grad-credit flex items-center justify-center shadow-lg">
+          <span class="text-white text-xs font-bold">工分</span>
+        </div>
+      </a>
+      <a href="chat.html" class="flex flex-col items-center gap-0.5 text-slate-400">
+        <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <span class="text-[10px]">消息</span>
+      </a>
+      <a href="profile.html" class="flex flex-col items-center gap-0.5 text-slate-400">
+        <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span class="text-[10px]">我的</span>
+      </a>
+    </div>
+
+  </div>
+</div>
+</body>
+</html>

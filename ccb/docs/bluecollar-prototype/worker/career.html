@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>蓝工 · AI 职业规划师</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="../shared/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  .hero-bg {
+    background:
+      radial-gradient(ellipse at top left, rgba(139,92,246,.5), transparent 50%),
+      radial-gradient(ellipse at top right, rgba(236,72,153,.4), transparent 50%),
+      radial-gradient(ellipse at bottom, rgba(59,130,246,.3), transparent 50%),
+      linear-gradient(135deg, #0F172A 0%, #1E1B4B 50%, #312E81 100%);
+  }
+  .star { position: absolute; background: white; border-radius: 50%; opacity: .6; animation: twinkle 3s ease-in-out infinite; }
+  @keyframes twinkle { 0%,100%{opacity:.3; transform:scale(1)} 50%{opacity:1; transform:scale(1.3)} }
+  .ai-glow { box-shadow: 0 0 40px rgba(168,85,247,.6), 0 0 80px rgba(139,92,246,.3); }
+  .path-card { transition: all .3s ease; }
+  .path-card.active { transform: scale(1.02); box-shadow: 0 20px 40px -12px rgba(124,58,237,.35); }
+  .timeline-node { position: relative; }
+  .timeline-node::before {
+    content: ''; position: absolute; left: -22px; top: 6px;
+    width: 12px; height: 12px; border-radius: 50%;
+    background: linear-gradient(135deg,#A855F7,#EC4899);
+    box-shadow: 0 0 0 4px white, 0 0 0 5px #E2E8F0;
+  }
+  .gradient-text {
+    background: linear-gradient(135deg,#A855F7,#EC4899,#F59E0B);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .typing::after {
+    content: '▌';
+    animation: blink 1s steps(2) infinite;
+  }
+  @keyframes blink { 50% { opacity: 0 } }
+  .chart-svg path { transition: all .3s ease; }
+  .glass { background: rgba(255,255,255,.08); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,.15); }
+  .pulse-ring { animation: ring 2s ease-out infinite; }
+  @keyframes ring { 0%{transform:scale(1); opacity:.6} 100%{transform:scale(2); opacity:0} }
+</style>
+</head>
+<body class="bg-slate-100 min-h-screen pb-10">
+
+<div class="text-center pt-6"><a href="../index.html" class="text-sm text-slate-500 hover:text-blue-600">← 返回原型导航</a></div>
+
+<div class="phone-frame">
+  <div class="phone-notch"></div>
+  <div class="phone-screen">
+    <div class="status-bar"><span>9:41</span><span class="flex gap-1 items-center"><span>●●●●●</span><span class="text-xs">5G</span><span class="text-xs">100%</span></span></div>
+
+    <div class="phone-content">
+
+      <!-- ===== Hero AI 导师 ===== -->
+      <div class="hero-bg relative overflow-hidden text-white">
+        <!-- 装饰星点 -->
+        <span class="star" style="width:3px;height:3px;top:15%;left:12%"></span>
+        <span class="star" style="width:2px;height:2px;top:25%;left:80%;animation-delay:.5s"></span>
+        <span class="star" style="width:4px;height:4px;top:45%;left:25%;animation-delay:1s"></span>
+        <span class="star" style="width:2px;height:2px;top:60%;left:75%;animation-delay:1.5s"></span>
+        <span class="star" style="width:3px;height:3px;top:35%;left:55%;animation-delay:2s"></span>
+        <span class="star" style="width:2px;height:2px;top:75%;left:15%;animation-delay:2.5s"></span>
+
+        <div class="relative px-5 pt-3 pb-6">
+          <div class="flex items-center justify-between">
+            <a href="profile.html" class="w-8 h-8 flex items-center justify-center">
+              <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+            </a>
+            <span class="text-base font-bold">AI 职业规划师</span>
+            <a href="#" class="w-8 h-8 flex items-center justify-center">
+              <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+            </a>
+          </div>
+
+          <!-- AI 头像 -->
+          <div class="mt-6 text-center relative">
+            <div class="absolute inset-0 flex items-center justify-center">
+              <span class="w-24 h-24 rounded-full bg-purple-500/30 pulse-ring"></span>
+            </div>
+            <div class="relative w-20 h-20 mx-auto rounded-full ai-glow flex items-center justify-center" style="background: conic-gradient(from 45deg, #A855F7, #EC4899, #F59E0B, #A855F7);">
+              <div class="w-[72px] h-[72px] rounded-full bg-slate-900 flex items-center justify-center">
+                <span class="text-3xl">🤖</span>
+              </div>
+            </div>
+
+            <div class="mt-4">
+              <div class="text-xs text-purple-200 tracking-widest font-medium">BLUE COLLAR · AI COACH</div>
+              <div class="text-2xl font-extrabold mt-1">你好，王建国</div>
+              <div class="text-sm text-purple-200 mt-2 typing">我已分析你的 <b class="text-white">256 项</b>数据，发现了 3 条最适合你的路</div>
+            </div>
+          </div>
+
+          <!-- 数据扫描完成卡 -->
+          <div class="mt-5 glass rounded-2xl p-4">
+            <div class="grid grid-cols-4 gap-2 text-center">
+              <div>
+                <div class="text-lg font-extrabold">5年</div>
+                <div class="text-[10px] text-purple-200">工作年限</div>
+              </div>
+              <div class="border-l border-r border-white/15">
+                <div class="text-lg font-extrabold">782</div>
+                <div class="text-[10px] text-purple-200">工分</div>
+              </div>
+              <div class="border-r border-white/15">
+                <div class="text-lg font-extrabold">12</div>
+                <div class="text-[10px] text-purple-200">已掌握技能</div>
+              </div>
+              <div>
+                <div class="text-lg font-extrabold">¥6.8k</div>
+                <div class="text-[10px] text-purple-200">当前月薪</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== 我的能力画像 ===== -->
+      <div class="px-5 -mt-3 relative z-10">
+        <div class="bg-white rounded-2xl p-5 shadow-xl">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <div class="text-xs text-slate-400">AI 智能画像</div>
+              <div class="font-bold text-slate-900">你在同龄人中处于<span class="gradient-text">前 18%</span></div>
+            </div>
+            <span class="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full font-semibold">深度分析</span>
+          </div>
+
+          <div class="flex items-center gap-4">
+            <!-- 雷达图 -->
+            <svg viewBox="0 0 200 200" class="w-32 h-32 flex-shrink-0">
+              <defs>
+                <linearGradient id="radarGrad" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stop-color="#A855F7" stop-opacity=".6"/>
+                  <stop offset="100%" stop-color="#EC4899" stop-opacity=".4"/>
+                </linearGradient>
+              </defs>
+              <!-- 网格 -->
+              <polygon points="100,20 169,60 169,140 100,180 31,140 31,60" fill="none" stroke="#E2E8F0" stroke-width="1"/>
+              <polygon points="100,40 152,70 152,130 100,160 48,130 48,70" fill="none" stroke="#E2E8F0" stroke-width="1"/>
+              <polygon points="100,60 135,80 135,120 100,140 65,120 65,80" fill="none" stroke="#E2E8F0" stroke-width="1"/>
+              <polygon points="100,80 118,90 118,110 100,120 82,110 82,90" fill="none" stroke="#E2E8F0" stroke-width="1"/>
+              <!-- 数据多边形 -->
+              <polygon points="100,28 162,68 158,135 100,170 42,138 38,72" fill="url(#radarGrad)" stroke="#A855F7" stroke-width="2"/>
+              <!-- 标签 -->
+              <text x="100" y="14" text-anchor="middle" font-size="10" fill="#64748B" font-weight="600">稳定性</text>
+              <text x="183" y="62" text-anchor="middle" font-size="10" fill="#64748B" font-weight="600">技能</text>
+              <text x="183" y="146" text-anchor="middle" font-size="10" fill="#64748B" font-weight="600">学习力</text>
+              <text x="100" y="195" text-anchor="middle" font-size="10" fill="#64748B" font-weight="600">协作</text>
+              <text x="17" y="146" text-anchor="middle" font-size="10" fill="#64748B" font-weight="600">体能</text>
+              <text x="17" y="62" text-anchor="middle" font-size="10" fill="#64748B" font-weight="600">领导力</text>
+            </svg>
+
+            <div class="flex-1 space-y-1.5 text-xs">
+              <div class="flex justify-between"><span class="text-slate-600">稳定性</span><span class="font-bold text-emerald-600">90 · 优秀</span></div>
+              <div class="flex justify-between"><span class="text-slate-600">技能熟练</span><span class="font-bold text-emerald-600">82 · 优秀</span></div>
+              <div class="flex justify-between"><span class="text-slate-600">学习能力</span><span class="font-bold text-blue-600">75 · 良好</span></div>
+              <div class="flex justify-between"><span class="text-slate-600">团队协作</span><span class="font-bold text-blue-600">78 · 良好</span></div>
+              <div class="flex justify-between"><span class="text-slate-600">体能强度</span><span class="font-bold text-emerald-600">85 · 优秀</span></div>
+              <div class="flex justify-between"><span class="text-slate-600">领导潜力</span><span class="font-bold text-amber-600">62 · 待提升</span></div>
+            </div>
+          </div>
+
+          <!-- 关键洞察 -->
+          <div class="mt-4 pt-4 border-t border-slate-100">
+            <div class="text-xs text-slate-400 mb-2">🔍 关键洞察</div>
+            <div class="grid grid-cols-2 gap-2">
+              <div class="bg-emerald-50 rounded-lg p-2">
+                <div class="text-[10px] text-emerald-700 font-bold">✓ 你的优势</div>
+                <div class="text-[11px] text-slate-700 mt-1">稳定性突出，5年只换4家，远超行业均值（行业均值 8家/5年）</div>
+              </div>
+              <div class="bg-amber-50 rounded-lg p-2">
+                <div class="text-[10px] text-amber-700 font-bold">⚠ 你的短板</div>
+                <div class="text-[11px] text-slate-700 mt-1">缺少管理岗经验，要冲钻石段位需补齐"带人能力"</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== AI 推荐的3条路径 ===== -->
+      <div class="px-5 mt-5">
+        <div class="flex items-center justify-between mb-3">
+          <div>
+            <div class="text-base font-bold text-slate-900">为你定制的 3 条职业路径</div>
+            <div class="text-xs text-slate-400">基于 GPT-4 蓝领模型 · 已对标 12,847 位相似背景工友</div>
+          </div>
+        </div>
+
+        <!-- 路径A 稳健派 - 当前选中 -->
+        <div class="path-card active bg-white rounded-2xl p-4 mb-3 border-2 border-purple-300 relative overflow-hidden">
+          <div class="absolute top-0 right-0 bg-gradient-to-l from-purple-500 to-pink-500 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl">⭐ AI 强烈推荐</div>
+          <div class="flex items-start gap-3 mb-3 mt-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-600 text-white flex items-center justify-center font-bold flex-shrink-0">A</div>
+            <div class="flex-1">
+              <div class="font-bold text-slate-900">🛡️ 稳健成长 · 仓储管理路线</div>
+              <div class="text-xs text-slate-500 mt-0.5">利用你5年仓储经验，3年内做到主管</div>
+            </div>
+          </div>
+          <!-- 路径节点 -->
+          <div class="flex items-center justify-between bg-slate-50 rounded-xl p-3 mb-3">
+            <div class="text-center"><div class="text-[10px] text-slate-500">现在</div><div class="text-xs font-bold mt-0.5">分拣员</div><div class="text-[10px] text-emerald-600">¥6.8k</div></div>
+            <svg width="20" height="20" class="text-slate-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+            <div class="text-center"><div class="text-[10px] text-slate-500">1 年</div><div class="text-xs font-bold mt-0.5">组长</div><div class="text-[10px] text-emerald-600">¥8.5k</div></div>
+            <svg width="20" height="20" class="text-slate-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+            <div class="text-center"><div class="text-[10px] text-slate-500">3 年</div><div class="text-xs font-bold mt-0.5">主管</div><div class="text-[10px] text-emerald-600">¥12k</div></div>
+            <svg width="20" height="20" class="text-slate-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+            <div class="text-center"><div class="text-[10px] text-slate-500">5 年</div><div class="text-xs font-bold mt-0.5">经理</div><div class="text-[10px] text-rose-600">¥18k</div></div>
+          </div>
+          <div class="grid grid-cols-3 gap-2 text-center">
+            <div class="bg-emerald-50 rounded-lg py-1.5"><div class="text-[10px] text-slate-500">风险</div><div class="text-xs font-bold text-emerald-600">低</div></div>
+            <div class="bg-blue-50 rounded-lg py-1.5"><div class="text-[10px] text-slate-500">5年涨幅</div><div class="text-xs font-bold text-blue-600">2.6×</div></div>
+            <div class="bg-amber-50 rounded-lg py-1.5"><div class="text-[10px] text-slate-500">匹配度</div><div class="text-xs font-bold text-amber-600">96%</div></div>
+          </div>
+        </div>
+
+        <!-- 路径B 转型派 -->
+        <div class="path-card bg-white rounded-2xl p-4 mb-3 border border-slate-200">
+          <div class="flex items-start gap-3 mb-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-400 to-blue-600 text-white flex items-center justify-center font-bold flex-shrink-0">B</div>
+            <div class="flex-1">
+              <div class="font-bold text-slate-900">🚚 技能转型 · 物流司机路线</div>
+              <div class="text-xs text-slate-500 mt-0.5">考叉车证 → 货车驾驶 → 自营车队</div>
+            </div>
+          </div>
+          <div class="flex items-center justify-between bg-slate-50 rounded-xl p-3 mb-3">
+            <div class="text-center"><div class="text-[10px] text-slate-500">现在</div><div class="text-xs font-bold mt-0.5">分拣员</div><div class="text-[10px] text-emerald-600">¥6.8k</div></div>
+            <svg width="20" height="20" class="text-slate-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+            <div class="text-center"><div class="text-[10px] text-slate-500">6 月</div><div class="text-xs font-bold mt-0.5">叉车工</div><div class="text-[10px] text-emerald-600">¥9k</div></div>
+            <svg width="20" height="20" class="text-slate-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+            <div class="text-center"><div class="text-[10px] text-slate-500">2 年</div><div class="text-xs font-bold mt-0.5">货车司机</div><div class="text-[10px] text-emerald-600">¥15k</div></div>
+            <svg width="20" height="20" class="text-slate-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+            <div class="text-center"><div class="text-[10px] text-slate-500">5 年</div><div class="text-xs font-bold mt-0.5">车队老板</div><div class="text-[10px] text-rose-600">¥25k</div></div>
+          </div>
+          <div class="grid grid-cols-3 gap-2 text-center">
+            <div class="bg-amber-50 rounded-lg py-1.5"><div class="text-[10px] text-slate-500">风险</div><div class="text-xs font-bold text-amber-600">中</div></div>
+            <div class="bg-blue-50 rounded-lg py-1.5"><div class="text-[10px] text-slate-500">5年涨幅</div><div class="text-xs font-bold text-blue-600">3.7×</div></div>
+            <div class="bg-amber-50 rounded-lg py-1.5"><div class="text-[10px] text-slate-500">匹配度</div><div class="text-xs font-bold text-amber-600">82%</div></div>
+          </div>
+        </div>
+
+        <!-- 路径C 跃迁派 -->
+        <div class="path-card bg-white rounded-2xl p-4 mb-3 border border-slate-200">
+          <div class="flex items-start gap-3 mb-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-rose-400 to-purple-600 text-white flex items-center justify-center font-bold flex-shrink-0">C</div>
+            <div class="flex-1">
+              <div class="font-bold text-slate-900">🌍 跨境跃迁 · 海外仓管路线</div>
+              <div class="text-xs text-slate-500 mt-0.5">英语+技能双修 → 海外仓 → 跨境物流</div>
+            </div>
+          </div>
+          <div class="flex items-center justify-between bg-slate-50 rounded-xl p-3 mb-3">
+            <div class="text-center"><div class="text-[10px] text-slate-500">现在</div><div class="text-xs font-bold mt-0.5">分拣员</div><div class="text-[10px] text-emerald-600">¥6.8k</div></div>
+            <svg width="20" height="20" class="text-slate-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+            <div class="text-center"><div class="text-[10px] text-slate-500">1 年</div><div class="text-xs font-bold mt-0.5">英语+证</div><div class="text-[10px] text-emerald-600">¥9k</div></div>
+            <svg width="20" height="20" class="text-slate-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+            <div class="text-center"><div class="text-[10px] text-slate-500">3 年</div><div class="text-xs font-bold mt-0.5">东南亚仓</div><div class="text-[10px] text-emerald-600">¥22k</div></div>
+            <svg width="20" height="20" class="text-slate-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+            <div class="text-center"><div class="text-[10px] text-slate-500">5 年</div><div class="text-xs font-bold mt-0.5">中东仓管</div><div class="text-[10px] text-rose-600">¥35k</div></div>
+          </div>
+          <div class="grid grid-cols-3 gap-2 text-center">
+            <div class="bg-rose-50 rounded-lg py-1.5"><div class="text-[10px] text-slate-500">风险</div><div class="text-xs font-bold text-rose-600">较高</div></div>
+            <div class="bg-purple-50 rounded-lg py-1.5"><div class="text-[10px] text-slate-500">5年涨幅</div><div class="text-xs font-bold text-purple-600">5.1×</div></div>
+            <div class="bg-amber-50 rounded-lg py-1.5"><div class="text-[10px] text-slate-500">匹配度</div><div class="text-xs font-bold text-amber-600">68%</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== 路径A 详细规划 ===== -->
+      <div class="px-5 mt-5">
+        <div class="bg-gradient-to-br from-slate-900 to-purple-900 rounded-2xl p-5 text-white relative overflow-hidden">
+          <div class="absolute top-0 right-0 w-32 h-32 bg-purple-500/20 rounded-full blur-3xl"></div>
+          <div class="relative">
+            <div class="text-xs text-purple-200">路径 A · 稳健成长详细规划</div>
+            <div class="text-lg font-bold mt-1">📈 5 年薪资预测曲线</div>
+
+            <!-- 薪资曲线 SVG -->
+            <svg viewBox="0 0 320 140" class="w-full mt-3">
+              <defs>
+                <linearGradient id="salaryGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#EC4899" stop-opacity=".6"/>
+                  <stop offset="100%" stop-color="#A855F7" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <!-- 网格 -->
+              <line x1="0" y1="30" x2="320" y2="30" stroke="rgba(255,255,255,.1)" stroke-dasharray="2 4"/>
+              <line x1="0" y1="65" x2="320" y2="65" stroke="rgba(255,255,255,.1)" stroke-dasharray="2 4"/>
+              <line x1="0" y1="100" x2="320" y2="100" stroke="rgba(255,255,255,.1)" stroke-dasharray="2 4"/>
+              <!-- 填充区域 -->
+              <path d="M 20,110 Q 80,100 110,85 T 200,50 T 300,20 L 300,130 L 20,130 Z" fill="url(#salaryGrad)"/>
+              <!-- 曲线 -->
+              <path d="M 20,110 Q 80,100 110,85 T 200,50 T 300,20" fill="none" stroke="#EC4899" stroke-width="2.5"/>
+              <!-- 节点 -->
+              <circle cx="20" cy="110" r="4" fill="#EC4899"/>
+              <circle cx="90" cy="92" r="4" fill="#A855F7"/>
+              <circle cx="180" cy="60" r="4" fill="#8B5CF6"/>
+              <circle cx="300" cy="20" r="5" fill="#FBBF24"/>
+              <!-- 标签 -->
+              <text x="20" y="125" text-anchor="middle" font-size="9" fill="rgba(255,255,255,.6)">现在</text>
+              <text x="90" y="125" text-anchor="middle" font-size="9" fill="rgba(255,255,255,.6)">1年</text>
+              <text x="180" y="125" text-anchor="middle" font-size="9" fill="rgba(255,255,255,.6)">3年</text>
+              <text x="300" y="125" text-anchor="middle" font-size="9" fill="rgba(255,255,255,.6)">5年</text>
+              <text x="20" y="105" text-anchor="middle" font-size="9" fill="#fff" font-weight="700">6.8k</text>
+              <text x="90" y="87" text-anchor="middle" font-size="9" fill="#fff" font-weight="700">8.5k</text>
+              <text x="180" y="55" text-anchor="middle" font-size="9" fill="#fff" font-weight="700">12k</text>
+              <text x="300" y="15" text-anchor="middle" font-size="10" fill="#FBBF24" font-weight="800">18k</text>
+            </svg>
+
+            <div class="mt-3 pt-3 border-t border-white/10 grid grid-cols-2 gap-3">
+              <div>
+                <div class="text-[10px] text-purple-200">5年累计收入</div>
+                <div class="text-lg font-extrabold gradient-text">¥768,000</div>
+              </div>
+              <div>
+                <div class="text-[10px] text-purple-200">vs. 现状不变</div>
+                <div class="text-lg font-extrabold text-emerald-300">+¥360,000</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== 技能差距 + 学习计划 ===== -->
+      <div class="px-5 mt-5">
+        <div class="bg-white rounded-2xl p-4">
+          <div class="flex items-center justify-between mb-3">
+            <div class="font-bold text-slate-900">📚 你的能力差距 · AI 学习计划</div>
+            <span class="text-[10px] text-purple-600 font-semibold">3 项待补 · 12 周可完成</span>
+          </div>
+          <div class="space-y-3">
+            <div class="bg-slate-50 rounded-xl p-3">
+              <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center gap-2">
+                  <span class="w-7 h-7 rounded-lg bg-rose-500 text-white flex items-center justify-center text-xs font-bold">1</span>
+                  <span class="text-sm font-semibold">叉车操作证（必修）</span>
+                </div>
+                <span class="text-[10px] text-rose-600 font-bold">高优先级</span>
+              </div>
+              <div class="h-1.5 bg-white rounded-full mb-2 overflow-hidden">
+                <div class="h-full bg-rose-500" style="width:20%"></div>
+              </div>
+              <div class="flex items-center justify-between text-[10px] text-slate-500">
+                <span>蓝工合作驾校 · ¥800 · 7 天</span>
+                <button class="text-blue-600 font-bold">立即报名 →</button>
+              </div>
+            </div>
+
+            <div class="bg-slate-50 rounded-xl p-3">
+              <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center gap-2">
+                  <span class="w-7 h-7 rounded-lg bg-amber-500 text-white flex items-center justify-center text-xs font-bold">2</span>
+                  <span class="text-sm font-semibold">仓储管理系统（ERP）使用</span>
+                </div>
+                <span class="text-[10px] text-amber-600 font-bold">中优先级</span>
+              </div>
+              <div class="h-1.5 bg-white rounded-full mb-2 overflow-hidden">
+                <div class="h-full bg-amber-500" style="width:40%"></div>
+              </div>
+              <div class="flex items-center justify-between text-[10px] text-slate-500">
+                <span>免费在线课程 · 21 节 · 3 周</span>
+                <button class="text-blue-600 font-bold">开始学习 →</button>
+              </div>
+            </div>
+
+            <div class="bg-slate-50 rounded-xl p-3">
+              <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center gap-2">
+                  <span class="w-7 h-7 rounded-lg bg-blue-500 text-white flex items-center justify-center text-xs font-bold">3</span>
+                  <span class="text-sm font-semibold">基础团队管理（带 5 人小组）</span>
+                </div>
+                <span class="text-[10px] text-blue-600 font-bold">推荐</span>
+              </div>
+              <div class="h-1.5 bg-white rounded-full mb-2 overflow-hidden">
+                <div class="h-full bg-blue-500" style="width:10%"></div>
+              </div>
+              <div class="flex items-center justify-between text-[10px] text-slate-500">
+                <span>主动报名"组长培养"项目 · 8 周</span>
+                <button class="text-blue-600 font-bold">了解详情 →</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== AI 对话区 ===== -->
+      <div class="px-5 mt-5">
+        <div class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-4 border border-purple-100">
+          <div class="flex items-center gap-2 mb-3">
+            <div class="w-9 h-9 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white">🤖</div>
+            <div>
+              <div class="text-sm font-bold text-slate-900">AI 导师 24h 在线</div>
+              <div class="text-[10px] text-emerald-600">● 实时回复 · 已为 5.2万 工友答疑</div>
+            </div>
+          </div>
+
+          <!-- 对话气泡示例 -->
+          <div class="space-y-2 mb-3">
+            <div class="flex justify-end">
+              <div class="bg-blue-600 text-white text-xs rounded-2xl rounded-tr-sm px-3 py-2 max-w-[75%]">
+                我现在 30 岁，转行做物流司机来得及吗？
+              </div>
+            </div>
+            <div class="flex gap-2">
+              <div class="w-6 h-6 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex-shrink-0 flex items-center justify-center text-[10px]">🤖</div>
+              <div class="bg-white text-xs rounded-2xl rounded-tl-sm px-3 py-2 max-w-[75%] text-slate-700">
+                完全来得及 ✨ 30 岁是司机岗位的黄金期。根据数据，<b class="text-purple-600">35-45 岁货车司机平均月薪比 25-30 岁高 23%</b>，因为雇主更信任稳定的中年司机。建议你下个月就考 B2 驾照...
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-xl p-2.5 flex items-center gap-2">
+            <input class="flex-1 text-sm outline-none placeholder:text-slate-400" placeholder="问我任何职业问题..."/>
+            <button class="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 text-white flex items-center justify-center">
+              <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>
+            </button>
+          </div>
+
+          <!-- 推荐问题 -->
+          <div class="flex gap-2 mt-2 overflow-x-auto pb-1">
+            <button class="flex-shrink-0 text-[10px] bg-white text-slate-700 px-2.5 py-1.5 rounded-full border border-purple-200">💼 我适合做管理岗吗？</button>
+            <button class="flex-shrink-0 text-[10px] bg-white text-slate-700 px-2.5 py-1.5 rounded-full border border-purple-200">📈 怎么涨工资最快？</button>
+            <button class="flex-shrink-0 text-[10px] bg-white text-slate-700 px-2.5 py-1.5 rounded-full border border-purple-200">🌏 出国打工靠谱吗？</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== 同路径成功案例 ===== -->
+      <div class="px-5 mt-5">
+        <div class="bg-white rounded-2xl p-4">
+          <div class="flex items-center justify-between mb-3">
+            <div class="font-bold text-slate-900">🌟 走同样路径的工友</div>
+            <a class="text-xs text-blue-600">更多 →</a>
+          </div>
+          <div class="space-y-3">
+            <div class="flex items-center gap-3 p-3 bg-emerald-50 rounded-xl">
+              <div class="w-10 h-10 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold">陈</div>
+              <div class="flex-1">
+                <div class="flex items-center gap-2">
+                  <span class="text-sm font-bold">陈大伟</span>
+                  <span class="text-[9px] bg-purple-500 text-white px-1.5 py-0.5 rounded">👑 王者</span>
+                </div>
+                <div class="text-[11px] text-slate-600 mt-0.5">5年前和你起点一样 · 现菜鸟仓储经理</div>
+                <div class="text-[10px] text-emerald-700 font-semibold mt-0.5">月薪 ¥18,500 · 累计赚 ¥720,000</div>
+              </div>
+              <a class="text-xs text-blue-600 font-medium">看故事</a>
+            </div>
+            <div class="flex items-center gap-3 p-3 bg-blue-50 rounded-xl">
+              <div class="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold">王</div>
+              <div class="flex-1">
+                <div class="flex items-center gap-2">
+                  <span class="text-sm font-bold">王志强</span>
+                  <span class="text-[9px] bg-cyan-500 text-white px-1.5 py-0.5 rounded">💎 钻石</span>
+                </div>
+                <div class="text-[11px] text-slate-600 mt-0.5">3年前起点和你相似 · 现京东仓储主管</div>
+                <div class="text-[10px] text-blue-700 font-semibold mt-0.5">月薪 ¥13,200 · 在管 18 人小组</div>
+              </div>
+              <a class="text-xs text-blue-600 font-medium">看故事</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== 底部 CTA ===== -->
+      <div class="px-5 mt-5 mb-4">
+        <div class="text-center text-xs text-slate-400 mb-3">每周 AI 重新评估你的画像 · 路径会动态调整</div>
+      </div>
+    </div>
+
+    <!-- 底部固定 CTA -->
+    <div class="bg-white border-t border-slate-100 px-4 py-2.5 flex gap-2">
+      <button class="px-4 py-3 border border-slate-200 rounded-xl text-xs font-medium text-slate-600">📥 保存方案</button>
+      <button class="flex-1 py-3 rounded-xl text-sm font-bold text-white" style="background: linear-gradient(135deg,#A855F7,#EC4899,#F59E0B);">🚀 开启路径 A · 稳健成长</button>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>

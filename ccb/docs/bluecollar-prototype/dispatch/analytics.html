@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>蓝工·派遣管家 — 数据分析</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="../shared/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  body { background: #F8FAFC; }
+  .stat-card { transition: all .2s ease; }
+  .stat-card:hover { transform: translateY(-2px); box-shadow: 0 10px 25px -8px rgba(15,23,42,.08); }
+</style>
+</head>
+<body class="text-slate-800">
+
+<div class="flex min-h-screen">
+
+  <!-- ============ 侧边栏 ============ -->
+  <aside class="w-60 bg-[#0F172A] text-slate-300 flex flex-col flex-shrink-0">
+    <div class="px-5 pt-5 pb-4 border-b border-white/5">
+      <div class="flex items-center gap-2 mb-3">
+        <div class="w-9 h-9 rounded-xl grad-blue flex items-center justify-center font-extrabold text-white shadow-lg shadow-blue-500/30">蓝</div>
+        <div>
+          <div class="text-white text-sm font-bold leading-tight">蓝工·派遣管家</div>
+          <div class="text-[10px] text-slate-500 tracking-wider">DISPATCH SAAS</div>
+        </div>
+      </div>
+      <div class="bg-white/5 rounded-xl p-3 border border-white/5">
+        <div class="flex items-center justify-between mb-1">
+          <span class="text-xs text-slate-400">浙江睿才人力</span>
+          <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-gradient-to-r from-amber-400 to-orange-500 text-white">VIP</span>
+        </div>
+        <div class="flex items-end gap-1.5"><span class="text-lg font-extrabold text-white leading-none">92</span><span class="text-[10px] text-slate-400 mb-0.5">企业信用分</span></div>
+        <div class="mt-1.5 h-1 bg-white/10 rounded-full overflow-hidden"><div class="h-full bg-gradient-to-r from-emerald-400 to-cyan-400" style="width:92%"></div></div>
+      </div>
+    </div>
+    <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto text-sm">
+      <a href="dashboard.html" class="sidebar-link"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>工作台</a>
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">招聘管理</div>
+      <a href="jobs.html" class="sidebar-link"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>职位列表</a>
+      <a href="job-create.html" class="sidebar-link"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>发布职位</a>
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">人才</div>
+      <a href="talents.html" class="sidebar-link"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>人才搜索</a>
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">沟通</div>
+      <a href="chat.html" class="sidebar-link"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>IM 沟通<span class="ml-auto px-1.5 py-0.5 rounded-full bg-red-500 text-white text-[10px] font-bold">12</span></a>
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">用工</div>
+      <a href="onboarding.html" class="sidebar-link">👥 在岗管理</a>
+      <a href="contract-mgmt.html" class="sidebar-link">📝 合同管理</a>
+
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold flex items-center gap-1.5">财务管理 <span class="px-1 py-0 rounded bg-gradient-to-r from-blue-500 to-cyan-500 text-white text-[9px]">NEW</span></div>
+      <a href="salary.html" class="sidebar-link">💰 薪酬发放</a>
+      <a href="social.html" class="sidebar-link">🏥 社保公积金</a>
+      <a href="tax.html" class="sidebar-link">📋 个税申报</a>
+      <a href="reconciliation.html" class="sidebar-link">⚖️ 对账中心</a>
+      <a href="invoice.html" class="sidebar-link">🧾 发票管理</a>
+
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">客户</div>
+      <a href="clients.html" class="sidebar-link">🏢 甲方管理 CRM</a>
+
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">数据 & 合规</div>
+      <a href="analytics.html" class="sidebar-link active"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>数据分析</a>
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">系统</div>
+      <a href="#" class="sidebar-link"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/></svg>设置</a>
+    </nav>
+    <div class="px-4 py-3 border-t border-white/5 text-xs text-slate-500 flex items-center justify-between"><a href="../index.html" class="hover:text-white">← 原型导航</a><span>v0.1.0</span></div>
+  </aside>
+
+  <!-- ============ 主内容 ============ -->
+  <main class="flex-1 flex flex-col min-w-0">
+    <header class="h-14 bg-white border-b border-slate-200 px-6 flex items-center justify-between flex-shrink-0">
+      <div class="flex items-center gap-2 text-sm text-slate-500">
+        <a href="dashboard.html" class="hover:text-slate-900">工作台</a>
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+        <span class="text-slate-900 font-medium">数据分析</span>
+      </div>
+      <div class="flex items-center gap-4">
+        <button class="relative w-9 h-9 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-600">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        </button>
+        <div class="flex items-center gap-2 pl-3 border-l border-slate-200">
+          <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center text-xs font-bold">李</div>
+          <div class="leading-tight">
+            <div class="text-sm font-semibold text-slate-900">李珊珊</div>
+            <div class="text-[11px] text-slate-500">招聘主管</div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="flex-1 overflow-y-auto p-6 space-y-5">
+
+      <!-- 标题 + 时间筛选 -->
+      <div class="flex items-end justify-between">
+        <div>
+          <h1 class="text-2xl font-bold text-slate-900">数据分析中心</h1>
+          <p class="text-sm text-slate-500 mt-1">招聘效率、用工质量、流失原因 · 智能洞察</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <div class="flex items-center bg-white border border-slate-200 rounded-lg p-1">
+            <button class="px-3 py-1.5 text-xs font-medium text-slate-500 hover:text-slate-900">今日</button>
+            <button class="px-3 py-1.5 text-xs font-medium text-slate-500 hover:text-slate-900">本周</button>
+            <button class="px-3 py-1.5 text-xs font-semibold bg-blue-600 text-white rounded">本月</button>
+            <button class="px-3 py-1.5 text-xs font-medium text-slate-500 hover:text-slate-900">本季度</button>
+            <button class="px-3 py-1.5 text-xs font-medium text-slate-500 hover:text-slate-900">本年</button>
+          </div>
+          <button class="h-9 px-3 bg-white border border-slate-200 rounded-lg text-xs text-slate-600 flex items-center gap-1.5">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            2026-05-01 ~ 05-17
+          </button>
+          <button class="h-9 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium flex items-center gap-2">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            导出报告
+          </button>
+        </div>
+      </div>
+
+      <!-- 4 指标卡 -->
+      <div class="grid grid-cols-4 gap-4">
+
+        <div class="stat-card bg-white border border-slate-200 rounded-2xl p-5">
+          <div class="flex items-start justify-between mb-3">
+            <span class="text-xs text-slate-500 font-medium">平均招聘成本</span>
+            <div class="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            </div>
+          </div>
+          <div class="flex items-end gap-2">
+            <span class="text-3xl font-extrabold text-slate-900 tabular-nums">¥ 286</span>
+          </div>
+          <div class="mt-2 flex items-center gap-2">
+            <span class="text-[11px] text-emerald-600 font-semibold flex items-center gap-0.5">
+              <svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+              ¥ 42
+            </span>
+            <span class="text-[11px] text-slate-400">较上月 -12.8%</span>
+          </div>
+          <svg class="mt-3 w-full h-10" viewBox="0 0 120 40">
+            <polyline points="0,28 15,22 30,30 45,18 60,20 75,12 90,16 105,8 120,10" fill="none" stroke="#1677FF" stroke-width="2"/>
+            <polyline points="0,28 15,22 30,30 45,18 60,20 75,12 90,16 105,8 120,10 120,40 0,40" fill="url(#blueGrad)" opacity=".2"/>
+            <defs><linearGradient id="blueGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1677FF"/><stop offset="100%" stop-color="#1677FF" stop-opacity="0"/></linearGradient></defs>
+          </svg>
+        </div>
+
+        <div class="stat-card bg-white border border-slate-200 rounded-2xl p-5">
+          <div class="flex items-start justify-between mb-3">
+            <span class="text-xs text-slate-500 font-medium">入职转化率</span>
+            <div class="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            </div>
+          </div>
+          <div class="flex items-end gap-2">
+            <span class="text-3xl font-extrabold text-slate-900 tabular-nums">16.8</span>
+            <span class="text-base text-slate-400 mb-1">%</span>
+          </div>
+          <div class="mt-2 flex items-center gap-2">
+            <span class="text-[11px] text-emerald-600 font-semibold flex items-center gap-0.5">
+              <svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg>
+              3.2%
+            </span>
+            <span class="text-[11px] text-slate-400">行业均值 11.2%</span>
+          </div>
+          <svg class="mt-3 w-full h-10" viewBox="0 0 120 40">
+            <polyline points="0,30 15,28 30,25 45,22 60,20 75,15 90,12 105,10 120,8" fill="none" stroke="#22C55E" stroke-width="2"/>
+            <polyline points="0,30 15,28 30,25 45,22 60,20 75,15 90,12 105,10 120,8 120,40 0,40" fill="url(#grnGrad)" opacity=".2"/>
+            <defs><linearGradient id="grnGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#22C55E"/><stop offset="100%" stop-color="#22C55E" stop-opacity="0"/></linearGradient></defs>
+          </svg>
+        </div>
+
+        <div class="stat-card bg-white border border-slate-200 rounded-2xl p-5">
+          <div class="flex items-start justify-between mb-3">
+            <span class="text-xs text-slate-500 font-medium">30 天留存率</span>
+            <div class="w-9 h-9 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </div>
+          </div>
+          <div class="flex items-end gap-2">
+            <span class="text-3xl font-extrabold text-slate-900 tabular-nums">82.4</span>
+            <span class="text-base text-slate-400 mb-1">%</span>
+          </div>
+          <div class="mt-2 flex items-center gap-2">
+            <span class="text-[11px] text-emerald-600 font-semibold flex items-center gap-0.5">
+              <svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg>
+              5.6%
+            </span>
+            <span class="text-[11px] text-slate-400">行业均值 68%</span>
+          </div>
+          <svg class="mt-3 w-full h-10" viewBox="0 0 120 40">
+            <polyline points="0,20 15,22 30,18 45,16 60,14 75,12 90,10 105,11 120,8" fill="none" stroke="#F59E0B" stroke-width="2"/>
+            <polyline points="0,20 15,22 30,18 45,16 60,14 75,12 90,10 105,11 120,8 120,40 0,40" fill="url(#ambGrad)" opacity=".2"/>
+            <defs><linearGradient id="ambGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#F59E0B"/><stop offset="100%" stop-color="#F59E0B" stop-opacity="0"/></linearGradient></defs>
+          </svg>
+        </div>
+
+        <div class="stat-card bg-white border border-slate-200 rounded-2xl p-5">
+          <div class="flex items-start justify-between mb-3">
+            <span class="text-xs text-slate-500 font-medium">在岗平均工分</span>
+            <div class="w-9 h-9 rounded-lg bg-violet-50 text-violet-600 flex items-center justify-center">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            </div>
+          </div>
+          <div class="flex items-end gap-2">
+            <span class="text-3xl font-extrabold text-slate-900 tabular-nums">782</span>
+            <span class="text-sm font-semibold text-amber-600 mb-1">黄金 II</span>
+          </div>
+          <div class="mt-2 flex items-center gap-2">
+            <span class="text-[11px] text-emerald-600 font-semibold flex items-center gap-0.5">
+              <svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg>
+              22
+            </span>
+            <span class="text-[11px] text-slate-400">行业均值 658</span>
+          </div>
+          <svg class="mt-3 w-full h-10" viewBox="0 0 120 40">
+            <polyline points="0,25 15,24 30,22 45,20 60,18 75,16 90,14 105,12 120,10" fill="none" stroke="#A855F7" stroke-width="2"/>
+            <polyline points="0,25 15,24 30,22 45,20 60,18 75,16 90,14 105,12 120,10 120,40 0,40" fill="url(#vioGrad)" opacity=".2"/>
+            <defs><linearGradient id="vioGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#A855F7"/><stop offset="100%" stop-color="#A855F7" stop-opacity="0"/></linearGradient></defs>
+          </svg>
+        </div>
+      </div>
+
+      <!-- 中部：招聘漏斗 + 渠道效果 -->
+      <div class="grid grid-cols-3 gap-5">
+
+        <div class="col-span-2 bg-white border border-slate-200 rounded-2xl p-6">
+          <div class="flex items-center justify-between mb-5">
+            <div>
+              <h3 class="text-base font-bold text-slate-900">招聘漏斗 · 全链路分析</h3>
+              <p class="text-xs text-slate-500 mt-0.5">从职位曝光到入职稳岗的完整旅程</p>
+            </div>
+            <select class="h-8 px-3 text-xs bg-slate-50 border border-slate-200 rounded-lg"><option>全部职位</option><option>焊工</option><option>SMT</option></select>
+          </div>
+
+          <div class="grid grid-cols-2 gap-8 items-center">
+            <svg viewBox="0 0 300 320" class="w-full">
+              <polygon points="20,10 280,10 260,60 40,60" fill="#3B82F6"/>
+              <text x="150" y="40" text-anchor="middle" fill="#fff" font-size="14" font-weight="700">12,480 次曝光</text>
+              <polygon points="40,70 260,70 240,120 60,120" fill="#06B6D4"/>
+              <text x="150" y="100" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">3,820 点击 (30.6%)</text>
+              <polygon points="60,130 240,130 220,180 80,180" fill="#22C55E"/>
+              <text x="150" y="160" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">512 投递 (13.4%)</text>
+              <polygon points="80,190 220,190 200,240 100,240" fill="#F59E0B"/>
+              <text x="150" y="220" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">218 面试 (42.6%)</text>
+              <polygon points="100,250 200,250 180,300 120,300" fill="#A855F7"/>
+              <text x="150" y="280" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">86 入职 (39%)</text>
+            </svg>
+
+            <div class="space-y-3">
+              <div class="p-3 bg-blue-50 rounded-xl border-l-4 border-blue-500">
+                <div class="flex justify-between text-sm"><span class="font-semibold text-slate-900">职位曝光</span><span class="text-blue-600 font-bold tabular-nums">12,480</span></div>
+                <div class="text-[11px] text-slate-500 mt-0.5">曝光 / 上架天数 = 624 次/天</div>
+              </div>
+              <div class="p-3 bg-cyan-50 rounded-xl border-l-4 border-cyan-500">
+                <div class="flex justify-between text-sm"><span class="font-semibold text-slate-900">点击查看</span><span class="text-cyan-600 font-bold tabular-nums">3,820</span></div>
+                <div class="text-[11px] text-slate-500 mt-0.5">CTR 30.6% · 行业 22%</div>
+              </div>
+              <div class="p-3 bg-emerald-50 rounded-xl border-l-4 border-emerald-500">
+                <div class="flex justify-between text-sm"><span class="font-semibold text-slate-900">投递简历</span><span class="text-emerald-600 font-bold tabular-nums">512</span></div>
+                <div class="text-[11px] text-slate-500 mt-0.5">投递率 13.4% · 行业 8%</div>
+              </div>
+              <div class="p-3 bg-amber-50 rounded-xl border-l-4 border-amber-500">
+                <div class="flex justify-between text-sm"><span class="font-semibold text-slate-900">参加面试</span><span class="text-amber-600 font-bold tabular-nums">218</span></div>
+                <div class="text-[11px] text-slate-500 mt-0.5">面试率 42.6% · 行业 35%</div>
+              </div>
+              <div class="p-3 bg-violet-50 rounded-xl border-l-4 border-violet-500">
+                <div class="flex justify-between text-sm"><span class="font-semibold text-slate-900">成功入职</span><span class="text-violet-600 font-bold tabular-nums">86</span></div>
+                <div class="text-[11px] text-slate-500 mt-0.5">总转化 0.69% · 行业 0.45%</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white border border-slate-200 rounded-2xl p-6">
+          <h3 class="text-base font-bold text-slate-900 mb-1">渠道效果对比</h3>
+          <p class="text-xs text-slate-500 mb-5">按入职人数排序</p>
+
+          <div class="space-y-4">
+            <div>
+              <div class="flex justify-between text-sm mb-1.5"><span class="text-slate-700 font-medium">蓝工平台推送</span><span class="text-blue-600 font-bold">42 <span class="text-[10px] text-slate-400">人</span></span></div>
+              <div class="h-7 bg-slate-100 rounded-lg overflow-hidden relative">
+                <div class="h-full bg-gradient-to-r from-blue-500 to-blue-400 rounded-lg flex items-center justify-end pr-2 text-white text-[10px] font-bold" style="width:100%">¥185/人</div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between text-sm mb-1.5"><span class="text-slate-700 font-medium">老乡推荐</span><span class="text-emerald-600 font-bold">18 <span class="text-[10px] text-slate-400">人</span></span></div>
+              <div class="h-7 bg-slate-100 rounded-lg overflow-hidden relative">
+                <div class="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 rounded-lg flex items-center justify-end pr-2 text-white text-[10px] font-bold" style="width:62%">¥120/人</div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between text-sm mb-1.5"><span class="text-slate-700 font-medium">微信广告</span><span class="text-violet-600 font-bold">12 <span class="text-[10px] text-slate-400">人</span></span></div>
+              <div class="h-7 bg-slate-100 rounded-lg overflow-hidden relative">
+                <div class="h-full bg-gradient-to-r from-violet-500 to-violet-400 rounded-lg flex items-center justify-end pr-2 text-white text-[10px] font-bold" style="width:48%">¥420/人</div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between text-sm mb-1.5"><span class="text-slate-700 font-medium">抖音同城</span><span class="text-amber-600 font-bold">8 <span class="text-[10px] text-slate-400">人</span></span></div>
+              <div class="h-7 bg-slate-100 rounded-lg overflow-hidden relative">
+                <div class="h-full bg-gradient-to-r from-amber-500 to-amber-400 rounded-lg flex items-center justify-end pr-2 text-white text-[10px] font-bold" style="width:34%">¥680/人</div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between text-sm mb-1.5"><span class="text-slate-700 font-medium">地推扫码</span><span class="text-cyan-600 font-bold">4 <span class="text-[10px] text-slate-400">人</span></span></div>
+              <div class="h-7 bg-slate-100 rounded-lg overflow-hidden relative">
+                <div class="h-full bg-gradient-to-r from-cyan-500 to-cyan-400 rounded-lg flex items-center justify-end pr-2 text-white text-[10px] font-bold" style="width:22%">¥350/人</div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between text-sm mb-1.5"><span class="text-slate-700 font-medium">其他</span><span class="text-slate-500 font-bold">2 <span class="text-[10px] text-slate-400">人</span></span></div>
+              <div class="h-7 bg-slate-100 rounded-lg overflow-hidden relative">
+                <div class="h-full bg-gradient-to-r from-slate-400 to-slate-300 rounded-lg flex items-center justify-end pr-2 text-white text-[10px] font-bold" style="width:14%">¥520/人</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-5 pt-4 border-t border-slate-100">
+            <div class="text-xs text-slate-500 mb-2">💡 优化建议</div>
+            <p class="text-xs text-slate-700 leading-relaxed">蓝工平台 ROI 最佳（¥185/人），建议下月投放预算提升 50%；抖音同城成本偏高，建议优化素材或暂停。</p>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 下部：工种填报 + 流失原因 + 工分对标 -->
+      <div class="grid grid-cols-3 gap-5">
+
+        <div class="bg-white border border-slate-200 rounded-2xl p-6">
+          <h3 class="text-base font-bold text-slate-900 mb-1">工种填报达成</h3>
+          <p class="text-xs text-slate-500 mb-5">本月各工种入职 / 目标</p>
+
+          <div class="space-y-4">
+            <div>
+              <div class="flex justify-between text-sm mb-1"><span class="text-slate-700">SMT 操作员</span><span><span class="font-bold text-emerald-600">38</span><span class="text-slate-400">/40</span></span></div>
+              <div class="h-2 bg-slate-100 rounded-full overflow-hidden"><div class="h-full bg-emerald-500 rounded-full" style="width:95%"></div></div>
+            </div>
+            <div>
+              <div class="flex justify-between text-sm mb-1"><span class="text-slate-700">普工</span><span><span class="font-bold text-emerald-600">22</span><span class="text-slate-400">/25</span></span></div>
+              <div class="h-2 bg-slate-100 rounded-full overflow-hidden"><div class="h-full bg-emerald-500 rounded-full" style="width:88%"></div></div>
+            </div>
+            <div>
+              <div class="flex justify-between text-sm mb-1"><span class="text-slate-700">分拣员</span><span><span class="font-bold text-amber-600">12</span><span class="text-slate-400">/20</span></span></div>
+              <div class="h-2 bg-slate-100 rounded-full overflow-hidden"><div class="h-full bg-amber-500 rounded-full" style="width:60%"></div></div>
+            </div>
+            <div>
+              <div class="flex justify-between text-sm mb-1"><span class="text-slate-700">焊工</span><span><span class="font-bold text-amber-600">8</span><span class="text-slate-400">/15</span></span></div>
+              <div class="h-2 bg-slate-100 rounded-full overflow-hidden"><div class="h-full bg-amber-500 rounded-full" style="width:53%"></div></div>
+            </div>
+            <div>
+              <div class="flex justify-between text-sm mb-1"><span class="text-slate-700">叉车司机</span><span><span class="font-bold text-red-600">3</span><span class="text-slate-400">/10</span></span></div>
+              <div class="h-2 bg-slate-100 rounded-full overflow-hidden"><div class="h-full bg-red-500 rounded-full" style="width:30%"></div></div>
+            </div>
+            <div>
+              <div class="flex justify-between text-sm mb-1"><span class="text-slate-700">数控车工</span><span><span class="font-bold text-red-600">2</span><span class="text-slate-400">/8</span></span></div>
+              <div class="h-2 bg-slate-100 rounded-full overflow-hidden"><div class="h-full bg-red-500 rounded-full" style="width:25%"></div></div>
+            </div>
+            <div>
+              <div class="flex justify-between text-sm mb-1"><span class="text-slate-700">电工</span><span><span class="font-bold text-red-600">1</span><span class="text-slate-400">/6</span></span></div>
+              <div class="h-2 bg-slate-100 rounded-full overflow-hidden"><div class="h-full bg-red-500 rounded-full" style="width:16%"></div></div>
+            </div>
+          </div>
+
+          <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+            <span class="text-slate-500">总达成率</span>
+            <span class="font-bold text-amber-600">86 / 124 · 69.4%</span>
+          </div>
+        </div>
+
+        <div class="bg-white border border-slate-200 rounded-2xl p-6">
+          <h3 class="text-base font-bold text-slate-900 mb-1">流失原因分析</h3>
+          <p class="text-xs text-slate-500 mb-3">本月离职 38 人</p>
+
+          <div class="flex justify-center my-2">
+            <svg width="180" height="180" viewBox="0 0 42 42">
+              <circle cx="21" cy="21" r="15.915" fill="#fff" stroke="#E2E8F0" stroke-width="6"></circle>
+              <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="#EF4444" stroke-width="6" stroke-dasharray="42 58" stroke-dashoffset="25"></circle>
+              <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="#F59E0B" stroke-width="6" stroke-dasharray="24 76" stroke-dashoffset="-17"></circle>
+              <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="#FB923C" stroke-width="6" stroke-dasharray="18 82" stroke-dashoffset="-41"></circle>
+              <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="#3B82F6" stroke-width="6" stroke-dasharray="11 89" stroke-dashoffset="-59"></circle>
+              <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="#94A3B8" stroke-width="6" stroke-dasharray="5 95" stroke-dashoffset="-70"></circle>
+              <text x="21" y="20" text-anchor="middle" font-size="4" font-weight="800" fill="#0F172A">38</text>
+              <text x="21" y="25" text-anchor="middle" font-size="2.5" fill="#94A3B8">总离职人数</text>
+            </svg>
+          </div>
+
+          <div class="space-y-2 text-xs">
+            <div class="flex items-center justify-between"><span class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded bg-red-500"></span>薪资偏低</span><span class="text-slate-700 font-medium">16 人 · 42%</span></div>
+            <div class="flex items-center justify-between"><span class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded bg-amber-500"></span>工时过长</span><span class="text-slate-700 font-medium">9 人 · 24%</span></div>
+            <div class="flex items-center justify-between"><span class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded bg-orange-400"></span>工作环境差</span><span class="text-slate-700 font-medium">7 人 · 18%</span></div>
+            <div class="flex items-center justify-between"><span class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded bg-blue-500"></span>家庭原因</span><span class="text-slate-700 font-medium">4 人 · 11%</span></div>
+            <div class="flex items-center justify-between"><span class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded bg-slate-400"></span>其他</span><span class="text-slate-700 font-medium">2 人 · 5%</span></div>
+          </div>
+
+          <div class="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs">
+            <div class="font-bold text-amber-700 mb-1">💡 AI 洞察</div>
+            <p class="text-slate-600 leading-relaxed">薪资+工时占比 66%，建议与用工方协商调整加班费率，可降低流失 30%+。</p>
+          </div>
+        </div>
+
+        <div class="bg-white border border-slate-200 rounded-2xl p-6">
+          <h3 class="text-base font-bold text-slate-900 mb-1">工分对标 · 同业 PK</h3>
+          <p class="text-xs text-slate-500 mb-5">vs 长三角 Top 20 派遣公司</p>
+
+          <div class="space-y-4">
+            <div>
+              <div class="text-xs text-slate-600 mb-1.5 font-medium">在岗平均工分</div>
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] text-blue-600 font-bold w-12">我司</span>
+                <div class="flex-1 h-6 bg-slate-100 rounded-md overflow-hidden relative">
+                  <div class="h-full bg-blue-500 rounded-md flex items-center justify-end pr-2 text-white text-[10px] font-bold" style="width:82%">782</div>
+                </div>
+              </div>
+              <div class="flex items-center gap-2 mt-1">
+                <span class="text-[10px] text-slate-400 font-bold w-12">行业</span>
+                <div class="flex-1 h-6 bg-slate-100 rounded-md overflow-hidden relative">
+                  <div class="h-full bg-slate-400 rounded-md flex items-center justify-end pr-2 text-white text-[10px] font-bold" style="width:69%">658</div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div class="text-xs text-slate-600 mb-1.5 font-medium">钻石+占比</div>
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] text-blue-600 font-bold w-12">我司</span>
+                <div class="flex-1 h-6 bg-slate-100 rounded-md overflow-hidden relative">
+                  <div class="h-full bg-cyan-500 rounded-md flex items-center justify-end pr-2 text-white text-[10px] font-bold" style="width:17%">17%</div>
+                </div>
+              </div>
+              <div class="flex items-center gap-2 mt-1">
+                <span class="text-[10px] text-slate-400 font-bold w-12">行业</span>
+                <div class="flex-1 h-6 bg-slate-100 rounded-md overflow-hidden relative">
+                  <div class="h-full bg-slate-400 rounded-md flex items-center justify-end pr-2 text-white text-[10px] font-bold" style="width:9%">9%</div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div class="text-xs text-slate-600 mb-1.5 font-medium">30 天留存</div>
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] text-blue-600 font-bold w-12">我司</span>
+                <div class="flex-1 h-6 bg-slate-100 rounded-md overflow-hidden relative">
+                  <div class="h-full bg-emerald-500 rounded-md flex items-center justify-end pr-2 text-white text-[10px] font-bold" style="width:82%">82%</div>
+                </div>
+              </div>
+              <div class="flex items-center gap-2 mt-1">
+                <span class="text-[10px] text-slate-400 font-bold w-12">行业</span>
+                <div class="flex-1 h-6 bg-slate-100 rounded-md overflow-hidden relative">
+                  <div class="h-full bg-slate-400 rounded-md flex items-center justify-end pr-2 text-white text-[10px] font-bold" style="width:68%">68%</div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div class="text-xs text-slate-600 mb-1.5 font-medium">每入职成本</div>
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] text-blue-600 font-bold w-12">我司</span>
+                <div class="flex-1 h-6 bg-slate-100 rounded-md overflow-hidden relative">
+                  <div class="h-full bg-violet-500 rounded-md flex items-center justify-end pr-2 text-white text-[10px] font-bold" style="width:48%">¥286</div>
+                </div>
+              </div>
+              <div class="flex items-center gap-2 mt-1">
+                <span class="text-[10px] text-slate-400 font-bold w-12">行业</span>
+                <div class="flex-1 h-6 bg-slate-100 rounded-md overflow-hidden relative">
+                  <div class="h-full bg-slate-400 rounded-md flex items-center justify-end pr-2 text-white text-[10px] font-bold" style="width:75%">¥486</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between">
+            <div>
+              <div class="text-xs text-slate-500">行业排名</div>
+              <div class="text-xl font-extrabold text-amber-600">TOP 5 / 全国 1,247</div>
+            </div>
+            <span class="px-3 py-1 rounded-full bg-amber-100 text-amber-700 text-[10px] font-bold">⬆ 比上月 ↑2</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 底部 数据导出 -->
+      <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-5 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-blue-500 text-white flex items-center justify-center">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          </div>
+          <div>
+            <div class="font-bold text-slate-900">月度运营报告已生成</div>
+            <div class="text-xs text-slate-600">包含招聘漏斗、用工质量、流失分析、ROI 测算等 8 大模块共 32 页</div>
+          </div>
+        </div>
+        <div class="flex gap-2">
+          <button class="h-9 px-4 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 hover:bg-slate-50">在线预览</button>
+          <button class="h-9 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold">下载 PDF</button>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+</body>
+</html>

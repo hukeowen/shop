@@ -1,0 +1,28 @@
+- generic [ref=e7]:
+  - generic [ref=e8]:
+    - generic [ref=e9]: 拓
+    - generic [ref=e10]:
+      - generic [ref=e11]: 商户登录
+      - generic [ref=e12]: 拓小二 SaaS 后台
+  - generic [ref=e13]:
+    - generic [ref=e14]: 欢迎回来
+    - generic [ref=e15]: 登录您的店铺管理后台
+    - generic [ref=e16]:
+      - generic [ref=e17]: 📱
+      - generic [ref=e19]:
+        - generic: 手机号（11 位）
+        - spinbutton [ref=e20]
+    - generic [ref=e21]:
+      - generic [ref=e22]: 🔒
+      - generic [ref=e24]:
+        - generic: 密码（≥6 位）
+        - textbox [ref=e25]
+    - generic [ref=e27]: 登录
+    - generic [ref=e29]: ·首次登录无需注册，输入即设密码
+  - generic [ref=e30]:
+    - generic [ref=e31]:
+      - text: 还没有店铺？
+      - generic [ref=e33]: 立即入驻 →
+    - generic [ref=e34]:
+      - text: 我是顾客？
+      - generic [ref=e36]: 用户登录

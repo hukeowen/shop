@@ -1,0 +1,59 @@
+- generic [ref=e175]:
+  - generic [ref=e177]:
+    - img [ref=e180] [cursor=pointer]
+    - generic [ref=e183]: 我的钱包
+  - generic [ref=e277]:
+    - generic [ref=e279]:
+      - generic [ref=e280]:
+        - generic [ref=e281]: 爱家超市
+        - generic [ref=e282]: 0 ★
+      - generic [ref=e283]:
+        - generic [ref=e284]:
+          - generic [ref=e285]: 推广积分
+          - generic [ref=e286]: ¥0.00
+        - generic [ref=e288]:
+          - generic [ref=e289]: 消费积分
+          - generic [ref=e290]: ¥0.00
+    - generic [ref=e291]:
+      - generic [ref=e292]: 推广 → 消费 转换
+      - generic [ref=e293]:
+        - generic [ref=e295]:
+          - generic: 推广积分（元）
+          - spinbutton [ref=e296]
+        - generic [ref=e297] [cursor=pointer]: 确认转换
+      - generic [ref=e298]: 按商户配置 ratio 折算；不可逆。
+    - generic [ref=e299]:
+      - generic [ref=e300]: 操作
+      - generic [ref=e301]:
+        - generic [ref=e302]:
+          - generic [ref=e303]: ¥
+          - generic [ref=e304]: 申请提现
+        - generic [ref=e305]:
+          - generic [ref=e306]: +
+          - generic [ref=e307]: 邀请好友
+        - generic [ref=e308]:
+          - generic [ref=e309]: ≡
+          - generic [ref=e310]: 我的队列
+        - generic [ref=e311]:
+          - generic [ref=e312]: ★
+          - generic [ref=e313]: 积分池历史
+    - generic [ref=e314]:
+      - generic [ref=e315]:
+        - generic [ref=e316]: 推广积分流水
+        - generic [ref=e317]: 消费积分流水
+      - generic [ref=e350]:
+        - generic [ref=e351]:
+          - generic [ref=e352]: ORDER_DEDUCT
+          - generic [ref=e353]: ¥-5.00
+        - generic [ref=e354]:
+          - generic [ref=e355]: v8 下单已抵扣 1 件价款 spu=99006（历史数据补偿）
+          - generic [ref=e356]: 余额 ¥0.00
+        - generic [ref=e357]: 2026-05-19 12:25
+      - generic [ref=e358]:
+        - generic [ref=e359]:
+          - generic [ref=e360]: 自购返奖
+          - generic [ref=e361]: +¥5.00
+        - generic [ref=e362]:
+          - generic [ref=e363]: v8 多件订单产生积分 spu=99006 count=4 deduct=1
+          - generic [ref=e364]: 余额 ¥5.00
+        - generic [ref=e365]: 2026-05-19 12:16

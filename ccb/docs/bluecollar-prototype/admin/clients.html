@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>甲方/用工单位 · 蓝工平台运营后台</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../shared/style.css">
+<style>
+  body { font-family: 'Inter', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif; background:#F8FAFC; }
+  .num-font { font-feature-settings: "tnum"; font-variant-numeric: tabular-nums; letter-spacing:-0.02em; }
+  .sidebar-link { display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:8px; color:#94A3B8; font-size:13px; font-weight:500; transition:all .15s; }
+  .sidebar-link:hover { background:rgba(255,255,255,.05); color:#fff; }
+  .sidebar-link.active { background:linear-gradient(135deg,#5046E5,#7C3AED); color:#fff; box-shadow:0 4px 12px rgba(80,70,229,.4); }
+  .sidebar-group { font-size:11px; font-weight:600; color:#475569; text-transform:uppercase; letter-spacing:0.08em; padding:14px 12px 6px; }
+  .stat-card { background:#fff; border:1px solid #E2E8F0; border-radius:12px; padding:16px 18px; transition:all .2s; position:relative; overflow:hidden; }
+  .stat-card:hover { border-color:#5046E5; box-shadow:0 8px 24px -8px rgba(80,70,229,.18); }
+  .tag { display:inline-flex; align-items:center; gap:4px; padding:2px 7px; border-radius:4px; font-size:10px; font-weight:600; }
+  .tag-green { background:#DCFCE7; color:#15803D; }
+  .tag-red { background:#FEE2E2; color:#B91C1C; }
+  .tag-amber { background:#FEF3C7; color:#B45309; }
+  .tag-blue { background:#DBEAFE; color:#1D4ED8; }
+  .tag-purple { background:#F3E8FF; color:#7E22CE; }
+  .tag-slate { background:#F1F5F9; color:#475569; }
+  th { background:#F8FAFC; font-size:11px; font-weight:600; color:#64748B; text-align:left; padding:10px 12px; border-bottom:1px solid #E2E8F0; white-space:nowrap; text-transform:uppercase; letter-spacing:0.04em; }
+  td { padding:11px 12px; border-bottom:1px solid #F1F5F9; font-size:12.5px; color:#334155; vertical-align:middle; white-space:nowrap; }
+  tr.row-hover:hover { background:#F8FAFC; }
+  .btn-icon { width:26px; height:26px; border-radius:5px; display:inline-flex; align-items:center; justify-content:center; color:#64748B; transition:all .15s; }
+  .btn-icon:hover { background:#F1F5F9; color:#5046E5; }
+  .scrollbar-thin::-webkit-scrollbar { width:6px; }
+  .scrollbar-thin::-webkit-scrollbar-thumb { background:#CBD5E1; border-radius:3px; }
+  .gradient-text { background:linear-gradient(135deg,#5046E5,#A855F7); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+  .map-dot { position:absolute; border-radius:50%; }
+  .map-dot::after { content:""; position:absolute; inset:-4px; border-radius:50%; background:inherit; opacity:.4; animation:pulse 2s ease-out infinite; }
+  @keyframes pulse { 0%{transform:scale(.8); opacity:.6;} 100%{transform:scale(2.5); opacity:0;} }
+  .credit-grade { display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:6px; font-size:11px; font-weight:800; }
+  .grade-S { background:linear-gradient(135deg,#A855F7,#7C3AED); color:#fff; }
+  .grade-A { background:linear-gradient(135deg,#F59E0B,#EF4444); color:#fff; }
+  .grade-B { background:#DBEAFE; color:#1D4ED8; }
+  .grade-C { background:#F1F5F9; color:#475569; }
+  .funnel-bar { transition:all .3s ease; }
+  .logo-box { width:32px; height:32px; border-radius:7px; display:inline-flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; color:#fff; flex-shrink:0; }
+  .vip-crown { display:inline-flex; align-items:center; gap:3px; padding:2px 6px; border-radius:4px; font-size:10px; font-weight:700; background:linear-gradient(135deg,#F59E0B,#EF4444); color:#fff; }
+  .bar-anim { animation: barRise .8s cubic-bezier(.2,.8,.2,1) both; transform-origin: bottom; }
+  @keyframes barRise { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+</style>
+</head>
+<body class="text-slate-800">
+
+<div class="flex min-h-screen">
+
+  <!-- ===== Sidebar ===== -->
+  <aside class="w-[240px] bg-[#0F172A] text-white flex-shrink-0 flex flex-col">
+    <div class="px-5 pt-5 pb-4 border-b border-white/5">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-[#5046E5] to-[#7C3AED] flex items-center justify-center font-extrabold text-[15px]">蓝</div>
+        <div><div class="text-[13px] font-bold leading-tight">蓝工平台</div><div class="text-[10px] text-slate-400 leading-tight mt-0.5 tracking-wider">运营后台 · ADMIN</div></div>
+      </div>
+      <div class="mt-4 flex items-center gap-2.5 px-2.5 py-2 rounded-lg bg-white/5">
+        <div class="w-7 h-7 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center text-[11px] font-bold">A</div>
+        <div class="min-w-0 flex-1"><div class="text-[12px] font-medium truncate">admin@bluework</div><div class="text-[10px] text-emerald-400 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>超级管理员</div></div>
+      </div>
+    </div>
+    <nav class="flex-1 px-3 py-2 overflow-y-auto scrollbar-thin">
+      <div class="sidebar-group">驾驶舱</div>
+      <a href="./dashboard.html" class="sidebar-link"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>数据驾驶舱</a>
+
+      <div class="sidebar-group">用户管理</div>
+      <a href="./workers.html" class="sidebar-link"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>工人管理</a>
+      <a href="./dispatches.html" class="sidebar-link"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>派遣公司</a>
+      <a href="./clients.html" class="sidebar-link active"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg>甲方/用工单位</a>
+
+      <div class="sidebar-group">业务管理</div>
+      <a href="./jobs-audit.html" class="sidebar-link"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/></svg>招聘审核<span class="ml-auto px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-500 text-white">34</span></a>
+      <a href="./credit.html" class="sidebar-link"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4.5L6 21l1.5-7.5L2 9h7z"/></svg>工分管理</a>
+
+      <div class="sidebar-group">风控合规</div>
+      <a href="./risk.html" class="sidebar-link"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>风控告警<span class="ml-auto px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500 text-white">23</span></a>
+      <a href="./audit.html" class="sidebar-link"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/></svg>审计日志</a>
+
+      <div class="sidebar-group">财务管理</div>
+      <a href="./finance.html" class="sidebar-link"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>财务对账</a>
+
+      <div class="sidebar-group">客服支持</div>
+      <a href="./tickets.html" class="sidebar-link"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>客服工单<span class="ml-auto px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-500 text-white">89</span></a>
+
+      <div class="sidebar-group">运营</div>
+      <a href="./campaigns.html" class="sidebar-link"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 11l18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>运营活动</a>
+      <a href="./notifications.html" class="sidebar-link"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>公告通知</a>
+
+      <div class="sidebar-group">系统</div>
+      <a href="./roles.html" class="sidebar-link"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-3-3.87"/><path d="M4 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>权限管理</a>
+      <a href="./api.html" class="sidebar-link"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>API 开放平台</a>
+      <a href="#" class="sidebar-link"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1z"/></svg>系统设置</a>
+    </nav>
+    <div class="px-4 py-3 border-t border-white/5"><div class="text-[10px] text-slate-500">v3.2.1 · build 20260517</div></div>
+  </aside>
+
+  <!-- ===== Main ===== -->
+  <main class="flex-1 min-w-0">
+
+    <header class="h-14 bg-white border-b border-slate-200 flex items-center px-6 sticky top-0 z-20">
+      <div class="flex items-center gap-2.5">
+        <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-red-50 text-red-600 border border-red-200">生产环境</span>
+        <h1 class="text-[15px] font-semibold text-slate-900">甲方/用工单位库</h1>
+        <span class="text-xs text-slate-400">·</span>
+        <span class="text-xs text-slate-500">全国 8,234 家合作企业</span>
+      </div>
+      <div class="ml-auto flex items-center gap-3">
+        <div class="relative">
+          <svg class="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input class="w-64 pl-8 pr-3 py-1.5 text-[13px] rounded-md bg-slate-100 border-0 focus:bg-white focus:ring-2 focus:ring-[#5046E5]/30 outline-none" placeholder="搜索甲方名称/统一信用代码 ⌘K">
+        </div>
+        <button class="px-3 py-1.5 text-[12px] rounded-md border border-slate-200 hover:bg-slate-50 flex items-center gap-1.5">
+          <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/></svg>
+          导出客户档案
+        </button>
+        <button class="px-3 py-1.5 text-[12px] rounded-md bg-[#5046E5] text-white hover:bg-[#4338CA] flex items-center gap-1.5 font-medium">
+          <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          新增甲方
+        </button>
+        <div class="w-px h-5 bg-slate-200"></div>
+        <div class="flex items-center gap-2">
+          <div class="w-7 h-7 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center text-white text-[11px] font-bold">A</div>
+          <div class="text-[12px]"><div class="font-semibold text-slate-800 leading-tight">Admin</div><div class="text-[10px] text-slate-500 leading-tight">超级管理员</div></div>
+        </div>
+      </div>
+    </header>
+
+    <div class="p-6 space-y-5">
+
+      <!-- ===== 6 KPI cards ===== -->
+      <section class="grid grid-cols-6 gap-4">
+        <div class="stat-card">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-[11px] text-slate-500 font-medium">合作甲方</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-600 font-semibold">+5.6%</span>
+          </div>
+          <div class="num-font text-[26px] font-extrabold text-slate-900 leading-none">8,234</div>
+          <div class="mt-2 text-[11px] text-slate-500">同比 +1,287 家</div>
+        </div>
+        <div class="stat-card bg-gradient-to-br from-amber-50 to-orange-50 border-amber-200">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-[11px] text-amber-700 font-medium">VIP 客户</span>
+            <span class="vip-crown">★ VIP</span>
+          </div>
+          <div class="num-font text-[26px] font-extrabold text-amber-700 leading-none">156</div>
+          <div class="mt-2 text-[11px] text-amber-600">贡献 GMV 占比 38%</div>
+        </div>
+        <div class="stat-card">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-[11px] text-slate-500 font-medium">本月新增</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-600 font-semibold">+12%</span>
+          </div>
+          <div class="num-font text-[26px] font-extrabold text-slate-900 leading-none">47</div>
+          <div class="mt-2 text-[11px] text-slate-500">日均 1.5 家入驻</div>
+        </div>
+        <div class="stat-card">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-[11px] text-slate-500 font-medium">月活甲方</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-600 font-semibold">活跃</span>
+          </div>
+          <div class="num-font text-[26px] font-extrabold text-slate-900 leading-none">6,890</div>
+          <div class="mt-2 text-[11px] text-slate-500">活跃率 83.7%</div>
+        </div>
+        <div class="stat-card bg-gradient-to-br from-[#5046E5] to-[#7C3AED] border-0 text-white">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-[11px] opacity-80 font-medium">TOP100 占 GMV</span>
+            <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="opacity-80"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          </div>
+          <div class="num-font text-[26px] font-extrabold leading-none">68<span class="text-[16px] opacity-80">%</span></div>
+          <div class="mt-2 text-[11px] opacity-90">头部集中度高</div>
+        </div>
+        <div class="stat-card">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-[11px] text-slate-500 font-medium">平均合作年限</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-600 font-semibold">长期</span>
+          </div>
+          <div class="num-font text-[26px] font-extrabold text-slate-900 leading-none">2.3<span class="text-[14px] text-slate-400 font-medium">年</span></div>
+          <div class="mt-2 text-[11px] text-slate-500">客户粘性强</div>
+        </div>
+      </section>
+
+      <!-- ===== 中国地图 + 行业分布 + 客户分层 ===== -->
+      <section class="grid grid-cols-12 gap-4">
+
+        <!-- 中国地图分布 -->
+        <div class="col-span-6 bg-white border border-slate-200 rounded-xl p-5">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <h3 class="text-[14px] font-bold text-slate-900">全国甲方分布热力图</h3>
+              <p class="text-[11px] text-slate-500 mt-0.5">8,234 家企业 · 覆盖 31 省 327 城</p>
+            </div>
+            <div class="flex gap-1 text-[11px]">
+              <button class="px-2 py-0.5 rounded bg-[#5046E5] text-white font-semibold">热力</button>
+              <button class="px-2 py-0.5 rounded bg-slate-100 text-slate-500">省份</button>
+              <button class="px-2 py-0.5 rounded bg-slate-100 text-slate-500">行业</button>
+            </div>
+          </div>
+          <div class="relative h-[340px] rounded-lg bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 overflow-hidden">
+            <svg class="absolute inset-0 w-full h-full opacity-40" viewBox="0 0 500 340" fill="none">
+              <!-- China outline simplified -->
+              <path d="M80 90 Q120 70 180 80 L240 70 Q300 60 360 80 L420 85 Q450 110 460 150 L455 200 Q440 240 400 260 L350 280 Q300 290 250 285 L200 280 Q150 275 110 260 L85 230 Q70 190 75 140 Z" stroke="#818CF8" stroke-width="1" fill="rgba(99,102,241,0.08)"/>
+              <!-- Province outlines -->
+              <path d="M280 150 L340 145 L360 175 L340 200 L290 195 Z" stroke="#A78BFA" stroke-width="0.4" fill="rgba(167,139,250,0.05)"/>
+              <path d="M180 180 L230 175 L250 210 L220 230 L175 220 Z" stroke="#A78BFA" stroke-width="0.4" fill="rgba(167,139,250,0.05)"/>
+              <g stroke="#4F46E5" stroke-width="0.3" opacity="0.3" stroke-dasharray="2 2">
+                <line x1="0" y1="100" x2="500" y2="100"/>
+                <line x1="0" y1="170" x2="500" y2="170"/>
+                <line x1="0" y1="240" x2="500" y2="240"/>
+                <line x1="120" y1="0" x2="120" y2="340"/>
+                <line x1="250" y1="0" x2="250" y2="340"/>
+                <line x1="380" y1="0" x2="380" y2="340"/>
+              </g>
+            </svg>
+
+            <!-- Hot spots -->
+            <div class="map-dot bg-red-500" style="left:78%; top:54%; width:22px; height:22px;"></div>
+            <div class="map-dot bg-red-500" style="left:72%; top:50%; width:18px; height:18px;"></div>
+            <div class="map-dot bg-red-500" style="left:32%; top:72%; width:20px; height:20px;"></div>
+            <div class="map-dot bg-orange-500" style="left:68%; top:62%; width:16px; height:16px;"></div>
+            <div class="map-dot bg-orange-500" style="left:56%; top:42%; width:18px; height:18px;"></div>
+            <div class="map-dot bg-orange-500" style="left:50%; top:62%; width:14px; height:14px;"></div>
+            <div class="map-dot bg-amber-400" style="left:42%; top:55%; width:12px; height:12px;"></div>
+            <div class="map-dot bg-amber-400" style="left:24%; top:60%; width:14px; height:14px;"></div>
+            <div class="map-dot bg-amber-400" style="left:62%; top:75%; width:10px; height:10px;"></div>
+            <div class="map-dot bg-yellow-400" style="left:46%; top:35%; width:8px; height:8px;"></div>
+            <div class="map-dot bg-yellow-400" style="left:80%; top:32%; width:8px; height:8px;"></div>
+            <div class="map-dot bg-yellow-400" style="left:38%; top:48%; width:8px; height:8px;"></div>
+
+            <!-- Labels -->
+            <div class="absolute text-[11px] font-bold text-white bg-black/40 px-1.5 rounded" style="left:82%; top:51%;">上海 1,247</div>
+            <div class="absolute text-[11px] font-bold text-white bg-black/40 px-1.5 rounded" style="left:51%; top:38%;">北京 1,089</div>
+            <div class="absolute text-[11px] font-bold text-white bg-black/40 px-1.5 rounded" style="left:35%; top:78%;">深圳 1,142</div>
+            <div class="absolute text-[11px] font-bold text-white bg-black/40 px-1.5 rounded" style="left:71%; top:67%;">杭州 824</div>
+            <div class="absolute text-[11px] font-bold text-white bg-black/40 px-1.5 rounded" style="left:54%; top:67%;">广州 687</div>
+            <div class="absolute text-[11px] font-bold text-white bg-black/40 px-1.5 rounded" style="left:26%; top:55%;">成都 412</div>
+
+            <!-- Stats overlay -->
+            <div class="absolute bottom-3 left-3 right-3 bg-black/50 backdrop-blur rounded-lg p-3 grid grid-cols-4 gap-3 text-white">
+              <div>
+                <div class="text-[10px] text-white/60">长三角</div>
+                <div class="num-font text-[16px] font-bold">3,287 家</div>
+                <div class="text-[10px] text-emerald-300">39.9%</div>
+              </div>
+              <div>
+                <div class="text-[10px] text-white/60">珠三角</div>
+                <div class="num-font text-[16px] font-bold">2,184 家</div>
+                <div class="text-[10px] text-emerald-300">26.5%</div>
+              </div>
+              <div>
+                <div class="text-[10px] text-white/60">京津冀</div>
+                <div class="num-font text-[16px] font-bold">1,623 家</div>
+                <div class="text-[10px] text-emerald-300">19.7%</div>
+              </div>
+              <div>
+                <div class="text-[10px] text-white/60">其他地区</div>
+                <div class="num-font text-[16px] font-bold">1,140 家</div>
+                <div class="text-[10px] text-emerald-300">13.9%</div>
+              </div>
+            </div>
+          </div>
+          <div class="mt-3 flex items-center gap-4 text-[11px]">
+            <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-red-500"></span><span class="text-slate-600">超 1000 家</span></div>
+            <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-orange-500"></span><span class="text-slate-600">500-1000</span></div>
+            <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span><span class="text-slate-600">100-500</span></div>
+            <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-yellow-400"></span><span class="text-slate-600">少于 100</span></div>
+          </div>
+        </div>
+
+        <!-- 行业分布饼图 -->
+        <div class="col-span-3 bg-white border border-slate-200 rounded-xl p-5">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-[14px] font-bold text-slate-900">行业分布</h3>
+            <a href="#" class="text-[11px] text-[#5046E5] font-semibold">详情 →</a>
+          </div>
+          <div class="flex items-center justify-center my-3">
+            <svg width="180" height="180" viewBox="0 0 200 200">
+              <!-- 制造业 38% -->
+              <circle cx="100" cy="100" r="68" fill="none" stroke="#5046E5" stroke-width="32" stroke-dasharray="162 428" stroke-dashoffset="0" transform="rotate(-90 100 100)"/>
+              <!-- 物流 22% -->
+              <circle cx="100" cy="100" r="68" fill="none" stroke="#7C3AED" stroke-width="32" stroke-dasharray="94 428" stroke-dashoffset="-162" transform="rotate(-90 100 100)"/>
+              <!-- 餐饮服务 16% -->
+              <circle cx="100" cy="100" r="68" fill="none" stroke="#A855F7" stroke-width="32" stroke-dasharray="68 428" stroke-dashoffset="-256" transform="rotate(-90 100 100)"/>
+              <!-- 零售商超 12% -->
+              <circle cx="100" cy="100" r="68" fill="none" stroke="#EC4899" stroke-width="32" stroke-dasharray="51 428" stroke-dashoffset="-324" transform="rotate(-90 100 100)"/>
+              <!-- 建筑 7% -->
+              <circle cx="100" cy="100" r="68" fill="none" stroke="#F59E0B" stroke-width="32" stroke-dasharray="30 428" stroke-dashoffset="-375" transform="rotate(-90 100 100)"/>
+              <!-- 其他 5% -->
+              <circle cx="100" cy="100" r="68" fill="none" stroke="#94A3B8" stroke-width="32" stroke-dasharray="21 428" stroke-dashoffset="-405" transform="rotate(-90 100 100)"/>
+              <text x="100" y="95" text-anchor="middle" class="num-font" font-size="22" font-weight="800" fill="#0F172A">8,234</text>
+              <text x="100" y="115" text-anchor="middle" font-size="10" fill="#64748B">家甲方</text>
+            </svg>
+          </div>
+          <div class="space-y-1.5">
+            <div class="flex items-center justify-between text-[11px]">
+              <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-sm bg-[#5046E5]"></span><span class="text-slate-700">制造业</span></div>
+              <span class="num-font font-semibold">38% · 3,129</span>
+            </div>
+            <div class="flex items-center justify-between text-[11px]">
+              <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-sm bg-[#7C3AED]"></span><span class="text-slate-700">物流仓储</span></div>
+              <span class="num-font font-semibold">22% · 1,811</span>
+            </div>
+            <div class="flex items-center justify-between text-[11px]">
+              <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-sm bg-[#A855F7]"></span><span class="text-slate-700">餐饮服务</span></div>
+              <span class="num-font font-semibold">16% · 1,317</span>
+            </div>
+            <div class="flex items-center justify-between text-[11px]">
+              <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-sm bg-[#EC4899]"></span><span class="text-slate-700">零售商超</span></div>
+              <span class="num-font font-semibold">12% · 988</span>
+            </div>
+            <div class="flex items-center justify-between text-[11px]">
+              <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-sm bg-[#F59E0B]"></span><span class="text-slate-700">建筑工程</span></div>
+              <span class="num-font font-semibold">7% · 577</span>
+            </div>
+            <div class="flex items-center justify-between text-[11px]">
+              <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-sm bg-[#94A3B8]"></span><span class="text-slate-700">其他</span></div>
+              <span class="num-font font-semibold">5% · 412</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 客户分层雷达 -->
+        <div class="col-span-3 bg-white border border-slate-200 rounded-xl p-5">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-[14px] font-bold text-slate-900">客户分层 SABC</h3>
+            <span class="text-[10px] text-slate-400">综合维度评估</span>
+          </div>
+          <div class="flex items-center justify-center my-2">
+            <svg width="200" height="180" viewBox="0 0 220 200">
+              <!-- Radar grid -->
+              <g fill="none" stroke="#E2E8F0" stroke-width="0.5">
+                <polygon points="110,30 184,75 156,160 64,160 36,75"/>
+                <polygon points="110,55 165,90 144,150 76,150 55,90"/>
+                <polygon points="110,80 146,105 132,140 88,140 74,105"/>
+                <polygon points="110,105 127,120 120,130 100,130 93,120"/>
+              </g>
+              <g stroke="#CBD5E1" stroke-width="0.5">
+                <line x1="110" y1="100" x2="110" y2="30"/>
+                <line x1="110" y1="100" x2="184" y2="75"/>
+                <line x1="110" y1="100" x2="156" y2="160"/>
+                <line x1="110" y1="100" x2="64" y2="160"/>
+                <line x1="110" y1="100" x2="36" y2="75"/>
+              </g>
+              <!-- S 级 area -->
+              <polygon points="110,40 175,80 150,150 75,148 50,82" fill="rgba(168,85,247,0.25)" stroke="#A855F7" stroke-width="1.8"/>
+              <!-- 文字 -->
+              <text x="110" y="22" text-anchor="middle" font-size="10" font-weight="600" fill="#475569">合作年限</text>
+              <text x="195" y="75" text-anchor="middle" font-size="10" font-weight="600" fill="#475569">月单价</text>
+              <text x="172" y="172" text-anchor="middle" font-size="10" font-weight="600" fill="#475569">规模</text>
+              <text x="48" y="172" text-anchor="middle" font-size="10" font-weight="600" fill="#475569">活跃度</text>
+              <text x="22" y="75" text-anchor="middle" font-size="10" font-weight="600" fill="#475569">信用</text>
+            </svg>
+          </div>
+          <div class="grid grid-cols-4 gap-1.5 mt-2">
+            <div class="text-center p-2 rounded bg-purple-50">
+              <div class="credit-grade grade-S mx-auto">S</div>
+              <div class="num-font text-[14px] font-bold text-purple-700 mt-1">156</div>
+              <div class="text-[10px] text-purple-600">战略客户</div>
+            </div>
+            <div class="text-center p-2 rounded bg-amber-50">
+              <div class="credit-grade grade-A mx-auto">A</div>
+              <div class="num-font text-[14px] font-bold text-amber-700 mt-1">892</div>
+              <div class="text-[10px] text-amber-600">重点客户</div>
+            </div>
+            <div class="text-center p-2 rounded bg-blue-50">
+              <div class="credit-grade grade-B mx-auto">B</div>
+              <div class="num-font text-[14px] font-bold text-blue-700 mt-1">3,128</div>
+              <div class="text-[10px] text-blue-600">普通客户</div>
+            </div>
+            <div class="text-center p-2 rounded bg-slate-100">
+              <div class="credit-grade grade-C mx-auto">C</div>
+              <div class="num-font text-[14px] font-bold text-slate-700 mt-1">4,058</div>
+              <div class="text-[10px] text-slate-600">基础客户</div>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ===== 主表格 + 右侧新签漏斗 ===== -->
+      <section class="grid grid-cols-12 gap-4">
+
+        <!-- 甲方表格 -->
+        <div class="col-span-9 bg-white border border-slate-200 rounded-xl overflow-hidden">
+          <div class="flex items-center justify-between p-4 border-b border-slate-100">
+            <div>
+              <h3 class="text-[14px] font-bold text-slate-900">甲方/用工单位明细</h3>
+              <p class="text-[11px] text-slate-500 mt-0.5">共 8,234 家 · 当前显示 TOP 15</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <div class="flex gap-1 text-[11px]">
+                <button class="px-2 py-1 rounded bg-[#5046E5] text-white font-semibold">全部</button>
+                <button class="px-2 py-1 rounded text-slate-500 hover:bg-slate-100">VIP</button>
+                <button class="px-2 py-1 rounded text-slate-500 hover:bg-slate-100">S级</button>
+                <button class="px-2 py-1 rounded text-slate-500 hover:bg-slate-100">活跃</button>
+                <button class="px-2 py-1 rounded text-slate-500 hover:bg-slate-100">休眠</button>
+              </div>
+              <select class="text-[11px] border border-slate-200 rounded-md px-2 py-1 bg-white">
+                <option>全部行业</option>
+                <option>制造业</option>
+                <option>物流仓储</option>
+                <option>餐饮服务</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full">
+              <thead>
+                <tr>
+                  <th class="w-10"><input type="checkbox" class="rounded"></th>
+                  <th>甲方名称</th>
+                  <th>信用</th>
+                  <th>行业</th>
+                  <th>注册地</th>
+                  <th class="text-right">在岗工人</th>
+                  <th class="text-right">月单价</th>
+                  <th class="text-right">合作派遣</th>
+                  <th>VIP</th>
+                  <th class="text-right">操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="row-hover">
+                  <td><input type="checkbox" class="rounded"></td>
+                  <td>
+                    <div class="flex items-center gap-2.5">
+                      <div class="logo-box" style="background:linear-gradient(135deg,#E1251B,#B91C1C);">京东</div>
+                      <div>
+                        <div class="font-semibold text-slate-900">京东物流</div>
+                        <div class="text-[10px] text-slate-400">合作 4.2 年 · 战略级</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td><span class="credit-grade grade-S">S</span></td>
+                  <td><span class="tag tag-blue">物流仓储</span></td>
+                  <td>北京</td>
+                  <td class="text-right num-font font-semibold">12,847</td>
+                  <td class="text-right num-font font-semibold">¥6,800</td>
+                  <td class="text-right num-font">42 家</td>
+                  <td><span class="vip-crown">★ VIP</span></td>
+                  <td class="text-right">
+                    <button class="btn-icon"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                    <button class="btn-icon"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg></button>
+                  </td>
+                </tr>
+
+                <tr class="row-hover">
+                  <td><input type="checkbox" class="rounded"></td>
+                  <td>
+                    <div class="flex items-center gap-2.5">
+                      <div class="logo-box" style="background:linear-gradient(135deg,#000,#444);">SF</div>
+                      <div>
+                        <div class="font-semibold text-slate-900">顺丰速运</div>
+                        <div class="text-[10px] text-slate-400">合作 5.8 年 · 战略级</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td><span class="credit-grade grade-S">S</span></td>
+                  <td><span class="tag tag-blue">物流仓储</span></td>
+                  <td>深圳</td>
+                  <td class="text-right num-font font-semibold">9,847</td>
+                  <td class="text-right num-font font-semibold">¥7,200</td>
+                  <td class="text-right num-font">38 家</td>
+                  <td><span class="vip-crown">★ VIP</span></td>
+                  <td class="text-right">
+                    <button class="btn-icon"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                    <button class="btn-icon"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg></button>
+                  </td>
+                </tr>
+
+                <tr class="row-hover">
+                  <td><input type="checkbox" class="rounded"></td>
+                  <td>
+                    <div class="flex items-center gap-2.5">
+                      <div class="logo-box" style="background:linear-gradient(135deg,#C8102E,#8B0000);">海底</div>
+                      <div>
+                        <div class="font-semibold text-slate-900">海底捞</div>
+                        <div class="text-[10px] text-slate-400">合作 3.1 年 · 全国连锁</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td><span class="credit-grade grade-S">S</span></td>
+                  <td><span class="tag tag-amber">餐饮服务</span></td>
+                  <td>四川 成都</td>
+                  <td class="text-right num-font font-semibold">8,234</td>
+                  <td class="text-right num-font font-semibold">¥5,800</td>
+                  <td class="text-right num-font">29 家</td>
+                  <td><span class="vip-crown">★ VIP</span></td>
+                  <td class="text-right">
+                    <button class="btn-icon"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                    <button class="btn-icon"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg></button>
+                  </td>
+                </tr>
+
+                <tr class="row-hover">
+                  <td><input type="checkbox" class="rounded"></td>
+                  <td>
+                    <div class="flex items-center gap-2.5">
+                      <div class="logo-box" style="background:linear-gradient(135deg,#0066B3,#003366);">立讯</div>
+                      <div>
+                        <div class="font-semibold text-slate-900">立讯精密</div>
+                        <div class="text-[10px] text-slate-400">合作 2.8 年 · 苹果代工</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td><span class="credit-grade grade-S">S</span></td>
+                  <td><span class="tag tag-purple">制造业</span></td>
+                  <td>广东 东莞</td>
+                  <td class="text-right num-font font-semibold">28,142</td>
+                  <td class="text-right num-font font-semibold">¥6,500</td>
+                  <td class="text-right num-font">56 家</td>
+                  <td><span class="vip-crown">★ VIP</span></td>
+                  <td class="text-right">
+                    <button class="btn-icon"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                    <button class="btn-icon"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg></button>
+                  </td>
+                </tr>
+
+                <tr class="row-hover">
+                  <td><input type="checkbox" class="rounded"></td>
+                  <td>
+                    <div class="flex items-center gap-2.5">
+                      <div class="logo-box" style="background:linear-gradient(135deg,#1B5E20,#0F3D14);">万象</div>
+                      <div>
+                        <div class="font-semibold text-slate-900">万象城商管</div>
+                        <div class="text-[10px] text-slate-400">合作 2.4 年 · 华润系</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td><span class="credit-grade grade-A">A</span></td>
+                  <td><span class="tag tag-blue">零售商超</span></td>
+                  <td>深圳</td>
+                  <td class="text-right num-font font-semibold">3,247</td>
+                  <td class="text-right num-font font-semibold">¥6,200</td>
+                  <td class="text-right num-font">18 家</td>
+                  <td><span class="vip-crown">★ VIP</span></td>
+                  <td class="text-right">
+                    <button class="btn-icon"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                    <button class="btn-icon"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg></button>
+                  </td>
+                </tr>
+
+                <tr class="row-hover">
+                  <td><input type="checkbox" class="rounded"></td>
+                  <td>
+                    <div class="flex items-center gap-2.5">
+                      <div class="logo-box" style="background:linear-gradient(135deg,#FF6A00,#FF3300);">阿里</div>
+                      <div>
+                        <div class="font-semibold text-slate-900">阿里巴巴集团</div>
+                        <div class="text-[10px] text-slate-400">合作 6.2 年 · 战略级</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td><span class="credit-grade grade-S">S</span></td>
+                  <td><span class="tag tag-purple">互联网</span></td>
+                  <td>浙江 杭州</td>
+                  <td class="text-right num-font font-semibold">15,289</td>
+                  <td class="text-right num-font font-semibold">¥8,500</td>
+                  <td class="text-right num-font">47 家</td>
+                  <td><span class="vip-crown">★ VIP</span></td>
+                  <td class="text-right">
+                    <button class="btn-icon"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                    <button class="btn-icon"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg></button>
+                  </td>
+                </tr>
+
+                <tr class="row-hover">
+                  <td><input type="checkbox" class="rounded"></td>
+                  <td>
+                    <div class="flex items-center gap-2.5">
+                      <div class="logo-box" style="background:linear-gradient(135deg,#FF9900,#E67E00);">菜鸟</div>
+                      <div>
+                        <div class="font-semibold text-slate-900">菜鸟供应链</div>
+                        <div class="text-[10px] text-slate-400">合作 3.7 年</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td><span class="credit-grade grade-S">S</span></td>
+                  <td><span class="tag tag-blue">物流仓储</span></td>
+                  <td>浙江 杭州</td>
+                  <td class="text-right num-font font-semibold">7,842</td>
+                  <td class="text-right num-font font-semibold">¥6,800</td>
+                  <td class="text-right num-font">31 家</td>
+                  <td><span class="vip-crown">★ VIP</span></td>
+                  <td class="text-right">
+                    <button class="btn-icon"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                    <button class="btn-icon"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg></button>
+                  </td>
+                </tr>
+
+                <tr class="row-hover">
+                  <td><input type="checkbox" class="rounded"></td>
+                  <td>
+                    <div class="flex items-center gap-2.5">
+                      <div class="logo-box" style="background:linear-gradient(135deg,#D52B1E,#A01818);">海康</div>
+                      <div>
+                        <div class="font-semibold text-slate-900">海康威视</div>
+                        <div class="text-[10px] text-slate-400">合作 2.1 年</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td><span class="credit-grade grade-A">A</span></td>
+                  <td><span class="tag tag-purple">制造业</span></td>
+                  <td>浙江 杭州</td>
+                  <td class="text-right num-font font-semibold">5,128</td>
+                  <td class="text-right num-font font-semibold">¥7,100</td>
+                  <td class="text-right num-font">21 家</td>
+                  <td><span class="tag tag-slate">普通</span></td>
+                  <td class="text-right">
+                    <button class="btn-icon"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                    <button class="btn-icon"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg></button>
+                  </td>
+                </tr>
+
+                <tr class="row-hover">
+                  <td><input type="checkbox" class="rounded"></td>
+                  <td>
+                    <div class="flex items-center gap-2.5">
+                      <div class="logo-box" style="background:linear-gradient(135deg,#FFCD00,#E6A800); color:#000;">美团</div>
+                      <div>
+                        <div class="font-semibold text-slate-900">美团本地生活</div>
+                        <div class="text-[10px] text-slate-400">合作 3.4 年</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td><span class="credit-grade grade-S">S</span></td>
+                  <td><span class="tag tag-blue">物流仓储</span></td>
+                  <td>北京</td>
+                  <td class="text-right num-font font-semibold">18,247</td>
+                  <td class="text-right num-font font-semibold">¥6,400</td>
+                  <td class="text-right num-font">52 家</td>
+                  <td><span class="vip-crown">★ VIP</span></td>
+                  <td class="text-right">
+                    <button class="btn-icon"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                    <button class="btn-icon"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg></button>
+                  </td>
+                </tr>
+
+                <tr class="row-hover">
+                  <td><input type="checkbox" class="rounded"></td>
+                  <td>
+                    <div class="flex items-center gap-2.5">
+                      <div class="logo-box" style="background:linear-gradient(135deg,#E62E2E,#B91C1C);">拼多</div>
+                      <div>
+                        <div class="font-semibold text-slate-900">拼多多</div>
+                        <div class="text-[10px] text-slate-400">合作 2.2 年</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td><span class="credit-grade grade-A">A</span></td>
+                  <td><span class="tag tag-purple">互联网</span></td>
+                  <td>上海</td>
+                  <td class="text-right num-font font-semibold">6,847</td>
+                  <td class="text-right num-font font-semibold">¥7,800</td>
+                  <td class="text-right num-font">24 家</td>
+                  <td><span class="vip-crown">★ VIP</span></td>
+                  <td class="text-right">
+                    <button class="btn-icon"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                    <button class="btn-icon"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg></button>
+                  </td>
+                </tr>
+
+                <tr class="row-hover">
+                  <td><input type="checkbox" class="rounded"></td>
+                  <td>
+                    <div class="flex items-center gap-2.5">
+                      <div class="logo-box" style="background:linear-gradient(135deg,#00913A,#005F26);">比亚</div>
+                      <div>
+                        <div class="font-semibold text-slate-900">比亚迪股份</div>
+                        <div class="text-[10px] text-slate-400">合作 1.8 年</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td><span class="credit-grade grade-S">S</span></td>
+                  <td><span class="tag tag-purple">制造业</span></td>
+                  <td>深圳</td>
+                  <td class="text-right num-font font-semibold">32,189</td>
+                  <td class="text-right num-font font-semibold">¥7,500</td>
+                  <td class="text-right num-font">68 家</td>
+                  <td><span class="vip-crown">★ VIP</span></td>
+                  <td class="text-right">
+                    <button class="btn-icon"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                    <button class="btn-icon"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg></button>
+                  </td>
+                </tr>
+
+                <tr class="row-hover">
+                  <td><input type="checkbox" class="rounded"></td>
+                  <td>
+                    <div class="flex items-center gap-2.5">
+                      <div class="logo-box" style="background:linear-gradient(135deg,#005CAB,#003966);">富士</div>
+                      <div>
+                        <div class="font-semibold text-slate-900">富士康科技</div>
+                        <div class="text-[10px] text-slate-400">合作 7.3 年 · 顶级战略</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td><span class="credit-grade grade-S">S</span></td>
+                  <td><span class="tag tag-purple">制造业</span></td>
+                  <td>深圳/郑州</td>
+                  <td class="text-right num-font font-semibold">52,847</td>
+                  <td class="text-right num-font font-semibold">¥6,200</td>
+                  <td class="text-right num-font">128 家</td>
+                  <td><span class="vip-crown">★ VIP</span></td>
+                  <td class="text-right">
+                    <button class="btn-icon"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                    <button class="btn-icon"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg></button>
+                  </td>
+                </tr>
+
+                <tr class="row-hover">
+                  <td><input type="checkbox" class="rounded"></td>
+                  <td>
+                    <div class="flex items-center gap-2.5">
+                      <div class="logo-box" style="background:linear-gradient(135deg,#E50012,#A00000);">华为</div>
+                      <div>
+                        <div class="font-semibold text-slate-900">华为技术</div>
+                        <div class="text-[10px] text-slate-400">合作 4.5 年</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td><span class="credit-grade grade-S">S</span></td>
+                  <td><span class="tag tag-purple">制造业</span></td>
+                  <td>深圳</td>
+                  <td class="text-right num-font font-semibold">14,289</td>
+                  <td class="text-right num-font font-semibold">¥9,200</td>
+                  <td class="text-right num-font">36 家</td>
+                  <td><span class="vip-crown">★ VIP</span></td>
+                  <td class="text-right">
+                    <button class="btn-icon"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                    <button class="btn-icon"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg></button>
+                  </td>
+                </tr>
+
+                <tr class="row-hover">
+                  <td><input type="checkbox" class="rounded"></td>
+                  <td>
+                    <div class="flex items-center gap-2.5">
+                      <div class="logo-box" style="background:linear-gradient(135deg,#E60012,#A50000);">移动</div>
+                      <div>
+                        <div class="font-semibold text-slate-900">中国移动</div>
+                        <div class="text-[10px] text-slate-400">合作 3.2 年 · 央企</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td><span class="credit-grade grade-A">A</span></td>
+                  <td><span class="tag tag-slate">通信运营</span></td>
+                  <td>北京</td>
+                  <td class="text-right num-font font-semibold">4,847</td>
+                  <td class="text-right num-font font-semibold">¥8,500</td>
+                  <td class="text-right num-font">22 家</td>
+                  <td><span class="tag tag-slate">普通</span></td>
+                  <td class="text-right">
+                    <button class="btn-icon"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                    <button class="btn-icon"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg></button>
+                  </td>
+                </tr>
+
+                <tr class="row-hover">
+                  <td><input type="checkbox" class="rounded"></td>
+                  <td>
+                    <div class="flex items-center gap-2.5">
+                      <div class="logo-box" style="background:linear-gradient(135deg,#1E5C9D,#0F3D6E);">国网</div>
+                      <div>
+                        <div class="font-semibold text-slate-900">国家电网</div>
+                        <div class="text-[10px] text-slate-400">合作 2.9 年 · 央企</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td><span class="credit-grade grade-S">S</span></td>
+                  <td><span class="tag tag-slate">能源电力</span></td>
+                  <td>北京</td>
+                  <td class="text-right num-font font-semibold">7,128</td>
+                  <td class="text-right num-font font-semibold">¥9,800</td>
+                  <td class="text-right num-font">19 家</td>
+                  <td><span class="vip-crown">★ VIP</span></td>
+                  <td class="text-right">
+                    <button class="btn-icon"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                    <button class="btn-icon"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg></button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="flex items-center justify-between px-4 py-3 border-t border-slate-100 text-[12px]">
+            <div class="text-slate-500">显示 1-15 / 共 8,234 条</div>
+            <div class="flex items-center gap-1">
+              <button class="px-2 py-1 rounded hover:bg-slate-100 text-slate-500">‹</button>
+              <button class="px-2.5 py-1 rounded bg-[#5046E5] text-white font-semibold">1</button>
+              <button class="px-2.5 py-1 rounded hover:bg-slate-100 text-slate-700">2</button>
+              <button class="px-2.5 py-1 rounded hover:bg-slate-100 text-slate-700">3</button>
+              <span class="px-1 text-slate-400">…</span>
+              <button class="px-2.5 py-1 rounded hover:bg-slate-100 text-slate-700">549</button>
+              <button class="px-2 py-1 rounded hover:bg-slate-100 text-slate-500">›</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 右侧：新签客户漏斗 -->
+        <div class="col-span-3 space-y-4">
+          <div class="bg-white border border-slate-200 rounded-xl p-5">
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <h3 class="text-[14px] font-bold text-slate-900">新签客户漏斗</h3>
+                <p class="text-[11px] text-slate-500 mt-0.5">本月数据</p>
+              </div>
+              <span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-600 font-semibold">↑ 8.2%</span>
+            </div>
+
+            <div class="space-y-2">
+              <div>
+                <div class="flex justify-between mb-1">
+                  <span class="text-[12px] font-semibold text-slate-700">销售线索</span>
+                  <span class="num-font text-[12px] font-bold text-slate-900">1,287</span>
+                </div>
+                <div class="h-9 rounded-md bg-gradient-to-r from-[#5046E5] to-[#7C3AED] flex items-center justify-end pr-3 funnel-bar" style="width:100%">
+                  <span class="text-white text-[10px] font-semibold">100%</span>
+                </div>
+              </div>
+              <div>
+                <div class="flex justify-between mb-1">
+                  <span class="text-[12px] font-semibold text-slate-700">需求洽谈</span>
+                  <span class="num-font text-[12px] font-bold text-slate-900">684</span>
+                </div>
+                <div class="h-9 rounded-md bg-gradient-to-r from-[#7C3AED] to-[#A855F7] flex items-center justify-end pr-3 funnel-bar" style="width:78%">
+                  <span class="text-white text-[10px] font-semibold">53.1%</span>
+                </div>
+              </div>
+              <div>
+                <div class="flex justify-between mb-1">
+                  <span class="text-[12px] font-semibold text-slate-700">方案报价</span>
+                  <span class="num-font text-[12px] font-bold text-slate-900">312</span>
+                </div>
+                <div class="h-9 rounded-md bg-gradient-to-r from-[#A855F7] to-[#EC4899] flex items-center justify-end pr-3 funnel-bar" style="width:55%">
+                  <span class="text-white text-[10px] font-semibold">24.2%</span>
+                </div>
+              </div>
+              <div>
+                <div class="flex justify-between mb-1">
+                  <span class="text-[12px] font-semibold text-slate-700">合同审批</span>
+                  <span class="num-font text-[12px] font-bold text-slate-900">128</span>
+                </div>
+                <div class="h-9 rounded-md bg-gradient-to-r from-[#EC4899] to-[#F59E0B] flex items-center justify-end pr-3 funnel-bar" style="width:38%">
+                  <span class="text-white text-[10px] font-semibold">9.9%</span>
+                </div>
+              </div>
+              <div>
+                <div class="flex justify-between mb-1">
+                  <span class="text-[12px] font-semibold text-emerald-700">成功签约</span>
+                  <span class="num-font text-[12px] font-bold text-emerald-700">47</span>
+                </div>
+                <div class="h-9 rounded-md bg-gradient-to-r from-emerald-500 to-emerald-600 flex items-center justify-end pr-3 funnel-bar" style="width:22%">
+                  <span class="text-white text-[10px] font-semibold">3.7%</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-slate-100 grid grid-cols-2 gap-2">
+              <div>
+                <div class="text-[10px] text-slate-500">平均转化周期</div>
+                <div class="num-font text-[14px] font-bold text-slate-900">18 天</div>
+              </div>
+              <div>
+                <div class="text-[10px] text-slate-500">总转化率</div>
+                <div class="num-font text-[14px] font-bold text-emerald-600">3.65%</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 最新签约 -->
+          <div class="bg-white border border-slate-200 rounded-xl p-5">
+            <h3 class="text-[14px] font-bold text-slate-900 mb-3">本周新签 TOP</h3>
+            <div class="space-y-2.5">
+              <div class="flex items-center gap-2.5">
+                <div class="logo-box w-8 h-8" style="background:linear-gradient(135deg,#10B981,#059669);">极兔</div>
+                <div class="flex-1 min-w-0">
+                  <div class="text-[12px] font-semibold text-slate-800 truncate">极兔速递</div>
+                  <div class="text-[10px] text-slate-500">¥3.8M/月 · 周二</div>
+                </div>
+                <span class="credit-grade grade-A">A</span>
+              </div>
+              <div class="flex items-center gap-2.5">
+                <div class="logo-box w-8 h-8" style="background:linear-gradient(135deg,#3B82F6,#1D4ED8);">小米</div>
+                <div class="flex-1 min-w-0">
+                  <div class="text-[12px] font-semibold text-slate-800 truncate">小米科技</div>
+                  <div class="text-[10px] text-slate-500">¥5.2M/月 · 周三</div>
+                </div>
+                <span class="credit-grade grade-S">S</span>
+              </div>
+              <div class="flex items-center gap-2.5">
+                <div class="logo-box w-8 h-8" style="background:linear-gradient(135deg,#F59E0B,#D97706);">瑞幸</div>
+                <div class="flex-1 min-w-0">
+                  <div class="text-[12px] font-semibold text-slate-800 truncate">瑞幸咖啡</div>
+                  <div class="text-[10px] text-slate-500">¥1.4M/月 · 周三</div>
+                </div>
+                <span class="credit-grade grade-B">B</span>
+              </div>
+              <div class="flex items-center gap-2.5">
+                <div class="logo-box w-8 h-8" style="background:linear-gradient(135deg,#EC4899,#BE185D);">名创</div>
+                <div class="flex-1 min-w-0">
+                  <div class="text-[12px] font-semibold text-slate-800 truncate">名创优品</div>
+                  <div class="text-[10px] text-slate-500">¥2.1M/月 · 周四</div>
+                </div>
+                <span class="credit-grade grade-A">A</span>
+              </div>
+              <div class="flex items-center gap-2.5">
+                <div class="logo-box w-8 h-8" style="background:linear-gradient(135deg,#8B5CF6,#6D28D9);">字节</div>
+                <div class="flex-1 min-w-0">
+                  <div class="text-[12px] font-semibold text-slate-800 truncate">字节跳动</div>
+                  <div class="text-[10px] text-slate-500">¥6.7M/月 · 周五</div>
+                </div>
+                <span class="credit-grade grade-S">S</span>
+              </div>
+            </div>
+            <button class="w-full mt-3 py-2 text-[12px] text-[#5046E5] font-semibold border border-[#5046E5]/20 rounded-md hover:bg-[#5046E5]/5">查看全部新签客户 →</button>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+</div>
+
+</body>
+</html>

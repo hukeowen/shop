@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>蓝工 · 工友圈</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="../shared/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body class="bg-slate-100 min-h-screen pb-10">
+
+<div class="text-center pt-6">
+  <a href="../index.html" class="text-sm text-slate-500 hover:text-blue-600">← 返回原型导航</a>
+</div>
+
+<div class="phone-frame">
+  <div class="phone-notch"></div>
+  <div class="phone-screen">
+    <div class="status-bar"><span>9:41</span><span class="flex gap-1 items-center"><span>●●●●●</span><span class="text-xs">5G</span><span class="text-xs">100%</span></span></div>
+
+    <div class="phone-content pb-20">
+
+      <!-- 顶部 Tab -->
+      <div class="bg-white sticky top-0 z-10 border-b border-slate-100">
+        <div class="px-4 pt-3 flex items-center justify-between">
+          <div class="flex gap-5">
+            <button class="text-sm text-slate-400 pb-3">关注</button>
+            <button class="text-base font-bold text-slate-900 pb-3 border-b-2 border-blue-600">推荐</button>
+            <button class="text-sm text-slate-400 pb-3">派遣公司榜</button>
+          </div>
+          <div class="flex items-center gap-3 pb-2">
+            <button>
+              <svg width="20" height="20" fill="none" stroke="#475569" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            </button>
+            <button class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center">
+              <svg width="16" height="16" fill="none" stroke="#fff" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 派遣公司排行榜 -->
+      <div class="px-4 mt-4">
+        <div class="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl p-4 border border-amber-100">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-2">
+              <span class="text-lg">🏆</span>
+              <h3 class="font-bold text-slate-900">派遣公司本月口碑榜</h3>
+            </div>
+            <span class="text-xs text-amber-600 font-medium">完整榜单 →</span>
+          </div>
+          <div class="space-y-2">
+            <div class="bg-white rounded-xl p-3 flex items-center gap-3">
+              <span class="text-base">🥇</span>
+              <div class="w-9 h-9 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold">浙</div>
+              <div class="flex-1 min-w-0">
+                <div class="text-sm font-bold text-slate-900">浙江睿才人力</div>
+                <div class="text-[11px] text-slate-500">12,580 工人服务 · 准时发薪 98.5%</div>
+              </div>
+              <div class="text-right">
+                <div class="text-amber-500 font-bold text-sm">★ 4.8</div>
+                <div class="text-[10px] text-emerald-500">+0.2 ↑</div>
+              </div>
+            </div>
+            <div class="bg-white rounded-xl p-3 flex items-center gap-3">
+              <span class="text-base">🥈</span>
+              <div class="w-9 h-9 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-600 font-bold">捷</div>
+              <div class="flex-1 min-w-0">
+                <div class="text-sm font-bold text-slate-900">捷诚劳务</div>
+                <div class="text-[11px] text-slate-500">8,420 工人服务 · 合同正规</div>
+              </div>
+              <div class="text-right">
+                <div class="text-amber-500 font-bold text-sm">★ 4.6</div>
+                <div class="text-[10px] text-emerald-500">+0.1 ↑</div>
+              </div>
+            </div>
+            <div class="bg-white rounded-xl p-3 flex items-center gap-3">
+              <span class="text-base">🥉</span>
+              <div class="w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600 font-bold">众</div>
+              <div class="flex-1 min-w-0">
+                <div class="text-sm font-bold text-slate-900">众联人力</div>
+                <div class="text-[11px] text-slate-500">6,180 工人服务 · 工种丰富</div>
+              </div>
+              <div class="text-right">
+                <div class="text-amber-500 font-bold text-sm">★ 4.4</div>
+                <div class="text-[10px] text-emerald-500">+0.0</div>
+              </div>
+            </div>
+            <!-- 红色警示 -->
+            <div class="bg-rose-50 rounded-xl p-3 flex items-center gap-3 border border-rose-200">
+              <span class="text-base">⚠️</span>
+              <div class="w-9 h-9 rounded-lg bg-rose-100 flex items-center justify-center text-rose-600 font-bold">鸿</div>
+              <div class="flex-1 min-w-0">
+                <div class="text-sm font-bold text-slate-900">鸿运人力 <span class="text-[10px] text-rose-500 font-medium">·  低分预警</span></div>
+                <div class="text-[11px] text-rose-500">本月投诉 23 起 · 欠薪 / 克扣</div>
+              </div>
+              <div class="text-right">
+                <div class="text-rose-500 font-bold text-sm">★ 3.2</div>
+                <div class="text-[10px] text-rose-500">-0.4 ↓</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 帖子流 -->
+      <div class="px-4 mt-4 space-y-3">
+
+        <!-- 帖子1：真实体验 + 图 -->
+        <div class="bg-white rounded-2xl p-4 shadow-sm">
+          <div class="flex items-center gap-2 mb-3">
+            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-cyan-500 flex items-center justify-center text-white font-bold text-sm">张</div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-1.5">
+                <span class="text-sm font-bold text-slate-900">张大锤</span>
+                <span class="badge-gold text-[9px] px-1.5 rounded font-bold">黄金 II</span>
+              </div>
+              <div class="text-[11px] text-slate-400">2 小时前 · 杭州 · 仓储工</div>
+            </div>
+            <button class="text-slate-300">⋯</button>
+          </div>
+          <p class="text-sm text-slate-700 mb-3 leading-relaxed">
+            在 <span class="text-blue-600 font-semibold">@浙江睿才人力</span> 干了 3 个月了，说说真实感受：日结准时（每天下午 4 点到账）、宿舍 4 人间有空调、HR 林姐人很好，遇到问题随叫随到。强烈推荐！👍
+          </p>
+          <!-- 图 -->
+          <div class="grid grid-cols-3 gap-1.5 mb-3">
+            <div class="aspect-square rounded-lg bg-gradient-to-br from-blue-200 to-indigo-300 flex items-center justify-center text-white text-xs">宿舍</div>
+            <div class="aspect-square rounded-lg bg-gradient-to-br from-emerald-200 to-teal-300 flex items-center justify-center text-white text-xs">食堂</div>
+            <div class="aspect-square rounded-lg bg-gradient-to-br from-amber-200 to-orange-300 flex items-center justify-center text-white text-xs">车间</div>
+          </div>
+          <!-- 派遣公司Tag -->
+          <a href="#" class="flex items-center gap-2 bg-blue-50 rounded-xl p-2 mb-3">
+            <div class="w-7 h-7 rounded bg-white flex items-center justify-center text-indigo-600 font-bold text-xs">浙</div>
+            <div class="flex-1">
+              <div class="text-xs font-semibold text-slate-700">浙江睿才人力</div>
+              <div class="text-[10px] text-slate-400">★4.8 · 在招 52 个职位</div>
+            </div>
+            <span class="text-[10px] text-blue-600">查看 →</span>
+          </a>
+          <div class="flex items-center justify-between text-xs text-slate-500 border-t border-slate-100 pt-2">
+            <button class="flex items-center gap-1">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              <span>128</span>
+            </button>
+            <button class="flex items-center gap-1 text-rose-500">
+              <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+              <span>342</span>
+            </button>
+            <button class="flex items-center gap-1">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/></svg>
+              <span>分享</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 帖子2：晒高工分 -->
+        <div class="bg-white rounded-2xl p-4 shadow-sm">
+          <div class="flex items-center gap-2 mb-3">
+            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center text-white font-bold text-sm">李</div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-1.5">
+                <span class="text-sm font-bold text-slate-900">李建国</span>
+                <span class="badge-diamond text-[9px] px-1.5 rounded font-bold">钻石 II</span>
+              </div>
+              <div class="text-[11px] text-slate-400">5 小时前 · 苏州 · 流水线</div>
+            </div>
+          </div>
+          <p class="text-sm text-slate-700 mb-3">冲！终于把工分干到 957 了！下个月就要上王者了 🔥 谁能想到 2 年前我还是个青铜小白...</p>
+          <!-- 工分卡 -->
+          <div class="bg-gradient-to-br from-amber-500 via-orange-500 to-purple-600 rounded-2xl p-4 text-white relative overflow-hidden mb-3">
+            <div class="absolute -top-6 -right-6 w-24 h-24 bg-white/10 rounded-full"></div>
+            <div class="relative">
+              <div class="flex items-center justify-between">
+                <span class="text-[11px] opacity-90">蓝工工分</span>
+                <span class="badge-diamond text-[9px] px-2 py-0.5 rounded-full font-bold">钻石 II</span>
+              </div>
+              <div class="flex items-end gap-2 mt-1">
+                <span class="text-4xl font-extrabold">957</span>
+                <span class="text-xs opacity-80 mb-1">/ 1100 王者</span>
+              </div>
+              <div class="text-[10px] opacity-90 mt-1">全国排名前 0.3% · 信用王者</div>
+            </div>
+          </div>
+          <div class="flex items-center justify-between text-xs text-slate-500 border-t border-slate-100 pt-2">
+            <button class="flex items-center gap-1"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>89</span></button>
+            <button class="flex items-center gap-1 text-rose-500"><svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg><span>520</span></button>
+            <button class="flex items-center gap-1"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/></svg><span>分享</span></button>
+          </div>
+        </div>
+
+        <!-- 帖子3：吐槽派遣公司 -->
+        <div class="bg-white rounded-2xl p-4 shadow-sm border-l-4 border-rose-400">
+          <div class="flex items-center gap-2 mb-3">
+            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-rose-400 to-red-500 flex items-center justify-center text-white font-bold text-sm">王</div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-1.5">
+                <span class="text-sm font-bold text-slate-900">王师傅</span>
+                <span class="badge-silver text-[9px] px-1.5 rounded font-bold">白银 I</span>
+              </div>
+              <div class="text-[11px] text-slate-400">昨天 18:30 · 杭州 · 装卸工</div>
+            </div>
+            <span class="text-[10px] bg-rose-100 text-rose-600 px-2 py-0.5 rounded-full font-semibold">维权求助</span>
+          </div>
+          <p class="text-sm text-slate-700 mb-3 leading-relaxed">
+            <span class="text-rose-500 font-semibold">@鸿运人力</span> 答应的工资 200 一天，干了 15 天到手只有 2400 元，扣了一堆莫名其妙的费用！姐妹们千万别去这家！蓝工法务能帮忙吗？？
+          </p>
+          <a href="#" class="flex items-center gap-2 bg-rose-50 rounded-xl p-2 mb-3">
+            <div class="w-7 h-7 rounded bg-white flex items-center justify-center text-rose-600 font-bold text-xs">鸿</div>
+            <div class="flex-1">
+              <div class="text-xs font-semibold text-slate-700">鸿运人力</div>
+              <div class="text-[10px] text-rose-500">★3.2 · 本月投诉 23 起</div>
+            </div>
+            <span class="text-[10px] text-rose-600">避雷 →</span>
+          </a>
+          <div class="bg-blue-50 rounded-lg p-2 mb-3 flex items-center gap-2">
+            <svg width="16" height="16" fill="#1677FF" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            <span class="text-[11px] text-blue-700">蓝工法务已介入，预计 48 小时内反馈</span>
+          </div>
+          <div class="flex items-center justify-between text-xs text-slate-500 border-t border-slate-100 pt-2">
+            <button class="flex items-center gap-1"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>286</span></button>
+            <button class="flex items-center gap-1 text-rose-500"><svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg><span>1.2k</span></button>
+            <button class="flex items-center gap-1 text-rose-500 font-semibold"><span>顶上去</span></button>
+          </div>
+        </div>
+
+        <!-- 帖子4：技能培训 -->
+        <div class="bg-white rounded-2xl p-4 shadow-sm">
+          <div class="flex items-center gap-2 mb-3">
+            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-teal-400 to-emerald-500 flex items-center justify-center text-white font-bold text-sm">陈</div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-1.5">
+                <span class="text-sm font-bold text-slate-900">陈技师</span>
+                <span class="badge-diamond text-[9px] px-1.5 rounded font-bold">钻石 I</span>
+                <span class="text-[10px] bg-blue-100 text-blue-600 px-1.5 rounded">技能官</span>
+              </div>
+              <div class="text-[11px] text-slate-400">2 天前 · 杭州 · 电焊工</div>
+            </div>
+          </div>
+          <p class="text-sm text-slate-700 mb-3 leading-relaxed">
+            分享一个干货 ⚡ 焊工考证攻略：3 天速通中级电焊工证（含国家承认证书）。考下来工资 +1500/月，工分 +25。我整理了 PDF，需要的扣 1。
+          </p>
+          <div class="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl p-3 mb-3 flex items-center gap-3 border border-blue-100">
+            <div class="w-10 h-10 rounded-lg bg-blue-600 flex items-center justify-center">
+              <svg width="22" height="22" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>
+            </div>
+            <div class="flex-1">
+              <div class="text-xs font-bold text-slate-900">焊工考证攻略.pdf</div>
+              <div class="text-[10px] text-slate-500">2.4 MB · 856 次下载</div>
+            </div>
+            <button class="text-xs text-blue-600 font-bold">下载</button>
+          </div>
+          <div class="flex items-center justify-between text-xs text-slate-500 border-t border-slate-100 pt-2">
+            <button class="flex items-center gap-1"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>67</span></button>
+            <button class="flex items-center gap-1 text-rose-500"><svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg><span>198</span></button>
+            <button class="flex items-center gap-1"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/></svg><span>分享</span></button>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- 底部 Tab -->
+    <div class="bg-white border-t border-slate-100 grid grid-cols-5 py-2">
+      <a href="home.html" class="flex flex-col items-center gap-0.5 text-slate-400">
+        <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+        <span class="text-[10px]">首页</span>
+      </a>
+      <a href="job-detail.html" class="flex flex-col items-center gap-0.5 text-slate-400">
+        <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <span class="text-[10px]">找活</span>
+      </a>
+      <a href="credit.html" class="flex flex-col items-center gap-0.5 text-slate-400">
+        <div class="w-10 h-10 -mt-4 rounded-full grad-credit flex items-center justify-center shadow-lg">
+          <span class="text-white text-xs font-bold">工分</span>
+        </div>
+      </a>
+      <a href="chat.html" class="flex flex-col items-center gap-0.5 text-slate-400 relative">
+        <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <span class="text-[10px]">消息</span>
+      </a>
+      <a href="profile.html" class="flex flex-col items-center gap-0.5 text-slate-400">
+        <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span class="text-[10px]">我的</span>
+      </a>
+    </div>
+
+  </div>
+</div>
+</body>
+</html>

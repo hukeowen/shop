@@ -1,0 +1,45 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e120]:
+    - generic [ref=e122]:
+      - img [ref=e125] [cursor=pointer]
+      - generic [ref=e128]: 商品详情
+    - generic [ref=e132]:
+      - generic [ref=e134]:
+        - generic [ref=e135]:
+          - generic [ref=e136]: ‹
+          - generic [ref=e137]: ↗
+          - img [ref=e140]
+        - generic [ref=e141]:
+          - generic [ref=e144]:
+            - generic [ref=e145]: ¥
+            - text: "0.01"
+          - generic [ref=e146]: 东北奶糕
+          - generic [ref=e147]: 牛奶口味，东北特色的美味奶糕
+          - generic [ref=e148]:
+            - generic [ref=e150]:
+              - text: 已售
+              - generic [ref=e151]: "0"
+            - generic [ref=e153]:
+              - text: 评分
+              - generic [ref=e154]: "5.0"
+            - generic [ref=e156]:
+              - text: 库存
+              - generic [ref=e157]: "9999"
+        - generic [ref=e158]:
+          - generic [ref=e160]: 商品介绍
+          - generic [ref=e161]: 东北奶糕
+      - generic [ref=e163]:
+        - generic [ref=e164]:
+          - generic [ref=e165]: 🏪
+          - generic [ref=e166]: 店铺
+        - generic [ref=e167]:
+          - generic [ref=e168]: 🛒
+          - generic [ref=e169]: 购物车
+          - generic [ref=e170]: "4"
+        - generic [ref=e171]: 加入购物车
+        - generic [ref=e172]: 立即购买
+  - generic:
+    - generic:
+      - generic:
+        - img
+        - paragraph: 已加入购物车

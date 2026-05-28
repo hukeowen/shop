@@ -1,0 +1,395 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - heading "摊小二 · 商户销售统计 原型" [level=1] [ref=e3]
+    - paragraph [ref=e4]: 4 屏：dashboard 改造 → 销售统计页 → 商品排行 → 会员列表
+    - generic [ref=e5]:
+      - text: 可点击跳转 ·
+      - text: 新增模块 ·
+      - text: 关键指标
+  - generic [ref=e9]:
+    - generic [ref=e10]:
+      - generic [ref=e12]:
+        - generic [ref=e13]:
+          - generic [ref=e14]:
+            - generic [ref=e15]: 9:41
+            - generic [ref=e16]: 📶 5G ▮▮▮
+          - generic [ref=e17]:
+            - generic [ref=e18]:
+              - generic [ref=e19]: 中午好，摊主
+              - generic [ref=e20]: 新店1
+            - generic [ref=e21]: ● 营业中
+        - generic [ref=e22]:
+          - generic [ref=e23]:
+            - generic [ref=e24]: AI
+            - text: 一键成片
+          - generic [ref=e25]:
+            - generic [ref=e26]: +
+            - text: AI上架
+          - generic [ref=e27]:
+            - generic [ref=e28]: 扫
+            - text: 扫码核销
+          - generic [ref=e29]:
+            - generic [ref=e30]: 单
+            - text: 订单
+        - generic [ref=e31]:
+          - generic [ref=e32]: 今日概览
+          - generic [ref=e33] [cursor=pointer]: 查看销售统计 ›
+        - generic [ref=e34]:
+          - generic [ref=e35] [cursor=pointer]:
+            - generic [ref=e36]:
+              - text: 订单数
+              - generic [ref=e37]: ›
+            - generic [ref=e38]: "1"
+          - generic [ref=e39] [cursor=pointer]:
+            - generic [ref=e40]:
+              - text: 销售额
+              - generic [ref=e41]: ›
+            - generic [ref=e42]: ¥500
+          - generic [ref=e43] [cursor=pointer]:
+            - generic [ref=e44]:
+              - text: 新会员
+              - generic [ref=e45]: ›
+            - generic [ref=e46]: "2"
+          - generic [ref=e47] [cursor=pointer]:
+            - generic [ref=e48]:
+              - text: 待处理
+              - generic [ref=e49]: ›
+            - generic [ref=e50]: "1"
+        - generic [ref=e51]:
+          - generic [ref=e52]: ★ 今日推广（NEW）
+          - generic [ref=e53] [cursor=pointer]: 明细 ›
+        - generic [ref=e54] [cursor=pointer]:
+          - generic [ref=e55]:
+            - generic [ref=e56]: 🎁 v8 推广积分对账
+            - generic [ref=e57]: 本日
+          - generic [ref=e58]:
+            - generic [ref=e59]:
+              - generic [ref=e60]: 发出推广积分
+              - generic [ref=e61]: ¥120.00
+            - generic [ref=e62]:
+              - generic [ref=e63]: 抵扣订单
+              - generic [ref=e64]: ¥100.00
+            - generic [ref=e65]:
+              - generic [ref=e66]: 极差奖发出
+              - generic [ref=e67]: ¥1.00
+        - generic [ref=e69]: 最近 7 天销售趋势
+        - generic [ref=e71]:
+          - generic [ref=e74] [cursor=pointer]: 5-04
+          - generic [ref=e77] [cursor=pointer]: 5-05
+          - generic [ref=e80] [cursor=pointer]: 5-06
+          - generic [ref=e83] [cursor=pointer]: 5-07
+          - generic [ref=e86] [cursor=pointer]: 5-08
+          - generic [ref=e89] [cursor=pointer]: 5-09
+          - generic [ref=e92] [cursor=pointer]: 5-10
+        - generic [ref=e93]:
+          - generic [ref=e94]: 热销商品 Top 3
+          - generic [ref=e95] [cursor=pointer]: 查看全部 ›
+        - generic [ref=e96]:
+          - generic [ref=e97] [cursor=pointer]:
+            - generic [ref=e98]: "1"
+            - generic [ref=e99]: v8测试商品-推5反1
+            - generic [ref=e100]:
+              - text: 售出 6
+              - generic [ref=e101]: ¥500
+          - generic [ref=e102] [cursor=pointer]:
+            - generic [ref=e103]: "2"
+            - generic [ref=e104]: 暂无
+          - generic [ref=e105] [cursor=pointer]:
+            - generic [ref=e106]: "3"
+            - generic [ref=e107]: 暂无
+        - generic [ref=e109]:
+          - generic [ref=e110]:
+            - generic [ref=e111]: 🏠
+            - generic [ref=e112]: 工作台
+          - generic [ref=e113]:
+            - generic [ref=e114]: 🎬
+            - generic [ref=e115]: 成片
+          - generic [ref=e116]:
+            - generic [ref=e117]: 📋
+            - generic [ref=e118]: 订单
+          - generic [ref=e119]:
+            - generic [ref=e120]: 👤
+            - generic [ref=e121]: 我的
+      - generic [ref=e122]:
+        - text: 屏 1：工作台 dashboard 改造
+        - generic [ref=e123]: 4 数字可点 + 新增「今日推广」+ 销售/排行可点
+    - generic [ref=e124]:
+      - generic [ref=e126]:
+        - generic [ref=e127]:
+          - generic [ref=e128]: 9:41
+          - generic [ref=e129]: 📶 5G ▮▮▮
+        - generic [ref=e130]:
+          - generic [ref=e131] [cursor=pointer]: ‹
+          - generic [ref=e132]: 销售统计
+          - generic [ref=e133]: 导出 ›
+        - generic [ref=e134]:
+          - generic [ref=e135] [cursor=pointer]: 日
+          - generic [ref=e136] [cursor=pointer]: 周
+          - generic [ref=e137] [cursor=pointer]: 月
+          - generic [ref=e138] [cursor=pointer]: 年
+          - generic [ref=e139] [cursor=pointer]: 📅 2026-05
+        - generic [ref=e140]:
+          - generic [ref=e141]: 本月销售总览（2026-05）
+          - generic [ref=e142]: ¥500.00
+          - generic [ref=e143]: 销售总金额（订单按定价合计）
+          - generic [ref=e144]:
+            - generic [ref=e145]:
+              - generic [ref=e146]: 实付总金额
+              - generic [ref=e147]: ¥500.00
+            - generic [ref=e148]:
+              - generic [ref=e149]: 推广积分发出
+              - generic [ref=e150]: ¥121.00
+            - generic [ref=e151]:
+              - generic [ref=e152]: 入池累计
+              - generic [ref=e153]: ¥7.00
+            - generic [ref=e154]:
+              - generic [ref=e155]: 退款 / 售后
+              - generic [ref=e156]: ¥0.00
+          - generic [ref=e157]:
+            - generic [ref=e158]: 净收入 = 实付 - 退款 - 推广积分支出
+            - generic [ref=e159]: ¥372.00
+        - generic [ref=e160]:
+          - heading "💰 资金分布 详细 ›" [level=3] [ref=e161]:
+            - text: 💰 资金分布
+            - generic [ref=e162] [cursor=pointer]: 详细 ›
+          - generic [ref=e163]:
+            - generic [ref=e164]:
+              - generic [ref=e165]: 用户应付未提余额
+              - generic [ref=e166]: ¥120.00
+            - generic [ref=e167]:
+              - generic [ref=e168]: 已提现累计
+              - generic [ref=e169]: ¥0.00
+            - generic [ref=e170]:
+              - generic [ref=e171]: 待处理提现申请
+              - generic [ref=e172]: 0 笔
+            - generic [ref=e173]:
+              - generic [ref=e174]: 店铺余额
+              - generic [ref=e175]: ¥0.00
+        - generic [ref=e176]:
+          - heading "📊 30 日双线趋势" [level=3] [ref=e177]
+          - generic [ref=e179]:
+            - generic [ref=e180]: 销售额
+            - generic [ref=e182]: 实付（v8 抵扣后）
+        - generic [ref=e184]:
+          - heading "🎯 推广积分对账（v8） 流水 ›" [level=3] [ref=e185]:
+            - text: 🎯 推广积分对账（v8）
+            - generic [ref=e186] [cursor=pointer]: 流水 ›
+          - generic [ref=e187]:
+            - generic [ref=e188]: 发出推广积分（订单触发）
+            - generic [ref=e189]: "-¥121.00"
+          - generic [ref=e190]:
+            - generic [ref=e191]: └ 抵扣订单（用户少付）
+            - generic [ref=e192]: ¥100.00 (1 件)
+          - generic [ref=e193]:
+            - generic [ref=e194]: └ 余额入账（首贡献+自购）
+            - generic [ref=e195]: ¥20.00
+          - generic [ref=e196]:
+            - generic [ref=e197]: └ 极差奖（沿链就近递增）
+            - generic [ref=e198]: ¥1.00
+          - generic [ref=e199]:
+            - generic [ref=e200]: 入池累计（未发放）
+            - generic [ref=e201]: +¥7.00
+        - generic [ref=e202]:
+          - heading "🛍 商品销售排行 完整排行 ›" [level=3] [ref=e203]:
+            - text: 🛍 商品销售排行
+            - generic [ref=e204] [cursor=pointer]: 完整排行 ›
+          - generic [ref=e205] [cursor=pointer]:
+            - generic [ref=e206]: "1"
+            - generic [ref=e207]: v8测试商品-推5反1
+            - generic [ref=e208]:
+              - text: 售 6 件
+              - generic [ref=e209]: ¥500
+        - generic [ref=e210]:
+          - heading "👥 客户洞察" [level=3] [ref=e211]
+          - generic [ref=e212]:
+            - generic [ref=e213]:
+              - generic [ref=e214]: 客单价
+              - generic [ref=e215]: ¥500
+            - generic [ref=e216]:
+              - generic [ref=e217]: 复购率
+              - generic [ref=e218]: 0%
+            - generic [ref=e219]:
+              - generic [ref=e220]: 新客 / 老客
+              - generic [ref=e221]: 3 / 0
+            - generic [ref=e222]:
+              - generic [ref=e223]: 推荐客户占比
+              - generic [ref=e224]: 66%
+        - generic [ref=e225]:
+          - heading "⏰ 时段热力图（本月）" [level=3] [ref=e226]
+          - generic [ref=e252]:
+            - generic [ref=e253]: 0:00
+            - generic [ref=e254]: 6:00
+            - generic [ref=e255]: 12:00
+            - generic [ref=e256]: 18:00
+            - generic [ref=e257]: 23:59
+          - generic [ref=e258]:
+            - text: 少
+            - text: 多
+        - generic [ref=e264]:
+          - heading "🎯 推广链路漏斗（v8）" [level=3] [ref=e265]
+          - generic [ref=e266]:
+            - generic [ref=e267]:
+              - generic [ref=e268]: 已激活
+              - generic [ref=e269]:
+                - generic [ref=e270]: 3 人（含 buyer）
+                - generic [ref=e271]: 100%
+            - generic [ref=e272]:
+              - generic [ref=e273]: 推进中
+              - generic [ref=e274]:
+                - generic [ref=e275]: 2 人 IN_PROGRESS
+                - generic [ref=e276]: 67%
+            - generic [ref=e277]:
+              - generic [ref=e278]: 已完成
+              - generic [ref=e279]:
+                - generic [ref=e280]: 1 人 COMPLETED
+                - generic [ref=e281]: 33%
+            - generic [ref=e282]:
+              - generic [ref=e283]: 直推有效
+              - generic [ref=e284]:
+                - generic [ref=e285]: 1 人首贡献已结
+                - generic [ref=e286]: 33%
+      - generic [ref=e288]:
+        - text: 屏 2：销售统计页（NEW）
+        - generic [ref=e289]: 核心指标 + 双线趋势 + 推广对账 + 热力图 + 漏斗
+    - generic [ref=e290]:
+      - generic [ref=e292]:
+        - generic [ref=e293]:
+          - generic [ref=e294]: 9:41
+          - generic [ref=e295]: 📶 5G ▮▮▮
+        - generic [ref=e296]:
+          - generic [ref=e297] [cursor=pointer]: ‹
+          - generic [ref=e298]: 商品销售排行
+          - generic [ref=e299]: 导出
+        - generic [ref=e300]:
+          - generic [ref=e301] [cursor=pointer]: 日
+          - generic [ref=e302] [cursor=pointer]: 周
+          - generic [ref=e303] [cursor=pointer]: 月
+          - generic [ref=e304] [cursor=pointer]: 年
+          - generic [ref=e305] [cursor=pointer]: 按销量 ↓
+        - table [ref=e307]:
+          - rowgroup [ref=e308]:
+            - row "名次 商品 销量 销售额" [ref=e309]:
+              - columnheader "名次" [ref=e310]
+              - columnheader "商品" [ref=e311]
+              - columnheader "销量" [ref=e312]
+              - columnheader "销售额" [ref=e313]
+          - rowgroup [ref=e314]:
+            - row "🥇 v8测试商品-推5反1 6 件 ¥500" [ref=e315]:
+              - cell "🥇" [ref=e316]
+              - cell "v8测试商品-推5反1" [ref=e317]
+              - cell "6 件" [ref=e318]
+              - cell "¥500" [ref=e319]:
+                - strong [ref=e320]: ¥500
+            - row "🥈 暂无 — —" [ref=e321]:
+              - cell "🥈" [ref=e322]
+              - cell "暂无" [ref=e323]
+              - cell "—" [ref=e324]
+              - cell "—" [ref=e325]
+            - row "🥉 暂无 — —" [ref=e326]:
+              - cell "🥉" [ref=e327]
+              - cell "暂无" [ref=e328]
+              - cell "—" [ref=e329]
+              - cell "—" [ref=e330]
+        - generic [ref=e331]:
+          - heading "🥇 v8测试商品-推5反1 详情" [level=3] [ref=e332]
+          - generic [ref=e333]:
+            - generic [ref=e334]:
+              - generic [ref=e335]: 月销量
+              - generic [ref=e336]: 6 件
+            - generic [ref=e337]:
+              - generic [ref=e338]: 销售额
+              - generic [ref=e339]: ¥500
+            - generic [ref=e340]:
+              - generic [ref=e341]: 客单价
+              - generic [ref=e342]: ¥500
+            - generic [ref=e343]:
+              - generic [ref=e344]: 复购率
+              - generic [ref=e345]: 0%
+          - generic [ref=e347]: 7 天销量曲线
+          - generic [ref=e351]:
+            - generic [ref=e352]: 推 N 反 1 链路（spu 级）
+            - generic [ref=e353]:
+              - generic [ref=e354]:
+                - generic [ref=e355]: 激活
+                - generic [ref=e356]:
+                  - generic [ref=e357]: 3 人
+                  - generic [ref=e358]: 100%
+              - generic [ref=e359]:
+                - generic [ref=e360]: 完成
+                - generic [ref=e361]:
+                  - generic [ref=e362]: 1 人
+                  - generic [ref=e363]: 33%
+      - generic [ref=e365]:
+        - text: 屏 3：商品销售排行 + 单品详情
+        - generic [ref=e366]: 展开排行 + 单品分析（含推 N 反 1 漏斗）
+    - generic [ref=e367]:
+      - generic [ref=e369]:
+        - generic [ref=e370]:
+          - generic [ref=e371]: 9:41
+          - generic [ref=e372]: 📶 5G ▮▮▮
+        - generic [ref=e373]:
+          - generic [ref=e374] [cursor=pointer]: ‹
+          - generic [ref=e375]: 店铺会员（5）
+          - generic [ref=e376]: 筛选
+        - generic [ref=e377]:
+          - generic [ref=e378]: 本月新会员 / 总会员
+          - generic [ref=e379]: 5 / 5
+          - generic [ref=e380]: 含商家本人 1 人 + 顾客 4 人 (推荐入店 3 人)
+        - generic [ref=e381]:
+          - generic [ref=e382] [cursor=pointer]: 全部
+          - generic [ref=e383] [cursor=pointer]: 活跃
+          - generic [ref=e384] [cursor=pointer]: 高消费
+          - generic [ref=e385] [cursor=pointer]: 流失风险
+        - generic [ref=e386]:
+          - generic [ref=e387]: "1"
+          - generic [ref=e388]:
+            - generic [ref=e389]: 店主 (18800009001)
+            - generic [ref=e390]: 商家身份 · 10 分钟前
+          - generic [ref=e391]:
+            - generic [ref=e392]: ★ 0
+            - generic [ref=e393]: 余 ¥0
+        - generic [ref=e394]:
+          - generic [ref=e395]: "2"
+          - generic [ref=e396]:
+            - generic [ref=e397]: user 2 (18800009002)
+            - generic [ref=e398]: A 顶级 · 已购 1 单 ¥500 · 推广 ¥110
+          - generic [ref=e399]:
+            - generic [ref=e400]: ★ 1
+            - generic [ref=e401]: 余 ¥0
+        - generic [ref=e402]:
+          - generic [ref=e403]: "3"
+          - generic [ref=e404]:
+            - generic [ref=e405]: user 3 (18800009003)
+            - generic [ref=e406]: B (parent A) · 已购 1 单 ¥100 · 推广 ¥20
+          - generic [ref=e407]:
+            - generic [ref=e408]: ★ 0
+            - generic [ref=e409]: 余 ¥0
+        - generic [ref=e410]:
+          - generic [ref=e411]: "4"
+          - generic [ref=e412]:
+            - generic [ref=e413]: user 4 (18800009004)
+            - generic [ref=e414]: C (parent B) · 已购 2 单 ¥200 · 推广 ¥20
+          - generic [ref=e415]:
+            - generic [ref=e416]: ★ 0
+            - generic [ref=e417]: 余 ¥0
+        - generic [ref=e418]:
+          - generic [ref=e419]: +
+          - generic [ref=e421]: 暂无更多
+        - generic [ref=e422]:
+          - heading "🏆 邀请排行 Top 3" [level=3] [ref=e423]
+          - generic [ref=e424] [cursor=pointer]:
+            - generic [ref=e425]: "1"
+            - generic [ref=e426]: user 2
+            - generic [ref=e427]:
+              - text: 推 1 人
+              - generic [ref=e428]: ¥10
+          - generic [ref=e429] [cursor=pointer]:
+            - generic [ref=e430]: "2"
+            - generic [ref=e431]: user 3
+            - generic [ref=e432]:
+              - text: 推 1 人
+              - generic [ref=e433]: ¥20
+      - generic [ref=e435]:
+        - text: 屏 4：店铺会员列表（NEW）
+        - generic [ref=e436]: 会员卡片 + 邀请关系 + 邀请排行
+  - paragraph [ref=e438]: ────────── 原型仅静态展示，确认后开始真实 API + 后端开发 ──────────

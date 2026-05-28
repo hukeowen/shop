@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>派遣管家 · 发票管理</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="../shared/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>body{background:#F8FAFC;font-family:'Inter','PingFang SC',sans-serif}.num-font{font-feature-settings:"tnum";font-variant-numeric:tabular-nums}.chip{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:9999px;font-size:11px;font-weight:600}th{background:#F8FAFC;font-size:11px;font-weight:600;color:#64748B;text-align:left;padding:10px 12px;border-bottom:1px solid #E2E8F0;text-transform:uppercase;letter-spacing:0.04em;white-space:nowrap}td{padding:11px 12px;border-bottom:1px solid #F1F5F9;font-size:13px;color:#334155;vertical-align:middle;white-space:nowrap}tr.row-hover:hover{background:#F8FAFC}</style>
+</head>
+<body>
+<div class="flex min-h-screen">
+  <aside class="w-60 bg-[#0F172A] text-slate-300 flex flex-col flex-shrink-0">
+    <div class="px-5 pt-5 pb-4 border-b border-white/5"><div class="flex items-center gap-2 mb-3"><div class="w-9 h-9 rounded-xl grad-blue flex items-center justify-center font-extrabold text-white">蓝</div><div><div class="text-white text-sm font-bold">蓝工·派遣管家</div><div class="text-[10px] text-slate-500 tracking-wider">DISPATCH SAAS</div></div></div></div>
+    <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto text-sm">
+      <a href="dashboard.html" class="sidebar-link">📊 工作台</a>
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">招聘管理</div>
+      <a href="jobs.html" class="sidebar-link">📋 职位列表</a><a href="job-create.html" class="sidebar-link">➕ 发布职位</a>
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">人才</div>
+      <a href="talents.html" class="sidebar-link">🔍 人才搜索</a>
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">沟通</div>
+      <a href="chat.html" class="sidebar-link">💬 IM 沟通</a>
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">用工</div>
+      <a href="onboarding.html" class="sidebar-link">👥 在岗管理</a><a href="contract-mgmt.html" class="sidebar-link">📝 合同管理</a>
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">财务管理</div>
+      <a href="salary.html" class="sidebar-link">💰 薪酬发放</a><a href="social.html" class="sidebar-link">🏥 社保公积金</a><a href="tax.html" class="sidebar-link">📋 个税申报</a><a href="reconciliation.html" class="sidebar-link">⚖️ 对账中心</a><a href="invoice.html" class="sidebar-link active">🧾 发票管理</a>
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">客户</div>
+      <a href="clients.html" class="sidebar-link">🏢 甲方管理</a>
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">数据 & 合规</div>
+      <a href="analytics.html" class="sidebar-link">📈 数据分析</a><a href="compliance.html" class="sidebar-link">🛡️ 风控合规</a>
+    </nav>
+    <div class="px-4 py-3 border-t border-white/5 text-xs text-slate-500 flex justify-between"><a href="../index.html" class="hover:text-white">← 原型导航</a><span>v0.2.0</span></div>
+  </aside>
+
+  <main class="flex-1 flex flex-col min-w-0">
+    <header class="h-14 bg-white border-b border-slate-200 px-6 flex items-center justify-between"><div class="text-sm text-slate-500">财务管理 / <span class="text-slate-900 font-medium">发票管理</span></div><button class="px-3 py-1.5 text-xs bg-blue-600 text-white rounded font-bold">+ 批量开票</button></header>
+
+    <div class="flex-1 overflow-y-auto p-6 space-y-5">
+      <div class="flex justify-between items-end"><div><h1 class="text-2xl font-bold">发票管理中心</h1><p class="text-sm text-slate-500 mt-1">已对接金税四期 · 电子发票当天即开 · 风控自动稽核</p></div></div>
+
+      <div class="grid grid-cols-4 gap-4">
+        <div class="bg-white border border-slate-200 rounded-xl p-5"><div class="text-xs text-slate-500">本月销项开票</div><div class="text-2xl font-extrabold text-emerald-600 num-font mt-1">¥18,500,000</div><div class="text-xs text-emerald-600 mt-2">已开 142 张</div></div>
+        <div class="bg-white border border-amber-200 rounded-xl p-5"><div class="text-xs text-amber-600">待开票</div><div class="text-2xl font-extrabold text-amber-600 num-font mt-1">¥3,200,000</div><div class="text-xs text-amber-600 mt-2">⚠ 18 张待处理</div></div>
+        <div class="bg-white border border-slate-200 rounded-xl p-5"><div class="text-xs text-slate-500">本月进项发票</div><div class="text-2xl font-extrabold num-font mt-1">¥12,400,000</div><div class="text-xs text-slate-400 mt-2">已收 86 张 · 待认证 12</div></div>
+        <div class="bg-white border border-slate-200 rounded-xl p-5"><div class="text-xs text-slate-500">本月税负</div><div class="text-2xl font-extrabold num-font mt-1">¥548,000</div><div class="text-xs text-emerald-600 mt-2">综合税率 2.96%</div></div>
+      </div>
+
+      <div class="bg-white rounded-xl border border-slate-200 p-2 flex gap-1">
+        <button class="px-5 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-bold">📤 销项发票（给甲方）</button>
+        <button class="px-5 py-2.5 text-slate-600 rounded-lg text-sm font-medium hover:bg-slate-50">📥 进项发票（从服务商）</button>
+        <button class="px-5 py-2.5 text-slate-600 rounded-lg text-sm font-medium hover:bg-slate-50">⚠ 风险预警 5</button>
+        <button class="px-5 py-2.5 text-slate-600 rounded-lg text-sm font-medium hover:bg-slate-50">📊 税务分析</button>
+      </div>
+
+      <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+        <table class="w-full">
+          <thead><tr><th>开票日期</th><th>甲方</th><th>合同号</th><th class="text-right">金额(不含税)</th><th class="text-right">税额</th><th class="text-right">价税合计</th><th>税率</th><th>票种</th><th>状态</th><th>操作</th></tr></thead>
+          <tbody>
+            <tr class="row-hover"><td class="num-font text-xs">2026-05-15</td><td><div class="flex items-center gap-2"><div class="w-6 h-6 rounded bg-red-500 text-white flex items-center justify-center text-[10px] font-bold">京</div><span>京东物流</span></div></td><td class="text-xs num-font">CT2024-0089</td><td class="text-right num-font">¥3,603,773</td><td class="text-right num-font">¥216,226</td><td class="text-right num-font font-bold">¥3,820,000</td><td>6%</td><td><span class="chip" style="background:#DBEAFE;color:#1D4ED8">增专</span></td><td><span class="chip" style="background:#DCFCE7;color:#15803D">✓ 已开</span></td><td class="text-xs"><a class="text-blue-600">下载</a></td></tr>
+            <tr class="row-hover"><td class="num-font text-xs">2026-05-14</td><td><div class="flex items-center gap-2"><div class="w-6 h-6 rounded bg-amber-500 text-white flex items-center justify-center text-[10px] font-bold">顺</div><span>顺丰速运</span></div></td><td class="text-xs num-font">CT2024-0102</td><td class="text-right num-font">¥2,415,094</td><td class="text-right num-font">¥144,906</td><td class="text-right num-font font-bold">¥2,560,000</td><td>6%</td><td><span class="chip" style="background:#DBEAFE;color:#1D4ED8">增专</span></td><td><span class="chip" style="background:#DCFCE7;color:#15803D">✓ 已开</span></td><td class="text-xs"><a class="text-blue-600">下载</a></td></tr>
+            <tr class="row-hover"><td class="num-font text-xs">2026-05-13</td><td><div class="flex items-center gap-2"><div class="w-6 h-6 rounded bg-emerald-500 text-white flex items-center justify-center text-[10px] font-bold">美</div><span>美团骑手</span></div></td><td class="text-xs num-font">CT2024-0156</td><td class="text-right num-font">¥2,698,113</td><td class="text-right num-font">¥161,887</td><td class="text-right num-font font-bold">¥2,860,000</td><td>6%</td><td><span class="chip" style="background:#DBEAFE;color:#1D4ED8">增专</span></td><td><span class="chip" style="background:#DCFCE7;color:#15803D">✓ 已开</span></td><td class="text-xs"><a class="text-blue-600">下载</a></td></tr>
+            <tr class="row-hover"><td class="num-font text-xs">2026-05-12</td><td><div class="flex items-center gap-2"><div class="w-6 h-6 rounded bg-red-600 text-white flex items-center justify-center text-[10px] font-bold">海</div><span>海底捞</span></div></td><td class="text-xs num-font">CT2025-0023</td><td class="text-right num-font">¥1,396,226</td><td class="text-right num-font">¥83,774</td><td class="text-right num-font font-bold">¥1,480,000</td><td>6%</td><td><span class="chip" style="background:#DBEAFE;color:#1D4ED8">增专</span></td><td><span class="chip" style="background:#DCFCE7;color:#15803D">✓ 已开</span></td><td class="text-xs"><a class="text-blue-600">下载</a></td></tr>
+            <tr class="row-hover"><td class="num-font text-xs">2026-05-11</td><td><div class="flex items-center gap-2"><div class="w-6 h-6 rounded bg-blue-500 text-white flex items-center justify-center text-[10px] font-bold">阿</div><span>菜鸟（阿里）</span></div></td><td class="text-xs num-font">CT2025-0034</td><td class="text-right num-font">¥2,056,604</td><td class="text-right num-font">¥123,396</td><td class="text-right num-font font-bold">¥2,180,000</td><td>6%</td><td><span class="chip" style="background:#DBEAFE;color:#1D4ED8">增专</span></td><td><span class="chip" style="background:#DCFCE7;color:#15803D">✓ 已开</span></td><td class="text-xs"><a class="text-blue-600">下载</a></td></tr>
+            <tr class="row-hover bg-amber-50/50"><td class="num-font text-xs">2026-05-10</td><td><div class="flex items-center gap-2"><div class="w-6 h-6 rounded bg-slate-700 text-white flex items-center justify-center text-[10px] font-bold">立</div><span>立讯精密</span></div></td><td class="text-xs num-font">CT2024-0078</td><td class="text-right num-font">¥1,716,981</td><td class="text-right num-font">¥103,019</td><td class="text-right num-font font-bold">¥1,820,000</td><td>6%</td><td><span class="chip" style="background:#DBEAFE;color:#1D4ED8">增专</span></td><td><span class="chip" style="background:#FEF3C7;color:#B45309">⚠ 待审核</span></td><td class="text-xs"><a class="text-blue-600">查看</a></td></tr>
+            <tr class="row-hover"><td class="num-font text-xs">2026-05-09</td><td><div class="flex items-center gap-2"><div class="w-6 h-6 rounded bg-pink-500 text-white flex items-center justify-center text-[10px] font-bold">外</div><span>外婆家</span></div></td><td class="text-xs num-font">CT2025-0089</td><td class="text-right num-font">¥490,566</td><td class="text-right num-font">¥29,434</td><td class="text-right num-font font-bold">¥520,000</td><td>6%</td><td><span class="chip" style="background:#FCE7F3;color:#BE185D">增普</span></td><td><span class="chip" style="background:#DCFCE7;color:#15803D">✓ 已开</span></td><td class="text-xs"><a class="text-blue-600">下载</a></td></tr>
+            <tr class="row-hover"><td class="num-font text-xs">2026-05-08</td><td><div class="flex items-center gap-2"><div class="w-6 h-6 rounded bg-violet-500 text-white flex items-center justify-center text-[10px] font-bold">万</div><span>万象城</span></div></td><td class="text-xs num-font">CT2024-0145</td><td class="text-right num-font">¥735,849</td><td class="text-right num-font">¥44,151</td><td class="text-right num-font font-bold">¥780,000</td><td>6%</td><td><span class="chip" style="background:#DBEAFE;color:#1D4ED8">增专</span></td><td><span class="chip" style="background:#DCFCE7;color:#15803D">✓ 已开</span></td><td class="text-xs"><a class="text-blue-600">下载</a></td></tr>
+            <tr class="row-hover bg-rose-50/50"><td class="num-font text-xs">2026-05-06</td><td><div class="flex items-center gap-2"><div class="w-6 h-6 rounded bg-emerald-600 text-white flex items-center justify-center text-[10px] font-bold">百</div><span class="text-rose-700">百世物流 ⚠️</span></div></td><td class="text-xs num-font">CT2024-0067</td><td class="text-right num-font">¥396,226</td><td class="text-right num-font">¥23,774</td><td class="text-right num-font font-bold">¥420,000</td><td>6%</td><td><span class="chip" style="background:#DBEAFE;color:#1D4ED8">增专</span></td><td><span class="chip" style="background:#FEE2E2;color:#B91C1C">⚠ 客户超期</span></td><td class="text-xs"><a class="text-rose-600">暂缓</a></td></tr>
+            <tr class="row-hover"><td class="num-font text-xs">2026-05-05</td><td><div class="flex items-center gap-2"><div class="w-6 h-6 rounded bg-orange-500 text-white flex items-center justify-center text-[10px] font-bold">拼</div><span>拼多多 · 多多买菜</span></div></td><td class="text-xs num-font">CT2025-0102</td><td class="text-right num-font">¥1,452,830</td><td class="text-right num-font">¥87,170</td><td class="text-right num-font font-bold">¥1,540,000</td><td>6%</td><td><span class="chip" style="background:#DBEAFE;color:#1D4ED8">增专</span></td><td><span class="chip" style="background:#DCFCE7;color:#15803D">✓ 已开</span></td><td class="text-xs"><a class="text-blue-600">下载</a></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="grid grid-cols-2 gap-5">
+        <div class="bg-white rounded-xl border border-slate-200 p-5">
+          <h3 class="font-bold mb-3">📊 销项税额构成</h3>
+          <div class="space-y-3 text-sm">
+            <div><div class="flex justify-between mb-1"><span>增专（6%）人力派遣</span><span class="font-bold num-font">¥16.8M (90.8%)</span></div><div class="h-2 bg-slate-100 rounded-full"><div class="h-full bg-blue-500 rounded-full" style="width:90.8%"></div></div></div>
+            <div><div class="flex justify-between mb-1"><span>增普（6%）人力派遣</span><span class="font-bold num-font">¥1.2M (6.5%)</span></div><div class="h-2 bg-slate-100 rounded-full"><div class="h-full bg-pink-500 rounded-full" style="width:6.5%"></div></div></div>
+            <div><div class="flex justify-between mb-1"><span>增专（3%）小规模</span><span class="font-bold num-font">¥0.5M (2.7%)</span></div><div class="h-2 bg-slate-100 rounded-full"><div class="h-full bg-amber-500 rounded-full" style="width:2.7%"></div></div></div>
+          </div>
+        </div>
+        <div class="bg-amber-50 border border-amber-200 rounded-xl p-5">
+          <h3 class="font-bold text-amber-700 mb-3">⚠ 税务风险提示</h3>
+          <ul class="space-y-2 text-xs">
+            <li class="flex justify-between p-2.5 bg-white rounded-lg"><div><div class="font-medium">百世物流 ¥420,000 已开票未回款</div><div class="text-[10px] text-slate-500">超过 60 天 · 需关注坏账风险</div></div><button class="text-[10px] px-2 py-1 bg-amber-600 text-white rounded">处理</button></li>
+            <li class="flex justify-between p-2.5 bg-white rounded-lg"><div><div class="font-medium">12 张进项发票未认证抵扣</div><div class="text-[10px] text-slate-500">本月内未完成将多缴税 ¥36,000</div></div><button class="text-[10px] px-2 py-1 bg-amber-600 text-white rounded">认证</button></li>
+            <li class="flex justify-between p-2.5 bg-white rounded-lg"><div><div class="font-medium">立讯精密 1 张发票金额异常</div><div class="text-[10px] text-slate-500">系统比对发现差异 ¥3,200</div></div><button class="text-[10px] px-2 py-1 bg-amber-600 text-white rounded">核对</button></li>
+            <li class="flex justify-between p-2.5 bg-white rounded-lg"><div><div class="font-medium">3 家甲方收票邮箱失效</div><div class="text-[10px] text-slate-500">电子发票送达失败</div></div><button class="text-[10px] px-2 py-1 bg-amber-600 text-white rounded">联系</button></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+</body>
+</html>

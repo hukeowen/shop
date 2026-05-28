@@ -1,0 +1,71 @@
+- generic [ref=e44]:
+  - generic [ref=e45]:
+    - generic [ref=e46]:
+      - generic [ref=e47]: 早上好，摊主
+      - generic [ref=e48]: 老王烧烤
+    - generic [ref=e49]: 营业中
+  - generic [ref=e51]:
+    - generic [ref=e52]:
+      - generic [ref=e53]: AI
+      - generic [ref=e54]: 一键成片
+    - generic [ref=e55]:
+      - generic [ref=e56]: ＋
+      - generic [ref=e57]: AI上架
+    - generic [ref=e58]:
+      - generic [ref=e59]: 扫
+      - generic [ref=e60]: 扫码核销
+    - generic [ref=e61]:
+      - generic [ref=e62]: 单
+      - generic [ref=e63]: 订单
+  - generic [ref=e64]: 今日概览
+  - generic [ref=e65]:
+    - generic [ref=e66]:
+      - generic [ref=e67]: 订单数
+      - generic [ref=e68]: "0"
+    - generic [ref=e69]:
+      - generic [ref=e70]: 销售额
+      - generic [ref=e71]: ¥0.00
+    - generic [ref=e72]:
+      - generic [ref=e73]: 新会员
+      - generic [ref=e74]: "0"
+    - generic [ref=e75]:
+      - generic [ref=e76]: 待处理
+      - generic [ref=e77]: "0"
+  - generic [ref=e78]:
+    - generic [ref=e80]: 最近 7 天销售趋势
+    - generic [ref=e81]:
+      - generic:
+        - generic [ref=e82]: ¥0
+        - generic [ref=e84]: 05-02
+      - generic:
+        - generic [ref=e85]: ¥0
+        - generic [ref=e87]: 05-03
+      - generic:
+        - generic [ref=e88]: ¥0
+        - generic [ref=e90]: 05-04
+      - generic:
+        - generic [ref=e91]: ¥0
+        - generic [ref=e93]: 05-05
+      - generic:
+        - generic [ref=e94]: ¥0
+        - generic [ref=e96]: 05-06
+      - generic:
+        - generic [ref=e97]: ¥0
+        - generic [ref=e99]: 05-07
+      - generic:
+        - generic [ref=e100]: ¥0
+        - generic [ref=e102]: 05-08
+  - generic [ref=e105]: 热销商品 Top 3
+  - generic [ref=e107]:
+    - generic [ref=e108]:
+      - generic [ref=e109]: 🏠
+      - generic [ref=e110]: 工作台
+    - generic [ref=e111]:
+      - generic [ref=e112]: 🎬
+      - generic [ref=e113]: 成片
+    - generic [ref=e114]:
+      - generic [ref=e115]: 📋
+      - generic [ref=e116]: 订单
+    - generic [ref=e117]:
+      - generic [ref=e118]: 👤
+      - generic [ref=e119]: 我的

@@ -1,0 +1,14 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e566]:
+    - generic [ref=e568]:
+      - img [ref=e571] [cursor=pointer]
+      - generic [ref=e574]: 结算
+    - generic [ref=e578]:
+      - generic [ref=e579]:
+        - generic [ref=e580]: ‹
+        - generic [ref=e581]: 订单结算
+      - generic [ref=e582]: 加载中...
+  - generic [ref=e560]:
+    - strong [ref=e562]: 下单失败
+    - generic [ref=e563]: 计算快递运费异常，配送方式不匹配
+    - generic [ref=e565] [cursor=pointer]: 确定

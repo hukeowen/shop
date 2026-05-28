@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>公告通知中心 · 蓝工平台运营后台</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../shared/style.css">
+<style>
+  body { font-family: 'Inter', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif; background:#F8FAFC; }
+  .num-font { font-feature-settings: "tnum"; font-variant-numeric: tabular-nums; letter-spacing:-0.02em; }
+  .sidebar-link { display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:8px; color:#94A3B8; font-size:13px; font-weight:500; transition:all .15s; }
+  .sidebar-link:hover { background:rgba(255,255,255,.05); color:#fff; }
+  .sidebar-link.active { background:linear-gradient(135deg,#5046E5,#7C3AED); color:#fff; box-shadow:0 4px 12px rgba(80,70,229,.4); }
+  .sidebar-group { font-size:11px; font-weight:600; color:#475569; text-transform:uppercase; letter-spacing:0.08em; padding:14px 12px 6px; }
+  .stat-card { background:#fff; border:1px solid #E2E8F0; border-radius:12px; padding:16px 18px; transition:all .2s; }
+  .stat-card:hover { border-color:#5046E5; box-shadow:0 8px 24px -8px rgba(80,70,229,.18); }
+  .tag { display:inline-flex; align-items:center; gap:4px; padding:2px 7px; border-radius:4px; font-size:10px; font-weight:600; }
+  .tag-red { background:#FEE2E2; color:#B91C1C; }
+  .tag-amber { background:#FEF3C7; color:#B45309; }
+  .tag-blue { background:#DBEAFE; color:#1D4ED8; }
+  .tag-green { background:#DCFCE7; color:#15803D; }
+  .tag-purple { background:#F3E8FF; color:#7E22CE; }
+  .tag-slate { background:#F1F5F9; color:#475569; }
+  th { background:#F8FAFC; font-size:11px; font-weight:600; color:#64748B; text-align:left; padding:10px 12px; border-bottom:1px solid #E2E8F0; white-space:nowrap; text-transform:uppercase; letter-spacing:0.04em; }
+  td { padding:11px 12px; border-bottom:1px solid #F1F5F9; font-size:12.5px; color:#334155; vertical-align:middle; white-space:nowrap; }
+  tr.row-hover:hover { background:#F8FAFC; }
+  .scrollbar-thin::-webkit-scrollbar { width:6px; }
+  .scrollbar-thin::-webkit-scrollbar-thumb { background:#CBD5E1; border-radius:3px; }
+  .tab-link { padding:10px 16px; border-bottom:2px solid transparent; font-size:13px; font-weight:600; color:#64748B; cursor:pointer; transition:all .15s; }
+  .tab-link.active { color:#5046E5; border-bottom-color:#5046E5; }
+  .tab-link:hover:not(.active) { color:#334155; }
+  .btn-icon { width:26px; height:26px; border-radius:5px; display:inline-flex; align-items:center; justify-content:center; color:#64748B; transition:all .15s; }
+  .btn-icon:hover { background:#F1F5F9; color:#5046E5; }
+  .phone-preview { background:#0F172A; border-radius:30px; padding:8px; box-shadow:0 20px 40px -12px rgba(0,0,0,.3); }
+  .segment-card { padding:10px 12px; border:1px solid #E2E8F0; border-radius:8px; transition:all .15s; cursor:pointer; }
+  .segment-card:hover { border-color:#5046E5; background:#F8FAFC; }
+  .segment-card.active { border-color:#5046E5; background:linear-gradient(135deg, rgba(80,70,229,0.06), rgba(124,58,237,0.04)); }
+</style>
+</head>
+<body class="text-slate-800">
+
+<div class="flex min-h-screen">
+
+  <aside class="w-[240px] bg-[#0F172A] text-white flex-shrink-0 flex flex-col">
+    <div class="px-5 pt-5 pb-4 border-b border-white/5">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-[#5046E5] to-[#7C3AED] flex items-center justify-center font-extrabold text-[15px]">蓝</div>
+        <div><div class="text-[13px] font-bold leading-tight">蓝工平台</div><div class="text-[10px] text-slate-400 leading-tight mt-0.5 tracking-wider">运营后台 · ADMIN</div></div>
+      </div>
+      <div class="mt-4 flex items-center gap-2.5 px-2.5 py-2 rounded-lg bg-white/5">
+        <div class="w-7 h-7 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center text-[11px] font-bold">A</div>
+        <div class="min-w-0 flex-1"><div class="text-[12px] font-medium truncate">admin@bluework</div><div class="text-[10px] text-emerald-400 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>超级管理员</div></div>
+      </div>
+    </div>
+    <nav class="flex-1 px-3 py-2 overflow-y-auto scrollbar-thin">
+      <div class="sidebar-group">驾驶舱</div>
+      <a href="./dashboard.html" class="sidebar-link"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>数据驾驶舱</a>
+      <div class="sidebar-group">用户管理</div>
+      <a href="./workers.html" class="sidebar-link"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>工人管理</a>
+      <a href="./dispatches.html" class="sidebar-link"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>派遣公司</a>
+      <a href="./clients.html" class="sidebar-link"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/></svg>甲方/用工单位</a>
+      <div class="sidebar-group">业务管理</div>
+      <a href="./jobs-audit.html" class="sidebar-link"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/></svg>招聘审核<span class="ml-auto px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-500 text-white">34</span></a>
+      <a href="./credit.html" class="sidebar-link"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4.5L6 21l1.5-7.5L2 9h7z"/></svg>工分管理</a>
+      <div class="sidebar-group">风控合规</div>
+      <a href="./risk.html" class="sidebar-link"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>风控告警<span class="ml-auto px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500 text-white">23</span></a>
+      <a href="./audit.html" class="sidebar-link"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/></svg>审计日志</a>
+      <div class="sidebar-group">财务管理</div>
+      <a href="./finance.html" class="sidebar-link"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>财务对账</a>
+      <div class="sidebar-group">客服支持</div>
+      <a href="./tickets.html" class="sidebar-link"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>客服工单<span class="ml-auto px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-500 text-white">89</span></a>
+      <div class="sidebar-group">运营</div>
+      <a href="./campaigns.html" class="sidebar-link"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 11l18-5v12L3 14v-3z"/></svg>运营活动</a>
+      <a href="./notifications.html" class="sidebar-link active"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>公告通知</a>
+      <div class="sidebar-group">系统</div>
+      <a href="./roles.html" class="sidebar-link"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="10" cy="7" r="4"/><path d="M4 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg>权限管理</a>
+      <a href="./api.html" class="sidebar-link"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>API 开放平台</a>
+      <a href="#" class="sidebar-link"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/></svg>系统设置</a>
+    </nav>
+    <div class="px-4 py-3 border-t border-white/5"><div class="text-[10px] text-slate-500">v3.2.1 · build 20260517</div></div>
+  </aside>
+
+  <main class="flex-1 min-w-0">
+
+    <header class="h-14 bg-white border-b border-slate-200 flex items-center px-6 sticky top-0 z-20">
+      <div class="flex items-center gap-2.5">
+        <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-red-50 text-red-600 border border-red-200">生产环境</span>
+        <h1 class="text-[15px] font-semibold text-slate-900">公告通知中心</h1>
+        <span class="text-xs text-slate-400">·</span>
+        <span class="text-xs text-slate-500">580 万用户触达</span>
+      </div>
+      <div class="ml-auto flex items-center gap-3">
+        <button class="px-3 py-1.5 text-[12px] rounded-md border border-slate-200 hover:bg-slate-50">通知模板库</button>
+        <button class="px-3 py-1.5 text-[12px] rounded-md bg-[#5046E5] text-white hover:bg-[#4338CA] flex items-center gap-1.5 font-medium">
+          <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          新建推送
+        </button>
+        <div class="w-px h-5 bg-slate-200"></div>
+        <div class="flex items-center gap-2">
+          <div class="w-7 h-7 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center text-white text-[11px] font-bold">A</div>
+          <div class="text-[12px]"><div class="font-semibold text-slate-800 leading-tight">Admin</div><div class="text-[10px] text-slate-500 leading-tight">超级管理员</div></div>
+        </div>
+      </div>
+    </header>
+
+    <div class="p-6 space-y-5">
+
+      <!-- KPI -->
+      <section class="grid grid-cols-4 gap-4">
+        <div class="stat-card">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-[11px] text-slate-500 font-medium">本月推送总数</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-600 font-semibold">+18.4%</span>
+          </div>
+          <div class="num-font text-[26px] font-extrabold text-slate-900 leading-none">1,287</div>
+          <div class="mt-2 text-[11px] text-slate-500">日均 41.5 条</div>
+        </div>
+        <div class="stat-card bg-gradient-to-br from-[#5046E5] to-[#7C3AED] border-0 text-white">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-[11px] opacity-80 font-medium">总触达用户</span>
+            <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="opacity-80"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+          </div>
+          <div class="num-font text-[26px] font-extrabold leading-none">580<span class="text-[14px] opacity-80">万</span></div>
+          <div class="mt-2 text-[11px] opacity-90">5,802,478 人次</div>
+        </div>
+        <div class="stat-card">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-[11px] text-slate-500 font-medium">平均打开率</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-600 font-semibold">行业 TOP</span>
+          </div>
+          <div class="num-font text-[26px] font-extrabold text-slate-900 leading-none">42<span class="text-[14px] text-slate-400">%</span></div>
+          <div class="mt-2 text-[11px] text-slate-500">↑ 8% vs 行业均值</div>
+        </div>
+        <div class="stat-card">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-[11px] text-slate-500 font-medium">短信余额</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-600 font-semibold">充足</span>
+          </div>
+          <div class="num-font text-[26px] font-extrabold text-slate-900 leading-none">230<span class="text-[14px] text-slate-400">万条</span></div>
+          <div class="mt-2 text-[11px] text-slate-500">可发 38 天</div>
+        </div>
+      </section>
+
+      <!-- Tabs -->
+      <section class="bg-white border border-slate-200 rounded-xl">
+        <div class="flex items-center border-b border-slate-100 px-3">
+          <div class="tab-link active">站内信 (684)</div>
+          <div class="tab-link">Push 推送 (412)</div>
+          <div class="tab-link">短信 (128)</div>
+          <div class="tab-link">微信模板消息 (63)</div>
+          <div class="ml-auto flex items-center gap-2 pr-3">
+            <select class="text-[11px] border border-slate-200 rounded-md px-2 py-1 bg-white">
+              <option>全部状态</option><option>已发送</option><option>发送中</option><option>已暂停</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead>
+              <tr>
+                <th class="w-10"><input type="checkbox" class="rounded"></th>
+                <th>推送标题</th>
+                <th>类型</th>
+                <th>受众群体</th>
+                <th class="text-right">发送量</th>
+                <th class="text-right">打开率</th>
+                <th class="text-right">转化率</th>
+                <th>发送时间</th>
+                <th>状态</th>
+                <th class="text-right">操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="row-hover">
+                <td><input type="checkbox" class="rounded"></td>
+                <td><div class="font-semibold text-slate-900">急聘 · 上海闵行立讯精密缺工 800 人</div><div class="text-[10px] text-slate-400">日薪 280 元 · 包食宿</div></td>
+                <td><span class="tag tag-blue">通知</span></td>
+                <td>上海/苏州 在岗工人</td>
+                <td class="text-right num-font font-semibold">128,247</td>
+                <td class="text-right num-font font-bold text-emerald-600">58.4%</td>
+                <td class="text-right num-font font-bold text-emerald-600">12.7%</td>
+                <td><div class="text-[11px]">5/17 09:00</div></td>
+                <td><span class="tag tag-green">已送达</span></td>
+                <td class="text-right">
+                  <button class="btn-icon"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                </td>
+              </tr>
+
+              <tr class="row-hover">
+                <td><input type="checkbox" class="rounded"></td>
+                <td><div class="font-semibold text-slate-900">工分等级升级提醒 · 您距钻石仅差 28 分</div><div class="text-[10px] text-slate-400">完成任务即可升级</div></td>
+                <td><span class="tag tag-purple">营销</span></td>
+                <td>黄金等级用户</td>
+                <td class="text-right num-font font-semibold">847,235</td>
+                <td class="text-right num-font font-bold text-emerald-600">68.2%</td>
+                <td class="text-right num-font font-bold text-emerald-600">23.4%</td>
+                <td><div class="text-[11px]">5/16 19:30</div></td>
+                <td><span class="tag tag-green">已送达</span></td>
+                <td class="text-right">
+                  <button class="btn-icon"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                </td>
+              </tr>
+
+              <tr class="row-hover">
+                <td><input type="checkbox" class="rounded"></td>
+                <td><div class="font-semibold text-slate-900">5月工资已发放 · 请查收 ¥6,820 元</div><div class="text-[10px] text-slate-400">含奖金 320 元</div></td>
+                <td><span class="tag tag-green">交易</span></td>
+                <td>当月在岗工人</td>
+                <td class="text-right num-font font-semibold">1,284,716</td>
+                <td class="text-right num-font font-bold text-emerald-600">92.8%</td>
+                <td class="text-right num-font font-bold text-emerald-600">87.2%</td>
+                <td><div class="text-[11px]">5/15 10:00</div></td>
+                <td><span class="tag tag-green">已送达</span></td>
+                <td class="text-right">
+                  <button class="btn-icon"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                </td>
+              </tr>
+
+              <tr class="row-hover">
+                <td><input type="checkbox" class="rounded"></td>
+                <td><div class="font-semibold text-slate-900">双11蓝领狂欢节 · 入职奖励翻倍</div><div class="text-[10px] text-slate-400">5/15-5/25 限时</div></td>
+                <td><span class="tag tag-amber">活动</span></td>
+                <td>全平台活跃用户</td>
+                <td class="text-right num-font font-semibold">4,827,394</td>
+                <td class="text-right num-font font-bold text-emerald-600">38.2%</td>
+                <td class="text-right num-font font-bold text-emerald-600">7.8%</td>
+                <td><div class="text-[11px]">5/14 12:00</div></td>
+                <td><span class="tag tag-green">已送达</span></td>
+                <td class="text-right">
+                  <button class="btn-icon"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                </td>
+              </tr>
+
+              <tr class="row-hover">
+                <td><input type="checkbox" class="rounded"></td>
+                <td><div class="font-semibold text-slate-900">您有 1 笔提现已到账 · ¥3,200</div><div class="text-[10px] text-slate-400">招商银行尾号 8847</div></td>
+                <td><span class="tag tag-green">交易</span></td>
+                <td>实时触发</td>
+                <td class="text-right num-font font-semibold">287,461</td>
+                <td class="text-right num-font font-bold text-emerald-600">95.4%</td>
+                <td class="text-right num-font font-medium text-slate-500">-</td>
+                <td><div class="text-[11px]">实时</div></td>
+                <td><span class="tag tag-blue">长期</span></td>
+                <td class="text-right">
+                  <button class="btn-icon"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                </td>
+              </tr>
+
+              <tr class="row-hover">
+                <td><input type="checkbox" class="rounded"></td>
+                <td><div class="font-semibold text-slate-900">7天未登录召回 · 新职位为您匹配</div><div class="text-[10px] text-slate-400">238 个高薪岗位等您</div></td>
+                <td><span class="tag tag-purple">召回</span></td>
+                <td>7-30天未登录</td>
+                <td class="text-right num-font font-semibold">428,712</td>
+                <td class="text-right num-font font-bold text-amber-600">22.4%</td>
+                <td class="text-right num-font font-bold text-emerald-600">5.8%</td>
+                <td><div class="text-[11px]">5/14 18:00</div></td>
+                <td><span class="tag tag-green">已送达</span></td>
+                <td class="text-right">
+                  <button class="btn-icon"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                </td>
+              </tr>
+
+              <tr class="row-hover">
+                <td><input type="checkbox" class="rounded"></td>
+                <td><div class="font-semibold text-slate-900">合同即将到期提醒 · 续约可获奖金</div><div class="text-[10px] text-slate-400">续签奖励 500 元</div></td>
+                <td><span class="tag tag-blue">通知</span></td>
+                <td>合同 7 天内到期</td>
+                <td class="text-right num-font font-semibold">8,247</td>
+                <td class="text-right num-font font-bold text-emerald-600">71.8%</td>
+                <td class="text-right num-font font-bold text-emerald-600">42.1%</td>
+                <td><div class="text-[11px]">5/13 10:00</div></td>
+                <td><span class="tag tag-green">已送达</span></td>
+                <td class="text-right">
+                  <button class="btn-icon"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                </td>
+              </tr>
+
+              <tr class="row-hover">
+                <td><input type="checkbox" class="rounded"></td>
+                <td><div class="font-semibold text-slate-900">App 3.2.1 版本更新 · 修复定位漂移问题</div><div class="text-[10px] text-slate-400">建议立即更新</div></td>
+                <td><span class="tag tag-slate">公告</span></td>
+                <td>所有 App 用户</td>
+                <td class="text-right num-font font-semibold">5,234,128</td>
+                <td class="text-right num-font font-bold text-amber-600">28.4%</td>
+                <td class="text-right num-font font-medium text-slate-500">68.2%升</td>
+                <td><div class="text-[11px]">5/12 14:30</div></td>
+                <td><span class="tag tag-green">已送达</span></td>
+                <td class="text-right">
+                  <button class="btn-icon"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                </td>
+              </tr>
+
+              <tr class="row-hover">
+                <td><input type="checkbox" class="rounded"></td>
+                <td><div class="font-semibold text-slate-900">您附近有新职位 · 步行 800 米</div><div class="text-[10px] text-slate-400">地理位置触发</div></td>
+                <td><span class="tag tag-purple">智能</span></td>
+                <td>地理围栏触发</td>
+                <td class="text-right num-font font-semibold">128,472</td>
+                <td class="text-right num-font font-bold text-emerald-600">62.4%</td>
+                <td class="text-right num-font font-bold text-emerald-600">18.7%</td>
+                <td><div class="text-[11px]">实时</div></td>
+                <td><span class="tag tag-blue">长期</span></td>
+                <td class="text-right">
+                  <button class="btn-icon"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                </td>
+              </tr>
+
+              <tr class="row-hover">
+                <td><input type="checkbox" class="rounded"></td>
+                <td><div class="font-semibold text-slate-900">紧急 · 北京暴雨橙色预警，建议改期到岗</div><div class="text-[10px] text-slate-400">天气联动预警</div></td>
+                <td><span class="tag tag-red">紧急</span></td>
+                <td>北京全员</td>
+                <td class="text-right num-font font-semibold">87,294</td>
+                <td class="text-right num-font font-bold text-emerald-600">94.8%</td>
+                <td class="text-right num-font font-medium text-slate-500">-</td>
+                <td><div class="text-[11px]">5/11 06:30</div></td>
+                <td><span class="tag tag-green">已送达</span></td>
+                <td class="text-right">
+                  <button class="btn-icon"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="flex items-center justify-between px-4 py-3 border-t border-slate-100 text-[12px]">
+          <div class="text-slate-500">显示 1-10 / 共 1,287 条</div>
+          <div class="flex items-center gap-1">
+            <button class="px-2 py-1 rounded hover:bg-slate-100 text-slate-500">‹</button>
+            <button class="px-2.5 py-1 rounded bg-[#5046E5] text-white font-semibold">1</button>
+            <button class="px-2.5 py-1 rounded hover:bg-slate-100 text-slate-700">2</button>
+            <button class="px-2.5 py-1 rounded hover:bg-slate-100 text-slate-700">3</button>
+            <span class="px-1 text-slate-400">…</span>
+            <button class="px-2.5 py-1 rounded hover:bg-slate-100 text-slate-700">129</button>
+            <button class="px-2 py-1 rounded hover:bg-slate-100 text-slate-500">›</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 新推送创建 + 用户分群 -->
+      <section class="grid grid-cols-12 gap-4">
+
+        <!-- 推送预览 + 表单 -->
+        <div class="col-span-8 bg-white border border-slate-200 rounded-xl p-5">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h3 class="text-[14px] font-bold text-slate-900">创建新推送 (预览模式)</h3>
+              <p class="text-[11px] text-slate-500 mt-0.5">填写表单 → 实时手机预览 → 发送</p>
+            </div>
+            <div class="flex items-center gap-1.5 text-[11px]">
+              <button class="px-3 py-1 rounded bg-[#5046E5] text-white font-semibold">Push 推送</button>
+              <button class="px-3 py-1 rounded text-slate-500 hover:bg-slate-100">站内信</button>
+              <button class="px-3 py-1 rounded text-slate-500 hover:bg-slate-100">短信</button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-6">
+            <!-- 左：表单 -->
+            <div class="space-y-3">
+              <div>
+                <label class="text-[11px] font-semibold text-slate-600 block mb-1">推送标题 (最多 30 字)</label>
+                <input value="工分等级升级提醒 · 您距钻石仅差 28 分" class="w-full text-[13px] border border-slate-200 rounded-md px-3 py-2 focus:border-[#5046E5] outline-none">
+                <div class="text-[10px] text-slate-400 mt-1">22 / 30 字</div>
+              </div>
+              <div>
+                <label class="text-[11px] font-semibold text-slate-600 block mb-1">推送内容</label>
+                <textarea rows="3" class="w-full text-[13px] border border-slate-200 rounded-md px-3 py-2 focus:border-[#5046E5] outline-none">完成今日 1 个任务即可升级到钻石等级，享受更高优先级推荐和专属服务！</textarea>
+              </div>
+              <div>
+                <label class="text-[11px] font-semibold text-slate-600 block mb-1">受众群体</label>
+                <select class="w-full text-[13px] border border-slate-200 rounded-md px-3 py-2 bg-white">
+                  <option>黄金等级用户 · 预计触达 847,235</option>
+                  <option>全平台活跃用户 · 预计触达 4,827,394</option>
+                  <option>7-30天未登录 · 预计触达 428,712</option>
+                </select>
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="text-[11px] font-semibold text-slate-600 block mb-1">发送时间</label>
+                  <input type="datetime-local" value="2026-05-17T19:30" class="w-full text-[13px] border border-slate-200 rounded-md px-3 py-2">
+                </div>
+                <div>
+                  <label class="text-[11px] font-semibold text-slate-600 block mb-1">跳转链接</label>
+                  <input value="bluework://credit" class="w-full text-[13px] border border-slate-200 rounded-md px-3 py-2 font-mono">
+                </div>
+              </div>
+              <div class="flex items-center gap-2 pt-2">
+                <button class="px-4 py-2 text-[12px] rounded-md bg-[#5046E5] text-white font-semibold hover:bg-[#4338CA]">提交审核并发送</button>
+                <button class="px-4 py-2 text-[12px] rounded-md border border-slate-200 hover:bg-slate-50">存为模板</button>
+                <button class="px-4 py-2 text-[12px] rounded-md border border-slate-200 hover:bg-slate-50">A/B 测试</button>
+              </div>
+            </div>
+
+            <!-- 右：手机预览 -->
+            <div class="flex flex-col items-center">
+              <div class="text-[11px] text-slate-500 mb-2">实时预览 (iOS 通知中心)</div>
+              <div class="phone-preview" style="width:220px;">
+                <div style="background:linear-gradient(180deg,#1F2937 0%,#374151 100%); border-radius:24px; padding:16px 10px; min-height:380px; position:relative;">
+                  <div class="flex items-center justify-between mb-4 px-2">
+                    <span class="text-white text-[10px]">14:23</span>
+                    <span class="text-white text-[10px]">100%</span>
+                  </div>
+                  <div class="text-center text-white/80 text-[24px] font-light mb-1">14:23</div>
+                  <div class="text-center text-white/60 text-[10px] mb-4">星期日 · 5月17日</div>
+
+                  <!-- 推送 -->
+                  <div class="bg-white/20 backdrop-blur-xl rounded-2xl p-2.5 mb-2">
+                    <div class="flex items-center gap-2 mb-1">
+                      <div class="w-6 h-6 rounded-md bg-gradient-to-br from-[#5046E5] to-[#7C3AED] flex items-center justify-center text-white text-[10px] font-bold">蓝</div>
+                      <span class="text-white text-[10px] font-semibold flex-1">蓝工平台</span>
+                      <span class="text-white/60 text-[9px]">现在</span>
+                    </div>
+                    <div class="text-white text-[11px] font-bold leading-tight mb-1">工分等级升级提醒</div>
+                    <div class="text-white/80 text-[10px] leading-snug">完成今日 1 个任务即可升级到钻石等级，享受更高优先级推荐和专属服务！</div>
+                  </div>
+
+                  <!-- 模拟其他通知 -->
+                  <div class="bg-white/10 backdrop-blur-xl rounded-2xl p-2 mb-2">
+                    <div class="text-white/60 text-[10px]">微信 · 张老板</div>
+                    <div class="text-white/40 text-[10px]">在吗？...</div>
+                  </div>
+                </div>
+              </div>
+              <div class="mt-3 grid grid-cols-3 gap-2 w-full text-center">
+                <div>
+                  <div class="text-[10px] text-slate-500">预计触达</div>
+                  <div class="num-font text-[13px] font-bold text-slate-900">847K</div>
+                </div>
+                <div>
+                  <div class="text-[10px] text-slate-500">预估打开率</div>
+                  <div class="num-font text-[13px] font-bold text-emerald-600">62%</div>
+                </div>
+                <div>
+                  <div class="text-[10px] text-slate-500">预估成本</div>
+                  <div class="num-font text-[13px] font-bold text-slate-900">¥0</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 用户分群 -->
+        <div class="col-span-4 bg-white border border-slate-200 rounded-xl p-5">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-[14px] font-bold text-slate-900">智能用户分群</h3>
+            <a href="#" class="text-[11px] text-[#5046E5] font-semibold">+ 新建</a>
+          </div>
+          <div class="space-y-2">
+            <div class="segment-card active">
+              <div class="flex items-center justify-between">
+                <div>
+                  <div class="text-[12px] font-bold text-slate-900">黄金等级用户</div>
+                  <div class="text-[10px] text-slate-500 mt-0.5">工分 700-799 · 月活</div>
+                </div>
+                <div class="text-right">
+                  <div class="num-font text-[14px] font-bold text-[#5046E5]">847K</div>
+                  <div class="text-[10px] text-slate-400">用户</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="segment-card">
+              <div class="flex items-center justify-between">
+                <div>
+                  <div class="text-[12px] font-bold text-slate-900">7天未登录</div>
+                  <div class="text-[10px] text-slate-500 mt-0.5">流失预警 · 召回目标</div>
+                </div>
+                <div class="text-right">
+                  <div class="num-font text-[14px] font-bold text-amber-600">428K</div>
+                  <div class="text-[10px] text-slate-400">用户</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="segment-card">
+              <div class="flex items-center justify-between">
+                <div>
+                  <div class="text-[12px] font-bold text-slate-900">即将离职</div>
+                  <div class="text-[10px] text-slate-500 mt-0.5">合同到期 7 天内</div>
+                </div>
+                <div class="text-right">
+                  <div class="num-font text-[14px] font-bold text-red-600">8.2K</div>
+                  <div class="text-[10px] text-slate-400">用户</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="segment-card">
+              <div class="flex items-center justify-between">
+                <div>
+                  <div class="text-[12px] font-bold text-slate-900">高价值客户</div>
+                  <div class="text-[10px] text-slate-500 mt-0.5">VIP 派遣 + S 级甲方</div>
+                </div>
+                <div class="text-right">
+                  <div class="num-font text-[14px] font-bold text-purple-600">156</div>
+                  <div class="text-[10px] text-slate-400">单位</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="segment-card">
+              <div class="flex items-center justify-between">
+                <div>
+                  <div class="text-[12px] font-bold text-slate-900">新工友 (30天内)</div>
+                  <div class="text-[10px] text-slate-500 mt-0.5">引导期 · 培育阶段</div>
+                </div>
+                <div class="text-right">
+                  <div class="num-font text-[14px] font-bold text-blue-600">128K</div>
+                  <div class="text-[10px] text-slate-400">用户</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="segment-card">
+              <div class="flex items-center justify-between">
+                <div>
+                  <div class="text-[12px] font-bold text-slate-900">异地求职意向</div>
+                  <div class="text-[10px] text-slate-500 mt-0.5">浏览过其他城市职位</div>
+                </div>
+                <div class="text-right">
+                  <div class="num-font text-[14px] font-bold text-cyan-600">92K</div>
+                  <div class="text-[10px] text-slate-400">用户</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="segment-card">
+              <div class="flex items-center justify-between">
+                <div>
+                  <div class="text-[12px] font-bold text-slate-900">高投诉风险</div>
+                  <div class="text-[10px] text-slate-500 mt-0.5">需重点关怀</div>
+                </div>
+                <div class="text-right">
+                  <div class="num-font text-[14px] font-bold text-amber-600">3.2K</div>
+                  <div class="text-[10px] text-slate-400">用户</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+</div>
+
+</body>
+</html>

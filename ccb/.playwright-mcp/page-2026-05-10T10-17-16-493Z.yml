@@ -1,0 +1,57 @@
+- generic [ref=e4]:
+  - generic [ref=e6]:
+    - img [ref=e9] [cursor=pointer]
+    - generic [ref=e12]: 店铺会员
+  - generic [ref=e16]:
+    - generic [ref=e17]:
+      - generic [ref=e18]: 本店会员 / 总会员
+      - generic [ref=e19]: 4 / 4
+      - generic [ref=e20]: 含店主 + 顾客；推荐入店 2 人
+    - generic [ref=e21]:
+      - generic [ref=e22]: "3"
+      - generic [ref=e23]:
+        - generic [ref=e24]: 188****9003
+        - generic [ref=e25]:
+          - generic [ref=e26]: "推荐人 #2"
+          - text: ·
+          - generic [ref=e27]: 已购 1 单 ¥100.00
+      - generic [ref=e28]:
+        - generic [ref=e29]: ★ 0
+        - generic [ref=e30]: 余 ¥0.00
+        - generic [ref=e31]: 推 ¥20.00
+    - generic [ref=e32]:
+      - generic [ref=e33]: "4"
+      - generic [ref=e34]:
+        - generic [ref=e35]: 188****9004
+        - generic [ref=e36]:
+          - generic [ref=e37]: "推荐人 #3"
+          - text: ·
+          - generic [ref=e38]: 已购 2 单 ¥200.00
+      - generic [ref=e39]:
+        - generic [ref=e40]: ★ 0
+        - generic [ref=e41]: 余 ¥0.00
+        - generic [ref=e42]: 推 ¥20.00
+    - generic [ref=e43]:
+      - generic [ref=e44]: "1"
+      - generic [ref=e45]:
+        - generic [ref=e46]: 188****9001
+        - generic [ref=e47]:
+          - generic [ref=e48]: 顶级用户
+          - text: ·
+          - generic [ref=e49]: 已购 0 单 ¥0.00
+      - generic [ref=e50]:
+        - generic [ref=e51]: ★ 0
+        - generic [ref=e52]: 余 ¥0.00
+        - generic [ref=e53]: 推 ¥0.00
+    - generic [ref=e54]:
+      - generic [ref=e55]: "2"
+      - generic [ref=e56]:
+        - generic [ref=e57]: 188****9002
+        - generic [ref=e58]:
+          - generic [ref=e59]: 顶级用户
+          - text: ·
+          - generic [ref=e60]: 已购 1 单 ¥500.00
+      - generic [ref=e61]:
+        - generic [ref=e62]: ★ 0
+        - generic [ref=e63]: 余 ¥0.00
+        - generic [ref=e64]: 推 ¥111.00

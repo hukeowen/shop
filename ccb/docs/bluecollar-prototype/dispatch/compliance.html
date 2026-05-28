@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>派遣管家 · 风控合规</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="../shared/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>body{background:#F8FAFC;font-family:'Inter','PingFang SC',sans-serif}.num-font{font-feature-settings:"tnum";font-variant-numeric:tabular-nums}.chip{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:9999px;font-size:11px;font-weight:600}</style>
+</head>
+<body>
+<div class="flex min-h-screen">
+  <aside class="w-60 bg-[#0F172A] text-slate-300 flex flex-col flex-shrink-0">
+    <div class="px-5 pt-5 pb-4 border-b border-white/5"><div class="flex items-center gap-2 mb-3"><div class="w-9 h-9 rounded-xl grad-blue flex items-center justify-center font-extrabold text-white">蓝</div><div><div class="text-white text-sm font-bold">蓝工·派遣管家</div><div class="text-[10px] text-slate-500 tracking-wider">DISPATCH SAAS</div></div></div></div>
+    <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto text-sm">
+      <a href="dashboard.html" class="sidebar-link">📊 工作台</a>
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">招聘</div>
+      <a href="jobs.html" class="sidebar-link">📋 职位</a><a href="job-create.html" class="sidebar-link">➕ 发布</a>
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">人才 / 沟通</div>
+      <a href="talents.html" class="sidebar-link">🔍 人才搜索</a><a href="chat.html" class="sidebar-link">💬 IM</a>
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">用工</div>
+      <a href="onboarding.html" class="sidebar-link">👥 在岗管理</a><a href="contract-mgmt.html" class="sidebar-link">📝 合同管理</a>
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">财务管理</div>
+      <a href="salary.html" class="sidebar-link">💰 薪酬</a><a href="social.html" class="sidebar-link">🏥 社保</a><a href="tax.html" class="sidebar-link">📋 个税</a><a href="reconciliation.html" class="sidebar-link">⚖️ 对账</a><a href="invoice.html" class="sidebar-link">🧾 发票</a>
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">客户 / 数据 / 合规</div>
+      <a href="clients.html" class="sidebar-link">🏢 甲方管理</a><a href="analytics.html" class="sidebar-link">📈 数据分析</a><a href="compliance.html" class="sidebar-link active">🛡️ 风控合规</a>
+    </nav>
+    <div class="px-4 py-3 border-t border-white/5 text-xs text-slate-500 flex justify-between"><a href="../index.html" class="hover:text-white">← 原型导航</a><span>v0.2.0</span></div>
+  </aside>
+
+  <main class="flex-1 flex flex-col min-w-0">
+    <header class="h-14 bg-white border-b border-slate-200 px-6 flex items-center justify-between"><div class="text-sm text-slate-500">合规 / <span class="text-slate-900 font-medium">风控合规中心</span></div><button class="px-3 py-1.5 text-xs bg-violet-600 text-white rounded font-bold">🤖 AI 一键合规体检</button></header>
+
+    <div class="flex-1 overflow-y-auto p-6 space-y-5">
+      <div class="flex justify-between items-end"><div><h1 class="text-2xl font-bold">风控合规中心</h1><p class="text-sm text-slate-500 mt-1">实时跟踪政策 · 自查报告 · 典型案例库 · AI 合规体检</p></div></div>
+
+      <div class="grid grid-cols-4 gap-4">
+        <div class="bg-gradient-to-br from-emerald-500 to-green-600 text-white rounded-xl p-5"><div class="text-xs opacity-90">合规分</div><div class="text-3xl font-extrabold num-font mt-1">92<span class="text-base opacity-80">/100</span></div><div class="text-xs opacity-90 mt-2">行业 TOP 5%</div></div>
+        <div class="bg-white border border-amber-200 rounded-xl p-5"><div class="text-xs text-amber-600">待整改项</div><div class="text-2xl font-extrabold text-amber-600 num-font mt-1">3</div><div class="text-xs text-amber-600 mt-2">⚠ 7 天内须完成</div></div>
+        <div class="bg-white border border-slate-200 rounded-xl p-5"><div class="text-xs text-slate-500">政策更新</div><div class="text-2xl font-extrabold num-font mt-1">5</div><div class="text-xs text-blue-600 mt-2">本月人社/税务新政</div></div>
+        <div class="bg-white border border-slate-200 rounded-xl p-5"><div class="text-xs text-slate-500">案例库</div><div class="text-2xl font-extrabold num-font mt-1">128</div><div class="text-xs text-slate-400 mt-2">含 12 起天价罚款</div></div>
+      </div>
+
+      <div class="grid grid-cols-3 gap-5">
+        <!-- 自查报告 -->
+        <div class="col-span-2 bg-white rounded-xl border border-slate-200 p-5">
+          <div class="flex items-center justify-between mb-4"><h3 class="font-bold">📊 自查报告 · 5 个维度</h3><span class="text-xs text-slate-400">最近体检 2026-05-15</span></div>
+          <div class="space-y-3">
+            <div class="p-3 bg-slate-50 rounded-lg flex items-center justify-between"><div class="flex items-center gap-3"><span class="w-10 h-10 rounded-lg bg-emerald-500 text-white flex items-center justify-center">✓</span><div><div class="font-semibold">派遣比例</div><div class="text-[10px] text-slate-500">辅助性岗位派遣 8.6% / 用工不超 10% 红线</div></div></div><div class="text-right"><div class="text-lg font-bold text-emerald-600">98 分</div><div class="text-[10px] text-emerald-600">合规</div></div></div>
+            <div class="p-3 bg-slate-50 rounded-lg flex items-center justify-between"><div class="flex items-center gap-3"><span class="w-10 h-10 rounded-lg bg-emerald-500 text-white flex items-center justify-center">✓</span><div><div class="font-semibold">工伤备案</div><div class="text-[10px] text-slate-500">1,247 名工人全部备案 · 工伤险 100% 覆盖</div></div></div><div class="text-right"><div class="text-lg font-bold text-emerald-600">100 分</div><div class="text-[10px] text-emerald-600">合规</div></div></div>
+            <div class="p-3 bg-amber-50 rounded-lg flex items-center justify-between border border-amber-200"><div class="flex items-center gap-3"><span class="w-10 h-10 rounded-lg bg-amber-500 text-white flex items-center justify-center">!</span><div><div class="font-semibold">社保覆盖</div><div class="text-[10px] text-slate-500">12 名工人未足额缴纳 · 主要因跨城转移未到 · 需 30 天内完成</div></div></div><div class="text-right"><div class="text-lg font-bold text-amber-600">85 分</div><div class="text-[10px] text-amber-600">待整改</div></div></div>
+            <div class="p-3 bg-slate-50 rounded-lg flex items-center justify-between"><div class="flex items-center gap-3"><span class="w-10 h-10 rounded-lg bg-emerald-500 text-white flex items-center justify-center">✓</span><div><div class="font-semibold">合同合规</div><div class="text-[10px] text-slate-500">仅 5 份合同已过期 · CFCA + 区块链存证 · 司法效力</div></div></div><div class="text-right"><div class="text-lg font-bold text-emerald-600">94 分</div><div class="text-[10px] text-emerald-600">合规</div></div></div>
+            <div class="p-3 bg-amber-50 rounded-lg flex items-center justify-between border border-amber-200"><div class="flex items-center gap-3"><span class="w-10 h-10 rounded-lg bg-amber-500 text-white flex items-center justify-center">!</span><div><div class="font-semibold">资金安全</div><div class="text-[10px] text-slate-500">工资垫付占用现金流 78% · 建议接入蓝工金融额度提升</div></div></div><div class="text-right"><div class="text-lg font-bold text-amber-600">82 分</div><div class="text-[10px] text-amber-600">优化</div></div></div>
+          </div>
+          <button class="w-full mt-4 py-2 bg-violet-600 text-white rounded-lg text-sm font-bold">🤖 AI 生成本季度合规报告（PDF）</button>
+        </div>
+
+        <!-- 政策动态 -->
+        <div class="bg-white rounded-xl border border-slate-200 p-5">
+          <h3 class="font-bold mb-3">📰 政策动态（最近 5 条）</h3>
+          <ul class="space-y-3 text-xs">
+            <li class="pb-3 border-b border-slate-100"><div class="flex items-center gap-2 mb-1"><span class="chip" style="background:#FEE2E2;color:#B91C1C">人社部</span><span class="text-slate-400">2026-05-12</span></div><div class="font-medium">《关于深入实施新就业形态劳动者职业伤害保障试点的通知》</div><a class="text-blue-600">详情 →</a></li>
+            <li class="pb-3 border-b border-slate-100"><div class="flex items-center gap-2 mb-1"><span class="chip" style="background:#DBEAFE;color:#1D4ED8">税务总局</span><span class="text-slate-400">2026-05-08</span></div><div class="font-medium">金税四期五月新增"劳务派遣"专项稽核功能</div><a class="text-blue-600">详情 →</a></li>
+            <li class="pb-3 border-b border-slate-100"><div class="flex items-center gap-2 mb-1"><span class="chip" style="background:#FEF3C7;color:#B45309">最高法</span><span class="text-slate-400">2026-05-03</span></div><div class="font-medium">关于"假外包真派遣"司法认定标准的最新指导案例</div><a class="text-blue-600">详情 →</a></li>
+            <li class="pb-3 border-b border-slate-100"><div class="flex items-center gap-2 mb-1"><span class="chip" style="background:#DCFCE7;color:#15803D">浙江省人社</span><span class="text-slate-400">2026-04-28</span></div><div class="font-medium">浙江省 2026 年最低工资标准上调 · 杭州 ¥2,490/月</div><a class="text-blue-600">详情 →</a></li>
+            <li><div class="flex items-center gap-2 mb-1"><span class="chip" style="background:#E9D5FF;color:#7C3AED">国务院</span><span class="text-slate-400">2026-04-20</span></div><div class="font-medium">延迟退休方案落地 · 60+ 灵活就业政策利好</div><a class="text-blue-600">详情 →</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- 典型案例 -->
+      <div class="bg-white rounded-xl border border-slate-200 p-5">
+        <div class="flex items-center justify-between mb-4"><h3 class="font-bold">📚 典型案例库 · 反面教材（行业警示）</h3><a class="text-xs text-blue-600">全部 128 条 →</a></div>
+        <div class="grid grid-cols-3 gap-4">
+          <div class="border border-rose-200 rounded-xl p-4 bg-rose-50/50">
+            <div class="flex items-center gap-2 mb-2"><span class="chip" style="background:#FEE2E2;color:#B91C1C">🚨 天价罚款</span><span class="text-[10px] text-slate-500">2025-11</span></div>
+            <div class="font-bold text-sm">XX 派遣 "假外包真派遣" 被罚 ¥6,800 万</div>
+            <div class="text-[11px] text-slate-600 mt-2">长三角某派遣公司将派遣业务包装成"服务外包"，被认定为"假外包"，连带补缴社保 + 罚款。<b class="text-rose-700">教训：派遣比例必须 &lt; 10%</b></div>
+            <div class="mt-2 text-[10px] text-blue-600">案例链接</div>
+          </div>
+          <div class="border border-rose-200 rounded-xl p-4 bg-rose-50/50">
+            <div class="flex items-center gap-2 mb-2"><span class="chip" style="background:#FEE2E2;color:#B91C1C">⚖️ 集体诉讼</span><span class="text-[10px] text-slate-500">2025-09</span></div>
+            <div class="font-bold text-sm">XX 物流派遣工集体仲裁 · 涉案 ¥2,400 万</div>
+            <div class="text-[11px] text-slate-600 mt-2">某物流派遣公司因长期克扣加班费，482 名工人集体仲裁全部胜诉。<b class="text-rose-700">教训：加班费必须严格按 1.5/2/3 倍计算</b></div>
+            <div class="mt-2 text-[10px] text-blue-600">案例链接</div>
+          </div>
+          <div class="border border-amber-200 rounded-xl p-4 bg-amber-50/50">
+            <div class="flex items-center gap-2 mb-2"><span class="chip" style="background:#FEF3C7;color:#B45309">💰 税务稽查</span><span class="text-[10px] text-slate-500">2025-07</span></div>
+            <div class="font-bold text-sm">XX 人力服务通过个体户分散收入 · 补税 ¥1,200 万</div>
+            <div class="text-[11px] text-slate-600 mt-2">利用核定征收个体户分散派遣公司收入，被金税四期识别。<b class="text-amber-700">教训：远离"灰色税筹"</b></div>
+            <div class="mt-2 text-[10px] text-blue-600">案例链接</div>
+          </div>
+          <div class="border border-amber-200 rounded-xl p-4 bg-amber-50/50">
+            <div class="flex items-center gap-2 mb-2"><span class="chip" style="background:#FEF3C7;color:#B45309">🏥 工伤纠纷</span><span class="text-[10px] text-slate-500">2025-05</span></div>
+            <div class="font-bold text-sm">XX 派遣未为农民工缴工伤险 · 个人承担 ¥86 万</div>
+            <div class="text-[11px] text-slate-600 mt-2">派遣公司侥幸心理未缴工伤险，工人摔伤致残后追偿全部由公司承担。<b class="text-amber-700">教训：工伤险一分不能省</b></div>
+            <div class="mt-2 text-[10px] text-blue-600">案例链接</div>
+          </div>
+          <div class="border border-blue-200 rounded-xl p-4 bg-blue-50/50">
+            <div class="flex items-center gap-2 mb-2"><span class="chip" style="background:#DBEAFE;color:#1D4ED8">📜 合同瑕疵</span><span class="text-[10px] text-slate-500">2025-03</span></div>
+            <div class="font-bold text-sm">XX 餐饮服务公司因合同未签 · 双倍工资 ¥230 万</div>
+            <div class="text-[11px] text-slate-600 mt-2">未在 1 个月内签订书面合同，被法院判赔双倍工资。<b class="text-blue-700">教训：合同必须 1 个月内电子签</b></div>
+            <div class="mt-2 text-[10px] text-blue-600">案例链接</div>
+          </div>
+          <div class="border border-blue-200 rounded-xl p-4 bg-blue-50/50">
+            <div class="flex items-center gap-2 mb-2"><span class="chip" style="background:#DBEAFE;color:#1D4ED8">📋 招聘违规</span><span class="text-[10px] text-slate-500">2025-01</span></div>
+            <div class="font-bold text-sm">XX 派遣发布"年龄限制 + 性别歧视"招聘 · 罚款 ¥15 万</div>
+            <div class="text-[11px] text-slate-600 mt-2">招聘信息含"35 岁以下""限女性"等违规表述。<b class="text-blue-700">教训：本平台自动审查</b></div>
+            <div class="mt-2 text-[10px] text-blue-600">案例链接</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 本月合规清单 -->
+      <div class="bg-amber-50 border border-amber-200 rounded-xl p-5">
+        <h3 class="font-bold text-amber-700 mb-3">✅ 本月必做合规动作（5 / 8 已完成）</h3>
+        <div class="grid grid-cols-2 gap-3 text-sm">
+          <label class="flex items-center gap-2"><input type="checkbox" checked class="w-4 h-4"/><span>5 月薪酬已发放 · 全员 0 拖欠</span></label>
+          <label class="flex items-center gap-2"><input type="checkbox" checked class="w-4 h-4"/><span>4 月个税已申报金税四期</span></label>
+          <label class="flex items-center gap-2"><input type="checkbox" checked class="w-4 h-4"/><span>5 月社保已全额缴纳</span></label>
+          <label class="flex items-center gap-2"><input type="checkbox" checked class="w-4 h-4"/><span>新签 86 份合同全部 CFCA + 区块链</span></label>
+          <label class="flex items-center gap-2"><input type="checkbox" checked class="w-4 h-4"/><span>工伤险参保 100% 覆盖</span></label>
+          <label class="flex items-center gap-2 text-rose-700"><input type="checkbox" class="w-4 h-4"/><span><b>5 份过期合同续签</b> · 剩 2 天</span></label>
+          <label class="flex items-center gap-2 text-amber-700"><input type="checkbox" class="w-4 h-4"/><span>12 名工人社保跨城转移完成</span></label>
+          <label class="flex items-center gap-2 text-amber-700"><input type="checkbox" class="w-4 h-4"/><span>本季度自查报告提交</span></label>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+</body>
+</html>

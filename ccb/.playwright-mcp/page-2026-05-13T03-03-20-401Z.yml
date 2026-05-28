@@ -1,0 +1,21 @@
+- generic [ref=e7]:
+  - generic [ref=e8]:
+    - generic [ref=e10]: ‹
+    - generic [ref=e11]: 商品管理
+    - generic [ref=e12]:
+      - generic [ref=e13]: ＋
+      - text: 新增
+  - generic [ref=e14]:
+    - generic [ref=e15]:
+      - text: 全部
+      - generic [ref=e16]: (0)
+    - generic [ref=e17]:
+      - text: 在售
+      - generic [ref=e18]: (0)
+    - generic [ref=e19]:
+      - text: 已下架
+      - generic [ref=e20]: (0)
+  - generic [ref=e22]:
+    - generic [ref=e23]: 📦
+    - generic [ref=e24]: 还没有商品
+    - generic [ref=e25] [cursor=pointer]: 立即上架第一个商品

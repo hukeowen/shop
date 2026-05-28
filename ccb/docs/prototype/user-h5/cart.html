@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>购物车 · 摊小二</title>
 <style>
-  :root{--bg:#fafafa;--card:#fff;--line:rgba(0,0,0,.06);--text:#1a1a1a;--text-2:#6b7280;--text-3:#9ca3af;--accent:#ff6b35}
+  :root{--bg:#fafafa;--card:#fff;--line:rgba(0,0,0,.06);--text:#1a1a1a;--text-2:#6b7280;--text-3:#9ca3af;--p:#ff6b35;--p-l:#fff1e8;--p-d:#e85a2c}
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
   html{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;font-size:14px}
   body{background:#e5e7eb;min-height:100vh;display:flex;justify-content:center;padding:24px 0;color:var(--text)}
@@ -14,41 +14,40 @@
   .back{width:36px;height:36px;display:flex;align-items:center;justify-content:center;color:var(--text)}
   .back svg{width:18px;height:18px}
   .nav-t{flex:1;font-size:18px;font-weight:700;letter-spacing:-.5px}
-  .nav-e{font-size:13px;color:var(--text-2)}
+  .nav-e{font-size:13px;color:var(--p);font-weight:600}
   .shop{margin:16px 16px 0;background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden}
   .sh-hd{padding:16px 18px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--line)}
-  .sh-ck{width:18px;height:18px;border:2px solid var(--text);border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center}
-  .sh-ck.on{background:var(--text)}
+  .sh-ck{width:18px;height:18px;border:2px solid var(--p);border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+  .sh-ck.on{background:var(--p)}
   .sh-ck.on::after{content:'';width:6px;height:10px;border-right:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(45deg) translate(-1px,-1px)}
   .sh-n{flex:1;font-size:14px;font-weight:600}
   .sh-go{font-size:11px;color:var(--text-3);display:flex;align-items:center;gap:2px}
   .row{padding:16px 18px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--line)}
   .row:last-child{border-bottom:none}
   .rk{width:18px;height:18px;border:2px solid var(--text-3);border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center}
-  .rk.on{background:var(--text);border-color:var(--text)}
+  .rk.on{background:var(--p);border-color:var(--p)}
   .rk.on::after{content:'';width:6px;height:10px;border-right:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(45deg) translate(-1px,-1px)}
-  .rc{width:64px;height:64px;background:#f3f4f6;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:32px;flex-shrink:0}
+  .rc{width:64px;height:64px;background:linear-gradient(135deg,#fce7f3,#fbcfe8);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:32px;flex-shrink:0}
+  .rc.alt{background:linear-gradient(135deg,#f3e8ff,#e9d5ff)}
+  .rc.alt2{background:linear-gradient(135deg,#fef3c7,#fde68a)}
   .rb{flex:1;min-width:0}
   .rn{font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .rd{margin-top:2px;font-size:10px;color:var(--text-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .rf{margin-top:8px;display:flex;align-items:center;justify-content:space-between}
-  .rp{font-size:10px;color:var(--text)}
+  .rp{font-size:10px;color:var(--p)}
   .rpn{font-size:16px;font-weight:700;letter-spacing:-.5px}
-  .step{display:flex;align-items:center;gap:0;border:1px solid var(--line);border-radius:999px;height:28px;background:var(--card)}
-  .st-b{width:28px;height:28px;line-height:1;display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--text)}
-  .st-b.dis{color:var(--text-3)}
-  .st-n{min-width:24px;text-align:center;font-size:13px;font-weight:600;font-variant-numeric:tabular-nums}
-  .empty{padding:120px 32px;text-align:center;color:var(--text-3)}
-  .empty-t{margin-top:16px;font-size:16px;font-weight:600;color:var(--text)}
-  .empty-d{margin-top:6px;font-size:12px}
+  .step{display:flex;align-items:center;gap:0;border:1px solid var(--p);border-radius:999px;height:28px;background:var(--card)}
+  .st-b{width:28px;height:28px;line-height:1;display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--p)}
+  .st-b.dis{color:var(--text-3);border-color:var(--text-3)}
+  .st-n{min-width:24px;text-align:center;font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--text)}
   .bar{position:absolute;left:0;right:0;bottom:0;height:74px;background:var(--card);border-top:1px solid var(--line);padding:12px 16px;padding-bottom:calc(env(safe-area-inset-bottom) + 12px);display:flex;align-items:center;gap:12px}
   .bk{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-2)}
-  .bk-c{width:18px;height:18px;border:2px solid var(--text);border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--text)}
+  .bk-c{width:18px;height:18px;border:2px solid var(--p);border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--p)}
   .bk-c::after{content:'';width:6px;height:10px;border-right:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(45deg) translate(-1px,-1px)}
   .bp{flex:1;text-align:right}
   .bp-t{font-size:10px;color:var(--text-2)}
-  .bp-n{font-size:22px;font-weight:700;letter-spacing:-.5px;color:var(--text)}
-  .pay{height:48px;line-height:48px;padding:0 24px;background:var(--text);color:#fff;border-radius:999px;font-size:13px;font-weight:600}
+  .bp-n{font-size:22px;font-weight:700;letter-spacing:-.5px;color:var(--p)}
+  .pay{height:48px;line-height:48px;padding:0 24px;background:linear-gradient(135deg,var(--p),var(--p-d));color:#fff;border-radius:999px;font-size:13px;font-weight:600;box-shadow:0 4px 12px rgba(255,107,53,.4)}
 </style>
 </head>
 <body>
@@ -83,7 +82,7 @@
     </div>
     <div class="row">
       <div class="rk on"></div>
-      <div class="rc">🍇</div>
+      <div class="rc alt">🍇</div>
       <div class="rb">
         <div class="rn">阳光玫瑰</div>
         <div class="rd">200g 装</div>
@@ -107,7 +106,7 @@
     </div>
     <div class="row">
       <div class="rk on"></div>
-      <div class="rc">🍠</div>
+      <div class="rc alt2">🍠</div>
       <div class="rb">
         <div class="rn">炭火烤蜜薯</div>
         <div class="rd">流糖心 · 250g</div>

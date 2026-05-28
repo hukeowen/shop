@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>蓝工平台 · 审计日志</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="../shared/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  body { background:#F8FAFC; font-family:'Inter','PingFang SC',sans-serif; }
+  .num-font { font-feature-settings:"tnum"; font-variant-numeric:tabular-nums; }
+  .chip { display:inline-flex; align-items:center; gap:4px; padding:2px 7px; border-radius:4px; font-size:10px; font-weight:600; }
+  .stat-card { background:#fff; border:1px solid #E2E8F0; border-radius:12px; padding:18px 20px; }
+  th { background:#F8FAFC; font-size:11px; font-weight:600; color:#64748B; text-align:left; padding:10px 12px; border-bottom:1px solid #E2E8F0; text-transform:uppercase; letter-spacing:0.04em; white-space:nowrap; }
+  td { padding:11px 12px; border-bottom:1px solid #F1F5F9; font-size:12.5px; color:#334155; vertical-align:middle; white-space:nowrap; }
+  tr.row-hover:hover { background:#F8FAFC; }
+</style>
+</head>
+<body class="text-slate-800">
+<div class="flex min-h-screen">
+  <aside class="w-60 bg-[#0F172A] text-white flex-shrink-0 flex flex-col">
+    <div class="px-5 pt-5 pb-4 border-b border-white/5"><div class="flex items-center gap-2.5"><div class="w-9 h-9 rounded-lg bg-gradient-to-br from-[#5046E5] to-[#7C3AED] flex items-center justify-center font-extrabold text-[15px]">蓝</div><div><div class="text-[13px] font-bold leading-tight">蓝工平台</div><div class="text-[10px] text-slate-400 tracking-wider">运营后台 · ADMIN</div></div></div></div>
+    <nav class="flex-1 px-3 py-2 overflow-y-auto text-sm">
+      <div class="px-3 pt-2 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">驾驶舱</div>
+      <a href="dashboard.html" class="sidebar-link">📊 数据驾驶舱</a>
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">用户管理</div>
+      <a href="workers.html" class="sidebar-link">👷 工人管理</a><a href="dispatches.html" class="sidebar-link">🏢 派遣公司</a><a href="clients.html" class="sidebar-link">🏛️ 甲方/用工单位</a>
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">业务管理</div>
+      <a href="jobs-audit.html" class="sidebar-link">📋 招聘审核</a><a href="credit.html" class="sidebar-link">⭐ 工分管理</a>
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">风控合规</div>
+      <a href="risk.html" class="sidebar-link">🚨 风控告警</a><a href="audit.html" class="sidebar-link active">📜 审计日志</a>
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">财务管理</div>
+      <a href="finance.html" class="sidebar-link">💰 财务对账</a>
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">客服支持</div>
+      <a href="tickets.html" class="sidebar-link">🎫 客服工单</a>
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">运营</div>
+      <a href="campaigns.html" class="sidebar-link">🎯 运营活动</a><a href="notifications.html" class="sidebar-link">📢 公告通知</a>
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">系统</div>
+      <a href="roles.html" class="sidebar-link">🔐 权限管理</a><a href="api.html" class="sidebar-link">🔌 API 开放平台</a>
+    </nav>
+    <div class="px-4 py-3 border-t border-white/5 text-xs text-slate-500 flex items-center justify-between"><a href="../index.html" class="hover:text-white">← 原型导航</a><span>v3.2.1</span></div>
+  </aside>
+
+  <main class="flex-1 min-w-0 flex flex-col">
+    <header class="h-14 bg-white border-b border-slate-200 flex items-center px-6 sticky top-0 z-20"><div class="flex items-center gap-2.5"><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-red-50 text-red-600 border border-red-200">生产环境</span><h1 class="text-[15px] font-semibold">审计日志中心</h1></div><div class="ml-auto flex gap-2"><button class="px-3 py-1.5 text-xs border border-slate-200 rounded">📥 导出审计报告</button></div></header>
+
+    <div class="flex-1 overflow-y-auto p-6 space-y-5">
+      <div class="grid grid-cols-4 gap-4">
+        <div class="stat-card"><div class="text-xs text-slate-500">今日操作总数</div><div class="text-2xl font-extrabold num-font mt-1">8,234</div><div class="text-xs text-emerald-600 mt-2">↑ 12% vs 昨日</div></div>
+        <div class="stat-card"><div class="text-xs text-slate-500">敏感操作</div><div class="text-2xl font-extrabold text-amber-600 num-font mt-1">287</div><div class="text-xs text-amber-600 mt-2">已二次确认</div></div>
+        <div class="stat-card border-rose-200"><div class="text-xs text-rose-600">异常操作</div><div class="text-2xl font-extrabold text-rose-600 num-font mt-1">12</div><div class="text-xs text-rose-600 mt-2">🚨 待人工核查</div></div>
+        <div class="stat-card"><div class="text-xs text-slate-500">日志保留期</div><div class="text-2xl font-extrabold num-font mt-1">730<span class="text-sm">天</span></div><div class="text-xs text-slate-400 mt-2">合规要求 ≥ 6 月</div></div>
+      </div>
+
+      <div class="bg-white rounded-xl border border-slate-200 p-4 flex gap-3 items-center">
+        <select class="text-xs px-3 py-2 border border-slate-200 rounded"><option>全部操作人</option><option>admin@bluework</option><option>liyifan@bluework</option></select>
+        <select class="text-xs px-3 py-2 border border-slate-200 rounded"><option>全部模块</option><option>工分管理</option><option>财务对账</option><option>风控</option><option>权限</option></select>
+        <select class="text-xs px-3 py-2 border border-slate-200 rounded"><option>全部风险等级</option><option>🔴 高危</option><option>🟡 中危</option><option>🟢 低危</option></select>
+        <input class="text-xs px-3 py-2 border border-slate-200 rounded" placeholder="时间范围 2026-05-17"/>
+        <input class="flex-1 text-xs px-3 py-2 border border-slate-200 rounded" placeholder="🔍 搜索操作详情/对象"/>
+        <button class="text-xs px-3 py-2 bg-violet-600 text-white rounded font-bold">搜索</button>
+      </div>
+
+      <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+        <table class="w-full">
+          <thead><tr><th>时间</th><th>操作人</th><th>IP</th><th>模块</th><th>操作类型</th><th>操作对象</th><th>影响范围</th><th>风险</th><th>详情</th></tr></thead>
+          <tbody>
+            <tr class="row-hover bg-rose-50/50"><td class="num-font text-xs">10:23:18</td><td>admin@bluework</td><td class="num-font">10.0.2.18</td><td>工分管理</td><td><span class="chip" style="background:#FEE2E2;color:#B91C1C">规则修改</span></td><td>"放鸽子" -20→-30</td><td class="text-rose-600 font-bold">影响 524万 工人</td><td><span class="chip" style="background:#FEE2E2;color:#B91C1C">🔴 高危</span></td><td class="text-xs"><a class="text-blue-600">查看</a></td></tr>
+            <tr class="row-hover"><td class="num-font text-xs">10:15:42</td><td>liyifan@bluework</td><td class="num-font">10.0.2.36</td><td>财务对账</td><td><span class="chip" style="background:#FEF3C7;color:#B45309">薪资调整</span></td><td>批量调整 1,287 人</td><td class="text-amber-600">总金额 ¥3,820,000</td><td><span class="chip" style="background:#FEF3C7;color:#B45309">🟡 中危</span></td><td class="text-xs"><a class="text-blue-600">查看</a></td></tr>
+            <tr class="row-hover"><td class="num-font text-xs">09:58:24</td><td>wangya@bluework</td><td class="num-font">10.0.2.42</td><td>客服工单</td><td><span class="chip" style="background:#DCFCE7;color:#15803D">工单升级</span></td><td>#TK20260517-0042 升级法务</td><td>1 工单</td><td><span class="chip" style="background:#DCFCE7;color:#15803D">🟢 低危</span></td><td class="text-xs"><a class="text-blue-600">查看</a></td></tr>
+            <tr class="row-hover bg-rose-50/50"><td class="num-font text-xs">09:42:15</td><td>fenghuang@bluework</td><td class="num-font">10.0.2.55</td><td>风控告警</td><td><span class="chip" style="background:#FEE2E2;color:#B91C1C">账户冻结</span></td><td>DP07712 鑫达劳务</td><td class="text-rose-600 font-bold">冻结 ¥520万 提现</td><td><span class="chip" style="background:#FEE2E2;color:#B91C1C">🔴 高危</span></td><td class="text-xs"><a class="text-blue-600">查看</a></td></tr>
+            <tr class="row-hover"><td class="num-font text-xs">09:36:08</td><td>zhanglei@bluework</td><td class="num-font">10.0.2.68</td><td>权限管理</td><td><span class="chip" style="background:#FEF3C7;color:#B45309">权限变更</span></td><td>新增 5 个客服角色</td><td>5 个用户</td><td><span class="chip" style="background:#FEF3C7;color:#B45309">🟡 中危</span></td><td class="text-xs"><a class="text-blue-600">查看</a></td></tr>
+            <tr class="row-hover"><td class="num-font text-xs">09:20:34</td><td>admin@bluework</td><td class="num-font">10.0.2.18</td><td>派遣公司</td><td><span class="chip" style="background:#FEF3C7;color:#B45309">信用分调整</span></td><td>DP00892 捷诚劳务 86→82</td><td>影响排名展示</td><td><span class="chip" style="background:#FEF3C7;color:#B45309">🟡 中危</span></td><td class="text-xs"><a class="text-blue-600">查看</a></td></tr>
+            <tr class="row-hover"><td class="num-font text-xs">09:15:22</td><td>chenyan@bluework</td><td class="num-font">10.0.2.74</td><td>招聘审核</td><td><span class="chip" style="background:#DCFCE7;color:#15803D">驳回职位</span></td><td>"虚假高薪" 12 条</td><td>影响 12 个职位</td><td><span class="chip" style="background:#DCFCE7;color:#15803D">🟢 低危</span></td><td class="text-xs"><a class="text-blue-600">查看</a></td></tr>
+            <tr class="row-hover"><td class="num-font text-xs">09:08:42</td><td>API @sa-001</td><td class="num-font">220.181.x.x</td><td>API 开放</td><td><span class="chip" style="background:#DBEAFE;color:#1D4ED8">数据导出</span></td><td>批量调用 工分API</td><td class="num-font">28,452 次</td><td><span class="chip" style="background:#DCFCE7;color:#15803D">🟢 低危</span></td><td class="text-xs"><a class="text-blue-600">查看</a></td></tr>
+            <tr class="row-hover"><td class="num-font text-xs">08:55:11</td><td>liuxin@bluework</td><td class="num-font">10.0.2.93</td><td>公告通知</td><td><span class="chip" style="background:#DBEAFE;color:#1D4ED8">全站推送</span></td><td>"APP V3.2 更新公告"</td><td class="num-font">触达 524万</td><td><span class="chip" style="background:#FEF3C7;color:#B45309">🟡 中危</span></td><td class="text-xs"><a class="text-blue-600">查看</a></td></tr>
+            <tr class="row-hover"><td class="num-font text-xs">08:42:05</td><td>admin@bluework</td><td class="num-font">10.0.2.18</td><td>系统设置</td><td><span class="chip" style="background:#FEF3C7;color:#B45309">配置变更</span></td><td>修改 API 限流策略</td><td>影响 47 接入方</td><td><span class="chip" style="background:#FEF3C7;color:#B45309">🟡 中危</span></td><td class="text-xs"><a class="text-blue-600">查看</a></td></tr>
+            <tr class="row-hover bg-rose-50/50"><td class="num-font text-xs">08:33:48</td><td>未知</td><td class="num-font text-rose-600">220.x.x.18</td><td>登录</td><td><span class="chip" style="background:#FEE2E2;color:#B91C1C">异常登录</span></td><td>admin@bluework 5 次失败</td><td class="text-rose-600">已锁定IP</td><td><span class="chip" style="background:#FEE2E2;color:#B91C1C">🔴 高危</span></td><td class="text-xs"><a class="text-rose-600 font-bold">追溯</a></td></tr>
+            <tr class="row-hover"><td class="num-font text-xs">08:25:11</td><td>linwei@bluework</td><td class="num-font">10.0.2.108</td><td>财务对账</td><td><span class="chip" style="background:#DCFCE7;color:#15803D">下载报表</span></td><td>5 月份对账单</td><td>1 PDF</td><td><span class="chip" style="background:#DCFCE7;color:#15803D">🟢 低危</span></td><td class="text-xs"><a class="text-blue-600">查看</a></td></tr>
+            <tr class="row-hover"><td class="num-font text-xs">08:18:36</td><td>admin@bluework</td><td class="num-font">10.0.2.18</td><td>工分管理</td><td><span class="chip" style="background:#DBEAFE;color:#1D4ED8">手动调整</span></td><td>BL2024112233 +30 工分</td><td>1 工人</td><td><span class="chip" style="background:#FEF3C7;color:#B45309">🟡 中危</span></td><td class="text-xs"><a class="text-blue-600">查看</a></td></tr>
+            <tr class="row-hover"><td class="num-font text-xs">08:05:24</td><td>chenmiao@bluework</td><td class="num-font">10.0.2.122</td><td>运营活动</td><td><span class="chip" style="background:#DCFCE7;color:#15803D">活动创建</span></td><td>"春节返工奖励" 活动</td><td>预算 ¥150万</td><td><span class="chip" style="background:#FEF3C7;color:#B45309">🟡 中危</span></td><td class="text-xs"><a class="text-blue-600">查看</a></td></tr>
+            <tr class="row-hover"><td class="num-font text-xs">07:58:18</td><td>API @sa-002</td><td class="num-font">114.x.x.x</td><td>API 开放</td><td><span class="chip" style="background:#DBEAFE;color:#1D4ED8">外部调用</span></td><td>招商银行 调用蓝领信用分</td><td class="num-font">125,680 次</td><td><span class="chip" style="background:#DCFCE7;color:#15803D">🟢 低危</span></td><td class="text-xs"><a class="text-blue-600">查看</a></td></tr>
+          </tbody>
+        </table>
+        <div class="px-5 py-3 flex justify-between items-center border-t border-slate-100 text-xs"><span class="text-slate-500">显示 1-15 / 共 <b class="num-font">8,234</b> 条</span><div class="flex gap-1"><button class="px-2 py-1 bg-violet-600 text-white rounded">1</button><button class="px-2 py-1 border border-slate-200 rounded">2</button><button class="px-2 py-1 border border-slate-200 rounded">3</button><span class="px-2 py-1">...</span><button class="px-2 py-1 border border-slate-200 rounded">549</button></div></div>
+      </div>
+    </div>
+  </main>
+</div>
+</body>
+</html>

@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>招聘审核 · 蓝工平台运营后台</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../shared/style.css">
+<style>
+  body { font-family: 'Inter', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif; background:#F8FAFC; }
+  .num-font { font-feature-settings: "tnum"; font-variant-numeric: tabular-nums; letter-spacing:-0.02em; }
+  .sidebar-link { display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:8px; color:#94A3B8; font-size:13px; font-weight:500; transition:all .15s; }
+  .sidebar-link:hover { background:rgba(255,255,255,.05); color:#fff; }
+  .sidebar-link.active { background:linear-gradient(135deg,#5046E5,#7C3AED); color:#fff; box-shadow:0 4px 12px rgba(80,70,229,.4); }
+  .sidebar-group { font-size:11px; font-weight:600; color:#475569; text-transform:uppercase; letter-spacing:0.08em; padding:14px 12px 6px; }
+  .audit-card { background:#fff; border:1px solid #E2E8F0; border-radius:12px; padding:18px 20px; transition:all .2s; }
+  .audit-card:hover { box-shadow:0 8px 24px -8px rgba(0,0,0,.08); border-color:#CBD5E1; }
+  .audit-card.high-risk { border-left:3px solid #DC2626; }
+  .audit-card.mid-risk { border-left:3px solid #F59E0B; }
+  .audit-card.low-risk { border-left:3px solid #10B981; }
+  .tag { display:inline-flex; align-items:center; gap:4px; padding:3px 8px; border-radius:4px; font-size:11px; font-weight:600; }
+  .ai-tag-red { background:linear-gradient(135deg,#FEE2E2,#FECACA); color:#991B1B; border:1px solid #FCA5A5; }
+  .ai-tag-amber { background:linear-gradient(135deg,#FEF3C7,#FDE68A); color:#92400E; border:1px solid #FCD34D; }
+  .ai-tag-green { background:linear-gradient(135deg,#DCFCE7,#BBF7D0); color:#166534; border:1px solid #86EFAC; }
+  .info-pill { display:inline-flex; align-items:center; gap:5px; padding:3px 8px; border-radius:5px; background:#F1F5F9; color:#475569; font-size:11px; font-weight:500; }
+  .tab { padding:10px 16px; font-size:13px; font-weight:500; color:#64748B; border-bottom:2px solid transparent; cursor:pointer; }
+  .tab:hover { color:#5046E5; }
+  .tab.active { color:#5046E5; border-color:#5046E5; font-weight:600; }
+  .scrollbar-thin::-webkit-scrollbar { width:6px; }
+  .scrollbar-thin::-webkit-scrollbar-thumb { background:#CBD5E1; border-radius:3px; }
+  .ai-badge { display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:6px; font-size:11px; font-weight:600; background:linear-gradient(135deg,#5046E5,#7C3AED); color:#fff; }
+</style>
+</head>
+<body class="text-slate-800">
+
+<div class="flex min-h-screen">
+
+  <aside class="w-[240px] bg-[#0F172A] text-white flex-shrink-0 flex flex-col">
+    <div class="px-5 pt-5 pb-4 border-b border-white/5">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-[#5046E5] to-[#7C3AED] flex items-center justify-center font-extrabold text-[15px]">蓝</div>
+        <div><div class="text-[13px] font-bold leading-tight">蓝工平台</div><div class="text-[10px] text-slate-400 leading-tight mt-0.5 tracking-wider">运营后台 · ADMIN</div></div>
+      </div>
+      <div class="mt-4 flex items-center gap-2.5 px-2.5 py-2 rounded-lg bg-white/5">
+        <div class="w-7 h-7 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center text-[11px] font-bold">A</div>
+        <div class="min-w-0 flex-1"><div class="text-[12px] font-medium truncate">admin@bluework</div><div class="text-[10px] text-emerald-400 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>超级管理员</div></div>
+      </div>
+    </div>
+    <nav class="flex-1 px-3 py-2 overflow-y-auto scrollbar-thin">
+      <div class="sidebar-group">驾驶舱</div>
+      <a href="./dashboard.html" class="sidebar-link"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>数据驾驶舱</a>
+      <div class="sidebar-group">用户管理</div>
+      <a href="./workers.html" class="sidebar-link"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>工人管理</a>
+      <a href="./dispatches.html" class="sidebar-link"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>派遣公司</a>
+      <a href="./clients.html" class="sidebar-link">🏛️ 甲方/用工单位 <span class="ml-auto px-1 py-0 rounded bg-gradient-to-r from-pink-500 to-orange-500 text-white text-[9px] font-bold">NEW</span></a>
+      <div class="sidebar-group">业务管理</div>
+      <a href="./jobs-audit.html" class="sidebar-link active"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>招聘审核<span class="ml-auto px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-500 text-white">34</span></a>
+      <a href="./credit.html" class="sidebar-link"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4.5L6 21l1.5-7.5L2 9h7z"/></svg>工分管理</a>
+      <div class="sidebar-group">风控合规</div>
+      <a href="./risk.html" class="sidebar-link"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>风控告警<span class="ml-auto px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500 text-white">23</span></a>
+      <a href="./audit.html" class="sidebar-link">📜 审计日志</a>
+      <div class="sidebar-group">财务管理</div>
+      <a href="./finance.html" class="sidebar-link"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>财务对账</a>
+      <div class="sidebar-group">客服支持</div>
+      <a href="./tickets.html" class="sidebar-link">🎫 客服工单 <span class="ml-auto px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-500 text-white">89</span></a>
+      <div class="sidebar-group">运营</div>
+      <a href="./campaigns.html" class="sidebar-link">🎯 运营活动</a>
+      <a href="./notifications.html" class="sidebar-link">📢 公告通知</a>
+      <div class="sidebar-group">系统</div>
+      <a href="./roles.html" class="sidebar-link">🔐 权限管理</a>
+      <a href="./api.html" class="sidebar-link">🔌 API 开放平台</a>
+      <a href="#" class="sidebar-link"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/></svg>系统设置</a>
+    </nav>
+    <div class="px-4 py-3 border-t border-white/5"><div class="text-[10px] text-slate-500">v3.2.1 · build 20260517</div></div>
+  </aside>
+
+  <main class="flex-1 min-w-0">
+    <header class="h-14 bg-white border-b border-slate-200 flex items-center px-6 sticky top-0 z-20">
+      <div class="flex items-center gap-2.5">
+        <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-red-50 text-red-600 border border-red-200">生产环境</span>
+        <h1 class="text-[15px] font-semibold text-slate-900">招聘审核</h1>
+      </div>
+      <div class="ml-auto flex items-center gap-3">
+        <div class="relative">
+          <svg class="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input class="w-64 pl-8 pr-3 py-1.5 text-[13px] rounded-md bg-slate-100 border-0" placeholder="搜索职位/公司 ⌘K">
+        </div>
+        <button class="w-8 h-8 rounded-md hover:bg-slate-100 flex items-center justify-center relative">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="text-slate-600"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 ring-2 ring-white"></span>
+        </button>
+        <div class="w-px h-5 bg-slate-200"></div>
+        <div class="flex items-center gap-2">
+          <div class="w-7 h-7 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center text-white text-[11px] font-bold">A</div>
+          <div class="text-[12px]"><div class="font-semibold text-slate-800 leading-tight">Admin</div><div class="text-[10px] text-slate-500 leading-tight">超级管理员</div></div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Tabs -->
+    <div class="bg-white border-b border-slate-200 px-6 flex items-center justify-between">
+      <div class="flex">
+        <div class="tab active">待审核 <span class="ml-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-500 text-white">34</span></div>
+        <div class="tab">已通过 <span class="ml-1 text-[10px] text-slate-400">1,247</span></div>
+        <div class="tab">已驳回 <span class="ml-1 text-[10px] text-slate-400">128</span></div>
+        <div class="tab">AI 预警 <span class="ml-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500 text-white">8</span></div>
+      </div>
+      <div class="flex items-center gap-2 py-2">
+        <span class="text-[11px] text-slate-500">排序:</span>
+        <button class="px-2 py-1 text-[11px] rounded text-slate-600 hover:bg-slate-100">提交时间</button>
+        <button class="px-2 py-1 text-[11px] rounded bg-slate-100 text-[#5046E5] font-semibold">风险等级 ↓</button>
+      </div>
+    </div>
+
+    <div class="p-6 grid grid-cols-12 gap-5">
+
+      <!-- Left: audit queue (cards) -->
+      <div class="col-span-9 space-y-4">
+
+        <!-- Card 1 - HIGH RISK -->
+        <div class="audit-card high-risk">
+          <div class="flex items-start justify-between mb-3">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-red-500 to-orange-600 flex items-center justify-center text-white font-bold text-[13px]">某</div>
+              <div>
+                <div class="flex items-center gap-2">
+                  <h3 class="text-[15px] font-bold text-slate-900">流水线包装工 (急招100人)</h3>
+                  <span class="tag ai-tag-red">⚠ 高风险</span>
+                </div>
+                <div class="flex items-center gap-2 mt-1">
+                  <span class="text-[12px] text-slate-600 font-medium">某某劳务中介有限公司</span>
+                  <span class="text-[10px] text-slate-400">·</span>
+                  <span class="text-[11px] text-red-600 font-semibold">信用分 412 · 异常</span>
+                  <span class="text-[10px] text-slate-400">·</span>
+                  <span class="text-[11px] text-slate-500">郑州 · 1分钟前提交</span>
+                </div>
+              </div>
+            </div>
+            <span class="text-[10px] text-slate-400">J20260517-0034</span>
+          </div>
+
+          <div class="grid grid-cols-4 gap-2 mb-3">
+            <div class="info-pill">💰 月薪 ¥3,200</div>
+            <div class="info-pill">📍 河南郑州·金水区</div>
+            <div class="info-pill">⏱ 12小时/班</div>
+            <div class="info-pill">🏠 包食宿</div>
+          </div>
+
+          <div class="bg-red-50 border border-red-100 rounded-lg p-3 mb-3">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="ai-badge">🤖 AI 风险分析</span>
+              <span class="text-[11px] text-red-700 font-semibold">综合风险评分 92/100</span>
+            </div>
+            <ul class="space-y-1.5 text-[12px] text-red-800">
+              <li class="flex items-start gap-1.5"><span class="text-red-500 mt-0.5">●</span><span><b>薪资异常:</b> 该岗位月薪低于郑州同工种行业均值 <b>32%</b> (¥4,700)</span></li>
+              <li class="flex items-start gap-1.5"><span class="text-red-500 mt-0.5">●</span><span><b>用工单位疑似空壳:</b> 注册资本 10 万 / 实缴 0 / 成立 2 个月 / 无社保缴纳记录</span></li>
+              <li class="flex items-start gap-1.5"><span class="text-red-500 mt-0.5">●</span><span><b>重复发布:</b> 该派遣 7 天内发布 <b>23 条</b>相似职位 (同薪同地址)</span></li>
+              <li class="flex items-start gap-1.5"><span class="text-red-500 mt-0.5">●</span><span><b>关键词命中:</b> "押金"、"日结" 出现在描述中</span></li>
+            </ul>
+          </div>
+
+          <div class="flex items-center justify-between pt-3 border-t border-slate-100">
+            <div class="flex items-center gap-2">
+              <span class="text-[11px] text-slate-500">同公司近期审核:</span>
+              <span class="text-[11px] text-red-600 font-semibold">7 通过 / 12 驳回 / 5 标记可疑</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <button class="px-3 py-1.5 text-[12px] rounded-md text-slate-600 hover:bg-slate-100">查看完整描述</button>
+              <button class="px-3 py-1.5 text-[12px] rounded-md border border-amber-300 text-amber-700 hover:bg-amber-50 font-semibold">标记可疑</button>
+              <button class="px-3 py-1.5 text-[12px] rounded-md border border-red-300 text-red-700 hover:bg-red-50 font-semibold">驳回</button>
+              <button class="px-3 py-1.5 text-[12px] rounded-md bg-slate-200 text-slate-400 font-semibold cursor-not-allowed" disabled>通过 (高风险禁用)</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 2 - HIGH RISK -->
+        <div class="audit-card high-risk">
+          <div class="flex items-start justify-between mb-3">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white font-bold text-[13px]">速</div>
+              <div>
+                <div class="flex items-center gap-2">
+                  <h3 class="text-[15px] font-bold text-slate-900">分拣员 · 物流园区</h3>
+                  <span class="tag ai-tag-red">⚠ 高风险</span>
+                </div>
+                <div class="flex items-center gap-2 mt-1">
+                  <span class="text-[12px] text-slate-600 font-medium">速达人力派遣 (深圳分公司)</span>
+                  <span class="text-[10px] text-slate-400">·</span>
+                  <span class="text-[11px] text-slate-500">深圳·龙华 · 8分钟前</span>
+                </div>
+              </div>
+            </div>
+            <span class="text-[10px] text-slate-400">J20260517-0033</span>
+          </div>
+
+          <div class="grid grid-cols-4 gap-2 mb-3">
+            <div class="info-pill">💰 月薪 ¥6,500-8,000</div>
+            <div class="info-pill">📍 深圳·龙华</div>
+            <div class="info-pill">⏱ 8小时/班</div>
+            <div class="info-pill">🏠 提供宿舍</div>
+          </div>
+
+          <div class="bg-red-50 border border-red-100 rounded-lg p-3 mb-3">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="ai-badge">🤖 AI 风险分析</span>
+              <span class="text-[11px] text-red-700 font-semibold">综合风险评分 78/100</span>
+            </div>
+            <ul class="space-y-1.5 text-[12px] text-red-800">
+              <li class="flex items-start gap-1.5"><span class="text-red-500 mt-0.5">●</span><span><b>用工单位资质未对接:</b> 终端用工单位"深圳XX物流"未在国家天眼信息中查到</span></li>
+              <li class="flex items-start gap-1.5"><span class="text-red-500 mt-0.5">●</span><span><b>地址异常:</b> 招聘地址 GPS 定位为住宅区</span></li>
+            </ul>
+          </div>
+
+          <div class="flex items-center justify-between pt-3 border-t border-slate-100">
+            <div class="flex items-center gap-2">
+              <span class="text-[11px] text-slate-500">建议: 要求补充用工单位资质</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <button class="px-3 py-1.5 text-[12px] rounded-md border border-amber-300 text-amber-700 hover:bg-amber-50 font-semibold">要求补充材料</button>
+              <button class="px-3 py-1.5 text-[12px] rounded-md border border-red-300 text-red-700 hover:bg-red-50 font-semibold">驳回</button>
+              <button class="px-3 py-1.5 text-[12px] rounded-md bg-[#5046E5] text-white font-semibold">通过</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 3 - MID RISK -->
+        <div class="audit-card mid-risk">
+          <div class="flex items-start justify-between mb-3">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center text-white font-bold text-[13px]">汇</div>
+              <div>
+                <div class="flex items-center gap-2">
+                  <h3 class="text-[15px] font-bold text-slate-900">电子厂普工 (招 80 人)</h3>
+                  <span class="tag ai-tag-amber">⚠ 中风险</span>
+                </div>
+                <div class="flex items-center gap-2 mt-1">
+                  <span class="text-[12px] text-slate-600 font-medium">江苏汇丰劳务派遣</span>
+                  <span class="text-[10px] text-slate-400">·</span>
+                  <span class="text-[11px] text-emerald-600 font-semibold">⭐ 信用分 854 · VIP</span>
+                  <span class="text-[10px] text-slate-400">·</span>
+                  <span class="text-[11px] text-slate-500">苏州·昆山 · 23分钟前</span>
+                </div>
+              </div>
+            </div>
+            <span class="text-[10px] text-slate-400">J20260517-0032</span>
+          </div>
+
+          <div class="grid grid-cols-4 gap-2 mb-3">
+            <div class="info-pill">💰 月薪 ¥5,500-7,200</div>
+            <div class="info-pill">📍 昆山·开发区</div>
+            <div class="info-pill">⏱ 11小时/班</div>
+            <div class="info-pill">🏠 包吃住</div>
+          </div>
+
+          <div class="bg-amber-50 border border-amber-100 rounded-lg p-3 mb-3">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="ai-badge">🤖 AI 风险分析</span>
+              <span class="text-[11px] text-amber-700 font-semibold">综合风险评分 38/100</span>
+            </div>
+            <ul class="space-y-1.5 text-[12px] text-amber-800">
+              <li class="flex items-start gap-1.5"><span class="text-amber-500 mt-0.5">●</span><span><b>工时较长:</b> 11 小时/班 超过单班建议 10 小时</span></li>
+              <li class="flex items-start gap-1.5"><span class="text-amber-500 mt-0.5">●</span><span><b>薪资范围较宽:</b> 浮动 30%+, 建议明确薪资构成</span></li>
+            </ul>
+          </div>
+
+          <div class="flex items-center justify-between pt-3 border-t border-slate-100">
+            <div class="flex items-center gap-2">
+              <span class="text-[11px] text-emerald-600">✓ 用工单位: 昆山汇丰电子 (已认证 · 上市公司)</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <button class="px-3 py-1.5 text-[12px] rounded-md border border-amber-300 text-amber-700 hover:bg-amber-50">附加备注</button>
+              <button class="px-3 py-1.5 text-[12px] rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50">驳回</button>
+              <button class="px-3 py-1.5 text-[12px] rounded-md bg-[#5046E5] text-white font-semibold">通过</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 4 - LOW RISK -->
+        <div class="audit-card low-risk">
+          <div class="flex items-start justify-between mb-3">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-[13px]">浙</div>
+              <div>
+                <div class="flex items-center gap-2">
+                  <h3 class="text-[15px] font-bold text-slate-900">仓库管理员 · 京东亚一</h3>
+                  <span class="tag ai-tag-green">✓ 低风险</span>
+                </div>
+                <div class="flex items-center gap-2 mt-1">
+                  <span class="text-[12px] text-slate-600 font-medium">浙江速派人力资源</span>
+                  <span class="text-[10px] text-slate-400">·</span>
+                  <span class="text-[11px] text-emerald-600 font-semibold">⭐⭐ 信用分 958 · VIP 钻石</span>
+                  <span class="text-[10px] text-slate-400">·</span>
+                  <span class="text-[11px] text-slate-500">嘉兴·南湖 · 35分钟前</span>
+                </div>
+              </div>
+            </div>
+            <span class="text-[10px] text-slate-400">J20260517-0031</span>
+          </div>
+
+          <div class="grid grid-cols-4 gap-2 mb-3">
+            <div class="info-pill">💰 月薪 ¥7,000-9,500</div>
+            <div class="info-pill">📍 嘉兴·南湖</div>
+            <div class="info-pill">⏱ 8小时/班</div>
+            <div class="info-pill">🏠 五险一金+宿舍</div>
+          </div>
+
+          <div class="bg-emerald-50 border border-emerald-100 rounded-lg p-3 mb-3">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="ai-badge">🤖 AI 风险分析</span>
+              <span class="text-[11px] text-emerald-700 font-semibold">综合风险评分 12/100</span>
+            </div>
+            <ul class="space-y-1.5 text-[12px] text-emerald-800">
+              <li class="flex items-start gap-1.5"><span class="text-emerald-500 mt-0.5">✓</span><span><b>派遣公司:</b> VIP 钻石客户，历史通过率 99.2%</span></li>
+              <li class="flex items-start gap-1.5"><span class="text-emerald-500 mt-0.5">✓</span><span><b>用工单位:</b> 京东物流 (已认证 · 500强企业)</span></li>
+              <li class="flex items-start gap-1.5"><span class="text-emerald-500 mt-0.5">✓</span><span><b>薪资合理:</b> 高于行业均值 12%，构成清晰</span></li>
+            </ul>
+          </div>
+
+          <div class="flex items-center justify-between pt-3 border-t border-slate-100">
+            <div class="flex items-center gap-2">
+              <span class="text-[11px] text-emerald-600 font-semibold">💡 建议: 一键通过</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <button class="px-3 py-1.5 text-[12px] rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50">驳回</button>
+              <button class="px-3 py-1.5 text-[12px] rounded-md bg-emerald-600 text-white font-semibold hover:bg-emerald-700">✓ 快速通过</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 5 - LOW RISK -->
+        <div class="audit-card low-risk">
+          <div class="flex items-start justify-between mb-3">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white font-bold text-[13px]">湖</div>
+              <div>
+                <div class="flex items-center gap-2">
+                  <h3 class="text-[15px] font-bold text-slate-900">叉车司机 (招 25 人)</h3>
+                  <span class="tag ai-tag-green">✓ 低风险</span>
+                </div>
+                <div class="flex items-center gap-2 mt-1">
+                  <span class="text-[12px] text-slate-600 font-medium">湖北千里马人力</span>
+                  <span class="text-[10px] text-slate-400">·</span>
+                  <span class="text-[11px] text-emerald-600 font-semibold">⭐ 信用分 876 · VIP</span>
+                  <span class="text-[10px] text-slate-400">·</span>
+                  <span class="text-[11px] text-slate-500">武汉·东西湖 · 1小时前</span>
+                </div>
+              </div>
+            </div>
+            <span class="text-[10px] text-slate-400">J20260517-0030</span>
+          </div>
+
+          <div class="grid grid-cols-4 gap-2 mb-3">
+            <div class="info-pill">💰 月薪 ¥8,500-12,000</div>
+            <div class="info-pill">📍 武汉·东西湖</div>
+            <div class="info-pill">⏱ 8小时/班</div>
+            <div class="info-pill">🏠 五险一金</div>
+          </div>
+
+          <div class="bg-emerald-50 border border-emerald-100 rounded-lg p-3 mb-3">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="ai-badge">🤖 AI 风险分析</span>
+              <span class="text-[11px] text-emerald-700 font-semibold">综合风险评分 8/100</span>
+            </div>
+            <ul class="space-y-1.5 text-[12px] text-emerald-800">
+              <li class="flex items-start gap-1.5"><span class="text-emerald-500 mt-0.5">✓</span><span>资质齐全，要求叉车证 (有合理性)</span></li>
+              <li class="flex items-start gap-1.5"><span class="text-emerald-500 mt-0.5">✓</span><span>薪资构成清晰，符合武汉叉车工市场行情</span></li>
+            </ul>
+          </div>
+
+          <div class="flex items-center justify-end pt-3 border-t border-slate-100 gap-2">
+            <button class="px-3 py-1.5 text-[12px] rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50">驳回</button>
+            <button class="px-3 py-1.5 text-[12px] rounded-md bg-emerald-600 text-white font-semibold hover:bg-emerald-700">✓ 快速通过</button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Right: Audit KPI -->
+      <aside class="col-span-3 space-y-4">
+        <div class="bg-white border border-slate-200 rounded-xl p-5">
+          <div class="flex items-center gap-2 mb-3">
+            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center text-white font-bold text-[12px]">A</div>
+            <div>
+              <div class="text-[13px] font-semibold text-slate-900">当前审核员</div>
+              <div class="text-[10px] text-slate-500">admin@bluework</div>
+            </div>
+          </div>
+          <div class="space-y-3">
+            <div>
+              <div class="flex justify-between text-[11px] mb-1">
+                <span class="text-slate-500">今日审核数</span>
+                <span class="num-font font-bold text-slate-900">87</span>
+              </div>
+              <div class="h-1.5 rounded-full bg-slate-100"><div class="h-full bg-gradient-to-r from-[#5046E5] to-[#7C3AED] rounded-full" style="width:87%"></div></div>
+              <div class="text-[10px] text-slate-400 mt-0.5">目标 100/日</div>
+            </div>
+            <div class="grid grid-cols-2 gap-3 pt-3 border-t border-slate-100">
+              <div>
+                <div class="num-font text-[18px] font-extrabold text-slate-900">42<span class="text-[12px] text-slate-400">s</span></div>
+                <div class="text-[10px] text-slate-500 mt-0.5">平均耗时</div>
+              </div>
+              <div>
+                <div class="num-font text-[18px] font-extrabold text-emerald-600">96.3%</div>
+                <div class="text-[10px] text-slate-500 mt-0.5">准确率</div>
+              </div>
+              <div>
+                <div class="num-font text-[18px] font-extrabold text-slate-900">68</div>
+                <div class="text-[10px] text-slate-500 mt-0.5">通过</div>
+              </div>
+              <div>
+                <div class="num-font text-[18px] font-extrabold text-red-600">19</div>
+                <div class="text-[10px] text-slate-500 mt-0.5">驳回</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white border border-slate-200 rounded-xl p-5">
+          <h3 class="text-[13px] font-semibold text-slate-900 mb-3">今日 AI 拦截</h3>
+          <div class="space-y-2.5">
+            <div class="flex items-center justify-between text-[12px]">
+              <span class="text-slate-600">薪资过低</span>
+              <span class="num-font font-bold text-red-600">12</span>
+            </div>
+            <div class="flex items-center justify-between text-[12px]">
+              <span class="text-slate-600">疑似空壳公司</span>
+              <span class="num-font font-bold text-red-600">8</span>
+            </div>
+            <div class="flex items-center justify-between text-[12px]">
+              <span class="text-slate-600">重复发布</span>
+              <span class="num-font font-bold text-amber-600">15</span>
+            </div>
+            <div class="flex items-center justify-between text-[12px]">
+              <span class="text-slate-600">违禁关键词</span>
+              <span class="num-font font-bold text-red-600">5</span>
+            </div>
+            <div class="flex items-center justify-between text-[12px]">
+              <span class="text-slate-600">地址异常</span>
+              <span class="num-font font-bold text-amber-600">3</span>
+            </div>
+            <div class="pt-2 border-t border-slate-100 flex items-center justify-between">
+              <span class="text-[11px] text-slate-500">拦截总数</span>
+              <span class="num-font font-bold text-[15px] text-slate-900">43</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-gradient-to-br from-[#5046E5] to-[#7C3AED] rounded-xl p-5 text-white">
+          <div class="flex items-center gap-2 mb-2">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+            <span class="text-[12px] font-semibold opacity-90">本月队伍数据</span>
+          </div>
+          <div class="num-font text-[28px] font-extrabold mt-2">28,492</div>
+          <div class="text-[11px] opacity-80 mt-0.5">职位审核总量</div>
+          <div class="mt-3 pt-3 border-t border-white/20 flex justify-between text-[11px]">
+            <span class="opacity-80">通过率</span>
+            <span class="font-bold">87.4%</span>
+          </div>
+        </div>
+      </aside>
+
+    </div>
+  </main>
+</div>
+
+</body>
+</html>

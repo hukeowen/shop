@@ -1,0 +1,5 @@
+- generic [ref=e120]:
+  - generic [ref=e122]:
+    - img [ref=e125] [cursor=pointer]
+    - generic [ref=e128]: 商品详情
+  - generic [ref=e133]: 加载中...

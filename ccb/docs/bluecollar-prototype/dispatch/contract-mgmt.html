@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>派遣管家 · 合同管理</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="../shared/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>body{background:#F8FAFC;font-family:'Inter','PingFang SC',sans-serif}.num-font{font-feature-settings:"tnum";font-variant-numeric:tabular-nums}.chip{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:9999px;font-size:11px;font-weight:600}th{background:#F8FAFC;font-size:11px;font-weight:600;color:#64748B;text-align:left;padding:10px 12px;border-bottom:1px solid #E2E8F0;text-transform:uppercase;letter-spacing:0.04em;white-space:nowrap}td{padding:11px 12px;border-bottom:1px solid #F1F5F9;font-size:13px;color:#334155;vertical-align:middle;white-space:nowrap}tr.row-hover:hover{background:#F8FAFC}</style>
+</head>
+<body>
+<div class="flex min-h-screen">
+  <aside class="w-60 bg-[#0F172A] text-slate-300 flex flex-col flex-shrink-0">
+    <div class="px-5 pt-5 pb-4 border-b border-white/5"><div class="flex items-center gap-2 mb-3"><div class="w-9 h-9 rounded-xl grad-blue flex items-center justify-center font-extrabold text-white">蓝</div><div><div class="text-white text-sm font-bold">蓝工·派遣管家</div><div class="text-[10px] text-slate-500 tracking-wider">DISPATCH SAAS</div></div></div></div>
+    <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto text-sm">
+      <a href="dashboard.html" class="sidebar-link">📊 工作台</a>
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">招聘</div>
+      <a href="jobs.html" class="sidebar-link">📋 职位列表</a><a href="job-create.html" class="sidebar-link">➕ 发布职位</a>
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">人才 / 沟通</div>
+      <a href="talents.html" class="sidebar-link">🔍 人才搜索</a><a href="chat.html" class="sidebar-link">💬 IM</a>
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">用工</div>
+      <a href="onboarding.html" class="sidebar-link">👥 在岗管理</a><a href="contract-mgmt.html" class="sidebar-link active">📝 合同管理</a>
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">财务管理</div>
+      <a href="salary.html" class="sidebar-link">💰 薪酬</a><a href="social.html" class="sidebar-link">🏥 社保</a><a href="tax.html" class="sidebar-link">📋 个税</a><a href="reconciliation.html" class="sidebar-link">⚖️ 对账</a><a href="invoice.html" class="sidebar-link">🧾 发票</a>
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">客户 / 数据 / 合规</div>
+      <a href="clients.html" class="sidebar-link">🏢 甲方管理</a><a href="analytics.html" class="sidebar-link">📈 数据分析</a><a href="compliance.html" class="sidebar-link">🛡️ 风控合规</a>
+    </nav>
+    <div class="px-4 py-3 border-t border-white/5 text-xs text-slate-500 flex justify-between"><a href="../index.html" class="hover:text-white">← 原型导航</a><span>v0.2.0</span></div>
+  </aside>
+
+  <main class="flex-1 flex flex-col min-w-0">
+    <header class="h-14 bg-white border-b border-slate-200 px-6 flex items-center justify-between"><div class="text-sm text-slate-500">用工 / <span class="text-slate-900 font-medium">合同管理</span></div><div class="flex gap-2"><button class="px-3 py-1.5 text-xs border border-slate-200 rounded">📥 批量导出</button><button class="px-3 py-1.5 text-xs bg-blue-600 text-white rounded font-bold">+ 新建合同</button></div></header>
+
+    <div class="flex-1 overflow-y-auto p-6 space-y-5">
+      <div><h1 class="text-2xl font-bold">合同管理库</h1><p class="text-sm text-slate-500 mt-1">劳动合同 + 派遣协议 + 三方协议 · 电子签 + 区块链存证 · 司法效力</p></div>
+
+      <div class="grid grid-cols-4 gap-4">
+        <div class="bg-white border border-slate-200 rounded-xl p-5"><div class="text-xs text-slate-500">合同总数</div><div class="text-2xl font-extrabold num-font mt-1">1,283</div><div class="text-xs text-emerald-600 mt-2">本月新增 86</div></div>
+        <div class="bg-white border border-amber-200 rounded-xl p-5"><div class="text-xs text-amber-600">即将到期 30 天</div><div class="text-2xl font-extrabold text-amber-600 num-font mt-1">23</div><div class="text-xs text-amber-600 mt-2">⚠ 需续签</div></div>
+        <div class="bg-white border border-rose-200 rounded-xl p-5"><div class="text-xs text-rose-600">已过期未处理</div><div class="text-2xl font-extrabold text-rose-600 num-font mt-1">5</div><div class="text-xs text-rose-600 mt-2">🚨 法律风险</div></div>
+        <div class="bg-white border border-slate-200 rounded-xl p-5"><div class="text-xs text-slate-500">模板库</div><div class="text-2xl font-extrabold num-font mt-1">18 <span class="text-sm">套</span></div><div class="text-xs text-slate-400 mt-2">含法务审核版</div></div>
+      </div>
+
+      <div class="bg-white rounded-xl border border-slate-200 p-2 flex gap-1">
+        <button class="px-5 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-bold">👷 劳动合同（跟工人 1,248）</button>
+        <button class="px-5 py-2.5 text-slate-600 rounded-lg text-sm font-medium hover:bg-slate-50">🤝 派遣协议（跟甲方 35）</button>
+        <button class="px-5 py-2.5 text-slate-600 rounded-lg text-sm font-medium hover:bg-slate-50">📜 三方协议</button>
+        <button class="px-5 py-2.5 text-slate-600 rounded-lg text-sm font-medium hover:bg-slate-50">📋 模板库 18</button>
+        <button class="px-5 py-2.5 text-slate-600 rounded-lg text-sm font-medium hover:bg-slate-50">📅 续签日历</button>
+      </div>
+
+      <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+        <table class="w-full">
+          <thead><tr><th>合同编号</th><th>工人</th><th>用工单位</th><th>合同期限</th><th>剩余天数</th><th>电子签</th><th>状态</th><th>操作</th></tr></thead>
+          <tbody>
+            <tr class="row-hover"><td class="num-font text-xs">LC2024031089</td><td><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full bg-purple-500 text-white flex items-center justify-center text-xs font-bold">张</div><span>张**强</span></div></td><td class="text-xs">京东亚一仓</td><td class="text-xs">2024-03 ~ 2027-03</td><td class="num-font text-emerald-600">658 天</td><td><span class="chip" style="background:#DCFCE7;color:#15803D">CFCA + 区块链</span></td><td><span class="chip" style="background:#DCFCE7;color:#15803D">履行中</span></td><td class="text-xs"><a class="text-blue-600 mr-2">查看</a><a class="text-blue-600">下载</a></td></tr>
+            <tr class="row-hover"><td class="num-font text-xs">LC2023082234</td><td><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full bg-cyan-500 text-white flex items-center justify-center text-xs font-bold">李</div><span>李**梅</span></div></td><td class="text-xs">海底捞·西湖店</td><td class="text-xs">2023-08 ~ 2026-08</td><td class="num-font text-amber-600">96 天</td><td><span class="chip" style="background:#DCFCE7;color:#15803D">CFCA</span></td><td><span class="chip" style="background:#FEF3C7;color:#B45309">即将到期</span></td><td class="text-xs"><a class="text-blue-600 mr-2">查看</a><a class="text-amber-600">续签</a></td></tr>
+            <tr class="row-hover"><td class="num-font text-xs">LC2024120567</td><td><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full bg-amber-500 text-white flex items-center justify-center text-xs font-bold">王</div><span>王**国</span></div></td><td class="text-xs">立讯精密</td><td class="text-xs">2024-12 ~ 2026-12</td><td class="num-font text-emerald-600">218 天</td><td><span class="chip" style="background:#DCFCE7;color:#15803D">CFCA + 区块链</span></td><td><span class="chip" style="background:#DCFCE7;color:#15803D">履行中</span></td><td class="text-xs"><a class="text-blue-600 mr-2">查看</a><a class="text-blue-600">下载</a></td></tr>
+            <tr class="row-hover bg-rose-50/50"><td class="num-font text-xs">LC2023052311</td><td><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full bg-rose-500 text-white flex items-center justify-center text-xs font-bold">陈</div><span>陈**辉</span></div></td><td class="text-xs">顺丰中转场</td><td class="text-xs">2023-05 ~ 2026-05</td><td class="num-font text-rose-600 font-bold">⚠ 超期 13 天</td><td><span class="chip" style="background:#DCFCE7;color:#15803D">CFCA</span></td><td><span class="chip" style="background:#FEE2E2;color:#B91C1C">已过期</span></td><td class="text-xs"><a class="text-rose-600 font-bold">立即续签</a></td></tr>
+            <tr class="row-hover"><td class="num-font text-xs">LC2024020912</td><td><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs font-bold">赵</div><span>赵**萍</span></div></td><td class="text-xs">万象城</td><td class="text-xs">2024-02 ~ 2027-02</td><td class="num-font text-emerald-600">632 天</td><td><span class="chip" style="background:#DCFCE7;color:#15803D">CFCA + 区块链</span></td><td><span class="chip" style="background:#DCFCE7;color:#15803D">履行中</span></td><td class="text-xs"><a class="text-blue-600 mr-2">查看</a><a class="text-blue-600">下载</a></td></tr>
+            <tr class="row-hover"><td class="num-font text-xs">LC2024061455</td><td><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full bg-indigo-500 text-white flex items-center justify-center text-xs font-bold">刘</div><span>刘**勇</span></div></td><td class="text-xs">百世物流</td><td class="text-xs">2024-06 ~ 2027-06</td><td class="num-font text-emerald-600">752 天</td><td><span class="chip" style="background:#DCFCE7;color:#15803D">CFCA + 区块链</span></td><td><span class="chip" style="background:#DCFCE7;color:#15803D">履行中</span></td><td class="text-xs"><a class="text-blue-600 mr-2">查看</a><a class="text-blue-600">下载</a></td></tr>
+            <tr class="row-hover"><td class="num-font text-xs">LC2024070822</td><td><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full bg-teal-500 text-white flex items-center justify-center text-xs font-bold">孙</div><span>孙**军</span></div></td><td class="text-xs">阿里西溪园区</td><td class="text-xs">2024-07 ~ 2027-07</td><td class="num-font text-emerald-600">782 天</td><td><span class="chip" style="background:#DCFCE7;color:#15803D">CFCA + 区块链</span></td><td><span class="chip" style="background:#DCFCE7;color:#15803D">履行中</span></td><td class="text-xs"><a class="text-blue-600 mr-2">查看</a><a class="text-blue-600">下载</a></td></tr>
+            <tr class="row-hover"><td class="num-font text-xs">LC2024100912</td><td><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full bg-pink-500 text-white flex items-center justify-center text-xs font-bold">周</div><span>周**英</span></div></td><td class="text-xs">月子中心·之江</td><td class="text-xs">2024-10 ~ 2026-04</td><td class="num-font text-amber-600">15 天</td><td><span class="chip" style="background:#DCFCE7;color:#15803D">CFCA</span></td><td><span class="chip" style="background:#FEF3C7;color:#B45309">即将到期</span></td><td class="text-xs"><a class="text-blue-600 mr-2">查看</a><a class="text-amber-600">续签</a></td></tr>
+            <tr class="row-hover"><td class="num-font text-xs">LC2024112501</td><td><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full bg-slate-500 text-white flex items-center justify-center text-xs font-bold">吴</div><span>吴**明</span></div></td><td class="text-xs">外婆家·西湖店</td><td class="text-xs">2024-11 ~ 2027-11</td><td class="num-font text-emerald-600">912 天</td><td><span class="chip" style="background:#DCFCE7;color:#15803D">CFCA + 区块链</span></td><td><span class="chip" style="background:#DCFCE7;color:#15803D">履行中</span></td><td class="text-xs"><a class="text-blue-600 mr-2">查看</a><a class="text-blue-600">下载</a></td></tr>
+            <tr class="row-hover"><td class="num-font text-xs">LC2024031709</td><td><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full bg-orange-500 text-white flex items-center justify-center text-xs font-bold">郑</div><span>郑**飞</span></div></td><td class="text-xs">嘉里物流</td><td class="text-xs">2024-03 ~ 2026-03</td><td class="num-font text-rose-600 font-bold">⚠ 超期 78 天</td><td><span class="chip" style="background:#DCFCE7;color:#15803D">CFCA</span></td><td><span class="chip" style="background:#FEE2E2;color:#B91C1C">已过期</span></td><td class="text-xs"><a class="text-rose-600 font-bold">立即续签</a></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="grid grid-cols-3 gap-5">
+        <div class="bg-white rounded-xl border border-slate-200 p-5 col-span-2">
+          <h3 class="font-bold mb-3">📋 合同模板库（18 套）· 法务已审核</h3>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 hover:border-blue-500 cursor-pointer"><div class="flex justify-between items-start"><div><div class="font-semibold text-sm">劳动合同（标准 3 年）</div><div class="text-[10px] text-slate-500 mt-0.5">适用：长期工 · 含五险</div></div><span class="text-[10px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded">推荐</span></div><div class="text-[10px] text-slate-400 mt-2">使用 856 次</div></div>
+            <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 hover:border-blue-500 cursor-pointer"><div class="flex justify-between items-start"><div><div class="font-semibold text-sm">劳动合同（1 年）</div><div class="text-[10px] text-slate-500 mt-0.5">适用：试用 / 短期</div></div></div><div class="text-[10px] text-slate-400 mt-2">使用 320 次</div></div>
+            <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 hover:border-blue-500 cursor-pointer"><div class="flex justify-between items-start"><div><div class="font-semibold text-sm">派遣三方协议</div><div class="text-[10px] text-slate-500 mt-0.5">派遣公司 + 甲方 + 工人</div></div></div><div class="text-[10px] text-slate-400 mt-2">使用 35 次</div></div>
+            <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 hover:border-blue-500 cursor-pointer"><div class="flex justify-between items-start"><div><div class="font-semibold text-sm">日结/小时工协议</div><div class="text-[10px] text-slate-500 mt-0.5">不完全劳动关系</div></div></div><div class="text-[10px] text-slate-400 mt-2">使用 1,820 次</div></div>
+            <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 hover:border-blue-500 cursor-pointer"><div class="flex justify-between items-start"><div><div class="font-semibold text-sm">餐饮服务专版</div><div class="text-[10px] text-slate-500 mt-0.5">含食品安全 + 卫生条款</div></div></div><div class="text-[10px] text-slate-400 mt-2">使用 256 次</div></div>
+            <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 hover:border-blue-500 cursor-pointer"><div class="flex justify-between items-start"><div><div class="font-semibold text-sm">高危行业专版</div><div class="text-[10px] text-slate-500 mt-0.5">建筑 / 化工 等 · 加强安全条款</div></div></div><div class="text-[10px] text-slate-400 mt-2">使用 68 次</div></div>
+          </div>
+        </div>
+        <div class="bg-amber-50 border border-amber-200 rounded-xl p-5">
+          <h3 class="font-bold text-amber-700 mb-3">⚠ 续签提醒（23 个）</h3>
+          <ul class="space-y-2 text-xs">
+            <li class="p-2.5 bg-white rounded-lg"><div class="flex justify-between"><div class="font-medium">李**梅</div><div class="text-amber-600 font-bold">96 天到期</div></div><div class="text-[10px] text-slate-500 mt-0.5">海底捞 · 工分 876</div></li>
+            <li class="p-2.5 bg-white rounded-lg"><div class="flex justify-between"><div class="font-medium">周**英</div><div class="text-rose-600 font-bold">15 天到期</div></div><div class="text-[10px] text-slate-500 mt-0.5">月子中心 · 工分 855</div></li>
+            <li class="p-2.5 bg-white rounded-lg"><div class="flex justify-between"><div class="font-medium">陈**辉</div><div class="text-rose-600 font-bold">已过期</div></div><div class="text-[10px] text-slate-500 mt-0.5">顺丰 · 急办</div></li>
+            <li class="p-2.5 bg-white rounded-lg"><div class="flex justify-between"><div class="font-medium">郑**飞</div><div class="text-rose-600 font-bold">已过期 78 天</div></div><div class="text-[10px] text-slate-500 mt-0.5">嘉里物流 · 紧急</div></li>
+            <li class="text-center"><a class="text-blue-600 text-xs">查看全部 23 个 →</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+</body>
+</html>

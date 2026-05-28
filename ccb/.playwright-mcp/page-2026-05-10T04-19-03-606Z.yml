@@ -1,0 +1,78 @@
+- generic [ref=e1061]:
+  - generic [ref=e1063]:
+    - img [ref=e1066] [cursor=pointer]
+    - generic [ref=e1069]: 编辑商品
+  - generic [ref=e1073]:
+    - generic [ref=e1077]: 点击替换
+    - generic [ref=e1078]:
+      - generic [ref=e1079]:
+        - generic [ref=e1080]: 名称
+        - textbox [ref=e1083]: v8测试商品-推5反1
+      - generic [ref=e1084]:
+        - generic [ref=e1085]: 价格
+        - generic [ref=e1086]:
+          - generic [ref=e1087]: ¥
+          - spinbutton [ref=e1090]: "100.00"
+      - generic [ref=e1091]:
+        - generic [ref=e1092]: 分类
+        - generic [ref=e1095] [cursor=pointer]:
+          - generic [ref=e1096]: 小吃
+          - generic [ref=e1097]: ›
+    - generic [ref=e1098]:
+      - generic [ref=e1099]:
+        - generic [ref=e1100]: 营销配置（v7）
+        - generic [ref=e1101]: 已配置
+      - generic [ref=e1102]:
+        - generic [ref=e1103]: 消费积分倍率
+        - spinbutton [ref=e1106]: "1"
+      - generic [ref=e1108]:
+        - generic [ref=e1109]: 参与推 N 反 1（v7）
+        - generic [ref=e1110]: 链上前 N 位推荐人按比例瓜分该商品的 1 笔订单返佣
+      - generic [ref=e1114]:
+        - generic [ref=e1115]: N 值
+        - spinbutton [ref=e1118]: "5"
+      - generic [ref=e1119]:
+        - generic [ref=e1120]: N 个返佣比例 % （从近到远）
+        - generic [ref=e1121]:
+          - spinbutton [ref=e1124]: "20"
+          - spinbutton [ref=e1127]: "20"
+          - spinbutton [ref=e1130]: "20"
+          - spinbutton [ref=e1133]: "20"
+          - spinbutton [ref=e1136]: "20"
+        - generic [ref=e1137]: 合计 100.0% / 100%（超过 100% 不能保存）
+      - generic [ref=e1138]:
+        - generic [ref=e1139]: 直推/间推奖比例（%）
+        - spinbutton [ref=e1142]: "10"
+      - generic [ref=e1143]:
+        - generic [ref=e1144]: 团队极差 - 星级数（0=不启用）
+        - spinbutton [ref=e1147]: "0"
+      - generic [ref=e1148]:
+        - generic [ref=e1149]: 星级奖池入池比例（%）
+        - spinbutton [ref=e1152]: "1"
+      - generic [ref=e1154]:
+        - generic [ref=e1155]: 参与星级积分池（v6 兼容）
+        - generic [ref=e1156]: 老开关；v8 仅看入池比例 > 0 即生效
+      - generic [ref=e1161] [cursor=pointer]: 保存营销配置
+    - generic [ref=e1162]:
+      - generic [ref=e1163]:
+        - generic [ref=e1164]: 高级设置
+        - generic [ref=e1165]: 库存 988
+        - generic [ref=e1166]: ›
+      - generic [ref=e1167]:
+        - generic [ref=e1169]:
+          - generic [ref=e1170]: 参与返利
+          - generic [ref=e1171]: 分享后下单，按全局比例给上线分成
+        - generic [ref=e1176]:
+          - generic [ref=e1177]: 参与推N返一
+          - generic [ref=e1178]: 推 N 个新会员付费，返 1 年订阅给推荐人
+        - generic [ref=e1182]:
+          - generic [ref=e1183]: 库存
+          - spinbutton [ref=e1186]: "988"
+        - generic [ref=e1187]:
+          - generic [ref=e1188]: 一句话简介
+          - generic [ref=e1190]:
+            - generic: 选填，例：现烤现卖
+            - textbox [ref=e1191]
+    - generic [ref=e1192]:
+      - generic [ref=e1193] [cursor=pointer]: 删除
+      - generic [ref=e1194] [cursor=pointer]: 保存

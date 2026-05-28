@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>蓝工 · 工资条</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="../shared/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body class="bg-slate-100 min-h-screen pb-10">
+
+<div class="text-center pt-6">
+  <a href="../index.html" class="text-sm text-slate-500 hover:text-blue-600">← 返回原型导航</a>
+</div>
+
+<div class="phone-frame">
+  <div class="phone-notch"></div>
+  <div class="phone-screen">
+    <div class="status-bar"><span>9:41</span><span class="flex gap-1 items-center"><span>●●●●●</span><span class="text-xs">5G</span><span class="text-xs">100%</span></span></div>
+
+    <div class="phone-content pb-6">
+
+      <!-- 顶部 -->
+      <div class="bg-gradient-to-br from-emerald-500 via-teal-500 to-blue-600 px-5 pt-3 pb-8 text-white relative overflow-hidden">
+        <div class="absolute -bottom-10 -right-10 w-40 h-40 bg-white/10 rounded-full"></div>
+        <div class="flex items-center justify-between relative">
+          <a href="home.html" class="w-8 h-8 flex items-center justify-center">
+            <svg width="20" height="20" fill="none" stroke="#fff" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+          </a>
+          <div class="text-base font-bold">我的工资</div>
+          <button class="text-xs font-medium">明细</button>
+        </div>
+        <div class="mt-5 relative">
+          <div class="text-xs opacity-90">2026年1月 · 预估收入</div>
+          <div class="flex items-end gap-1 mt-1">
+            <span class="text-xs opacity-80 mb-1.5">¥</span>
+            <span class="text-5xl font-extrabold tracking-tight">6,840</span>
+            <span class="text-xs opacity-80 mb-1.5">.00</span>
+          </div>
+          <div class="text-xs opacity-90 mt-1">较上月 <span class="font-bold">+ ¥920 ↑</span></div>
+        </div>
+        <div class="mt-5 grid grid-cols-3 gap-2 relative">
+          <div class="bg-white/15 backdrop-blur rounded-xl p-2.5 text-center">
+            <div class="text-base font-bold">¥4,860</div>
+            <div class="text-[10px] opacity-80 mt-0.5">已发放</div>
+          </div>
+          <div class="bg-white/15 backdrop-blur rounded-xl p-2.5 text-center">
+            <div class="text-base font-bold">¥1,980</div>
+            <div class="text-[10px] opacity-80 mt-0.5">待结算</div>
+          </div>
+          <div class="bg-white/15 backdrop-blur rounded-xl p-2.5 text-center">
+            <div class="text-base font-bold">22 天</div>
+            <div class="text-[10px] opacity-80 mt-0.5">已出勤</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab -->
+      <div class="bg-white px-4 -mt-4 mx-4 rounded-2xl shadow-md relative">
+        <div class="flex">
+          <button class="flex-1 py-3 text-sm font-bold text-slate-900 border-b-2 border-blue-600">月薪</button>
+          <button class="flex-1 py-3 text-sm text-slate-400">日结记录</button>
+          <button class="flex-1 py-3 text-sm text-slate-400">借支</button>
+        </div>
+      </div>
+
+      <!-- 工资明细卡 -->
+      <div class="px-4 mt-4">
+        <div class="bg-white rounded-2xl shadow-sm p-4">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="font-bold text-slate-900">本月明细</h3>
+            <span class="text-xs text-slate-400">京东亚一仓 · 浙江睿才</span>
+          </div>
+
+          <!-- 收入 -->
+          <div class="mb-3">
+            <div class="text-[11px] text-emerald-600 font-bold mb-2 flex items-center gap-1">
+              <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span> 收入
+            </div>
+            <div class="space-y-2 text-sm">
+              <div class="flex justify-between">
+                <span class="text-slate-600">基础工资 (¥180 × 22天)</span>
+                <span class="text-slate-900 font-semibold">¥3,960.00</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-600">加班费 (18h × ¥20)</span>
+                <span class="text-slate-900 font-semibold">¥360.00</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-600">夜班补贴 (8班 × ¥30)</span>
+                <span class="text-slate-900 font-semibold">¥240.00</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-600">工龄奖 (3 个月)</span>
+                <span class="text-slate-900 font-semibold">¥150.00</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-600">全勤奖（预估）</span>
+                <span class="text-slate-900 font-semibold">¥500.00</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-600">蓝工·钻石冲刺奖</span>
+                <span class="text-emerald-600 font-semibold">+ ¥200.00</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 扣减 -->
+          <div class="border-t border-slate-100 pt-3 mb-3">
+            <div class="text-[11px] text-rose-500 font-bold mb-2 flex items-center gap-1">
+              <span class="w-1.5 h-1.5 bg-rose-500 rounded-full"></span> 扣减
+            </div>
+            <div class="space-y-2 text-sm">
+              <div class="flex justify-between">
+                <span class="text-slate-600">个人所得税</span>
+                <span class="text-rose-500 font-semibold">- ¥0.00</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-600">社保（个人部分）</span>
+                <span class="text-rose-500 font-semibold">- ¥320.00</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-600">公积金</span>
+                <span class="text-rose-500 font-semibold">- ¥150.00</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-600">餐补扣款 (¥5 × 20)</span>
+                <span class="text-rose-500 font-semibold">- ¥100.00</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 总计 -->
+          <div class="border-t-2 border-dashed border-slate-200 pt-3 flex items-end justify-between">
+            <div>
+              <div class="text-[11px] text-slate-400">实发到手</div>
+              <div class="text-2xl font-extrabold text-red-500">¥6,840.00</div>
+            </div>
+            <div class="text-right">
+              <div class="text-[10px] text-emerald-600">✓ 蓝工托管 · 月底前发放</div>
+              <button class="mt-1 text-xs text-blue-600 font-semibold">查看完整工资条 →</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 提现 / 借支 大卡片 -->
+      <div class="px-4 mt-4">
+        <div class="bg-gradient-to-br from-purple-600 to-pink-600 rounded-2xl p-4 text-white relative overflow-hidden shadow-lg">
+          <div class="absolute -top-6 -right-6 w-32 h-32 bg-white/10 rounded-full"></div>
+          <div class="flex items-center justify-between relative">
+            <div>
+              <div class="flex items-center gap-1.5">
+                <svg width="14" height="14" fill="#fff" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/></svg>
+                <span class="text-xs opacity-90">可提现余额</span>
+              </div>
+              <div class="text-3xl font-extrabold mt-1">¥ 4,860</div>
+              <div class="text-[11px] opacity-80 mt-1">T+0 秒到账 · 0 手续费</div>
+            </div>
+            <button class="bg-white text-purple-600 font-bold px-5 py-2.5 rounded-xl shadow-md">提现</button>
+          </div>
+          <!-- 借支额度（关联工分） -->
+          <div class="mt-4 bg-white/15 backdrop-blur rounded-xl p-3 relative">
+            <div class="flex items-center justify-between text-xs mb-2">
+              <span class="flex items-center gap-1">
+                <svg width="12" height="12" fill="#FFD700" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                <span>蓝工工分借支额度</span>
+              </span>
+              <span class="opacity-80">黄金III 段位特权</span>
+            </div>
+            <div class="flex items-end gap-2">
+              <span class="text-2xl font-extrabold">¥10,000</span>
+              <span class="text-xs opacity-80 mb-1">已借 ¥500</span>
+            </div>
+            <div class="mt-2 h-1.5 bg-white/20 rounded-full overflow-hidden">
+              <div class="h-full bg-amber-300" style="width:5%"></div>
+            </div>
+            <div class="flex justify-between text-[10px] opacity-90 mt-1">
+              <span>剩余 ¥9,500 · 0 利息</span>
+              <span class="font-semibold">冲钻石可升至 ¥20,000 →</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 日结流水 -->
+      <div class="px-4 mt-4">
+        <div class="bg-white rounded-2xl shadow-sm p-4">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="font-bold text-slate-900">日结流水</h3>
+            <span class="text-xs text-blue-600">本月共 22 笔 →</span>
+          </div>
+          <div class="divide-y divide-slate-100">
+            <div class="py-2.5 flex items-center justify-between">
+              <div>
+                <div class="text-sm text-slate-800 font-medium">1月15日 · 仓储分拣 (12h)</div>
+                <div class="text-[10px] text-slate-400 mt-0.5">京东亚一仓 · 已到账 16:08</div>
+              </div>
+              <div class="text-right">
+                <div class="text-base font-bold text-red-500">+ ¥220</div>
+                <div class="text-[10px] text-emerald-500">已到账</div>
+              </div>
+            </div>
+            <div class="py-2.5 flex items-center justify-between">
+              <div>
+                <div class="text-sm text-slate-800 font-medium">1月14日 · 仓储分拣 (12h)</div>
+                <div class="text-[10px] text-slate-400 mt-0.5">京东亚一仓 · 已到账</div>
+              </div>
+              <div class="text-right">
+                <div class="text-base font-bold text-red-500">+ ¥220</div>
+                <div class="text-[10px] text-emerald-500">已到账</div>
+              </div>
+            </div>
+            <div class="py-2.5 flex items-center justify-between">
+              <div>
+                <div class="text-sm text-slate-800 font-medium">1月13日 · 仓储分拣 + 夜班</div>
+                <div class="text-[10px] text-slate-400 mt-0.5">京东亚一仓 · 已到账</div>
+              </div>
+              <div class="text-right">
+                <div class="text-base font-bold text-red-500">+ ¥260</div>
+                <div class="text-[10px] text-emerald-500">已到账</div>
+              </div>
+            </div>
+            <div class="py-2.5 flex items-center justify-between">
+              <div>
+                <div class="text-sm text-slate-800 font-medium">1月12日 · 仓储分拣 (12h)</div>
+                <div class="text-[10px] text-slate-400 mt-0.5">京东亚一仓 · 已到账</div>
+              </div>
+              <div class="text-right">
+                <div class="text-base font-bold text-red-500">+ ¥220</div>
+                <div class="text-[10px] text-emerald-500">已到账</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 历史工资条 -->
+      <div class="px-4 mt-4">
+        <div class="bg-white rounded-2xl shadow-sm p-4">
+          <h3 class="font-bold text-slate-900 mb-3">历史工资条</h3>
+          <div class="space-y-2">
+            <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50">
+              <div>
+                <div class="text-sm font-semibold text-slate-800">2025 年 12 月</div>
+                <div class="text-[11px] text-slate-400">京东亚一仓 · 22 天 · 168h</div>
+              </div>
+              <div class="text-right">
+                <div class="text-base font-bold text-slate-900">¥5,920</div>
+                <div class="text-[10px] text-emerald-500">已发放</div>
+              </div>
+            </div>
+            <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50">
+              <div>
+                <div class="text-sm font-semibold text-slate-800">2025 年 11 月</div>
+                <div class="text-[11px] text-slate-400">海底捞 · 24 天 · 192h</div>
+              </div>
+              <div class="text-right">
+                <div class="text-base font-bold text-slate-900">¥6,180</div>
+                <div class="text-[10px] text-emerald-500">已发放</div>
+              </div>
+            </div>
+            <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50">
+              <div>
+                <div class="text-sm font-semibold text-slate-800">2025 年 10 月</div>
+                <div class="text-[11px] text-slate-400">海底捞 · 25 天 · 200h</div>
+              </div>
+              <div class="text-right">
+                <div class="text-base font-bold text-slate-900">¥6,450</div>
+                <div class="text-[10px] text-emerald-500">已发放</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 说明 -->
+      <div class="px-4 mt-4">
+        <div class="bg-blue-50 rounded-xl p-3 text-[11px] text-blue-800 leading-relaxed flex gap-2">
+          <svg width="14" height="14" fill="#1677FF" viewBox="0 0 24 24" class="flex-shrink-0 mt-0.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          <div>
+            <b>工资由蓝工平台代发，准时到账率 99.8%</b>。如遇延迟，平台先行垫付。<br>
+            工分越高，可获得 <b>更高借支额度 / 更低费率</b>，是蓝工的核心特权。
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+</body>
+</html>

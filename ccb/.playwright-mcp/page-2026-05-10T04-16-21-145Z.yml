@@ -1,0 +1,17 @@
+- generic [ref=e908]:
+  - generic [ref=e910]:
+    - img [ref=e913] [cursor=pointer]
+    - generic [ref=e916]: 我的队列
+  - generic [ref=e920]:
+    - generic [ref=e921]:
+      - generic [ref=e922]: ‹
+      - generic [ref=e923]: 我的队列
+      - generic [ref=e924]: 规则
+    - generic [ref=e925]:
+      - generic [ref=e926]: 推 N 反 1：
+      - text: 自购该商品 → 激活推广资格；自购或下级首单买同款 → 累计 +1，按 1/N 返推广积分； 累计满 N 次进入「已完成」，之后自购或下级首单按订单金额 × 间推 % 返推广积分。
+    - generic [ref=e927]:
+      - generic [ref=e928]: 🎯
+      - generic [ref=e929]: 暂无队列记录
+      - generic [ref=e930]: 下单参与"推 N 反 1"的商品后会进入队列
+      - generic [ref=e931]: 去逛附近店铺 ›

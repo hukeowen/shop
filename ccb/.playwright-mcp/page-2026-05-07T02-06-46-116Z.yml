@@ -1,0 +1,54 @@
+- generic [ref=e254]:
+  - generic [ref=e255]:
+    - text: 🍠
+    - generic [ref=e256]:
+      - generic [ref=e257]: ‹
+      - generic [ref=e258]:
+        - generic [ref=e259]: ♡
+        - generic [ref=e260]: ↗
+    - generic [ref=e262]:
+      - generic [ref=e263]: 老王烧烤店
+      - generic [ref=e264]: 欢迎光临
+  - generic [ref=e266]:
+    - generic [ref=e267]:
+      - generic [ref=e268]:
+        - generic [ref=e269]: ★
+        - text: "5.0"
+      - generic [ref=e270]: 评分
+    - generic [ref=e272]:
+      - generic [ref=e273]: "0"
+      - generic [ref=e274]: 月售
+    - generic [ref=e276]:
+      - generic [ref=e277]: ¥0.00
+      - generic [ref=e278]: 我已赚
+  - generic [ref=e279]:
+    - generic [ref=e280]: 🎁
+    - generic [ref=e281]:
+      - generic [ref=e283]: 邀请好友赚返奖
+      - generic [ref=e303]: 已邀请 0 位好友 · 在该店赚 ¥0.00
+    - generic [ref=e286]: 邀请赚奖 ›
+  - generic [ref=e304]:
+    - generic [ref=e305]: 👥
+    - generic [ref=e307]:
+      - generic [ref=e308]: "3"
+      - text: 位邻居近 30 天来过这家店
+  - generic [ref=e309]: 暂无商品
+  - generic [ref=e310]:
+    - generic [ref=e311]:
+      - text: 🛒
+      - generic [ref=e312]: "3"
+    - generic [ref=e314]: ¥0.00
+    - generic [ref=e315]: 去结算
+  - generic [ref=e289]:
+    - generic [ref=e290]:
+      - generic [ref=e291]: 🏠
+      - generic [ref=e292]: 首页
+    - generic [ref=e293]:
+      - generic [ref=e294]: 📋
+      - generic [ref=e295]: 订单
+    - generic [ref=e296]:
+      - generic [ref=e297]: 🛒
+      - generic [ref=e298]: 购物车
+    - generic [ref=e299]:
+      - generic [ref=e300]: 👤
+      - generic [ref=e301]: 我的

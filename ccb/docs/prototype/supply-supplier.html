@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>供应链供应端 · 鑫源食材批发</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-font-smoothing:antialiased}
+  body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;background:#0f1115;min-height:100vh;padding:24px;display:flex;flex-wrap:wrap;gap:24px;justify-content:center}
+  :root{
+    --bg:#f4f6fa;--ink:#0f1729;--mute:#6b7280;--mute2:#a6b0c2;--line:#e5e9ef;
+    --blue:#2563eb;--blue-dk:#1e3a8a;--blue-lt:#e8efff;
+    --orange:#e8721b;--red:#dc2626;--amber:#d99e2b;--amber-lt:#fef3cd;
+    --green:#16a34a;--green-lt:#dcfce7;
+    --card:#ffffff;
+  }
+  .frame{width:390px;height:844px;background:var(--bg);border-radius:48px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.5);position:relative;display:flex;flex-direction:column}
+  .frame-label{position:absolute;top:-32px;left:50%;transform:translateX(-50%);color:#9ca3af;font-size:12px;font-weight:600;letter-spacing:2px;text-transform:uppercase}
+  .statusbar{height:44px;display:flex;justify-content:space-between;align-items:center;padding:0 28px;flex-shrink:0;font-size:14px;font-weight:700;color:var(--ink)}
+  .statusbar-r{display:flex;align-items:center;gap:6px}
+
+  .body{flex:1;overflow-y:auto;padding-bottom:88px}
+  .body::-webkit-scrollbar{display:none}
+
+  /* ===== Header ===== */
+  .hd{padding:8px 20px 24px;background:linear-gradient(180deg,var(--blue) 0%,var(--blue-dk) 100%);color:#fff;position:relative;overflow:hidden}
+  .hd::after{content:'';position:absolute;top:-30%;right:-20%;width:240px;height:240px;background:radial-gradient(circle,rgba(255,255,255,.08),transparent 60%);pointer-events:none}
+  .hd-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;position:relative}
+  .hd-shop{display:flex;align-items:center;gap:10px}
+  .hd-logo{width:42px;height:42px;border-radius:12px;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;letter-spacing:-1px}
+  .hd-name{font-size:16px;font-weight:800;letter-spacing:-.3px}
+  .hd-sub{font-size:11px;opacity:.8;margin-top:2px;display:flex;align-items:center;gap:6px}
+  .hd-status{padding:2px 8px;background:rgba(34,197,94,.25);color:#86efac;border-radius:4px;font-size:9px;font-weight:700}
+  .hd-icons{display:flex;gap:10px}
+  .hd-ic{width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;font-size:14px;position:relative}
+  .hd-ic-dot{position:absolute;top:6px;right:6px;width:6px;height:6px;background:#ef4444;border-radius:50%;border:1.5px solid var(--blue)}
+
+  .hd-title{font-size:22px;font-weight:900;letter-spacing:-.5px;margin-top:4px}
+  .hd-tagline{font-size:11px;opacity:.7;margin-top:6px}
+
+  /* dashboard cards */
+  .dash{padding:16px;margin-top:-12px;background:transparent;display:grid;grid-template-columns:1fr 1fr;gap:10px;position:relative;z-index:2}
+  .dash-card{background:#fff;border-radius:16px;padding:14px;box-shadow:0 4px 14px rgba(15,23,41,.06)}
+  .dash-h{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--mute);font-weight:600;letter-spacing:.5px;text-transform:uppercase;margin-bottom:8px}
+  .dash-h::before{content:'';width:3px;height:12px;background:var(--blue);border-radius:2px}
+  .dash-v{font-size:24px;font-weight:900;color:var(--ink);letter-spacing:-.8px;line-height:1}
+  .dash-v small{font-size:13px;color:var(--mute);font-weight:600;margin-left:2px}
+  .dash-d{font-size:10px;color:var(--mute2);margin-top:6px}
+  .dash-d.up{color:var(--green)}.dash-d.dn{color:var(--red)}
+
+  .dash-wide{grid-column:1/-1;background:linear-gradient(135deg,#fff 0%,var(--blue-lt) 100%);border:1px solid #d0dcfb}
+  .dash-wide-row{display:flex;align-items:flex-end;justify-content:space-between}
+  .dash-wide-l{display:flex;flex-direction:column;gap:4px}
+  .dash-wide-num{font-size:32px;font-weight:900;color:var(--blue-dk);letter-spacing:-1px}
+  .dash-wide-cta{padding:8px 16px;background:var(--blue);color:#fff;border-radius:999px;font-size:11px;font-weight:700;display:flex;align-items:center;gap:4px}
+
+  /* 紧急待办 / 提醒 */
+  .urgents{padding:0 14px;margin-top:6px}
+  .urg-h{display:flex;align-items:center;justify-content:space-between;padding:14px 6px 8px}
+  .urg-t{font-size:15px;font-weight:800;color:var(--ink)}
+  .urg-more{font-size:11px;color:var(--mute);font-weight:600}
+  .urg-list{background:#fff;border-radius:16px;padding:4px;border:1px solid var(--line)}
+  .urg-i{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px}
+  .urg-i:hover{background:var(--bg)}
+  .urg-i + .urg-i{border-top:1px solid var(--line)}
+  .urg-ic{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+  .urg-ic.pend{background:#fef3cd;color:#8a5a00}
+  .urg-ic.ship{background:var(--blue-lt);color:var(--blue-dk)}
+  .urg-ic.bill{background:#f0e8ff;color:#5d3fd3}
+  .urg-ic.low{background:#fee2e2;color:#991b1b}
+  .urg-m{flex:1;min-width:0}
+  .urg-n{font-size:13px;font-weight:700;color:var(--ink)}
+  .urg-d{font-size:11px;color:var(--mute);margin-top:2px}
+  .urg-cta{font-size:11px;color:var(--blue);font-weight:700;background:var(--blue-lt);padding:5px 10px;border-radius:6px}
+
+  /* 今日订单 */
+  .day-h{padding:18px 20px 10px;display:flex;align-items:center;justify-content:space-between}
+  .day-t{font-size:16px;font-weight:800;color:var(--ink)}
+  .day-list{padding:0 14px;display:flex;flex-direction:column;gap:10px;padding-bottom:24px}
+  .day-card{background:#fff;border-radius:14px;padding:14px;border:1px solid var(--line);display:flex;gap:12px}
+  .day-buyer-ic{width:42px;height:42px;border-radius:10px;background:linear-gradient(135deg,var(--blue) 0%,var(--blue-dk) 100%);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;flex-shrink:0}
+  .day-meta{flex:1;min-width:0}
+  .day-buyer{font-size:13px;font-weight:700;color:var(--ink);display:flex;justify-content:space-between;align-items:center}
+  .day-buyer-amt{color:var(--blue-dk);font-weight:800}
+  .day-line{font-size:11px;color:var(--mute);margin-top:4px}
+
+  /* ===== Tab Bar ===== */
+  .tabbar{position:absolute;bottom:0;left:0;right:0;height:78px;background:rgba(255,255,255,.96);backdrop-filter:blur(20px);display:flex;border-top:1px solid var(--line);padding-bottom:14px}
+  .tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:10px;color:var(--mute);font-weight:600;position:relative}
+  .tab svg{width:22px;height:22px}
+  .tab.on{color:var(--blue)}
+  .tab .badge{position:absolute;top:8px;right:24px;min-width:16px;height:16px;padding:0 4px;background:#ef4444;color:#fff;border-radius:8px;font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center}
+
+  /* ===== 订单管理 frame ===== */
+  .o-hd{background:#fff;padding:16px 20px;border-bottom:1px solid var(--line)}
+  .o-hd-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+  .o-hd-t{font-size:20px;font-weight:800;color:var(--ink);letter-spacing:-.3px}
+  .o-hd-search{display:flex;align-items:center;gap:6px;background:var(--bg);padding:6px 12px;border-radius:999px;font-size:11px;color:var(--mute);font-weight:600}
+
+  .o-tabs{display:flex;gap:6px;background:var(--bg);padding:4px;border-radius:12px}
+  .o-tab{flex:1;padding:8px 0;text-align:center;font-size:12px;color:var(--mute);font-weight:700;border-radius:8px}
+  .o-tab.on{background:var(--ink);color:#fff;box-shadow:0 4px 12px rgba(15,23,41,.15)}
+  .o-tab small{display:inline-block;background:#ef4444;color:#fff;font-size:9px;padding:1px 4px;border-radius:6px;margin-left:3px}
+
+  .o-list{padding:14px;display:flex;flex-direction:column;gap:12px}
+  .o-card{background:#fff;border-radius:16px;border:1px solid var(--line);overflow:hidden}
+  .o-card.urgent{border:1.5px solid #fbbf24;background:#fffbeb}
+  .o-h-row{padding:12px 14px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line)}
+  .o-h-no{font-size:11px;color:var(--mute);font-weight:600;font-variant-numeric:tabular-nums}
+  .o-h-time{font-size:11px;color:var(--mute);margin-left:auto;padding-right:8px}
+  .o-h-tag{font-size:10px;font-weight:700;padding:3px 7px;border-radius:5px}
+  .o-tag-new{background:#fef3cd;color:#8a5a00}
+  .o-tag-ship{background:#dbeafe;color:#1e40af}
+  .o-tag-done{background:var(--green-lt);color:#15803d}
+
+  .o-buyer{padding:10px 14px;background:#fafbff;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--line)}
+  .o-buyer-ic{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--blue) 0%,var(--blue-dk) 100%);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0}
+  .o-buyer-meta{flex:1;min-width:0}
+  .o-buyer-n{font-size:13px;font-weight:700;color:var(--ink)}
+  .o-buyer-d{font-size:10px;color:var(--mute);margin-top:1px}
+  .o-buyer-tag{font-size:9px;background:var(--blue-lt);color:var(--blue-dk);padding:2px 5px;border-radius:4px;font-weight:700}
+
+  .o-items{padding:10px 14px}
+  .o-i{display:flex;align-items:center;gap:10px;padding:5px 0;font-size:12px}
+  .o-i-img{width:30px;height:30px;border-radius:8px;background:var(--blue-lt);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+  .o-i-n{flex:1;color:var(--ink);font-weight:600}
+  .o-i-q{color:var(--mute);font-weight:600;font-variant-numeric:tabular-nums}
+
+  .o-foot{padding:10px 14px;background:#fafbff;display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--line)}
+  .o-amt{font-size:15px;font-weight:800;color:var(--ink)}
+  .o-amt small{font-size:11px;color:var(--mute);font-weight:600;margin-left:3px}
+  .o-acts{display:flex;gap:6px}
+  .o-btn{padding:6px 14px;border-radius:999px;font-size:11px;font-weight:700;border:1px solid var(--line);color:var(--ink);background:#fff}
+  .o-btn.primary{background:var(--blue);color:#fff;border-color:var(--blue)}
+
+  /* ===== 发货录入 frame ===== */
+  .ship-hd{background:#fff;padding:16px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px}
+  .ship-back{width:30px;height:30px;border-radius:8px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:18px}
+  .ship-t{font-size:17px;font-weight:800;color:var(--ink)}
+
+  .ship-card{margin:14px;background:#fff;border-radius:16px;padding:16px;border:1px solid var(--line)}
+  .ship-buyer{display:flex;align-items:center;gap:10px;padding-bottom:14px;border-bottom:1px solid var(--line)}
+  .ship-bn{font-size:14px;font-weight:800;color:var(--ink)}
+  .ship-bd{font-size:11px;color:var(--mute);margin-top:2px}
+
+  .ship-items{padding-top:14px}
+  .ship-i-row{display:flex;align-items:center;gap:10px;padding:8px 0;font-size:13px}
+  .ship-i-img{width:34px;height:34px;border-radius:8px;background:var(--blue-lt);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+  .ship-i-meta{flex:1}
+  .ship-i-n{font-size:13px;color:var(--ink);font-weight:700}
+  .ship-i-spec{font-size:10px;color:var(--mute);margin-top:1px}
+  .ship-i-qty{font-size:13px;color:var(--blue-dk);font-weight:800;font-variant-numeric:tabular-nums}
+
+  .ship-form{margin:14px;background:#fff;border-radius:16px;padding:16px;border:1px solid var(--line)}
+  .ship-f-h{font-size:14px;font-weight:800;color:var(--ink);margin-bottom:14px}
+  .ship-f-row{margin-bottom:14px}
+  .ship-f-l{font-size:12px;font-weight:700;color:var(--ink);margin-bottom:6px}
+  .ship-f-i{height:42px;padding:0 12px;border:1.5px solid var(--line);border-radius:10px;display:flex;align-items:center;font-size:13px;color:var(--ink);background:#fff}
+  .ship-f-i.active{border-color:var(--blue);background:#fafbff}
+  .ship-f-tip{font-size:10px;color:var(--mute);margin-top:4px}
+
+  .ship-options{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .ship-opt{padding:10px;border:1.5px solid var(--line);border-radius:10px;text-align:center;font-size:12px;color:var(--ink);font-weight:700;background:#fff}
+  .ship-opt.on{border-color:var(--blue);background:var(--blue-lt);color:var(--blue-dk)}
+  .ship-opt-ic{font-size:18px;margin-bottom:4px;display:block}
+
+  .ship-foot{position:absolute;bottom:0;left:0;right:0;background:#fff;padding:14px 20px;display:flex;gap:10px;border-top:1px solid var(--line)}
+  .ship-foot-btn{flex:1;height:46px;border-radius:12px;font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:center}
+  .ship-foot-cancel{background:var(--bg);color:var(--ink)}
+  .ship-foot-confirm{background:var(--blue);color:#fff;box-shadow:0 6px 16px rgba(37,99,235,.25)}
+
+  /* ===== 商品管理 frame ===== */
+  .pm-search{padding:14px 14px 0;display:flex;gap:8px}
+  .pm-search-i{flex:1;height:38px;padding:0 12px;background:#fff;border-radius:10px;border:1px solid var(--line);display:flex;align-items:center;gap:8px;font-size:12px;color:var(--mute)}
+  .pm-search-add{width:38px;height:38px;border-radius:10px;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800}
+
+  .pm-tabs{display:flex;gap:6px;padding:14px 14px 0}
+  .pm-tab{padding:6px 14px;background:#fff;border:1px solid var(--line);border-radius:999px;font-size:11px;font-weight:700;color:var(--mute)}
+  .pm-tab.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+
+  .pm-list{padding:14px;display:flex;flex-direction:column;gap:10px;padding-bottom:24px}
+  .pm-card{background:#fff;border-radius:14px;padding:12px;display:flex;gap:12px;border:1px solid var(--line)}
+  .pm-img{width:64px;height:64px;border-radius:10px;background:var(--blue-lt);display:flex;align-items:center;justify-content:center;font-size:30px;flex-shrink:0;position:relative}
+  .pm-meta{flex:1;min-width:0}
+  .pm-n{font-size:13px;font-weight:700;color:var(--ink);display:flex;justify-content:space-between;align-items:center}
+  .pm-tier-badge{font-size:9px;font-weight:700;background:#fff5e8;color:var(--orange);padding:1px 5px;border-radius:4px;margin-left:6px}
+  .pm-spec{font-size:10px;color:var(--mute);margin-top:2px}
+  .pm-tier-row{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+  .pm-tier{font-size:10px;background:var(--blue-lt);color:var(--blue-dk);padding:3px 7px;border-radius:5px;font-weight:700}
+  .pm-bottom{display:flex;justify-content:space-between;align-items:center;margin-top:6px}
+  .pm-stock{font-size:11px;color:var(--mute);font-weight:600}
+  .pm-stock b{color:var(--ink);font-weight:800}
+  .pm-stock.low b{color:var(--red)}
+  .pm-toggle{display:flex;align-items:center;gap:6px;font-size:10px;font-weight:700;color:var(--green)}
+  .pm-switch{width:32px;height:18px;background:var(--green);border-radius:10px;position:relative}
+  .pm-switch::after{content:'';position:absolute;width:14px;height:14px;background:#fff;border-radius:50%;top:2px;right:2px}
+  .pm-switch.off{background:var(--mute2)}
+  .pm-switch.off::after{right:auto;left:2px}
+
+  /* ===== 客户管理 frame ===== */
+  .cm-hd{background:#fff;padding:16px 20px;border-bottom:1px solid var(--line)}
+  .cm-t{font-size:20px;font-weight:800;color:var(--ink);letter-spacing:-.3px}
+  .cm-sub{font-size:12px;color:var(--mute);margin-top:2px}
+
+  .cm-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px;background:#fff;border-radius:14px;padding:14px;border:1px solid var(--line)}
+  .cm-s-l{font-size:10px;color:var(--mute);font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+  .cm-s-v{font-size:18px;font-weight:800;color:var(--ink);letter-spacing:-.5px;margin-top:4px}
+  .cm-s-v small{font-size:11px;color:var(--mute);font-weight:600}
+
+  .cm-list-h{padding:14px 20px 8px;display:flex;justify-content:space-between;align-items:center}
+  .cm-list-t{font-size:14px;font-weight:800;color:var(--ink)}
+  .cm-filter{font-size:11px;color:var(--blue);font-weight:700}
+
+  .cm-list{padding:0 14px;display:flex;flex-direction:column;gap:10px;padding-bottom:24px}
+  .cm-card{background:#fff;border-radius:14px;padding:14px;border:1px solid var(--line);display:flex;gap:12px}
+  .cm-card-ic{width:46px;height:46px;border-radius:12px;background:linear-gradient(135deg,var(--blue) 0%,var(--blue-dk) 100%);color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;flex-shrink:0}
+  .cm-card-m{flex:1;min-width:0}
+  .cm-card-top{display:flex;justify-content:space-between;align-items:center}
+  .cm-card-n{font-size:14px;font-weight:800;color:var(--ink)}
+  .cm-card-d{font-size:11px;color:var(--mute);margin-top:2px}
+  .cm-card-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)}
+  .cm-g-l{font-size:9px;color:var(--mute);letter-spacing:.5px;text-transform:uppercase}
+  .cm-g-v{font-size:13px;font-weight:800;color:var(--ink);margin-top:2px;letter-spacing:-.3px}
+  .cm-g-v small{font-size:9px;font-weight:600;color:var(--mute);margin-left:1px}
+  .cm-g-v.warn{color:var(--orange)}
+  .cm-g-v.ok{color:var(--green)}
+
+  .cm-tag{display:inline-block;font-size:9px;padding:2px 6px;border-radius:4px;font-weight:700;margin-left:4px}
+  .cm-tag.vip{background:linear-gradient(90deg,#fbbf24,#f59e0b);color:#fff}
+  .cm-tag.new{background:var(--green-lt);color:#15803d}
+
+  /* ===== 月度对账（供应端）===== */
+  .set-hd{background:linear-gradient(180deg,var(--blue-dk) 0%,#0c1d4d 100%);color:#fff;padding:18px 20px 28px;position:relative;overflow:hidden}
+  .set-hd::after{content:'';position:absolute;top:-30%;right:-15%;width:200px;height:200px;background:radial-gradient(circle,rgba(255,255,255,.08),transparent 60%)}
+  .set-h-top{display:flex;align-items:center;gap:12px;margin-bottom:18px;position:relative}
+  .set-h-t{font-size:18px;font-weight:800}
+  .set-m{display:flex;justify-content:space-between;align-items:baseline}
+  .set-m-l{font-size:11px;opacity:.8}
+  .set-m-v{font-size:20px;font-weight:800}
+  .set-amt-l{font-size:11px;opacity:.8;margin-top:14px}
+  .set-amt{font-size:36px;font-weight:900;letter-spacing:-1px}
+  .set-amt small{font-size:14px;font-weight:600;opacity:.8;margin-left:4px}
+  .set-amt-d{font-size:11px;opacity:.7;margin-top:4px}
+  .set-stats{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-top:18px}
+  .set-stat{background:rgba(255,255,255,.1);border-radius:10px;padding:8px;text-align:center}
+  .set-stat-l{font-size:9px;opacity:.7;letter-spacing:.5px;text-transform:uppercase}
+  .set-stat-v{font-size:14px;font-weight:800;margin-top:3px}
+
+  .set-list-h{padding:18px 20px 8px;display:flex;justify-content:space-between;align-items:center}
+  .set-list-t{font-size:14px;font-weight:800;color:var(--ink)}
+  .set-list{padding:0 14px;display:flex;flex-direction:column;gap:8px;padding-bottom:24px}
+  .set-row{background:#fff;border-radius:12px;padding:12px;display:flex;align-items:center;gap:12px;border:1px solid var(--line)}
+  .set-row-i{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--blue) 0%,var(--blue-dk) 100%);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;flex-shrink:0}
+  .set-row-m{flex:1;min-width:0}
+  .set-row-n{font-size:13px;font-weight:700;color:var(--ink)}
+  .set-row-d{font-size:11px;color:var(--mute);margin-top:2px}
+  .set-row-r{text-align:right}
+  .set-row-v{font-size:14px;font-weight:800;color:var(--ink)}
+  .set-row-s{font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;margin-top:4px;display:inline-block}
+  .set-s-wait{background:#fef3cd;color:#8a5a00}
+  .set-s-paid{background:var(--green-lt);color:#15803d}
+  .set-s-due{background:#fee2e2;color:#991b1b}
+</style>
+</head>
+<body>
+
+<!-- ============================== 屏幕 1：供应商 Dashboard ============================== -->
+<div class="frame">
+  <div class="frame-label">供应商 · 工作台</div>
+  <div class="statusbar"><span>9:41</span><span class="statusbar-r">⚡ 4G ▮▮▮▮</span></div>
+  <div class="body">
+    <div class="hd">
+      <div class="hd-top">
+        <div class="hd-shop">
+          <div class="hd-logo">鑫</div>
+          <div>
+            <div class="hd-name">鑫源食材批发</div>
+            <div class="hd-sub">老板 王伟 <span class="hd-status">营业中</span></div>
+          </div>
+        </div>
+        <div class="hd-icons">
+          <div class="hd-ic">🔍</div>
+          <div class="hd-ic">🔔<div class="hd-ic-dot"></div></div>
+        </div>
+      </div>
+      <div class="hd-title">今日 4 笔新订单</div>
+      <div class="hd-tagline">待你处理 · 上午 6 单已发货</div>
+    </div>
+
+    <div class="dash">
+      <div class="dash-card">
+        <div class="dash-h">待发货</div>
+        <div class="dash-v">8<small>单</small></div>
+        <div class="dash-d up">↑ 比昨日 +3</div>
+      </div>
+      <div class="dash-card">
+        <div class="dash-h">今日已发</div>
+        <div class="dash-v">12<small>单</small></div>
+        <div class="dash-d">已签收 9</div>
+      </div>
+      <div class="dash-card">
+        <div class="dash-h">本月销售额</div>
+        <div class="dash-v">¥186K</div>
+        <div class="dash-d up">↑ 12.5% MoM</div>
+      </div>
+      <div class="dash-card">
+        <div class="dash-h">待结算</div>
+        <div class="dash-v" style="color:var(--orange)">¥34K</div>
+        <div class="dash-d">5 家客户 · 月结</div>
+      </div>
+      <div class="dash-card dash-wide">
+        <div class="dash-h">本月利润</div>
+        <div class="dash-wide-row">
+          <div class="dash-wide-l">
+            <div class="dash-wide-num">¥42,860</div>
+            <div style="font-size:11px;color:var(--mute);font-weight:600">毛利率 23.1% · 较上月 +1.8pp</div>
+          </div>
+          <div class="dash-wide-cta">月报 →</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="urgents">
+      <div class="urg-h">
+        <div class="urg-t">紧急待办</div>
+        <div class="urg-more">查看全部 ›</div>
+      </div>
+      <div class="urg-list">
+        <div class="urg-i">
+          <div class="urg-ic pend">📦</div>
+          <div class="urg-m">
+            <div class="urg-n">3 单超 4 小时未发货</div>
+            <div class="urg-d">明德中学食堂 / 阳光幼儿园 / 城南医院</div>
+          </div>
+          <div class="urg-cta">去发货</div>
+        </div>
+        <div class="urg-i">
+          <div class="urg-ic low">🥩</div>
+          <div class="urg-m">
+            <div class="urg-n">五花肉库存仅剩 120 斤</div>
+            <div class="urg-d">日均出 80 斤 · 预计明天断货</div>
+          </div>
+          <div class="urg-cta">补货</div>
+        </div>
+        <div class="urg-i">
+          <div class="urg-ic bill">💰</div>
+          <div class="urg-m">
+            <div class="urg-n">明德中学 5 月对账单已过期</div>
+            <div class="urg-d">应收 ¥18,200 · 逾期 8 天</div>
+          </div>
+          <div class="urg-cta">催收</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="day-h">
+      <div class="day-t">今日新订单</div>
+      <div class="urg-more" style="color:var(--blue);font-weight:700">查看 ›</div>
+    </div>
+    <div class="day-list">
+      <div class="day-card">
+        <div class="day-buyer-ic">明</div>
+        <div class="day-meta">
+          <div class="day-buyer">
+            <div>明德中学食堂</div>
+            <div class="day-buyer-amt">¥4,180</div>
+          </div>
+          <div class="day-line">8:32 · 五花肉 80 斤 / 鸡腿 40 斤 / 鸡蛋 40 板</div>
+        </div>
+      </div>
+      <div class="day-card">
+        <div class="day-buyer-ic">阳</div>
+        <div class="day-meta">
+          <div class="day-buyer">
+            <div>阳光幼儿园</div>
+            <div class="day-buyer-amt">¥1,560</div>
+          </div>
+          <div class="day-line">9:05 · 鸡腿 30 斤 / 鸡蛋 20 板</div>
+        </div>
+      </div>
+      <div class="day-card">
+        <div class="day-buyer-ic">城</div>
+        <div class="day-meta">
+          <div class="day-buyer">
+            <div>城南医院食堂</div>
+            <div class="day-buyer-amt">¥3,240</div>
+          </div>
+          <div class="day-line">9:18 · 牛腩 30 斤 / 三黄鸡 60 只</div>
+        </div>
+      </div>
+      <div class="day-card">
+        <div class="day-buyer-ic">东</div>
+        <div class="day-meta">
+          <div class="day-buyer">
+            <div>东方酒楼</div>
+            <div class="day-buyer-amt">¥6,840</div>
+          </div>
+          <div class="day-line">9:35 · 排骨 60 斤 / 五花肉 100 斤 / 猪腰 20 斤</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="tabbar">
+    <div class="tab on"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h8V3H3zm0 8h8v-6H3zm10 0h8V11h-8zm0-18v6h8V3z"/></svg>工作台</div>
+    <div class="tab"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 5h18v3H3zM3 10h18v3H3zM3 15h18v3H3z"/></svg>订单<span class="badge">8</span></div>
+    <div class="tab"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 6h16v3H4zm0 5h16v8H4z"/></svg>商品</div>
+    <div class="tab"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="3"/><path d="M3 21c0-3.3 2.7-6 6-6s6 2.7 6 6m0-1c0-2.5 2-4.5 4.5-4.5S24 17.5 24 20"/></svg>客户</div>
+    <div class="tab"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 22c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>我的</div>
+  </div>
+</div>
+
+<!-- ============================== 屏幕 2：订单管理 ============================== -->
+<div class="frame">
+  <div class="frame-label">供应商 · 订单管理</div>
+  <div class="statusbar"><span>9:41</span><span class="statusbar-r">⚡ 4G ▮▮▮▮</span></div>
+  <div class="body">
+    <div class="o-hd">
+      <div class="o-hd-row">
+        <div class="o-hd-t">订单管理</div>
+        <div class="o-hd-search">🔍 搜单号 / 客户</div>
+      </div>
+      <div class="o-tabs">
+        <div class="o-tab on">待发货 <small>8</small></div>
+        <div class="o-tab">已发货 <small>12</small></div>
+        <div class="o-tab">已完成</div>
+        <div class="o-tab">售后</div>
+      </div>
+    </div>
+    <div class="o-list">
+
+      <div class="o-card urgent">
+        <div class="o-h-row">
+          <div class="o-h-no">#PO-20260611-0072</div>
+          <div class="o-h-time">⚠ 待发 4h25m</div>
+          <div class="o-h-tag o-tag-new">紧急</div>
+        </div>
+        <div class="o-buyer">
+          <div class="o-buyer-ic">明</div>
+          <div class="o-buyer-meta">
+            <div class="o-buyer-n">明德中学食堂</div>
+            <div class="o-buyer-d">合作 2 年 · 朝阳区</div>
+          </div>
+          <div class="o-buyer-tag">VIP</div>
+        </div>
+        <div class="o-items">
+          <div class="o-i"><div class="o-i-img">🥓</div><div class="o-i-n">五花肉 · 鲜切</div><div class="o-i-q">×80 斤</div></div>
+          <div class="o-i"><div class="o-i-img">🍗</div><div class="o-i-n">鸡腿肉</div><div class="o-i-q">×40 斤</div></div>
+          <div class="o-i"><div class="o-i-img">🥚</div><div class="o-i-n">土鸡蛋 30 枚</div><div class="o-i-q">×40 板</div></div>
+        </div>
+        <div class="o-foot">
+          <div class="o-amt">¥4,180<small>.00</small></div>
+          <div class="o-acts">
+            <div class="o-btn">详情</div>
+            <div class="o-btn primary">立即发货</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="o-card">
+        <div class="o-h-row">
+          <div class="o-h-no">#PO-20260611-0073</div>
+          <div class="o-h-time">下单 35min 前</div>
+          <div class="o-h-tag o-tag-new">新单</div>
+        </div>
+        <div class="o-buyer">
+          <div class="o-buyer-ic">阳</div>
+          <div class="o-buyer-meta">
+            <div class="o-buyer-n">阳光幼儿园</div>
+            <div class="o-buyer-d">月结 30 天 · 海淀区</div>
+          </div>
+        </div>
+        <div class="o-items">
+          <div class="o-i"><div class="o-i-img">🍗</div><div class="o-i-n">鸡腿肉</div><div class="o-i-q">×30 斤</div></div>
+          <div class="o-i"><div class="o-i-img">🥚</div><div class="o-i-n">土鸡蛋 30 枚</div><div class="o-i-q">×20 板</div></div>
+        </div>
+        <div class="o-foot">
+          <div class="o-amt">¥1,560<small>.00</small></div>
+          <div class="o-acts">
+            <div class="o-btn">详情</div>
+            <div class="o-btn primary">立即发货</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="o-card">
+        <div class="o-h-row">
+          <div class="o-h-no">#PO-20260611-0074</div>
+          <div class="o-h-time">下单 22min 前</div>
+          <div class="o-h-tag o-tag-new">新单</div>
+        </div>
+        <div class="o-buyer">
+          <div class="o-buyer-ic">城</div>
+          <div class="o-buyer-meta">
+            <div class="o-buyer-n">城南医院食堂</div>
+            <div class="o-buyer-d">月结 15 天 · 西城区</div>
+          </div>
+        </div>
+        <div class="o-items">
+          <div class="o-i"><div class="o-i-img">🐄</div><div class="o-i-n">牛腩肉</div><div class="o-i-q">×30 斤</div></div>
+          <div class="o-i"><div class="o-i-img">🐔</div><div class="o-i-n">三黄鸡 整只</div><div class="o-i-q">×60 只</div></div>
+        </div>
+        <div class="o-foot">
+          <div class="o-amt">¥3,240<small>.00</small></div>
+          <div class="o-acts">
+            <div class="o-btn">详情</div>
+            <div class="o-btn primary">立即发货</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="o-card">
+        <div class="o-h-row">
+          <div class="o-h-no">#PO-20260611-0075</div>
+          <div class="o-h-time">下单 6min 前</div>
+          <div class="o-h-tag o-tag-new">新单</div>
+        </div>
+        <div class="o-buyer">
+          <div class="o-buyer-ic">东</div>
+          <div class="o-buyer-meta">
+            <div class="o-buyer-n">东方酒楼</div>
+            <div class="o-buyer-d">先款 · 朝阳区</div>
+          </div>
+          <div class="o-buyer-tag">VIP</div>
+        </div>
+        <div class="o-items">
+          <div class="o-i"><div class="o-i-img">🥩</div><div class="o-i-n">排骨</div><div class="o-i-q">×60 斤</div></div>
+          <div class="o-i"><div class="o-i-img">🥓</div><div class="o-i-n">五花肉</div><div class="o-i-q">×100 斤</div></div>
+          <div class="o-i"><div class="o-i-img">🥩</div><div class="o-i-n">猪腰</div><div class="o-i-q">×20 斤</div></div>
+        </div>
+        <div class="o-foot">
+          <div class="o-amt">¥6,840<small>.00</small></div>
+          <div class="o-acts">
+            <div class="o-btn">详情</div>
+            <div class="o-btn primary">立即发货</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ============================== 屏幕 3：发货录入 ============================== -->
+<div class="frame">
+  <div class="frame-label">供应商 · 发货录入</div>
+  <div class="statusbar"><span>9:41</span><span class="statusbar-r">⚡ 4G ▮▮▮▮</span></div>
+  <div class="body" style="padding-bottom:80px">
+    <div class="ship-hd">
+      <div class="ship-back">‹</div>
+      <div>
+        <div class="ship-t">订单发货</div>
+        <div style="font-size:11px;color:var(--mute);margin-top:2px">#PO-20260611-0072</div>
+      </div>
+    </div>
+
+    <div class="ship-card">
+      <div class="ship-buyer">
+        <div class="day-buyer-ic">明</div>
+        <div>
+          <div class="ship-bn">明德中学食堂</div>
+          <div class="ship-bd">张主任 · 13800138001 · 朝阳区xx路</div>
+        </div>
+      </div>
+      <div class="ship-items">
+        <div class="ship-i-row">
+          <div class="ship-i-img">🥓</div>
+          <div class="ship-i-meta">
+            <div class="ship-i-n">五花肉 · 鲜切</div>
+            <div class="ship-i-spec">¥25/斤 · 阶梯价 50 斤档</div>
+          </div>
+          <div class="ship-i-qty">×80 斤</div>
+        </div>
+        <div class="ship-i-row">
+          <div class="ship-i-img">🍗</div>
+          <div class="ship-i-meta">
+            <div class="ship-i-n">鸡腿肉</div>
+            <div class="ship-i-spec">¥22/斤</div>
+          </div>
+          <div class="ship-i-qty">×40 斤</div>
+        </div>
+        <div class="ship-i-row">
+          <div class="ship-i-img">🥚</div>
+          <div class="ship-i-meta">
+            <div class="ship-i-n">土鸡蛋 30 枚装</div>
+            <div class="ship-i-spec">¥32/板</div>
+          </div>
+          <div class="ship-i-qty">×40 板</div>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding-top:12px;margin-top:8px;border-top:1px dashed var(--line)">
+        <div style="font-size:12px;color:var(--mute);font-weight:600">订单合计</div>
+        <div style="font-size:18px;font-weight:900;color:var(--ink);letter-spacing:-.3px">¥4,180.00</div>
+      </div>
+    </div>
+
+    <div class="ship-form">
+      <div class="ship-f-h">发货方式</div>
+      <div class="ship-options">
+        <div class="ship-opt on">
+          <span class="ship-opt-ic">🚛</span>
+          自有冷链
+        </div>
+        <div class="ship-opt">
+          <span class="ship-opt-ic">📦</span>
+          第三方物流
+        </div>
+      </div>
+
+      <div class="ship-f-row" style="margin-top:18px">
+        <div class="ship-f-l">运单 / 车牌</div>
+        <div class="ship-f-i active">京 P · 12345</div>
+        <div class="ship-f-tip">已记住常用车辆</div>
+      </div>
+
+      <div class="ship-f-row">
+        <div class="ship-f-l">司机 / 联系方式</div>
+        <div class="ship-f-i">李师傅 · 13800009999</div>
+      </div>
+
+      <div class="ship-f-row">
+        <div class="ship-f-l">预计送达</div>
+        <div class="ship-f-i">今天 14:00 - 16:00</div>
+      </div>
+
+      <div class="ship-f-row">
+        <div class="ship-f-l">备注（可选）</div>
+        <div class="ship-f-i" style="height:60px;align-items:flex-start;padding-top:10px;color:var(--mute2)">如：货物分两车 / 食堂后门收货...</div>
+      </div>
+    </div>
+  </div>
+  <div class="ship-foot">
+    <div class="ship-foot-btn ship-foot-cancel">保存草稿</div>
+    <div class="ship-foot-btn ship-foot-confirm">确认发货</div>
+  </div>
+</div>
+
+<!-- ============================== 屏幕 4：商品管理（阶梯价）============================== -->
+<div class="frame">
+  <div class="frame-label">供应商 · 商品 & 阶梯价</div>
+  <div class="statusbar"><span>9:41</span><span class="statusbar-r">⚡ 4G ▮▮▮▮</span></div>
+  <div class="body">
+    <div class="o-hd">
+      <div class="o-hd-row">
+        <div class="o-hd-t">商品管理</div>
+        <div class="o-hd-search">🔍 搜索</div>
+      </div>
+    </div>
+    <div class="pm-search">
+      <div class="pm-search-i">🔍 商品名 / SKU</div>
+      <div class="pm-search-add">+</div>
+    </div>
+    <div class="pm-tabs">
+      <div class="pm-tab on">全部 · 86</div>
+      <div class="pm-tab">在售 78</div>
+      <div class="pm-tab">下架 8</div>
+      <div class="pm-tab">缺货 3</div>
+    </div>
+
+    <div class="pm-list">
+
+      <div class="pm-card">
+        <div class="pm-img">🥓</div>
+        <div class="pm-meta">
+          <div class="pm-n">
+            <span>五花肉 · 鲜切<span class="pm-tier-badge">阶梯价</span></span>
+            <div class="pm-toggle"><div class="pm-switch"></div>在售</div>
+          </div>
+          <div class="pm-spec">SKU PA-001 · 每斤 · 冷链</div>
+          <div class="pm-tier-row">
+            <div class="pm-tier">10+: ¥28</div>
+            <div class="pm-tier">50+: ¥25</div>
+            <div class="pm-tier">100+: ¥23</div>
+            <div class="pm-tier">500+: ¥22</div>
+          </div>
+          <div class="pm-bottom">
+            <div class="pm-stock low">库存 <b>120 斤</b> · 日销 80</div>
+            <div style="font-size:11px;color:var(--blue);font-weight:700">编辑 ›</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="pm-card">
+        <div class="pm-img">🍗</div>
+        <div class="pm-meta">
+          <div class="pm-n">
+            <span>鸡腿肉<span class="pm-tier-badge">阶梯价</span></span>
+            <div class="pm-toggle"><div class="pm-switch"></div>在售</div>
+          </div>
+          <div class="pm-spec">SKU CK-002 · 每斤</div>
+          <div class="pm-tier-row">
+            <div class="pm-tier">10+: ¥22</div>
+            <div class="pm-tier">100+: ¥20</div>
+          </div>
+          <div class="pm-bottom">
+            <div class="pm-stock">库存 <b>460 斤</b></div>
+            <div style="font-size:11px;color:var(--blue);font-weight:700">编辑 ›</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="pm-card">
+        <div class="pm-img">🥚</div>
+        <div class="pm-meta">
+          <div class="pm-n">
+            <span>土鸡蛋 · 30 枚装</span>
+            <div class="pm-toggle"><div class="pm-switch"></div>在售</div>
+          </div>
+          <div class="pm-spec">SKU EG-005 · 每板</div>
+          <div class="pm-tier-row">
+            <div class="pm-tier">5+: ¥32</div>
+            <div class="pm-tier">20+: ¥30</div>
+            <div class="pm-tier">50+: ¥28</div>
+          </div>
+          <div class="pm-bottom">
+            <div class="pm-stock">库存 <b>220 板</b></div>
+            <div style="font-size:11px;color:var(--blue);font-weight:700">编辑 ›</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="pm-card" style="opacity:.65">
+        <div class="pm-img" style="filter:grayscale(.6)">🐄</div>
+        <div class="pm-meta">
+          <div class="pm-n">
+            <span>牛腩肉</span>
+            <div class="pm-toggle" style="color:var(--mute2)"><div class="pm-switch off"></div>已下架</div>
+          </div>
+          <div class="pm-spec">SKU BE-008 · 每斤 · 已下架 3 天</div>
+          <div class="pm-tier-row">
+            <div class="pm-tier" style="background:var(--bg);color:var(--mute)">10+: ¥58</div>
+            <div class="pm-tier" style="background:var(--bg);color:var(--mute)">50+: ¥55</div>
+          </div>
+          <div class="pm-bottom">
+            <div class="pm-stock">库存 <b>0 斤</b></div>
+            <div style="font-size:11px;color:var(--blue);font-weight:700">补货 ›</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="pm-card">
+        <div class="pm-img">🐔</div>
+        <div class="pm-meta">
+          <div class="pm-n">
+            <span>三黄鸡 · 整只</span>
+            <div class="pm-toggle"><div class="pm-switch"></div>在售</div>
+          </div>
+          <div class="pm-spec">SKU CK-010 · 每只 · 平均 2.4 斤</div>
+          <div class="pm-tier-row">
+            <div class="pm-tier">10+: ¥36</div>
+            <div class="pm-tier">50+: ¥34</div>
+          </div>
+          <div class="pm-bottom">
+            <div class="pm-stock">库存 <b>180 只</b></div>
+            <div style="font-size:11px;color:var(--blue);font-weight:700">编辑 ›</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ============================== 屏幕 5：客户管理（信用 + 账期）============================== -->
+<div class="frame">
+  <div class="frame-label">供应商 · 客户管理</div>
+  <div class="statusbar"><span>9:41</span><span class="statusbar-r">⚡ 4G ▮▮▮▮</span></div>
+  <div class="body">
+    <div class="cm-hd">
+      <div class="cm-t">我的客户</div>
+      <div class="cm-sub">28 家活跃 · 本月新增 3 家</div>
+    </div>
+
+    <div class="cm-stats">
+      <div>
+        <div class="cm-s-l">月活客户</div>
+        <div class="cm-s-v">28</div>
+      </div>
+      <div>
+        <div class="cm-s-l">累计交易额</div>
+        <div class="cm-s-v">186<small>K</small></div>
+      </div>
+      <div>
+        <div class="cm-s-l">逾期欠款</div>
+        <div class="cm-s-v" style="color:var(--red)">¥18.2K</div>
+      </div>
+    </div>
+
+    <div class="cm-list-h">
+      <div class="cm-list-t">客户列表</div>
+      <div class="cm-filter">按近 30 天 ▾</div>
+    </div>
+    <div class="cm-list">
+
+      <div class="cm-card">
+        <div class="cm-card-ic">明</div>
+        <div class="cm-card-m">
+          <div class="cm-card-top">
+            <div>
+              <div class="cm-card-n">明德中学食堂<span class="cm-tag vip">VIP</span></div>
+              <div class="cm-card-d">张主任 · 138****8001</div>
+            </div>
+          </div>
+          <div class="cm-card-grid">
+            <div>
+              <div class="cm-g-l">月采购</div>
+              <div class="cm-g-v">¥38.2K</div>
+            </div>
+            <div>
+              <div class="cm-g-l">信用额度</div>
+              <div class="cm-g-v">¥50<small>K</small></div>
+            </div>
+            <div>
+              <div class="cm-g-l">账期</div>
+              <div class="cm-g-v warn">30 天</div>
+            </div>
+          </div>
+          <div style="margin-top:8px;padding-top:8px;border-top:1px dashed var(--line);font-size:11px;color:var(--mute);font-weight:600">
+            合作 2 年 · 累计 ¥186K · 准时付款率 <b style="color:var(--green)">92%</b>
+          </div>
+        </div>
+      </div>
+
+      <div class="cm-card">
+        <div class="cm-card-ic">东</div>
+        <div class="cm-card-m">
+          <div class="cm-card-top">
+            <div>
+              <div class="cm-card-n">东方酒楼<span class="cm-tag vip">VIP</span></div>
+              <div class="cm-card-d">李经理 · 138****0001</div>
+            </div>
+          </div>
+          <div class="cm-card-grid">
+            <div>
+              <div class="cm-g-l">月采购</div>
+              <div class="cm-g-v">¥52.4K</div>
+            </div>
+            <div>
+              <div class="cm-g-l">信用额度</div>
+              <div class="cm-g-v">¥80<small>K</small></div>
+            </div>
+            <div>
+              <div class="cm-g-l">账期</div>
+              <div class="cm-g-v ok">先款</div>
+            </div>
+          </div>
+          <div style="margin-top:8px;padding-top:8px;border-top:1px dashed var(--line);font-size:11px;color:var(--mute);font-weight:600">
+            合作 3.5 年 · 累计 ¥420K · 准时付款率 <b style="color:var(--green)">100%</b>
+          </div>
+        </div>
+      </div>
+
+      <div class="cm-card">
+        <div class="cm-card-ic">阳</div>
+        <div class="cm-card-m">
+          <div class="cm-card-top">
+            <div>
+              <div class="cm-card-n">阳光幼儿园</div>
+              <div class="cm-card-d">王园长 · 139****6666</div>
+            </div>
+          </div>
+          <div class="cm-card-grid">
+            <div>
+              <div class="cm-g-l">月采购</div>
+              <div class="cm-g-v">¥12.8K</div>
+            </div>
+            <div>
+              <div class="cm-g-l">信用额度</div>
+              <div class="cm-g-v">¥20<small>K</small></div>
+            </div>
+            <div>
+              <div class="cm-g-l">账期</div>
+              <div class="cm-g-v warn">30 天</div>
+            </div>
+          </div>
+          <div style="margin-top:8px;padding-top:8px;border-top:1px dashed var(--line);font-size:11px;color:var(--mute);font-weight:600">
+            合作 1 年 · 累计 ¥86K · 准时付款率 <b style="color:var(--green)">88%</b>
+          </div>
+        </div>
+      </div>
+
+      <div class="cm-card">
+        <div class="cm-card-ic">城</div>
+        <div class="cm-card-m">
+          <div class="cm-card-top">
+            <div>
+              <div class="cm-card-n">城南医院食堂</div>
+              <div class="cm-card-d">赵主任 · 137****5555</div>
+            </div>
+          </div>
+          <div class="cm-card-grid">
+            <div>
+              <div class="cm-g-l">月采购</div>
+              <div class="cm-g-v">¥28.5K</div>
+            </div>
+            <div>
+              <div class="cm-g-l">信用额度</div>
+              <div class="cm-g-v">¥30<small>K</small></div>
+            </div>
+            <div>
+              <div class="cm-g-l">账期</div>
+              <div class="cm-g-v warn">15 天</div>
+            </div>
+          </div>
+          <div style="margin-top:8px;padding-top:8px;border-top:1px dashed var(--line);font-size:11px;color:var(--mute);font-weight:600">
+            合作 1.5 年 · 累计 ¥104K · 准时付款率 <b style="color:var(--green)">95%</b>
+          </div>
+        </div>
+      </div>
+
+      <div class="cm-card">
+        <div class="cm-card-ic">新</div>
+        <div class="cm-card-m">
+          <div class="cm-card-top">
+            <div>
+              <div class="cm-card-n">新世纪学校<span class="cm-tag new">新</span></div>
+              <div class="cm-card-d">钱主任 · 188****1234</div>
+            </div>
+          </div>
+          <div class="cm-card-grid">
+            <div>
+              <div class="cm-g-l">月采购</div>
+              <div class="cm-g-v">¥3.2K</div>
+            </div>
+            <div>
+              <div class="cm-g-l">信用额度</div>
+              <div class="cm-g-v">¥10<small>K</small></div>
+            </div>
+            <div>
+              <div class="cm-g-l">账期</div>
+              <div class="cm-g-v ok">先款</div>
+            </div>
+          </div>
+          <div style="margin-top:8px;padding-top:8px;border-top:1px dashed var(--line);font-size:11px;color:var(--mute);font-weight:600">
+            合作 12 天 · 累计 ¥3.2K · 准时付款率 <b style="color:var(--green)">100%</b>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ============================== 屏幕 6：月度对账（供应商收款）============================== -->
+<div class="frame">
+  <div class="frame-label">供应商 · 应收对账</div>
+  <div class="statusbar"><span>9:41</span><span class="statusbar-r">⚡ 4G ▮▮▮▮</span></div>
+  <div class="body">
+    <div class="set-hd">
+      <div class="set-h-top">
+        <div class="ship-back" style="background:rgba(255,255,255,.15);color:#fff">‹</div>
+        <div class="set-h-t">应收对账</div>
+      </div>
+      <div class="set-m">
+        <div>
+          <div class="set-m-l">结算周期 6/26 - 7/25</div>
+          <div class="set-m-v">2026 年 7 月</div>
+        </div>
+        <div style="background:rgba(255,255,255,.15);padding:5px 10px;border-radius:999px;font-size:11px;font-weight:700">📊 切月</div>
+      </div>
+      <div class="set-amt-l">本月应收总额</div>
+      <div class="set-amt">¥68,420<small>.00</small></div>
+      <div class="set-amt-d">5 家客户 · 28 单 · 8 张待开票</div>
+      <div class="set-stats">
+        <div class="set-stat">
+          <div class="set-stat-l">已收</div>
+          <div class="set-stat-v">¥32K</div>
+        </div>
+        <div class="set-stat">
+          <div class="set-stat-l">待收</div>
+          <div class="set-stat-v">¥18K</div>
+        </div>
+        <div class="set-stat">
+          <div class="set-stat-l">逾期</div>
+          <div class="set-stat-v" style="color:#fca5a5">¥18K</div>
+        </div>
+        <div class="set-stat">
+          <div class="set-stat-l">回款率</div>
+          <div class="set-stat-v">47%</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="set-list-h">
+      <div class="set-list-t">按客户分账</div>
+      <div style="font-size:11px;color:var(--blue);font-weight:700">导出 PDF ›</div>
+    </div>
+    <div class="set-list">
+
+      <div class="set-row">
+        <div class="set-row-i">明</div>
+        <div class="set-row-m">
+          <div class="set-row-n">明德中学食堂</div>
+          <div class="set-row-d">14 单 · 5 月对账逾期 8 天</div>
+        </div>
+        <div class="set-row-r">
+          <div class="set-row-v">¥18,200</div>
+          <div class="set-row-s set-s-due">逾期</div>
+        </div>
+      </div>
+
+      <div class="set-row">
+        <div class="set-row-i">东</div>
+        <div class="set-row-m">
+          <div class="set-row-n">东方酒楼</div>
+          <div class="set-row-d">6 单 · 先款 已结清</div>
+        </div>
+        <div class="set-row-r">
+          <div class="set-row-v">¥22,400</div>
+          <div class="set-row-s set-s-paid">已收</div>
+        </div>
+      </div>
+
+      <div class="set-row">
+        <div class="set-row-i">阳</div>
+        <div class="set-row-m">
+          <div class="set-row-n">阳光幼儿园</div>
+          <div class="set-row-d">3 单 · 月结 30 天</div>
+        </div>
+        <div class="set-row-r">
+          <div class="set-row-v">¥8,600</div>
+          <div class="set-row-s set-s-wait">待收</div>
+        </div>
+      </div>
+
+      <div class="set-row">
+        <div class="set-row-i">城</div>
+        <div class="set-row-m">
+          <div class="set-row-n">城南医院食堂</div>
+          <div class="set-row-d">4 单 · 月结 15 天</div>
+        </div>
+        <div class="set-row-r">
+          <div class="set-row-v">¥9,820</div>
+          <div class="set-row-s set-s-wait">待收</div>
+        </div>
+      </div>
+
+      <div class="set-row">
+        <div class="set-row-i">新</div>
+        <div class="set-row-m">
+          <div class="set-row-n">新世纪学校</div>
+          <div class="set-row-d">1 单 · 先款 已结清</div>
+        </div>
+        <div class="set-row-r">
+          <div class="set-row-v">¥9,400</div>
+          <div class="set-row-s set-s-paid">已收</div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="set-list-h">
+      <div class="set-list-t">操作中心</div>
+    </div>
+    <div class="set-list">
+      <div class="set-row">
+        <div class="set-row-i" style="background:#fff5e8;color:var(--orange)">📄</div>
+        <div class="set-row-m">
+          <div class="set-row-n">本月待开发票</div>
+          <div class="set-row-d">8 张专票 · 合计 ¥48,200</div>
+        </div>
+        <div style="font-size:12px;color:var(--blue);font-weight:700">开票 ›</div>
+      </div>
+      <div class="set-row">
+        <div class="set-row-i" style="background:#fee2e2;color:var(--red)">⏰</div>
+        <div class="set-row-m">
+          <div class="set-row-n">催收任务</div>
+          <div class="set-row-d">明德中学逾期 8 天 · 一键提醒</div>
+        </div>
+        <div style="font-size:12px;color:var(--red);font-weight:700">催收</div>
+      </div>
+      <div class="set-row">
+        <div class="set-row-i" style="background:var(--green-lt);color:#15803d">📥</div>
+        <div class="set-row-m">
+          <div class="set-row-n">收款登记</div>
+          <div class="set-row-d">阳光幼儿园 7/15 转账 ¥8,600</div>
+        </div>
+        <div style="font-size:12px;color:var(--green);font-weight:700">标记</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

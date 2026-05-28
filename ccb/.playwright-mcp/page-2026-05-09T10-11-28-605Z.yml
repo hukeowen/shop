@@ -1,0 +1,77 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e83]:
+    - generic [ref=e84]:
+      - generic [ref=e85]:
+        - generic [ref=e86]: 早上好，摊主
+        - generic [ref=e87]: 未关联店铺
+      - generic [ref=e88]: 营业中
+    - generic [ref=e90]:
+      - generic [ref=e91]:
+        - generic [ref=e92]: AI
+        - generic [ref=e93]: 一键成片
+      - generic [ref=e94]:
+        - generic [ref=e95]: ＋
+        - generic [ref=e96]: AI上架
+      - generic [ref=e97]:
+        - generic [ref=e98]: 扫
+        - generic [ref=e99]: 扫码核销
+      - generic [ref=e100]:
+        - generic [ref=e101]: 单
+        - generic [ref=e102]: 订单
+    - generic [ref=e103]: 今日概览
+    - generic [ref=e104]:
+      - generic [ref=e105]:
+        - generic [ref=e106]: 订单数
+        - generic [ref=e107]: "0"
+      - generic [ref=e108]:
+        - generic [ref=e109]: 销售额
+        - generic [ref=e110]: ¥0.00
+      - generic [ref=e111]:
+        - generic [ref=e112]: 新会员
+        - generic [ref=e113]: "1"
+      - generic [ref=e114]:
+        - generic [ref=e115]: 待处理
+        - generic [ref=e116]: "0"
+    - generic [ref=e117]:
+      - generic [ref=e119]: 最近 7 天销售趋势
+      - generic [ref=e120]:
+        - generic:
+          - generic [ref=e121]: ¥0
+          - generic [ref=e123]: 05-03
+        - generic:
+          - generic [ref=e124]: ¥0
+          - generic [ref=e126]: 05-04
+        - generic:
+          - generic [ref=e127]: ¥0
+          - generic [ref=e129]: 05-05
+        - generic:
+          - generic [ref=e130]: ¥0
+          - generic [ref=e132]: 05-06
+        - generic:
+          - generic [ref=e133]: ¥0
+          - generic [ref=e135]: 05-07
+        - generic:
+          - generic [ref=e136]: ¥0
+          - generic [ref=e138]: 05-08
+        - generic:
+          - generic [ref=e139]: ¥0
+          - generic [ref=e141]: 05-09
+    - generic [ref=e144]: 热销商品 Top 3
+    - generic [ref=e146]:
+      - generic [ref=e147]:
+        - generic [ref=e148]: 🏠
+        - generic [ref=e149]: 首页
+      - generic [ref=e150]:
+        - generic [ref=e151]: 📋
+        - generic [ref=e152]: 订单
+      - generic [ref=e153]:
+        - generic [ref=e154]: 🛒
+        - generic [ref=e155]: 购物车
+      - generic [ref=e156]:
+        - generic [ref=e157]: 👤
+        - generic [ref=e158]: 我的
+  - generic:
+    - generic:
+      - generic:
+        - img
+        - paragraph: 登录成功

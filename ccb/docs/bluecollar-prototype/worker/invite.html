@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>蓝工 · 邀请工友</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="../shared/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  .coin-rain::before, .coin-rain::after {
+    content: "¥"; position: absolute; color: rgba(255,255,255,.25);
+    font-size: 48px; font-weight: 900;
+  }
+  .coin-rain::before { top: 10%; left: 8%; transform: rotate(-15deg); }
+  .coin-rain::after { top: 35%; right: 10%; font-size: 32px; transform: rotate(20deg); }
+  .stat-glow { text-shadow: 0 0 20px rgba(255,255,255,.4); }
+  .poster-qr { background:
+    linear-gradient(45deg, #000 25%, transparent 25%),
+    linear-gradient(-45deg, #000 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #000 75%),
+    linear-gradient(-45deg, transparent 75%, #000 75%);
+    background-size: 8px 8px;
+    background-position: 0 0, 0 4px, 4px -4px, -4px 0;
+  }
+  .leaderboard-1 { background: linear-gradient(135deg,#FBBF24,#F59E0B); }
+  .leaderboard-2 { background: linear-gradient(135deg,#94A3B8,#64748B); }
+  .leaderboard-3 { background: linear-gradient(135deg,#FB923C,#EA580C); }
+</style>
+</head>
+<body class="bg-slate-100 min-h-screen pb-10">
+
+<div class="text-center pt-6"><a href="../index.html" class="text-sm text-slate-500 hover:text-blue-600">← 返回原型导航</a></div>
+
+<div class="phone-frame">
+  <div class="phone-notch"></div>
+  <div class="phone-screen">
+    <div class="status-bar"><span>9:41</span><span class="flex gap-1 items-center"><span>●●●●●</span><span class="text-xs">5G</span><span class="text-xs">100%</span></span></div>
+
+    <div class="phone-content">
+
+      <!-- 顶部 Hero -->
+      <div class="relative overflow-hidden coin-rain text-white" style="background: linear-gradient(135deg,#F59E0B 0%,#EF4444 50%,#A855F7 100%);">
+        <div class="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,.2),transparent_50%)]"></div>
+        <div class="relative px-5 pt-3 pb-6">
+          <div class="flex items-center justify-between">
+            <a href="profile.html" class="w-8 h-8 flex items-center justify-center">
+              <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+            </a>
+            <span class="text-base font-bold">邀请工友</span>
+            <a href="#" class="text-xs opacity-90">规则</a>
+          </div>
+
+          <div class="mt-5 text-center">
+            <div class="text-[13px] opacity-90 tracking-wider">拉老乡入职 · 现金工分双倍赚</div>
+            <div class="text-4xl font-extrabold mt-2 stat-glow">最高 ¥500/人</div>
+            <div class="mt-3 inline-flex items-center gap-2 bg-white/20 backdrop-blur rounded-full px-4 py-1.5 text-xs">
+              <span>👑</span><span>您是 <b>黄金III</b> 段位 · 奖励 ×1.5 加成</span>
+            </div>
+          </div>
+
+          <!-- 我的邀请战绩 -->
+          <div class="mt-5 bg-white/95 rounded-2xl p-4 text-slate-900 shadow-xl">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs text-slate-500">我的邀请战绩</span>
+              <a href="#records" class="text-xs text-blue-600">明细 →</a>
+            </div>
+            <div class="grid grid-cols-3 gap-2">
+              <div class="text-center">
+                <div class="text-2xl font-extrabold text-amber-600">8</div>
+                <div class="text-[10px] text-slate-500 mt-0.5">累计邀请</div>
+              </div>
+              <div class="text-center border-x border-slate-100">
+                <div class="text-2xl font-extrabold text-emerald-600">¥1,260</div>
+                <div class="text-[10px] text-slate-500 mt-0.5">已到账现金</div>
+              </div>
+              <div class="text-center">
+                <div class="text-2xl font-extrabold text-purple-600">+62</div>
+                <div class="text-[10px] text-slate-500 mt-0.5">额外工分</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 奖励机制 -->
+      <div class="px-5 mt-4">
+        <div class="bg-white rounded-2xl p-4">
+          <div class="text-xs text-slate-400 mb-3">奖励机制 · 拉满双方都赚</div>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-3 border border-amber-100">
+              <div class="flex items-center gap-1.5 mb-2">
+                <span class="w-6 h-6 rounded-full bg-amber-500 text-white flex items-center justify-center text-xs font-bold">你</span>
+                <span class="text-xs font-bold text-slate-700">我能得到</span>
+              </div>
+              <ul class="space-y-1.5 text-[11px] text-slate-700">
+                <li class="flex justify-between"><span>· 工友实名认证</span><span class="text-amber-600 font-bold">¥10</span></li>
+                <li class="flex justify-between"><span>· 工友首次入职</span><span class="text-amber-600 font-bold">¥150</span></li>
+                <li class="flex justify-between"><span>· 工友干满7天</span><span class="text-amber-600 font-bold">¥200</span></li>
+                <li class="flex justify-between"><span>· 工友干满30天</span><span class="text-rose-600 font-bold">¥500</span></li>
+                <li class="flex justify-between pt-1 border-t border-amber-200"><span class="text-purple-700">· 邀请工分</span><span class="text-purple-700 font-bold">+5/人</span></li>
+              </ul>
+            </div>
+            <div class="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-3 border border-blue-100">
+              <div class="flex items-center gap-1.5 mb-2">
+                <span class="w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center text-xs font-bold">友</span>
+                <span class="text-xs font-bold text-slate-700">工友能得到</span>
+              </div>
+              <ul class="space-y-1.5 text-[11px] text-slate-700">
+                <li class="flex justify-between"><span>· 注册即送</span><span class="text-blue-600 font-bold">¥30</span></li>
+                <li class="flex justify-between"><span>· 完成实名</span><span class="text-blue-600 font-bold">¥20</span></li>
+                <li class="flex justify-between"><span>· 首次入职</span><span class="text-blue-600 font-bold">¥100</span></li>
+                <li class="flex justify-between"><span>· 初始工分</span><span class="text-purple-600 font-bold">+50</span></li>
+                <li class="flex justify-between pt-1 border-t border-blue-200"><span>· 7天保险</span><span class="text-emerald-600 font-bold">免费</span></li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- 段位加成 -->
+          <div class="mt-3 bg-purple-50 border border-purple-100 rounded-xl p-3">
+            <div class="text-[11px] text-purple-700 font-semibold mb-2">⭐ 段位越高，奖励倍数越高</div>
+            <div class="grid grid-cols-5 gap-1 text-center">
+              <div><div class="text-[9px] text-orange-700 font-bold">青铜</div><div class="text-[10px] text-slate-500">×1.0</div></div>
+              <div><div class="text-[9px] text-slate-600 font-bold">白银</div><div class="text-[10px] text-slate-500">×1.2</div></div>
+              <div class="bg-white rounded p-0.5 ring-1 ring-amber-400"><div class="text-[9px] text-amber-700 font-bold">黄金</div><div class="text-[10px] text-amber-600 font-bold">×1.5</div></div>
+              <div><div class="text-[9px] text-cyan-700 font-bold">钻石</div><div class="text-[10px] text-slate-500">×2.0</div></div>
+              <div><div class="text-[9px] text-purple-700 font-bold">王者</div><div class="text-[10px] text-purple-600 font-bold">×3.0</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 海报预览 + 分享 -->
+      <div class="px-5 mt-4">
+        <div class="bg-white rounded-2xl p-4">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-xs text-slate-400">分享海报 · 一键转发</span>
+            <span class="text-[10px] text-blue-600">切换样式 →</span>
+          </div>
+
+          <!-- 海报卡 -->
+          <div class="rounded-xl p-4 text-white relative overflow-hidden" style="background: linear-gradient(135deg,#1E3A8A 0%,#1677FF 60%,#4096FF 100%);">
+            <div class="absolute -right-8 -top-8 w-32 h-32 bg-white/10 rounded-full"></div>
+            <div class="absolute -right-4 -bottom-12 w-40 h-40 bg-white/5 rounded-full"></div>
+            <div class="relative">
+              <div class="flex items-start justify-between">
+                <div>
+                  <div class="text-[10px] opacity-80">蓝工 · 真招聘 · 真发工资</div>
+                  <div class="text-xl font-extrabold mt-1 leading-tight">在杭州找工作？<br/>来蓝工，老乡介绍更靠谱！</div>
+                </div>
+                <div class="bg-white p-1.5 rounded-lg">
+                  <div class="poster-qr w-14 h-14 rounded"></div>
+                  <div class="text-[9px] text-slate-700 text-center mt-0.5 font-bold">扫码</div>
+                </div>
+              </div>
+              <div class="mt-3 grid grid-cols-3 gap-1 text-center">
+                <div class="bg-white/15 rounded p-1.5">
+                  <div class="text-sm font-bold">¥30起</div>
+                  <div class="text-[9px] opacity-80">注册红包</div>
+                </div>
+                <div class="bg-white/15 rounded p-1.5">
+                  <div class="text-sm font-bold">日结</div>
+                  <div class="text-[9px] opacity-80">薪资保障</div>
+                </div>
+                <div class="bg-white/15 rounded p-1.5">
+                  <div class="text-sm font-bold">免费</div>
+                  <div class="text-[9px] opacity-80">7天保险</div>
+                </div>
+              </div>
+              <div class="mt-3 flex items-center gap-2 pt-2 border-t border-white/20">
+                <div class="w-7 h-7 rounded-full bg-white/30 flex items-center justify-center text-xs font-bold">王</div>
+                <div class="flex-1">
+                  <div class="text-[11px] font-medium">王建国 (老乡) 邀请你</div>
+                  <div class="text-[9px] opacity-80">黄金III · 累计赚 ¥48,920</div>
+                </div>
+                <span class="text-[9px] bg-amber-500 px-1.5 py-0.5 rounded">⭐</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 分享按钮 -->
+          <div class="grid grid-cols-5 gap-2 mt-4">
+            <button class="text-center">
+              <div class="w-11 h-11 mx-auto rounded-full bg-emerald-500 flex items-center justify-center mb-1">
+                <svg width="22" height="22" fill="white" viewBox="0 0 24 24"><path d="M8.5 12.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2zm7 0a1 1 0 1 1 0-2 1 1 0 0 1 0 2zM12 3C7.03 3 3 6.36 3 10.5c0 2.4 1.34 4.53 3.42 5.92L5.5 19l3.07-1.71c1.07.3 2.22.46 3.43.46.62 0 1.22-.04 1.8-.13-.19-.61-.3-1.26-.3-1.93 0-3.59 3.13-6.5 7-6.5.14 0 .27.02.41.03C19.7 6.4 16.2 3 12 3z"/></svg>
+              </div>
+              <span class="text-[10px] text-slate-700">微信好友</span>
+            </button>
+            <button class="text-center">
+              <div class="w-11 h-11 mx-auto rounded-full bg-emerald-600 flex items-center justify-center mb-1">
+                <svg width="22" height="22" fill="white" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3" fill="#059669"/></svg>
+              </div>
+              <span class="text-[10px] text-slate-700">朋友圈</span>
+            </button>
+            <button class="text-center">
+              <div class="w-11 h-11 mx-auto rounded-full bg-blue-500 flex items-center justify-center mb-1">
+                <svg width="22" height="22" fill="white" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              </div>
+              <span class="text-[10px] text-slate-700">QQ</span>
+            </button>
+            <button class="text-center">
+              <div class="w-11 h-11 mx-auto rounded-full bg-slate-700 flex items-center justify-center mb-1">
+                <svg width="22" height="22" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              </div>
+              <span class="text-[10px] text-slate-700">复制链接</span>
+            </button>
+            <button class="text-center">
+              <div class="w-11 h-11 mx-auto rounded-full bg-purple-500 flex items-center justify-center mb-1">
+                <svg width="22" height="22" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              </div>
+              <span class="text-[10px] text-slate-700">下载海报</span>
+            </button>
+          </div>
+
+          <!-- 我的邀请码 -->
+          <div class="mt-3 bg-slate-50 rounded-xl px-3 py-2.5 flex items-center justify-between">
+            <div>
+              <div class="text-[10px] text-slate-500">我的专属邀请码</div>
+              <div class="font-bold text-slate-900 tracking-widest text-base">WJG8826</div>
+            </div>
+            <button class="text-xs bg-blue-600 text-white px-3 py-1.5 rounded-lg font-medium">复制</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 我邀请的工友 -->
+      <div class="px-5 mt-4" id="records">
+        <div class="bg-white rounded-2xl p-4">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-xs text-slate-400">我邀请的工友 (8 人)</span>
+            <div class="flex gap-1 text-[10px]">
+              <button class="bg-blue-600 text-white px-2 py-0.5 rounded">全部 8</button>
+              <button class="text-slate-500 px-2 py-0.5">待结算 2</button>
+            </div>
+          </div>
+          <ul class="space-y-2.5">
+            <li class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">李</div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2">
+                  <span class="text-sm font-medium">李**勇</span>
+                  <span class="text-[9px] bg-emerald-100 text-emerald-700 px-1.5 rounded">已干30天</span>
+                </div>
+                <div class="text-[10px] text-slate-400">2025-12-08 加入 · 现海底捞</div>
+              </div>
+              <div class="text-right">
+                <div class="text-sm font-bold text-emerald-600">+¥750</div>
+                <div class="text-[10px] text-purple-500">+5 工分</div>
+              </div>
+            </li>
+            <li class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-full bg-cyan-500 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">陈</div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2">
+                  <span class="text-sm font-medium">陈**强</span>
+                  <span class="text-[9px] bg-emerald-100 text-emerald-700 px-1.5 rounded">已干30天</span>
+                </div>
+                <div class="text-[10px] text-slate-400">2025-11-22 加入 · 京东亚一仓</div>
+              </div>
+              <div class="text-right">
+                <div class="text-sm font-bold text-emerald-600">+¥750</div>
+                <div class="text-[10px] text-purple-500">+5 工分</div>
+              </div>
+            </li>
+            <li class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-full bg-amber-500 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">张</div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2">
+                  <span class="text-sm font-medium">张**明</span>
+                  <span class="text-[9px] bg-amber-100 text-amber-700 px-1.5 rounded">第15天</span>
+                </div>
+                <div class="text-[10px] text-slate-400">2026-05-02 加入 · 立讯精密</div>
+              </div>
+              <div class="text-right">
+                <div class="text-sm font-bold text-amber-600">¥300<span class="text-[10px] text-slate-400">/750</span></div>
+                <div class="text-[10px] text-slate-400">差15天再得¥450</div>
+              </div>
+            </li>
+            <li class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-full bg-pink-500 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">赵</div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2">
+                  <span class="text-sm font-medium">赵**梅</span>
+                  <span class="text-[9px] bg-blue-100 text-blue-700 px-1.5 rounded">刚入职</span>
+                </div>
+                <div class="text-[10px] text-slate-400">2026-05-12 加入 · 万象城保洁</div>
+              </div>
+              <div class="text-right">
+                <div class="text-sm font-bold text-blue-600">+¥150</div>
+                <div class="text-[10px] text-slate-400">7天再得¥200</div>
+              </div>
+            </li>
+            <li class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-full bg-slate-300 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">刘</div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2">
+                  <span class="text-sm font-medium text-slate-600">刘**刚</span>
+                  <span class="text-[9px] bg-slate-100 text-slate-600 px-1.5 rounded">已实名</span>
+                </div>
+                <div class="text-[10px] text-slate-400">2026-05-15 注册 · 待入职</div>
+              </div>
+              <div class="text-right">
+                <div class="text-sm font-bold text-slate-600">+¥10</div>
+                <div class="text-[10px] text-amber-500">提醒TA入职</div>
+              </div>
+            </li>
+          </ul>
+          <a href="#" class="block text-center text-xs text-blue-600 mt-3">查看全部 8 人 →</a>
+        </div>
+      </div>
+
+      <!-- 本月排行榜 -->
+      <div class="px-5 mt-4">
+        <div class="bg-gradient-to-br from-orange-50 via-pink-50 to-purple-50 rounded-2xl p-4 border border-orange-100">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-2">
+              <span class="text-base">🏆</span>
+              <span class="text-sm font-bold text-slate-900">本月邀请榜 · 杭州</span>
+            </div>
+            <span class="text-[10px] text-slate-500">距月末 16 天</span>
+          </div>
+          <ul class="space-y-2">
+            <li class="flex items-center gap-3 bg-white rounded-xl p-2.5">
+              <div class="w-7 h-7 rounded-lg leaderboard-1 text-white flex items-center justify-center text-xs font-bold">1</div>
+              <div class="w-8 h-8 rounded-full bg-purple-500 text-white flex items-center justify-center text-xs font-bold">何</div>
+              <div class="flex-1"><div class="text-sm font-medium">何**飞</div><div class="text-[10px] text-purple-600">王者II · 杭州</div></div>
+              <div class="text-right"><div class="text-sm font-bold text-rose-600">邀请 47 人</div><div class="text-[10px] text-emerald-600">赚 ¥18,200</div></div>
+            </li>
+            <li class="flex items-center gap-3 bg-white rounded-xl p-2.5">
+              <div class="w-7 h-7 rounded-lg leaderboard-2 text-white flex items-center justify-center text-xs font-bold">2</div>
+              <div class="w-8 h-8 rounded-full bg-cyan-500 text-white flex items-center justify-center text-xs font-bold">林</div>
+              <div class="flex-1"><div class="text-sm font-medium">林**华</div><div class="text-[10px] text-cyan-600">钻石I · 余杭</div></div>
+              <div class="text-right"><div class="text-sm font-bold text-rose-600">邀请 38 人</div><div class="text-[10px] text-emerald-600">赚 ¥13,800</div></div>
+            </li>
+            <li class="flex items-center gap-3 bg-white rounded-xl p-2.5">
+              <div class="w-7 h-7 rounded-lg leaderboard-3 text-white flex items-center justify-center text-xs font-bold">3</div>
+              <div class="w-8 h-8 rounded-full bg-amber-500 text-white flex items-center justify-center text-xs font-bold">周</div>
+              <div class="flex-1"><div class="text-sm font-medium">周**军</div><div class="text-[10px] text-amber-600">钻石III · 萧山</div></div>
+              <div class="text-right"><div class="text-sm font-bold text-rose-600">邀请 26 人</div><div class="text-[10px] text-emerald-600">赚 ¥9,500</div></div>
+            </li>
+            <li class="flex items-center gap-3 bg-blue-50 rounded-xl p-2.5 ring-2 ring-blue-300">
+              <div class="w-7 h-7 rounded-lg bg-blue-600 text-white flex items-center justify-center text-xs font-bold">186</div>
+              <div class="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center text-xs font-bold">我</div>
+              <div class="flex-1"><div class="text-sm font-medium text-blue-700">王建国 (你)</div><div class="text-[10px] text-blue-600">黄金III · 西湖</div></div>
+              <div class="text-right"><div class="text-sm font-bold text-blue-700">邀请 4 人</div><div class="text-[10px] text-blue-600">本月赚 ¥860</div></div>
+            </li>
+          </ul>
+          <div class="text-center mt-3">
+            <div class="text-[10px] text-slate-500">本月榜单 TOP 10 额外奖励 <b class="text-rose-600">¥3,000-30,000</b></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 常见问题 -->
+      <div class="px-5 mt-4 mb-4">
+        <div class="bg-white rounded-2xl p-4">
+          <div class="text-xs text-slate-400 mb-3">常见问题</div>
+          <ul class="space-y-2.5 text-xs">
+            <li class="flex items-start gap-2"><span class="text-blue-600 font-bold flex-shrink-0">Q</span><div><div class="text-slate-700">奖励什么时候到账？</div><div class="text-[10px] text-slate-400 mt-0.5">工友每达成一个节点（实名/入职/7天/30天），奖励 T+1 到账</div></div></li>
+            <li class="flex items-start gap-2"><span class="text-blue-600 font-bold flex-shrink-0">Q</span><div><div class="text-slate-700">工友离职了怎么办？</div><div class="text-[10px] text-slate-400 mt-0.5">已结算奖励不退。未达成节点的奖励作废</div></div></li>
+            <li class="flex items-start gap-2"><span class="text-blue-600 font-bold flex-shrink-0">Q</span><div><div class="text-slate-700">邀请上限多少？</div><div class="text-[10px] text-slate-400 mt-0.5">月内无上限。但同一身份证、同一设备的工友只算 1 次</div></div></li>
+            <li class="flex items-start gap-2"><span class="text-blue-600 font-bold flex-shrink-0">Q</span><div><div class="text-slate-700">如何成为"百人推广员"？</div><div class="text-[10px] text-slate-400 mt-0.5">月邀请≥100 人可申请，额外享受 5% 佣金 + 专属经理</div></div></li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 底部固定 CTA -->
+    <div class="bg-white border-t border-slate-100 px-4 py-2.5 flex gap-3">
+      <button class="flex-1 py-3 border border-slate-200 rounded-xl text-sm font-medium text-slate-600">📋 复制邀请码</button>
+      <button class="flex-1 py-3 rounded-xl text-sm font-bold text-white" style="background: linear-gradient(135deg,#F59E0B,#EF4444);">立即邀请赚 ¥500</button>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>

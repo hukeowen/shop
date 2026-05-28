@@ -1,0 +1,71 @@
+- generic [ref=e363]:
+  - generic [ref=e364]:
+    - generic [ref=e365]:
+      - generic [ref=e366]: 早上好，摊主
+      - generic [ref=e367]: 老王烧烤
+    - generic [ref=e368]: 营业中
+  - generic [ref=e370]:
+    - generic [ref=e371]:
+      - generic [ref=e372]: AI
+      - generic [ref=e373]: 一键成片
+    - generic [ref=e374]:
+      - generic [ref=e375]: ＋
+      - generic [ref=e376]: AI上架
+    - generic [ref=e377]:
+      - generic [ref=e378]: 扫
+      - generic [ref=e379]: 扫码核销
+    - generic [ref=e380]:
+      - generic [ref=e381]: 单
+      - generic [ref=e382]: 订单
+  - generic [ref=e383]: 今日概览
+  - generic [ref=e384]:
+    - generic [ref=e385]:
+      - generic [ref=e386]: 订单数
+      - generic [ref=e387]: "0"
+    - generic [ref=e388]:
+      - generic [ref=e389]: 销售额
+      - generic [ref=e390]: ¥0.00
+    - generic [ref=e391]:
+      - generic [ref=e392]: 新会员
+      - generic [ref=e393]: "3"
+    - generic [ref=e394]:
+      - generic [ref=e395]: 待处理
+      - generic [ref=e396]: "0"
+  - generic [ref=e397]:
+    - generic [ref=e399]: 最近 7 天销售趋势
+    - generic [ref=e400]:
+      - generic:
+        - generic [ref=e419]: ¥0
+        - generic [ref=e421]: 05-03
+      - generic:
+        - generic [ref=e422]: ¥0
+        - generic [ref=e424]: 05-04
+      - generic:
+        - generic [ref=e425]: ¥0
+        - generic [ref=e427]: 05-05
+      - generic:
+        - generic [ref=e428]: ¥0
+        - generic [ref=e430]: 05-06
+      - generic:
+        - generic [ref=e431]: ¥0
+        - generic [ref=e433]: 05-07
+      - generic:
+        - generic [ref=e434]: ¥0
+        - generic [ref=e436]: 05-08
+      - generic:
+        - generic [ref=e437]: ¥0
+        - generic [ref=e439]: 05-09
+  - generic [ref=e403]: 热销商品 Top 3
+  - generic [ref=e405]:
+    - generic [ref=e406]:
+      - generic [ref=e407]: 🏠
+      - generic [ref=e408]: 工作台
+    - generic [ref=e409]:
+      - generic [ref=e410]: 🎬
+      - generic [ref=e411]: 成片
+    - generic [ref=e412]:
+      - generic [ref=e413]: 📋
+      - generic [ref=e414]: 订单
+    - generic [ref=e415]:
+      - generic [ref=e416]: 👤
+      - generic [ref=e417]: 我的

@@ -1,0 +1,16 @@
+- generic [ref=e650]:
+  - generic [ref=e652]:
+    - img [ref=e655] [cursor=pointer]
+    - generic [ref=e658]: 店铺二维码
+  - generic [ref=e662]:
+    - generic [ref=e663]:
+      - generic [ref=e664]: 老王烧烤
+      - generic [ref=e668]: 长按图片可保存到相册
+      - generic [ref=e669]:
+        - generic [ref=e670]: http://www.doupaidoudian.com/m/shop-home?tenantId=162&inviter=1
+        - generic [ref=e671] [cursor=pointer]: 复制链接
+    - generic [ref=e672]:
+      - generic [ref=e673]: 使用说明
+      - generic [ref=e674]: • 将此二维码印刷/展示在店铺门口
+      - generic [ref=e675]: • 顾客扫码后直接进入您的店铺页
+      - generic [ref=e676]: • 通过二维码进店的顾客消费，您可以获得返佣

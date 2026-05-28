@@ -1,0 +1,103 @@
+/* ============ 蓝工平台 共享设计系统 ============ */
+:root {
+  --primary: #1677FF;
+  --primary-dark: #0958D9;
+  --accent: #FF7A45;
+  --success: #22C55E;
+  --warning: #F59E0B;
+  --danger: #EF4444;
+
+  --credit-bronze: #B87333;
+  --credit-silver: #94A3B8;
+  --credit-gold: #F59E0B;
+  --credit-diamond: #06B6D4;
+  --credit-king: #A855F7;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 手机原型外壳 */
+.phone-frame {
+  width: 390px;
+  height: 844px;
+  background: #000;
+  border-radius: 48px;
+  padding: 12px;
+  box-shadow: 0 30px 60px -15px rgba(0,0,0,.35);
+  margin: 24px auto;
+  position: relative;
+}
+.phone-screen {
+  width: 100%;
+  height: 100%;
+  background: #F5F7FA;
+  border-radius: 38px;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+.phone-notch {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 120px;
+  height: 30px;
+  background: #000;
+  border-radius: 0 0 16px 16px;
+  z-index: 50;
+}
+.status-bar {
+  height: 44px;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 14px;
+  font-weight: 600;
+  color: #000;
+}
+.phone-content {
+  flex: 1;
+  overflow-y: auto;
+  background: #F5F7FA;
+}
+.phone-content::-webkit-scrollbar { display: none; }
+
+/* 工分等级徽章 */
+.badge-bronze { background: linear-gradient(135deg,#CD7F32,#8B4513); color:#fff; }
+.badge-silver { background: linear-gradient(135deg,#C0C0C0,#808080); color:#fff; }
+.badge-gold { background: linear-gradient(135deg,#FFD700,#FFA500); color:#fff; }
+.badge-diamond { background: linear-gradient(135deg,#22D3EE,#06B6D4); color:#fff; }
+.badge-king { background: linear-gradient(135deg,#A855F7,#7C3AED); color:#fff; }
+
+/* 渐变 */
+.grad-blue { background: linear-gradient(135deg, #1677FF 0%, #4096FF 100%); }
+.grad-credit { background: linear-gradient(135deg, #F59E0B 0%, #EF4444 50%, #A855F7 100%); }
+.grad-card { background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%); }
+
+/* 卡片 */
+.card-hover { transition: all .2s ease; }
+.card-hover:hover { transform: translateY(-2px); box-shadow: 0 12px 24px -8px rgba(0,0,0,.1); }
+
+/* 桌面端侧边栏 */
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  color: #94A3B8;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all .15s ease;
+}
+.sidebar-link:hover { background: rgba(255,255,255,.05); color: #fff; }
+.sidebar-link.active { background: linear-gradient(135deg,#1677FF,#4096FF); color: #fff; box-shadow: 0 4px 12px rgba(22,119,255,.35); }
+
+/* 表格行 hover */
+tr.row-hover:hover { background: #F8FAFC; }

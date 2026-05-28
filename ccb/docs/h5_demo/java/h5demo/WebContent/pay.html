@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+	<title>H5聚合收银台支付接口</title>
+</head>
+	<body BGCOLOR='#FFFFFF' TEXT='#000000' LINK='#0000FF' VLINK='#0000FF' ALINK='#FF0000'>
+		<br /> <br />
+		<table border="1" cellpadding="1" cellspacing="1" align="center" width="50%">
+			<tr>
+		  		<th colspan="2" bgcolor="#5cacee">
+					请输入订单支付参数	
+				</th>
+		  	</tr> 
+
+			<form method="post" action="sendpay.jsp" accept-charset="utf-8">
+
+				<tr >
+					<td >商户订单号(orderid)</td>
+					
+					<td > 
+						<input type="text" name="reqsn" id="reqsn" value="reqsn001" />
+					</td>
+					
+				</tr>
+
+				<tr >
+					<td >支付金额(trxamt)单位分</td>
+					
+					<td > 
+						<input  type="text" name="trxamt" id="trxamt" value="1" />
+					</td>
+			
+				</tr>
+
+				<tr >
+					<td >订单备注(remark)</td>
+					
+					<td > 
+						<inputtype="text" name="remark" id="remark" value="" />
+					</td>
+				
+				</tr>
+
+				<tr >
+					<td >商品描述信息(body)</td>
+					
+					<td > 
+						<input type="text" name="body" id="body" value="手机充值" />
+					</td>
+					
+				</tr>
+
+				<tr >
+					<td ></td>
+					<td > 
+						<input type="submit" value="提交订单" />
+					</td>
+				</tr>
+
+			</form>
+		</table>
+</body>
+</html>

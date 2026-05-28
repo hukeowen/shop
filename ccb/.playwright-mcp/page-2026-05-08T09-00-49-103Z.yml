@@ -1,0 +1,75 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e4]:
+    - generic [ref=e6]:
+      - img [ref=e9] [cursor=pointer]
+      - generic [ref=e12]: 结算
+    - generic [ref=e16]:
+      - generic [ref=e17]:
+        - generic [ref=e18]: ‹
+        - generic [ref=e19]: 订单结算
+      - generic [ref=e20]:
+        - generic [ref=e22]: 配送方式
+        - generic [ref=e23]:
+          - generic [ref=e24]: 🏪 到店自提
+          - generic [ref=e25]: 🚚 快递发货
+      - generic [ref=e26]:
+        - generic [ref=e27]:
+          - generic [ref=e28]: 老
+          - generic [ref=e29]: 老王烧烤
+        - generic [ref=e30]:
+          - img [ref=e33]
+          - generic [ref=e34]:
+            - generic [ref=e35]: 海福盛干贝炖鸡粥
+            - generic [ref=e36]: 默认
+          - generic [ref=e37]:
+            - generic [ref=e38]: ¥5.50
+            - generic [ref=e39]: x 1
+        - generic [ref=e40]:
+          - generic [ref=e41]: 商品小计
+          - generic [ref=e42]: ¥5.50
+        - generic [ref=e43]:
+          - generic [ref=e44]: 店铺合计
+          - generic [ref=e45]: ¥5.50
+      - generic [ref=e46]:
+        - generic [ref=e48]: 订单备注
+        - generic [ref=e51]:
+          - generic: 如：少糖 / 不要葱…
+          - textbox [ref=e52]
+      - generic [ref=e53]:
+        - generic [ref=e54]: 店铺资产抵扣
+        - generic [ref=e55]:
+          - generic [ref=e56]: 余
+          - generic [ref=e57]:
+            - generic [ref=e58]: 老王烧烤 · 店铺余额
+            - generic [ref=e59]: 该店余额为 0，请先去"我的钱包"充值或推荐好友赚积分
+          - generic [ref=e61]: 未使用
+        - generic [ref=e64]:
+          - generic [ref=e65]: 抵扣后还需在线支付
+          - generic [ref=e66]: ¥5.50
+      - generic [ref=e67]:
+        - generic [ref=e68]: 在线支付剩余 ¥5.50
+        - generic [ref=e69]:
+          - generic [ref=e70]: 微
+          - generic [ref=e71]:
+            - generic [ref=e72]: 微信支付
+            - generic [ref=e73]: 推荐
+        - generic [ref=e75]:
+          - generic [ref=e76]: 店
+          - generic [ref=e77]:
+            - generic [ref=e78]: 到店付款
+            - generic [ref=e79]: 商家未开通在线支付
+      - generic [ref=e81]:
+        - generic [ref=e82]: 支付明细：
+        - text: · 店铺余额抵扣：
+        - generic [ref=e83]: 未启用
+        - text: · 在线支付：
+        - generic [ref=e84]: ¥5.50
+      - generic [ref=e86]:
+        - generic [ref=e87]:
+          - text: 合计 ¥5.50 · 实付
+          - generic [ref=e88]: ¥5.50
+        - generic [ref=e89]: 提交订单
+  - generic:
+    - generic:
+      - generic:
+        - paragraph: 还需线上支付 ¥5.50

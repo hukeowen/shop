@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>工分管理 · 蓝工平台运营后台</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../shared/style.css">
+<style>
+  body { font-family: 'Inter', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif; background:#F8FAFC; }
+  .num-font { font-feature-settings: "tnum"; font-variant-numeric: tabular-nums; letter-spacing:-0.02em; }
+  .sidebar-link { display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:8px; color:#94A3B8; font-size:13px; font-weight:500; transition:all .15s; }
+  .sidebar-link:hover { background:rgba(255,255,255,.05); color:#fff; }
+  .sidebar-link.active { background:linear-gradient(135deg,#5046E5,#7C3AED); color:#fff; box-shadow:0 4px 12px rgba(80,70,229,.4); }
+  .sidebar-group { font-size:11px; font-weight:600; color:#475569; text-transform:uppercase; letter-spacing:0.08em; padding:14px 12px 6px; }
+  .stat-card { background:#fff; border:1px solid #E2E8F0; border-radius:12px; padding:16px 18px; }
+  .tag { display:inline-flex; align-items:center; gap:4px; padding:2px 7px; border-radius:4px; font-size:10px; font-weight:600; }
+  .tag-green { background:#DCFCE7; color:#15803D; }
+  .tag-red { background:#FEE2E2; color:#B91C1C; }
+  .tag-amber { background:#FEF3C7; color:#B45309; }
+  .tag-blue { background:#DBEAFE; color:#1D4ED8; }
+  .tag-slate { background:#F1F5F9; color:#475569; }
+  th { background:#F8FAFC; font-size:11px; font-weight:600; color:#64748B; text-align:left; padding:10px 12px; border-bottom:1px solid #E2E8F0; white-space:nowrap; text-transform:uppercase; letter-spacing:0.04em; }
+  td { padding:11px 12px; border-bottom:1px solid #F1F5F9; font-size:12.5px; color:#334155; vertical-align:middle; }
+  tr.row-hover:hover { background:#F8FAFC; }
+  .btn-icon { width:26px; height:26px; border-radius:5px; display:inline-flex; align-items:center; justify-content:center; color:#64748B; transition:all .15s; }
+  .btn-icon:hover { background:#F1F5F9; color:#5046E5; }
+  .scrollbar-thin::-webkit-scrollbar { width:6px; }
+  .scrollbar-thin::-webkit-scrollbar-thumb { background:#CBD5E1; border-radius:3px; }
+  .credit-pill { display:inline-flex; align-items:center; gap:5px; padding:3px 8px; border-radius:10px; font-size:11px; font-weight:700; }
+  .switch { position:relative; display:inline-block; width:34px; height:18px; }
+  .switch input { opacity:0; width:0; height:0; }
+  .slider { position:absolute; cursor:pointer; inset:0; background:#CBD5E1; border-radius:9px; transition:.2s; }
+  .slider::before { content:""; position:absolute; height:14px; width:14px; left:2px; bottom:2px; background:#fff; border-radius:50%; transition:.2s; }
+  input:checked + .slider { background:#5046E5; }
+  input:checked + .slider::before { transform:translateX(16px); }
+  .rule-row.disabled { opacity:0.5; }
+  .pulse-bg { animation: pulseBg 2s ease-in-out infinite; }
+  @keyframes pulseBg { 0%,100%{background:rgba(239,68,68,0.05);} 50%{background:rgba(239,68,68,0.12);} }
+</style>
+</head>
+<body class="text-slate-800">
+
+<div class="flex min-h-screen">
+
+  <aside class="w-[240px] bg-[#0F172A] text-white flex-shrink-0 flex flex-col">
+    <div class="px-5 pt-5 pb-4 border-b border-white/5">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-[#5046E5] to-[#7C3AED] flex items-center justify-center font-extrabold text-[15px]">蓝</div>
+        <div><div class="text-[13px] font-bold leading-tight">蓝工平台</div><div class="text-[10px] text-slate-400 leading-tight mt-0.5 tracking-wider">运营后台 · ADMIN</div></div>
+      </div>
+      <div class="mt-4 flex items-center gap-2.5 px-2.5 py-2 rounded-lg bg-white/5">
+        <div class="w-7 h-7 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center text-[11px] font-bold">A</div>
+        <div class="min-w-0 flex-1"><div class="text-[12px] font-medium truncate">admin@bluework</div><div class="text-[10px] text-emerald-400 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>超级管理员</div></div>
+      </div>
+    </div>
+    <nav class="flex-1 px-3 py-2 overflow-y-auto scrollbar-thin">
+      <div class="sidebar-group">驾驶舱</div>
+      <a href="./dashboard.html" class="sidebar-link"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>数据驾驶舱</a>
+      <div class="sidebar-group">用户管理</div>
+      <a href="./workers.html" class="sidebar-link"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>工人管理</a>
+      <a href="./dispatches.html" class="sidebar-link"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>派遣公司</a>
+      <a href="./clients.html" class="sidebar-link">🏛️ 甲方/用工单位 <span class="ml-auto px-1 py-0 rounded bg-gradient-to-r from-pink-500 to-orange-500 text-white text-[9px] font-bold">NEW</span></a>
+      <div class="sidebar-group">业务管理</div>
+      <a href="./jobs-audit.html" class="sidebar-link"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>招聘审核<span class="ml-auto px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-500 text-white">34</span></a>
+      <a href="./credit.html" class="sidebar-link active"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4.5L6 21l1.5-7.5L2 9h7z"/></svg>工分管理</a>
+      <div class="sidebar-group">风控合规</div>
+      <a href="./risk.html" class="sidebar-link"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>风控告警<span class="ml-auto px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500 text-white">23</span></a>
+      <a href="./audit.html" class="sidebar-link">📜 审计日志</a>
+      <div class="sidebar-group">财务管理</div>
+      <a href="./finance.html" class="sidebar-link"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>财务对账</a>
+      <div class="sidebar-group">客服支持</div>
+      <a href="./tickets.html" class="sidebar-link">🎫 客服工单 <span class="ml-auto px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-500 text-white">89</span></a>
+      <div class="sidebar-group">运营</div>
+      <a href="./campaigns.html" class="sidebar-link">🎯 运营活动</a>
+      <a href="./notifications.html" class="sidebar-link">📢 公告通知</a>
+      <div class="sidebar-group">系统</div>
+      <a href="./roles.html" class="sidebar-link">🔐 权限管理</a>
+      <a href="./api.html" class="sidebar-link">🔌 API 开放平台</a>
+      <a href="#" class="sidebar-link"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/></svg>系统设置</a>
+    </nav>
+    <div class="px-4 py-3 border-t border-white/5"><div class="text-[10px] text-slate-500">v3.2.1 · build 20260517</div></div>
+  </aside>
+
+  <main class="flex-1 min-w-0">
+    <header class="h-14 bg-white border-b border-slate-200 flex items-center px-6 sticky top-0 z-20">
+      <div class="flex items-center gap-2.5">
+        <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-red-50 text-red-600 border border-red-200">生产环境</span>
+        <h1 class="text-[15px] font-semibold text-slate-900">工分管理</h1>
+        <span class="text-xs text-slate-400">/</span>
+        <span class="text-xs text-slate-500">蓝领芝麻信用 · 全局</span>
+        <span class="ml-2 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">⚠ 调整需二次确认</span>
+      </div>
+      <div class="ml-auto flex items-center gap-3">
+        <div class="relative">
+          <svg class="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input class="w-64 pl-8 pr-3 py-1.5 text-[13px] rounded-md bg-slate-100 border-0" placeholder="搜索工人ID/规则 ⌘K">
+        </div>
+        <button class="w-8 h-8 rounded-md hover:bg-slate-100 flex items-center justify-center relative">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="text-slate-600"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 ring-2 ring-white"></span>
+        </button>
+        <div class="w-px h-5 bg-slate-200"></div>
+        <div class="flex items-center gap-2">
+          <div class="w-7 h-7 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center text-white text-[11px] font-bold">A</div>
+          <div class="text-[12px]"><div class="font-semibold text-slate-800 leading-tight">Admin</div><div class="text-[10px] text-slate-500 leading-tight">超级管理员</div></div>
+        </div>
+      </div>
+    </header>
+
+    <div class="p-6 space-y-4">
+
+      <!-- Top 4 stat cards -->
+      <section class="grid grid-cols-4 gap-4">
+        <div class="stat-card bg-gradient-to-br from-[#5046E5] to-[#7C3AED] border-0 text-white">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-[11px] opacity-80 font-medium">工分总积分</span>
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="opacity-70"><path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4.5L6 21l1.5-7.5L2 9h7z"/></svg>
+          </div>
+          <div class="num-font text-[24px] font-extrabold leading-tight">3.54<span class="text-[14px] opacity-80">B</span></div>
+          <div class="text-[11px] opacity-80 mt-1">3,548,234,512 分</div>
+        </div>
+        <div class="stat-card">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-[11px] text-slate-500 font-medium">平均分</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-600 font-semibold">↑ 8</span>
+          </div>
+          <div class="num-font text-[24px] font-extrabold text-slate-900 leading-tight">678<span class="text-[14px] text-slate-400">/1000</span></div>
+          <div class="mt-1.5 h-1 rounded-full bg-slate-100 overflow-hidden"><div class="h-full grad-credit" style="width:67.8%"></div></div>
+        </div>
+        <div class="stat-card">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-[11px] text-slate-500 font-medium">最高分</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded bg-purple-50 text-purple-600 font-semibold">王者</span>
+          </div>
+          <div class="num-font text-[24px] font-extrabold text-slate-900 leading-tight">998<span class="text-[14px] text-slate-400">/1000</span></div>
+          <div class="text-[11px] text-slate-500 mt-1">王女士 · 上海 · 7年勤工</div>
+        </div>
+        <div class="stat-card border-red-200">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-[11px] text-red-600 font-medium">异常工分账户</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded bg-red-500 text-white font-bold">告警</span>
+          </div>
+          <div class="num-font text-[24px] font-extrabold text-red-600 leading-tight">23</div>
+          <div class="text-[11px] text-red-600 mt-1">→ 查看异常列表</div>
+        </div>
+      </section>
+
+      <!-- Middle: 2 charts -->
+      <section class="grid grid-cols-12 gap-4">
+        <!-- Histogram -->
+        <div class="col-span-8 bg-white border border-slate-200 rounded-xl p-5">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h3 class="text-[14px] font-bold text-slate-900">工分分布直方图</h3>
+              <p class="text-[11px] text-slate-500 mt-0.5">全平台工人工分分布 · 5,234,128 样本</p>
+            </div>
+            <div class="flex items-center gap-3 text-[11px]">
+              <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm" style="background:#CD7F32"></span>青铜</span>
+              <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm" style="background:#94A3B8"></span>白银</span>
+              <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm" style="background:#F59E0B"></span>黄金</span>
+              <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm" style="background:#06B6D4"></span>钻石</span>
+              <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm" style="background:#A855F7"></span>王者</span>
+            </div>
+          </div>
+          <div class="h-[260px] flex items-end justify-between gap-1 px-2">
+            <!-- 0-100 bronze 1 -->
+            <div class="flex-1 flex flex-col items-center gap-1">
+              <div class="text-[9px] text-slate-400 num-font">28K</div>
+              <div class="w-full rounded-t-sm" style="background:#CD7F32; height:5%"></div>
+            </div>
+            <div class="flex-1 flex flex-col items-center gap-1">
+              <div class="text-[9px] text-slate-400 num-font">54K</div>
+              <div class="w-full rounded-t-sm" style="background:#CD7F32; height:9%"></div>
+            </div>
+            <div class="flex-1 flex flex-col items-center gap-1">
+              <div class="text-[9px] text-slate-400 num-font">98K</div>
+              <div class="w-full rounded-t-sm" style="background:#CD7F32; height:16%"></div>
+            </div>
+            <div class="flex-1 flex flex-col items-center gap-1">
+              <div class="text-[9px] text-slate-400 num-font">187K</div>
+              <div class="w-full rounded-t-sm" style="background:#CD7F32; height:30%"></div>
+            </div>
+            <div class="flex-1 flex flex-col items-center gap-1">
+              <div class="text-[9px] text-slate-400 num-font">324K</div>
+              <div class="w-full rounded-t-sm" style="background:#CD7F32; height:52%"></div>
+            </div>
+            <div class="flex-1 flex flex-col items-center gap-1">
+              <div class="text-[9px] text-slate-400 num-font">487K</div>
+              <div class="w-full rounded-t-sm" style="background:#CD7F32; height:78%"></div>
+            </div>
+            <div class="flex-1 flex flex-col items-center gap-1">
+              <div class="text-[9px] text-slate-400 num-font">623K</div>
+              <div class="w-full rounded-t-sm" style="background:#94A3B8; height:100%"></div>
+            </div>
+            <div class="flex-1 flex flex-col items-center gap-1">
+              <div class="text-[9px] text-slate-400 num-font">587K</div>
+              <div class="w-full rounded-t-sm" style="background:#94A3B8; height:94%"></div>
+            </div>
+            <div class="flex-1 flex flex-col items-center gap-1">
+              <div class="text-[9px] text-slate-400 num-font">512K</div>
+              <div class="w-full rounded-t-sm" style="background:#94A3B8; height:82%"></div>
+            </div>
+            <div class="flex-1 flex flex-col items-center gap-1">
+              <div class="text-[9px] text-slate-400 num-font">478K</div>
+              <div class="w-full rounded-t-sm" style="background:#F59E0B; height:77%"></div>
+            </div>
+            <div class="flex-1 flex flex-col items-center gap-1">
+              <div class="text-[9px] text-slate-400 num-font">412K</div>
+              <div class="w-full rounded-t-sm" style="background:#F59E0B; height:66%"></div>
+            </div>
+            <div class="flex-1 flex flex-col items-center gap-1">
+              <div class="text-[9px] text-slate-400 num-font">298K</div>
+              <div class="w-full rounded-t-sm" style="background:#F59E0B; height:48%"></div>
+            </div>
+            <div class="flex-1 flex flex-col items-center gap-1">
+              <div class="text-[9px] text-slate-400 num-font">187K</div>
+              <div class="w-full rounded-t-sm" style="background:#06B6D4; height:30%"></div>
+            </div>
+            <div class="flex-1 flex flex-col items-center gap-1">
+              <div class="text-[9px] text-slate-400 num-font">98K</div>
+              <div class="w-full rounded-t-sm" style="background:#06B6D4; height:16%"></div>
+            </div>
+            <div class="flex-1 flex flex-col items-center gap-1">
+              <div class="text-[9px] text-slate-400 num-font">42K</div>
+              <div class="w-full rounded-t-sm" style="background:#06B6D4; height:7%"></div>
+            </div>
+            <div class="flex-1 flex flex-col items-center gap-1">
+              <div class="text-[9px] text-slate-400 num-font">13K</div>
+              <div class="w-full rounded-t-sm" style="background:#A855F7; height:2.5%"></div>
+            </div>
+          </div>
+          <div class="mt-2 flex justify-between text-[10px] text-slate-400 px-2 num-font">
+            <span>0</span><span>100</span><span>200</span><span>300</span><span>400</span><span>500</span><span>600</span><span>650</span><span>700</span><span>750</span><span>800</span><span>850</span><span>900</span><span>950</span><span>980</span><span>1000</span>
+          </div>
+          <div class="mt-3 pt-3 border-t border-slate-100 flex justify-around text-center">
+            <div><div class="num-font text-[14px] font-bold text-slate-900">678</div><div class="text-[10px] text-slate-500">均值</div></div>
+            <div><div class="num-font text-[14px] font-bold text-slate-900">692</div><div class="text-[10px] text-slate-500">中位数</div></div>
+            <div><div class="num-font text-[14px] font-bold text-slate-900">128</div><div class="text-[10px] text-slate-500">标准差</div></div>
+            <div><div class="num-font text-[14px] font-bold text-emerald-600">+8.4%</div><div class="text-[10px] text-slate-500">月度增长</div></div>
+          </div>
+        </div>
+
+        <!-- Radar 5D -->
+        <div class="col-span-4 bg-white border border-slate-200 rounded-xl p-5">
+          <div class="mb-3">
+            <h3 class="text-[14px] font-bold text-slate-900">5 维平均分对比</h3>
+            <p class="text-[11px] text-slate-500 mt-0.5">vs 行业基准</p>
+          </div>
+          <div class="h-[240px] flex items-center justify-center">
+            <svg viewBox="0 0 280 240" class="w-full h-full">
+              <g transform="translate(140, 120)">
+                <!-- Grid -->
+                <polygon points="0,-100 95,-31 59,81 -59,81 -95,-31" fill="none" stroke="#E2E8F0" stroke-width="1"/>
+                <polygon points="0,-75 71,-23 44,61 -44,61 -71,-23" fill="none" stroke="#E2E8F0" stroke-width="1"/>
+                <polygon points="0,-50 47,-15 29,40 -29,40 -47,-15" fill="none" stroke="#E2E8F0" stroke-width="1"/>
+                <polygon points="0,-25 23,-7 14,20 -14,20 -23,-7" fill="none" stroke="#E2E8F0" stroke-width="1"/>
+                <!-- Lines from center -->
+                <line x1="0" y1="0" x2="0" y2="-100" stroke="#E2E8F0" stroke-width="1"/>
+                <line x1="0" y1="0" x2="95" y2="-31" stroke="#E2E8F0" stroke-width="1"/>
+                <line x1="0" y1="0" x2="59" y2="81" stroke="#E2E8F0" stroke-width="1"/>
+                <line x1="0" y1="0" x2="-59" y2="81" stroke="#E2E8F0" stroke-width="1"/>
+                <line x1="0" y1="0" x2="-95" y2="-31" stroke="#E2E8F0" stroke-width="1"/>
+                <!-- Industry baseline -->
+                <polygon points="0,-60 56,-18 35,49 -41,56 -66,-22" fill="rgba(148,163,184,0.15)" stroke="#94A3B8" stroke-width="1.5" stroke-dasharray="3 2"/>
+                <!-- Our platform -->
+                <polygon points="0,-88 82,-26 50,69 -52,71 -83,-27" fill="rgba(80,70,229,0.2)" stroke="#5046E5" stroke-width="2"/>
+                <circle cx="0" cy="-88" r="3" fill="#5046E5"/>
+                <circle cx="82" cy="-26" r="3" fill="#5046E5"/>
+                <circle cx="50" cy="69" r="3" fill="#5046E5"/>
+                <circle cx="-52" cy="71" r="3" fill="#5046E5"/>
+                <circle cx="-83" cy="-27" r="3" fill="#5046E5"/>
+                <!-- Labels -->
+                <text x="0" y="-110" text-anchor="middle" font-size="11" fill="#475569" font-weight="600">守信</text>
+                <text x="108" y="-31" text-anchor="middle" font-size="11" fill="#475569" font-weight="600">勤奋</text>
+                <text x="71" y="98" text-anchor="middle" font-size="11" fill="#475569" font-weight="600">技能</text>
+                <text x="-71" y="98" text-anchor="middle" font-size="11" fill="#475569" font-weight="600">协作</text>
+                <text x="-108" y="-31" text-anchor="middle" font-size="11" fill="#475569" font-weight="600">稳定</text>
+              </g>
+            </svg>
+          </div>
+          <div class="grid grid-cols-2 gap-2 text-[11px] mt-2">
+            <div class="flex items-center gap-1.5"><span class="w-3 h-2 rounded-sm bg-[#5046E5]"></span><span>蓝工平台 678</span></div>
+            <div class="flex items-center gap-1.5"><span class="w-3 h-2 rounded-sm border border-slate-400 border-dashed"></span><span>行业 568</span></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 工分规则配置 -->
+      <section class="bg-white border border-slate-200 rounded-xl overflow-hidden">
+        <div class="flex items-center justify-between p-5 border-b border-slate-100">
+          <div>
+            <h3 class="text-[14px] font-bold text-slate-900">工分规则配置</h3>
+            <p class="text-[11px] text-slate-500 mt-0.5">所有规则变更将记录至审计日志 · 需超管签字</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button class="px-3 py-1.5 text-[12px] rounded-md border border-slate-200 hover:bg-slate-50">查看历史</button>
+            <button class="px-3 py-1.5 text-[12px] font-semibold rounded-md bg-[#5046E5] text-white">+ 新增规则</button>
+          </div>
+        </div>
+        <div class="overflow-x-auto scrollbar-thin">
+          <table class="w-full">
+            <thead>
+              <tr>
+                <th>规则名称</th>
+                <th>行为</th>
+                <th>分值</th>
+                <th>触发条件</th>
+                <th>影响维度</th>
+                <th>本月触发</th>
+                <th>启用</th>
+                <th class="text-right pr-4">操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="row-hover">
+                <td class="font-medium">准时打卡</td>
+                <td><span class="tag tag-green">正向</span></td>
+                <td class="num-font font-bold text-emerald-600">+1</td>
+                <td class="text-slate-600">每次打卡迟到≤5min</td>
+                <td><span class="text-[11px] text-slate-500">勤奋</span></td>
+                <td class="num-font">3,247,892</td>
+                <td><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></td>
+                <td class="text-right pr-2"><button class="btn-icon"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button></td>
+              </tr>
+              <tr class="row-hover">
+                <td class="font-medium">雇主好评</td>
+                <td><span class="tag tag-green">正向</span></td>
+                <td class="num-font font-bold text-emerald-600">+3</td>
+                <td class="text-slate-600">收到 5 星评价</td>
+                <td><span class="text-[11px] text-slate-500">协作 · 技能</span></td>
+                <td class="num-font">1,247,134</td>
+                <td><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></td>
+                <td class="text-right pr-2"><button class="btn-icon"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button></td>
+              </tr>
+              <tr class="row-hover">
+                <td class="font-medium">月度全勤</td>
+                <td><span class="tag tag-green">正向</span></td>
+                <td class="num-font font-bold text-emerald-600">+20</td>
+                <td class="text-slate-600">单月零迟到/零请假</td>
+                <td><span class="text-[11px] text-slate-500">稳定 · 勤奋</span></td>
+                <td class="num-font">487,234</td>
+                <td><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></td>
+                <td class="text-right pr-2"><button class="btn-icon"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button></td>
+              </tr>
+              <tr class="row-hover">
+                <td class="font-medium">技能认证通过</td>
+                <td><span class="tag tag-green">正向</span></td>
+                <td class="num-font font-bold text-emerald-600">+15</td>
+                <td class="text-slate-600">完成在线技能考试</td>
+                <td><span class="text-[11px] text-slate-500">技能</span></td>
+                <td class="num-font">187,452</td>
+                <td><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></td>
+                <td class="text-right pr-2"><button class="btn-icon"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button></td>
+              </tr>
+              <tr class="row-hover">
+                <td class="font-medium">连续在岗 90 天</td>
+                <td><span class="tag tag-green">正向</span></td>
+                <td class="num-font font-bold text-emerald-600">+50</td>
+                <td class="text-slate-600">同岗位连续 90 天</td>
+                <td><span class="text-[11px] text-slate-500">稳定</span></td>
+                <td class="num-font">128,742</td>
+                <td><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></td>
+                <td class="text-right pr-2"><button class="btn-icon"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button></td>
+              </tr>
+              <tr class="row-hover">
+                <td class="font-medium">迟到一次</td>
+                <td><span class="tag tag-red">负向</span></td>
+                <td class="num-font font-bold text-red-600">-2</td>
+                <td class="text-slate-600">单次迟到 &gt; 5min</td>
+                <td><span class="text-[11px] text-slate-500">勤奋</span></td>
+                <td class="num-font">247,184</td>
+                <td><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></td>
+                <td class="text-right pr-2"><button class="btn-icon"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button></td>
+              </tr>
+              <tr class="row-hover">
+                <td class="font-medium">无故旷工</td>
+                <td><span class="tag tag-red">负向</span></td>
+                <td class="num-font font-bold text-red-600">-8</td>
+                <td class="text-slate-600">未请假无打卡</td>
+                <td><span class="text-[11px] text-slate-500">守信 · 勤奋</span></td>
+                <td class="num-font">87,234</td>
+                <td><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></td>
+                <td class="text-right pr-2"><button class="btn-icon"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button></td>
+              </tr>
+              <tr class="row-hover">
+                <td class="font-medium">投诉成立</td>
+                <td><span class="tag tag-red">负向</span></td>
+                <td class="num-font font-bold text-red-600">-10</td>
+                <td class="text-slate-600">客服核实雇主投诉</td>
+                <td><span class="text-[11px] text-slate-500">协作 · 守信</span></td>
+                <td class="num-font">12,847</td>
+                <td><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></td>
+                <td class="text-right pr-2"><button class="btn-icon"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button></td>
+              </tr>
+              <tr class="row-hover">
+                <td class="font-medium">无故离岗 (跑路)</td>
+                <td><span class="tag tag-red">负向</span></td>
+                <td class="num-font font-bold text-red-600">-50</td>
+                <td class="text-slate-600">入职后 7 天内未通知离岗</td>
+                <td><span class="text-[11px] text-slate-500">守信 · 稳定</span></td>
+                <td class="num-font">4,128</td>
+                <td><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></td>
+                <td class="text-right pr-2"><button class="btn-icon"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button></td>
+              </tr>
+              <tr class="row-hover rule-row disabled">
+                <td class="font-medium">介绍工友入职 <span class="tag tag-slate ml-1">实验中</span></td>
+                <td><span class="tag tag-green">正向</span></td>
+                <td class="num-font font-bold text-emerald-600">+25</td>
+                <td class="text-slate-600">被介绍人成功入职满 30 天</td>
+                <td><span class="text-[11px] text-slate-500">协作</span></td>
+                <td class="num-font">0</td>
+                <td><label class="switch"><input type="checkbox"><span class="slider"></span></label></td>
+                <td class="text-right pr-2"><button class="btn-icon"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- 异常账户 -->
+      <section class="bg-white border border-red-200 rounded-xl overflow-hidden">
+        <div class="flex items-center justify-between p-5 border-b border-red-100 bg-red-50/60">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg bg-red-100 flex items-center justify-center">
+              <svg width="18" height="18" fill="none" stroke="#DC2626" stroke-width="2" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            </div>
+            <div>
+              <h3 class="text-[14px] font-bold text-red-700">异常账户监控 <span class="text-[11px] text-red-600 font-normal">23 个待调查</span></h3>
+              <p class="text-[11px] text-red-600 mt-0.5">短时间暴涨 / 异常波动 / 跨城高频接单</p>
+            </div>
+          </div>
+          <button class="px-3 py-1.5 text-[12px] font-semibold rounded-md bg-red-600 text-white hover:bg-red-700">批量调查</button>
+        </div>
+        <div class="overflow-x-auto scrollbar-thin">
+          <table class="w-full">
+            <thead>
+              <tr>
+                <th>工人</th>
+                <th>当前工分</th>
+                <th>异常类型</th>
+                <th>触发详情</th>
+                <th>关联派遣</th>
+                <th>风险等级</th>
+                <th>检测时间</th>
+                <th class="text-right pr-4">操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="row-hover pulse-bg">
+                <td><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full bg-gradient-to-br from-slate-400 to-slate-500 flex items-center justify-center text-white text-[11px] font-bold">B</div><div><div class="font-medium">W202405...0011</div><div class="text-[10px] text-slate-500">河南郑州</div></div></div></td>
+                <td><div class="num-font font-bold text-red-600">820</div><div class="text-[10px] text-red-500">↑ +228 / 10天</div></td>
+                <td><span class="tag tag-red">⚡ 短期暴涨</span></td>
+                <td class="text-slate-600 text-[11px]">10 天内增加 228 分 (异常)</td>
+                <td class="text-[11px] text-slate-600">某某劳务中介</td>
+                <td><span class="tag tag-red">🔴 高危</span></td>
+                <td class="text-slate-500 text-[11px]">5月17 09:23</td>
+                <td class="text-right pr-2"><button class="px-2.5 py-1 rounded text-[11px] bg-red-600 text-white font-semibold mr-1">立即调查</button></td>
+              </tr>
+              <tr class="row-hover">
+                <td><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white text-[11px] font-bold">C</div><div><div class="font-medium">W202404...0892</div><div class="text-[10px] text-slate-500">广东东莞</div></div></div></td>
+                <td><div class="num-font font-bold text-amber-600">718</div><div class="text-[10px] text-amber-600">↑↓ 频繁波动</div></td>
+                <td><span class="tag tag-amber">📊 异常波动</span></td>
+                <td class="text-slate-600 text-[11px]">30天内 ±120 分 7 次波动</td>
+                <td class="text-[11px] text-slate-600">3 家关联派遣</td>
+                <td><span class="tag tag-amber">🟡 中危</span></td>
+                <td class="text-slate-500 text-[11px]">5月17 08:14</td>
+                <td class="text-right pr-2"><button class="px-2.5 py-1 rounded text-[11px] border border-amber-300 text-amber-700 font-semibold">调查</button></td>
+              </tr>
+              <tr class="row-hover">
+                <td><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white text-[11px] font-bold">D</div><div><div class="font-medium">W202403...0517</div><div class="text-[10px] text-slate-500">江苏苏州</div></div></div></td>
+                <td><div class="num-font font-bold text-amber-600">692</div><div class="text-[10px] text-slate-500">跨城高频</div></td>
+                <td><span class="tag tag-amber">🌏 跨城接单</span></td>
+                <td class="text-slate-600 text-[11px]">7 天 3 城市接单 (代打卡嫌疑)</td>
+                <td class="text-[11px] text-slate-600">3 家关联派遣</td>
+                <td><span class="tag tag-amber">🟡 中危</span></td>
+                <td class="text-slate-500 text-[11px]">5月16 22:47</td>
+                <td class="text-right pr-2"><button class="px-2.5 py-1 rounded text-[11px] border border-amber-300 text-amber-700 font-semibold">调查</button></td>
+              </tr>
+              <tr class="row-hover">
+                <td><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full bg-gradient-to-br from-rose-400 to-red-500 flex items-center justify-center text-white text-[11px] font-bold">E</div><div><div class="font-medium">W202402...0387</div><div class="text-[10px] text-slate-500">浙江温州</div></div></div></td>
+                <td><div class="num-font font-bold text-red-600">752</div><div class="text-[10px] text-red-500">↑ +180 / 5天</div></td>
+                <td><span class="tag tag-red">⚡ 短期暴涨</span></td>
+                <td class="text-slate-600 text-[11px]">5 天内 +180 分，同派遣集中加分</td>
+                <td class="text-[11px] text-red-600 font-semibold">单一派遣 (异常)</td>
+                <td><span class="tag tag-red">🔴 高危</span></td>
+                <td class="text-slate-500 text-[11px]">5月16 16:32</td>
+                <td class="text-right pr-2"><button class="px-2.5 py-1 rounded text-[11px] bg-red-600 text-white font-semibold mr-1">立即调查</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="px-5 py-3 border-t border-red-100 text-[11px] text-red-700 bg-red-50/40 text-center">
+          显示 4 / 23 条 · <a href="#" class="font-semibold underline">查看全部异常账户 →</a>
+        </div>
+      </section>
+
+    </div>
+  </main>
+</div>
+
+</body>
+</html>

@@ -5,55 +5,61 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>店铺 · 摊小二</title>
 <style>
-  :root{--bg:#fafafa;--card:#fff;--line:rgba(0,0,0,.06);--text:#1a1a1a;--text-2:#6b7280;--text-3:#9ca3af;--accent:#ff6b35;--success:#10b981}
+  :root{--bg:#fafafa;--card:#fff;--line:rgba(0,0,0,.06);--text:#1a1a1a;--text-2:#6b7280;--text-3:#9ca3af;--p:#ff6b35;--p-l:#fff1e8;--success:#10b981}
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
   html{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;font-size:14px}
   body{background:#e5e7eb;min-height:100vh;display:flex;justify-content:center;padding:24px 0;color:var(--text)}
   .phone{width:375px;min-height:812px;background:var(--bg);box-shadow:0 24px 64px rgba(0,0,0,.18);border-radius:40px;overflow:hidden;position:relative;padding-bottom:96px}
-  .hero{position:relative;height:240px;background:linear-gradient(180deg,#e5e7eb,#f3f4f6);overflow:hidden}
-  .hero-ph{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:120px;color:#d1d5db;font-weight:700}
+  .hero{position:relative;height:240px;background:linear-gradient(135deg,#ff9b5e 0%,#ff6b35 70%,#e85a2c 100%);overflow:hidden}
+  .hero-ph{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:120px;color:rgba(255,255,255,.35);font-weight:700}
   .hero-nav{position:absolute;top:44px;left:0;right:0;padding:0 20px;display:flex;justify-content:space-between;z-index:2}
   .nb{width:36px;height:36px;background:rgba(255,255,255,.92);backdrop-filter:blur(20px);border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--text)}
   .nb svg{width:18px;height:18px}
-  .info{margin:-32px 20px 0;background:var(--card);border-radius:20px;padding:24px 20px;position:relative;z-index:3;border:1px solid var(--line)}
+  .info{margin:-32px 20px 0;background:var(--card);border-radius:20px;padding:24px 20px;position:relative;z-index:3;border:1px solid var(--line);box-shadow:0 8px 24px rgba(255,107,53,.06)}
   .i-top{display:flex;align-items:center;gap:10px;margin-bottom:8px}
   .i-name{flex:1;font-size:22px;font-weight:700;letter-spacing:-.5px}
-  .badge{font-size:10px;color:var(--success);background:rgba(16,185,129,.1);padding:3px 10px;border-radius:999px}
+  .badge{font-size:10px;color:var(--success);background:rgba(16,185,129,.1);padding:3px 10px;border-radius:999px;font-weight:600}
   .i-meta{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-2)}
-  .r{color:var(--text);font-weight:700;font-size:12px}
+  .r{color:var(--p);font-weight:700;font-size:12px;display:flex;align-items:center;gap:2px}
+  .r::before{content:'★';font-size:11px}
   .dot{color:#d1d5db}
   .i-tags{margin-top:12px;display:flex;flex-wrap:wrap;gap:6px}
-  .tg{font-size:10px;color:var(--text-2);padding:3px 10px;background:#f3f4f6;border-radius:4px}
-  .i-stats{margin-top:20px;display:flex;align-items:center}
+  .tg{font-size:10px;color:var(--p);padding:3px 10px;background:var(--p-l);border-radius:4px;font-weight:500}
+  .i-stats{margin-top:20px;display:flex;align-items:center;padding-top:16px;border-top:1px dashed var(--line)}
   .st{flex:1;text-align:center}
-  .st-n{font-size:18px;font-weight:700;letter-spacing:-.5px;font-variant-numeric:tabular-nums}
+  .st-n{font-size:18px;font-weight:700;letter-spacing:-.5px;font-variant-numeric:tabular-nums;color:var(--p)}
   .st-l{font-size:10px;color:var(--text-3);margin-top:2px}
   .st-d{width:1px;height:24px;background:var(--line)}
   .tabs{margin:24px 20px 16px;display:flex;gap:24px;overflow-x:auto;-webkit-overflow-scrolling:touch}
   .tabs::-webkit-scrollbar{display:none}
   .t{font-size:14px;color:var(--text-3);padding:6px 0;position:relative;white-space:nowrap;flex-shrink:0}
-  .t.on{color:var(--text);font-weight:700}
-  .t.on::after{content:'';position:absolute;bottom:-4px;left:50%;transform:translateX(-50%);width:16px;height:3px;background:var(--text);border-radius:2px}
+  .t.on{color:var(--p);font-weight:700}
+  .t.on::after{content:'';position:absolute;bottom:-4px;left:50%;transform:translateX(-50%);width:16px;height:3px;background:var(--p);border-radius:2px}
   .grid{margin:0 20px;display:grid;grid-template-columns:1fr 1fr;gap:12px}
   .c{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden}
-  .c-c{position:relative;aspect-ratio:1;background:#f3f4f6;display:flex;align-items:center;justify-content:center;font-size:48px}
-  .c-tag{position:absolute;top:8px;left:8px;padding:2px 8px;background:var(--text);color:#fff;font-size:9px;letter-spacing:1px;border-radius:4px}
+  .c-c{position:relative;aspect-ratio:1;background:linear-gradient(135deg,#fff1e8,#ffe1c8);display:flex;align-items:center;justify-content:center;font-size:48px}
+  .c-c.a1{background:linear-gradient(135deg,#fce7f3,#fbcfe8)}
+  .c-c.a2{background:linear-gradient(135deg,#ecfdf5,#a7f3d0)}
+  .c-c.a3{background:linear-gradient(135deg,#fef3c7,#fde68a)}
+  .c-c.a4{background:linear-gradient(135deg,#dbeafe,#bfdbfe)}
+  .c-c.a5{background:linear-gradient(135deg,#f3e8ff,#e9d5ff)}
+  .c-tag{position:absolute;top:8px;left:8px;padding:2px 8px;background:var(--p);color:#fff;font-size:9px;letter-spacing:1px;border-radius:4px;font-weight:600}
   .c-b{padding:10px 12px 12px}
   .c-n{font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .c-d{margin-top:2px;font-size:10px;color:var(--text-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .c-f{margin-top:10px;display:flex;align-items:center;justify-content:space-between}
-  .p{font-size:10px}
+  .p{font-size:10px;color:var(--p)}
   .pn{font-size:18px;font-weight:700;margin-left:1px;letter-spacing:-.5px}
-  .ab{width:28px;height:28px;border-radius:50%;background:var(--text);color:#fff;font-size:18px;line-height:1;display:flex;align-items:center;justify-content:center}
-  .bar{position:absolute;left:16px;right:16px;bottom:16px;padding-bottom:env(safe-area-inset-bottom);height:60px;background:var(--text);color:#fff;border-radius:999px;display:flex;align-items:center;padding-left:18px;padding-right:6px;gap:12px;box-shadow:0 12px 32px rgba(0,0,0,.25)}
+  .ab{width:28px;height:28px;border-radius:50%;background:var(--p);color:#fff;font-size:18px;line-height:1;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(255,107,53,.35)}
+  .bar{position:absolute;left:16px;right:16px;bottom:16px;padding-bottom:env(safe-area-inset-bottom);height:60px;background:linear-gradient(135deg,#1f2937,#111827);color:#fff;border-radius:999px;display:flex;align-items:center;padding-left:18px;padding-right:6px;gap:12px;box-shadow:0 12px 32px rgba(0,0,0,.25)}
   .bc{position:relative;width:36px;height:36px;display:flex;align-items:center;justify-content:center}
   .bc svg{width:20px;height:20px;color:#fff}
-  .bn{position:absolute;top:0;right:0;min-width:16px;height:16px;line-height:16px;padding:0 4px;background:var(--accent);color:#fff;border-radius:999px;font-size:9px;text-align:center;font-weight:600}
+  .bn{position:absolute;top:-2px;right:-2px;min-width:18px;height:18px;line-height:18px;padding:0 5px;background:var(--p);color:#fff;border-radius:999px;font-size:10px;text-align:center;font-weight:700;border:2px solid #1f2937}
   .bi{flex:1}
-  .bp{font-size:10px}
-  .bnum{font-size:20px;font-weight:700;margin-left:1px;letter-spacing:-.5px}
+  .bp{font-size:10px;color:rgba(255,255,255,.7)}
+  .bnum{font-size:20px;font-weight:700;margin-left:1px;letter-spacing:-.5px;color:#fff}
   .bf{font-size:10px;color:rgba(255,255,255,.55);margin-top:1px}
-  .bg{height:48px;line-height:48px;padding:0 22px;background:var(--accent);color:#fff;border-radius:999px;font-size:14px;font-weight:600}
+  .bg{height:48px;line-height:48px;padding:0 22px;background:var(--p);color:#fff;border-radius:999px;font-size:14px;font-weight:600;box-shadow:0 4px 12px rgba(255,107,53,.45)}
 </style>
 </head>
 <body>
@@ -91,7 +97,7 @@
   </div>
   <div class="grid">
     <a class="c" href="product.html" style="text-decoration:none;color:inherit">
-      <div class="c-c">🍓<div class="c-tag">热销</div></div>
+      <div class="c-c a1">🍓<div class="c-tag">热销</div></div>
       <div class="c-b">
         <div class="c-n">现切草莓盘</div>
         <div class="c-d">丹东 99 草莓</div>
@@ -99,7 +105,7 @@
       </div>
     </a>
     <div class="c">
-      <div class="c-c">🍉</div>
+      <div class="c-c a2">🍉</div>
       <div class="c-b">
         <div class="c-n">西瓜切盘</div>
         <div class="c-d">麒麟瓜 · 冰镇</div>
@@ -107,7 +113,7 @@
       </div>
     </div>
     <div class="c">
-      <div class="c-c">🍇</div>
+      <div class="c-c a5">🍇</div>
       <div class="c-b">
         <div class="c-n">阳光玫瑰</div>
         <div class="c-d">云南 200g 装</div>
@@ -115,7 +121,7 @@
       </div>
     </div>
     <div class="c">
-      <div class="c-c">🍑</div>
+      <div class="c-c a1">🍑</div>
       <div class="c-b">
         <div class="c-n">油桃切盘</div>
         <div class="c-d">本地 · 现切</div>
@@ -123,7 +129,7 @@
       </div>
     </div>
     <div class="c">
-      <div class="c-c">🥝</div>
+      <div class="c-c a2">🥝</div>
       <div class="c-b">
         <div class="c-n">猕猴桃</div>
         <div class="c-d">陕西 · 5 个</div>
@@ -131,7 +137,7 @@
       </div>
     </div>
     <div class="c">
-      <div class="c-c">🍊</div>
+      <div class="c-c a3">🍊</div>
       <div class="c-b">
         <div class="c-n">现榨橙汁</div>
         <div class="c-d">350ml · 不加水</div>
@@ -141,7 +147,7 @@
   </div>
   <a class="bar" href="cart.html" style="text-decoration:none">
     <div class="bc">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2l4 4v0M18 2l-4 4M3 7h18l-1 12H4L3 7zM9 11v4M15 11v4"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2l4 4v0M18 2l-4 4M3 7h18l-1 12H4L3 7z"/></svg>
       <div class="bn">3</div>
     </div>
     <div class="bi"><div class="bp">¥<span class="bnum">88</span></div><div class="bf">配送 ¥3</div></div>

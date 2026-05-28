@@ -5,38 +5,49 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>我的 · 摊小二</title>
 <style>
-  :root{--bg:#fafafa;--card:#fff;--line:rgba(0,0,0,.06);--text:#1a1a1a;--text-2:#6b7280;--text-3:#9ca3af;--accent:#ff6b35}
+  :root{--bg:#fafafa;--card:#fff;--line:rgba(0,0,0,.06);--text:#1a1a1a;--text-2:#6b7280;--text-3:#9ca3af;--p:#ff6b35;--p-l:#fff1e8;--p-d:#e85a2c}
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
   html{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;font-size:14px}
   body{background:#e5e7eb;min-height:100vh;display:flex;justify-content:center;padding:24px 0;color:var(--text)}
   .phone{width:375px;min-height:812px;background:var(--bg);box-shadow:0 24px 64px rgba(0,0,0,.18);border-radius:40px;overflow:hidden;position:relative;padding-bottom:90px}
-  .head{padding:56px 24px 32px;background:var(--card);border-bottom:1px solid var(--line)}
-  .h-row{display:flex;align-items:center;gap:16px}
-  .avatar{width:64px;height:64px;border-radius:50%;background:var(--text);color:#fff;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700}
+  .head{padding:56px 24px 24px;background:linear-gradient(135deg,#ff9b5e 0%,#ff6b35 100%);color:#fff;position:relative;overflow:hidden}
+  .head::before{content:'';position:absolute;top:-80px;right:-60px;width:240px;height:240px;background:rgba(255,255,255,.12);border-radius:50%}
+  .head::after{content:'';position:absolute;bottom:-40px;left:-40px;width:160px;height:160px;background:rgba(255,255,255,.08);border-radius:50%}
+  .h-row{display:flex;align-items:center;gap:16px;position:relative;z-index:1}
+  .avatar{width:64px;height:64px;border-radius:50%;background:#fff;color:var(--p);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;box-shadow:0 4px 16px rgba(0,0,0,.18)}
   .h-info{flex:1;min-width:0}
-  .name{font-size:22px;font-weight:700;letter-spacing:-.5px}
-  .phone-n{margin-top:4px;font-size:12px;color:var(--text-3);font-variant-numeric:tabular-nums}
-  .h-set{padding:8px;color:var(--text-2)}
+  .name{font-size:22px;font-weight:700;letter-spacing:-.5px;color:#fff}
+  .phone-n{margin-top:4px;font-size:12px;color:rgba(255,255,255,.8);font-variant-numeric:tabular-nums}
+  .h-set{padding:8px;color:rgba(255,255,255,.9)}
   .h-set svg{width:20px;height:20px}
-  .assets{margin-top:24px;display:grid;grid-template-columns:repeat(4,1fr);gap:0;border-radius:14px;border:1px solid var(--line);overflow:hidden}
-  .as{padding:14px 0;text-align:center;border-right:1px solid var(--line)}
+  .assets{margin:20px 16px 0;background:#fff;border-radius:18px;padding:18px 0;display:grid;grid-template-columns:repeat(4,1fr);position:relative;z-index:2;box-shadow:0 8px 24px rgba(255,107,53,.18);transform:translateY(24px)}
+  .as{text-align:center;border-right:1px solid var(--line)}
   .as:last-child{border-right:none}
-  .as-n{font-size:20px;font-weight:700;letter-spacing:-.5px;font-variant-numeric:tabular-nums}
+  .as-n{font-size:20px;font-weight:700;letter-spacing:-.5px;font-variant-numeric:tabular-nums;color:var(--p)}
   .as-l{margin-top:2px;font-size:11px;color:var(--text-3)}
-  .sec-t{margin:24px 24px 12px;font-size:12px;color:var(--text-3);letter-spacing:1px;text-transform:uppercase}
+  .sec-t{margin:48px 24px 12px;font-size:11px;color:var(--text-3);letter-spacing:1.5px;text-transform:uppercase;font-weight:600}
   .grp{margin:0 16px;background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden}
   .mi{display:flex;align-items:center;gap:14px;padding:16px 18px;border-bottom:1px solid var(--line);color:inherit;text-decoration:none}
   .mi:last-child{border-bottom:none}
-  .mi-ic{width:32px;height:32px;border-radius:8px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;color:var(--text);flex-shrink:0}
-  .mi-ic svg{width:16px;height:16px}
-  .mi-l{flex:1;font-size:14px}
+  .mi-ic{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .mi-ic svg{width:18px;height:18px}
+  .ic-orange{background:#fff1e8;color:#ff6b35}
+  .ic-red   {background:#fee2e2;color:#dc2626}
+  .ic-pink  {background:#fce7f3;color:#db2777}
+  .ic-blue  {background:#dbeafe;color:#2563eb}
+  .ic-green {background:#ecfdf5;color:#059669}
+  .ic-purple{background:#f3e8ff;color:#7c3aed}
+  .ic-yellow{background:#fef3c7;color:#d97706}
+  .ic-gray  {background:#f3f4f6;color:#4b5563}
+  .mi-l{flex:1;font-size:14px;font-weight:500}
   .mi-r{font-size:12px;color:var(--text-3)}
   .mi-go{font-size:18px;color:var(--text-3)}
   .tab{position:absolute;left:0;right:0;bottom:0;height:74px;background:var(--card);border-top:1px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom)}
   .ti{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--text-3);text-decoration:none}
-  .ti.on{color:var(--text)}
+  .ti.on{color:var(--p)}
   .ti svg{width:20px;height:20px}
-  .tl{font-size:10px}
+  .tl{font-size:10px;font-weight:500}
+  .ti.on .tl{font-weight:700}
 </style>
 </head>
 <body>
@@ -49,33 +60,33 @@
         <div class="phone-n">137 **** 8842</div>
       </div>
       <div class="h-set">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82 2 2 0 1 1-2.83 2.83 1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0 1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33 2 2 0 1 1-2.83-2.83 1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4 1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82 2 2 0 1 1 2.83-2.83 1.65 1.65 0 0 0 1.82.33 1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0 1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33 2 2 0 1 1 2.83 2.83 1.65 1.65 0 0 0-.33 1.82 1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4 1.65 1.65 0 0 0-1.51 1z"/></svg>
       </div>
     </div>
-    <div class="assets">
-      <div class="as"><div class="as-n">128</div><div class="as-l">积分</div></div>
-      <div class="as"><div class="as-n">¥56</div><div class="as-l">余额</div></div>
-      <div class="as"><div class="as-n">4</div><div class="as-l">优惠券</div></div>
-      <div class="as"><div class="as-n">12</div><div class="as-l">收藏</div></div>
-    </div>
+  </div>
+  <div class="assets">
+    <div class="as"><div class="as-n">128</div><div class="as-l">积分</div></div>
+    <div class="as"><div class="as-n">¥56</div><div class="as-l">余额</div></div>
+    <div class="as"><div class="as-n">4</div><div class="as-l">优惠券</div></div>
+    <div class="as"><div class="as-n">12</div><div class="as-l">收藏</div></div>
   </div>
 
   <div class="sec-t">订单</div>
   <a class="grp" href="orders.html" style="text-decoration:none;color:inherit">
     <div class="mi">
-      <div class="mi-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 7h14v14H5zM9 3h6l2 4H7l2-4z"/></svg></div>
+      <div class="mi-ic ic-orange"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 7h14v14H5zM9 3h6l2 4H7l2-4z"/></svg></div>
       <div class="mi-l">全部订单</div>
       <div class="mi-r">查看历史</div>
       <div class="mi-go">›</div>
     </div>
     <div class="mi">
-      <div class="mi-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+      <div class="mi-ic ic-red"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
       <div class="mi-l">待付款</div>
       <div class="mi-r">1 笔</div>
       <div class="mi-go">›</div>
     </div>
     <div class="mi">
-      <div class="mi-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg></div>
+      <div class="mi-ic ic-green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg></div>
       <div class="mi-l">待自提</div>
       <div class="mi-r">2 笔</div>
       <div class="mi-go">›</div>
@@ -85,19 +96,19 @@
   <div class="sec-t">资产</div>
   <div class="grp">
     <div class="mi">
-      <div class="mi-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/></svg></div>
+      <div class="mi-ic ic-orange"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/></svg></div>
       <div class="mi-l">我的钱包</div>
       <div class="mi-r">¥56.00</div>
       <div class="mi-go">›</div>
     </div>
     <div class="mi">
-      <div class="mi-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 9V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v2"/><path d="M3 12h2a2 2 0 0 1 0 4H3v3a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-3h-2a2 2 0 0 1 0-4h2"/></svg></div>
+      <div class="mi-ic ic-yellow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 9V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v2"/><path d="M3 12h2a2 2 0 0 1 0 4H3v3a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-3h-2a2 2 0 0 1 0-4h2"/></svg></div>
       <div class="mi-l">优惠券</div>
       <div class="mi-r">4 张可用</div>
       <div class="mi-go">›</div>
     </div>
     <div class="mi">
-      <div class="mi-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4-6 4 1.5-7.5L2 9h7z"/></svg></div>
+      <div class="mi-ic ic-pink"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4-6 4 1.5-7.5L2 9h7z"/></svg></div>
       <div class="mi-l">我的收藏</div>
       <div class="mi-r">12 家店铺</div>
       <div class="mi-go">›</div>
@@ -107,18 +118,18 @@
   <div class="sec-t">服务</div>
   <div class="grp">
     <div class="mi">
-      <div class="mi-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 1 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg></div>
+      <div class="mi-ic ic-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 1 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg></div>
       <div class="mi-l">收货地址</div>
       <div class="mi-r">3 个地址</div>
       <div class="mi-go">›</div>
     </div>
     <div class="mi">
-      <div class="mi-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 16v.01M12 8a2 2 0 0 1 2 2c0 2-2 2-2 4"/></svg></div>
+      <div class="mi-ic ic-purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 16v.01M12 8a2 2 0 0 1 2 2c0 2-2 2-2 4"/></svg></div>
       <div class="mi-l">帮助与反馈</div>
       <div class="mi-go">›</div>
     </div>
     <div class="mi">
-      <div class="mi-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg></div>
+      <div class="mi-ic ic-gray"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg></div>
       <div class="mi-l">关于摊小二</div>
       <div class="mi-r">v1.2.0</div>
       <div class="mi-go">›</div>
@@ -139,7 +150,7 @@
       <div class="tl">消息</div>
     </div>
     <a class="ti on" href="me.html">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
+      <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8H4z"/></svg>
       <div class="tl">我的</div>
     </a>
   </div>

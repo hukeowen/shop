@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>数据驾驶舱 · 蓝工平台运营后台</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../shared/style.css">
+<style>
+  body { font-family: 'Inter', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif; background:#F8FAFC; }
+  .num-font { font-feature-settings: "tnum"; font-variant-numeric: tabular-nums; letter-spacing:-0.02em; }
+  .sidebar-link { display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:8px; color:#94A3B8; font-size:13px; font-weight:500; transition:all .15s; }
+  .sidebar-link:hover { background:rgba(255,255,255,.05); color:#fff; }
+  .sidebar-link.active { background:linear-gradient(135deg,#5046E5,#7C3AED); color:#fff; box-shadow:0 4px 12px rgba(80,70,229,.4); }
+  .sidebar-group { font-size:11px; font-weight:600; color:#475569; text-transform:uppercase; letter-spacing:0.08em; padding:14px 12px 6px; }
+  .metric-card { background:#fff; border:1px solid #E2E8F0; border-radius:12px; padding:18px 20px; transition:all .2s; position:relative; overflow:hidden; }
+  .metric-card:hover { border-color:#5046E5; box-shadow:0 8px 24px -8px rgba(80,70,229,.18); }
+  .metric-card::before { content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background:#5046E5; opacity:0; transition:opacity .2s; }
+  .metric-card:hover::before { opacity:1; }
+  .pulse-dot { position:relative; }
+  .pulse-dot::before { content:""; position:absolute; inset:-4px; border-radius:50%; background:currentColor; opacity:.4; animation:pulse 1.5s ease-out infinite; }
+  @keyframes pulse { 0% { transform:scale(.8); opacity:.6; } 100% { transform:scale(2.5); opacity:0; } }
+  .event-flow > div { animation: slideIn .4s ease-out; }
+  @keyframes slideIn { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
+  .bar-anim { animation: barRise .8s cubic-bezier(.2,.8,.2,1) both; transform-origin: bottom; }
+  @keyframes barRise { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+  .live-tag { display:inline-flex; align-items:center; gap:5px; padding:3px 8px; border-radius:6px; font-size:10px; font-weight:700; background:#FEF2F2; color:#DC2626; }
+  .live-tag::before { content:""; width:6px; height:6px; border-radius:50%; background:#DC2626; animation:blink 1.2s ease-in-out infinite; }
+  @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:.3;} }
+  .gradient-text { background:linear-gradient(135deg,#5046E5,#A855F7); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+  .map-dot { position:absolute; width:8px; height:8px; border-radius:50%; }
+  .map-dot::after { content:""; position:absolute; inset:-3px; border-radius:50%; background:inherit; opacity:.5; animation:pulse 2s ease-out infinite; }
+  .scrollbar-thin::-webkit-scrollbar { width:6px; }
+  .scrollbar-thin::-webkit-scrollbar-thumb { background:#CBD5E1; border-radius:3px; }
+  .ring-segment { fill:none; stroke-width:18; }
+</style>
+</head>
+<body class="text-slate-800">
+
+<div class="flex min-h-screen">
+
+  <!-- ===== Sidebar ===== -->
+  <aside class="w-[240px] bg-[#0F172A] text-white flex-shrink-0 flex flex-col">
+    <div class="px-5 pt-5 pb-4 border-b border-white/5">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-[#5046E5] to-[#7C3AED] flex items-center justify-center font-extrabold text-[15px]">蓝</div>
+        <div>
+          <div class="text-[13px] font-bold leading-tight">蓝工平台</div>
+          <div class="text-[10px] text-slate-400 leading-tight mt-0.5 tracking-wider">运营后台 · ADMIN</div>
+        </div>
+      </div>
+      <div class="mt-4 flex items-center gap-2.5 px-2.5 py-2 rounded-lg bg-white/5">
+        <div class="w-7 h-7 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center text-[11px] font-bold">A</div>
+        <div class="min-w-0 flex-1">
+          <div class="text-[12px] font-medium truncate">admin@bluework</div>
+          <div class="text-[10px] text-emerald-400 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>超级管理员</div>
+        </div>
+      </div>
+    </div>
+
+    <nav class="flex-1 px-3 py-2 overflow-y-auto scrollbar-thin">
+      <div class="sidebar-group">驾驶舱</div>
+      <a href="./dashboard.html" class="sidebar-link active">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        数据驾驶舱
+      </a>
+
+      <div class="sidebar-group">用户管理</div>
+      <a href="./workers.html" class="sidebar-link">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        工人管理
+      </a>
+      <a href="./dispatches.html" class="sidebar-link">🏢 派遣公司</a>
+      <a href="./clients.html" class="sidebar-link">🏛️ 甲方/用工单位 <span class="ml-auto px-1 py-0 rounded bg-gradient-to-r from-pink-500 to-orange-500 text-white text-[9px] font-bold">NEW</span></a>
+
+      <div class="sidebar-group">业务管理</div>
+      <a href="./jobs-audit.html" class="sidebar-link">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        招聘审核
+        <span class="ml-auto px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-500 text-white">34</span>
+      </a>
+      <a href="./credit.html" class="sidebar-link">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4.5L6 21l1.5-7.5L2 9h7z"/></svg>
+        工分管理
+      </a>
+
+      <div class="sidebar-group">风控合规</div>
+      <a href="./risk.html" class="sidebar-link">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        风控告警
+        <span class="ml-auto px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500 text-white">23</span>
+      </a>
+      <a href="./audit.html" class="sidebar-link">📜 审计日志</a>
+
+      <div class="sidebar-group">财务管理</div>
+      <a href="./finance.html" class="sidebar-link">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        财务对账
+      </a>
+
+      <div class="sidebar-group">客服支持</div>
+      <a href="./tickets.html" class="sidebar-link">🎫 客服工单 <span class="ml-auto px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-500 text-white">89</span></a>
+
+      <div class="sidebar-group">运营</div>
+      <a href="./campaigns.html" class="sidebar-link">🎯 运营活动</a>
+      <a href="./notifications.html" class="sidebar-link">📢 公告通知</a>
+
+      <div class="sidebar-group">系统</div>
+      <a href="./roles.html" class="sidebar-link">🔐 权限管理</a>
+      <a href="./api.html" class="sidebar-link">🔌 API 开放平台</a>
+      <a href="#" class="sidebar-link">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        系统设置
+      </a>
+    </nav>
+
+    <div class="px-4 py-3 border-t border-white/5">
+      <div class="text-[10px] text-slate-500">v3.2.1 · build 20260517</div>
+    </div>
+  </aside>
+
+  <!-- ===== Main ===== -->
+  <main class="flex-1 min-w-0">
+
+    <!-- Top bar -->
+    <header class="h-14 bg-white border-b border-slate-200 flex items-center px-6 sticky top-0 z-20">
+      <div class="flex items-center gap-2.5">
+        <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-red-50 text-red-600 border border-red-200">生产环境</span>
+        <h1 class="text-[15px] font-semibold text-slate-900">数据驾驶舱</h1>
+        <span class="text-xs text-slate-400">·</span>
+        <span class="text-xs text-slate-500">实时更新</span>
+        <span class="live-tag ml-1">LIVE</span>
+      </div>
+      <div class="ml-auto flex items-center gap-3">
+        <div class="relative">
+          <svg class="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input class="w-64 pl-8 pr-3 py-1.5 text-[13px] rounded-md bg-slate-100 border-0 focus:bg-white focus:ring-2 focus:ring-[#5046E5]/30 outline-none" placeholder="搜索工人/派遣/订单 ⌘K">
+        </div>
+        <button class="w-8 h-8 rounded-md hover:bg-slate-100 flex items-center justify-center relative">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="text-slate-600"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 ring-2 ring-white"></span>
+        </button>
+        <div class="w-px h-5 bg-slate-200"></div>
+        <div class="flex items-center gap-2">
+          <div class="w-7 h-7 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center text-white text-[11px] font-bold">A</div>
+          <div class="text-[12px]">
+            <div class="font-semibold text-slate-800 leading-tight">Admin</div>
+            <div class="text-[10px] text-slate-500 leading-tight">超级管理员</div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="p-6 space-y-5">
+
+      <!-- ===== Top 6 metric cards ===== -->
+      <section class="grid grid-cols-6 gap-4">
+        <div class="metric-card">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-[11px] text-slate-500 font-medium">累计工人</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-600 font-semibold">+0.24%</span>
+          </div>
+          <div class="num-font text-[26px] font-extrabold text-slate-900 leading-none">5,234,128</div>
+          <div class="mt-2 text-[11px] text-slate-500 flex items-center gap-1">
+            <svg width="10" height="10" fill="none" stroke="#10B981" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg>
+            <span class="text-emerald-600 font-semibold">+12,456</span> 今日
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-[11px] text-slate-500 font-medium">入驻派遣公司</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-600 font-semibold">+0.38%</span>
+          </div>
+          <div class="num-font text-[26px] font-extrabold text-slate-900 leading-none">8,932</div>
+          <div class="mt-2 text-[11px] text-slate-500 flex items-center gap-1">
+            <svg width="10" height="10" fill="none" stroke="#10B981" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg>
+            <span class="text-emerald-600 font-semibold">+34</span> 今日
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-[11px] text-slate-500 font-medium">在招职位</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-600 font-semibold">+5.2%</span>
+          </div>
+          <div class="num-font text-[26px] font-extrabold text-slate-900 leading-none">142,857</div>
+          <div class="mt-2 text-[11px] text-slate-500">环比上周</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-[11px] text-slate-500 font-medium">月撮合入职</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-600 font-semibold">+156%</span>
+          </div>
+          <div class="num-font text-[26px] font-extrabold gradient-text leading-none">89,234</div>
+          <div class="mt-2 text-[11px] text-slate-500 flex items-center gap-1">
+            <span class="text-emerald-600 font-semibold">同比 +156%</span>
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-[11px] text-slate-500 font-medium">平台 GMV (月)</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-600 font-semibold">+42%</span>
+          </div>
+          <div class="num-font text-[26px] font-extrabold text-slate-900 leading-none">¥328.49<span class="text-[16px] text-slate-500 font-bold">M</span></div>
+          <div class="mt-2 text-[11px] text-slate-500">328,492,000 元</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-[11px] text-slate-500 font-medium">工分平均分</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-600 font-semibold">+8</span>
+          </div>
+          <div class="num-font text-[26px] font-extrabold text-slate-900 leading-none">678<span class="text-[14px] text-slate-400 font-medium">/1000</span></div>
+          <div class="mt-2 flex items-center gap-1">
+            <div class="flex-1 h-1 rounded-full bg-slate-100 overflow-hidden">
+              <div class="h-full grad-credit" style="width:67.8%"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== 3 column main visual area ===== -->
+      <section class="grid grid-cols-12 gap-4">
+
+        <!-- Real-time matching map -->
+        <div class="col-span-5 bg-white border border-slate-200 rounded-xl p-5">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <h3 class="text-[14px] font-bold text-slate-900">实时撮合地图</h3>
+              <p class="text-[11px] text-slate-500 mt-0.5">过去 5 分钟撮合活动</p>
+            </div>
+            <span class="live-tag">LIVE 142/min</span>
+          </div>
+          <div class="relative h-[280px] rounded-lg bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 overflow-hidden">
+            <!-- Decorative map outline using SVG -->
+            <svg class="absolute inset-0 w-full h-full opacity-30" viewBox="0 0 400 280" fill="none">
+              <path d="M60 80 Q90 60 130 70 L180 60 Q220 50 260 65 L310 70 Q340 80 350 110 L355 150 Q345 180 320 195 L280 215 Q240 225 200 220 L160 215 Q120 210 95 195 L70 170 Q55 140 60 110 Z" stroke="#6366F1" stroke-width="0.8" fill="rgba(99,102,241,0.05)"/>
+              <path d="M150 100 L200 90 L240 110 L260 140 L240 170 L200 180 L150 170 L130 140 Z" stroke="#818CF8" stroke-width="0.5"/>
+              <g stroke="#4F46E5" stroke-width="0.3" opacity="0.4">
+                <line x1="0" y1="50" x2="400" y2="50"/>
+                <line x1="0" y1="100" x2="400" y2="100"/>
+                <line x1="0" y1="150" x2="400" y2="150"/>
+                <line x1="0" y1="200" x2="400" y2="200"/>
+                <line x1="50" y1="0" x2="50" y2="280"/>
+                <line x1="150" y1="0" x2="150" y2="280"/>
+                <line x1="250" y1="0" x2="250" y2="280"/>
+                <line x1="350" y1="0" x2="350" y2="280"/>
+              </g>
+            </svg>
+            <!-- City hotspots -->
+            <div class="map-dot bg-red-500" style="left:78%; top:55%;"></div>
+            <div class="map-dot bg-red-500" style="left:72%; top:62%;"></div>
+            <div class="map-dot bg-orange-400" style="left:65%; top:45%;"></div>
+            <div class="map-dot bg-yellow-400" style="left:55%; top:48%;"></div>
+            <div class="map-dot bg-orange-400" style="left:48%; top:68%;"></div>
+            <div class="map-dot bg-red-500" style="left:32%; top:72%;"></div>
+            <div class="map-dot bg-yellow-400" style="left:38%; top:38%;"></div>
+            <div class="map-dot bg-orange-400" style="left:22%; top:55%;"></div>
+            <div class="map-dot bg-yellow-400" style="left:60%; top:75%;"></div>
+
+            <!-- City labels -->
+            <div class="absolute text-[10px] font-semibold text-white" style="left:80%; top:51%;">上海</div>
+            <div class="absolute text-[10px] font-semibold text-white" style="left:50%; top:43%;">北京</div>
+            <div class="absolute text-[10px] font-semibold text-white" style="left:34%; top:75%;">深圳</div>
+            <div class="absolute text-[10px] font-semibold text-white" style="left:67%; top:65%;">杭州</div>
+            <div class="absolute text-[10px] font-semibold text-white" style="left:24%; top:58%;">成都</div>
+
+            <!-- Stats overlay -->
+            <div class="absolute bottom-3 left-3 right-3 bg-black/40 backdrop-blur rounded-lg p-3 flex justify-between text-white">
+              <div>
+                <div class="text-[10px] text-white/60">活跃城市</div>
+                <div class="num-font text-[18px] font-bold">328</div>
+              </div>
+              <div>
+                <div class="text-[10px] text-white/60">在线工人</div>
+                <div class="num-font text-[18px] font-bold text-emerald-300">847K</div>
+              </div>
+              <div>
+                <div class="text-[10px] text-white/60">本时撮合</div>
+                <div class="num-font text-[18px] font-bold text-amber-300">8,524</div>
+              </div>
+            </div>
+          </div>
+          <div class="mt-3 grid grid-cols-3 gap-2 text-[11px]">
+            <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-red-500"></span><span class="text-slate-600">超高活跃</span></div>
+            <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-orange-400"></span><span class="text-slate-600">高活跃</span></div>
+            <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-yellow-400"></span><span class="text-slate-600">中活跃</span></div>
+          </div>
+        </div>
+
+        <!-- GMV trend chart -->
+        <div class="col-span-4 bg-white border border-slate-200 rounded-xl p-5">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <h3 class="text-[14px] font-bold text-slate-900">成交金额趋势</h3>
+              <p class="text-[11px] text-slate-500 mt-0.5">过去 30 天 GMV (单位: 万元)</p>
+            </div>
+            <div class="flex gap-1 text-[11px]">
+              <button class="px-2 py-0.5 rounded bg-slate-100 text-slate-500">7D</button>
+              <button class="px-2 py-0.5 rounded bg-[#5046E5] text-white font-semibold">30D</button>
+              <button class="px-2 py-0.5 rounded bg-slate-100 text-slate-500">90D</button>
+            </div>
+          </div>
+          <div class="mb-3">
+            <div class="num-font text-[26px] font-extrabold text-slate-900 leading-none">¥32,849<span class="text-[14px] text-slate-400 ml-1">万</span></div>
+            <div class="text-[11px] text-emerald-600 font-semibold mt-1">↑ 42.6% vs 上月</div>
+          </div>
+          <!-- Line chart SVG -->
+          <div class="h-[180px]">
+            <svg viewBox="0 0 400 180" class="w-full h-full">
+              <defs>
+                <linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#5046E5" stop-opacity="0.25"/>
+                  <stop offset="100%" stop-color="#5046E5" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <!-- grid -->
+              <g stroke="#E2E8F0" stroke-width="0.5" stroke-dasharray="2 2">
+                <line x1="0" y1="40" x2="400" y2="40"/>
+                <line x1="0" y1="80" x2="400" y2="80"/>
+                <line x1="0" y1="120" x2="400" y2="120"/>
+              </g>
+              <!-- area -->
+              <path d="M0,140 L13,135 L27,128 L40,132 L53,120 L67,115 L80,118 L93,108 L107,102 L120,98 L133,92 L147,95 L160,85 L173,80 L187,82 L200,72 L213,68 L227,65 L240,58 L253,62 L267,52 L280,48 L293,42 L307,45 L320,38 L333,32 L347,28 L360,32 L373,22 L387,18 L400,12 L400,180 L0,180 Z" fill="url(#lineGrad)"/>
+              <!-- line -->
+              <path d="M0,140 L13,135 L27,128 L40,132 L53,120 L67,115 L80,118 L93,108 L107,102 L120,98 L133,92 L147,95 L160,85 L173,80 L187,82 L200,72 L213,68 L227,65 L240,58 L253,62 L267,52 L280,48 L293,42 L307,45 L320,38 L333,32 L347,28 L360,32 L373,22 L387,18 L400,12" fill="none" stroke="#5046E5" stroke-width="2"/>
+              <!-- end dot pulse -->
+              <circle cx="400" cy="12" r="4" fill="#5046E5"/>
+              <circle cx="400" cy="12" r="8" fill="#5046E5" opacity="0.3">
+                <animate attributeName="r" from="4" to="14" dur="1.5s" repeatCount="indefinite"/>
+                <animate attributeName="opacity" from="0.5" to="0" dur="1.5s" repeatCount="indefinite"/>
+              </circle>
+            </svg>
+          </div>
+          <div class="mt-2 flex justify-between text-[10px] text-slate-400">
+            <span>4/17</span><span>4/24</span><span>5/1</span><span>5/8</span><span>5/15</span>
+          </div>
+        </div>
+
+        <!-- Real-time event stream -->
+        <div class="col-span-3 bg-white border border-slate-200 rounded-xl p-5">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <h3 class="text-[14px] font-bold text-slate-900">实时事件流</h3>
+              <p class="text-[11px] text-slate-500 mt-0.5">全平台实时事件</p>
+            </div>
+            <span class="live-tag">LIVE</span>
+          </div>
+          <div class="event-flow space-y-2.5 h-[300px] overflow-y-auto scrollbar-thin -mr-2 pr-2">
+            <div class="flex gap-2.5 p-2 rounded-lg hover:bg-slate-50">
+              <div class="w-1 self-stretch rounded-full bg-emerald-500"></div>
+              <div class="flex-1 min-w-0">
+                <div class="text-[12px] text-slate-800"><b>上海·浦东</b> 工人 王*强 成功入职</div>
+                <div class="text-[10px] text-slate-400 mt-0.5">汇丰电子 · 12 秒前</div>
+              </div>
+            </div>
+            <div class="flex gap-2.5 p-2 rounded-lg hover:bg-slate-50">
+              <div class="w-1 self-stretch rounded-full bg-blue-500"></div>
+              <div class="flex-1 min-w-0">
+                <div class="text-[12px] text-slate-800"><b>杭州</b> 派遣公司充值 <span class="text-blue-600 font-semibold">¥58,000</span></div>
+                <div class="text-[10px] text-slate-400 mt-0.5">浙江速派 · 38 秒前</div>
+              </div>
+            </div>
+            <div class="flex gap-2.5 p-2 rounded-lg hover:bg-slate-50">
+              <div class="w-1 self-stretch rounded-full bg-red-500"></div>
+              <div class="flex-1 min-w-0">
+                <div class="text-[12px] text-slate-800"><b>北京</b> 触发风控告警 <span class="text-red-600 font-semibold">高危</span></div>
+                <div class="text-[10px] text-slate-400 mt-0.5">异常工分波动 · 1 分钟前</div>
+              </div>
+            </div>
+            <div class="flex gap-2.5 p-2 rounded-lg hover:bg-slate-50">
+              <div class="w-1 self-stretch rounded-full bg-emerald-500"></div>
+              <div class="flex-1 min-w-0">
+                <div class="text-[12px] text-slate-800"><b>深圳·宝安</b> 工人 李*梅 入职成功</div>
+                <div class="text-[10px] text-slate-400 mt-0.5">富士康精密 · 2 分钟前</div>
+              </div>
+            </div>
+            <div class="flex gap-2.5 p-2 rounded-lg hover:bg-slate-50">
+              <div class="w-1 self-stretch rounded-full bg-purple-500"></div>
+              <div class="flex-1 min-w-0">
+                <div class="text-[12px] text-slate-800">VIP 派遣公司续费 <span class="text-purple-600 font-semibold">¥28,800/年</span></div>
+                <div class="text-[10px] text-slate-400 mt-0.5">广州速达 · 3 分钟前</div>
+              </div>
+            </div>
+            <div class="flex gap-2.5 p-2 rounded-lg hover:bg-slate-50">
+              <div class="w-1 self-stretch rounded-full bg-amber-500"></div>
+              <div class="flex-1 min-w-0">
+                <div class="text-[12px] text-slate-800"><b>苏州</b> 新职位发布待审核</div>
+                <div class="text-[10px] text-slate-400 mt-0.5">流水线包装工 · 4 分钟前</div>
+              </div>
+            </div>
+            <div class="flex gap-2.5 p-2 rounded-lg hover:bg-slate-50">
+              <div class="w-1 self-stretch rounded-full bg-emerald-500"></div>
+              <div class="flex-1 min-w-0">
+                <div class="text-[12px] text-slate-800"><b>成都</b> 工人 张*军 入职成功</div>
+                <div class="text-[10px] text-slate-400 mt-0.5">京东物流 · 5 分钟前</div>
+              </div>
+            </div>
+            <div class="flex gap-2.5 p-2 rounded-lg hover:bg-slate-50">
+              <div class="w-1 self-stretch rounded-full bg-blue-500"></div>
+              <div class="flex-1 min-w-0">
+                <div class="text-[12px] text-slate-800"><b>武汉</b> 派遣公司充值 <span class="text-blue-600 font-semibold">¥120,000</span></div>
+                <div class="text-[10px] text-slate-400 mt-0.5">湖北千里马 · 6 分钟前</div>
+              </div>
+            </div>
+            <div class="flex gap-2.5 p-2 rounded-lg hover:bg-slate-50">
+              <div class="w-1 self-stretch rounded-full bg-slate-400"></div>
+              <div class="flex-1 min-w-0">
+                <div class="text-[12px] text-slate-800">工人申诉提交</div>
+                <div class="text-[10px] text-slate-400 mt-0.5">客服已受理 · 8 分钟前</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== 4 column bottom area ===== -->
+      <section class="grid grid-cols-12 gap-4">
+
+        <!-- TOP10 dispatches -->
+        <div class="col-span-3 bg-white border border-slate-200 rounded-xl p-5">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-[14px] font-bold text-slate-900">派遣公司 TOP 10</h3>
+            <span class="text-[11px] text-slate-400">招聘数</span>
+          </div>
+          <div class="space-y-2.5">
+            <div class="flex items-center gap-2.5">
+              <div class="w-5 h-5 rounded text-[10px] font-bold flex items-center justify-center bg-gradient-to-br from-amber-400 to-orange-500 text-white">1</div>
+              <div class="flex-1 min-w-0 text-[12px] font-medium truncate">浙江速派人力</div>
+              <div class="num-font text-[12px] font-semibold text-slate-700">8,247</div>
+            </div>
+            <div class="flex items-center gap-2.5">
+              <div class="w-5 h-5 rounded text-[10px] font-bold flex items-center justify-center bg-gradient-to-br from-slate-400 to-slate-500 text-white">2</div>
+              <div class="flex-1 min-w-0 text-[12px] font-medium truncate">深圳富岗派遣</div>
+              <div class="num-font text-[12px] font-semibold text-slate-700">6,892</div>
+            </div>
+            <div class="flex items-center gap-2.5">
+              <div class="w-5 h-5 rounded text-[10px] font-bold flex items-center justify-center bg-gradient-to-br from-orange-600 to-amber-700 text-white">3</div>
+              <div class="flex-1 min-w-0 text-[12px] font-medium truncate">广州速达劳务</div>
+              <div class="num-font text-[12px] font-semibold text-slate-700">5,468</div>
+            </div>
+            <div class="flex items-center gap-2.5"><div class="w-5 h-5 rounded text-[10px] font-bold flex items-center justify-center bg-slate-100 text-slate-500">4</div><div class="flex-1 min-w-0 text-[12px] truncate">湖北千里马人力</div><div class="num-font text-[12px] font-medium text-slate-600">4,823</div></div>
+            <div class="flex items-center gap-2.5"><div class="w-5 h-5 rounded text-[10px] font-bold flex items-center justify-center bg-slate-100 text-slate-500">5</div><div class="flex-1 min-w-0 text-[12px] truncate">江苏汇丰劳务</div><div class="num-font text-[12px] font-medium text-slate-600">4,217</div></div>
+            <div class="flex items-center gap-2.5"><div class="w-5 h-5 rounded text-[10px] font-bold flex items-center justify-center bg-slate-100 text-slate-500">6</div><div class="flex-1 min-w-0 text-[12px] truncate">上海联通人力</div><div class="num-font text-[12px] font-medium text-slate-600">3,892</div></div>
+            <div class="flex items-center gap-2.5"><div class="w-5 h-5 rounded text-[10px] font-bold flex items-center justify-center bg-slate-100 text-slate-500">7</div><div class="flex-1 min-w-0 text-[12px] truncate">北京中智外服</div><div class="num-font text-[12px] font-medium text-slate-600">3,524</div></div>
+            <div class="flex items-center gap-2.5"><div class="w-5 h-5 rounded text-[10px] font-bold flex items-center justify-center bg-slate-100 text-slate-500">8</div><div class="flex-1 min-w-0 text-[12px] truncate">成都川蜀人力</div><div class="num-font text-[12px] font-medium text-slate-600">3,128</div></div>
+            <div class="flex items-center gap-2.5"><div class="w-5 h-5 rounded text-[10px] font-bold flex items-center justify-center bg-slate-100 text-slate-500">9</div><div class="flex-1 min-w-0 text-[12px] truncate">天津渤海劳务</div><div class="num-font text-[12px] font-medium text-slate-600">2,847</div></div>
+            <div class="flex items-center gap-2.5"><div class="w-5 h-5 rounded text-[10px] font-bold flex items-center justify-center bg-slate-100 text-slate-500">10</div><div class="flex-1 min-w-0 text-[12px] truncate">青岛海派人力</div><div class="num-font text-[12px] font-medium text-slate-600">2,512</div></div>
+          </div>
+        </div>
+
+        <!-- TOP10 工种 bar chart -->
+        <div class="col-span-4 bg-white border border-slate-200 rounded-xl p-5">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-[14px] font-bold text-slate-900">工种成交 TOP 10</h3>
+            <span class="text-[11px] text-slate-400">本月入职数</span>
+          </div>
+          <div class="space-y-2.5">
+            <div>
+              <div class="flex justify-between text-[12px] mb-1"><span class="text-slate-700">普工/流水线</span><span class="num-font font-semibold">24,892</span></div>
+              <div class="h-2 rounded-full bg-slate-100 overflow-hidden"><div class="h-full bar-anim rounded-full bg-gradient-to-r from-[#5046E5] to-[#7C3AED]" style="width:100%"></div></div>
+            </div>
+            <div>
+              <div class="flex justify-between text-[12px] mb-1"><span class="text-slate-700">分拣/打包</span><span class="num-font font-semibold">18,234</span></div>
+              <div class="h-2 rounded-full bg-slate-100 overflow-hidden"><div class="h-full bar-anim rounded-full bg-gradient-to-r from-[#5046E5] to-[#7C3AED]" style="width:73%"></div></div>
+            </div>
+            <div>
+              <div class="flex justify-between text-[12px] mb-1"><span class="text-slate-700">仓库管理员</span><span class="num-font font-semibold">14,567</span></div>
+              <div class="h-2 rounded-full bg-slate-100 overflow-hidden"><div class="h-full bar-anim rounded-full bg-gradient-to-r from-[#5046E5] to-[#7C3AED]" style="width:58%"></div></div>
+            </div>
+            <div>
+              <div class="flex justify-between text-[12px] mb-1"><span class="text-slate-700">叉车司机</span><span class="num-font font-semibold">9,847</span></div>
+              <div class="h-2 rounded-full bg-slate-100 overflow-hidden"><div class="h-full bar-anim rounded-full bg-gradient-to-r from-[#5046E5] to-[#7C3AED]" style="width:40%"></div></div>
+            </div>
+            <div>
+              <div class="flex justify-between text-[12px] mb-1"><span class="text-slate-700">餐厅服务员</span><span class="num-font font-semibold">7,234</span></div>
+              <div class="h-2 rounded-full bg-slate-100 overflow-hidden"><div class="h-full bar-anim rounded-full bg-gradient-to-r from-[#5046E5] to-[#7C3AED]" style="width:29%"></div></div>
+            </div>
+            <div>
+              <div class="flex justify-between text-[12px] mb-1"><span class="text-slate-700">保安</span><span class="num-font font-semibold">5,892</span></div>
+              <div class="h-2 rounded-full bg-slate-100 overflow-hidden"><div class="h-full bar-anim rounded-full bg-gradient-to-r from-[#5046E5] to-[#7C3AED]" style="width:24%"></div></div>
+            </div>
+            <div>
+              <div class="flex justify-between text-[12px] mb-1"><span class="text-slate-700">焊工</span><span class="num-font font-semibold">4,217</span></div>
+              <div class="h-2 rounded-full bg-slate-100 overflow-hidden"><div class="h-full bar-anim rounded-full bg-gradient-to-r from-[#5046E5] to-[#7C3AED]" style="width:17%"></div></div>
+            </div>
+            <div>
+              <div class="flex justify-between text-[12px] mb-1"><span class="text-slate-700">家政服务</span><span class="num-font font-semibold">3,524</span></div>
+              <div class="h-2 rounded-full bg-slate-100 overflow-hidden"><div class="h-full bar-anim rounded-full bg-gradient-to-r from-[#5046E5] to-[#7C3AED]" style="width:14%"></div></div>
+            </div>
+            <div>
+              <div class="flex justify-between text-[12px] mb-1"><span class="text-slate-700">司机</span><span class="num-font font-semibold">2,847</span></div>
+              <div class="h-2 rounded-full bg-slate-100 overflow-hidden"><div class="h-full bar-anim rounded-full bg-gradient-to-r from-[#5046E5] to-[#7C3AED]" style="width:11%"></div></div>
+            </div>
+            <div>
+              <div class="flex justify-between text-[12px] mb-1"><span class="text-slate-700">建筑工人</span><span class="num-font font-semibold">2,134</span></div>
+              <div class="h-2 rounded-full bg-slate-100 overflow-hidden"><div class="h-full bar-anim rounded-full bg-gradient-to-r from-[#5046E5] to-[#7C3AED]" style="width:9%"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 工分金字塔 -->
+        <div class="col-span-3 bg-white border border-slate-200 rounded-xl p-5">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-[14px] font-bold text-slate-900">工分分布金字塔</h3>
+            <a href="./credit.html" class="text-[11px] text-[#5046E5] font-semibold">详情 →</a>
+          </div>
+          <div class="space-y-2 flex flex-col items-center">
+            <div class="w-[35%] py-2 px-3 rounded-md badge-king text-center shadow-sm">
+              <div class="text-[10px] opacity-80">王者 900+</div>
+              <div class="num-font text-[14px] font-bold">12,847</div>
+            </div>
+            <div class="w-[50%] py-2 px-3 rounded-md badge-diamond text-center shadow-sm">
+              <div class="text-[10px] opacity-90">钻石 800-899</div>
+              <div class="num-font text-[14px] font-bold">128,924</div>
+            </div>
+            <div class="w-[68%] py-2 px-3 rounded-md badge-gold text-center shadow-sm">
+              <div class="text-[10px] opacity-90">黄金 700-799</div>
+              <div class="num-font text-[14px] font-bold">847,235</div>
+            </div>
+            <div class="w-[85%] py-2 px-3 rounded-md badge-silver text-center shadow-sm">
+              <div class="text-[10px] opacity-90">白银 600-699</div>
+              <div class="num-font text-[14px] font-bold">2,184,517</div>
+            </div>
+            <div class="w-full py-2 px-3 rounded-md badge-bronze text-center shadow-sm">
+              <div class="text-[10px] opacity-90">青铜 0-599</div>
+              <div class="num-font text-[14px] font-bold">2,060,605</div>
+            </div>
+          </div>
+          <div class="mt-3 pt-3 border-t border-slate-100 grid grid-cols-2 gap-2 text-center">
+            <div>
+              <div class="num-font text-[16px] font-bold text-emerald-600">+8.4%</div>
+              <div class="text-[10px] text-slate-500">月度均分增长</div>
+            </div>
+            <div>
+              <div class="num-font text-[16px] font-bold text-slate-900">678</div>
+              <div class="text-[10px] text-slate-500">全平台均分</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 风控告警概览 -->
+        <div class="col-span-2 bg-white border border-slate-200 rounded-xl p-5">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-[14px] font-bold text-slate-900">风控告警</h3>
+            <a href="./risk.html" class="text-[11px] text-[#5046E5] font-semibold">→</a>
+          </div>
+          <div class="space-y-3">
+            <div class="p-3 rounded-lg bg-red-50 border border-red-100">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="w-2 h-2 rounded-full bg-red-500 pulse-dot text-red-500"></span>
+                <span class="text-[11px] font-bold text-red-700">高危</span>
+              </div>
+              <div class="num-font text-[24px] font-extrabold text-red-700 leading-none">5</div>
+              <div class="text-[10px] text-red-600 mt-1">需立即处理</div>
+            </div>
+            <div class="p-3 rounded-lg bg-amber-50 border border-amber-100">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                <span class="text-[11px] font-bold text-amber-700">中危</span>
+              </div>
+              <div class="num-font text-[24px] font-extrabold text-amber-700 leading-none">18</div>
+              <div class="text-[10px] text-amber-600 mt-1">待审查</div>
+            </div>
+            <div class="p-3 rounded-lg bg-emerald-50 border border-emerald-100">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                <span class="text-[11px] font-bold text-emerald-700">低危</span>
+              </div>
+              <div class="num-font text-[24px] font-extrabold text-emerald-700 leading-none">24</div>
+              <div class="text-[10px] text-emerald-600 mt-1">观察中</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,13 @@
+- generic [ref=e316]:
+  - generic [ref=e318]:
+    - img [ref=e321] [cursor=pointer]
+    - generic [ref=e324]: 我的队列
+  - generic [ref=e328]:
+    - generic [ref=e329]:
+      - generic [ref=e330]: ‹
+      - generic [ref=e331]: 我的队列
+      - generic [ref=e332]: 规则
+    - generic [ref=e333]:
+      - generic [ref=e334]: 推 N 反 1：
+      - text: 自购该商品 → 激活推广资格；自购或下级首单买同款 → 累计 +1，按 1/N 返推广积分； 累计满 N 次进入「已完成」，之后自购或下级首单按订单金额 × 间推 % 返推广积分。
+    - generic [ref=e412]: 加载中…

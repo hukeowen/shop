@@ -1,0 +1,23 @@
+- generic [ref=e7]:
+  - generic [ref=e8]:
+    - generic [ref=e9]: 🏆
+    - generic [ref=e10]: 客小二
+    - generic [ref=e11]: 商户派奖 · 推 N 反 1 · 1:1 提现
+  - generic [ref=e12]:
+    - generic [ref=e13]: 手机号登录
+    - generic [ref=e14]:
+      - generic [ref=e15]: 手机号
+      - generic [ref=e17]:
+        - generic: 请输入手机号
+        - spinbutton [ref=e18]
+    - generic [ref=e19]:
+      - generic [ref=e20]: 验证码
+      - generic [ref=e22]:
+        - generic: 6 位短信验证码
+        - spinbutton [ref=e23]
+      - generic [ref=e24]: 获取
+    - generic [ref=e25]: 登录
+    - generic [ref=e26]:
+      - text: 登录即同意
+      - generic [ref=e27]: 《用户协议》
+      - text: 《隐私政策》

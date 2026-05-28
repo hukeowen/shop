@@ -1,0 +1,43 @@
+- generic [ref=e7]:
+  - generic [ref=e8]:
+    - generic [ref=e9]: 摊
+    - generic [ref=e10]: 摊小二
+    - generic [ref=e11]: 小摊主的生意伙伴
+  - generic [ref=e12]:
+    - generic [ref=e13]:
+      - generic [ref=e14]: 🎯
+      - generic [ref=e15]:
+        - generic [ref=e16]:
+          - text: 边吃边赚 · 邀请最高
+          - generic [ref=e17]: 返 100%
+          - text: 商品价
+        - generic [ref=e18]: 推 N 个朋友买同款，每位都给你返推广积分
+    - generic [ref=e19]:
+      - generic [ref=e20]: 🏪
+      - generic [ref=e21]:
+        - generic [ref=e22]: 本地小店 一键直达
+        - generic [ref=e23]: 附近的烧烤、水果、早点摊，扫码进店即时下单
+    - generic [ref=e24]:
+      - generic [ref=e25]: ⭐
+      - generic [ref=e26]:
+        - generic [ref=e27]: 多店独立会员 · 长期复购更赚
+        - generic [ref=e28]: 每家店独立星级 + 余额 + 推广积分
+  - generic [ref=e29]:
+    - generic [ref=e30]: 手机号登录
+    - generic [ref=e31]: 首次登录即注册，无需短信验证
+    - generic [ref=e32]:
+      - generic [ref=e33]: 手机号
+      - generic [ref=e35]:
+        - generic: 请输入手机号
+        - spinbutton [ref=e36]
+    - generic [ref=e37]:
+      - generic [ref=e38]: 密码（≥ 6 位）
+      - generic [ref=e40]:
+        - generic: 设置一个密码
+        - textbox [ref=e41]
+    - generic [ref=e42]: 登录 / 注册
+    - generic [ref=e43]: 演示环境不发短信，输入手机号 + 密码即可登录
+    - generic [ref=e44]:
+      - generic [ref=e45]: 已是商户？
+      - generic [ref=e46]: 商户登录 →
+  - generic [ref=e48]: Phase 0.2 · 微信小程序登录接后端 BFF

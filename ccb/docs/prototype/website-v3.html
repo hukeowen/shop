@@ -1,0 +1,1417 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>拓小二 · ISSUE 07 — 给小老板的 AI 带货 + 在线商城</title>
+<meta name="description" content="¥298/年 基础包，¥1688/年 全功能包。13 行业模板，AI 20 秒出片，通联 T+0 直入老板账户。">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT@0,9..144,300..900,0..100;1,9..144,300..900,0..100&family=Noto+Serif+SC:wght@400;500;600;700;900&family=DM+Mono:wght@400;500&family=Manrope:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<style>
+  :root {
+    --bone:       #F2ECDF;
+    --bone-2:     #E8E0CD;
+    --bone-3:     #DDD3BB;
+    --blush:      #EBD5C2;
+    --espresso:   #1C1814;
+    --espresso-2: #2B2520;
+    --muted:      #7B7166;
+    --bordeaux:   #6B1F2A;
+    --bordeaux-2: #8E2A36;
+    --ochre:      #B88846;
+    --ink-line:   rgba(28,24,20,0.85);
+    --hair:       rgba(28,24,20,0.18);
+    --hair-soft:  rgba(28,24,20,0.10);
+  }
+
+  * { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bone);
+    color: var(--espresso);
+    font-family: 'Manrope', 'PingFang SC', 'Hiragino Sans GB', system-ui, sans-serif;
+    font-feature-settings: "kern", "ss01", "case", "tnum";
+    overflow-x: hidden;
+  }
+
+  .font-fr  { font-family: 'Fraunces', 'Noto Serif SC', serif; font-variation-settings: 'opsz' 144, 'SOFT' 0; font-weight: 500; letter-spacing: -0.018em; }
+  .font-fr-soft { font-family: 'Fraunces', 'Noto Serif SC', serif; font-variation-settings: 'opsz' 144, 'SOFT' 100; font-weight: 400; letter-spacing: -0.018em; }
+  .font-fr-it { font-family: 'Fraunces', 'Noto Serif SC', serif; font-variation-settings: 'opsz' 144; font-style: italic; font-weight: 400; letter-spacing: -0.012em; }
+  .font-zh  { font-family: 'Noto Serif SC', serif; font-weight: 700; }
+  .font-mono { font-family: 'DM Mono', 'JetBrains Mono', monospace; }
+
+  /* Magazine small-cap label */
+  .smcap {
+    font-family: 'DM Mono', monospace; font-size: 10.5px;
+    letter-spacing: .22em; text-transform: uppercase; font-weight: 500;
+  }
+
+  .tabular { font-variant-numeric: tabular-nums; }
+
+  /* Paper grain */
+  body::before {
+    content:''; position: fixed; inset:0; pointer-events: none; z-index: 90;
+    opacity: 0.045; mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  }
+
+  ::selection { background: var(--bordeaux); color: var(--bone); }
+
+  /* Hairline rules */
+  .hr-thin { height: 1px; background: var(--ink-line); border: 0; }
+  .hr-soft { height: 1px; background: var(--hair); border: 0; }
+
+  /* Editorial link — slow underline draw */
+  .ed-link {
+    position: relative; display: inline-flex; align-items: baseline; gap: 6px;
+    color: inherit; transition: letter-spacing .6s ease;
+  }
+  .ed-link::after {
+    content:''; position: absolute; left: 0; bottom: -2px;
+    height: 1px; width: 100%;
+    background: currentColor; transform: scaleX(0); transform-origin: right;
+    transition: transform .55s cubic-bezier(.7,.0,.3,1);
+  }
+  .ed-link:hover { letter-spacing: .03em; }
+  .ed-link:hover::after { transform: scaleX(1); transform-origin: left; }
+
+  /* Big italic pull-quote */
+  .pull-quote {
+    font-family: 'Fraunces', 'Noto Serif SC', serif;
+    font-variation-settings: 'opsz' 144;
+    font-style: italic; font-weight: 400;
+    line-height: 1.05; letter-spacing: -0.015em;
+  }
+
+  /* Drop cap */
+  .dropcap::first-letter {
+    font-family: 'Fraunces', serif; font-variation-settings: 'opsz' 144;
+    font-weight: 500; font-style: normal;
+    float: left; font-size: 5.2em; line-height: 0.86;
+    margin: 0.08em 0.12em 0 -0.04em;
+    color: var(--bordeaux);
+  }
+
+  /* Outline numeral */
+  .outline-num {
+    font-family: 'Fraunces', serif; font-variation-settings: 'opsz' 144;
+    font-weight: 400; line-height: 0.85;
+    color: transparent;
+    -webkit-text-stroke: 1.2px var(--espresso);
+    text-stroke: 1.2px var(--espresso);
+  }
+  .outline-num.b { -webkit-text-stroke-color: var(--bordeaux); }
+
+  /* Buttons */
+  .btn-ink {
+    display: inline-flex; align-items: center; gap: 10px;
+    padding: 16px 26px;
+    background: var(--espresso); color: var(--bone);
+    font-size: 13px; font-weight: 500;
+    letter-spacing: .14em; text-transform: uppercase;
+    border-radius: 0;
+    transition: background .35s ease, padding .35s ease;
+  }
+  .btn-ink:hover { background: var(--bordeaux); padding-right: 32px; }
+  .btn-line {
+    display: inline-flex; align-items: center; gap: 10px;
+    padding: 15px 25px;
+    background: transparent; color: var(--espresso);
+    font-size: 13px; font-weight: 500;
+    letter-spacing: .14em; text-transform: uppercase;
+    border: 1px solid var(--espresso);
+    transition: background .35s ease, color .35s ease;
+  }
+  .btn-line:hover { background: var(--espresso); color: var(--bone); }
+  .btn-bone-on-dark {
+    display: inline-flex; align-items: center; gap: 10px;
+    padding: 16px 26px;
+    background: var(--bone); color: var(--espresso);
+    font-size: 13px; font-weight: 500;
+    letter-spacing: .14em; text-transform: uppercase;
+    transition: background .35s ease, color .35s ease, padding .35s ease;
+  }
+  .btn-bone-on-dark:hover { background: var(--ochre); padding-right: 32px; }
+
+  /* Mark / highlight */
+  .mark-b { background: var(--bordeaux); color: var(--bone); padding: 0 .2em; }
+  .mark-o { background: var(--ochre); color: var(--espresso); padding: 0 .2em; }
+  .mark-blush { background: var(--blush); padding: 0 .2em; }
+
+  /* Cover headline */
+  .cover-h {
+    font-family: 'Fraunces', 'Noto Serif SC', serif;
+    font-variation-settings: 'opsz' 144, 'SOFT' 30;
+    font-weight: 500; line-height: 0.92;
+    letter-spacing: -0.032em;
+  }
+
+  /* Magazine grid line */
+  .col-rule { border-left: 1px solid var(--hair); padding-left: 22px; }
+  @media (max-width: 1024px) { .col-rule { border-left: 0; padding-left: 0; border-top: 1px solid var(--hair); padding-top: 22px; margin-top: 22px; } }
+
+  /* TOC row */
+  .toc-row {
+    display: grid; grid-template-columns: 56px 1fr auto 220px;
+    align-items: baseline; gap: 24px;
+    padding: 22px 0; border-top: 1px solid var(--hair);
+    transition: padding .4s cubic-bezier(.2,.7,.2,1);
+    position: relative; cursor: pointer;
+  }
+  .toc-row:last-child { border-bottom: 1px solid var(--hair); }
+  .toc-row:hover { padding-left: 12px; }
+  .toc-row::after { content:'→'; position: absolute; left: -22px; top: 50%; transform: translateY(-50%); font-family: 'Fraunces', serif; font-style: italic; opacity: 0; transition: opacity .35s ease, left .35s ease; color: var(--bordeaux); }
+  .toc-row:hover::after { opacity: 1; left: -2px; }
+  @media (max-width: 768px) { .toc-row { grid-template-columns: 40px 1fr; } .toc-row .toc-meta, .toc-row .toc-desc { grid-column: 2; } }
+
+  /* Plate (image substitute) */
+  .plate {
+    position: relative; overflow: hidden;
+    background: linear-gradient(135deg, var(--bone-2), var(--bone-3));
+    border: 1px solid var(--hair);
+  }
+  .plate.b { background: linear-gradient(160deg, var(--bordeaux), #4A1521); color: var(--bone); border-color: var(--bordeaux); }
+  .plate.e { background: linear-gradient(160deg, var(--espresso), #0F0C09); color: var(--bone); border-color: var(--espresso); }
+  .plate.blush { background: linear-gradient(160deg, var(--blush), #DDB89C); }
+  .plate.ochre { background: linear-gradient(160deg, var(--ochre), #8E6829); color: var(--bone); border-color: var(--ochre); }
+
+  /* Caption italic */
+  .caption {
+    font-family: 'Fraunces', serif; font-variation-settings: 'opsz' 36;
+    font-style: italic; font-weight: 400;
+    font-size: 12.5px; line-height: 1.5; color: var(--muted);
+  }
+
+  /* Reveal */
+  .reveal { opacity: 0; transform: translateY(24px); transition: opacity 1s cubic-bezier(.2,.7,.2,1), transform 1s cubic-bezier(.2,.7,.2,1); }
+  .reveal.in { opacity: 1; transform: translateY(0); }
+
+  /* FAQ */
+  .faq-item { border-top: 1px solid var(--hair); }
+  .faq-item:last-child { border-bottom: 1px solid var(--hair); }
+  .faq-q {
+    width: 100%; text-align: left; padding: 28px 0;
+    display: grid; grid-template-columns: 48px 1fr 32px;
+    gap: 24px; align-items: baseline;
+    cursor: pointer; background: transparent; border: 0;
+    font-family: 'Fraunces', 'Noto Serif SC', serif; font-variation-settings: 'opsz' 144;
+    color: var(--espresso); font-size: 22px; font-weight: 500;
+    transition: color .35s ease;
+  }
+  .faq-q:hover { color: var(--bordeaux); }
+  .faq-q .qn { font-family: 'Fraunces', serif; font-style: italic; font-size: 17px; color: var(--bordeaux); }
+  .faq-q .qi { font-family: 'Fraunces', serif; font-weight: 300; font-size: 26px; line-height: 1; transition: transform .4s ease; text-align: right; }
+  .faq-item.open .faq-q .qi { transform: rotate(45deg); color: var(--bordeaux); }
+  .faq-a { max-height: 0; overflow: hidden; transition: max-height .55s cubic-bezier(.4,0,.2,1), padding .35s ease; }
+  .faq-a-inner { padding: 0 0 28px 72px; color: var(--espresso-2); font-size: 15.5px; line-height: 1.8; max-width: 720px; }
+  .faq-item.open .faq-a { max-height: 360px; }
+
+  /* Marquee subtle */
+  @keyframes scroll-l { to { transform: translateX(-50%); } }
+  .marq-track {
+    display: flex; gap: 56px; width: max-content;
+    animation: scroll-l 80s linear infinite;
+    align-items: center;
+  }
+  .marq-track > * { white-space: nowrap; }
+
+  /* Edge-of-page side label (vertical) */
+  .side-vertical {
+    writing-mode: vertical-rl; transform: rotate(180deg);
+    font-family: 'DM Mono', monospace; font-size: 11px;
+    letter-spacing: .28em; text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* Issue stamp */
+  .stamp {
+    display: inline-flex; align-items: center; justify-content: center;
+    border: 1px solid var(--espresso); border-radius: 999px;
+    padding: 8px 22px;
+    font-family: 'DM Mono', monospace; font-size: 10.5px;
+    letter-spacing: .22em; text-transform: uppercase; font-weight: 500;
+  }
+
+  /* Soft shadow */
+  .ed-shadow { box-shadow: 0 30px 60px -30px rgba(28,24,20,0.18); }
+
+  /* Mock phone (editorial) */
+  .mock-phone {
+    width: 192px; aspect-ratio: 9/19; border-radius: 28px; padding: 9px;
+    background: var(--espresso); position: relative; overflow: hidden;
+    box-shadow: 0 26px 60px -20px rgba(28,24,20,0.45);
+  }
+  .mock-phone .notch { position: absolute; top: 9px; left: 50%; transform: translateX(-50%); width: 64px; height: 6px; background: #000; border-radius: 4px; z-index: 4; }
+  .mock-phone .screen { position: absolute; inset: 11px; background: var(--bone); border-radius: 22px; padding: 22px 11px 11px; overflow: hidden; }
+  .mock-card { background: var(--bone-2); border: 1px solid var(--hair-soft); height: 28px; border-radius: 4px; margin-top: 6px; }
+
+  /* Service tier card */
+  .tier {
+    padding: 44px 38px;
+    background: var(--bone); border: 1px solid var(--hair);
+    transition: border-color .4s ease, transform .4s cubic-bezier(.2,.7,.2,1);
+    display: flex; flex-direction: column; position: relative;
+  }
+  .tier:hover { border-color: var(--espresso); transform: translateY(-4px); }
+  .tier.featured { background: var(--espresso); color: var(--bone); border-color: var(--espresso); }
+  .tier.featured .muted-d { color: rgba(242,236,223,0.55); }
+  .tier.blush-ed { background: var(--blush); border-color: var(--blush); }
+
+  /* Decorative ornament */
+  .ornament {
+    font-family: 'Fraunces', serif; font-variation-settings: 'opsz' 144;
+    font-style: italic; font-weight: 300;
+    color: var(--bordeaux);
+  }
+
+  /* Industry mini-card */
+  .indu-mini {
+    padding: 18px 22px;
+    background: var(--bone); border: 1px solid var(--hair);
+    display: flex; align-items: center; gap: 12px;
+    transition: background .35s ease, color .35s ease, border-color .35s ease;
+    cursor: default;
+  }
+  .indu-mini:hover { background: var(--espresso); color: var(--bone); border-color: var(--espresso); }
+  .indu-mini .num { font-family: 'Fraunces', serif; font-style: italic; font-size: 14px; color: var(--bordeaux); width: 22px; }
+  .indu-mini:hover .num { color: var(--ochre); }
+
+  /* Big-quote opening */
+  .big-quote {
+    font-family: 'Fraunces', serif; font-variation-settings: 'opsz' 144;
+    font-style: italic; font-weight: 300;
+    font-size: clamp(80px, 14vw, 200px); line-height: 0.7;
+    color: var(--bordeaux);
+  }
+
+  /* Reduce motion */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+    .marq-track { animation: none; }
+  }
+
+  /* Top tape */
+  .top-tape {
+    background: var(--espresso); color: var(--bone);
+    padding: 8px 0; font-family: 'DM Mono', monospace;
+    font-size: 11px; letter-spacing: .18em; text-transform: uppercase;
+    overflow: hidden;
+  }
+
+  /* Headline display sizes */
+  .h-cover { font-size: clamp(56px, 11vw, 168px); }
+  .h-display { font-size: clamp(40px, 6vw, 96px); }
+  .h-story { font-size: clamp(32px, 4.4vw, 72px); }
+  .h-section { font-size: clamp(28px, 3.4vw, 56px); }
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- TOP TAPE — marquee announcing issue + deals -->
+<!-- ════════════════════════════════════════════════════════ -->
+<div class="top-tape">
+  <div class="marq-track">
+    <span>Issue 07 · Spring/Summer 2026</span><span class="ornament">✦</span>
+    <span>The Small Owners' Edition</span><span class="ornament">✦</span>
+    <span>¥298/year — A Shop, Built in 30 Minutes</span><span class="ornament">✦</span>
+    <span>AI Video · 20 Seconds Per Cut</span><span class="ornament">✦</span>
+    <span>Allinpay T+0 · Direct to Owner's Account</span><span class="ornament">✦</span>
+    <span>13 Industries Ready Out of the Box</span><span class="ornament">✦</span>
+    <!-- loop -->
+    <span>Issue 07 · Spring/Summer 2026</span><span class="ornament">✦</span>
+    <span>The Small Owners' Edition</span><span class="ornament">✦</span>
+    <span>¥298/year — A Shop, Built in 30 Minutes</span><span class="ornament">✦</span>
+    <span>AI Video · 20 Seconds Per Cut</span><span class="ornament">✦</span>
+    <span>Allinpay T+0 · Direct to Owner's Account</span><span class="ornament">✦</span>
+    <span>13 Industries Ready Out of the Box</span><span class="ornament">✦</span>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- MASTHEAD -->
+<!-- ════════════════════════════════════════════════════════ -->
+<header class="sticky top-0 z-40 backdrop-blur-md" style="background: rgba(242,236,223,0.88); border-bottom: 1px solid var(--hair);">
+  <div class="max-w-[1440px] mx-auto px-6 lg:px-12 h-[64px] flex items-center justify-between">
+    <a href="#" class="flex items-baseline gap-3">
+      <span class="font-fr text-2xl tracking-tight">拓小二</span>
+      <span class="font-fr-it text-sm" style="color: var(--muted);">Tuoxiao'er Mag.</span>
+    </a>
+    <nav class="hidden lg:flex items-center gap-9 smcap" style="font-size: 11.5px;">
+      <a href="#toc" class="ed-link">目录</a>
+      <a href="#s01" class="ed-link">视频</a>
+      <a href="#s02" class="ed-link">商城</a>
+      <a href="#s03" class="ed-link">价格</a>
+      <a href="#s04" class="ed-link">行业</a>
+      <a href="#s05" class="ed-link">问答</a>
+    </nav>
+    <div class="flex items-center gap-4 smcap" style="font-size: 11.5px;">
+      <a href="#" class="ed-link hidden sm:inline">登录</a>
+      <a href="#cta" class="ed-link"><span class="mark-b">¥298 入驻 →</span></a>
+    </div>
+  </div>
+</header>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- COVER — magazine cover style -->
+<!-- ════════════════════════════════════════════════════════ -->
+<section class="relative pt-12 lg:pt-16 pb-24 lg:pb-32 overflow-hidden">
+  <div class="max-w-[1440px] mx-auto px-6 lg:px-12 relative">
+
+    <!-- Left vertical edge -->
+    <div class="absolute left-6 top-12 hidden lg:block">
+      <div class="side-vertical">№ 07 · MMXXVI · 春夏号</div>
+    </div>
+    <!-- Right vertical edge -->
+    <div class="absolute right-6 top-12 hidden lg:block">
+      <div class="side-vertical">A SMALL-OWNER'S MAGAZINE · ¥298 / YEAR</div>
+    </div>
+
+    <!-- Cover header strip -->
+    <div class="grid grid-cols-12 gap-6 mb-12 lg:mb-16 reveal">
+      <div class="col-span-6 lg:col-span-4 flex items-center gap-3">
+        <span class="stamp">Issue 07</span>
+        <span class="smcap" style="color: var(--muted);">2026 · 春夏</span>
+      </div>
+      <div class="hidden lg:flex col-span-4 items-center justify-center">
+        <span class="font-fr-it text-xl" style="color: var(--bordeaux);">a small-owner's edition</span>
+      </div>
+      <div class="col-span-6 lg:col-span-4 flex items-center justify-end gap-3">
+        <span class="smcap" style="color: var(--muted);">¥0.00 · 永久免费阅读</span>
+      </div>
+    </div>
+
+    <hr class="hr-thin mb-12 lg:mb-16">
+
+    <!-- Cover main -->
+    <div class="grid grid-cols-12 gap-6 lg:gap-10 reveal">
+      <!-- Editor's letter -->
+      <aside class="col-span-12 lg:col-span-3 order-2 lg:order-1">
+        <div class="smcap mb-4" style="color: var(--bordeaux);">— Editor's Note</div>
+        <p class="font-fr-it text-[19px] leading-[1.45] mb-5" style="color: var(--espresso-2);">
+          这一本是为<span style="color: var(--bordeaux);">街边</span>那间小店准备的。
+        </p>
+        <p class="text-[13.5px] leading-[1.75]" style="color: var(--espresso-2);">
+          做了十年的烧烤摊、开了三家的奶茶店、隔条街的小服装铺 — 他们都不需要再一套又一套的 SaaS。需要的是 <em class="font-fr-it">一个</em> 开机即用、收款直接到自己账户的店。
+          <br><br>
+          ¥298 起开张，AI 20 秒出片，通联 T+0 进自己银行卡。<br>这本杂志记录了把这件事做对的全过程。
+        </p>
+        <p class="font-fr-it text-[14px] mt-7" style="color: var(--bordeaux);">— 编辑部</p>
+      </aside>
+
+      <!-- Cover line -->
+      <div class="col-span-12 lg:col-span-9 order-1 lg:order-2">
+        <h1 class="cover-h h-cover">
+          给<span class="font-fr-it" style="color: var(--bordeaux);">小老板</span>的<br>
+          AI 带货<br>
+          <span style="-webkit-text-stroke: 1.5px var(--espresso); color: transparent;">＋</span>
+          在线<span class="font-fr-it" style="color: var(--bordeaux);">商城</span>。
+        </h1>
+
+        <div class="mt-10 lg:mt-14 grid grid-cols-12 gap-6">
+          <p class="col-span-12 md:col-span-7 text-[16px] lg:text-[18px] leading-[1.75]" style="color: var(--espresso-2);">
+            烧烤、奶茶、茶楼、美容院、服装鞋帽、超市便利 — <span class="mark-blush">13 个行业都能开</span>。<br>
+            输入商品 → 20 秒出片 → 一键发抖音。商城、推广、收款一并送上 — 老板只管卖货。
+          </p>
+          <div class="col-span-12 md:col-span-5 flex flex-wrap items-end md:justify-end gap-3">
+            <a href="#cta" class="btn-ink">¥298 / 立即入驻</a>
+            <a href="#toc" class="btn-line">阅读本期</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <hr class="hr-thin mt-16 lg:mt-20 mb-12 lg:mb-16">
+
+    <!-- Cover figures -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-px reveal" style="background: var(--hair);">
+      <div class="p-7 lg:p-10" style="background: var(--bone);">
+        <div class="smcap" style="color: var(--muted);">Cut Time</div>
+        <div class="font-fr h-section mt-4 tabular leading-none">20<sup class="font-fr-it text-base align-super" style="color: var(--bordeaux);">"</sup></div>
+        <div class="caption mt-3">即梦 AI · 平均出片时长</div>
+      </div>
+      <div class="p-7 lg:p-10 relative" style="background: var(--blush);">
+        <div class="smcap" style="color: var(--bordeaux);">Subscription</div>
+        <div class="font-fr h-section mt-4 tabular leading-none">¥298<sup class="font-fr-it text-base align-super" style="color: var(--espresso);">/年</sup></div>
+        <div class="caption mt-3" style="color: var(--espresso-2);">基础包 · 含 10 条 AI 视频</div>
+      </div>
+      <div class="p-7 lg:p-10" style="background: var(--bone);">
+        <div class="smcap" style="color: var(--muted);">Industries</div>
+        <div class="font-fr h-section mt-4 tabular leading-none">13<sup class="font-fr-it text-base align-super" style="color: var(--bordeaux);">个</sup></div>
+        <div class="caption mt-3">餐饮 · 零售 · 美容 · 服务</div>
+      </div>
+      <div class="p-7 lg:p-10" style="background: var(--espresso); color: var(--bone);">
+        <div class="smcap" style="color: var(--ochre);">Payment</div>
+        <div class="font-fr h-section mt-4 tabular leading-none">T+0<sup class="font-fr-it text-base align-super" style="color: var(--ochre);">秒到</sup></div>
+        <div class="caption mt-3" style="color: rgba(242,236,223,0.6);">通联直入 · 平台不沾钱</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- TABLE OF CONTENTS -->
+<!-- ════════════════════════════════════════════════════════ -->
+<section id="toc" class="relative py-24 lg:py-32" style="background: var(--bone-2);">
+  <div class="max-w-[1440px] mx-auto px-6 lg:px-12">
+    <div class="grid grid-cols-12 gap-6 mb-14">
+      <div class="col-span-12 lg:col-span-4 reveal">
+        <div class="smcap mb-6" style="color: var(--bordeaux);">— In This Issue</div>
+        <h2 class="font-fr h-display leading-[0.95]">
+          本期<span class="font-fr-it" style="color: var(--bordeaux);">目录</span>
+        </h2>
+      </div>
+      <div class="col-span-12 lg:col-span-7 lg:col-start-6 reveal">
+        <p class="font-fr-it text-[20px] lg:text-[22px] leading-[1.5]" style="color: var(--espresso-2);">
+          八篇关于开店的事 — 从 <span style="color: var(--bordeaux);">AI 一条短视频</span>，到顾客付款的那一秒钟，<br>钱怎么不经过平台、直接落进老板的口袋。
+        </p>
+      </div>
+    </div>
+
+    <div class="mt-10 reveal">
+      <a href="#s01" class="toc-row">
+        <div class="font-fr-it text-3xl" style="color: var(--bordeaux);">01</div>
+        <div>
+          <div class="font-fr text-2xl lg:text-3xl leading-tight">AI 视频，<span class="font-fr-it">20 秒</span> 一条</div>
+          <div class="caption toc-desc mt-2">即梦 AI + 火山引擎 · 商品图自动出片</div>
+        </div>
+        <div class="smcap toc-meta" style="color: var(--muted);">Story · Feature</div>
+        <div class="caption text-right hidden md:block">P. 014 — 022</div>
+      </a>
+      <a href="#s02" class="toc-row">
+        <div class="font-fr-it text-3xl" style="color: var(--bordeaux);">02</div>
+        <div>
+          <div class="font-fr text-2xl lg:text-3xl leading-tight">抖音一键直发 <span class="font-fr-it">挂车</span></div>
+          <div class="caption toc-desc mt-2">OAuth 合规 · 多账号矩阵 · 自动归因</div>
+        </div>
+        <div class="smcap toc-meta" style="color: var(--muted);">Mechanism</div>
+        <div class="caption text-right hidden md:block">P. 024 — 029</div>
+      </a>
+      <a href="#s03" class="toc-row">
+        <div class="font-fr-it text-3xl" style="color: var(--bordeaux);">03</div>
+        <div>
+          <div class="font-fr text-2xl lg:text-3xl leading-tight">附赠商城 — <span class="font-fr-it">六件套</span></div>
+          <div class="caption toc-desc mt-2">拍照上架 · 多 SKU · 会员积分 · 数据看板</div>
+        </div>
+        <div class="smcap toc-meta" style="color: var(--muted);">The Bundle</div>
+        <div class="caption text-right hidden md:block">P. 030 — 041</div>
+      </a>
+      <a href="#s04" class="toc-row">
+        <div class="font-fr-it text-3xl" style="color: var(--bordeaux);">04</div>
+        <div>
+          <div class="font-fr text-2xl lg:text-3xl leading-tight">老客邀请 — <span class="font-fr-it">单层</span> · 合规归本</div>
+          <div class="caption toc-desc mt-2">只奖直接邀请人 · 按真实成交结算</div>
+        </div>
+        <div class="smcap toc-meta" style="color: var(--muted);">Referral · Compliance</div>
+        <div class="caption text-right hidden md:block">P. 042 — 048</div>
+      </a>
+      <a href="#s05" class="toc-row">
+        <div class="font-fr-it text-3xl" style="color: var(--bordeaux);">05</div>
+        <div>
+          <div class="font-fr text-2xl lg:text-3xl leading-tight">订阅 — <span class="font-fr-it">¥298</span> / <span class="font-fr-it">¥1688</span></div>
+          <div class="caption toc-desc mt-2">两个套餐 · 全场 T+0 · GMV 0 抽成</div>
+        </div>
+        <div class="smcap toc-meta" style="color: var(--muted);">Membership</div>
+        <div class="caption text-right hidden md:block">P. 050 — 059</div>
+      </a>
+      <a href="#s06" class="toc-row">
+        <div class="font-fr-it text-3xl" style="color: var(--bordeaux);">06</div>
+        <div>
+          <div class="font-fr text-2xl lg:text-3xl leading-tight">开张四步 — <span class="font-fr-it">10 分钟</span> 上线</div>
+          <div class="caption toc-desc mt-2">提交 → 上架 → 出片 → 收单</div>
+        </div>
+        <div class="smcap toc-meta" style="color: var(--muted);">Flow</div>
+        <div class="caption text-right hidden md:block">P. 060 — 064</div>
+      </a>
+      <a href="#s07" class="toc-row">
+        <div class="font-fr-it text-3xl" style="color: var(--bordeaux);">07</div>
+        <div>
+          <div class="font-fr text-2xl lg:text-3xl leading-tight">13 个行业 — <span class="font-fr-it">街边</span> 实战</div>
+          <div class="caption toc-desc mt-2">烧烤 · 奶茶 · 美容 · 服装 · 三家店主访谈</div>
+        </div>
+        <div class="smcap toc-meta" style="color: var(--muted);">Lookbook · Interviews</div>
+        <div class="caption text-right hidden md:block">P. 066 — 074</div>
+      </a>
+      <a href="#s08" class="toc-row">
+        <div class="font-fr-it text-3xl" style="color: var(--bordeaux);">08</div>
+        <div>
+          <div class="font-fr text-2xl lg:text-3xl leading-tight">老板的<span class="font-fr-it">七个</span>问题</div>
+          <div class="caption toc-desc mt-2">入驻资质 · AI 模型 · 钱怎么走 · 合规边界</div>
+        </div>
+        <div class="smcap toc-meta" style="color: var(--muted);">Q&amp;A</div>
+        <div class="caption text-right hidden md:block">P. 076 — 081</div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- STORY 01 — AI 视频 -->
+<!-- ════════════════════════════════════════════════════════ -->
+<section id="s01" class="relative py-24 lg:py-32">
+  <div class="max-w-[1440px] mx-auto px-6 lg:px-12">
+    <div class="grid grid-cols-12 gap-6 lg:gap-10">
+
+      <!-- left meta -->
+      <aside class="col-span-12 lg:col-span-2">
+        <div class="smcap" style="color: var(--muted);">Story 01</div>
+        <div class="font-fr-it text-3xl mt-3" style="color: var(--bordeaux);">视频</div>
+        <hr class="hr-soft my-6 max-w-[60px]">
+        <div class="caption">2026.05<br>by 编辑部</div>
+      </aside>
+
+      <!-- Content -->
+      <div class="col-span-12 lg:col-span-6 reveal">
+        <h2 class="font-fr h-story leading-[0.98] mb-10">
+          AI 在你拍照的<br>
+          <span class="font-fr-it" style="color: var(--bordeaux);">那一刻</span><br>
+          已经在剪片。
+        </h2>
+
+        <p class="dropcap text-[16px] leading-[1.85]" style="color: var(--espresso-2);">
+          拍商品图。AI 自动写卖点文案，挑真人级配音音色，从火山引擎即梦 AI 取一段 15s／20s／30s 的成片 — 整个过程，比你点一杯外卖还快。<br><br>
+          这是为不会剪辑、不会写文案的小老板做的：单条成本不到 <em class="font-fr-it">¥1</em>，比外包便宜 30 倍。
+        </p>
+
+        <hr class="hr-soft my-10">
+
+        <div class="grid grid-cols-3 gap-6">
+          <div>
+            <div class="smcap" style="color: var(--muted);">出片时长</div>
+            <div class="font-fr text-3xl mt-2 tabular">20<sup class="font-fr-it text-sm" style="color: var(--bordeaux);">秒</sup></div>
+          </div>
+          <div>
+            <div class="smcap" style="color: var(--muted);">单条成本</div>
+            <div class="font-fr text-3xl mt-2 tabular">¥<span class="font-fr">0.4</span></div>
+          </div>
+          <div>
+            <div class="smcap" style="color: var(--muted);">音色</div>
+            <div class="font-fr text-3xl mt-2 tabular">12<sup class="font-fr-it text-sm" style="color: var(--bordeaux);">种</sup></div>
+          </div>
+        </div>
+
+        <a href="#cta" class="ed-link mt-10 inline-flex smcap" style="color: var(--bordeaux);">体验 AI 视频生成 →</a>
+      </div>
+
+      <!-- Plate visual -->
+      <div class="col-span-12 lg:col-span-4 reveal">
+        <div class="plate e ed-shadow" style="aspect-ratio: 4/5;">
+          <div class="absolute inset-7 flex flex-col justify-between">
+            <div>
+              <div class="smcap" style="color: var(--ochre);">Now Rendering</div>
+              <div class="font-fr-it text-2xl mt-3" style="color: var(--bone);">茶里春和 · 招牌烤串</div>
+            </div>
+            <div class="flex flex-col items-center justify-center flex-1">
+              <div class="font-fr leading-none tabular" style="font-size: 130px; color: var(--ochre); font-variation-settings: 'opsz' 144, 'SOFT' 100;">78<sup class="font-fr-it text-3xl">%</sup></div>
+              <div class="caption mt-2" style="color: rgba(242,236,223,0.7);">即梦 AI · ETC 00:04</div>
+              <div class="mt-6 w-[200px] h-[1px]" style="background: rgba(242,236,223,0.25);">
+                <div class="h-full" style="background: var(--ochre); width: 78%;"></div>
+              </div>
+            </div>
+            <div class="flex items-center justify-between">
+              <div class="caption" style="color: rgba(242,236,223,0.6);">📷 IMG-2026-0512-014.JPG</div>
+              <div class="caption" style="color: var(--ochre);">▶ 00:14 / 00:20</div>
+            </div>
+          </div>
+        </div>
+        <p class="caption mt-3">Fig. 01 — 视频生成实时进度</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="hr-thin max-w-[1440px] mx-auto" style="margin-left: 48px; margin-right: 48px;">
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- STORY 02 — 抖音发布 -->
+<!-- ════════════════════════════════════════════════════════ -->
+<section id="s02" class="relative py-24 lg:py-32">
+  <div class="max-w-[1440px] mx-auto px-6 lg:px-12">
+    <div class="grid grid-cols-12 gap-6 lg:gap-10">
+
+      <!-- Plate first this time (asymmetric flip) -->
+      <div class="col-span-12 lg:col-span-5 order-2 lg:order-1 reveal">
+        <div class="plate b ed-shadow" style="aspect-ratio: 4/5;">
+          <div class="absolute inset-7 flex flex-col">
+            <div class="flex items-center justify-between mb-6">
+              <div>
+                <div class="font-fr text-xl">@tea-spring</div>
+                <div class="caption" style="color: rgba(242,236,223,0.65);">蓝 V · 抖店 · 已授权</div>
+              </div>
+              <div class="smcap" style="color: var(--ochre);">OAuth · ✓</div>
+            </div>
+            <div class="flex-1 grid grid-cols-3 gap-2.5">
+              <div class="rounded-sm flex items-end p-2 relative overflow-hidden" style="background: linear-gradient(160deg, var(--ochre), #6F4F1B);">
+                <span class="font-mono text-[10px] font-bold" style="color: var(--bone);">▶ 2.4k</span>
+              </div>
+              <div class="rounded-sm flex items-end p-2 relative overflow-hidden" style="background: linear-gradient(160deg, var(--bone), var(--blush));">
+                <span class="font-mono text-[10px] font-bold" style="color: var(--espresso);">▶ 14k</span>
+                <span class="absolute top-1.5 right-1.5 px-1 py-0.5 text-[8px] font-mono font-bold" style="background: var(--bordeaux); color: var(--bone);">HOT</span>
+              </div>
+              <div class="rounded-sm flex items-end p-2" style="background: rgba(242,236,223,0.12);">
+                <span class="font-mono text-[10px] font-bold" style="color: var(--bone);">▶ 820</span>
+              </div>
+              <div class="rounded-sm" style="background: rgba(242,236,223,0.08);"></div>
+              <div class="rounded-sm flex items-end p-2" style="background: linear-gradient(160deg, #2B1417, var(--bordeaux));">
+                <span class="font-mono text-[10px] font-bold" style="color: var(--bone);">▶ 5.6k</span>
+              </div>
+              <div class="rounded-sm" style="background: rgba(242,236,223,0.05);"></div>
+            </div>
+            <div class="flex items-center justify-between mt-5 pt-4" style="border-top: 1px solid rgba(242,236,223,0.18);">
+              <span class="font-mono text-[10px]" style="color: rgba(242,236,223,0.6);">今日 6 条</span>
+              <span class="font-mono text-[10px]" style="color: var(--ochre);">播放 → 23.4k</span>
+            </div>
+          </div>
+        </div>
+        <p class="caption mt-3">Fig. 02 — 多账号矩阵 · 当日成绩</p>
+      </div>
+
+      <!-- Content -->
+      <div class="col-span-12 lg:col-span-5 lg:col-start-7 order-1 lg:order-2 reveal">
+        <div class="smcap" style="color: var(--muted);">Story 02</div>
+        <h2 class="font-fr h-story leading-[0.98] mt-4 mb-10">
+          一条片子，<br>
+          剩下的<span class="font-fr-it" style="color: var(--bordeaux);">挂车</span>、<br>
+          归因、回流，<br>
+          全在后台跑。
+        </h2>
+
+        <p class="dropcap text-[16px] leading-[1.85]" style="color: var(--espresso-2);">
+          抖音开放平台官方 OAuth 授权后，AI 视频可直接挂车发布、带店铺二维码、定时矩阵排程。
+          <br><br>
+          播放、转化、GMV — 反向归因到每一个 SKU。哪条片有效，看一眼就知道。
+        </p>
+
+        <hr class="hr-soft my-10">
+
+        <ul class="space-y-4 text-[14.5px] leading-[1.7]">
+          <li class="flex gap-3"><span class="font-fr-it" style="color: var(--bordeaux);">i.</span> 抖音官方 OAuth · 全流程合规</li>
+          <li class="flex gap-3"><span class="font-fr-it" style="color: var(--bordeaux);">ii.</span> 视频自动挂车 · 多账号矩阵管理</li>
+          <li class="flex gap-3"><span class="font-fr-it" style="color: var(--bordeaux);">iii.</span> 播放量 / 转化率 / GMV 反向归因到 SKU</li>
+          <li class="flex gap-3"><span class="font-fr-it" style="color: var(--bordeaux);">iv.</span> 蓝 V 抖店资质可代办</li>
+        </ul>
+
+        <a href="#cta" class="ed-link mt-10 inline-flex smcap" style="color: var(--bordeaux);">看抖音发布演示 →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- STORY 03 — 附赠商城 (bento spread) -->
+<!-- ════════════════════════════════════════════════════════ -->
+<section id="s03" class="relative py-24 lg:py-32" style="background: var(--blush);">
+  <div class="max-w-[1440px] mx-auto px-6 lg:px-12">
+
+    <div class="grid grid-cols-12 gap-6 mb-16 reveal">
+      <div class="col-span-12 lg:col-span-2">
+        <div class="smcap" style="color: var(--bordeaux);">Story 03</div>
+        <div class="font-fr-it text-3xl mt-3" style="color: var(--bordeaux);">附赠</div>
+      </div>
+      <div class="col-span-12 lg:col-span-8">
+        <h2 class="font-fr h-story leading-[0.98]">
+          视频引来的客人，<br>
+          请用<span class="font-fr-it" style="color: var(--bordeaux);">商城</span> 接住。
+        </h2>
+      </div>
+      <div class="col-span-12 lg:col-span-2 flex items-end justify-end">
+        <div class="text-right">
+          <div class="font-fr-it text-2xl" style="color: var(--bordeaux);">六件套</div>
+          <div class="caption mt-1">送 · 01 — 06</div>
+        </div>
+      </div>
+    </div>
+
+    <hr class="hr-thin mb-12">
+
+    <p class="font-fr-it text-[20px] lg:text-[22px] leading-[1.55] max-w-3xl mb-16" style="color: var(--espresso-2);">
+      订阅 <span style="color: var(--bordeaux);">¥298 / 年</span> 即送下面这套全功能商城 — 商品、订单、会员、积分、数据，全部开。
+    </p>
+
+    <!-- Bento grid - editorial -->
+    <div class="grid grid-cols-12 gap-5 lg:gap-6">
+      <!-- 01 BIG -->
+      <article class="reveal col-span-12 lg:col-span-7 row-span-2 p-9 lg:p-12 flex flex-col justify-between" style="background: var(--bone); border: 1px solid var(--hair); min-height: 460px;">
+        <div>
+          <div class="flex items-center justify-between mb-8">
+            <div class="font-fr-it text-2xl" style="color: var(--bordeaux);">i.</div>
+            <div class="smcap" style="color: var(--muted);">Order Loop</div>
+          </div>
+          <h3 class="font-fr text-3xl lg:text-4xl leading-[1.1] mb-5">
+            拍照上架 ·<br>订单履约闭环
+          </h3>
+          <p class="text-[14.5px] leading-[1.8]" style="color: var(--espresso-2);">
+            拍张照 AI 自动识别商品信息一键上架；订单到了扫码核销 / 发货，到店自提 + 快递双模式。从街边小店到连锁老板，5 分钟掌握。
+          </p>
+        </div>
+        <div class="mt-8 pt-8 flex items-end justify-between" style="border-top: 1px solid var(--hair);">
+          <div class="grid grid-cols-4 gap-6 flex-1">
+            <div><div class="font-fr-it text-xl" style="color: var(--bordeaux);">1</div><div class="caption mt-1.5">拍照上传</div></div>
+            <div><div class="font-fr-it text-xl" style="color: var(--bordeaux);">2</div><div class="caption mt-1.5">AI 填规格</div></div>
+            <div><div class="font-fr-it text-xl" style="color: var(--bordeaux);">3</div><div class="caption mt-1.5">顾客下单</div></div>
+            <div><div class="font-fr-it text-xl" style="color: var(--bordeaux);">4</div><div class="caption mt-1.5">核销发货</div></div>
+          </div>
+        </div>
+      </article>
+
+      <!-- 02 -->
+      <article class="reveal col-span-6 lg:col-span-5 p-8 lg:p-10" style="background: var(--bone); border: 1px solid var(--hair);">
+        <div class="flex items-center justify-between mb-6">
+          <div class="font-fr-it text-xl" style="color: var(--bordeaux);">ii.</div>
+          <div class="smcap" style="color: var(--muted);">Stock</div>
+        </div>
+        <h3 class="font-fr text-2xl mb-3 leading-tight">多 SKU 库存</h3>
+        <p class="text-[13.5px] leading-[1.7]" style="color: var(--espresso-2);">规格、价格、库存随时改；售罄自动下架，避免空单。</p>
+      </article>
+
+      <!-- 03 -->
+      <article class="reveal col-span-6 lg:col-span-5 p-8 lg:p-10" style="background: var(--bone); border: 1px solid var(--hair);">
+        <div class="flex items-center justify-between mb-6">
+          <div class="font-fr-it text-xl" style="color: var(--bordeaux);">iii.</div>
+          <div class="smcap" style="color: var(--muted);">Loyalty</div>
+        </div>
+        <h3 class="font-fr text-2xl mb-3 leading-tight">会员积分余额</h3>
+        <p class="text-[13.5px] leading-[1.7]" style="color: var(--espresso-2);">消费自动积分、下单可抵扣，余额线上充值 / 提现。</p>
+      </article>
+
+      <!-- 04 -->
+      <article class="reveal col-span-6 lg:col-span-4 p-8 lg:p-10" style="background: var(--bone); border: 1px solid var(--hair);">
+        <div class="flex items-center justify-between mb-6">
+          <div class="font-fr-it text-xl" style="color: var(--bordeaux);">iv.</div>
+          <div class="smcap" style="color: var(--muted);">Alerts</div>
+        </div>
+        <h3 class="font-fr text-2xl mb-3 leading-tight">消息客服</h3>
+        <p class="text-[13.5px] leading-[1.7]" style="color: var(--espresso-2);">下单 / 到店 / 退款实时通知，不漏单。</p>
+      </article>
+
+      <!-- 05 -->
+      <article class="reveal col-span-6 lg:col-span-4 p-8 lg:p-10" style="background: var(--bone); border: 1px solid var(--hair);">
+        <div class="flex items-center justify-between mb-6">
+          <div class="font-fr-it text-xl" style="color: var(--bordeaux);">v.</div>
+          <div class="smcap" style="color: var(--muted);">QR Poster</div>
+        </div>
+        <h3 class="font-fr text-2xl mb-3 leading-tight">推广海报</h3>
+        <p class="text-[13.5px] leading-[1.7]" style="color: var(--espresso-2);">店铺商品二维码海报一键生成。</p>
+      </article>
+
+      <!-- 06 dashboard - dark -->
+      <article class="reveal col-span-12 lg:col-span-4 p-8 lg:p-10 flex flex-col justify-between" style="background: var(--espresso); color: var(--bone);">
+        <div>
+          <div class="flex items-center justify-between mb-6">
+            <div class="font-fr-it text-xl" style="color: var(--ochre);">vi.</div>
+            <div class="smcap" style="color: var(--ochre);">Dashboard</div>
+          </div>
+          <h3 class="font-fr text-2xl mb-3 leading-tight">数据看板</h3>
+          <p class="text-[13.5px] leading-[1.7]" style="color: rgba(242,236,223,0.78);">哪条视频有效一眼看穿。</p>
+        </div>
+        <div class="mt-6 pt-6 grid grid-cols-3 gap-3" style="border-top: 1px solid rgba(242,236,223,0.18);">
+          <div><div class="font-fr text-xl tabular" style="color: var(--ochre);">↑32%</div><div class="caption" style="color: rgba(242,236,223,0.55);">视频带客</div></div>
+          <div><div class="font-fr text-xl tabular">128</div><div class="caption" style="color: rgba(242,236,223,0.55);">活跃会员</div></div>
+          <div><div class="font-fr text-xl tabular">¥4.2k</div><div class="caption" style="color: rgba(242,236,223,0.55);">老客贡献</div></div>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- STORY 04 — 老客邀请 -->
+<!-- ════════════════════════════════════════════════════════ -->
+<section id="s04" class="relative py-24 lg:py-32" style="background: var(--espresso); color: var(--bone);">
+  <div class="max-w-[1440px] mx-auto px-6 lg:px-12">
+    <div class="grid grid-cols-12 gap-6 mb-16 reveal">
+      <div class="col-span-12 lg:col-span-2">
+        <div class="smcap" style="color: var(--ochre);">Story 04</div>
+        <div class="font-fr-it text-3xl mt-3" style="color: var(--ochre);">老客</div>
+      </div>
+      <div class="col-span-12 lg:col-span-10">
+        <h2 class="font-fr h-story leading-[0.98]">
+          让老客户帮你<br>
+          <span class="font-fr-it" style="color: var(--ochre);">邀请</span> 新顾客。
+        </h2>
+      </div>
+    </div>
+
+    <hr class="hr-thin mb-14" style="background: rgba(242,236,223,0.2);">
+
+    <div class="grid grid-cols-12 gap-10 lg:gap-14 reveal">
+      <div class="col-span-12 lg:col-span-5">
+        <p class="big-quote">"</p>
+        <p class="pull-quote text-[28px] lg:text-[36px] mt-3" style="color: var(--bone);">
+          单层结构 — <span class="font-fr-it">只</span> 奖励直接邀请人，<br>
+          不发展层级，<br>
+          严守合规边界。
+        </p>
+        <p class="caption mt-6" style="color: rgba(242,236,223,0.6);">— 编辑部 · 合规策略说明</p>
+      </div>
+
+      <div class="col-span-12 lg:col-span-7 grid grid-cols-1 md:grid-cols-2 gap-px" style="background: rgba(242,236,223,0.18);">
+        <div class="p-8 lg:p-10" style="background: var(--espresso);">
+          <div class="smcap mb-5" style="color: var(--ochre);">A · 老客邀请</div>
+          <h3 class="font-fr text-2xl mb-4 leading-tight">推广积分到账</h3>
+          <p class="text-[13.5px] leading-[1.75] mb-5" style="color: rgba(242,236,223,0.78);">老客分享商品 / 店铺，扫码下单成交即按比例发放积分到邀请人。</p>
+          <ul class="space-y-2.5 text-[13px]" style="color: rgba(242,236,223,0.85);">
+            <li>· 比例 1% – 30%（商户自定）</li>
+            <li>· 真实订单结算，仅 1 级关系</li>
+            <li>· 积分冻结期可设，防刷单</li>
+            <li>· 流水全留痕，提现线上审核</li>
+          </ul>
+        </div>
+        <div class="p-8 lg:p-10" style="background: var(--bordeaux);">
+          <div class="smcap mb-5" style="color: var(--ochre);">B · 推广激励</div>
+          <h3 class="font-fr text-2xl mb-4 leading-tight">按 GMV 归本</h3>
+          <p class="text-[13.5px] leading-[1.75] mb-5" style="color: rgba(242,236,223,0.85);">设立 1 名推广伙伴，达成 GMV 目标可领约定激励 — 不与人数挂钩。</p>
+          <ul class="space-y-2.5 text-[13px]" style="color: rgba(242,236,223,0.92);">
+            <li>· 固定档位 / 阶梯比例，老板自定</li>
+            <li>· 结算：成交 GMV，不计人数</li>
+            <li>· 合同协议模板内置</li>
+            <li>· 结算可导出，备查备税</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- STORY 05 — 订阅定价 -->
+<!-- ════════════════════════════════════════════════════════ -->
+<section id="s05" class="relative py-24 lg:py-32">
+  <div class="max-w-[1440px] mx-auto px-6 lg:px-12">
+
+    <div class="grid grid-cols-12 gap-6 mb-16 reveal">
+      <div class="col-span-12 lg:col-span-2">
+        <div class="smcap" style="color: var(--muted);">Story 05</div>
+        <div class="font-fr-it text-3xl mt-3" style="color: var(--bordeaux);">订阅</div>
+      </div>
+      <div class="col-span-12 lg:col-span-7">
+        <h2 class="font-fr h-story leading-[0.98]">
+          两个套餐 ·<br>
+          <span class="font-fr-it" style="color: var(--bordeaux);">¥298</span> 起开张，<br>
+          <span class="font-fr-it" style="color: var(--bordeaux);">¥1688</span> 做规模。
+        </h2>
+      </div>
+      <div class="col-span-12 lg:col-span-3 lg:flex lg:items-end">
+        <p class="font-fr-it text-[18px] leading-[1.5]" style="color: var(--espresso-2);">
+          所有套餐顾客付款 <span style="color: var(--bordeaux); font-style: normal;">T+0 直入</span> 商户通联账户 — 平台不沾钱。
+        </p>
+      </div>
+    </div>
+
+    <hr class="hr-thin mb-14">
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-px reveal" style="background: var(--hair);">
+      <!-- 基础包 -->
+      <div class="tier">
+        <div class="flex items-center justify-between">
+          <div class="font-fr text-2xl">基础包</div>
+          <div class="smcap" style="color: var(--muted);">A</div>
+        </div>
+        <p class="font-fr-it text-[15px] mt-1" style="color: var(--muted);">先把店开起来的最小投入</p>
+        <hr class="hr-soft my-7">
+        <div class="flex items-baseline gap-1">
+          <span class="font-fr text-6xl tabular" style="color: var(--bordeaux);">¥298</span>
+          <span class="font-fr-it text-sm" style="color: var(--muted);">/ 年</span>
+        </div>
+        <p class="caption mt-2">一店一年 · 续费即送 AI 视频礼包</p>
+        <a href="#cta" class="btn-line w-full justify-center mt-7">¥298 立即开张</a>
+        <hr class="hr-soft my-7">
+        <ul class="space-y-3 text-[13.5px] leading-[1.65]">
+          <li class="flex gap-3"><span class="font-fr-it" style="color: var(--bordeaux);">·</span>全功能在线商城（商品 / 订单 / 会员 / 积分）</li>
+          <li class="flex gap-3"><span class="font-fr-it" style="color: var(--bordeaux);">·</span>通联秒到收款（T+0 直入银行卡）</li>
+          <li class="flex gap-3"><span class="font-fr-it" style="color: var(--bordeaux);">·</span>推广奖励工具（积分 + 邀请）</li>
+          <li class="flex gap-3"><span class="font-fr-it" style="color: var(--bordeaux);">·</span><strong>赠送 10 条 AI 视频</strong> + 抖音通道</li>
+          <li class="flex gap-3"><span class="font-fr-it" style="color: var(--bordeaux);">·</span>13 个行业模板</li>
+          <li class="flex gap-3" style="color: var(--muted);"><span>—</span>智能推广引擎</li>
+        </ul>
+      </div>
+
+      <!-- 全功能 featured -->
+      <div class="tier featured relative">
+        <div class="absolute -top-3 right-7 px-3 py-1.5 stamp" style="background: var(--ochre); color: var(--espresso); border-color: var(--ochre);">热门首选</div>
+        <div class="flex items-center justify-between">
+          <div class="font-fr text-2xl" style="color: var(--bone);">全功能</div>
+          <div class="smcap" style="color: var(--ochre);">B</div>
+        </div>
+        <p class="font-fr-it text-[15px] mt-1 muted-d">单店扩多店 · 靠数据做运营</p>
+        <hr class="hr-soft my-7" style="background: rgba(242,236,223,0.2);">
+        <div class="flex items-baseline gap-1">
+          <span class="font-fr text-6xl tabular" style="color: var(--ochre);">¥1688</span>
+          <span class="font-fr-it text-sm muted-d">/ 年</span>
+        </div>
+        <p class="caption mt-2" style="color: rgba(242,236,223,0.55);">6 倍 AI 视频 + 智能推广 + 数据看板</p>
+        <a href="#cta" class="btn-bone-on-dark w-full justify-center mt-7">¥1688 升级全功能</a>
+        <hr class="hr-soft my-7" style="background: rgba(242,236,223,0.2);">
+        <ul class="space-y-3 text-[13.5px] leading-[1.65]" style="color: rgba(242,236,223,0.92);">
+          <li class="flex gap-3"><span class="font-fr-it" style="color: var(--ochre);">·</span>包含 <strong>基础包全部功能</strong></li>
+          <li class="flex gap-3"><span class="font-fr-it" style="color: var(--ochre);">·</span><strong>赠送 60 条 AI 视频</strong>（6 倍基础）</li>
+          <li class="flex gap-3"><span class="font-fr-it" style="color: var(--ochre);">·</span><strong>智能推广引擎</strong> · 老客带新客</li>
+          <li class="flex gap-3"><span class="font-fr-it" style="color: var(--ochre);">·</span>13 行业 <strong>AI 风格定制</strong></li>
+          <li class="flex gap-3"><span class="font-fr-it" style="color: var(--ochre);">·</span>数据看板 · 用户画像 · 复购漏斗</li>
+          <li class="flex gap-3"><span class="font-fr-it" style="color: var(--ochre);">·</span>商户提现 <strong>分级审批</strong></li>
+          <li class="flex gap-3"><span class="font-fr-it" style="color: var(--ochre);">·</span><strong>优先客服 + 1v1 答疑</strong></li>
+        </ul>
+      </div>
+
+      <!-- 资金安全 -->
+      <div class="tier blush-ed">
+        <div class="flex items-center justify-between">
+          <div class="font-fr text-2xl">钱不过平台</div>
+          <div class="smcap" style="color: var(--bordeaux);">C</div>
+        </div>
+        <p class="font-fr-it text-[15px] mt-1" style="color: var(--espresso-2);">资金直入老板自己账户</p>
+        <hr class="hr-soft my-7" style="background: rgba(28,24,20,0.2);">
+        <div class="flex items-baseline gap-1">
+          <span class="font-fr text-6xl tabular">T+0</span>
+          <span class="font-fr-it text-sm">秒到</span>
+        </div>
+        <p class="caption mt-2" style="color: var(--espresso-2);">商城 GMV 0 抽成 · 0 服务费</p>
+        <a href="#cta" class="btn-ink w-full justify-center mt-7">联系顾问 →</a>
+        <hr class="hr-soft my-7" style="background: rgba(28,24,20,0.2);">
+        <ul class="space-y-3 text-[13.5px] leading-[1.65]">
+          <li class="flex gap-3"><span class="font-fr-it" style="color: var(--bordeaux);">·</span>T+0 即时到账，资金不留过夜</li>
+          <li class="flex gap-3"><span class="font-fr-it" style="color: var(--bordeaux);">·</span>平台不碰用户钱，<strong>零二清风险</strong></li>
+          <li class="flex gap-3"><span class="font-fr-it" style="color: var(--bordeaux);">·</span>资金落到商户自己的通联账号</li>
+          <li class="flex gap-3"><span class="font-fr-it" style="color: var(--bordeaux);">·</span>余额随时提现到本人银行卡</li>
+          <li class="flex gap-3"><span class="font-fr-it" style="color: var(--bordeaux);">·</span>商城 GMV <strong>0 抽成 / 0 费</strong></li>
+        </ul>
+      </div>
+    </div>
+
+    <p class="text-center mt-12 caption">
+      * AI 视频按"成片条数"计 · 建议单条 ≤ 20s · 年内可一次性升级 · 差额抵扣 · 所有价格含税。
+    </p>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- STORY 06 — 开张四步 -->
+<!-- ════════════════════════════════════════════════════════ -->
+<section id="s06" class="relative py-24 lg:py-32" style="background: var(--bone-2);">
+  <div class="max-w-[1440px] mx-auto px-6 lg:px-12">
+
+    <div class="grid grid-cols-12 gap-6 mb-16 reveal">
+      <div class="col-span-12 lg:col-span-2">
+        <div class="smcap" style="color: var(--muted);">Story 06</div>
+        <div class="font-fr-it text-3xl mt-3" style="color: var(--bordeaux);">流程</div>
+      </div>
+      <div class="col-span-12 lg:col-span-8">
+        <h2 class="font-fr h-story leading-[0.98]">
+          几步搞定 —<br>
+          <span class="font-fr-it" style="color: var(--bordeaux);">10 分钟</span><br>
+          开起线上店铺。
+        </h2>
+      </div>
+    </div>
+
+    <hr class="hr-thin mb-14">
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8 reveal">
+      <article class="relative pt-10">
+        <div class="absolute -top-2 left-0 outline-num b" style="font-size: 132px;">01</div>
+        <div class="pt-24 lg:pt-32">
+          <h3 class="font-fr text-2xl mb-3 leading-tight">提交入驻 · 选行业</h3>
+          <p class="text-[13.5px] leading-[1.75]" style="color: var(--espresso-2);">填资料 → 选 13 行业之一，平台 2 小时内审核通过。</p>
+          <div class="mt-6 smcap" style="color: var(--bordeaux);">耗时 · 2 分钟</div>
+        </div>
+      </article>
+      <article class="relative pt-10">
+        <div class="absolute -top-2 left-0 outline-num" style="font-size: 132px;">02</div>
+        <div class="pt-24 lg:pt-32">
+          <h3 class="font-fr text-2xl mb-3 leading-tight">拍照上架 · AI 识别</h3>
+          <p class="text-[13.5px] leading-[1.75]" style="color: var(--espresso-2);">拍 1 张商品图 → AI 自动填规格、价格、卖点。</p>
+          <div class="mt-6 smcap" style="color: var(--bordeaux);">耗时 · 3 分钟</div>
+        </div>
+      </article>
+      <article class="relative pt-10">
+        <div class="absolute -top-2 left-0 outline-num b" style="font-size: 132px;">03</div>
+        <div class="pt-24 lg:pt-32">
+          <h3 class="font-fr text-2xl mb-3 leading-tight">AI 出片 · 发抖音</h3>
+          <p class="text-[13.5px] leading-[1.75]" style="color: var(--espresso-2);">点"生成" → 20 秒得成片 → 授权抖音一键直发，挂车带二维码。</p>
+          <div class="mt-6 smcap" style="color: var(--bordeaux);">耗时 · 1 分钟</div>
+        </div>
+      </article>
+      <article class="relative pt-10">
+        <div class="absolute -top-2 left-0 outline-num" style="font-size: 132px;">04</div>
+        <div class="pt-24 lg:pt-32">
+          <h3 class="font-fr text-2xl mb-3 leading-tight">收单到账 · 看数据</h3>
+          <p class="text-[13.5px] leading-[1.75]" style="color: var(--espresso-2);">顾客付款 T+0 直入通联 → 数据看板实时复盘。</p>
+          <div class="mt-6 smcap" style="color: var(--bordeaux);">持续运营</div>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- STORY 07 — 行业 + 访谈 -->
+<!-- ════════════════════════════════════════════════════════ -->
+<section id="s07" class="relative py-24 lg:py-32">
+  <div class="max-w-[1440px] mx-auto px-6 lg:px-12">
+
+    <div class="grid grid-cols-12 gap-6 mb-16 reveal">
+      <div class="col-span-12 lg:col-span-2">
+        <div class="smcap" style="color: var(--muted);">Story 07</div>
+        <div class="font-fr-it text-3xl mt-3" style="color: var(--bordeaux);">行业</div>
+      </div>
+      <div class="col-span-12 lg:col-span-10">
+        <h2 class="font-fr h-story leading-[0.98]">
+          十三个行业，<br>
+          <span class="font-fr-it" style="color: var(--bordeaux);">开箱即用</span>。
+        </h2>
+      </div>
+    </div>
+
+    <hr class="hr-thin mb-12">
+
+    <!-- Industry list - editorial -->
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-px reveal" style="background: var(--hair);">
+      <span class="indu-mini"><span class="num">i.</span><span class="icn text-lg">🍢</span><span>烧烤夜市</span></span>
+      <span class="indu-mini"><span class="num">ii.</span><span class="icn text-lg">🧋</span><span>奶茶饮品</span></span>
+      <span class="indu-mini"><span class="num">iii.</span><span class="icn text-lg">🍵</span><span>茶楼茶饮</span></span>
+      <span class="indu-mini"><span class="num">iv.</span><span class="icn text-lg">💄</span><span>美容美甲</span></span>
+      <span class="indu-mini"><span class="num">v.</span><span class="icn text-lg">👕</span><span>服装鞋帽</span></span>
+      <span class="indu-mini"><span class="num">vi.</span><span class="icn text-lg">🏪</span><span>超市便利</span></span>
+      <span class="indu-mini"><span class="num">vii.</span><span class="icn text-lg">🍰</span><span>烘焙甜品</span></span>
+      <span class="indu-mini"><span class="num">viii.</span><span class="icn text-lg">🥩</span><span>生鲜肉品</span></span>
+      <span class="indu-mini"><span class="num">ix.</span><span class="icn text-lg">💐</span><span>鲜花植物</span></span>
+      <span class="indu-mini"><span class="num">x.</span><span class="icn text-lg">📚</span><span>母婴文创</span></span>
+      <span class="indu-mini"><span class="num">xi.</span><span class="icn text-lg">🏠</span><span>家居杂货</span></span>
+      <span class="indu-mini"><span class="num">xii.</span><span class="icn text-lg">🏋️</span><span>健身瑜伽</span></span>
+    </div>
+
+    <hr class="hr-thin mt-16 mb-16">
+
+    <!-- Interview spread -->
+    <div class="mb-10">
+      <div class="smcap mb-4" style="color: var(--bordeaux);">— Interviews / 三家店主访谈</div>
+      <h3 class="font-fr h-section leading-tight">
+        <span class="font-fr-it">街边</span> 实战 ·<br>
+        三家店主怎么说。
+      </h3>
+    </div>
+
+    <hr class="hr-thin mb-12">
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-px" style="background: var(--hair);">
+      <article class="reveal p-9 lg:p-11" style="background: var(--bone);">
+        <div class="big-quote leading-none" style="font-size: 96px;">"</div>
+        <p class="pull-quote text-[22px] lg:text-[26px] mt-2 mb-7" style="color: var(--espresso);">
+          一条 AI 视频，<br>
+          <span class="font-fr-it" style="color: var(--bordeaux);">单晚 +200</span><br>
+          顾客进店。
+        </p>
+        <hr class="hr-soft mb-5">
+        <div class="flex items-center justify-between mb-5">
+          <div>
+            <div class="font-fr text-base">夜市烧烤铺 · 老张</div>
+            <div class="caption">烧烤 · 街边 · 江苏南京</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-3 gap-2">
+          <div><div class="font-fr text-lg tabular">420</div><div class="caption">日单</div></div>
+          <div><div class="font-fr text-lg tabular">¥58</div><div class="caption">客单</div></div>
+          <div><div class="font-fr text-lg tabular">42%</div><div class="caption">回购</div></div>
+        </div>
+      </article>
+
+      <article class="reveal p-9 lg:p-11" style="background: var(--blush);">
+        <div class="big-quote leading-none" style="font-size: 96px; color: var(--espresso);">"</div>
+        <p class="pull-quote text-[22px] lg:text-[26px] mt-2 mb-7" style="color: var(--espresso);">
+          老客推广积分<br>
+          回本 <span class="font-fr-it" style="color: var(--bordeaux);">不到 2 个月</span>。
+        </p>
+        <hr class="hr-soft mb-5" style="background: rgba(28,24,20,0.2);">
+        <div class="flex items-center justify-between mb-5">
+          <div>
+            <div class="font-fr text-base">街角奶茶店 · 小林</div>
+            <div class="caption" style="color: var(--espresso-2);">奶茶 · 3 店 · 浙江温州</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-3 gap-2">
+          <div><div class="font-fr text-lg tabular">8.6k</div><div class="caption" style="color: var(--espresso-2);">月单</div></div>
+          <div><div class="font-fr text-lg tabular">38%</div><div class="caption" style="color: var(--espresso-2);">老客</div></div>
+          <div><div class="font-fr text-lg tabular">52%</div><div class="caption" style="color: var(--espresso-2);">复购</div></div>
+        </div>
+      </article>
+
+      <article class="reveal p-9 lg:p-11" style="background: var(--espresso); color: var(--bone);">
+        <div class="big-quote leading-none" style="font-size: 96px; color: var(--ochre);">"</div>
+        <p class="pull-quote text-[22px] lg:text-[26px] mt-2 mb-7" style="color: var(--bone);">
+          视频带客占<br>
+          月营收 <span class="font-fr-it" style="color: var(--ochre);">62%</span>。
+        </p>
+        <hr class="hr-soft mb-5" style="background: rgba(242,236,223,0.2);">
+        <div class="flex items-center justify-between mb-5">
+          <div>
+            <div class="font-fr text-base">小区美容院 · 陈姐</div>
+            <div class="caption" style="color: rgba(242,236,223,0.6);">美容 · 私域 · 广东深圳</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-3 gap-2">
+          <div><div class="font-fr text-lg tabular">¥48k</div><div class="caption" style="color: rgba(242,236,223,0.55);">月营收</div></div>
+          <div><div class="font-fr text-lg tabular">94</div><div class="caption" style="color: rgba(242,236,223,0.55);">新客</div></div>
+          <div><div class="font-fr text-lg tabular">¥386</div><div class="caption" style="color: rgba(242,236,223,0.55);">客单</div></div>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- STORY 08 — Q&A -->
+<!-- ════════════════════════════════════════════════════════ -->
+<section id="s08" class="relative py-24 lg:py-32" style="background: var(--bone-2);">
+  <div class="max-w-[1440px] mx-auto px-6 lg:px-12">
+
+    <div class="grid grid-cols-12 gap-6 mb-12 reveal">
+      <div class="col-span-12 lg:col-span-2">
+        <div class="smcap" style="color: var(--muted);">Story 08</div>
+        <div class="font-fr-it text-3xl mt-3" style="color: var(--bordeaux);">问答</div>
+      </div>
+      <div class="col-span-12 lg:col-span-7">
+        <h2 class="font-fr h-story leading-[0.98]">
+          老板的<span class="font-fr-it" style="color: var(--bordeaux);">七个</span><br>
+          问题。
+        </h2>
+      </div>
+      <div class="col-span-12 lg:col-span-3 lg:flex lg:items-end">
+        <p class="caption">没看到你的？加客服微信 <span class="font-mono" style="color: var(--espresso); background: var(--bone); padding: 2px 8px; border: 1px solid var(--hair);">tuoxiaoer-help</span></p>
+      </div>
+    </div>
+
+    <hr class="hr-thin mb-2">
+
+    <div class="reveal">
+      <div class="faq-item open">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          <span class="qn">Q.i</span>
+          <span>¥298 / 年 真的能开起一家在线商城吗？</span>
+          <span class="qi">+</span>
+        </button>
+        <div class="faq-a"><div class="faq-a-inner">能。¥298 是全年订阅费，覆盖全功能商城 + 通联收款 + 10 条 AI 视频 + 13 行业模板。商城 GMV <strong>0 抽成、0 服务费</strong> — 钱直接进商户自己的通联账户。</div></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          <span class="qn">Q.ii</span>
+          <span>AI 视频用的是哪个模型？</span>
+          <span class="qi">+</span>
+        </button>
+        <div class="faq-a"><div class="faq-a-inner">视频生成基于火山引擎 + 即梦 AI，配音用真人级 AI 多音色。单条 20 秒成片，质量等同当前抖音商家自制内容，已被烧烤、奶茶、美容、服装等 13 行业商户验证。</div></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          <span class="qn">Q.iii</span>
+          <span>钱真的不过平台？通联账号是什么？</span>
+          <span class="qi">+</span>
+        </button>
+        <div class="faq-a"><div class="faq-a-inner">通联（Allinpay）是央行牌照的持牌支付机构。顾客付款 T+0 直接清算到商户在通联开立的二级户里 — 平台不沾一分钱用户资金，零二清风险，资金不留过夜。</div></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          <span class="qn">Q.iv</span>
+          <span>抖音一键发布要先授权吗？会不会封号？</span>
+          <span class="qi">+</span>
+        </button>
+        <div class="faq-a"><div class="faq-a-inner">通过抖音开放平台官方 OAuth 授权，全流程合规。不会出现刷量、批量异常行为，账号安全等同人工运营。商品挂车需要抖店蓝 V 资质（可代办）。</div></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          <span class="qn">Q.v</span>
+          <span>老客推广积分会有合规风险吗？</span>
+          <span class="qi">+</span>
+        </button>
+        <div class="faq-a"><div class="faq-a-inner">拓小二的推广是<strong>单层结构</strong> — 只奖励直接邀请人，不发展层级、不按人头计酬，仅以真实订单 GMV 结算。合同模板内置，所有结算流水可导出备查备税。</div></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          <span class="qn">Q.vi</span>
+          <span>不会剪、不会写文案，真的能用吗？</span>
+          <span class="qi">+</span>
+        </button>
+        <div class="faq-a"><div class="faq-a-inner">真的能。拍 1 张商品照 → 选风格 → 点"生成" → 20 秒得成片 — 文案、配音、剪辑全部 AI 完成。13 行业内置脚本风格，拓小二专为不懂技术的小老板设计。</div></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          <span class="qn">Q.vii</span>
+          <span>¥298 升级 ¥1688 数据会丢吗？</span>
+          <span class="qi">+</span>
+        </button>
+        <div class="faq-a"><div class="faq-a-inner">年内可一次性升级，<strong>差额抵扣</strong>，数据完全保留不丢失。即使整体迁出，也支持完整商品、订单、会员数据 CSV / API 导出 — 绝不绑架商户。</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- CLOSING SPREAD / CTA -->
+<!-- ════════════════════════════════════════════════════════ -->
+<section id="cta" class="relative py-28 lg:py-40 overflow-hidden" style="background: var(--bordeaux); color: var(--bone);">
+  <!-- Decorative side -->
+  <div class="absolute right-12 top-12 hidden lg:block">
+    <div class="side-vertical" style="color: rgba(242,236,223,0.5);">— SUBSCRIBE NOW · ISSUE 07 ENDS HERE</div>
+  </div>
+
+  <div class="max-w-[1440px] mx-auto px-6 lg:px-12 relative">
+
+    <div class="smcap mb-10 reveal" style="color: var(--ochre);">— 最后一页</div>
+
+    <h2 class="font-fr h-cover leading-[0.92] reveal" style="color: var(--bone); font-size: clamp(56px, 12vw, 180px);">
+      做<span class="font-fr-it" style="color: var(--ochre);">那家</span><br>
+      能赚钱的<br>
+      <span class="font-fr-it" style="color: var(--ochre);">小店</span>。
+    </h2>
+
+    <hr class="hr-thin my-14" style="background: rgba(242,236,223,0.3);">
+
+    <div class="grid grid-cols-12 gap-10 lg:gap-14 reveal">
+      <div class="col-span-12 lg:col-span-7">
+        <p class="text-[17px] lg:text-[19px] leading-[1.75]" style="color: rgba(242,236,223,0.92);">
+          注册 → 实名 → 上架商品 → 发抖音视频。<br>
+          全流程不超过 <em class="font-fr-it" style="color: var(--ochre);">30 分钟</em>。<br>
+          顾客付款 T+0 直入你的通联账户 — 平台不沾一分钱。
+        </p>
+        <div class="mt-10 flex flex-wrap items-center gap-4">
+          <a href="#" class="btn-bone-on-dark text-[14px] !py-5 !px-8">¥298/年 立即入驻</a>
+          <a href="#" class="ed-link smcap" style="color: var(--ochre);">找顾问聊聊 →</a>
+        </div>
+      </div>
+      <div class="col-span-12 lg:col-span-5">
+        <div class="grid grid-cols-2 gap-px" style="background: rgba(242,236,223,0.2);">
+          <div class="p-7" style="background: var(--bordeaux);">
+            <div class="smcap" style="color: rgba(242,236,223,0.6);">入驻时长</div>
+            <div class="font-fr text-3xl mt-3 tabular">≤ 30<sup class="font-fr-it text-sm" style="color: var(--ochre);">分钟</sup></div>
+          </div>
+          <div class="p-7" style="background: var(--bordeaux);">
+            <div class="smcap" style="color: rgba(242,236,223,0.6);">首单到账</div>
+            <div class="font-fr text-3xl mt-3 tabular">T+0</div>
+          </div>
+          <div class="p-7" style="background: var(--bordeaux);">
+            <div class="smcap" style="color: rgba(242,236,223,0.6);">客服响应</div>
+            <div class="font-fr text-3xl mt-3 tabular">≤ 5<sup class="font-fr-it text-sm" style="color: var(--ochre);">分钟</sup></div>
+          </div>
+          <div class="p-7" style="background: var(--bordeaux);">
+            <div class="smcap" style="color: rgba(242,236,223,0.6);">服务时间</div>
+            <div class="font-fr text-3xl mt-3 tabular">7×16<sup class="font-fr-it text-sm" style="color: var(--ochre);">h</sup></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- COLOPHON (footer) -->
+<!-- ════════════════════════════════════════════════════════ -->
+<footer style="background: var(--espresso); color: var(--bone);">
+  <div class="max-w-[1440px] mx-auto px-6 lg:px-12 pt-20 pb-10">
+
+    <div class="grid grid-cols-12 gap-8">
+      <div class="col-span-12 lg:col-span-5">
+        <a href="#" class="flex items-baseline gap-3">
+          <span class="font-fr text-4xl">拓小二</span>
+          <span class="font-fr-it text-base" style="color: var(--ochre);">Tuoxiao'er Mag.</span>
+        </a>
+        <p class="font-fr-it text-[20px] mt-6 leading-[1.5]" style="color: rgba(242,236,223,0.78);">
+          一本写给<br>
+          <span style="color: var(--ochre);">街边小老板</span> 的<br>
+          开店杂志。
+        </p>
+        <hr class="hr-soft my-7" style="background: rgba(242,236,223,0.2);">
+        <div class="grid grid-cols-2 gap-6">
+          <div>
+            <div class="smcap mb-2" style="color: var(--ochre);">商务</div>
+            <div class="font-mono text-[13px]">biz@tuoxiaoer.cn</div>
+          </div>
+          <div>
+            <div class="smcap mb-2" style="color: var(--ochre);">客服</div>
+            <div class="font-mono text-[13px]">400-820-1688</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-span-6 lg:col-span-2 lg:col-start-7">
+        <div class="smcap mb-5" style="color: var(--ochre);">产品</div>
+        <ul class="space-y-3 text-[14px]" style="color: rgba(242,236,223,0.78);">
+          <li><a href="#s01" class="ed-link">AI 视频</a></li>
+          <li><a href="#s02" class="ed-link">抖音发布</a></li>
+          <li><a href="#s03" class="ed-link">在线商城</a></li>
+          <li><a href="#s04" class="ed-link">老客邀请</a></li>
+          <li><a href="#" class="ed-link">数据看板</a></li>
+        </ul>
+      </div>
+
+      <div class="col-span-6 lg:col-span-2">
+        <div class="smcap mb-5" style="color: var(--ochre);">资源</div>
+        <ul class="space-y-3 text-[14px]" style="color: rgba(242,236,223,0.78);">
+          <li><a href="#" class="ed-link">商户帮助</a></li>
+          <li><a href="#" class="ed-link">视频教程</a></li>
+          <li><a href="#s07" class="ed-link">行业模板</a></li>
+          <li><a href="#" class="ed-link">运营学院</a></li>
+          <li><a href="#" class="ed-link">更新日志</a></li>
+        </ul>
+      </div>
+
+      <div class="col-span-12 lg:col-span-3">
+        <div class="smcap mb-5" style="color: var(--ochre);">订阅简报</div>
+        <p class="text-[13px] leading-[1.7] mb-4" style="color: rgba(242,236,223,0.7);">
+          每月一封编辑部信件 — 行业开店实战、AI 新模型、合规要点。
+        </p>
+        <form class="flex border-b pb-3" style="border-color: rgba(242,236,223,0.4);">
+          <input type="email" placeholder="your@email.com" class="flex-1 bg-transparent text-[14px] font-mono outline-none" style="color: var(--bone);">
+          <button class="font-fr-it text-base" style="color: var(--ochre);">订阅 →</button>
+        </form>
+      </div>
+    </div>
+
+    <hr class="hr-thin my-16" style="background: rgba(242,236,223,0.2);">
+
+    <!-- Colophon line -->
+    <div class="grid grid-cols-12 gap-6 items-end">
+      <div class="col-span-12 lg:col-span-8 space-y-1">
+        <div class="caption" style="color: rgba(242,236,223,0.55);">
+          排印 · Fraunces (Undercase Type) · Noto Serif SC · DM Mono (Colophon Foundry).
+        </div>
+        <div class="caption" style="color: rgba(242,236,223,0.55);">
+          Issue 07 · Spring/Summer 2026 · Published in Shanghai · 印刷于云端，免费阅读。
+        </div>
+      </div>
+      <div class="col-span-12 lg:col-span-4 lg:text-right">
+        <div class="smcap" style="color: rgba(242,236,223,0.55);">v 7.0 · build 2026.05</div>
+      </div>
+    </div>
+
+    <hr class="hr-thin my-8" style="background: rgba(242,236,223,0.2);">
+
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 text-[12px]" style="color: rgba(242,236,223,0.5);">
+      <div>© 2026 拓小二科技有限公司 · <a href="#" class="ed-link">隐私协议</a> · <a href="#" class="ed-link">服务条款</a> · 沪 ICP 备 20260828 号</div>
+      <div class="font-fr-it" style="color: var(--ochre);">— end of issue —</div>
+    </div>
+  </div>
+</footer>
+
+<script>
+  if (window.lucide) lucide.createIcons();
+
+  function toggleFaq(btn) {
+    const item = btn.parentElement;
+    const wasOpen = item.classList.contains('open');
+    document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+    if (!wasOpen) item.classList.add('open');
+  }
+
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('in');
+        io.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.10, rootMargin: '0px 0px -8% 0px' });
+  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+</script>
+</body>
+</html>

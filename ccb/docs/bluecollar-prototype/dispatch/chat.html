@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>蓝工·派遣管家 — 沟通 IM</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="../shared/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  body { background: #F8FAFC; }
+  .session-item { padding: 12px 16px; cursor: pointer; border-bottom: 1px solid #F1F5F9; transition: background .15s; }
+  .session-item:hover { background: #F8FAFC; }
+  .session-item.active { background: #EFF6FF; border-left: 3px solid #1677FF; padding-left: 13px; }
+  .msg-bubble-me { background: #1677FF; color: #fff; border-radius: 14px 14px 4px 14px; padding: 10px 14px; max-width: 480px; }
+  .msg-bubble-other { background: #fff; border: 1px solid #E2E8F0; color: #0F172A; border-radius: 14px 14px 14px 4px; padding: 10px 14px; max-width: 480px; }
+  .quick-tpl { padding: 6px 12px; background: #F1F5F9; color: #475569; border-radius: 999px; font-size: 12px; cursor: pointer; transition: all .15s; }
+  .quick-tpl:hover { background: #1677FF; color: #fff; }
+</style>
+</head>
+<body class="text-slate-800">
+
+<div class="flex h-screen">
+
+  <!-- ============ 侧边栏 ============ -->
+  <aside class="w-60 bg-[#0F172A] text-slate-300 flex flex-col flex-shrink-0">
+    <div class="px-5 pt-5 pb-4 border-b border-white/5">
+      <div class="flex items-center gap-2 mb-3">
+        <div class="w-9 h-9 rounded-xl grad-blue flex items-center justify-center font-extrabold text-white shadow-lg shadow-blue-500/30">蓝</div>
+        <div>
+          <div class="text-white text-sm font-bold leading-tight">蓝工·派遣管家</div>
+          <div class="text-[10px] text-slate-500 tracking-wider">DISPATCH SAAS</div>
+        </div>
+      </div>
+      <div class="bg-white/5 rounded-xl p-3 border border-white/5">
+        <div class="flex items-center justify-between mb-1">
+          <span class="text-xs text-slate-400">浙江睿才人力</span>
+          <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-gradient-to-r from-amber-400 to-orange-500 text-white">VIP</span>
+        </div>
+        <div class="flex items-end gap-1.5"><span class="text-lg font-extrabold text-white leading-none">92</span><span class="text-[10px] text-slate-400 mb-0.5">企业信用分</span></div>
+        <div class="mt-1.5 h-1 bg-white/10 rounded-full overflow-hidden"><div class="h-full bg-gradient-to-r from-emerald-400 to-cyan-400" style="width:92%"></div></div>
+      </div>
+    </div>
+    <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto text-sm">
+      <a href="dashboard.html" class="sidebar-link"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>工作台</a>
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">招聘管理</div>
+      <a href="jobs.html" class="sidebar-link"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>职位列表</a>
+      <a href="job-create.html" class="sidebar-link"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>发布职位</a>
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">人才</div>
+      <a href="talents.html" class="sidebar-link"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>人才搜索</a>
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">沟通</div>
+      <a href="chat.html" class="sidebar-link active"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>IM 沟通<span class="ml-auto px-1.5 py-0.5 rounded-full bg-red-500 text-white text-[10px] font-bold">12</span></a>
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">用工</div>
+      <a href="onboarding.html" class="sidebar-link">👥 在岗管理</a>
+      <a href="contract-mgmt.html" class="sidebar-link">📝 合同管理</a>
+
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold flex items-center gap-1.5">财务管理 <span class="px-1 py-0 rounded bg-gradient-to-r from-blue-500 to-cyan-500 text-white text-[9px]">NEW</span></div>
+      <a href="salary.html" class="sidebar-link">💰 薪酬发放</a>
+      <a href="social.html" class="sidebar-link">🏥 社保公积金</a>
+      <a href="tax.html" class="sidebar-link">📋 个税申报</a>
+      <a href="reconciliation.html" class="sidebar-link">⚖️ 对账中心</a>
+      <a href="invoice.html" class="sidebar-link">🧾 发票管理</a>
+
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">客户</div>
+      <a href="clients.html" class="sidebar-link">🏢 甲方管理 CRM</a>
+
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">数据 & 合规</div>
+      <a href="analytics.html" class="sidebar-link"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>数据分析</a>
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">系统</div>
+      <a href="#" class="sidebar-link"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/></svg>设置</a>
+    </nav>
+    <div class="px-4 py-3 border-t border-white/5 text-xs text-slate-500 flex items-center justify-between">
+      <a href="../index.html" class="hover:text-white">← 原型导航</a><span>v0.1.0</span>
+    </div>
+  </aside>
+
+  <!-- ============ 主内容 ============ -->
+  <main class="flex-1 flex flex-col min-w-0">
+    <header class="h-14 bg-white border-b border-slate-200 px-6 flex items-center justify-between flex-shrink-0">
+      <div class="flex items-center gap-2 text-sm text-slate-500">
+        <a href="dashboard.html" class="hover:text-slate-900">工作台</a>
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+        <span class="text-slate-900 font-medium">IM 沟通</span>
+      </div>
+      <div class="flex items-center gap-4">
+        <div class="flex items-center gap-2 pl-3 border-l border-slate-200">
+          <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center text-xs font-bold">李</div>
+          <div class="leading-tight">
+            <div class="text-sm font-semibold text-slate-900">李珊珊</div>
+            <div class="text-[11px] text-slate-500">招聘主管</div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="flex-1 flex min-h-0">
+
+      <!-- 会话列表 -->
+      <div class="w-80 bg-white border-r border-slate-200 flex flex-col flex-shrink-0">
+        <div class="p-4 border-b border-slate-100">
+          <div class="relative">
+            <svg class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input class="w-full h-9 pl-9 pr-3 bg-slate-100 rounded-lg text-sm outline-none focus:bg-white focus:ring-2 focus:ring-blue-500" placeholder="搜索工人 / 职位"/>
+          </div>
+          <div class="flex items-center gap-1 mt-3 text-xs">
+            <button class="px-2.5 py-1 bg-blue-100 text-blue-700 rounded-md font-semibold">全部 18</button>
+            <button class="px-2.5 py-1 text-slate-500 hover:bg-slate-100 rounded-md">未读 12</button>
+            <button class="px-2.5 py-1 text-slate-500 hover:bg-slate-100 rounded-md">已邀面试</button>
+          </div>
+        </div>
+        <div class="flex-1 overflow-y-auto">
+
+          <!-- 当前选中 -->
+          <div class="session-item active">
+            <div class="flex items-start gap-3">
+              <div class="relative flex-shrink-0">
+                <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-violet-400 to-purple-600 text-white flex items-center justify-center font-bold">刘</div>
+                <span class="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 rounded-full ring-2 ring-white"></span>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between">
+                  <span class="font-semibold text-slate-900 text-sm">刘*峰</span>
+                  <span class="text-[10px] text-slate-400">12:08</span>
+                </div>
+                <div class="flex items-center gap-1 mt-0.5">
+                  <span class="badge-king text-[9px] px-1 py-0 rounded font-bold">王者</span>
+                  <span class="text-[11px] text-slate-500">叉车 · 上海</span>
+                </div>
+                <p class="text-xs text-slate-500 mt-1 truncate">好的，明天上午 10 点我准时到现场...</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="session-item">
+            <div class="flex items-start gap-3">
+              <div class="relative flex-shrink-0">
+                <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-blue-400 to-indigo-500 text-white flex items-center justify-center font-bold">陈</div>
+                <span class="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 rounded-full ring-2 ring-white"></span>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between">
+                  <span class="font-semibold text-slate-900 text-sm">陈*军</span>
+                  <span class="text-[10px] text-red-500 font-bold">11:42</span>
+                </div>
+                <div class="flex items-center gap-1 mt-0.5">
+                  <span class="badge-diamond text-[9px] px-1 py-0 rounded font-bold">钻石</span>
+                  <span class="text-[11px] text-slate-500">焊工 · 苏州</span>
+                </div>
+                <p class="text-xs text-slate-500 mt-1 truncate flex items-center gap-1">想问下加班工资是怎么算的？<span class="ml-auto px-1.5 py-0.5 rounded-full bg-red-500 text-white text-[10px] font-bold">3</span></p>
+              </div>
+            </div>
+          </div>
+
+          <div class="session-item">
+            <div class="flex items-start gap-3">
+              <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-pink-400 to-rose-500 text-white flex items-center justify-center font-bold flex-shrink-0">王</div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between">
+                  <span class="font-semibold text-slate-900 text-sm">王*红</span>
+                  <span class="text-[10px] text-slate-400">10:55</span>
+                </div>
+                <div class="flex items-center gap-1 mt-0.5">
+                  <span class="badge-gold text-[9px] px-1 py-0 rounded font-bold">黄金</span>
+                  <span class="text-[11px] text-slate-500">SMT · 郑州</span>
+                </div>
+                <p class="text-xs text-slate-500 mt-1 truncate flex items-center gap-1">已查看您发的职位卡<span class="ml-auto px-1.5 py-0.5 rounded-full bg-red-500 text-white text-[10px] font-bold">1</span></p>
+              </div>
+            </div>
+          </div>
+
+          <div class="session-item">
+            <div class="flex items-start gap-3">
+              <div class="relative flex-shrink-0">
+                <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-500 text-white flex items-center justify-center font-bold">周</div>
+                <span class="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 rounded-full ring-2 ring-white"></span>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between">
+                  <span class="font-semibold text-slate-900 text-sm">周*强</span>
+                  <span class="text-[10px] text-slate-400">09:30</span>
+                </div>
+                <div class="flex items-center gap-1 mt-0.5">
+                  <span class="badge-diamond text-[9px] px-1 py-0 rounded font-bold">钻石</span>
+                  <span class="text-[11px] text-slate-500">数控车 · 杭州</span>
+                </div>
+                <p class="text-xs text-slate-500 mt-1 truncate flex items-center gap-1">那我下周一过去吧<span class="ml-auto px-1.5 py-0.5 rounded-full bg-red-500 text-white text-[10px] font-bold">2</span></p>
+              </div>
+            </div>
+          </div>
+
+          <div class="session-item">
+            <div class="flex items-start gap-3">
+              <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 text-white flex items-center justify-center font-bold flex-shrink-0">钱</div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between">
+                  <span class="font-semibold text-slate-900 text-sm">钱*平</span>
+                  <span class="text-[10px] text-slate-400">昨天</span>
+                </div>
+                <div class="flex items-center gap-1 mt-0.5">
+                  <span class="badge-diamond text-[9px] px-1 py-0 rounded font-bold">钻石</span>
+                  <span class="text-[11px] text-slate-500">电工 · 郑州</span>
+                </div>
+                <p class="text-xs text-slate-500 mt-1 truncate">谢谢李姐，那我考虑下</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="session-item">
+            <div class="flex items-start gap-3">
+              <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 text-white flex items-center justify-center font-bold flex-shrink-0">赵</div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between">
+                  <span class="font-semibold text-slate-900 text-sm">赵*梅</span>
+                  <span class="text-[10px] text-slate-400">昨天</span>
+                </div>
+                <div class="flex items-center gap-1 mt-0.5">
+                  <span class="badge-gold text-[9px] px-1 py-0 rounded font-bold">黄金</span>
+                  <span class="text-[11px] text-slate-500">分拣员 · 东莞</span>
+                </div>
+                <p class="text-xs text-slate-500 mt-1 truncate">您发的合同我已经签了</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="session-item">
+            <div class="flex items-start gap-3">
+              <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-rose-400 to-pink-500 text-white flex items-center justify-center font-bold flex-shrink-0">吴</div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between">
+                  <span class="font-semibold text-slate-900 text-sm">吴*芳</span>
+                  <span class="text-[10px] text-slate-400">前天</span>
+                </div>
+                <div class="flex items-center gap-1 mt-0.5">
+                  <span class="badge-gold text-[9px] px-1 py-0 rounded font-bold">黄金</span>
+                  <span class="text-[11px] text-slate-500">品检员 · 苏州</span>
+                </div>
+                <p class="text-xs text-slate-500 mt-1 truncate flex items-center gap-1">好的<span class="ml-auto px-1.5 py-0.5 rounded-full bg-red-500 text-white text-[10px] font-bold">1</span></p>
+              </div>
+            </div>
+          </div>
+
+          <div class="session-item">
+            <div class="flex items-start gap-3">
+              <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-purple-400 to-violet-600 text-white flex items-center justify-center font-bold flex-shrink-0">林</div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between">
+                  <span class="font-semibold text-slate-900 text-sm">林*春</span>
+                  <span class="text-[10px] text-slate-400">5/12</span>
+                </div>
+                <div class="flex items-center gap-1 mt-0.5">
+                  <span class="badge-king text-[9px] px-1 py-0 rounded font-bold">王者</span>
+                  <span class="text-[11px] text-slate-500">焊工 · 福州</span>
+                </div>
+                <p class="text-xs text-slate-500 mt-1 truncate">期待跟您合作</p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- 聊天窗 -->
+      <div class="flex-1 flex flex-col bg-slate-50 min-w-0">
+        <!-- 工人卡片 头部 -->
+        <div class="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between flex-shrink-0">
+          <div class="flex items-center gap-3">
+            <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-violet-400 to-purple-600 text-white flex items-center justify-center font-bold">刘</div>
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-slate-900">刘*峰</span>
+                <span class="badge-king text-[10px] px-1.5 py-0.5 rounded font-bold">王者 I · 912</span>
+                <span class="text-xs text-emerald-600 font-bold flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>在线</span>
+              </div>
+              <div class="text-xs text-slate-500 mt-0.5">男 · 35 · 安徽阜阳 · 叉车司机 12 年 · 期望 8K-12K</div>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <button class="h-9 px-3 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg text-xs font-medium text-slate-700 flex items-center gap-1.5">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              邀面试
+            </button>
+            <button class="h-9 px-3 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg text-xs font-medium text-slate-700 flex items-center gap-1.5">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              发合同
+            </button>
+            <a href="talent-detail.html" class="h-9 px-3 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg text-xs font-semibold flex items-center gap-1.5">查看完整资料 →</a>
+          </div>
+        </div>
+
+        <!-- 安全提示 -->
+        <div class="px-6 py-2 bg-amber-50 border-b border-amber-200 text-xs text-amber-700 flex items-center gap-2 flex-shrink-0">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          为保护双方隐私，对话中的手机号、微信号、银行卡号将自动脱敏处理
+        </div>
+
+        <!-- 消息流 -->
+        <div class="flex-1 overflow-y-auto p-6 space-y-4">
+
+          <!-- 日期分隔 -->
+          <div class="text-center"><span class="text-[10px] text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">今天 09:43</span></div>
+
+          <!-- 系统提示 -->
+          <div class="text-center text-xs text-slate-400">您已消耗 5 招聘币，解锁查看刘*峰的完整简历</div>
+
+          <!-- 我发的 -->
+          <div class="flex justify-end gap-3">
+            <div>
+              <div class="msg-bubble-me text-sm">
+                您好刘师傅！我是浙江睿才人力的李珊珊，看到您的简历非常优秀。我们在京东亚一仓有个叉车司机的岗位，月薪 8000-10500，很匹配您的期望，方便聊聊吗？
+              </div>
+              <div class="text-[10px] text-slate-400 mt-1 text-right">09:43 · 已读</div>
+            </div>
+            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">李</div>
+          </div>
+
+          <!-- 我发的 职位卡 -->
+          <div class="flex justify-end gap-3">
+            <div class="bg-white border border-slate-200 rounded-xl p-3 max-w-sm">
+              <div class="flex items-center gap-1.5 mb-2">
+                <span class="text-[10px] bg-red-100 text-red-700 px-1.5 py-0.5 rounded font-bold">急聘</span>
+                <span class="text-[10px] bg-violet-100 text-violet-700 px-1.5 py-0.5 rounded font-bold">AI 推荐</span>
+              </div>
+              <div class="font-bold text-slate-900">叉车司机 · 持证</div>
+              <div class="text-orange-500 font-bold text-lg my-1">8,000 - 10,500 元/月</div>
+              <div class="text-xs text-slate-500">京东亚一 · 上海嘉定 · 双休</div>
+              <div class="mt-2 pt-2 border-t border-slate-100 text-[11px] text-blue-600 font-medium">→ 点击查看完整职位</div>
+            </div>
+            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">李</div>
+          </div>
+
+          <!-- 对方回复 -->
+          <div class="flex gap-3">
+            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-violet-400 to-purple-600 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">刘</div>
+            <div>
+              <div class="msg-bubble-other text-sm">
+                您好李经理，待遇可以，请问具体在嘉定哪？我现在住浦东，每天通勤方便吗？
+              </div>
+              <div class="text-[10px] text-slate-400 mt-1">10:12</div>
+            </div>
+          </div>
+
+          <!-- 我发 -->
+          <div class="flex justify-end gap-3">
+            <div>
+              <div class="msg-bubble-me text-sm">
+                在嘉定区华亭镇泽普路 18 号，地铁 11 号线嘉定北站坐免费班车 15 分钟。公司也提供宿舍，是 4 人间空调独卫，可以选住。
+              </div>
+              <div class="text-[10px] text-slate-400 mt-1 text-right">10:14 · 已读</div>
+            </div>
+            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">李</div>
+          </div>
+
+          <!-- 对方 -->
+          <div class="flex gap-3">
+            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-violet-400 to-purple-600 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">刘</div>
+            <div>
+              <div class="msg-bubble-other text-sm">
+                那挺好的。我有 N1 叉车证、B2 驾照都齐全，做过 3 年班长。加班怎么算？周末双休还是单休？
+              </div>
+              <div class="text-[10px] text-slate-400 mt-1">10:18</div>
+            </div>
+          </div>
+
+          <!-- 我发 -->
+          <div class="flex justify-end gap-3">
+            <div>
+              <div class="msg-bubble-me text-sm">
+                您证件全这个加分项很大。基本工时 8 小时，加班按 1.5/2/3 倍法定执行；目前是双休（京东物流标准）。京东那边看到您有班长经验，可能会推举您带组，月度奖金 500-1500 元额外。我们公司还有推荐奖 800/人。
+              </div>
+              <div class="text-[10px] text-slate-400 mt-1 text-right">10:21 · 已读</div>
+            </div>
+            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">李</div>
+          </div>
+
+          <!-- 对方 -->
+          <div class="flex gap-3">
+            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-violet-400 to-purple-600 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">刘</div>
+            <div>
+              <div class="msg-bubble-other text-sm">
+                可以的，那加我微信详聊吧 <span class="bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded text-xs">[已脱敏 · 微信号]</span>
+              </div>
+              <div class="text-[10px] text-slate-400 mt-1">10:35</div>
+            </div>
+          </div>
+
+          <!-- 我发 面试邀请卡 -->
+          <div class="flex justify-end gap-3">
+            <div class="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-4 max-w-sm">
+              <div class="flex items-center gap-2 mb-2">
+                <div class="w-6 h-6 rounded-md bg-blue-500 text-white flex items-center justify-center text-xs font-bold">📅</div>
+                <span class="font-bold text-slate-900 text-sm">面试邀请</span>
+              </div>
+              <div class="space-y-1 text-xs text-slate-700">
+                <div><span class="text-slate-500">职位：</span>叉车司机 · 持证</div>
+                <div><span class="text-slate-500">时间：</span>2026-05-18 上午 10:00</div>
+                <div><span class="text-slate-500">地点：</span>京东亚一仓 · 嘉定区华亭镇泽普路 18 号</div>
+                <div><span class="text-slate-500">联系人：</span>李珊珊（睿才人力）</div>
+              </div>
+              <div class="flex gap-2 mt-3">
+                <button class="flex-1 h-8 bg-blue-600 text-white rounded-md text-xs font-semibold">已发送</button>
+              </div>
+            </div>
+            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">李</div>
+          </div>
+
+          <!-- 对方 -->
+          <div class="flex gap-3">
+            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-violet-400 to-purple-600 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">刘</div>
+            <div>
+              <div class="msg-bubble-other text-sm">
+                好的，明天上午 10 点我准时到现场。需要带什么材料吗？
+              </div>
+              <div class="text-[10px] text-slate-400 mt-1">12:08</div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- 底部输入区 -->
+        <div class="bg-white border-t border-slate-200 px-6 py-3 flex-shrink-0">
+          <!-- 快捷功能栏 -->
+          <div class="flex items-center gap-3 mb-2">
+            <button class="w-8 h-8 rounded-lg hover:bg-slate-100 text-slate-500 flex items-center justify-center" title="发职位卡">
+              <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+            </button>
+            <button class="w-8 h-8 rounded-lg hover:bg-slate-100 text-slate-500 flex items-center justify-center" title="邀面试">
+              <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            </button>
+            <button class="w-8 h-8 rounded-lg hover:bg-slate-100 text-slate-500 flex items-center justify-center" title="发合同">
+              <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            </button>
+            <button class="w-8 h-8 rounded-lg hover:bg-slate-100 text-slate-500 flex items-center justify-center" title="图片">
+              <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            </button>
+            <button class="w-8 h-8 rounded-lg hover:bg-slate-100 text-slate-500 flex items-center justify-center" title="表情">
+              <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+            </button>
+
+            <div class="w-px h-5 bg-slate-200 mx-1"></div>
+
+            <!-- 模板 -->
+            <span class="quick-tpl">薪资介绍</span>
+            <span class="quick-tpl">面试邀请</span>
+            <span class="quick-tpl">食宿说明</span>
+            <span class="quick-tpl">福利说明</span>
+            <span class="quick-tpl">+ 我的模板</span>
+          </div>
+
+          <!-- 输入框 -->
+          <div class="relative">
+            <textarea class="w-full p-3 pr-32 bg-slate-50 border border-slate-200 focus:border-blue-500 focus:bg-white rounded-xl text-sm outline-none resize-none" rows="2" placeholder="输入消息... (Shift + Enter 换行)"></textarea>
+            <div class="absolute right-3 bottom-3 flex items-center gap-2">
+              <span class="text-[10px] text-slate-400">⌘ Enter 发送</span>
+              <button class="h-8 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold">发 送</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 右侧工人侧栏（可隐藏） -->
+      <div class="w-64 bg-white border-l border-slate-200 flex-shrink-0 overflow-y-auto">
+        <div class="p-5 text-center border-b border-slate-100">
+          <div class="w-20 h-20 rounded-2xl mx-auto bg-gradient-to-br from-violet-400 to-purple-600 text-white flex items-center justify-center text-2xl font-bold">刘</div>
+          <h3 class="mt-3 font-bold text-slate-900">刘*峰</h3>
+          <div class="text-xs text-slate-500 mt-0.5">男 · 35 · 安徽阜阳</div>
+          <div class="mt-2 inline-flex items-center gap-1.5 bg-violet-50 border border-violet-200 rounded-full px-2.5 py-0.5">
+            <span class="badge-king text-[10px] px-1.5 py-0.5 rounded font-bold">王者</span>
+            <span class="text-sm font-bold text-violet-700 tabular-nums">912</span>
+          </div>
+        </div>
+        <div class="p-5 space-y-3 text-xs">
+          <div><div class="text-slate-400 mb-1">期望工种</div><div class="text-slate-900 font-medium">叉车司机</div></div>
+          <div><div class="text-slate-400 mb-1">期望薪资</div><div class="text-slate-900 font-medium">8,000 - 12,000</div></div>
+          <div><div class="text-slate-400 mb-1">工作年限</div><div class="text-slate-900 font-medium">12 年（叉车）</div></div>
+          <div><div class="text-slate-400 mb-1">持有证书</div><div class="text-slate-900 font-medium">N1 叉车证、B2 驾驶证</div></div>
+          <div><div class="text-slate-400 mb-1">到岗时间</div><div class="text-emerald-600 font-bold">3 天内可到</div></div>
+        </div>
+        <div class="p-5 border-t border-slate-100">
+          <div class="text-xs font-semibold text-slate-500 mb-2">沟通记录</div>
+          <div class="text-xs text-slate-500 space-y-1">
+            <div class="flex justify-between"><span>首次沟通</span><span>今天 09:43</span></div>
+            <div class="flex justify-between"><span>消息数</span><span>14 条</span></div>
+            <div class="flex justify-between"><span>响应时长</span><span>平均 4 分钟</span></div>
+            <div class="flex justify-between"><span>已邀面试</span><span class="text-emerald-600 font-bold">✓ 已确认</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+</body>
+</html>

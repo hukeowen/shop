@@ -1,0 +1,1166 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>用户端 H5 · v7 最终版</title>
+<style>
+/* ── 设计令牌 ── */
+:root{
+  /* 主色 */
+  --p:#e8721b; --p-d:#c45e10; --p-ll:#fde9d0; --p-l:#fff3e8;
+  /* 辅色 */
+  --gold:#d4920a; --gold-bg:#fef9e8;
+  --green:#1a7a4a; --green-bg:#e8f5ee;
+  /* 深色背景 */
+  --dark:#1a1410; --dark-2:#251c16; --dark-3:#2f2218; --dark-card:#33261e;
+  /* 暖中性 */
+  --warm-bg:#fdf8f0; --warm-white:#fff; --line:#ede3d4;
+  /* 文字 */
+  --ink:#3a2510; --ink-2:#5a3a20; --mute:#8a7060; --mute-2:#c4b5a5;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
+html{font-family:-apple-system,'PingFang SC','Helvetica Neue',sans-serif;font-size:14px;color:var(--ink)}
+body{background:#2a201a;min-height:100vh;display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-start;gap:32px;padding:32px 20px 60px}
+
+/* ── frame ── */
+.frame-wrap{display:flex;flex-direction:column;align-items:center;gap:10px}
+.frame-label{color:rgba(255,255,255,.45);font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase}
+.phone{width:390px;height:844px;background:var(--warm-bg);border-radius:48px;overflow:hidden;position:relative;box-shadow:0 32px 80px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.07);display:flex;flex-direction:column}
+.phone.dark-phone{background:var(--dark)}
+
+/* 状态栏 */
+.stb{height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 28px;flex-shrink:0}
+.stb-t{font-size:15px;font-weight:700}
+.stb-r{display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600}
+.stb.light .stb-t,.stb.light .stb-r{color:#fff}
+
+/* tabbar */
+.tab{height:72px;background:var(--warm-white);border-top:1px solid var(--line);display:flex;padding:0 4px 8px;flex-shrink:0}
+.ti{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--mute);font-size:10px;font-weight:500}
+.ti.on{color:var(--p)}
+.ti-ic{font-size:22px;line-height:1}
+.ti-lb{font-size:10px;font-weight:500}
+.ti.on .ti-lb{font-weight:700}
+
+/* scroll */
+.scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.scroll::-webkit-scrollbar{display:none}
+
+/* 公用 */
+.sec-head{display:flex;align-items:center;justify-content:space-between;padding:20px 20px 10px}
+.sec-title{font-size:15px;font-weight:800;color:var(--ink)}
+.sec-more{font-size:12px;color:var(--p);font-weight:600}
+.divider{height:8px;background:var(--warm-bg)}
+.badge-p{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:700;background:var(--p-ll);color:var(--p-d)}
+.badge-gold{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:700;background:var(--gold-bg);color:var(--gold)}
+
+/* ════════════════════ SCREEN 1 · 首页 ════════════════════ */
+
+/* hero 顶部 — 深咖底 */
+.s1-hero-block{background:var(--dark);padding:0 0 20px}
+.s1-nav{padding:8px 20px 0;display:flex;align-items:center;gap:10px}
+.s1-loc{flex:1;display:flex;align-items:center;gap:6px;font-size:14px;font-weight:600;color:#fff}
+.s1-loc-dot{width:8px;height:8px;background:var(--p);border-radius:50%;box-shadow:0 0 0 4px rgba(232,114,27,.25)}
+.s1-loc-arrow{color:var(--mute-2);font-size:10px}
+.s1-bell{width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;font-size:17px;position:relative;flex-shrink:0}
+.s1-bell::after{content:'';position:absolute;top:7px;right:8px;width:7px;height:7px;background:#e84040;border-radius:50%;border:2px solid var(--dark)}
+
+/* 欢迎区 */
+.s1-welcome{padding:14px 20px 0;color:#fff}
+.s1-eyebrow{font-size:10px;color:var(--mute-2);font-weight:600;letter-spacing:2.5px;text-transform:uppercase;margin-bottom:8px}
+.s1-headline{font-size:42px;font-weight:900;line-height:.95;letter-spacing:-2px;color:#fff}
+.s1-headline em{color:var(--p);font-style:normal}
+.s1-sub{margin-top:8px;font-size:12px;color:var(--mute-2);line-height:1.5}
+
+/* 搜索 */
+.s1-search{margin:16px 20px 0;height:50px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);border-radius:16px;display:flex;align-items:center;padding:0 8px 0 18px;gap:10px}
+.s1-search-ic{font-size:15px;color:var(--mute-2)}
+.s1-search-ph{flex:1;font-size:13px;color:var(--mute-2)}
+.s1-search-ph span{color:rgba(255,255,255,.8);font-weight:600}
+.s1-search-btn{width:38px;height:38px;border-radius:12px;background:var(--p);display:flex;align-items:center;justify-content:center;font-size:15px;color:#fff;flex-shrink:0}
+
+/* 3 快捷入口 */
+.s1-sc{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:16px 20px 0}
+.s1-sc-item{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:14px 8px;display:flex;flex-direction:column;align-items:center;gap:7px}
+.s1-sc-ic{width:44px;height:44px;border-radius:13px;background:rgba(232,114,27,.18);display:flex;align-items:center;justify-content:center;font-size:22px}
+.s1-sc-l{font-size:12px;font-weight:600;color:rgba(255,255,255,.8)}
+
+/* 最近去过 */
+.s1-recent-scroll{overflow-x:auto;padding:0 20px 4px;display:flex;gap:12px}
+.s1-recent-scroll::-webkit-scrollbar{display:none}
+.s1-shop-card{flex-shrink:0;width:148px;background:var(--dark-card);border-radius:20px;overflow:hidden;border:1px solid rgba(255,255,255,.06)}
+.s1-shop-cover{height:76px;display:flex;align-items:center;justify-content:center;font-size:36px;position:relative}
+.s1-shop-body{padding:10px 12px 12px}
+.s1-shop-name{font-size:13px;font-weight:800;color:#fff}
+.s1-shop-ago{font-size:10px;color:var(--mute-2);margin-top:2px}
+.s1-shop-assets{margin-top:8px;display:flex;flex-direction:column;gap:4px}
+.s1-shop-tag{font-size:10px;padding:2px 7px;border-radius:6px;font-weight:600;display:inline-block;align-self:flex-start}
+.tag-bal{background:rgba(232,114,27,.2);color:#f0a060}
+.tag-pts{background:rgba(26,122,74,.2);color:#5cb88a}
+
+/* banner */
+.s1-banner{margin:0 20px;background:linear-gradient(135deg,var(--dark) 0%,var(--dark-3) 100%);border:1px solid rgba(232,114,27,.2);border-radius:20px;padding:16px 18px;display:flex;align-items:center;gap:14px;position:relative;overflow:hidden}
+.s1-banner::before{content:'✨';position:absolute;right:12px;top:8px;font-size:38px;opacity:.2}
+.s1-banner-ic{font-size:30px;flex-shrink:0}
+.s1-banner-body{flex:1;min-width:0}
+.s1-banner-t{font-size:13px;font-weight:800;color:#fff}
+.s1-banner-sub{font-size:11px;color:var(--mute-2);margin-top:3px}
+.s1-banner-btn{padding:7px 13px;background:var(--p);border-radius:10px;font-size:11px;font-weight:700;color:#fff;white-space:nowrap;flex-shrink:0}
+
+/* 附近店铺 grid (浅色区) */
+.s1-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin:0 20px 20px}
+.s1-grid-card{background:var(--warm-white);border-radius:18px;overflow:hidden;box-shadow:0 2px 10px rgba(58,37,16,.08)}
+.s1-grid-cover{height:96px;display:flex;align-items:center;justify-content:center;font-size:44px}
+.s1-grid-body{padding:10px 12px}
+.s1-grid-name{font-size:13px;font-weight:700;color:var(--ink)}
+.s1-grid-meta{font-size:11px;color:var(--mute);margin-top:2px}
+.s1-grid-row{display:flex;align-items:center;justify-content:space-between;margin-top:6px}
+.s1-grid-dist{font-size:11px;color:var(--mute)}
+.s1-grid-rating{font-size:11px;color:var(--gold);font-weight:700}
+
+/* ════════════════════ SCREEN 2 · 店铺主页 ════════════════════ */
+
+.s2-hero{height:210px;position:relative;display:flex;flex-direction:column;justify-content:flex-end;padding:16px 20px;overflow:hidden;flex-shrink:0}
+.s2-hero-bg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:100px;z-index:0;background:linear-gradient(135deg,var(--dark) 0%,#5a2a0a 60%,#9a4010 100%)}
+.s2-hero-overlay{position:absolute;inset:0;background:linear-gradient(180deg,transparent 30%,rgba(0,0,0,.72));z-index:1}
+.s2-hero-top{position:absolute;top:0;left:0;right:0;display:flex;align-items:center;padding:14px 16px;z-index:3}
+.s2-hero-back{width:34px;height:34px;border-radius:50%;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff}
+.s2-hero-acts{margin-left:auto;display:flex;gap:8px}
+.s2-hero-btn{width:34px;height:34px;border-radius:50%;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff}
+.s2-hero-info{position:relative;z-index:2}
+.s2-hero-name{font-size:24px;font-weight:900;color:#fff;letter-spacing:-.5px}
+.s2-hero-slogan{font-size:12px;color:rgba(255,255,255,.7);margin-top:3px}
+
+/* 信息卡 3 列 */
+.s2-infocard{margin:0 16px;background:var(--warm-white);border-radius:20px;padding:16px 0;display:grid;grid-template-columns:repeat(3,1fr);box-shadow:0 10px 28px rgba(58,37,16,.12);transform:translateY(-16px)}
+.s2-ic-col{text-align:center;border-right:1px solid var(--line)}
+.s2-ic-col:last-child{border-right:none}
+.s2-ic-v{font-size:19px;font-weight:800;color:var(--ink);letter-spacing:-.5px}
+.s2-ic-v.orange{color:var(--p)}
+.s2-ic-l{font-size:10px;color:var(--mute);margin-top:2px}
+.s2-star-tag{display:inline-flex;align-items:center;gap:2px;background:var(--gold-bg);color:var(--gold);padding:2px 7px;border-radius:99px;font-size:10px;font-weight:700;margin-top:4px}
+
+/* chips */
+.s2-chips{display:flex;flex-wrap:wrap;gap:6px;padding:0 20px 4px;margin-top:-4px}
+.chip{padding:4px 10px;background:#f0e8e0;border-radius:99px;font-size:11px;color:var(--ink-2);font-weight:500}
+
+/* 地址行 */
+.s2-loc-row{padding:12px 20px;background:var(--warm-white);margin:0 0 0;display:flex;align-items:flex-start;gap:8px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.s2-loc-ic{font-size:15px;margin-top:1px}
+.s2-loc-body{flex:1;min-width:0}
+.s2-loc-addr{font-size:13px;color:var(--ink-2);line-height:1.4}
+.s2-loc-hours{font-size:11px;color:var(--mute);margin-top:3px}
+.s2-loc-open{color:var(--green);font-weight:700;font-size:11px}
+
+/* VIP 邀请条 */
+.s2-vip{margin:12px 16px 0;background:var(--dark);border-radius:18px;padding:16px;color:#fff;position:relative;overflow:hidden;border:1px solid rgba(232,114,27,.18)}
+.s2-vip::after{content:'👑';position:absolute;right:-6px;top:-6px;font-size:54px;opacity:.12}
+.s2-vip-top{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.s2-vip-badge{background:var(--p);padding:3px 9px;border-radius:99px;font-size:11px;font-weight:700}
+.s2-vip-title{font-size:13px;font-weight:700;color:#fff}
+.s2-vip-row{display:flex;align-items:center;justify-content:space-between}
+.s2-vip-stats{font-size:12px;color:rgba(255,255,255,.7)}
+.s2-vip-stats b{color:#f0c060;font-weight:700}
+.s2-vip-cta{padding:6px 14px;background:rgba(232,114,27,.22);border:1px solid rgba(232,114,27,.35);color:var(--p-ll);border-radius:99px;font-size:11px;font-weight:700}
+
+/* 推N反1大卡 */
+.s2-promo{margin:12px 16px 0;background:var(--dark);border-radius:20px;padding:18px;border:1px solid rgba(232,114,27,.2);position:relative;overflow:hidden}
+.s2-promo::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(232,114,27,.06),transparent 55%);pointer-events:none}
+.s2-promo-head{display:flex;align-items:center;gap:8px;margin-bottom:14px}
+.s2-promo-title{font-size:14px;font-weight:800;color:#fff;flex:1}
+.s2-promo-hint{font-size:12px;color:var(--p);font-weight:700}
+.s2-promo-sub{font-size:11px;color:var(--mute-2);margin-bottom:10px}
+.prg-bar{height:10px;background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden}
+.prg-fill{height:100%;background:linear-gradient(90deg,var(--p-d),var(--p));border-radius:99px;position:relative;overflow:hidden}
+.prg-fill::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,.3) 50%,transparent 100%);animation:sweep 2.2s ease-in-out infinite}
+@keyframes sweep{0%{transform:translateX(-100%)}100%{transform:translateX(200%)}}
+.prg-labels{display:flex;justify-content:space-between;margin-top:8px}
+.prg-l{font-size:11px;color:var(--mute-2)}
+.prg-r{font-size:11px;color:var(--p);font-weight:700}
+
+/* product tabs */
+.s2-ptabs{display:flex;gap:0;overflow-x:auto;padding:12px 20px 0;border-top:1px solid rgba(255,255,255,.08);margin-top:14px}
+.s2-ptabs::-webkit-scrollbar{display:none}
+.s2-ptab{flex-shrink:0;padding:6px 14px;font-size:13px;color:var(--mute-2);font-weight:500;border-bottom:2px solid transparent}
+.s2-ptab.on{color:var(--p);font-weight:700;border-bottom-color:var(--p)}
+
+/* product grid */
+.s2-pgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:12px 16px 20px}
+.s2-pcard{background:var(--dark-card);border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,.06)}
+.s2-pcard-img{height:90px;display:flex;align-items:center;justify-content:center;font-size:40px;background:rgba(255,255,255,.04)}
+.s2-pcard-body{padding:10px}
+.s2-pcard-name{font-size:13px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.s2-pcard-desc{font-size:11px;color:var(--mute-2);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.s2-pcard-pr{display:flex;align-items:center;justify-content:space-between;margin-top:8px}
+.s2-pcard-price{font-size:16px;font-weight:800;color:var(--p)}
+.s2-pcard-price small{font-size:11px}
+.s2-pcard-add{width:28px;height:28px;background:var(--p);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff;line-height:1}
+
+/* dark tabbar */
+.tab.dark{background:var(--dark-2);border-top:1px solid rgba(255,255,255,.07)}
+.tab.dark .ti{color:var(--mute)}
+.tab.dark .ti.on{color:var(--p)}
+.tab.dark .ti-lb{color:inherit}
+
+/* ════════════════════ SCREEN 3 · 我的 ════════════════════ */
+
+.s3-head{padding:52px 20px 28px;background:linear-gradient(150deg,var(--dark) 0%,#3a1e08 50%,var(--p-d) 100%);position:relative;overflow:hidden}
+.s3-head::before{content:'';position:absolute;top:-60px;right:-50px;width:220px;height:220px;background:rgba(232,114,27,.12);border-radius:50%}
+.s3-head::after{content:'';position:absolute;bottom:-60px;left:-30px;width:180px;height:180px;background:rgba(255,255,255,.04);border-radius:50%}
+.s3-hrow{display:flex;align-items:center;gap:14px;position:relative;z-index:1}
+.s3-avatar{width:62px;height:62px;border-radius:50%;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:28px;border:2px solid rgba(255,255,255,.25);box-shadow:0 4px 16px rgba(0,0,0,.3)}
+.s3-info{flex:1}
+.s3-name{font-size:22px;font-weight:900;color:#fff;letter-spacing:-.5px}
+.s3-phone{font-size:12px;color:rgba(255,255,255,.7);margin-top:3px}
+.s3-joined{font-size:11px;color:rgba(255,255,255,.55);margin-top:2px}
+.s3-set{font-size:22px;color:rgba(255,255,255,.6)}
+
+/* 跨店计数 */
+.s3-stats{margin:0 16px;background:var(--warm-white);border-radius:20px;padding:18px 0;display:grid;grid-template-columns:repeat(3,1fr);box-shadow:0 8px 28px rgba(232,114,27,.18);transform:translateY(-22px)}
+.s3-st{text-align:center;border-right:1px solid var(--line)}
+.s3-st:last-child{border-right:none}
+.s3-st-n{font-size:24px;font-weight:900;color:var(--ink);letter-spacing:-.5px}
+.s3-st-l{font-size:10px;color:var(--mute);margin-top:2px}
+
+/* 资产隔离提示 */
+.s3-notice{margin:4px 16px 0;background:var(--p-l);border:1px solid rgba(232,114,27,.25);border-radius:16px;padding:12px 14px}
+.s3-notice-t{font-size:12px;font-weight:800;color:var(--p-d);margin-bottom:4px}
+.s3-notice-b{font-size:12px;color:var(--ink-2);line-height:1.6}
+
+/* 店铺列表 */
+.s3-shoplist{margin:0 16px}
+.s3-shoprow{background:var(--warm-white);border-radius:18px;padding:16px;margin-bottom:10px;box-shadow:0 2px 10px rgba(58,37,16,.07)}
+.s3-shoprow-top{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.s3-shoprow-ic{width:40px;height:40px;border-radius:12px;background:var(--p-ll);display:flex;align-items:center;justify-content:center;font-size:22px}
+.s3-shoprow-name{flex:1;font-size:14px;font-weight:800;color:var(--ink)}
+.s3-shoprow-star{font-size:11px;color:var(--gold);font-weight:700;background:var(--gold-bg);padding:3px 9px;border-radius:99px}
+.s3-shoprow-assets{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.s3-shoprow-asset{text-align:center;background:var(--warm-bg);border-radius:12px;padding:9px 4px}
+.s3-shoprow-asset-v{font-size:15px;font-weight:800;color:var(--ink)}
+.s3-shoprow-asset-v.p{color:var(--p)}
+.s3-shoprow-asset-v.mute{color:var(--mute-2)}
+.s3-shoprow-asset-l{font-size:10px;color:var(--mute);margin-top:2px}
+
+/* 资产 grid */
+.s3-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:0 16px}
+.s3-grid-item{background:var(--warm-white);border-radius:16px;padding:14px 8px;display:flex;flex-direction:column;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(58,37,16,.06)}
+.s3-grid-ic{font-size:26px}
+.s3-grid-l{font-size:11px;font-weight:600;color:var(--ink-2);text-align:center;line-height:1.3}
+
+/* 菜单列表 */
+.s3-menu{margin:0 16px;background:var(--warm-white);border-radius:16px;overflow:hidden;box-shadow:0 2px 8px rgba(58,37,16,.05)}
+.s3-mi{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--line)}
+.s3-mi:last-child{border-bottom:none}
+.s3-mi-ic{font-size:20px;width:30px;text-align:center}
+.s3-mi-l{flex:1;font-size:14px;font-weight:500;color:var(--ink)}
+.s3-mi-r{font-size:12px;color:var(--mute)}
+.s3-mi-go{color:var(--mute-2);font-size:16px}
+
+/* ════════════════════ SCREEN 4 · 钱包 ════════════════════ */
+
+.s4-head{padding:52px 20px 20px;background:linear-gradient(150deg,var(--dark) 0%,#3a1e08 60%,var(--p-d) 100%);color:#fff}
+.s4-head-t{font-size:22px;font-weight:900;letter-spacing:-.5px}
+.s4-head-sub{font-size:12px;color:rgba(255,255,255,.55);margin-top:4px}
+
+.s4-notice{margin:12px 16px 0;background:var(--p-ll);border-left:3px solid var(--p);border-radius:12px;padding:10px 14px;font-size:12px;color:var(--p-d);font-weight:600}
+
+/* 每家店一张大卡 */
+.s4-shopcard{margin:12px 16px 0;background:var(--dark);border-radius:22px;padding:18px;box-shadow:0 8px 28px rgba(0,0,0,.35);border:1px solid rgba(232,114,27,.15)}
+.s4-sc-head{display:flex;align-items:center;gap:10px;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,.08)}
+.s4-sc-ic{width:42px;height:42px;border-radius:12px;background:rgba(232,114,27,.18);display:flex;align-items:center;justify-content:center;font-size:22px}
+.s4-sc-name{flex:1;font-size:16px;font-weight:800;color:#fff}
+.s4-sc-star{font-size:11px;color:var(--gold);background:rgba(212,146,10,.18);padding:3px 9px;border-radius:99px;font-weight:700}
+.s4-sc-assets{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.s4-asset{background:rgba(255,255,255,.05);border-radius:14px;padding:12px 8px;text-align:center}
+.s4-asset-v{font-size:20px;font-weight:900;color:var(--p);letter-spacing:-.5px}
+.s4-asset-v.muted{color:var(--mute-2)}
+.s4-asset-l{font-size:10px;color:var(--mute-2);margin-top:4px}
+.s4-sc-footer{display:flex;gap:8px}
+.s4-btn{flex:1;padding:10px;border-radius:12px;font-size:13px;font-weight:700;text-align:center}
+.s4-btn-outline{background:rgba(255,255,255,.07);color:rgba(255,255,255,.7);border:1px solid rgba(255,255,255,.1)}
+.s4-btn-fill{background:var(--p);color:#fff}
+
+/* ════════════════════ SCREEN 5 · 订单详情 ════════════════════ */
+
+.s5-head{padding:48px 20px 16px;background:var(--warm-white);display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--line)}
+.s5-head-back{font-size:20px}
+.s5-head-t{font-size:17px;font-weight:700;flex:1;color:var(--ink)}
+.s5-status-banner{padding:22px 20px;background:var(--dark);color:#fff;position:relative;overflow:hidden}
+.s5-status-banner::before{content:'';position:absolute;top:0;right:0;bottom:0;left:0;background:linear-gradient(135deg,rgba(232,114,27,.1),transparent 60%);pointer-events:none}
+.s5-status-t{font-size:12px;color:var(--mute-2);font-weight:500;letter-spacing:1px;text-transform:uppercase}
+.s5-status-main{font-size:26px;font-weight:900;margin:4px 0 2px;letter-spacing:-.5px;color:#fff}
+.s5-status-eta{display:flex;align-items:baseline;gap:4px;margin-top:6px}
+.s5-eta-n{font-size:56px;font-weight:900;color:var(--p);line-height:1;letter-spacing:-3px}
+.s5-eta-u{font-size:14px;color:var(--mute-2);font-weight:600}
+
+/* 时间轴 */
+.s5-tl{background:var(--warm-white);padding:20px;margin:8px 0}
+.s5-tl-t{font-size:13px;font-weight:700;color:var(--ink);margin-bottom:16px}
+.tl-item{display:flex;gap:14px;margin-bottom:14px;position:relative}
+.tl-item:last-child{margin-bottom:0}
+.tl-dot-col{display:flex;flex-direction:column;align-items:center;flex-shrink:0;width:20px}
+.tl-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;margin-top:3px}
+.tl-dot.done{background:var(--p)}
+.tl-dot.now{background:var(--p);box-shadow:0 0 0 5px rgba(232,114,27,.22);animation:tl-pulse 1.6s ease-in-out infinite}
+@keyframes tl-pulse{0%,100%{box-shadow:0 0 0 5px rgba(232,114,27,.22)}50%{box-shadow:0 0 0 8px rgba(232,114,27,.08)}}
+.tl-dot.pend{background:var(--line)}
+.tl-line{flex:1;width:2px;background:var(--line);margin:4px 0}
+.tl-line.done{background:var(--p)}
+.tl-body{flex:1;padding-bottom:4px}
+.tl-title{font-size:13px;font-weight:700;color:var(--ink)}
+.tl-title.pend{color:var(--mute)}
+.tl-time{font-size:11px;color:var(--mute);margin-top:2px}
+
+/* 骑手卡 */
+.s5-rider{background:var(--warm-white);padding:16px 20px;margin:8px 0;display:flex;align-items:center;gap:14px}
+.s5-rider-av{width:48px;height:48px;border-radius:50%;background:var(--p-ll);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.s5-rider-info{flex:1}
+.s5-rider-name{font-size:14px;font-weight:700;color:var(--ink)}
+.s5-rider-plate{font-size:12px;color:var(--mute);margin-top:2px}
+.s5-rider-call{width:42px;height:42px;border-radius:50%;background:var(--p);display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff}
+
+/* 商品 */
+.s5-goods{background:var(--warm-white);padding:16px 20px;margin:8px 0}
+.s5-goods-t{font-size:13px;font-weight:700;color:var(--ink);margin-bottom:12px}
+.s5-good-item{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}
+.s5-good-item:last-child{border-bottom:none}
+.s5-good-ic{width:54px;height:54px;border-radius:12px;background:var(--warm-bg);display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0}
+.s5-good-info{flex:1}
+.s5-good-name{font-size:13px;font-weight:600;color:var(--ink)}
+.s5-good-spec{font-size:11px;color:var(--mute);margin-top:2px}
+.s5-good-right{text-align:right}
+.s5-good-price{font-size:14px;font-weight:700;color:var(--ink)}
+.s5-good-qty{font-size:11px;color:var(--mute);margin-top:2px}
+
+/* 抵扣明细 */
+.s5-deduct{background:var(--warm-white);padding:16px 20px;margin:8px 0}
+.s5-deduct-t{font-size:13px;font-weight:700;color:var(--ink);margin-bottom:12px}
+.s5-drow{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line)}
+.s5-drow:last-child{border-bottom:none;padding-top:12px;margin-top:4px}
+.s5-drow-l{font-size:13px;color:var(--ink-2)}
+.s5-drow-r{font-size:13px;font-weight:600;color:var(--ink)}
+.s5-drow-r.deduct{color:var(--green)}
+.s5-drow-r.total{color:var(--p);font-size:17px;font-weight:900}
+.s5-drow.final .s5-drow-l{font-weight:800;font-size:14px;color:var(--ink)}
+
+/* 操作栏 */
+.s5-actions{background:var(--warm-white);padding:12px 16px;display:flex;gap:10px;border-top:1px solid var(--line);margin-bottom:0;flex-shrink:0}
+.s5-action-btn{flex:1;padding:13px;border-radius:14px;font-size:14px;font-weight:700;text-align:center}
+.s5-action-outline{background:var(--warm-bg);color:var(--ink-2);border:1px solid var(--line)}
+.s5-action-fill{background:var(--p);color:#fff}
+
+/* ════════════════════ SCREEN 6 · 中奖弹窗 ════════════════════ */
+
+.s6-bg{background:var(--dark);min-height:844px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;position:relative;overflow:hidden}
+.s6-mask{position:absolute;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(6px)}
+.s6-modal{background:var(--warm-white);border-radius:26px;width:100%;max-width:340px;overflow:hidden;box-shadow:0 28px 72px rgba(0,0,0,.5);position:relative;z-index:1}
+.s6-modal-top{background:linear-gradient(160deg,var(--dark) 0%,#4a2008 50%,var(--p-d) 100%);padding:28px 20px 36px;text-align:center;position:relative;overflow:hidden}
+.s6-modal-top::before{content:'';position:absolute;top:-40px;left:50%;transform:translateX(-50%);width:200px;height:200px;background:radial-gradient(circle,rgba(212,146,10,.25),transparent 65%);pointer-events:none}
+.s6-modal-ic{font-size:58px;margin-bottom:8px;display:block;position:relative}
+.s6-modal-t{font-size:18px;font-weight:800;color:rgba(255,255,255,.7);letter-spacing:1px;text-transform:uppercase}
+.s6-modal-amount{font-size:48px;font-weight:900;color:#fff;line-height:1;letter-spacing:-2.5px;margin-top:4px}
+.s6-modal-amount small{font-size:22px;font-weight:700;color:var(--p-ll)}
+.s6-modal-amount span{color:var(--p)}
+.s6-modal-sub{font-size:12px;color:rgba(255,255,255,.55);margin-top:8px}
+.s6-modal-body{padding:20px}
+.s6-info-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.s6-info-row:last-child{border-bottom:none}
+.s6-info-ic{font-size:18px;width:26px;text-align:center}
+.s6-info-l{font-size:12px;color:var(--mute);flex:1}
+.s6-info-v{font-size:13px;font-weight:700;color:var(--ink)}
+.s6-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+.s6-btn{padding:13px;border-radius:14px;font-size:14px;font-weight:700;text-align:center}
+.s6-btn-outline{background:var(--warm-bg);color:var(--ink-2)}
+.s6-btn-fill{background:var(--p);color:#fff}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════ 屏 1: 首页 ══════════════════ -->
+<div class="frame-wrap">
+  <div class="frame-label">① 首页</div>
+  <div class="phone">
+    <!-- hero 深色区 -->
+    <div class="s1-hero-block">
+      <div class="stb" style="background:var(--dark)">
+        <span class="stb-t" style="color:#fff">9:41</span>
+        <span class="stb-r" style="color:#fff">📶 🔋</span>
+      </div>
+      <div class="s1-nav">
+        <div class="s1-loc">
+          <span class="s1-loc-dot"></span>
+          <span>北京市朝阳区</span>
+          <span class="s1-loc-arrow">▾</span>
+        </div>
+        <div class="s1-bell">🔔</div>
+      </div>
+      <div class="s1-welcome">
+        <div class="s1-eyebrow">摊小二 · 发现好店</div>
+        <div class="s1-headline">今天<br>想逛<em>哪家</em>？</div>
+        <div class="s1-sub">附近 128 家好店在线 · 今日最近浏览 3 家</div>
+      </div>
+      <div class="s1-search">
+        <span class="s1-search-ic">🔍</span>
+        <div class="s1-search-ph">搜索<span> 店铺 / 商品 / 附近</span></div>
+        <div class="s1-search-btn">→</div>
+      </div>
+      <div class="s1-sc">
+        <div class="s1-sc-item">
+          <div class="s1-sc-ic">📍</div>
+          <span class="s1-sc-l">附近</span>
+        </div>
+        <div class="s1-sc-item">
+          <div class="s1-sc-ic">🛍</div>
+          <span class="s1-sc-l">分类</span>
+        </div>
+        <div class="s1-sc-item">
+          <div class="s1-sc-ic">🎁</div>
+          <span class="s1-sc-l">优惠</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="scroll" style="background:var(--warm-bg)">
+      <!-- 最近去过 -->
+      <div class="sec-head">
+        <span class="sec-title">最近去过</span>
+        <span class="sec-more">查看全部 →</span>
+      </div>
+      <div class="s1-recent-scroll">
+        <!-- 爱家超市 -->
+        <div class="s1-shop-card">
+          <div class="s1-shop-cover" style="background:linear-gradient(135deg,#3a1e08,#7a3810)">🏪</div>
+          <div class="s1-shop-body">
+            <div class="s1-shop-name">爱家超市</div>
+            <div class="s1-shop-ago">3 小时前</div>
+            <div class="s1-shop-assets">
+              <span class="s1-shop-tag tag-bal">余额 ¥52</span>
+              <span class="s1-shop-tag tag-pts">推广 ¥86.40</span>
+            </div>
+          </div>
+        </div>
+        <!-- 清远茶楼 -->
+        <div class="s1-shop-card">
+          <div class="s1-shop-cover" style="background:linear-gradient(135deg,#1a1a14,#2d2a1a)">🍵</div>
+          <div class="s1-shop-body">
+            <div class="s1-shop-name">清远茶楼</div>
+            <div class="s1-shop-ago">昨天</div>
+            <div class="s1-shop-assets">
+              <span class="s1-shop-tag tag-bal">余额 ¥0</span>
+              <span class="s1-shop-tag tag-pts">推广 ¥0</span>
+            </div>
+          </div>
+        </div>
+        <!-- 明德食材 -->
+        <div class="s1-shop-card">
+          <div class="s1-shop-cover" style="background:linear-gradient(135deg,#1a2010,#2e3a18)">🥩</div>
+          <div class="s1-shop-body">
+            <div class="s1-shop-name">明德食材</div>
+            <div class="s1-shop-ago">2 天前</div>
+            <div class="s1-shop-assets">
+              <span class="s1-shop-tag tag-bal">余额 ¥12</span>
+              <span class="s1-shop-tag tag-pts">推广 ¥18</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- banner -->
+      <div class="sec-head" style="padding-bottom:8px">
+        <span class="sec-title">平台活动</span>
+      </div>
+      <div class="s1-banner">
+        <span class="s1-banner-ic">🎬</span>
+        <div class="s1-banner-body">
+          <div class="s1-banner-t">AI 短视频 · 一键生成</div>
+          <div class="s1-banner-sub">为你的店铺制作专属推广视频</div>
+        </div>
+        <div class="s1-banner-btn">去试试</div>
+      </div>
+
+      <!-- 附近推荐 -->
+      <div class="sec-head">
+        <span class="sec-title">附近推荐</span>
+        <span class="sec-more">更多 →</span>
+      </div>
+      <div class="s1-grid">
+        <div class="s1-grid-card">
+          <div class="s1-grid-cover" style="background:linear-gradient(135deg,#fff3e0,#ffe0b2)">🥐</div>
+          <div class="s1-grid-body">
+            <div class="s1-grid-name">阳光烘焙坊</div>
+            <div class="s1-grid-meta">面包 · 糕点</div>
+            <div class="s1-grid-row">
+              <span class="s1-grid-dist">280m</span>
+              <span class="s1-grid-rating">★ 4.8</span>
+            </div>
+          </div>
+        </div>
+        <div class="s1-grid-card">
+          <div class="s1-grid-cover" style="background:linear-gradient(135deg,#f3e8d8,#e8d4b8)">🍜</div>
+          <div class="s1-grid-body">
+            <div class="s1-grid-name">老方炸酱面</div>
+            <div class="s1-grid-meta">面食 · 小吃</div>
+            <div class="s1-grid-row">
+              <span class="s1-grid-dist">450m</span>
+              <span class="s1-grid-rating">★ 4.6</span>
+            </div>
+          </div>
+        </div>
+        <div class="s1-grid-card">
+          <div class="s1-grid-cover" style="background:linear-gradient(135deg,#e8f5ee,#c8e8d8)">🥗</div>
+          <div class="s1-grid-body">
+            <div class="s1-grid-name">绿野轻食铺</div>
+            <div class="s1-grid-meta">沙拉 · 轻食</div>
+            <div class="s1-grid-row">
+              <span class="s1-grid-dist">600m</span>
+              <span class="s1-grid-rating">★ 4.9</span>
+            </div>
+          </div>
+        </div>
+        <div class="s1-grid-card">
+          <div class="s1-grid-cover" style="background:linear-gradient(135deg,#fff8e8,#fdecc8)">☕</div>
+          <div class="s1-grid-body">
+            <div class="s1-grid-name">晨光咖啡馆</div>
+            <div class="s1-grid-meta">咖啡 · 甜点</div>
+            <div class="s1-grid-row">
+              <span class="s1-grid-dist">820m</span>
+              <span class="s1-grid-rating">★ 4.7</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab">
+      <div class="ti on"><span class="ti-ic">🏠</span><span class="ti-lb">主页</span></div>
+      <div class="ti"><span class="ti-ic">📂</span><span class="ti-lb">分类</span></div>
+      <div class="ti"><span class="ti-ic">🛒</span><span class="ti-lb">购物车</span></div>
+      <div class="ti"><span class="ti-ic">📋</span><span class="ti-lb">订单</span></div>
+      <div class="ti"><span class="ti-ic">👤</span><span class="ti-lb">我的</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ 屏 2: 店铺主页 ══════════════════ -->
+<div class="frame-wrap">
+  <div class="frame-label">② 店铺主页</div>
+  <div class="phone dark-phone">
+    <div class="stb light" style="position:absolute;top:0;left:0;right:0;z-index:10;background:transparent">
+      <span class="stb-t">9:41</span><span class="stb-r">📶 🔋</span>
+    </div>
+
+    <!-- 沉浸式头图 -->
+    <div class="s2-hero">
+      <div class="s2-hero-bg">🏪</div>
+      <div class="s2-hero-overlay"></div>
+      <div class="s2-hero-top">
+        <div class="s2-hero-back">←</div>
+        <div class="s2-hero-acts">
+          <div class="s2-hero-btn">♡</div>
+          <div class="s2-hero-btn">↑</div>
+        </div>
+      </div>
+      <div class="s2-hero-info">
+        <div class="s2-hero-name">爱家超市</div>
+        <div class="s2-hero-slogan">社区首选 · 新鲜食材每日直供</div>
+      </div>
+    </div>
+
+    <div class="scroll" style="background:var(--dark)">
+      <!-- 信息卡 3 列 -->
+      <div style="padding:0 16px">
+        <div class="s2-infocard">
+          <div class="s2-ic-col">
+            <div class="s2-ic-v">4.9 <span style="font-size:12px">★</span></div>
+            <div class="s2-ic-l">评分</div>
+          </div>
+          <div class="s2-ic-col">
+            <div class="s2-ic-v">1.2k</div>
+            <div class="s2-ic-l">月售</div>
+          </div>
+          <div class="s2-ic-col">
+            <div class="s2-ic-v orange">¥52</div>
+            <div class="s2-ic-l">我已赚</div>
+            <div class="s2-star-tag">⭐ 3 星</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 特色 chips -->
+      <div class="s2-chips" style="margin-top:-4px">
+        <span class="chip">🏆 老字号</span>
+        <span class="chip">⏰ 24h 营业</span>
+        <span class="chip">🥬 有机食材</span>
+        <span class="chip">🚀 闪电配送</span>
+      </div>
+
+      <!-- VIP 邀请条 -->
+      <div style="padding:0 16px">
+        <div class="s2-vip">
+          <div class="s2-vip-top">
+            <span class="s2-vip-badge">⭐ 3 星会员</span>
+            <span class="s2-vip-title">享受 9.5 折专属优惠</span>
+          </div>
+          <div class="s2-vip-row">
+            <span class="s2-vip-stats">已邀请 <b>5 位好友</b> · 在该店赚 <b>¥52</b></span>
+            <span class="s2-vip-cta">邀请好友 →</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 推 N 反 1 大卡 -->
+      <div style="padding:0 16px">
+        <div class="s2-promo">
+          <div class="s2-promo-head">
+            <span>🎯</span>
+            <span class="s2-promo-title">推 3 反 1 进度</span>
+            <span class="s2-promo-hint">再推 1 件即免单！</span>
+          </div>
+          <div class="s2-promo-sub">商品：农家蜂蜜 500g · 单价 ¥58</div>
+          <div class="prg-bar"><div class="prg-fill" style="width:66%"></div></div>
+          <div class="prg-labels">
+            <span class="prg-l">已推 2 件</span>
+            <span class="prg-r">目标 3 件 · 奖励 ¥58</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 商品分类 tabs -->
+      <div class="s2-ptabs">
+        <span class="s2-ptab on">全部</span>
+        <span class="s2-ptab">生鲜蔬果</span>
+        <span class="s2-ptab">日用百货</span>
+        <span class="s2-ptab">饮料零食</span>
+        <span class="s2-ptab">粮油调味</span>
+      </div>
+
+      <!-- 商品 grid -->
+      <div class="s2-pgrid">
+        <div class="s2-pcard">
+          <div class="s2-pcard-img">🥚</div>
+          <div class="s2-pcard-body">
+            <div class="s2-pcard-name">散养土鸡蛋</div>
+            <div class="s2-pcard-desc">30 枚 · 净重 1.5kg</div>
+            <div class="s2-pcard-pr">
+              <span class="s2-pcard-price"><small>¥</small>28</span>
+              <span class="s2-pcard-add">+</span>
+            </div>
+          </div>
+        </div>
+        <div class="s2-pcard">
+          <div class="s2-pcard-img">🍯</div>
+          <div class="s2-pcard-body">
+            <div class="s2-pcard-name">农家蜂蜜</div>
+            <div class="s2-pcard-desc">500g · 枸杞花蜜</div>
+            <div class="s2-pcard-pr">
+              <span class="s2-pcard-price"><small>¥</small>58</span>
+              <span class="s2-pcard-add">+</span>
+            </div>
+          </div>
+        </div>
+        <div class="s2-pcard">
+          <div class="s2-pcard-img">🥬</div>
+          <div class="s2-pcard-body">
+            <div class="s2-pcard-name">有机菠菜</div>
+            <div class="s2-pcard-desc">200g · 当日现摘</div>
+            <div class="s2-pcard-pr">
+              <span class="s2-pcard-price"><small>¥</small>9</span>
+              <span class="s2-pcard-add">+</span>
+            </div>
+          </div>
+        </div>
+        <div class="s2-pcard">
+          <div class="s2-pcard-img">🧴</div>
+          <div class="s2-pcard-body">
+            <div class="s2-pcard-name">芦荟洗手液</div>
+            <div class="s2-pcard-desc">500ml · 泡沫款</div>
+            <div class="s2-pcard-pr">
+              <span class="s2-pcard-price"><small>¥</small>16</span>
+              <span class="s2-pcard-add">+</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab dark">
+      <div class="ti"><span class="ti-ic">🏠</span><span class="ti-lb">主页</span></div>
+      <div class="ti"><span class="ti-ic">📂</span><span class="ti-lb">分类</span></div>
+      <div class="ti on"><span class="ti-ic">🛒</span><span class="ti-lb">购物车</span></div>
+      <div class="ti"><span class="ti-ic">📋</span><span class="ti-lb">订单</span></div>
+      <div class="ti"><span class="ti-ic">👤</span><span class="ti-lb">我的</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ 屏 3: 我的 ══════════════════ -->
+<div class="frame-wrap">
+  <div class="frame-label">③ 我的</div>
+  <div class="phone">
+    <div class="scroll">
+      <!-- 顶部 hero -->
+      <div class="s3-head">
+        <div class="stb light" style="padding:0;margin-bottom:8px;height:32px">
+          <span class="stb-t" style="font-size:14px">9:41</span>
+          <span class="stb-r">📶 🔋</span>
+        </div>
+        <div class="s3-hrow">
+          <div class="s3-avatar">😊</div>
+          <div class="s3-info">
+            <div class="s3-name">小慧</div>
+            <div class="s3-phone">138 **** 6688</div>
+            <div class="s3-joined">已加入 3 家店铺</div>
+          </div>
+          <span class="s3-set">⚙️</span>
+        </div>
+      </div>
+
+      <!-- 跨店 3 列计数 -->
+      <div style="padding:0 16px">
+        <div class="s3-stats">
+          <div class="s3-st">
+            <div class="s3-st-n">3</div>
+            <div class="s3-st-l">加入店铺</div>
+          </div>
+          <div class="s3-st">
+            <div class="s3-st-n">48</div>
+            <div class="s3-st-l">累计订单</div>
+          </div>
+          <div class="s3-st">
+            <div class="s3-st-n">5</div>
+            <div class="s3-st-l">推荐好友</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 资产隔离提示 -->
+      <div class="s3-notice">
+        <div class="s3-notice-t">💡 资产按店铺独立结算</div>
+        <div class="s3-notice-b">余额、推广积分、消费积分、星级均隔离在各店账户，不合并计算</div>
+      </div>
+
+      <!-- 我加入的店铺列表 -->
+      <div class="sec-head" style="padding-top:16px">
+        <span class="sec-title">我加入的店铺</span>
+        <span class="sec-more">全部 →</span>
+      </div>
+      <div class="s3-shoplist">
+        <!-- 爱家超市 3星 -->
+        <div class="s3-shoprow">
+          <div class="s3-shoprow-top">
+            <div class="s3-shoprow-ic">🏪</div>
+            <span class="s3-shoprow-name">爱家超市</span>
+            <span class="s3-shoprow-star">⭐ 3 星</span>
+          </div>
+          <div class="s3-shoprow-assets">
+            <div class="s3-shoprow-asset">
+              <div class="s3-shoprow-asset-v p">¥52</div>
+              <div class="s3-shoprow-asset-l">余额</div>
+            </div>
+            <div class="s3-shoprow-asset">
+              <div class="s3-shoprow-asset-v">¥86.40</div>
+              <div class="s3-shoprow-asset-l">推广积分</div>
+            </div>
+            <div class="s3-shoprow-asset">
+              <div class="s3-shoprow-asset-v">310</div>
+              <div class="s3-shoprow-asset-l">消费积分</div>
+            </div>
+          </div>
+        </div>
+        <!-- 清远茶楼 1星 -->
+        <div class="s3-shoprow">
+          <div class="s3-shoprow-top">
+            <div class="s3-shoprow-ic">🍵</div>
+            <span class="s3-shoprow-name">清远茶楼</span>
+            <span class="s3-shoprow-star">⭐ 1 星</span>
+          </div>
+          <div class="s3-shoprow-assets">
+            <div class="s3-shoprow-asset">
+              <div class="s3-shoprow-asset-v mute">¥0</div>
+              <div class="s3-shoprow-asset-l">余额</div>
+            </div>
+            <div class="s3-shoprow-asset">
+              <div class="s3-shoprow-asset-v mute">¥0</div>
+              <div class="s3-shoprow-asset-l">推广积分</div>
+            </div>
+            <div class="s3-shoprow-asset">
+              <div class="s3-shoprow-asset-l" style="margin-top:6px;font-size:10px;color:var(--mute-2)">暂无</div>
+            </div>
+          </div>
+        </div>
+        <!-- 明德食材 2星 -->
+        <div class="s3-shoprow">
+          <div class="s3-shoprow-top">
+            <div class="s3-shoprow-ic">🥩</div>
+            <span class="s3-shoprow-name">明德食材</span>
+            <span class="s3-shoprow-star">⭐ 2 星</span>
+          </div>
+          <div class="s3-shoprow-assets">
+            <div class="s3-shoprow-asset">
+              <div class="s3-shoprow-asset-v p">¥12</div>
+              <div class="s3-shoprow-asset-l">余额</div>
+            </div>
+            <div class="s3-shoprow-asset">
+              <div class="s3-shoprow-asset-v">¥18</div>
+              <div class="s3-shoprow-asset-l">推广积分</div>
+            </div>
+            <div class="s3-shoprow-asset">
+              <div class="s3-shoprow-asset-v">80</div>
+              <div class="s3-shoprow-asset-l">消费积分</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 资产功能 grid -->
+      <div class="sec-head" style="padding-top:6px">
+        <span class="sec-title">资产 · 推广</span>
+      </div>
+      <div class="s3-grid" style="margin-bottom:12px">
+        <div class="s3-grid-item"><span class="s3-grid-ic">👛</span><span class="s3-grid-l">钱包</span></div>
+        <div class="s3-grid-item"><span class="s3-grid-ic">📊</span><span class="s3-grid-l">推广明细</span></div>
+        <div class="s3-grid-item"><span class="s3-grid-ic">💎</span><span class="s3-grid-l">消费积分</span></div>
+        <div class="s3-grid-item"><span class="s3-grid-ic">🎟</span><span class="s3-grid-l">我的队列</span></div>
+        <div class="s3-grid-item"><span class="s3-grid-ic">⭐</span><span class="s3-grid-l">店铺星级</span></div>
+        <div class="s3-grid-item"><span class="s3-grid-ic">🤝</span><span class="s3-grid-l">邀请好友</span></div>
+      </div>
+
+      <!-- 收藏 & 设置 -->
+      <div class="s3-menu" style="margin-bottom:10px">
+        <div class="s3-mi">
+          <span class="s3-mi-ic">❤️</span>
+          <span class="s3-mi-l">我收藏的店铺</span>
+          <span class="s3-mi-r">8 家</span>
+          <span class="s3-mi-go">›</span>
+        </div>
+        <div class="s3-mi">
+          <span class="s3-mi-ic">👁</span>
+          <span class="s3-mi-l">最近浏览</span>
+          <span class="s3-mi-r">12 条</span>
+          <span class="s3-mi-go">›</span>
+        </div>
+      </div>
+      <div class="s3-menu" style="margin-bottom:24px">
+        <div class="s3-mi">
+          <span class="s3-mi-ic">🎧</span>
+          <span class="s3-mi-l">联系客服</span>
+          <span class="s3-mi-go">›</span>
+        </div>
+        <div class="s3-mi">
+          <span class="s3-mi-ic">ℹ️</span>
+          <span class="s3-mi-l">关于摊小二</span>
+          <span class="s3-mi-go">›</span>
+        </div>
+        <div class="s3-mi">
+          <span class="s3-mi-ic">⚙️</span>
+          <span class="s3-mi-l">设置</span>
+          <span class="s3-mi-go">›</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab">
+      <div class="ti"><span class="ti-ic">🏠</span><span class="ti-lb">主页</span></div>
+      <div class="ti"><span class="ti-ic">📂</span><span class="ti-lb">分类</span></div>
+      <div class="ti"><span class="ti-ic">🛒</span><span class="ti-lb">购物车</span></div>
+      <div class="ti"><span class="ti-ic">📋</span><span class="ti-lb">订单</span></div>
+      <div class="ti on"><span class="ti-ic">👤</span><span class="ti-lb">我的</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ 屏 4: 钱包 ══════════════════ -->
+<div class="frame-wrap">
+  <div class="frame-label">④ 钱包</div>
+  <div class="phone dark-phone">
+    <div class="s4-head">
+      <div class="stb light" style="padding:0;height:36px;margin-bottom:4px">
+        <span class="stb-t">9:41</span><span class="stb-r">📶 🔋</span>
+      </div>
+      <div class="s4-head-t">我的钱包</div>
+      <div class="s4-head-sub">各店资产独立管理，不合并结算</div>
+    </div>
+
+    <div class="scroll" style="background:var(--dark)">
+      <div class="s4-notice">📌 已加入 3 家店，每家独立结算，互不干扰</div>
+
+      <!-- 爱家超市 -->
+      <div class="s4-shopcard">
+        <div class="s4-sc-head">
+          <div class="s4-sc-ic">🏪</div>
+          <span class="s4-sc-name">爱家超市</span>
+          <span class="s4-sc-star">⭐ 3 星</span>
+        </div>
+        <div class="s4-sc-assets">
+          <div class="s4-asset">
+            <div class="s4-asset-v">¥52</div>
+            <div class="s4-asset-l">余额</div>
+          </div>
+          <div class="s4-asset">
+            <div class="s4-asset-v">¥86.40</div>
+            <div class="s4-asset-l">推广积分</div>
+          </div>
+          <div class="s4-asset">
+            <div class="s4-asset-v" style="font-size:16px">310 pt</div>
+            <div class="s4-asset-l">消费积分</div>
+          </div>
+        </div>
+        <div class="s4-sc-footer">
+          <div class="s4-btn s4-btn-outline">明细</div>
+          <div class="s4-btn s4-btn-fill">提现</div>
+        </div>
+      </div>
+
+      <!-- 清远茶楼 -->
+      <div class="s4-shopcard">
+        <div class="s4-sc-head">
+          <div class="s4-sc-ic">🍵</div>
+          <span class="s4-sc-name">清远茶楼</span>
+          <span class="s4-sc-star">⭐ 1 星</span>
+        </div>
+        <div class="s4-sc-assets">
+          <div class="s4-asset">
+            <div class="s4-asset-v muted">¥0</div>
+            <div class="s4-asset-l">余额</div>
+          </div>
+          <div class="s4-asset">
+            <div class="s4-asset-v muted">¥0</div>
+            <div class="s4-asset-l">推广积分</div>
+          </div>
+          <div class="s4-asset">
+            <div class="s4-asset-v muted" style="font-size:14px">— pt</div>
+            <div class="s4-asset-l">消费积分</div>
+          </div>
+        </div>
+        <div class="s4-sc-footer">
+          <div class="s4-btn s4-btn-outline">明细</div>
+          <div class="s4-btn s4-btn-outline" style="opacity:.4">提现</div>
+        </div>
+      </div>
+
+      <!-- 明德食材 -->
+      <div class="s4-shopcard" style="margin-bottom:24px">
+        <div class="s4-sc-head">
+          <div class="s4-sc-ic">🥩</div>
+          <span class="s4-sc-name">明德食材</span>
+          <span class="s4-sc-star">⭐ 2 星</span>
+        </div>
+        <div class="s4-sc-assets">
+          <div class="s4-asset">
+            <div class="s4-asset-v">¥12</div>
+            <div class="s4-asset-l">余额</div>
+          </div>
+          <div class="s4-asset">
+            <div class="s4-asset-v">¥18</div>
+            <div class="s4-asset-l">推广积分</div>
+          </div>
+          <div class="s4-asset">
+            <div class="s4-asset-v" style="font-size:16px">80 pt</div>
+            <div class="s4-asset-l">消费积分</div>
+          </div>
+        </div>
+        <div class="s4-sc-footer">
+          <div class="s4-btn s4-btn-outline">明细</div>
+          <div class="s4-btn s4-btn-fill">提现</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab dark">
+      <div class="ti"><span class="ti-ic">🏠</span><span class="ti-lb">主页</span></div>
+      <div class="ti"><span class="ti-ic">📂</span><span class="ti-lb">分类</span></div>
+      <div class="ti"><span class="ti-ic">🛒</span><span class="ti-lb">购物车</span></div>
+      <div class="ti"><span class="ti-ic">📋</span><span class="ti-lb">订单</span></div>
+      <div class="ti on"><span class="ti-ic">👤</span><span class="ti-lb">我的</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ 屏 5: 订单详情 + 派单 ══════════════════ -->
+<div class="frame-wrap">
+  <div class="frame-label">⑤ 订单详情</div>
+  <div class="phone">
+    <div class="s5-head">
+      <span class="s5-head-back">←</span>
+      <span class="s5-head-t">订单详情</span>
+      <span style="font-size:13px;color:var(--mute)">#PO-20260522-0028</span>
+    </div>
+
+    <div class="scroll">
+      <!-- 状态 hero -->
+      <div class="s5-status-banner">
+        <div class="s5-status-t">ORDER STATUS</div>
+        <div class="s5-status-main">配送中</div>
+        <div class="s5-status-eta">
+          <span class="s5-eta-n">18</span>
+          <span class="s5-eta-u">分钟送达</span>
+        </div>
+      </div>
+
+      <!-- 时间轴 -->
+      <div class="s5-tl">
+        <div class="s5-tl-t">配送进度</div>
+        <div class="tl-item">
+          <div class="tl-dot-col">
+            <div class="tl-dot done"></div>
+            <div class="tl-line done"></div>
+          </div>
+          <div class="tl-body">
+            <div class="tl-title">已确认</div>
+            <div class="tl-time">10:24 · 商家已接单</div>
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot-col">
+            <div class="tl-dot done"></div>
+            <div class="tl-line done"></div>
+          </div>
+          <div class="tl-body">
+            <div class="tl-title">已打包</div>
+            <div class="tl-time">10:31 · 商品打包完成</div>
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot-col">
+            <div class="tl-dot now"></div>
+            <div class="tl-line"></div>
+          </div>
+          <div class="tl-body">
+            <div class="tl-title" style="color:var(--p)">配送中 · 当前节点</div>
+            <div class="tl-time">10:38 · 王师傅正在前往</div>
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot-col">
+            <div class="tl-dot pend"></div>
+          </div>
+          <div class="tl-body">
+            <div class="tl-title pend">已送达</div>
+            <div class="tl-time" style="color:var(--mute-2)">预计 10:56</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 骑手卡 -->
+      <div class="s5-rider">
+        <div class="s5-rider-av">🛵</div>
+        <div class="s5-rider-info">
+          <div class="s5-rider-name">王师傅</div>
+          <div class="s5-rider-plate">京 P · 12345 · 评分 4.97</div>
+        </div>
+        <div class="s5-rider-call">📞</div>
+      </div>
+
+      <!-- 商品 -->
+      <div class="s5-goods">
+        <div class="s5-goods-t">订单商品</div>
+        <div class="s5-good-item">
+          <div class="s5-good-ic">🥚</div>
+          <div class="s5-good-info">
+            <div class="s5-good-name">散养土鸡蛋</div>
+            <div class="s5-good-spec">30 枚 · 净重 1.5kg</div>
+          </div>
+          <div class="s5-good-right">
+            <div class="s5-good-price">¥28</div>
+            <div class="s5-good-qty">× 2</div>
+          </div>
+        </div>
+        <div class="s5-good-item">
+          <div class="s5-good-ic">🍯</div>
+          <div class="s5-good-info">
+            <div class="s5-good-name">农家蜂蜜</div>
+            <div class="s5-good-spec">500g · 枸杞花蜜</div>
+          </div>
+          <div class="s5-good-right">
+            <div class="s5-good-price">¥58</div>
+            <div class="s5-good-qty">× 1</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 完整抵扣明细 -->
+      <div class="s5-deduct">
+        <div class="s5-deduct-t">费用明细</div>
+        <div class="s5-drow">
+          <span class="s5-drow-l">商品总价</span>
+          <span class="s5-drow-r">¥114.00</span>
+        </div>
+        <div class="s5-drow">
+          <span class="s5-drow-l">余额抵扣</span>
+          <span class="s5-drow-r deduct">-¥20.00</span>
+        </div>
+        <div class="s5-drow">
+          <span class="s5-drow-l">消费积分抵扣</span>
+          <span class="s5-drow-r deduct">-¥5.00</span>
+        </div>
+        <div class="s5-drow">
+          <span class="s5-drow-l">推广积分抵扣</span>
+          <span class="s5-drow-r deduct">-¥10.00</span>
+        </div>
+        <div class="s5-drow">
+          <span class="s5-drow-l">优惠券</span>
+          <span class="s5-drow-r deduct">-¥5.00</span>
+        </div>
+        <div class="s5-drow final">
+          <span class="s5-drow-l">实付</span>
+          <span class="s5-drow-r total">¥74.00</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 操作栏 -->
+    <div class="s5-actions">
+      <div class="s5-action-btn s5-action-outline">🗺 查看地图</div>
+      <div class="s5-action-btn s5-action-fill">📞 联系骑手</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ 屏 6: 中奖弹窗 ══════════════════ -->
+<div class="frame-wrap">
+  <div class="frame-label">⑥ 中奖弹窗</div>
+  <div class="phone dark-phone">
+    <div class="s6-bg">
+      <div class="s6-mask"></div>
+      <!-- 弹窗 -->
+      <div class="s6-modal">
+        <div class="s6-modal-top">
+          <span class="s6-modal-ic">🥇</span>
+          <div class="s6-modal-t">CONGRATULATIONS</div>
+          <div class="s6-modal-amount"><small>¥</small><span>10</span></div>
+          <div class="s6-modal-sub">恭喜您中奖！奖励已进入您的爱家超市余额</div>
+        </div>
+        <div class="s6-modal-body">
+          <div class="s6-info-row">
+            <span class="s6-info-ic">🏪</span>
+            <span class="s6-info-l">所属店铺</span>
+            <span class="s6-info-v">爱家超市</span>
+          </div>
+          <div class="s6-info-row">
+            <span class="s6-info-ic">🍯</span>
+            <span class="s6-info-l">奖励来源</span>
+            <span class="s6-info-v">月饼节礼盒奖池</span>
+          </div>
+          <div class="s6-info-row">
+            <span class="s6-info-ic">⭐</span>
+            <span class="s6-info-l">您的星级</span>
+            <span class="s6-info-v" style="color:var(--gold)">3 星会员</span>
+          </div>
+          <div class="s6-info-row">
+            <span class="s6-info-ic">👥</span>
+            <span class="s6-info-l">本轮总中奖人数</span>
+            <span class="s6-info-v">共 12 人</span>
+          </div>
+          <div class="s6-btns">
+            <div class="s6-btn s6-btn-outline">稍后再看</div>
+            <div class="s6-btn s6-btn-fill">查看奖池详情</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

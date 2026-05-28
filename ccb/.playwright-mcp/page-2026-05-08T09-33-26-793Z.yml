@@ -1,0 +1,53 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e589]:
+    - generic [ref=e591]:
+      - img [ref=e594] [cursor=pointer]
+      - generic [ref=e597]: 我的钱包
+    - generic [ref=e601]:
+      - generic [ref=e602]:
+        - generic [ref=e603]:
+          - generic [ref=e604]:
+            - generic [ref=e605]: 推广积分
+            - generic [ref=e606]: "0"
+            - generic [ref=e607]: 分（0.00 元）
+          - generic [ref=e608]:
+            - generic [ref=e609]: 消费积分
+            - generic [ref=e610]: "0"
+            - generic [ref=e611]: 分
+        - generic [ref=e612]:
+          - generic [ref=e613]: 当前星级：
+          - generic [ref=e614]: "0"
+          - generic [ref=e615]: ★
+          - generic [ref=e616]: 直推 0 · 团队链 0
+      - generic [ref=e617]:
+        - generic [ref=e618]: 推广 → 消费 转换
+        - generic [ref=e619]:
+          - generic [ref=e621]:
+            - generic: 推广积分(分)
+            - spinbutton [ref=e622]
+          - generic [ref=e623] [cursor=pointer]: 确认转换
+        - generic [ref=e624]: 按商户配置 ratio 折算；不可逆。
+      - generic [ref=e625]:
+        - generic [ref=e626]: 操作
+        - generic [ref=e627]:
+          - generic [ref=e628]:
+            - generic [ref=e629]: ¥
+            - generic [ref=e630]: 申请提现
+          - generic [ref=e631]:
+            - generic [ref=e632]: +
+            - generic [ref=e633]: 邀请好友
+          - generic [ref=e634]:
+            - generic [ref=e635]: ≡
+            - generic [ref=e636]: 我的队列
+          - generic [ref=e637]:
+            - generic [ref=e638]: ★
+            - generic [ref=e639]: 积分池历史
+      - generic [ref=e640]:
+        - generic [ref=e641]:
+          - generic [ref=e642]: 推广积分流水
+          - generic [ref=e643]: 消费积分流水
+        - generic [ref=e644]: 暂无流水
+  - generic:
+    - generic:
+      - generic:
+        - paragraph: 登录已失效，请重新登录

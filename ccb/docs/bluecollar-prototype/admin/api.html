@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>蓝工平台 · API 开放平台</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="../shared/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  body { background:#F8FAFC; font-family:'Inter','PingFang SC',sans-serif; }
+  .num-font { font-feature-settings:"tnum"; font-variant-numeric:tabular-nums; letter-spacing:-0.01em; }
+  .chip { display:inline-flex; align-items:center; gap:4px; padding:2px 7px; border-radius:4px; font-size:10px; font-weight:600; }
+  .api-card { background:#fff; border:1px solid #E2E8F0; border-radius:12px; padding:20px; transition:all .2s; }
+  .api-card:hover { transform:translateY(-2px); box-shadow:0 12px 24px -10px rgba(80,70,229,.15); border-color:#5046E5; }
+  th { background:#F8FAFC; font-size:11px; font-weight:600; color:#64748B; text-align:left; padding:10px 12px; border-bottom:1px solid #E2E8F0; text-transform:uppercase; letter-spacing:0.04em; white-space:nowrap; }
+  td { padding:11px 12px; border-bottom:1px solid #F1F5F9; font-size:12.5px; color:#334155; vertical-align:middle; }
+</style>
+</head>
+<body class="text-slate-800">
+<div class="flex min-h-screen">
+  <aside class="w-60 bg-[#0F172A] text-white flex-shrink-0 flex flex-col">
+    <div class="px-5 pt-5 pb-4 border-b border-white/5"><div class="flex items-center gap-2.5"><div class="w-9 h-9 rounded-lg bg-gradient-to-br from-[#5046E5] to-[#7C3AED] flex items-center justify-center font-extrabold text-[15px]">蓝</div><div><div class="text-[13px] font-bold leading-tight">蓝工平台</div><div class="text-[10px] text-slate-400 tracking-wider">运营后台 · ADMIN</div></div></div></div>
+    <nav class="flex-1 px-3 py-2 overflow-y-auto text-sm">
+      <div class="px-3 pt-2 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">驾驶舱</div>
+      <a href="dashboard.html" class="sidebar-link">📊 数据驾驶舱</a>
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">用户管理</div>
+      <a href="workers.html" class="sidebar-link">👷 工人管理</a><a href="dispatches.html" class="sidebar-link">🏢 派遣公司</a><a href="clients.html" class="sidebar-link">🏛️ 甲方/用工单位</a>
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">业务管理</div>
+      <a href="jobs-audit.html" class="sidebar-link">📋 招聘审核</a><a href="credit.html" class="sidebar-link">⭐ 工分管理</a>
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">风控合规</div>
+      <a href="risk.html" class="sidebar-link">🚨 风控告警</a><a href="audit.html" class="sidebar-link">📜 审计日志</a>
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">财务管理</div>
+      <a href="finance.html" class="sidebar-link">💰 财务对账</a>
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">客服支持</div>
+      <a href="tickets.html" class="sidebar-link">🎫 客服工单</a>
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">运营</div>
+      <a href="campaigns.html" class="sidebar-link">🎯 运营活动</a><a href="notifications.html" class="sidebar-link">📢 公告通知</a>
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">系统</div>
+      <a href="roles.html" class="sidebar-link">🔐 权限管理</a><a href="api.html" class="sidebar-link active">🔌 API 开放平台</a>
+    </nav>
+    <div class="px-4 py-3 border-t border-white/5 text-xs text-slate-500 flex items-center justify-between"><a href="../index.html" class="hover:text-white">← 原型导航</a><span>v3.2.1</span></div>
+  </aside>
+
+  <main class="flex-1 min-w-0">
+    <header class="h-14 bg-white border-b border-slate-200 flex items-center px-6 sticky top-0 z-20"><div class="flex items-center gap-2.5"><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-red-50 text-red-600 border border-red-200">生产环境</span><h1 class="text-[15px] font-semibold">API 开放平台</h1><span class="text-xs text-slate-400">/</span><span class="text-xs text-slate-500">蓝领信用 = 国内空白市场</span></div><div class="ml-auto flex gap-2"><button class="px-3 py-1.5 text-xs border border-slate-200 rounded">📖 开发者文档</button><button class="px-3 py-1.5 text-xs bg-violet-600 text-white rounded font-bold">+ 新增 API</button></div></header>
+
+    <div class="p-6 space-y-5">
+      <!-- KPI 旗舰 -->
+      <div class="grid grid-cols-4 gap-4">
+        <div class="bg-gradient-to-br from-violet-500 to-purple-700 text-white rounded-xl p-5">
+          <div class="text-xs opacity-90">接入机构</div>
+          <div class="text-2xl font-extrabold num-font mt-1">47</div>
+          <div class="text-xs opacity-90 mt-2">含 12 家银行 / 8 家保险</div>
+        </div>
+        <div class="bg-white border border-slate-200 rounded-xl p-5">
+          <div class="text-xs text-slate-500">月调用量</div>
+          <div class="text-2xl font-extrabold text-slate-900 num-font mt-1">12.8 亿</div>
+          <div class="text-xs text-emerald-600 mt-2">↑ 240% YoY</div>
+        </div>
+        <div class="bg-white border border-emerald-200 rounded-xl p-5">
+          <div class="text-xs text-emerald-600">月 API 收入</div>
+          <div class="text-2xl font-extrabold text-emerald-600 num-font mt-1">¥3,850,000</div>
+          <div class="text-xs text-emerald-600 mt-2">毛利率 92% (千亿想象空间)</div>
+        </div>
+        <div class="bg-white border border-slate-200 rounded-xl p-5">
+          <div class="text-xs text-slate-500">平均响应时间</div>
+          <div class="text-2xl font-extrabold num-font mt-1">89 <span class="text-base">ms</span></div>
+          <div class="text-xs text-emerald-600 mt-2">SLA 99.97%</div>
+        </div>
+      </div>
+
+      <!-- API 产品 6 张卡 -->
+      <div>
+        <div class="flex items-center justify-between mb-3"><h2 class="text-base font-bold">⭐ API 产品矩阵</h2><span class="text-xs text-slate-400">蓝领工分征信是央行征信的盲区</span></div>
+        <div class="grid grid-cols-3 gap-4">
+          <div class="api-card">
+            <div class="flex items-start justify-between mb-3"><div class="w-10 h-10 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 text-white flex items-center justify-center">⭐</div><span class="chip" style="background:#A855F71A;color:#7C3AED">⭐ 旗舰</span></div>
+            <h3 class="font-bold text-slate-900">蓝领信用评分 API</h3>
+            <div class="text-xs text-slate-500 mt-1">基于 524 万工人 × 256 维数据，输出 0-1000 信用分</div>
+            <div class="mt-3 grid grid-cols-3 gap-2 text-center">
+              <div><div class="text-sm font-bold text-violet-600 num-font">8.6 亿</div><div class="text-[10px] text-slate-400">月调用</div></div>
+              <div><div class="text-sm font-bold num-font">¥0.5</div><div class="text-[10px] text-slate-400">单价</div></div>
+              <div><div class="text-sm font-bold text-emerald-600 num-font">¥2.18M</div><div class="text-[10px] text-slate-400">月收入</div></div>
+            </div>
+            <div class="mt-3 pt-3 border-t border-slate-100 text-[10px] text-slate-500">主要客户：招商银行 / 中信银行 / 蚂蚁集团 / 微众银行</div>
+          </div>
+
+          <div class="api-card">
+            <div class="flex items-start justify-between mb-3"><div class="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-600 text-white flex items-center justify-center">📊</div><span class="chip" style="background:#DBEAFE;color:#1D4ED8">热门</span></div>
+            <h3 class="font-bold text-slate-900">工资流水查询 API</h3>
+            <div class="text-xs text-slate-500 mt-1">查询工人近 24 月工资流水，用于消费金融授信</div>
+            <div class="mt-3 grid grid-cols-3 gap-2 text-center">
+              <div><div class="text-sm font-bold text-blue-600 num-font">2.4 亿</div><div class="text-[10px] text-slate-400">月调用</div></div>
+              <div><div class="text-sm font-bold num-font">¥0.3</div><div class="text-[10px] text-slate-400">单价</div></div>
+              <div><div class="text-sm font-bold text-emerald-600 num-font">¥720K</div><div class="text-[10px] text-slate-400">月收入</div></div>
+            </div>
+            <div class="mt-3 pt-3 border-t border-slate-100 text-[10px] text-slate-500">主要客户：京东数科 / 度小满 / 360 数科</div>
+          </div>
+
+          <div class="api-card">
+            <div class="flex items-start justify-between mb-3"><div class="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 text-white flex items-center justify-center">🛡️</div><span class="chip" style="background:#FEF3C7;color:#B45309">保险专属</span></div>
+            <h3 class="font-bold text-slate-900">工伤风险评估 API</h3>
+            <div class="text-xs text-slate-500 mt-1">基于工种、工时、历史工伤记录预测 12 月工伤概率</div>
+            <div class="mt-3 grid grid-cols-3 gap-2 text-center">
+              <div><div class="text-sm font-bold text-amber-600 num-font">8,200万</div><div class="text-[10px] text-slate-400">月调用</div></div>
+              <div><div class="text-sm font-bold num-font">¥1.2</div><div class="text-[10px] text-slate-400">单价</div></div>
+              <div><div class="text-sm font-bold text-emerald-600 num-font">¥980K</div><div class="text-[10px] text-slate-400">月收入</div></div>
+            </div>
+            <div class="mt-3 pt-3 border-t border-slate-100 text-[10px] text-slate-500">主要客户：平安保险 / 太平洋保险 / 众安保险</div>
+          </div>
+
+          <div class="api-card">
+            <div class="flex items-start justify-between mb-3"><div class="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-500 to-green-600 text-white flex items-center justify-center">📈</div><span class="chip" style="background:#DCFCE7;color:#15803D">机构专享</span></div>
+            <h3 class="font-bold text-slate-900">中国蓝领用工景气指数 API</h3>
+            <div class="text-xs text-slate-500 mt-1">月度发布 · 城市级 / 行业级 · 媒体/券商权威引用</div>
+            <div class="mt-3 grid grid-cols-3 gap-2 text-center">
+              <div><div class="text-sm font-bold text-emerald-600 num-font">28万</div><div class="text-[10px] text-slate-400">月调用</div></div>
+              <div><div class="text-sm font-bold num-font">¥年费</div><div class="text-[10px] text-slate-400">订阅制</div></div>
+              <div><div class="text-sm font-bold text-emerald-600 num-font">¥320K</div><div class="text-[10px] text-slate-400">月收入</div></div>
+            </div>
+            <div class="mt-3 pt-3 border-t border-slate-100 text-[10px] text-slate-500">主要客户：高盛 / 中金 / 国家统计局 / 央视财经</div>
+          </div>
+
+          <div class="api-card">
+            <div class="flex items-start justify-between mb-3"><div class="w-10 h-10 rounded-lg bg-gradient-to-br from-pink-500 to-rose-600 text-white flex items-center justify-center">👥</div><span class="chip" style="background:#FCE7F3;color:#BE185D">B2B 撮合</span></div>
+            <h3 class="font-bold text-slate-900">人才推荐 API</h3>
+            <div class="text-xs text-slate-500 mt-1">其他平台调用我们的人才匹配能力，按推荐成功收费</div>
+            <div class="mt-3 grid grid-cols-3 gap-2 text-center">
+              <div><div class="text-sm font-bold text-pink-600 num-font">1.2 亿</div><div class="text-[10px] text-slate-400">月调用</div></div>
+              <div><div class="text-sm font-bold num-font">¥0.2</div><div class="text-[10px] text-slate-400">单价</div></div>
+              <div><div class="text-sm font-bold text-emerald-600 num-font">¥240K</div><div class="text-[10px] text-slate-400">月收入</div></div>
+            </div>
+            <div class="mt-3 pt-3 border-t border-slate-100 text-[10px] text-slate-500">主要客户：58同城 / BOSS直聘 / 鱼泡网</div>
+          </div>
+
+          <div class="api-card">
+            <div class="flex items-start justify-between mb-3"><div class="w-10 h-10 rounded-lg bg-gradient-to-br from-slate-500 to-slate-700 text-white flex items-center justify-center">🔍</div><span class="chip" style="background:#F1F5F9;color:#475569">基础</span></div>
+            <h3 class="font-bold text-slate-900">身份核验 / 实名 API</h3>
+            <div class="text-xs text-slate-500 mt-1">三要素核验 · 人脸识别 · 黑名单查询</div>
+            <div class="mt-3 grid grid-cols-3 gap-2 text-center">
+              <div><div class="text-sm font-bold num-font">3,600万</div><div class="text-[10px] text-slate-400">月调用</div></div>
+              <div><div class="text-sm font-bold num-font">¥0.1</div><div class="text-[10px] text-slate-400">单价</div></div>
+              <div><div class="text-sm font-bold text-emerald-600 num-font">¥36K</div><div class="text-[10px] text-slate-400">月收入</div></div>
+            </div>
+            <div class="mt-3 pt-3 border-t border-slate-100 text-[10px] text-slate-500">主要客户：泛行业 · 入门级 API</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 接入机构列表 -->
+      <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+        <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
+          <h3 class="font-bold">已接入机构（47 家）</h3>
+          <div class="flex gap-2 text-xs">
+            <button class="px-3 py-1.5 bg-violet-600 text-white rounded-full font-bold">全部 47</button>
+            <button class="px-3 py-1.5 text-slate-600">银行 12</button>
+            <button class="px-3 py-1.5 text-slate-600">保险 8</button>
+            <button class="px-3 py-1.5 text-slate-600">消金 14</button>
+            <button class="px-3 py-1.5 text-slate-600">数科 7</button>
+            <button class="px-3 py-1.5 text-slate-600">同业 6</button>
+          </div>
+        </div>
+        <table class="w-full">
+          <thead><tr><th>接入机构</th><th>类型</th><th>调用 API</th><th class="text-right">月调用量</th><th class="text-right">月消费</th><th>SLA</th><th>接入日期</th><th>状态</th></tr></thead>
+          <tbody>
+            <tr><td class="font-semibold">招商银行 · 闪电贷</td><td><span class="chip" style="background:#FEE2E2;color:#B91C1C">银行</span></td><td class="text-xs">信用分 + 工资流水</td><td class="text-right num-font font-bold">2.86 亿</td><td class="text-right num-font text-emerald-600 font-bold">¥1,420,000</td><td class="text-emerald-600">99.99%</td><td>2024-08</td><td><span class="chip" style="background:#DCFCE7;color:#15803D">活跃</span></td></tr>
+            <tr><td class="font-semibold">蚂蚁集团 · 网商贷</td><td><span class="chip" style="background:#DBEAFE;color:#1D4ED8">数科</span></td><td class="text-xs">信用分 + 风险评估</td><td class="text-right num-font font-bold">2.45 亿</td><td class="text-right num-font text-emerald-600 font-bold">¥1,280,000</td><td class="text-emerald-600">99.97%</td><td>2024-06</td><td><span class="chip" style="background:#DCFCE7;color:#15803D">活跃</span></td></tr>
+            <tr><td class="font-semibold">平安保险 · 蓝领意外险</td><td><span class="chip" style="background:#FEF3C7;color:#B45309">保险</span></td><td class="text-xs">工伤风险评估</td><td class="text-right num-font font-bold">8,200万</td><td class="text-right num-font text-emerald-600 font-bold">¥980,000</td><td class="text-emerald-600">99.95%</td><td>2024-10</td><td><span class="chip" style="background:#DCFCE7;color:#15803D">活跃</span></td></tr>
+            <tr><td class="font-semibold">微众银行 · 微粒贷</td><td><span class="chip" style="background:#FEE2E2;color:#B91C1C">银行</span></td><td class="text-xs">信用分</td><td class="text-right num-font font-bold">1.86 亿</td><td class="text-right num-font text-emerald-600 font-bold">¥920,000</td><td class="text-emerald-600">99.96%</td><td>2024-12</td><td><span class="chip" style="background:#DCFCE7;color:#15803D">活跃</span></td></tr>
+            <tr><td class="font-semibold">京东数科</td><td><span class="chip" style="background:#DBEAFE;color:#1D4ED8">数科</span></td><td class="text-xs">工资流水 + 人才推荐</td><td class="text-right num-font font-bold">1.45 亿</td><td class="text-right num-font text-emerald-600 font-bold">¥680,000</td><td class="text-emerald-600">99.94%</td><td>2025-02</td><td><span class="chip" style="background:#DCFCE7;color:#15803D">活跃</span></td></tr>
+            <tr><td class="font-semibold">众安保险 · 雇主责任险</td><td><span class="chip" style="background:#FEF3C7;color:#B45309">保险</span></td><td class="text-xs">工伤风险评估</td><td class="text-right num-font font-bold">6,800万</td><td class="text-right num-font text-emerald-600 font-bold">¥820,000</td><td class="text-emerald-600">99.92%</td><td>2025-03</td><td><span class="chip" style="background:#DCFCE7;color:#15803D">活跃</span></td></tr>
+            <tr><td class="font-semibold">度小满金融</td><td><span class="chip" style="background:#FECDD3;color:#9F1239">消金</span></td><td class="text-xs">信用分 + 工资流水</td><td class="text-right num-font font-bold">1.28 亿</td><td class="text-right num-font text-emerald-600 font-bold">¥620,000</td><td class="text-emerald-600">99.93%</td><td>2025-05</td><td><span class="chip" style="background:#DCFCE7;color:#15803D">活跃</span></td></tr>
+            <tr><td class="font-semibold">中信银行</td><td><span class="chip" style="background:#FEE2E2;color:#B91C1C">银行</span></td><td class="text-xs">信用分</td><td class="text-right num-font font-bold">9,800万</td><td class="text-right num-font text-emerald-600 font-bold">¥490,000</td><td class="text-emerald-600">99.95%</td><td>2025-07</td><td><span class="chip" style="background:#DCFCE7;color:#15803D">活跃</span></td></tr>
+            <tr><td class="font-semibold">高盛中国 · 行业研究</td><td><span class="chip" style="background:#E9D5FF;color:#7C3AED">机构</span></td><td class="text-xs">用工景气指数</td><td class="text-right num-font">28万</td><td class="text-right num-font text-emerald-600 font-bold">¥120,000</td><td class="text-emerald-600">99.99%</td><td>2025-08</td><td><span class="chip" style="background:#DCFCE7;color:#15803D">活跃</span></td></tr>
+            <tr><td class="font-semibold">58同城</td><td><span class="chip" style="background:#FCE7F3;color:#BE185D">同业</span></td><td class="text-xs">人才推荐</td><td class="text-right num-font font-bold">8,500万</td><td class="text-right num-font text-emerald-600 font-bold">¥170,000</td><td class="text-amber-600">98.86%</td><td>2025-10</td><td><span class="chip" style="background:#DCFCE7;color:#15803D">活跃</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+</body>
+</html>

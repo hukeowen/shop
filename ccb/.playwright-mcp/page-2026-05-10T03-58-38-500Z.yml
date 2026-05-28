@@ -1,0 +1,87 @@
+- generic [ref=e456]:
+  - generic [ref=e458]:
+    - img [ref=e461] [cursor=pointer]
+    - generic [ref=e464]: 结算
+  - generic [ref=e468]:
+    - generic [ref=e469]:
+      - generic [ref=e470]: ‹
+      - generic [ref=e471]: 订单结算
+    - generic [ref=e472]:
+      - generic [ref=e474]: 配送方式
+      - generic [ref=e475]:
+        - generic [ref=e476]: 🏪 到店自提
+        - generic [ref=e477]: 🚚 快递发货
+    - generic [ref=e478]:
+      - generic [ref=e479]:
+        - generic [ref=e480]: 新
+        - generic [ref=e481]: 新店1
+      - generic [ref=e482]:
+        - generic [ref=e486]: v8测试商品-推5反1
+        - generic [ref=e487]:
+          - generic [ref=e488]: ¥100.00
+          - generic [ref=e489]: x 6
+      - generic [ref=e490]:
+        - generic [ref=e491]: 商品小计
+        - generic [ref=e492]: ¥600.00
+      - generic [ref=e493]:
+        - generic [ref=e494]: 店铺合计
+        - generic [ref=e495]: ¥600.00
+    - generic [ref=e496]:
+      - generic [ref=e498]: 订单备注
+      - generic [ref=e501]:
+        - generic: 如：少糖 / 不要葱…
+        - textbox [ref=e502]
+    - generic [ref=e503]:
+      - generic [ref=e504]: 店铺资产抵扣
+      - generic [ref=e505]:
+        - generic [ref=e506]: 余
+        - generic [ref=e507]:
+          - generic [ref=e508]: 新店1 · 店铺余额
+          - generic [ref=e509]: 该店余额为 0，请先去"我的钱包"充值或推荐好友赚积分
+        - generic [ref=e511]: 未使用
+      - generic [ref=e514]:
+        - generic [ref=e515]: 抵扣后还需在线支付
+        - generic [ref=e516]: ¥600.00
+    - generic [ref=e517]:
+      - generic [ref=e518]: 在线支付剩余 ¥600.00
+      - generic [ref=e519]:
+        - generic [ref=e520]: 微
+        - generic [ref=e521]:
+          - generic [ref=e522]: 微信支付
+          - generic [ref=e523]: 推荐
+      - generic [ref=e525]:
+        - generic [ref=e526]: 店
+        - generic [ref=e527]:
+          - generic [ref=e528]: 到店付款
+          - generic [ref=e529]: 商家未开通在线支付
+    - generic [ref=e531]:
+      - generic [ref=e532]:
+        - generic [ref=e533]: 🎁 推 N 反 1 抵扣
+        - generic [ref=e534]: 少付 ¥100.00
+      - generic [ref=e535]:
+        - generic [ref=e537]:
+          - text: "商品 #8001：买 6 件 → 抵扣"
+          - generic [ref=e538]: "1"
+          - text: 件
+        - generic [ref=e539]: 单价 ¥100.00 × 抵扣 1 件 = -¥100.00
+      - generic [ref=e540]:
+        - generic [ref=e541]:
+          - generic [ref=e542]: 抵扣前
+          - generic [ref=e543]: ¥600.00
+        - generic [ref=e544]:
+          - generic [ref=e545]: 抵扣后
+          - generic [ref=e546]: ¥500.00
+    - generic [ref=e547]:
+      - generic [ref=e548]: 支付明细：
+      - text: · 店铺余额抵扣：
+      - generic [ref=e549]: 未启用
+      - text: · 推广积分抵扣：
+      - generic [ref=e550]: "-¥100.00（1 件）"
+      - text: · 在线支付：
+      - generic [ref=e551]: ¥500.00
+    - generic [ref=e553]:
+      - generic [ref=e554]:
+        - text: 合计 ¥600.00 · 实付
+        - generic [ref=e555]: ¥500.00
+        - generic [ref=e556]: 省 ¥100.00
+      - generic [ref=e557]: 提交订单

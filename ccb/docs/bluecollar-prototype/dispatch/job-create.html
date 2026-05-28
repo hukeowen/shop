@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>蓝工·派遣管家 — 发布职位</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="../shared/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  body { background: #F8FAFC; }
+  .field-label { display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px; }
+  .field-label .req { color: #EF4444; margin-right: 2px; }
+  .input, .select, .textarea {
+    width: 100%; height: 38px; padding: 0 12px; border: 1px solid #E2E8F0; border-radius: 8px;
+    font-size: 14px; background: #fff; color: #0F172A; outline: none; transition: border .15s, box-shadow .15s;
+  }
+  .input:focus, .select:focus, .textarea:focus { border-color: #1677FF; box-shadow: 0 0 0 3px rgba(22,119,255,.12); }
+  .textarea { height: auto; padding: 10px 12px; resize: vertical; min-height: 100px; line-height: 1.55; }
+  .tag-toggle { padding: 6px 12px; border: 1px solid #E2E8F0; border-radius: 999px; font-size: 12px; cursor: pointer; color: #475569; background: #fff; transition: all .15s; }
+  .tag-toggle:hover { border-color: #94A3B8; }
+  .tag-toggle.on { background: #EFF6FF; border-color: #1677FF; color: #1677FF; font-weight: 600; }
+  .section-title { font-size: 15px; font-weight: 700; color: #0F172A; display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+  .section-title .num { display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:6px; background: #EFF6FF; color: #1677FF; font-size: 12px; font-weight: 700; }
+  /* 自定义滑块 */
+  .range { -webkit-appearance: none; appearance: none; width: 100%; height: 6px; background: linear-gradient(to right, #1677FF 0%, #1677FF 70%, #E2E8F0 70%, #E2E8F0 100%); border-radius: 999px; outline: none; }
+  .range::-webkit-slider-thumb { -webkit-appearance:none; width: 20px; height: 20px; background: #fff; border: 3px solid #1677FF; border-radius: 50%; cursor: pointer; box-shadow: 0 2px 6px rgba(22,119,255,.4); }
+</style>
+</head>
+<body class="text-slate-800">
+
+<div class="flex min-h-screen">
+
+  <!-- ============ 侧边栏 ============ -->
+  <aside class="w-60 bg-[#0F172A] text-slate-300 flex flex-col flex-shrink-0">
+    <div class="px-5 pt-5 pb-4 border-b border-white/5">
+      <div class="flex items-center gap-2 mb-3">
+        <div class="w-9 h-9 rounded-xl grad-blue flex items-center justify-center font-extrabold text-white shadow-lg shadow-blue-500/30">蓝</div>
+        <div>
+          <div class="text-white text-sm font-bold leading-tight">蓝工·派遣管家</div>
+          <div class="text-[10px] text-slate-500 tracking-wider">DISPATCH SAAS</div>
+        </div>
+      </div>
+      <div class="bg-white/5 rounded-xl p-3 border border-white/5">
+        <div class="flex items-center justify-between mb-1">
+          <span class="text-xs text-slate-400">浙江睿才人力</span>
+          <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-gradient-to-r from-amber-400 to-orange-500 text-white">VIP</span>
+        </div>
+        <div class="flex items-end gap-1.5">
+          <span class="text-lg font-extrabold text-white leading-none">92</span>
+          <span class="text-[10px] text-slate-400 mb-0.5">企业信用分</span>
+        </div>
+        <div class="mt-1.5 h-1 bg-white/10 rounded-full overflow-hidden">
+          <div class="h-full bg-gradient-to-r from-emerald-400 to-cyan-400" style="width:92%"></div>
+        </div>
+      </div>
+    </div>
+    <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto text-sm">
+      <a href="dashboard.html" class="sidebar-link">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+        工作台
+      </a>
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">招聘管理</div>
+      <a href="jobs.html" class="sidebar-link">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+        职位列表
+      </a>
+      <a href="job-create.html" class="sidebar-link active">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        发布职位
+      </a>
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">人才</div>
+      <a href="talents.html" class="sidebar-link">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        人才搜索
+      </a>
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">沟通</div>
+      <a href="chat.html" class="sidebar-link">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        IM 沟通<span class="ml-auto px-1.5 py-0.5 rounded-full bg-red-500 text-white text-[10px] font-bold">12</span>
+      </a>
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">用工</div>
+      <a href="onboarding.html" class="sidebar-link">👥 在岗管理</a>
+      <a href="contract-mgmt.html" class="sidebar-link">📝 合同管理</a>
+
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold flex items-center gap-1.5">财务管理 <span class="px-1 py-0 rounded bg-gradient-to-r from-blue-500 to-cyan-500 text-white text-[9px]">NEW</span></div>
+      <a href="salary.html" class="sidebar-link">💰 薪酬发放</a>
+      <a href="social.html" class="sidebar-link">🏥 社保公积金</a>
+      <a href="tax.html" class="sidebar-link">📋 个税申报</a>
+      <a href="reconciliation.html" class="sidebar-link">⚖️ 对账中心</a>
+      <a href="invoice.html" class="sidebar-link">🧾 发票管理</a>
+
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">客户</div>
+      <a href="clients.html" class="sidebar-link">🏢 甲方管理 CRM</a>
+
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">数据 & 合规</div>
+      <a href="analytics.html" class="sidebar-link">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        数据分析
+      </a>
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">系统</div>
+      <a href="#" class="sidebar-link">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/></svg>
+        设置
+      </a>
+    </nav>
+    <div class="px-4 py-3 border-t border-white/5 text-xs text-slate-500 flex items-center justify-between">
+      <a href="../index.html" class="hover:text-white">← 原型导航</a>
+      <span>v0.1.0</span>
+    </div>
+  </aside>
+
+  <!-- ============ 主内容 ============ -->
+  <main class="flex-1 flex flex-col min-w-0">
+    <header class="h-14 bg-white border-b border-slate-200 px-6 flex items-center justify-between flex-shrink-0">
+      <div class="flex items-center gap-2 text-sm text-slate-500">
+        <a href="dashboard.html" class="hover:text-slate-900">工作台</a>
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+        <a href="jobs.html" class="hover:text-slate-900">招聘管理</a>
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+        <span class="text-slate-900 font-medium">发布职位</span>
+      </div>
+      <div class="flex items-center gap-4">
+        <button class="relative w-9 h-9 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-600">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white"></span>
+        </button>
+        <div class="flex items-center gap-2 pl-3 border-l border-slate-200">
+          <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center text-xs font-bold">李</div>
+          <div class="leading-tight">
+            <div class="text-sm font-semibold text-slate-900">李珊珊</div>
+            <div class="text-[11px] text-slate-500">招聘主管</div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="flex-1 overflow-y-auto p-6">
+      <div class="max-w-5xl mx-auto">
+        <!-- 标题 -->
+        <div class="flex items-end justify-between mb-5">
+          <div>
+            <h1 class="text-2xl font-bold text-slate-900">发布新职位</h1>
+            <p class="text-sm text-slate-500 mt-1">完善以下信息，AI 会自动匹配高分人才并推送通知</p>
+          </div>
+          <div class="flex items-center gap-2 text-xs text-slate-400">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            自动保存于 09:42
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-5">
+
+          <!-- 左侧主表单 -->
+          <div class="col-span-2 space-y-5">
+
+            <!-- 基本信息 -->
+            <section class="bg-white border border-slate-200 rounded-2xl p-6">
+              <div class="section-title mb-5"><span class="num">1</span>基本信息</div>
+              <div class="grid grid-cols-2 gap-4">
+                <div class="col-span-2">
+                  <label class="field-label"><span class="req">*</span>职位名称</label>
+                  <input class="input" value="焊工 · 二保焊熟练工"/>
+                  <p class="text-xs text-slate-400 mt-1">建议格式：工种 · 修饰词（如"熟练工 / 持证 / 包食宿"）</p>
+                </div>
+                <div>
+                  <label class="field-label"><span class="req">*</span>工种类别</label>
+                  <select class="select"><option>焊工</option><option>普工</option><option>叉车</option><option>SMT 操作员</option><option>分拣员</option><option>数控车工</option></select>
+                </div>
+                <div>
+                  <label class="field-label"><span class="req">*</span>招聘人数</label>
+                  <input class="input" type="number" value="30"/>
+                </div>
+              </div>
+            </section>
+
+            <!-- 用工单位 + 地点 -->
+            <section class="bg-white border border-slate-200 rounded-2xl p-6">
+              <div class="section-title mb-5"><span class="num">2</span>用工单位 & 工作地点</div>
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="field-label"><span class="req">*</span>用工单位</label>
+                  <select class="select"><option>立讯精密 (苏州) 有限公司</option><option>富士康科技集团 · 郑州</option><option>比亚迪股份 · 深圳坪山</option><option>京东亚一物流园</option></select>
+                </div>
+                <div>
+                  <label class="field-label">所属行业</label>
+                  <select class="select"><option>消费电子</option><option>新能源</option><option>物流仓储</option><option>食品加工</option></select>
+                </div>
+                <div>
+                  <label class="field-label"><span class="req">*</span>城市</label>
+                  <select class="select"><option>江苏省 · 苏州市 · 工业园区</option><option>河南省 · 郑州市 · 航空港区</option><option>广东省 · 深圳市 · 坪山区</option></select>
+                </div>
+                <div>
+                  <label class="field-label"><span class="req">*</span>详细地址</label>
+                  <input class="input" value="苏州工业园区唯亭街道唯文路 158 号"/>
+                </div>
+              </div>
+            </section>
+
+            <!-- 薪资 -->
+            <section class="bg-white border border-slate-200 rounded-2xl p-6">
+              <div class="section-title mb-5"><span class="num">3</span>薪资待遇</div>
+              <div class="grid grid-cols-3 gap-4 mb-4">
+                <div>
+                  <label class="field-label"><span class="req">*</span>薪资下限 (元/月)</label>
+                  <input class="input" type="number" value="6500"/>
+                </div>
+                <div>
+                  <label class="field-label"><span class="req">*</span>薪资上限 (元/月)</label>
+                  <input class="input" type="number" value="8500"/>
+                </div>
+                <div>
+                  <label class="field-label">结算方式</label>
+                  <select class="select"><option>月结</option><option>周结</option><option>日结</option></select>
+                </div>
+              </div>
+              <div class="grid grid-cols-3 gap-4">
+                <div>
+                  <label class="field-label">小时工资 (元)</label>
+                  <input class="input" type="number" value="32"/>
+                </div>
+                <div>
+                  <label class="field-label">加班工资倍数</label>
+                  <select class="select"><option>1.5 / 2 / 3 倍 (法定)</option><option>2 倍</option></select>
+                </div>
+                <div>
+                  <label class="field-label">综合月收入预估</label>
+                  <div class="h-[38px] flex items-center bg-emerald-50 border border-emerald-200 rounded-lg px-3 text-emerald-700 font-bold">7,800 - 9,200 元</div>
+                </div>
+              </div>
+            </section>
+
+            <!-- 工分门槛 -->
+            <section class="bg-white border border-slate-200 rounded-2xl p-6">
+              <div class="section-title"><span class="num">4</span>工分门槛 <span class="text-xs font-normal text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">核心 · 蓝领芝麻信用</span></div>
+              <p class="text-xs text-slate-500 mb-4">设置后，仅符合工分等级的工人会收到推送，可显著提升入职率</p>
+
+              <div class="bg-slate-50 rounded-xl p-5">
+                <div class="flex items-center justify-between mb-3">
+                  <span class="text-sm font-semibold text-slate-700">最低工分要求</span>
+                  <span class="text-2xl font-extrabold text-blue-600 tabular-nums">≥ 700 <span class="text-xs text-slate-400 font-medium">（黄金）</span></span>
+                </div>
+                <input type="range" min="400" max="950" value="700" class="range mb-2"/>
+                <div class="flex justify-between text-[10px] text-slate-400">
+                  <span>青铜 400</span><span>白银 600</span><span class="text-blue-600 font-bold">黄金 700</span><span>钻石 800</span><span>王者 900+</span>
+                </div>
+
+                <div class="mt-4 grid grid-cols-5 gap-2">
+                  <label class="tag-toggle text-center">不限</label>
+                  <label class="tag-toggle text-center">青铜</label>
+                  <label class="tag-toggle text-center">白银</label>
+                  <label class="tag-toggle on text-center">黄金</label>
+                  <label class="tag-toggle text-center">钻石+</label>
+                </div>
+
+                <div class="mt-4 grid grid-cols-3 gap-3 text-xs">
+                  <div class="bg-white rounded-lg p-3 border border-slate-200"><div class="text-slate-400 mb-0.5">符合条件人才</div><div class="text-base font-bold text-slate-900">8,624 人</div></div>
+                  <div class="bg-white rounded-lg p-3 border border-slate-200"><div class="text-slate-400 mb-0.5">预估入职率</div><div class="text-base font-bold text-emerald-600">+34%</div></div>
+                  <div class="bg-white rounded-lg p-3 border border-slate-200"><div class="text-slate-400 mb-0.5">预估流失率</div><div class="text-base font-bold text-emerald-600">-22%</div></div>
+                </div>
+              </div>
+            </section>
+
+            <!-- 要求 -->
+            <section class="bg-white border border-slate-200 rounded-2xl p-6">
+              <div class="section-title mb-5"><span class="num">5</span>任职要求</div>
+              <div class="grid grid-cols-3 gap-4 mb-4">
+                <div>
+                  <label class="field-label">性别</label>
+                  <select class="select"><option>不限</option><option>男</option><option>女</option></select>
+                </div>
+                <div>
+                  <label class="field-label">年龄范围</label>
+                  <div class="flex items-center gap-2">
+                    <input class="input" type="number" value="18"/>
+                    <span class="text-slate-400">-</span>
+                    <input class="input" type="number" value="45"/>
+                  </div>
+                </div>
+                <div>
+                  <label class="field-label">工作经验</label>
+                  <select class="select"><option>2 年以上</option><option>不限</option><option>1 年以上</option><option>3 年以上</option></select>
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="field-label">学历要求</label>
+                  <select class="select"><option>初中以上</option><option>不限</option><option>高中以上</option><option>大专以上</option></select>
+                </div>
+                <div>
+                  <label class="field-label">必备证书</label>
+                  <div class="flex flex-wrap gap-2 pt-1.5">
+                    <span class="tag-toggle on">焊工证 (IC)</span>
+                    <span class="tag-toggle">特种作业证</span>
+                    <span class="tag-toggle">叉车证 (N1)</span>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- 工时 + 福利 -->
+            <section class="bg-white border border-slate-200 rounded-2xl p-6">
+              <div class="section-title mb-5"><span class="num">6</span>工时 & 福利</div>
+              <div class="grid grid-cols-3 gap-4 mb-5">
+                <div>
+                  <label class="field-label">工作制</label>
+                  <select class="select"><option>两班倒 (12 小时)</option><option>三班倒</option><option>常白班</option><option>大小周</option></select>
+                </div>
+                <div>
+                  <label class="field-label">每月休息</label>
+                  <select class="select"><option>4 天</option><option>2 天</option><option>6 天</option><option>8 天</option></select>
+                </div>
+                <div>
+                  <label class="field-label">每月工时</label>
+                  <input class="input" type="number" value="280"/>
+                </div>
+              </div>
+
+              <label class="field-label">福利标签</label>
+              <div class="flex flex-wrap gap-2">
+                <span class="tag-toggle on">包食宿</span>
+                <span class="tag-toggle on">五险一金</span>
+                <span class="tag-toggle on">免费班车</span>
+                <span class="tag-toggle on">年终奖</span>
+                <span class="tag-toggle on">月度评优</span>
+                <span class="tag-toggle">免费体检</span>
+                <span class="tag-toggle">高温补贴</span>
+                <span class="tag-toggle">8 小时工作制</span>
+                <span class="tag-toggle">夜班补贴</span>
+                <span class="tag-toggle">推荐奖金 ¥800</span>
+                <span class="tag-toggle">弹性工时</span>
+                <span class="tag-toggle">技能培训</span>
+              </div>
+            </section>
+
+            <!-- 职位描述 -->
+            <section class="bg-white border border-slate-200 rounded-2xl p-6">
+              <div class="section-title mb-2"><span class="num">7</span>职位描述</div>
+              <div class="flex items-center gap-2 mb-3">
+                <button class="text-xs text-blue-600 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-md font-medium flex items-center gap-1">
+                  <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                  AI 一键生成
+                </button>
+                <button class="text-xs text-slate-500 hover:bg-slate-100 px-2.5 py-1 rounded-md font-medium">使用模板</button>
+              </div>
+              <textarea class="textarea" rows="8">【岗位职责】
+1. 按图纸要求完成二保焊接作业，确保焊缝质量符合 ISO 5817 标准；
+2. 配合班组完成日产能任务，及时处理来料不良；
+3. 维护焊机及作业区域 5S。
+
+【任职要求】
+1. 18-45 岁，男性，初中以上学历，2 年以上二保焊经验；
+2. 持焊工证（IC），可独立看图施焊；
+3. 服从两班倒，能吃苦耐劳，无重大违纪记录。
+
+【公司福利】
+免费食宿、五险一金、月度评优 500 元、推荐奖金 800 元/人。</textarea>
+              <div class="flex justify-between mt-2 text-xs text-slate-400">
+                <span>建议 300 字以上，提高 32% 投递率</span>
+                <span class="tabular-nums">228 / 2000</span>
+              </div>
+            </section>
+
+          </div>
+
+          <!-- 右侧增值服务 + 操作 -->
+          <div class="col-span-1 space-y-5">
+
+            <!-- 增值服务 -->
+            <section class="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-5">
+              <div class="flex items-center gap-2 mb-1">
+                <div class="w-6 h-6 rounded-md bg-amber-500 text-white flex items-center justify-center text-xs font-bold">★</div>
+                <h3 class="text-base font-bold text-slate-900">增值服务</h3>
+              </div>
+              <p class="text-xs text-slate-500 mb-4">购买后，职位曝光提升 3-8 倍</p>
+
+              <label class="block bg-white rounded-xl p-3 mb-2 border-2 border-amber-400 cursor-pointer">
+                <div class="flex items-start gap-3">
+                  <input type="checkbox" checked class="mt-0.5 accent-amber-500"/>
+                  <div class="flex-1">
+                    <div class="flex items-center justify-between"><span class="text-sm font-bold text-slate-900">⚡ 急聘标识</span><span class="text-sm font-bold text-orange-600">50 币/天</span></div>
+                    <p class="text-xs text-slate-500 mt-0.5">列表显示红色"急聘"角标，点击率 +180%</p>
+                  </div>
+                </div>
+              </label>
+
+              <label class="block bg-white rounded-xl p-3 mb-2 border border-slate-200 hover:border-amber-300 cursor-pointer">
+                <div class="flex items-start gap-3">
+                  <input type="checkbox" class="mt-0.5 accent-amber-500"/>
+                  <div class="flex-1">
+                    <div class="flex items-center justify-between"><span class="text-sm font-bold text-slate-900">⬆ 职位置顶</span><span class="text-sm font-bold text-orange-600">200 币/天</span></div>
+                    <p class="text-xs text-slate-500 mt-0.5">同城同工种首页置顶，曝光 +500%</p>
+                  </div>
+                </div>
+              </label>
+
+              <label class="block bg-white rounded-xl p-3 mb-2 border-2 border-amber-400 cursor-pointer">
+                <div class="flex items-start gap-3">
+                  <input type="checkbox" checked class="mt-0.5 accent-amber-500"/>
+                  <div class="flex-1">
+                    <div class="flex items-center justify-between"><span class="text-sm font-bold text-slate-900">🤖 AI 优选推送</span><span class="text-sm font-bold text-orange-600">300 币</span></div>
+                    <p class="text-xs text-slate-500 mt-0.5">向 500 名匹配人才主动 PUSH 通知</p>
+                  </div>
+                </div>
+              </label>
+
+              <label class="block bg-white rounded-xl p-3 border border-slate-200 hover:border-amber-300 cursor-pointer">
+                <div class="flex items-start gap-3">
+                  <input type="checkbox" class="mt-0.5 accent-amber-500"/>
+                  <div class="flex-1">
+                    <div class="flex items-center justify-between"><span class="text-sm font-bold text-slate-900">📣 同城广播</span><span class="text-sm font-bold text-orange-600">500 币</span></div>
+                    <p class="text-xs text-slate-500 mt-0.5">微信/短信全员触达，附 H5 投递链接</p>
+                  </div>
+                </div>
+              </label>
+
+              <div class="mt-4 pt-4 border-t border-amber-200 flex items-center justify-between text-sm">
+                <span class="text-slate-500">预估消耗</span>
+                <span class="font-bold text-orange-600 text-base">650 招聘币</span>
+              </div>
+              <div class="mt-1 text-xs text-slate-500 text-right">当前余额 <span class="font-semibold text-slate-700">200 币</span> · <a href="#" class="text-blue-600 hover:underline">充值 →</a></div>
+            </section>
+
+            <!-- 预览卡 -->
+            <section class="bg-white border border-slate-200 rounded-2xl p-5">
+              <div class="text-xs text-slate-400 font-semibold mb-2">工人端预览</div>
+              <div class="bg-slate-50 rounded-xl p-4 border border-slate-200">
+                <div class="flex items-center gap-1.5 mb-2">
+                  <span class="chip bg-red-100 text-red-700">急聘</span>
+                  <span class="chip bg-violet-100 text-violet-700">AI 推荐</span>
+                </div>
+                <h4 class="text-base font-bold text-slate-900">焊工 · 二保焊熟练工</h4>
+                <div class="text-orange-500 font-bold text-lg my-1.5">6,500 - 8,500 元/月</div>
+                <div class="text-xs text-slate-500 leading-relaxed">立讯精密 · 苏州工业园<br>2 年经验 · 黄金工分 ≥700</div>
+                <div class="mt-3 flex flex-wrap gap-1">
+                  <span class="text-[10px] bg-white border border-slate-200 text-slate-600 rounded px-1.5 py-0.5">包食宿</span>
+                  <span class="text-[10px] bg-white border border-slate-200 text-slate-600 rounded px-1.5 py-0.5">五险一金</span>
+                  <span class="text-[10px] bg-white border border-slate-200 text-slate-600 rounded px-1.5 py-0.5">免费班车</span>
+                </div>
+              </div>
+            </section>
+
+            <!-- 操作 -->
+            <section class="bg-white border border-slate-200 rounded-2xl p-5 sticky top-4">
+              <button class="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold text-sm shadow-sm shadow-blue-500/30 mb-2">立即发布</button>
+              <button class="w-full h-10 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl font-medium text-sm">保存草稿</button>
+              <div class="mt-3 text-center text-xs text-slate-400">发布即同意《<a href="#" class="text-blue-600">蓝工平台招聘协议》</a></div>
+            </section>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+</body>
+</html>

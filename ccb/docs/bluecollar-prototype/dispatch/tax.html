@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>蓝工·派遣管家 — 个税申报</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="../shared/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  body { background: #F8FAFC; }
+  .stat-card { transition: all .2s ease; }
+  .stat-card:hover { transform: translateY(-2px); box-shadow: 0 10px 25px -8px rgba(15,23,42,.08); }
+  .pill { display:inline-flex; align-items:center; gap:4px; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+  .cal-cell { aspect-ratio: 1; display:flex; flex-direction:column; align-items:center; justify-content:center; border-radius:8px; font-size:11px; }
+</style>
+</head>
+<body class="text-slate-800">
+
+<div class="flex min-h-screen">
+
+  <aside class="w-60 bg-[#0F172A] text-slate-300 flex flex-col flex-shrink-0">
+    <div class="px-5 pt-5 pb-4 border-b border-white/5">
+      <div class="flex items-center gap-2 mb-3"><div class="w-9 h-9 rounded-xl grad-blue flex items-center justify-center font-extrabold text-white shadow-lg shadow-blue-500/30">蓝</div><div><div class="text-white text-sm font-bold leading-tight">蓝工·派遣管家</div><div class="text-[10px] text-slate-500 tracking-wider">DISPATCH SAAS</div></div></div>
+      <div class="bg-white/5 rounded-xl p-3 border border-white/5"><div class="flex items-center justify-between mb-1"><span class="text-xs text-slate-400">浙江睿才人力</span><span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-gradient-to-r from-amber-400 to-orange-500 text-white">VIP</span></div><div class="flex items-end gap-1.5"><span class="text-lg font-extrabold text-white leading-none">92</span><span class="text-[10px] text-slate-400 mb-0.5">企业信用分</span></div><div class="mt-1.5 h-1 bg-white/10 rounded-full overflow-hidden"><div class="h-full bg-gradient-to-r from-emerald-400 to-cyan-400" style="width:92%"></div></div></div>
+    </div>
+    <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto text-sm">
+      <a href="dashboard.html" class="sidebar-link"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>工作台</a>
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">招聘管理</div>
+      <a href="jobs.html" class="sidebar-link"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/></svg>职位列表</a>
+      <a href="job-create.html" class="sidebar-link"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>发布职位</a>
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">人才</div>
+      <a href="talents.html" class="sidebar-link"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="9" cy="7" r="4"/></svg>人才搜索</a>
+      <a href="talent-detail.html" class="sidebar-link"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/></svg>人才详情</a>
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">沟通</div>
+      <a href="chat.html" class="sidebar-link"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>IM 沟通<span class="ml-auto px-1.5 py-0.5 rounded-full bg-red-500 text-white text-[10px] font-bold">12</span></a>
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">用工</div>
+      <a href="onboarding.html" class="sidebar-link"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="7" r="4"/></svg>在岗管理</a>
+      <a href="contract-mgmt.html" class="sidebar-link"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>合同管理</a>
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold flex items-center gap-1.5">财务管理 <span class="px-1 py-0 rounded bg-gradient-to-r from-blue-500 to-cyan-500 text-white text-[9px]">NEW</span></div>
+      <a href="salary.html" class="sidebar-link"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/></svg>薪酬发放</a>
+      <a href="social.html" class="sidebar-link"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06"/></svg>社保公积金</a>
+      <a href="tax.html" class="sidebar-link active"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 11H7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2h-2"/><path d="M9 11V7a3 3 0 0 1 6 0v4"/></svg>个税申报</a>
+      <a href="reconciliation.html" class="sidebar-link"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 12 20 22 4 22 4 12"/></svg>对账中心</a>
+      <a href="invoice.html" class="sidebar-link"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>发票管理</a>
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">客户</div>
+      <a href="clients.html" class="sidebar-link"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 21h18M5 21V7l8-4v18"/></svg>甲方管理</a>
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">数据</div>
+      <a href="analytics.html" class="sidebar-link"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="20" x2="12" y2="4"/></svg>数据分析</a>
+      <a href="compliance.html" class="sidebar-link"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>风控合规</a>
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">系统</div>
+      <a href="#" class="sidebar-link"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/></svg>设置</a>
+    </nav>
+    <div class="px-4 py-3 border-t border-white/5 text-xs text-slate-500 flex items-center justify-between"><a href="../index.html" class="hover:text-white">← 原型导航</a><span>v0.1.0</span></div>
+  </aside>
+
+  <main class="flex-1 flex flex-col min-w-0">
+    <header class="h-14 bg-white border-b border-slate-200 px-6 flex items-center justify-between flex-shrink-0">
+      <div class="flex items-center gap-2 text-sm text-slate-500"><a href="dashboard.html" class="hover:text-slate-900">工作台</a><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg><span>财务管理</span><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg><span class="text-slate-900 font-medium">个税申报</span></div>
+      <div class="flex items-center gap-4">
+        <div class="relative"><svg class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/></svg><input class="w-72 h-9 pl-9 pr-3 bg-slate-100 border border-transparent focus:bg-white focus:border-blue-500 rounded-lg text-sm outline-none transition" placeholder="搜索工人姓名 / 身份证号..."></div>
+        <button class="relative w-9 h-9 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-600"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/></svg></button>
+        <div class="flex items-center gap-2 pl-3 border-l border-slate-200"><div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center text-xs font-bold">李</div><div class="leading-tight"><div class="text-sm font-semibold text-slate-900">李珊珊</div><div class="text-[11px] text-slate-500">招聘主管</div></div></div>
+      </div>
+    </header>
+
+    <div class="flex-1 overflow-y-auto p-6 space-y-5">
+
+      <div class="flex items-end justify-between">
+        <div>
+          <h1 class="text-2xl font-bold text-slate-900">个人所得税申报</h1>
+          <p class="text-sm text-slate-500 mt-1">金税四期直连 · 全员全额扣缴申报 · 累计预扣预缴方式 · 当前所属期 <span class="text-slate-700 font-semibold">2026年4月</span></p>
+        </div>
+        <div class="flex gap-2">
+          <button class="h-9 px-4 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50">导出申报表</button>
+          <button class="h-9 px-4 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50">汇算清缴</button>
+          <button class="h-9 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium flex items-center gap-2 shadow-sm shadow-blue-500/20"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>一键申报到金税四期</button>
+        </div>
+      </div>
+
+      <!-- KPI -->
+      <div class="grid grid-cols-4 gap-4">
+        <div class="stat-card bg-white border border-slate-200 rounded-2xl p-5"><div class="flex items-start justify-between mb-3"><span class="text-xs text-slate-500 font-medium">本月预扣个税</span><div class="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/></svg></div></div><div class="text-2xl font-extrabold text-slate-900 tabular-nums">¥285,420</div><div class="text-[11px] text-slate-400 mt-1">较上月 <span class="text-emerald-600">+5.2%</span></div></div>
+        <div class="stat-card bg-white border border-slate-200 rounded-2xl p-5"><div class="flex items-start justify-between mb-3"><span class="text-xs text-slate-500 font-medium">已申报</span><div class="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div></div><div class="text-2xl font-extrabold text-slate-900 tabular-nums">1,892</div><div class="text-[11px] text-slate-400 mt-1">¥248,200 · 完成 87%</div></div>
+        <div class="stat-card bg-white border border-slate-200 rounded-2xl p-5"><div class="flex items-start justify-between mb-3"><span class="text-xs text-slate-500 font-medium">待申报</span><div class="w-9 h-9 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div></div><div class="text-2xl font-extrabold text-slate-900 tabular-nums">335</div><div class="text-[11px] text-slate-400 mt-1">¥37,220 · <span class="text-red-600 font-semibold">截止 6.15</span></div></div>
+        <div class="stat-card bg-white border border-slate-200 rounded-2xl p-5"><div class="flex items-start justify-between mb-3"><span class="text-xs text-slate-500 font-medium">年累计专项附加扣除</span><div class="w-9 h-9 rounded-lg bg-violet-50 text-violet-600 flex items-center justify-center"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div></div><div class="text-2xl font-extrabold text-slate-900 tabular-nums">¥4,820,000</div><div class="text-[11px] text-slate-400 mt-1">惠及 <span class="text-violet-600 font-semibold">894 人</span></div></div>
+      </div>
+
+      <!-- 申报日历 + 政策 -->
+      <div class="grid grid-cols-3 gap-4">
+        <!-- 申报周期日历 -->
+        <div class="col-span-2 bg-white border border-slate-200 rounded-2xl p-5">
+          <div class="flex items-center justify-between mb-4">
+            <div><h3 class="text-base font-bold text-slate-900">申报周期日历</h3><p class="text-xs text-slate-500 mt-0.5">每月 1~15 日为申报期 · 红色为截止前 3 天</p></div>
+            <div class="flex items-center gap-2"><button class="w-7 h-7 rounded border border-slate-200 text-slate-500">‹</button><span class="text-sm font-semibold">2026 年 5 月</span><button class="w-7 h-7 rounded border border-slate-200 text-slate-500">›</button></div>
+          </div>
+          <div class="grid grid-cols-7 gap-2 text-center">
+            <div class="text-[11px] text-slate-400 font-semibold">一</div><div class="text-[11px] text-slate-400 font-semibold">二</div><div class="text-[11px] text-slate-400 font-semibold">三</div><div class="text-[11px] text-slate-400 font-semibold">四</div><div class="text-[11px] text-slate-400 font-semibold">五</div><div class="text-[11px] text-slate-400 font-semibold">六</div><div class="text-[11px] text-slate-400 font-semibold">日</div>
+
+            <div class="cal-cell text-slate-300">28</div><div class="cal-cell text-slate-300">29</div><div class="cal-cell text-slate-300">30</div><div class="cal-cell bg-blue-50 text-blue-700 font-bold">1<span class="text-[9px] text-blue-500">申报开始</span></div><div class="cal-cell bg-blue-50 text-blue-700">2</div><div class="cal-cell text-slate-400">3</div><div class="cal-cell text-slate-400">4</div>
+
+            <div class="cal-cell bg-blue-50 text-blue-700">5</div><div class="cal-cell bg-blue-50 text-blue-700">6</div><div class="cal-cell bg-blue-50 text-blue-700">7</div><div class="cal-cell bg-blue-50 text-blue-700">8</div><div class="cal-cell bg-blue-50 text-blue-700">9</div><div class="cal-cell text-slate-400">10</div><div class="cal-cell text-slate-400">11</div>
+
+            <div class="cal-cell bg-emerald-100 text-emerald-700 font-bold ring-2 ring-emerald-500">12<span class="text-[9px]">今日</span></div><div class="cal-cell bg-red-50 text-red-700 font-bold">13</div><div class="cal-cell bg-red-50 text-red-700 font-bold">14</div><div class="cal-cell bg-red-100 text-red-700 font-bold">15<span class="text-[9px]">截止</span></div><div class="cal-cell text-slate-400">16</div><div class="cal-cell text-slate-300">17</div><div class="cal-cell text-slate-300">18</div>
+
+            <div class="cal-cell text-slate-400">19</div><div class="cal-cell text-slate-400">20</div><div class="cal-cell text-slate-400">21</div><div class="cal-cell text-slate-400">22</div><div class="cal-cell text-slate-400">23</div><div class="cal-cell text-slate-300">24</div><div class="cal-cell bg-violet-50 text-violet-700 font-bold">25<span class="text-[9px]">薪酬发放</span></div>
+
+            <div class="cal-cell text-slate-400">26</div><div class="cal-cell text-slate-400">27</div><div class="cal-cell text-slate-400">28</div><div class="cal-cell text-slate-400">29</div><div class="cal-cell text-slate-400">30</div><div class="cal-cell text-slate-400">31</div><div class="cal-cell text-slate-300">1</div>
+          </div>
+
+          <div class="grid grid-cols-3 gap-3 mt-5 pt-4 border-t border-slate-100 text-xs">
+            <div class="flex items-center gap-2"><span class="w-3 h-3 rounded bg-blue-50 border border-blue-200"></span><span class="text-slate-600">申报期</span></div>
+            <div class="flex items-center gap-2"><span class="w-3 h-3 rounded bg-red-100"></span><span class="text-slate-600">截止前 3 天</span></div>
+            <div class="flex items-center gap-2"><span class="w-3 h-3 rounded bg-emerald-100"></span><span class="text-slate-600">今日</span></div>
+          </div>
+        </div>
+
+        <!-- 政策提示 -->
+        <div class="space-y-4">
+          <div class="bg-gradient-to-br from-blue-600 to-cyan-700 rounded-2xl p-5 text-white">
+            <div class="flex items-center gap-2 mb-2"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><span class="text-xs font-semibold tracking-wider">金税四期</span></div>
+            <div class="text-sm font-bold mb-2">系统接口已对接 · 5 月 12 日 14:32 同步成功</div>
+            <p class="text-[11px] text-blue-100 leading-relaxed">本月可一键完成 2,227 人申报，预计耗时 8 分钟。系统已自动匹配工人专项附加扣除信息。</p>
+            <button class="mt-3 h-8 px-3 bg-white text-blue-700 rounded-lg text-xs font-semibold">立即申报</button>
+          </div>
+
+          <div class="bg-white border border-slate-200 rounded-2xl p-4">
+            <div class="text-xs font-semibold text-slate-500 mb-3 tracking-wider">2025 年度汇算清缴提醒</div>
+            <div class="text-sm font-bold text-slate-900">汇算清缴尚有 218 名工人未完成</div>
+            <p class="text-xs text-slate-500 mt-1">截止日 <span class="text-red-600 font-semibold">2026-06-30</span> · 距今 49 天</p>
+            <div class="mt-3 h-2 bg-slate-100 rounded"><div class="h-full bg-emerald-500 rounded" style="width:76%"></div></div>
+            <div class="flex justify-between text-[11px] text-slate-500 mt-1"><span>已完成 1,009</span><span>未完成 218</span></div>
+            <button class="mt-3 w-full h-8 border border-slate-200 hover:bg-slate-50 rounded-lg text-xs font-medium">推送提醒到工人 APP</button>
+          </div>
+
+          <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4">
+            <div class="flex items-start gap-2"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="text-amber-600 mt-0.5"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg><div><div class="text-sm font-bold text-amber-900">劳务报酬税率提示</div><p class="text-xs text-amber-700 mt-1">日结工资走"劳务报酬"，单次超 ¥800 需预扣 20% 起。本月预计涉及 138 人。</p></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 个税明细表 -->
+      <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+        <div class="px-5 py-3 flex items-center justify-between border-b border-slate-100">
+          <div><h3 class="text-base font-bold text-slate-900">个税申报明细 · 4月所属期</h3><p class="text-xs text-slate-500 mt-0.5">累计预扣预缴 · 含专项附加扣除</p></div>
+          <div class="flex items-center gap-2">
+            <select class="h-8 px-2 text-xs bg-slate-50 border border-slate-200 rounded-lg"><option>全部状态</option><option>已申报</option><option>待申报</option><option>待审核</option></select>
+            <button class="h-8 px-3 text-xs bg-slate-100 rounded-lg">高级筛选</button>
+          </div>
+        </div>
+        <table class="w-full text-sm">
+          <thead class="bg-slate-50 text-xs text-slate-500 font-medium">
+            <tr>
+              <th class="text-left px-4 py-2.5 font-medium">工人</th>
+              <th class="text-right px-2 py-2.5 font-medium">累计收入</th>
+              <th class="text-right px-2 py-2.5 font-medium">累计预扣</th>
+              <th class="text-center px-2 py-2.5 font-medium" colspan="3">专项附加扣除</th>
+              <th class="text-right px-2 py-2.5 font-medium">应纳税所得</th>
+              <th class="text-right px-2 py-2.5 font-medium">本期税额</th>
+              <th class="text-center px-2 py-2.5 font-medium">状态</th>
+              <th class="text-right px-4 py-2.5 font-medium">操作</th>
+            </tr>
+            <tr class="text-[10px] text-slate-400">
+              <th></th><th></th><th></th>
+              <th class="text-center px-1 font-medium">住房</th>
+              <th class="text-center px-1 font-medium">赡养</th>
+              <th class="text-center px-1 font-medium">子女</th>
+              <th></th><th></th><th></th><th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="row-hover border-t border-slate-100"><td class="px-4 py-2.5"><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-xs font-bold">陈</div><div><div class="font-medium">陈建军</div><div class="text-[10px] text-slate-400 tabular-nums">320***********8842</div></div></div></td><td class="px-2 py-2.5 text-right tabular-nums">¥38,560</td><td class="px-2 py-2.5 text-right tabular-nums">¥1,648</td><td class="px-1 py-2.5 text-center text-xs">¥1,500</td><td class="px-1 py-2.5 text-center text-xs">¥2,000</td><td class="px-1 py-2.5 text-center text-xs">¥1,000</td><td class="px-2 py-2.5 text-right tabular-nums">¥4,120</td><td class="px-2 py-2.5 text-right tabular-nums font-bold">¥412</td><td class="px-2 py-2.5 text-center"><span class="pill bg-emerald-100 text-emerald-700">已申报</span></td><td class="px-4 py-2.5 text-right"><a href="#" class="text-blue-600 hover:underline text-xs">详情</a></td></tr>
+            <tr class="row-hover border-t border-slate-100"><td class="px-4 py-2.5"><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs font-bold">王</div><div><div class="font-medium">王红梅</div><div class="text-[10px] text-slate-400 tabular-nums">410***********6326</div></div></div></td><td class="px-2 py-2.5 text-right tabular-nums">¥31,280</td><td class="px-2 py-2.5 text-right tabular-nums">¥872</td><td class="px-1 py-2.5 text-center text-xs">—</td><td class="px-1 py-2.5 text-center text-xs">¥2,000</td><td class="px-1 py-2.5 text-center text-xs">¥2,000</td><td class="px-2 py-2.5 text-right tabular-nums">¥2,180</td><td class="px-2 py-2.5 text-right tabular-nums font-bold">¥218</td><td class="px-2 py-2.5 text-center"><span class="pill bg-emerald-100 text-emerald-700">已申报</span></td><td class="px-4 py-2.5 text-right"><a href="#" class="text-blue-600 hover:underline text-xs">详情</a></td></tr>
+            <tr class="row-hover border-t border-slate-100"><td class="px-4 py-2.5"><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full bg-violet-100 text-violet-700 flex items-center justify-center text-xs font-bold">刘</div><div><div class="font-medium">刘志峰</div><div class="text-[10px] text-slate-400 tabular-nums">310***********4173</div></div></div></td><td class="px-2 py-2.5 text-right tabular-nums">¥42,300</td><td class="px-2 py-2.5 text-right tabular-nums">¥1,312</td><td class="px-1 py-2.5 text-center text-xs">¥1,500</td><td class="px-1 py-2.5 text-center text-xs">¥2,000</td><td class="px-1 py-2.5 text-center text-xs">—</td><td class="px-2 py-2.5 text-right tabular-nums">¥3,280</td><td class="px-2 py-2.5 text-right tabular-nums font-bold">¥328</td><td class="px-2 py-2.5 text-center"><span class="pill bg-emerald-100 text-emerald-700">已申报</span></td><td class="px-4 py-2.5 text-right"><a href="#" class="text-blue-600 hover:underline text-xs">详情</a></td></tr>
+            <tr class="row-hover border-t border-slate-100"><td class="px-4 py-2.5"><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full bg-pink-100 text-pink-700 flex items-center justify-center text-xs font-bold">赵</div><div><div class="font-medium">赵小梅</div><div class="text-[10px] text-slate-400 tabular-nums">442***********0568</div></div></div></td><td class="px-2 py-2.5 text-right tabular-nums">¥27,760</td><td class="px-2 py-2.5 text-right tabular-nums">¥500</td><td class="px-1 py-2.5 text-center text-xs">¥1,100</td><td class="px-1 py-2.5 text-center text-xs">—</td><td class="px-1 py-2.5 text-center text-xs">¥1,000</td><td class="px-2 py-2.5 text-right tabular-nums">¥1,250</td><td class="px-2 py-2.5 text-right tabular-nums font-bold">¥125</td><td class="px-2 py-2.5 text-center"><span class="pill bg-emerald-100 text-emerald-700">已申报</span></td><td class="px-4 py-2.5 text-right"><a href="#" class="text-blue-600 hover:underline text-xs">详情</a></td></tr>
+            <tr class="row-hover border-t border-slate-100"><td class="px-4 py-2.5"><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full bg-cyan-100 text-cyan-700 flex items-center justify-center text-xs font-bold">周</div><div><div class="font-medium">周建强</div><div class="text-[10px] text-slate-400 tabular-nums">330***********7218</div></div></div></td><td class="px-2 py-2.5 text-right tabular-nums">¥35,680</td><td class="px-2 py-2.5 text-right tabular-nums">¥1,540</td><td class="px-1 py-2.5 text-center text-xs">¥1,500</td><td class="px-1 py-2.5 text-center text-xs">¥2,000</td><td class="px-1 py-2.5 text-center text-xs">¥1,000</td><td class="px-2 py-2.5 text-right tabular-nums">¥3,850</td><td class="px-2 py-2.5 text-right tabular-nums font-bold">¥385</td><td class="px-2 py-2.5 text-center"><span class="pill bg-amber-100 text-amber-700">待申报</span></td><td class="px-4 py-2.5 text-right"><a href="#" class="text-amber-700 hover:underline text-xs font-medium">立即申报</a></td></tr>
+            <tr class="row-hover border-t border-slate-100"><td class="px-4 py-2.5"><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full bg-yellow-100 text-yellow-700 flex items-center justify-center text-xs font-bold">钱</div><div><div class="font-medium">钱建平</div><div class="text-[10px] text-slate-400 tabular-nums">320***********3416</div></div></div></td><td class="px-2 py-2.5 text-right tabular-nums">¥42,320</td><td class="px-2 py-2.5 text-right tabular-nums">¥2,112</td><td class="px-1 py-2.5 text-center text-xs">¥1,500</td><td class="px-1 py-2.5 text-center text-xs">¥2,000</td><td class="px-1 py-2.5 text-center text-xs">—</td><td class="px-2 py-2.5 text-right tabular-nums">¥5,280</td><td class="px-2 py-2.5 text-right tabular-nums font-bold">¥528</td><td class="px-2 py-2.5 text-center"><span class="pill bg-amber-100 text-amber-700">待申报</span></td><td class="px-4 py-2.5 text-right"><a href="#" class="text-amber-700 hover:underline text-xs font-medium">立即申报</a></td></tr>
+            <tr class="row-hover border-t border-slate-100"><td class="px-4 py-2.5"><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full bg-rose-100 text-rose-700 flex items-center justify-center text-xs font-bold">孙</div><div><div class="font-medium">孙伟东</div><div class="text-[10px] text-slate-400 tabular-nums">440***********9914</div></div></div></td><td class="px-2 py-2.5 text-right tabular-nums">¥25,920</td><td class="px-2 py-2.5 text-right tabular-nums">¥472</td><td class="px-1 py-2.5 text-center text-xs">¥1,500</td><td class="px-1 py-2.5 text-center text-xs">—</td><td class="px-1 py-2.5 text-center text-xs">—</td><td class="px-2 py-2.5 text-right tabular-nums">¥1,180</td><td class="px-2 py-2.5 text-right tabular-nums font-bold">¥118</td><td class="px-2 py-2.5 text-center"><span class="pill bg-emerald-100 text-emerald-700">已申报</span></td><td class="px-4 py-2.5 text-right"><a href="#" class="text-blue-600 hover:underline text-xs">详情</a></td></tr>
+            <tr class="row-hover border-t border-slate-100"><td class="px-4 py-2.5"><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-bold">郑</div><div><div class="font-medium">郑光辉</div><div class="text-[10px] text-slate-400 tabular-nums">110***********5728</div></div></div></td><td class="px-2 py-2.5 text-right tabular-nums">¥29,040</td><td class="px-2 py-2.5 text-right tabular-nums">¥728</td><td class="px-1 py-2.5 text-center text-xs">¥1,500</td><td class="px-1 py-2.5 text-center text-xs">¥2,000</td><td class="px-1 py-2.5 text-center text-xs">¥1,000</td><td class="px-2 py-2.5 text-right tabular-nums">¥1,820</td><td class="px-2 py-2.5 text-right tabular-nums font-bold">¥182</td><td class="px-2 py-2.5 text-center"><span class="pill bg-emerald-100 text-emerald-700">已申报</span></td><td class="px-4 py-2.5 text-right"><a href="#" class="text-blue-600 hover:underline text-xs">详情</a></td></tr>
+            <tr class="row-hover border-t border-slate-100"><td class="px-4 py-2.5"><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full bg-teal-100 text-teal-700 flex items-center justify-center text-xs font-bold">何</div><div><div class="font-medium">何婉兰</div><div class="text-[10px] text-slate-400 tabular-nums">330***********4282</div></div></div></td><td class="px-2 py-2.5 text-right tabular-nums">¥28,560</td><td class="px-2 py-2.5 text-right tabular-nums">¥656</td><td class="px-1 py-2.5 text-center text-xs">—</td><td class="px-1 py-2.5 text-center text-xs">¥2,000</td><td class="px-1 py-2.5 text-center text-xs">¥1,000</td><td class="px-2 py-2.5 text-right tabular-nums">¥1,640</td><td class="px-2 py-2.5 text-right tabular-nums font-bold">¥164</td><td class="px-2 py-2.5 text-center"><span class="pill bg-emerald-100 text-emerald-700">已申报</span></td><td class="px-4 py-2.5 text-right"><a href="#" class="text-blue-600 hover:underline text-xs">详情</a></td></tr>
+            <tr class="row-hover border-t border-slate-100"><td class="px-4 py-2.5"><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center text-xs font-bold">吴</div><div><div class="font-medium">吴秀芳</div><div class="text-[10px] text-slate-400 tabular-nums">320***********2548</div></div></div></td><td class="px-2 py-2.5 text-right tabular-nums">¥27,280</td><td class="px-2 py-2.5 text-right tabular-nums">¥568</td><td class="px-1 py-2.5 text-center text-xs">—</td><td class="px-1 py-2.5 text-center text-xs">—</td><td class="px-1 py-2.5 text-center text-xs">¥1,000</td><td class="px-2 py-2.5 text-right tabular-nums">¥1,420</td><td class="px-2 py-2.5 text-right tabular-nums font-bold">¥142</td><td class="px-2 py-2.5 text-center"><span class="pill bg-emerald-100 text-emerald-700">已申报</span></td><td class="px-4 py-2.5 text-right"><a href="#" class="text-blue-600 hover:underline text-xs">详情</a></td></tr>
+            <tr class="row-hover border-t border-slate-100"><td class="px-4 py-2.5"><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full bg-fuchsia-100 text-fuchsia-700 flex items-center justify-center text-xs font-bold">徐</div><div><div class="font-medium">徐文杰</div><div class="text-[10px] text-slate-400 tabular-nums">320***********8194</div></div></div></td><td class="px-2 py-2.5 text-right tabular-nums">¥36,720</td><td class="px-2 py-2.5 text-right tabular-nums">¥1,648</td><td class="px-1 py-2.5 text-center text-xs">¥1,500</td><td class="px-1 py-2.5 text-center text-xs">¥2,000</td><td class="px-1 py-2.5 text-center text-xs">¥1,000</td><td class="px-2 py-2.5 text-right tabular-nums">¥4,120</td><td class="px-2 py-2.5 text-right tabular-nums font-bold">¥412</td><td class="px-2 py-2.5 text-center"><span class="pill bg-blue-100 text-blue-700">审核中</span></td><td class="px-4 py-2.5 text-right"><a href="#" class="text-blue-600 hover:underline text-xs">查看</a></td></tr>
+            <tr class="row-hover border-t border-slate-100"><td class="px-4 py-2.5"><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full bg-sky-100 text-sky-700 flex items-center justify-center text-xs font-bold">林</div><div><div class="font-medium">林秀英</div><div class="text-[10px] text-slate-400 tabular-nums">310***********3206</div></div></div></td><td class="px-2 py-2.5 text-right tabular-nums">¥24,800</td><td class="px-2 py-2.5 text-right tabular-nums">¥392</td><td class="px-1 py-2.5 text-center text-xs">—</td><td class="px-1 py-2.5 text-center text-xs">¥2,000</td><td class="px-1 py-2.5 text-center text-xs">—</td><td class="px-2 py-2.5 text-right tabular-nums">¥980</td><td class="px-2 py-2.5 text-right tabular-nums font-bold">¥98</td><td class="px-2 py-2.5 text-center"><span class="pill bg-emerald-100 text-emerald-700">已申报</span></td><td class="px-4 py-2.5 text-right"><a href="#" class="text-blue-600 hover:underline text-xs">详情</a></td></tr>
+          </tbody>
+          <tfoot class="bg-slate-50 text-xs">
+            <tr><td class="px-4 py-3 font-semibold text-slate-700" colspan="6">合计 (含未显示数据)</td><td class="px-2 py-3 text-right font-bold tabular-nums">¥4,820,000</td><td class="px-2 py-3 text-right font-bold tabular-nums text-blue-700">¥285,420</td><td colspan="2"></td></tr>
+          </tfoot>
+        </table>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+</body>
+</html>

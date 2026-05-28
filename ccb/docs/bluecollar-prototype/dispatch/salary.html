@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>蓝工·派遣管家 — 薪酬发放</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="../shared/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  body { background: #F8FAFC; }
+  .stat-card { transition: all .2s ease; }
+  .stat-card:hover { transform: translateY(-2px); box-shadow: 0 10px 25px -8px rgba(15,23,42,.08); }
+  .tab-btn { padding: 8px 16px; font-size: 13px; font-weight: 600; color: #64748B; border-radius: 8px; transition: all .15s ease; cursor: pointer; }
+  .tab-btn.active { background: #fff; color: #0F172A; box-shadow: 0 1px 2px rgba(15,23,42,.06), 0 0 0 1px rgba(15,23,42,.04); }
+  .pill { display:inline-flex; align-items:center; gap:4px; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+  .modal-mask { position:fixed; inset:0; background:rgba(15,23,42,.45); display:none; align-items:center; justify-content:center; z-index:50; }
+  .modal-mask.show { display:flex; }
+</style>
+</head>
+<body class="text-slate-800">
+
+<div class="flex min-h-screen">
+
+  <!-- ============ 侧边栏 ============ -->
+  <aside class="w-60 bg-[#0F172A] text-slate-300 flex flex-col flex-shrink-0">
+    <div class="px-5 pt-5 pb-4 border-b border-white/5">
+      <div class="flex items-center gap-2 mb-3">
+        <div class="w-9 h-9 rounded-xl grad-blue flex items-center justify-center font-extrabold text-white shadow-lg shadow-blue-500/30">蓝</div>
+        <div>
+          <div class="text-white text-sm font-bold leading-tight">蓝工·派遣管家</div>
+          <div class="text-[10px] text-slate-500 tracking-wider">DISPATCH SAAS</div>
+        </div>
+      </div>
+      <div class="bg-white/5 rounded-xl p-3 border border-white/5">
+        <div class="flex items-center justify-between mb-1"><span class="text-xs text-slate-400">浙江睿才人力</span><span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-gradient-to-r from-amber-400 to-orange-500 text-white">VIP</span></div>
+        <div class="flex items-end gap-1.5"><span class="text-lg font-extrabold text-white leading-none">92</span><span class="text-[10px] text-slate-400 mb-0.5">企业信用分</span></div>
+        <div class="mt-1.5 h-1 bg-white/10 rounded-full overflow-hidden"><div class="h-full bg-gradient-to-r from-emerald-400 to-cyan-400" style="width:92%"></div></div>
+      </div>
+    </div>
+    <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto text-sm">
+      <a href="dashboard.html" class="sidebar-link"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>工作台</a>
+
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">招聘管理</div>
+      <a href="jobs.html" class="sidebar-link"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>职位列表</a>
+      <a href="job-create.html" class="sidebar-link"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>发布职位</a>
+
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">人才</div>
+      <a href="talents.html" class="sidebar-link"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>人才搜索</a>
+      <a href="talent-detail.html" class="sidebar-link"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v2"/></svg>人才详情</a>
+
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">沟通</div>
+      <a href="chat.html" class="sidebar-link"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>IM 沟通<span class="ml-auto px-1.5 py-0.5 rounded-full bg-red-500 text-white text-[10px] font-bold">12</span></a>
+
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">用工</div>
+      <a href="onboarding.html" class="sidebar-link"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>在岗管理</a>
+      <a href="contract-mgmt.html" class="sidebar-link"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>合同管理</a>
+
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold flex items-center gap-1.5">财务管理 <span class="px-1 py-0 rounded bg-gradient-to-r from-blue-500 to-cyan-500 text-white text-[9px]">NEW</span></div>
+      <a href="salary.html" class="sidebar-link active"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>薪酬发放</a>
+      <a href="social.html" class="sidebar-link"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>社保公积金</a>
+      <a href="tax.html" class="sidebar-link"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 11H7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2h-2"/><path d="M9 11V7a3 3 0 0 1 6 0v4"/></svg>个税申报</a>
+      <a href="reconciliation.html" class="sidebar-link"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/></svg>对账中心</a>
+      <a href="invoice.html" class="sidebar-link"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>发票管理</a>
+
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">客户</div>
+      <a href="clients.html" class="sidebar-link"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 21h18M5 21V7l8-4v18M13 9v12M13 13l8 4v4"/></svg>甲方管理</a>
+
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">数据</div>
+      <a href="analytics.html" class="sidebar-link"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>数据分析</a>
+
+      <a href="compliance.html" class="sidebar-link"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>风控合规</a>
+
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">系统</div>
+      <a href="#" class="sidebar-link"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/></svg>设置</a>
+    </nav>
+    <div class="px-4 py-3 border-t border-white/5 text-xs text-slate-500 flex items-center justify-between"><a href="../index.html" class="hover:text-white">← 原型导航</a><span>v0.1.0</span></div>
+  </aside>
+
+  <!-- ============ 主内容 ============ -->
+  <main class="flex-1 flex flex-col min-w-0">
+    <header class="h-14 bg-white border-b border-slate-200 px-6 flex items-center justify-between flex-shrink-0">
+      <div class="flex items-center gap-2 text-sm text-slate-500">
+        <a href="dashboard.html" class="hover:text-slate-900">工作台</a>
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+        <span>财务管理</span>
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+        <span class="text-slate-900 font-medium">薪酬发放</span>
+      </div>
+      <div class="flex items-center gap-4">
+        <div class="relative">
+          <svg class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input class="w-72 h-9 pl-9 pr-3 bg-slate-100 border border-transparent focus:bg-white focus:border-blue-500 rounded-lg text-sm outline-none transition" placeholder="搜索工人姓名 / 工号 / 银行卡号...">
+        </div>
+        <button class="relative w-9 h-9 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-600">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white"></span>
+        </button>
+        <div class="flex items-center gap-2 pl-3 border-l border-slate-200">
+          <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center text-xs font-bold">李</div>
+          <div class="leading-tight">
+            <div class="text-sm font-semibold text-slate-900">李珊珊</div>
+            <div class="text-[11px] text-slate-500">招聘主管</div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="flex-1 overflow-y-auto p-6 space-y-5">
+
+      <!-- 标题 -->
+      <div class="flex items-end justify-between">
+        <div>
+          <h1 class="text-2xl font-bold text-slate-900">薪酬发放 · 2026年5月</h1>
+          <p class="text-sm text-slate-500 mt-1">本月薪酬发放周期 <span class="text-slate-700 font-semibold">2026-05-01 ~ 2026-05-31</span> · 上次发薪 2026-04-25 09:14 已完成</p>
+        </div>
+        <div class="flex gap-2">
+          <button class="h-9 px-4 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-2">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33"/></svg>
+            薪资规则
+          </button>
+          <button class="h-9 px-4 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-2">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            导出工资单
+          </button>
+          <button class="h-9 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium flex items-center gap-2 shadow-sm shadow-blue-500/20">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+            发起本月发薪
+          </button>
+        </div>
+      </div>
+
+      <!-- 4 KPI -->
+      <div class="grid grid-cols-4 gap-4">
+        <div class="stat-card bg-white border border-slate-200 rounded-2xl p-5">
+          <div class="flex items-start justify-between mb-3">
+            <span class="text-xs text-slate-500 font-medium">本月待发工资</span>
+            <div class="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+          </div>
+          <div class="text-3xl font-extrabold text-slate-900 tabular-nums">¥3,820,000</div>
+          <div class="text-[11px] text-slate-400 mt-1">较上月 <span class="text-emerald-600 font-semibold">+8.4%</span> · 2,227 人</div>
+        </div>
+        <div class="stat-card bg-white border border-slate-200 rounded-2xl p-5">
+          <div class="flex items-start justify-between mb-3">
+            <span class="text-xs text-slate-500 font-medium">已发放</span>
+            <div class="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+          </div>
+          <div class="text-3xl font-extrabold text-slate-900 tabular-nums">2,140<span class="text-base font-semibold text-slate-400 ml-1">人</span></div>
+          <div class="text-[11px] text-slate-400 mt-1">¥3,635,200 · 完成率 96.1%</div>
+        </div>
+        <div class="stat-card bg-white border border-slate-200 rounded-2xl p-5">
+          <div class="flex items-start justify-between mb-3">
+            <span class="text-xs text-slate-500 font-medium">待发放</span>
+            <div class="w-9 h-9 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+          </div>
+          <div class="text-3xl font-extrabold text-slate-900 tabular-nums">87<span class="text-base font-semibold text-slate-400 ml-1">人</span></div>
+          <div class="text-[11px] text-slate-400 mt-1">¥184,800 · <span class="text-amber-600 font-semibold">3 人待工人确认</span></div>
+        </div>
+        <div class="stat-card bg-white border border-slate-200 rounded-2xl p-5">
+          <div class="flex items-start justify-between mb-3">
+            <span class="text-xs text-slate-500 font-medium">平均月薪</span>
+            <div class="w-9 h-9 rounded-lg bg-violet-50 text-violet-600 flex items-center justify-center"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
+          </div>
+          <div class="text-3xl font-extrabold text-slate-900 tabular-nums">¥6,840</div>
+          <div class="text-[11px] text-slate-400 mt-1">行业均值 ¥5,920 · <span class="text-emerald-600">高 15.5%</span></div>
+        </div>
+      </div>
+
+      <!-- 主区：左 主表格 + 右 批量发薪卡 -->
+      <div class="grid grid-cols-4 gap-4">
+        <!-- 左：8/10 -->
+        <div class="col-span-3 space-y-4">
+
+          <!-- Tab -->
+          <div class="bg-white border border-slate-200 rounded-2xl">
+            <div class="px-5 py-3 flex items-center justify-between border-b border-slate-100">
+              <div class="bg-slate-100 p-1 rounded-lg inline-flex gap-1">
+                <button class="tab-btn active">月薪 · 2,089</button>
+                <button class="tab-btn">日结 · 138</button>
+                <button class="tab-btn">加班费 · 64</button>
+                <button class="tab-btn">借支垫付 · 23</button>
+              </div>
+              <div class="flex items-center gap-2">
+                <select class="h-8 px-2 text-xs bg-slate-50 border border-slate-200 rounded-lg"><option>全部用工单位</option><option>立讯精密</option><option>京东亚一</option><option>富士康郑州</option></select>
+                <select class="h-8 px-2 text-xs bg-slate-50 border border-slate-200 rounded-lg"><option>全部状态</option><option>待发放</option><option>发放中</option><option>已发放</option><option>异常</option></select>
+              </div>
+            </div>
+
+            <table class="w-full text-sm">
+              <thead class="bg-slate-50 text-xs text-slate-500 font-medium">
+                <tr>
+                  <th class="text-left px-4 py-2.5 font-medium w-8"><input type="checkbox" class="rounded"></th>
+                  <th class="text-left px-2 py-2.5 font-medium">工人姓名</th>
+                  <th class="text-left px-2 py-2.5 font-medium">工号</th>
+                  <th class="text-left px-2 py-2.5 font-medium">用工单位</th>
+                  <th class="text-right px-2 py-2.5 font-medium">工时</th>
+                  <th class="text-right px-2 py-2.5 font-medium">应发</th>
+                  <th class="text-right px-2 py-2.5 font-medium">个税</th>
+                  <th class="text-right px-2 py-2.5 font-medium">社保</th>
+                  <th class="text-right px-2 py-2.5 font-medium">实发</th>
+                  <th class="text-center px-2 py-2.5 font-medium">状态</th>
+                  <th class="text-right px-4 py-2.5 font-medium">操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="row-hover border-t border-slate-100">
+                  <td class="px-4 py-2.5"><input type="checkbox" class="rounded" checked></td>
+                  <td class="px-2 py-2.5"><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-xs font-bold">陈</div><span class="font-medium">陈建军</span></div></td>
+                  <td class="px-2 py-2.5 text-slate-500 tabular-nums">G20240312</td>
+                  <td class="px-2 py-2.5 text-slate-600">立讯精密</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums">208h</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums font-medium">¥9,640</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums text-slate-500">¥412</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums text-slate-500">¥1,156</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums font-bold text-slate-900">¥8,072</td>
+                  <td class="px-2 py-2.5 text-center"><span class="pill bg-amber-100 text-amber-700">待发放</span></td>
+                  <td class="px-4 py-2.5 text-right"><a href="#" onclick="openPayslip();return false;" class="text-blue-600 hover:underline text-xs font-medium">详情</a> · <a href="#" class="text-slate-500 hover:underline text-xs">发薪</a></td>
+                </tr>
+                <tr class="row-hover border-t border-slate-100">
+                  <td class="px-4 py-2.5"><input type="checkbox" class="rounded" checked></td>
+                  <td class="px-2 py-2.5"><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs font-bold">王</div><span class="font-medium">王红梅</span></div></td>
+                  <td class="px-2 py-2.5 text-slate-500 tabular-nums">G20240118</td>
+                  <td class="px-2 py-2.5 text-slate-600">富士康郑州</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums">216h</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums font-medium">¥7,820</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums text-slate-500">¥218</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums text-slate-500">¥938</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums font-bold text-slate-900">¥6,664</td>
+                  <td class="px-2 py-2.5 text-center"><span class="pill bg-amber-100 text-amber-700">待发放</span></td>
+                  <td class="px-4 py-2.5 text-right"><a href="#" onclick="openPayslip();return false;" class="text-blue-600 hover:underline text-xs font-medium">详情</a> · <a href="#" class="text-slate-500 hover:underline text-xs">发薪</a></td>
+                </tr>
+                <tr class="row-hover border-t border-slate-100">
+                  <td class="px-4 py-2.5"><input type="checkbox" class="rounded" checked></td>
+                  <td class="px-2 py-2.5"><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full bg-violet-100 text-violet-700 flex items-center justify-center text-xs font-bold">刘</div><span class="font-medium">刘志峰</span></div></td>
+                  <td class="px-2 py-2.5 text-slate-500 tabular-nums">G20231209</td>
+                  <td class="px-2 py-2.5 text-slate-600">京东亚一仓</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums">192h</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums font-medium">¥8,460</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums text-slate-500">¥328</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums text-slate-500">¥1,015</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums font-bold text-slate-900">¥7,117</td>
+                  <td class="px-2 py-2.5 text-center"><span class="pill bg-emerald-100 text-emerald-700">已发放</span></td>
+                  <td class="px-4 py-2.5 text-right"><a href="#" onclick="openPayslip();return false;" class="text-blue-600 hover:underline text-xs font-medium">详情</a></td>
+                </tr>
+                <tr class="row-hover border-t border-slate-100">
+                  <td class="px-4 py-2.5"><input type="checkbox" class="rounded" checked></td>
+                  <td class="px-2 py-2.5"><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full bg-pink-100 text-pink-700 flex items-center justify-center text-xs font-bold">赵</div><span class="font-medium">赵小梅</span></div></td>
+                  <td class="px-2 py-2.5 text-slate-500 tabular-nums">G20240507</td>
+                  <td class="px-2 py-2.5 text-slate-600">顺丰东莞</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums">186h</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums font-medium">¥6,940</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums text-slate-500">¥125</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums text-slate-500">¥832</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums font-bold text-slate-900">¥5,983</td>
+                  <td class="px-2 py-2.5 text-center"><span class="pill bg-emerald-100 text-emerald-700">已发放</span></td>
+                  <td class="px-4 py-2.5 text-right"><a href="#" onclick="openPayslip();return false;" class="text-blue-600 hover:underline text-xs font-medium">详情</a></td>
+                </tr>
+                <tr class="row-hover border-t border-slate-100">
+                  <td class="px-4 py-2.5"><input type="checkbox" class="rounded" checked></td>
+                  <td class="px-2 py-2.5"><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full bg-cyan-100 text-cyan-700 flex items-center justify-center text-xs font-bold">周</div><span class="font-medium">周建强</span></div></td>
+                  <td class="px-2 py-2.5 text-slate-500 tabular-nums">G20240223</td>
+                  <td class="px-2 py-2.5 text-slate-600">海康威视杭州</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums">198h</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums font-medium">¥8,920</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums text-slate-500">¥385</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums text-slate-500">¥1,072</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums font-bold text-slate-900">¥7,463</td>
+                  <td class="px-2 py-2.5 text-center"><span class="pill bg-blue-100 text-blue-700">发放中</span></td>
+                  <td class="px-4 py-2.5 text-right"><a href="#" onclick="openPayslip();return false;" class="text-blue-600 hover:underline text-xs font-medium">详情</a></td>
+                </tr>
+                <tr class="row-hover border-t border-slate-100">
+                  <td class="px-4 py-2.5"><input type="checkbox" class="rounded" checked></td>
+                  <td class="px-2 py-2.5"><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full bg-yellow-100 text-yellow-700 flex items-center justify-center text-xs font-bold">钱</div><span class="font-medium">钱建平</span></div></td>
+                  <td class="px-2 py-2.5 text-slate-500 tabular-nums">G20230926</td>
+                  <td class="px-2 py-2.5 text-slate-600">立讯精密</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums">224h</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums font-medium">¥10,580</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums text-slate-500">¥528</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums text-slate-500">¥1,272</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums font-bold text-slate-900">¥8,780</td>
+                  <td class="px-2 py-2.5 text-center"><span class="pill bg-amber-100 text-amber-700">待发放</span></td>
+                  <td class="px-4 py-2.5 text-right"><a href="#" onclick="openPayslip();return false;" class="text-blue-600 hover:underline text-xs font-medium">详情</a> · <a href="#" class="text-slate-500 hover:underline text-xs">发薪</a></td>
+                </tr>
+                <tr class="row-hover border-t border-slate-100">
+                  <td class="px-4 py-2.5"><input type="checkbox" class="rounded" checked></td>
+                  <td class="px-2 py-2.5"><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full bg-rose-100 text-rose-700 flex items-center justify-center text-xs font-bold">孙</div><span class="font-medium">孙伟东</span></div></td>
+                  <td class="px-2 py-2.5 text-slate-500 tabular-nums">G20240615</td>
+                  <td class="px-2 py-2.5 text-slate-600">比亚迪深圳</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums">182h</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums font-medium">¥6,480</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums text-slate-500">¥118</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums text-slate-500">¥778</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums font-bold text-slate-900">¥5,584</td>
+                  <td class="px-2 py-2.5 text-center"><span class="pill bg-emerald-100 text-emerald-700">已发放</span></td>
+                  <td class="px-4 py-2.5 text-right"><a href="#" onclick="openPayslip();return false;" class="text-blue-600 hover:underline text-xs font-medium">详情</a></td>
+                </tr>
+                <tr class="row-hover border-t border-slate-100">
+                  <td class="px-4 py-2.5"><input type="checkbox" class="rounded"></td>
+                  <td class="px-2 py-2.5"><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-bold">郑</div><span class="font-medium">郑光辉</span></div></td>
+                  <td class="px-2 py-2.5 text-slate-500 tabular-nums">G20230814</td>
+                  <td class="px-2 py-2.5 text-slate-600">京东亚一仓</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums">204h</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums font-medium">¥7,260</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums text-slate-500">¥182</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums text-slate-500">¥871</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums font-bold text-slate-900">¥6,207</td>
+                  <td class="px-2 py-2.5 text-center"><span class="pill bg-red-100 text-red-700">异常·卡号错误</span></td>
+                  <td class="px-4 py-2.5 text-right"><a href="#" class="text-red-600 hover:underline text-xs font-medium">立即处理</a></td>
+                </tr>
+                <tr class="row-hover border-t border-slate-100">
+                  <td class="px-4 py-2.5"><input type="checkbox" class="rounded"></td>
+                  <td class="px-2 py-2.5"><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full bg-teal-100 text-teal-700 flex items-center justify-center text-xs font-bold">何</div><span class="font-medium">何婉兰</span></div></td>
+                  <td class="px-2 py-2.5 text-slate-500 tabular-nums">G20240402</td>
+                  <td class="px-2 py-2.5 text-slate-600">海康威视杭州</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums">196h</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums font-medium">¥7,140</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums text-slate-500">¥164</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums text-slate-500">¥856</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums font-bold text-slate-900">¥6,120</td>
+                  <td class="px-2 py-2.5 text-center"><span class="pill bg-emerald-100 text-emerald-700">已发放</span></td>
+                  <td class="px-4 py-2.5 text-right"><a href="#" onclick="openPayslip();return false;" class="text-blue-600 hover:underline text-xs font-medium">详情</a></td>
+                </tr>
+                <tr class="row-hover border-t border-slate-100">
+                  <td class="px-4 py-2.5"><input type="checkbox" class="rounded"></td>
+                  <td class="px-2 py-2.5"><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center text-xs font-bold">吴</div><span class="font-medium">吴秀芳</span></div></td>
+                  <td class="px-2 py-2.5 text-slate-500 tabular-nums">G20240128</td>
+                  <td class="px-2 py-2.5 text-slate-600">立讯精密</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums">200h</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums font-medium">¥6,820</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums text-slate-500">¥142</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums text-slate-500">¥818</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums font-bold text-slate-900">¥5,860</td>
+                  <td class="px-2 py-2.5 text-center"><span class="pill bg-emerald-100 text-emerald-700">已发放</span></td>
+                  <td class="px-4 py-2.5 text-right"><a href="#" onclick="openPayslip();return false;" class="text-blue-600 hover:underline text-xs font-medium">详情</a></td>
+                </tr>
+                <tr class="row-hover border-t border-slate-100">
+                  <td class="px-4 py-2.5"><input type="checkbox" class="rounded"></td>
+                  <td class="px-2 py-2.5"><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full bg-fuchsia-100 text-fuchsia-700 flex items-center justify-center text-xs font-bold">徐</div><span class="font-medium">徐文杰</span></div></td>
+                  <td class="px-2 py-2.5 text-slate-500 tabular-nums">G20231115</td>
+                  <td class="px-2 py-2.5 text-slate-600">菜鸟无锡</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums">212h</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums font-medium">¥9,180</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums text-slate-500">¥412</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums text-slate-500">¥1,102</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums font-bold text-slate-900">¥7,666</td>
+                  <td class="px-2 py-2.5 text-center"><span class="pill bg-amber-100 text-amber-700">待发放</span></td>
+                  <td class="px-4 py-2.5 text-right"><a href="#" onclick="openPayslip();return false;" class="text-blue-600 hover:underline text-xs font-medium">详情</a> · <a href="#" class="text-slate-500 hover:underline text-xs">发薪</a></td>
+                </tr>
+                <tr class="row-hover border-t border-slate-100">
+                  <td class="px-4 py-2.5"><input type="checkbox" class="rounded"></td>
+                  <td class="px-2 py-2.5"><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full bg-sky-100 text-sky-700 flex items-center justify-center text-xs font-bold">林</div><span class="font-medium">林秀英</span></div></td>
+                  <td class="px-2 py-2.5 text-slate-500 tabular-nums">G20240321</td>
+                  <td class="px-2 py-2.5 text-slate-600">海底捞上海</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums">220h</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums font-medium">¥6,200</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums text-slate-500">¥98</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums text-slate-500">¥744</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums font-bold text-slate-900">¥5,358</td>
+                  <td class="px-2 py-2.5 text-center"><span class="pill bg-emerald-100 text-emerald-700">已发放</span></td>
+                  <td class="px-4 py-2.5 text-right"><a href="#" onclick="openPayslip();return false;" class="text-blue-600 hover:underline text-xs font-medium">详情</a></td>
+                </tr>
+                <tr class="row-hover border-t border-slate-100">
+                  <td class="px-4 py-2.5"><input type="checkbox" class="rounded"></td>
+                  <td class="px-2 py-2.5"><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full bg-lime-100 text-lime-700 flex items-center justify-center text-xs font-bold">高</div><span class="font-medium">高建国</span></div></td>
+                  <td class="px-2 py-2.5 text-slate-500 tabular-nums">G20230702</td>
+                  <td class="px-2 py-2.5 text-slate-600">阿里菜鸟杭州</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums">216h</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums font-medium">¥8,640</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums text-slate-500">¥318</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums text-slate-500">¥1,037</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums font-bold text-slate-900">¥7,285</td>
+                  <td class="px-2 py-2.5 text-center"><span class="pill bg-emerald-100 text-emerald-700">已发放</span></td>
+                  <td class="px-4 py-2.5 text-right"><a href="#" onclick="openPayslip();return false;" class="text-blue-600 hover:underline text-xs font-medium">详情</a></td>
+                </tr>
+                <tr class="row-hover border-t border-slate-100">
+                  <td class="px-4 py-2.5"><input type="checkbox" class="rounded"></td>
+                  <td class="px-2 py-2.5"><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-xs font-bold">马</div><span class="font-medium">马志超</span></div></td>
+                  <td class="px-2 py-2.5 text-slate-500 tabular-nums">G20240711</td>
+                  <td class="px-2 py-2.5 text-slate-600">富士康郑州</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums">204h</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums font-medium">¥7,580</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums text-slate-500">¥208</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums text-slate-500">¥910</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums font-bold text-slate-900">¥6,462</td>
+                  <td class="px-2 py-2.5 text-center"><span class="pill bg-blue-100 text-blue-700">发放中</span></td>
+                  <td class="px-4 py-2.5 text-right"><a href="#" onclick="openPayslip();return false;" class="text-blue-600 hover:underline text-xs font-medium">详情</a></td>
+                </tr>
+                <tr class="row-hover border-t border-slate-100">
+                  <td class="px-4 py-2.5"><input type="checkbox" class="rounded"></td>
+                  <td class="px-2 py-2.5"><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs font-bold">黄</div><span class="font-medium">黄丽娟</span></div></td>
+                  <td class="px-2 py-2.5 text-slate-500 tabular-nums">G20240810</td>
+                  <td class="px-2 py-2.5 text-slate-600">万象城广州</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums">194h</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums font-medium">¥5,940</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums text-slate-500">¥85</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums text-slate-500">¥713</td>
+                  <td class="px-2 py-2.5 text-right tabular-nums font-bold text-slate-900">¥5,142</td>
+                  <td class="px-2 py-2.5 text-center"><span class="pill bg-emerald-100 text-emerald-700">已发放</span></td>
+                  <td class="px-4 py-2.5 text-right"><a href="#" onclick="openPayslip();return false;" class="text-blue-600 hover:underline text-xs font-medium">详情</a></td>
+                </tr>
+              </tbody>
+            </table>
+
+            <!-- 分页 -->
+            <div class="px-5 py-3 flex items-center justify-between border-t border-slate-100">
+              <div class="text-xs text-slate-500">显示 1-15 共 <span class="font-semibold text-slate-700">2,089</span> 条 · 已选 <span class="text-blue-600 font-semibold">7</span> 条</div>
+              <div class="flex items-center gap-1">
+                <button class="h-8 w-8 rounded-md border border-slate-200 text-slate-500 hover:bg-slate-50 text-sm">‹</button>
+                <button class="h-8 w-8 rounded-md bg-blue-600 text-white text-sm font-medium">1</button>
+                <button class="h-8 w-8 rounded-md border border-slate-200 text-slate-500 hover:bg-slate-50 text-sm">2</button>
+                <button class="h-8 w-8 rounded-md border border-slate-200 text-slate-500 hover:bg-slate-50 text-sm">3</button>
+                <span class="px-1 text-xs text-slate-400">...</span>
+                <button class="h-8 w-8 rounded-md border border-slate-200 text-slate-500 hover:bg-slate-50 text-sm">139</button>
+                <button class="h-8 w-8 rounded-md border border-slate-200 text-slate-500 hover:bg-slate-50 text-sm">›</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 日结记录 -->
+          <div class="bg-white border border-slate-200 rounded-2xl">
+            <div class="px-5 py-3 flex items-center justify-between border-b border-slate-100">
+              <div>
+                <h3 class="text-base font-bold text-slate-900">日结发放流水</h3>
+                <p class="text-xs text-slate-500 mt-0.5">2026-05-16 共 138 笔 · ¥86,420 全部已确认</p>
+              </div>
+              <button class="text-xs text-blue-600 font-medium hover:underline">查看历史 →</button>
+            </div>
+            <table class="w-full text-sm">
+              <thead class="bg-slate-50 text-xs text-slate-500 font-medium">
+                <tr>
+                  <th class="text-left px-5 py-2.5 font-medium">时间</th>
+                  <th class="text-left px-2 py-2.5 font-medium">工人</th>
+                  <th class="text-left px-2 py-2.5 font-medium">岗位</th>
+                  <th class="text-right px-2 py-2.5 font-medium">工时</th>
+                  <th class="text-right px-2 py-2.5 font-medium">单价/h</th>
+                  <th class="text-right px-2 py-2.5 font-medium">实发</th>
+                  <th class="text-center px-2 py-2.5 font-medium">渠道</th>
+                  <th class="text-center px-5 py-2.5 font-medium">工人确认</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="row-hover border-t border-slate-100"><td class="px-5 py-2.5 text-slate-500 tabular-nums">17:32:08</td><td class="px-2 py-2.5 font-medium">张大彪</td><td class="px-2 py-2.5 text-slate-600">分拣员·京东亚一</td><td class="px-2 py-2.5 text-right tabular-nums">10h</td><td class="px-2 py-2.5 text-right tabular-nums">¥28</td><td class="px-2 py-2.5 text-right tabular-nums font-bold">¥280</td><td class="px-2 py-2.5 text-center"><span class="pill bg-green-100 text-green-700">微信</span></td><td class="px-5 py-2.5 text-center"><span class="pill bg-emerald-100 text-emerald-700">✓ 已确认</span></td></tr>
+                <tr class="row-hover border-t border-slate-100"><td class="px-5 py-2.5 text-slate-500 tabular-nums">17:31:42</td><td class="px-2 py-2.5 font-medium">李建军</td><td class="px-2 py-2.5 text-slate-600">搬运工·顺丰东莞</td><td class="px-2 py-2.5 text-right tabular-nums">12h</td><td class="px-2 py-2.5 text-right tabular-nums">¥32</td><td class="px-2 py-2.5 text-right tabular-nums font-bold">¥384</td><td class="px-2 py-2.5 text-center"><span class="pill bg-blue-100 text-blue-700">银行卡</span></td><td class="px-5 py-2.5 text-center"><span class="pill bg-emerald-100 text-emerald-700">✓ 已确认</span></td></tr>
+                <tr class="row-hover border-t border-slate-100"><td class="px-5 py-2.5 text-slate-500 tabular-nums">17:30:11</td><td class="px-2 py-2.5 font-medium">王秀丽</td><td class="px-2 py-2.5 text-slate-600">服务员·海底捞</td><td class="px-2 py-2.5 text-right tabular-nums">8h</td><td class="px-2 py-2.5 text-right tabular-nums">¥26</td><td class="px-2 py-2.5 text-right tabular-nums font-bold">¥208</td><td class="px-2 py-2.5 text-center"><span class="pill bg-green-100 text-green-700">微信</span></td><td class="px-5 py-2.5 text-center"><span class="pill bg-emerald-100 text-emerald-700">✓ 已确认</span></td></tr>
+                <tr class="row-hover border-t border-slate-100"><td class="px-5 py-2.5 text-slate-500 tabular-nums">17:29:50</td><td class="px-2 py-2.5 font-medium">陈志强</td><td class="px-2 py-2.5 text-slate-600">叉车工·菜鸟</td><td class="px-2 py-2.5 text-right tabular-nums">10h</td><td class="px-2 py-2.5 text-right tabular-nums">¥35</td><td class="px-2 py-2.5 text-right tabular-nums font-bold">¥350</td><td class="px-2 py-2.5 text-center"><span class="pill bg-green-100 text-green-700">微信</span></td><td class="px-5 py-2.5 text-center"><span class="pill bg-amber-100 text-amber-700">⌛ 待确认</span></td></tr>
+                <tr class="row-hover border-t border-slate-100"><td class="px-5 py-2.5 text-slate-500 tabular-nums">17:28:13</td><td class="px-2 py-2.5 font-medium">赵立军</td><td class="px-2 py-2.5 text-slate-600">普工·立讯精密</td><td class="px-2 py-2.5 text-right tabular-nums">11h</td><td class="px-2 py-2.5 text-right tabular-nums">¥30</td><td class="px-2 py-2.5 text-right tabular-nums font-bold">¥330</td><td class="px-2 py-2.5 text-center"><span class="pill bg-blue-100 text-blue-700">银行卡</span></td><td class="px-5 py-2.5 text-center"><span class="pill bg-emerald-100 text-emerald-700">✓ 已确认</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+
+        <!-- 右：批量发薪 -->
+        <div class="space-y-4">
+
+          <!-- 批量发薪 -->
+          <div class="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl p-5 text-white shadow-lg shadow-blue-500/20">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs text-blue-100">已选发薪</span>
+              <span class="px-2 py-0.5 bg-white/20 rounded text-[10px] font-bold">PRO</span>
+            </div>
+            <div class="text-3xl font-extrabold tabular-nums">¥186,500</div>
+            <div class="text-xs text-blue-100 mt-1">23 人 · 平均 ¥8,108</div>
+            <div class="mt-4 grid grid-cols-3 gap-2 text-center text-[11px] text-blue-100">
+              <div><div class="text-base font-bold text-white">¥182k</div>应发</div>
+              <div><div class="text-base font-bold text-white">¥8.2k</div>个税</div>
+              <div><div class="text-base font-bold text-white">¥186.5k</div>实发</div>
+            </div>
+            <button class="mt-4 w-full h-10 bg-white text-blue-700 rounded-lg text-sm font-bold hover:bg-blue-50 flex items-center justify-center gap-2">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+              一键发薪 (23人)
+            </button>
+            <div class="mt-2 text-[10px] text-blue-100 text-center">财务复核后 30 秒到账</div>
+          </div>
+
+          <!-- 发薪渠道 -->
+          <div class="bg-white border border-slate-200 rounded-2xl p-5">
+            <h3 class="text-sm font-bold text-slate-900 mb-3">发薪渠道</h3>
+            <div class="space-y-2">
+              <label class="flex items-start gap-3 p-3 border border-blue-500 bg-blue-50 rounded-lg cursor-pointer">
+                <input type="radio" name="ch" checked class="mt-0.5">
+                <div class="flex-1">
+                  <div class="flex items-center justify-between"><span class="text-sm font-semibold text-slate-900">银行批量代发</span><span class="text-xs text-blue-600 font-bold">推荐</span></div>
+                  <p class="text-[11px] text-slate-500 mt-0.5">招商银行企业版 · 手续费 0.3‰ · 到账时效 实时</p>
+                </div>
+              </label>
+              <label class="flex items-start gap-3 p-3 border border-slate-200 rounded-lg cursor-pointer hover:border-slate-300">
+                <input type="radio" name="ch" class="mt-0.5">
+                <div class="flex-1">
+                  <span class="text-sm font-semibold text-slate-900">微信红包发放</span>
+                  <p class="text-[11px] text-slate-500 mt-0.5">日结 / 加班费场景 · 单笔最高 ¥200 · 即时</p>
+                </div>
+              </label>
+              <label class="flex items-start gap-3 p-3 border border-slate-200 rounded-lg cursor-pointer hover:border-slate-300">
+                <input type="radio" name="ch" class="mt-0.5">
+                <div class="flex-1">
+                  <span class="text-sm font-semibold text-slate-900">支付宝 B2C 转账</span>
+                  <p class="text-[11px] text-slate-500 mt-0.5">手续费 1‰ · 实名校验 · 适合无银行卡工人</p>
+                </div>
+              </label>
+              <label class="flex items-start gap-3 p-3 border border-slate-200 rounded-lg cursor-pointer hover:border-slate-300">
+                <input type="radio" name="ch" class="mt-0.5">
+                <div class="flex-1">
+                  <span class="text-sm font-semibold text-slate-900">代发服务商 · 易工卡</span>
+                  <p class="text-[11px] text-slate-500 mt-0.5">合规代发 + 个税申报 · 综合费率 0.8%</p>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- 薪资计算规则 -->
+          <div class="bg-white border border-slate-200 rounded-2xl p-5">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-sm font-bold text-slate-900">薪资计算规则</h3>
+              <a href="#" class="text-xs text-blue-600 hover:underline">编辑 →</a>
+            </div>
+            <div class="space-y-2 text-xs">
+              <div class="flex justify-between py-1.5 border-b border-slate-100"><span class="text-slate-500">基础工资</span><span class="font-medium tabular-nums">¥4,200 / 月</span></div>
+              <div class="flex justify-between py-1.5 border-b border-slate-100"><span class="text-slate-500">岗位津贴 · 焊工</span><span class="font-medium tabular-nums">¥1,200 / 月</span></div>
+              <div class="flex justify-between py-1.5 border-b border-slate-100"><span class="text-slate-500">绩效系数</span><span class="font-medium tabular-nums">0.8 ~ 1.5</span></div>
+              <div class="flex justify-between py-1.5 border-b border-slate-100"><span class="text-slate-500">加班费 · 平日</span><span class="font-medium tabular-nums">1.5 倍</span></div>
+              <div class="flex justify-between py-1.5 border-b border-slate-100"><span class="text-slate-500">加班费 · 周末</span><span class="font-medium tabular-nums">2.0 倍</span></div>
+              <div class="flex justify-between py-1.5 border-b border-slate-100"><span class="text-slate-500">加班费 · 法定节假日</span><span class="font-medium tabular-nums">3.0 倍</span></div>
+              <div class="flex justify-between py-1.5 border-b border-slate-100"><span class="text-slate-500">满勤奖</span><span class="font-medium tabular-nums">¥300 / 月</span></div>
+              <div class="flex justify-between py-1.5"><span class="text-slate-500">夜班补贴</span><span class="font-medium tabular-nums">¥30 / 班</span></div>
+            </div>
+            <button class="mt-3 w-full h-8 border border-slate-200 hover:bg-slate-50 rounded-lg text-xs font-medium text-slate-600">新建薪资模板</button>
+          </div>
+
+          <!-- 提醒 -->
+          <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4">
+            <div class="flex items-start gap-2">
+              <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="text-amber-600 mt-0.5 flex-shrink-0"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/></svg>
+              <div>
+                <div class="text-sm font-semibold text-amber-900">发薪提醒</div>
+                <p class="text-xs text-amber-700 mt-1">距离月度发薪日 <span class="font-bold">还有 9 天</span>。建议本周三前完成考勤核对，避免月末高峰拥堵。</p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- 工资单详情弹窗 -->
+<div id="payslipModal" class="modal-mask">
+  <div class="bg-white rounded-2xl w-[560px] max-h-[88vh] overflow-y-auto shadow-2xl">
+    <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+      <div>
+        <h3 class="text-lg font-bold text-slate-900">工资单详情</h3>
+        <p class="text-xs text-slate-500 mt-0.5">2026年5月 · 陈建军 · G20240312</p>
+      </div>
+      <button onclick="closePayslip()" class="w-8 h-8 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-500">✕</button>
+    </div>
+    <div class="p-6 space-y-4">
+      <!-- 工人信息 -->
+      <div class="flex items-center gap-3 pb-4 border-b border-slate-100">
+        <div class="w-12 h-12 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-base font-bold">陈</div>
+        <div class="flex-1">
+          <div class="text-base font-bold text-slate-900">陈建军 <span class="badge-diamond text-[10px] px-1.5 py-0.5 rounded font-bold ml-1">钻 856</span></div>
+          <div class="text-xs text-slate-500 mt-0.5">焊工 · 立讯精密昆山厂 · 入职 2024-03-12 · 招商银行 6225 **** **** 8842</div>
+        </div>
+      </div>
+
+      <!-- 收入 -->
+      <div>
+        <div class="text-xs font-semibold text-slate-500 mb-2 tracking-wider">收入明细</div>
+        <div class="bg-slate-50 rounded-lg p-3 space-y-1.5 text-sm">
+          <div class="flex justify-between"><span class="text-slate-600">基础工资</span><span class="tabular-nums">¥4,200.00</span></div>
+          <div class="flex justify-between"><span class="text-slate-600">岗位津贴（焊工）</span><span class="tabular-nums">¥1,200.00</span></div>
+          <div class="flex justify-between"><span class="text-slate-600">绩效工资 (1.32倍)</span><span class="tabular-nums">¥1,848.00</span></div>
+          <div class="flex justify-between"><span class="text-slate-600">加班费 · 平日 24h</span><span class="tabular-nums">¥1,080.00</span></div>
+          <div class="flex justify-between"><span class="text-slate-600">加班费 · 周末 16h</span><span class="tabular-nums">¥960.00</span></div>
+          <div class="flex justify-between"><span class="text-slate-600">夜班补贴 12 班</span><span class="tabular-nums">¥360.00</span></div>
+          <div class="flex justify-between"><span class="text-slate-600">满勤奖</span><span class="tabular-nums">¥300.00</span></div>
+          <div class="flex justify-between pt-2 mt-1 border-t border-slate-200 font-bold"><span>应发合计</span><span class="tabular-nums text-blue-700">¥9,948.00</span></div>
+        </div>
+      </div>
+
+      <!-- 扣除 -->
+      <div>
+        <div class="text-xs font-semibold text-slate-500 mb-2 tracking-wider">扣除明细</div>
+        <div class="bg-slate-50 rounded-lg p-3 space-y-1.5 text-sm">
+          <div class="flex justify-between"><span class="text-slate-600">养老保险 (8%)</span><span class="tabular-nums">¥352.00</span></div>
+          <div class="flex justify-between"><span class="text-slate-600">医疗保险 (2%)</span><span class="tabular-nums">¥88.00</span></div>
+          <div class="flex justify-between"><span class="text-slate-600">失业保险 (0.5%)</span><span class="tabular-nums">¥22.00</span></div>
+          <div class="flex justify-between"><span class="text-slate-600">住房公积金 (12%)</span><span class="tabular-nums">¥528.00</span></div>
+          <div class="flex justify-between"><span class="text-slate-600">个人所得税</span><span class="tabular-nums">¥412.00</span></div>
+          <div class="flex justify-between"><span class="text-slate-600">借支扣回</span><span class="tabular-nums">¥-308.00</span></div>
+          <div class="flex justify-between pt-2 mt-1 border-t border-slate-200 font-bold"><span>扣除合计</span><span class="tabular-nums text-red-600">¥1,710.00</span></div>
+        </div>
+      </div>
+
+      <!-- 实发 -->
+      <div class="bg-gradient-to-r from-emerald-500 to-teal-600 rounded-lg p-4 text-white">
+        <div class="text-xs text-emerald-100">实发工资</div>
+        <div class="text-3xl font-extrabold tabular-nums mt-1">¥8,238.00</div>
+        <div class="text-xs text-emerald-100 mt-1">预计 2026-05-25 09:00 前到账</div>
+      </div>
+
+      <div class="flex gap-2 pt-2">
+        <button class="flex-1 h-10 border border-slate-200 hover:bg-slate-50 rounded-lg text-sm font-medium">下载 PDF</button>
+        <button class="flex-1 h-10 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium">推送到工人 APP</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function openPayslip(){ document.getElementById('payslipModal').classList.add('show'); }
+  function closePayslip(){ document.getElementById('payslipModal').classList.remove('show'); }
+  document.querySelectorAll('.tab-btn').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.tab-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');}));
+</script>
+
+</body>
+</html>

@@ -1,0 +1,775 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - generic [ref=e4]:
+      - link "拓 拓小二" [ref=e5] [cursor=pointer]:
+        - /url: "#"
+        - generic [ref=e6]: 拓
+        - text: 拓小二
+      - list [ref=e7]:
+        - listitem [ref=e8]:
+          - link "AI 成片" [ref=e9] [cursor=pointer]:
+            - /url: "#ai"
+        - listitem [ref=e10]:
+          - link "实战演示" [ref=e11] [cursor=pointer]:
+            - /url: "#showcase"
+        - listitem [ref=e12]:
+          - link "附赠商城" [ref=e13] [cursor=pointer]:
+            - /url: "#features"
+        - listitem [ref=e14]:
+          - link "推广合伙人" [ref=e15] [cursor=pointer]:
+            - /url: "#promo"
+        - listitem [ref=e16]:
+          - link "定价" [ref=e17] [cursor=pointer]:
+            - /url: "#pricing"
+      - generic [ref=e18]:
+        - link "用户登录" [ref=e19] [cursor=pointer]:
+          - /url: /m/#/pages/login/index
+        - link "¥298 起 立即入驻 →" [ref=e20] [cursor=pointer]:
+          - /url: /m/#/pages/merchant-apply/index
+  - generic [ref=e21]:
+    - generic [ref=e22] [cursor=pointer]: 首页
+    - generic [ref=e23] [cursor=pointer]: AI 成片
+    - generic [ref=e24] [cursor=pointer]: 实战演示
+    - generic [ref=e25] [cursor=pointer]: 附赠商城
+    - generic [ref=e26] [cursor=pointer]: 推广合伙人
+    - generic [ref=e27] [cursor=pointer]: 定价
+    - generic [ref=e28] [cursor=pointer]: 使用流程
+    - generic [ref=e29] [cursor=pointer]: 立即开始
+  - generic [ref=e30]:
+    - img
+    - generic [ref=e31]:
+      - link "¥298 起 在线商城 + 通联秒到账 + AI 视频带货 →" [ref=e32] [cursor=pointer]:
+        - /url: "#pricing"
+        - generic [ref=e33]: ¥298 起
+        - text: 在线商城 + 通联秒到账 +
+        - generic [ref=e34]: AI 视频带货
+        - generic [ref=e35]: →
+      - heading "给 小老板 的 AI 视频带货 + 在线商城" [level=1] [ref=e36]:
+        - text: 给
+        - generic [ref=e38]:
+          - generic: 小老板
+        - text: 的
+        - text: AI 视频带货 + 在线商城
+      - paragraph [ref=e39]:
+        - text: 烧烤店、奶茶、茶楼、美容院、服装鞋帽、超市便利…… 13 个行业都能开。
+        - text: 输入商品 → 20 秒出片 → 一键发抖音，商城 + 推广引擎一起送，开张就能跑起来。
+      - generic [ref=e40]:
+        - link "¥298/年 立即入驻 →" [ref=e41] [cursor=pointer]:
+          - /url: /m/#/pages/merchant-apply/index
+        - link "看 ¥298 / ¥1688 对比" [ref=e42] [cursor=pointer]:
+          - /url: "#pricing"
+      - generic [ref=e43]:
+        - generic [ref=e44]:
+          - generic [ref=e45]: 0秒
+          - generic [ref=e46]: AI 一条视频出片
+        - generic [ref=e47]:
+          - generic [ref=e48]: ¥0/年起
+          - generic [ref=e49]: 基础包 → 全功能包 ¥1688
+        - generic [ref=e50]:
+          - generic [ref=e51]: 0个
+          - generic [ref=e52]: 行业模板（餐饮 / 零售 / 美容）
+        - generic [ref=e53]:
+          - generic [ref=e54]: T+0
+          - generic [ref=e55]: 通联秒到，钱进商户账户
+    - generic [ref=e57]: 向下滚动
+  - generic [ref=e59]:
+    - generic [ref=e63]: 拓小二能为你做什么
+    - generic [ref=e65]:
+      - generic [ref=e66]: 🎬 20 秒 AI 生成带货短视频
+      - generic [ref=e67]: 📱 一键直发抖音不用剪辑
+      - generic [ref=e68]: 🤖 火山引擎 + 即梦 AI 加持
+      - generic [ref=e69]: 🎙️ 真人级 AI 配音 多种音色
+      - generic [ref=e70]: ✍️ 商品卖点 AI 自动写文案
+      - generic [ref=e71]: 💡 ¥298/年 首购送 10 条 AI 视频
+      - generic [ref=e72]: 🛍️ 附赠全套商城 0 费上线
+      - generic [ref=e73]: 📦 订单库存自提核销一站搞定
+      - generic [ref=e74]: 💰 多种推广裂变工具 自动结算
+      - generic [ref=e75]: 🤝 推广激励按 GMV 归本 合规
+      - generic [ref=e76]: ⭐ 积分会员锁回头客
+      - generic [ref=e77]: 🛠️ 不会剪不会写都能用
+      - generic [ref=e78]: 🎬 20 秒 AI 生成带货短视频
+      - generic [ref=e79]: 📱 一键直发抖音不用剪辑
+      - generic [ref=e80]: 🤖 火山引擎 + 即梦 AI 加持
+      - generic [ref=e81]: 🎙️ 真人级 AI 配音 多种音色
+      - generic [ref=e82]: ✍️ 商品卖点 AI 自动写文案
+      - generic [ref=e83]: 💡 ¥298/年 首购送 10 条 AI 视频
+      - generic [ref=e84]: 🛍️ 附赠全套商城 0 费上线
+      - generic [ref=e85]: 📦 订单库存自提核销一站搞定
+      - generic [ref=e86]: 💰 多种推广裂变工具 自动结算
+      - generic [ref=e87]: 🤝 推广激励按 GMV 归本 合规
+      - generic [ref=e88]: ⭐ 积分会员锁回头客
+      - generic [ref=e89]: 🛠️ 不会剪不会写都能用
+  - generic [ref=e90]:
+    - img
+    - generic [ref=e92]:
+      - generic [ref=e93]:
+        - generic [ref=e94]: 主打 · AI 成片
+        - heading "输入商品， 20 秒 出带货短视频" [level=2] [ref=e96]:
+          - text: 输入商品，
+          - generic [ref=e97]:
+            - text: "20"
+            - generic [ref=e98]: 秒
+          - text: 出带货短视频
+        - paragraph [ref=e99]:
+          - text: 这是平台的
+          - strong [ref=e100]: 主菜
+          - text: 。火山引擎 TTS + 即梦 AI 合成，文案、配音、字幕、画面一站完成，发抖音一键到位。
+          - text: ¥298/年 首购送 10 条 ｜ 续费再送视频大礼包
+      - generic [ref=e101]:
+        - generic [ref=e102]:
+          - generic [ref=e103]:
+            - generic [ref=e104]:
+              - generic [ref=e105]: PROMPT
+              - generic [ref=e106]: 15 元烤肉串，新鲜五花肉，火焰炙烤、外酥里嫩
+            - generic [ref=e108]:
+              - generic [ref=e109]: 商品识别
+              - generic [ref=e110]: ▸
+              - generic [ref=e111]: 文案生成
+              - generic [ref=e112]: ▸
+              - generic [ref=e113]: 配音合成
+              - generic [ref=e114]: ▸
+              - generic [ref=e115]: 视频导出
+            - generic [ref=e116]:
+              - generic [ref=e117]: ▶
+              - generic [ref=e118]:
+                - strong [ref=e119]: output_v0427.mp4
+                - text: 高清成片 · 20s · ready to publish
+          - generic [ref=e120]:
+            - generic [ref=e121]: ✍️
+            - generic [ref=e122]:
+              - heading "智能文案生成" [level=4] [ref=e123]
+              - paragraph [ref=e124]: 输入商品名称和卖点，AI 自动生成符合抖音风格的营销文案，多种风格可选。
+          - generic [ref=e125]:
+            - generic [ref=e126]: 🎙️
+            - generic [ref=e127]:
+              - heading "真人语音合成" [level=4] [ref=e128]
+              - paragraph [ref=e129]: 火山引擎 TTS 技术，支持多种音色，生成自然流畅的配音，完全告别机器感。
+          - generic [ref=e130]:
+            - generic [ref=e131]: 🎞️
+            - generic [ref=e132]:
+              - heading "自动视频合成" [level=4] [ref=e133]
+              - paragraph [ref=e134]: 商品图片 + 配音 + 字幕自动合成短视频，高清成片直接发布。
+          - generic [ref=e135]:
+            - generic [ref=e136]: 📱
+            - generic [ref=e137]:
+              - heading "一键发布抖音" [level=4] [ref=e138]
+              - paragraph [ref=e139]: 授权抖音账号后，视频审核通过即可一键投放，触达更多本地潜在顾客。
+        - generic [ref=e141]:
+          - generic [ref=e143]: 9:41
+          - generic [ref=e148]:
+            - generic [ref=e149]: AI 成片流水线
+            - generic [ref=e150]: pipeline.flow
+          - generic [ref=e151]:
+            - generic [ref=e152]:
+              - generic [ref=e153]: "1"
+              - text: 输入商品 & 卖点
+            - generic [ref=e154]:
+              - generic [ref=e155]: "2"
+              - text: AI 生成营销文案
+            - generic [ref=e156]:
+              - generic [ref=e157]: "3"
+              - text: 合成配音 + 字幕
+            - generic [ref=e158]:
+              - generic [ref=e159]: "4"
+              - text: 审核并发布抖音
+            - generic [ref=e163]:
+              - generic [ref=e164]: 处理进度
+              - generic [ref=e165]: 25%
+            - generic [ref=e166]:
+              - generic [ref=e167]: 火山引擎
+              - generic [ref=e168]: 即梦 AI
+              - generic [ref=e169]: 高清
+              - generic [ref=e170]: 抖音
+  - generic [ref=e172]:
+    - generic [ref=e173]:
+      - generic [ref=e174]: 附赠商城
+      - heading "视频引来的客人，用商城接住" [level=2] [ref=e176]
+      - paragraph [ref=e177]:
+        - text: 订阅 ¥298/年 套餐，下面这套全功能商城
+        - strong [ref=e178]: 一并送你
+        - text: —— 商品、订单、会员、积分、数据，全开。
+    - generic [ref=e179]:
+      - generic [ref=e181]:
+        - generic [ref=e182]:
+          - generic [ref=e183]: 送 · 01
+          - generic [ref=e184]: 🛍️
+          - heading "拍照上架 & 订单履约闭环" [level=3] [ref=e185]
+          - paragraph [ref=e186]: 拍张照 AI 自动识别商品信息上架；订单到了一键扫码核销/发货，到店自提 + 快递双模式。从街边小店到连锁老板，5 分钟掌握。
+        - generic [ref=e187]:
+          - generic [ref=e192]:
+            - generic [ref=e193]: "1"
+            - text: 拍照上传商品图
+          - generic [ref=e194]:
+            - generic [ref=e195]: "2"
+            - text: AI 识别填规格价
+          - generic [ref=e196]:
+            - generic [ref=e197]: "3"
+            - text: 顾客下单付款
+          - generic [ref=e198]:
+            - generic [ref=e199]: "4"
+            - text: 扫码核销/发货
+      - generic [ref=e200]:
+        - generic [ref=e201]: 送 · 02
+        - generic [ref=e202]: 📦
+        - heading "多 SKU & 库存管理" [level=3] [ref=e203]
+        - paragraph [ref=e204]: 规格、价格、库存随时改；售罄自动下架，避免空单。
+      - generic [ref=e205]:
+        - generic [ref=e206]: 送 · 03
+        - generic [ref=e207]: ⭐
+        - heading "会员积分 & 余额" [level=3] [ref=e208]
+        - paragraph [ref=e209]: 消费自动积分、下单可抵扣，余额线上充值/提现，回头客留得住。
+      - generic [ref=e210]:
+        - generic [ref=e211]: 送 · 04
+        - generic [ref=e212]: 💬
+        - heading "消息提醒 & 客服" [level=3] [ref=e213]
+        - paragraph [ref=e214]: 下单/到店/退款实时通知，店长不漏单、顾客不投诉。
+      - generic [ref=e215]:
+        - generic [ref=e216]: 送 · 05
+        - generic [ref=e217]: 🎯
+        - heading "推广海报 & 二维码" [level=3] [ref=e218]
+        - paragraph [ref=e219]: 店铺/商品专属二维码海报一键生成，扫码就能下单。
+      - generic [ref=e221]:
+        - generic [ref=e222]:
+          - generic [ref=e223]: 送 · 06
+          - generic [ref=e224]: 📊
+          - heading "经营数据看板" [level=3] [ref=e225]
+          - paragraph [ref=e226]: 每日销售、客单价、视频带来的转化、推广合伙人贡献，实时呈现。哪条视频有效一眼看穿。
+        - generic [ref=e227]:
+          - generic [ref=e228]:
+            - generic [ref=e229]: ↑32%
+            - generic [ref=e230]: 视频带客转化
+          - generic [ref=e231]:
+            - generic [ref=e232]: "128"
+            - generic [ref=e233]: 活跃会员
+          - generic [ref=e234]:
+            - generic [ref=e235]: ¥4.2k
+            - generic [ref=e236]: 合伙人贡献
+  - generic [ref=e238]:
+    - generic [ref=e239]:
+      - generic [ref=e240]: 实战演示
+      - heading "看一眼就懂，怎么用最高效" [level=2] [ref=e242]
+      - paragraph [ref=e243]: 从 AI 拍照上架，到顾客下单到手，再到 AI 视频一键投放抖音 —— 每个核心流程都有真实演示。
+    - generic [ref=e244]:
+      - generic [ref=e245]:
+        - generic [ref=e246]:
+          - generic [ref=e247]: "1"
+          - text: FOR MERCHANT
+        - heading "拍一张照， 商品自动上架" [level=3] [ref=e248]:
+          - text: 拍一张照，
+          - text: 商品自动上架
+        - paragraph [ref=e249]: 对准商品拍一张照片，AI 自动识别品类、规格、推荐价格与文案，20 秒完成传统 5 分钟的录入工作。
+        - list [ref=e250]:
+          - listitem [ref=e251]:
+            - generic [ref=e252]: ✓
+            - generic [ref=e253]: 支持多 SKU 规格自动识别（颜色 / 重量 / 包装）
+          - listitem [ref=e254]:
+            - generic [ref=e255]: ✓
+            - generic [ref=e256]: 商品名 / 卖点 / 单位 / 库存一键填充
+          - listitem [ref=e257]:
+            - generic [ref=e258]: ✓
+            - generic [ref=e259]: 识别错可当场修改，下次更准
+      - generic [ref=e260]:
+        - generic [ref=e262]:
+          - generic [ref=e264]: 9:41
+          - generic [ref=e269]:
+            - generic [ref=e270]: ‹
+            - text: 新增商品
+            - generic [ref=e271]: step 1/3
+          - generic [ref=e272]:
+            - generic [ref=e273]: 📷
+            - generic [ref=e276]:
+              - generic [ref=e277]: uploading.jpg
+              - generic [ref=e278]: 2.4 MB
+            - generic [ref=e279]: 拍照 / 选择图片
+        - generic [ref=e280]: ›
+        - generic [ref=e282]:
+          - generic [ref=e284]: 9:41
+          - generic [ref=e289]:
+            - generic [ref=e290]: ‹
+            - text: AI 识别
+            - generic [ref=e291]: step 2/3
+          - generic [ref=e292]:
+            - generic [ref=e293]: 🍡 AI 识别中…
+            - generic [ref=e294]:
+              - generic [ref=e295]: 商品识别
+              - generic [ref=e296]: 规格抽取
+              - generic [ref=e297]: 价格建议
+            - generic [ref=e298]:
+              - generic [ref=e299]: processing…
+              - generic [ref=e300]: 67%
+        - generic [ref=e301]: ›
+        - generic [ref=e303]:
+          - generic [ref=e305]: 9:41
+          - generic [ref=e310]:
+            - generic [ref=e311]: ‹
+            - text: 确认上架
+            - generic [ref=e312]: step 3/3
+          - generic [ref=e313]:
+            - generic [ref=e314]:
+              - generic [ref=e315]: 商品名
+              - generic [ref=e316]: 烤肉串 · 特色
+            - generic [ref=e317]:
+              - generic [ref=e318]: 建议售价
+              - generic [ref=e319]: ¥ 15.00
+            - generic [ref=e320]:
+              - generic [ref=e321]: 规格
+              - generic [ref=e322]: 3 串/份
+            - generic [ref=e323]:
+              - generic [ref=e324]: 起始库存
+              - generic [ref=e325]: "50"
+            - generic [ref=e326]: 立即上架 →
+    - generic [ref=e327]:
+      - generic [ref=e328]:
+        - generic [ref=e329]:
+          - generic [ref=e330]: "2"
+          - text: FOR CUSTOMER
+        - heading "顾客下单， 3 步出单到手" [level=3] [ref=e331]:
+          - text: 顾客下单，
+          - text: 3 步出单到手
+        - paragraph [ref=e332]: 扫码进店即成会员，挑选商品后结算页自动算好积分抵扣与余额支付，到店出示自提码就能取货。
+        - list [ref=e333]:
+          - listitem [ref=e334]:
+            - generic [ref=e335]: ✓
+            - generic [ref=e336]: 积分自动抵扣，结算页一目了然
+          - listitem [ref=e337]:
+            - generic [ref=e338]: ✓
+            - generic [ref=e339]: 支持到店自提 / 快递发货双模式
+          - listitem [ref=e340]:
+            - generic [ref=e341]: ✓
+            - generic [ref=e342]: 大号自提码，商户扫码秒核销
+      - generic [ref=e343]:
+        - generic [ref=e345]:
+          - generic [ref=e347]: 9:41
+          - generic [ref=e352]:
+            - text: 老王烧烤店
+            - generic [ref=e353]: 3.2km
+          - generic [ref=e354]:
+            - generic [ref=e355]:
+              - generic [ref=e356]:
+                - generic [ref=e357]: 🍡
+                - generic [ref=e358]: 烤肉串
+                - generic [ref=e359]: ¥15
+              - generic [ref=e360]:
+                - generic [ref=e361]: 🥬
+                - generic [ref=e362]: 韭菜
+                - generic [ref=e363]: ¥8
+              - generic [ref=e364]:
+                - generic [ref=e365]: 🍺
+                - generic [ref=e366]: 扎啤
+                - generic [ref=e367]: ¥12
+              - generic [ref=e368]:
+                - generic [ref=e369]: 🍤
+                - generic [ref=e370]: 烤虾
+                - generic [ref=e371]: ¥28
+            - generic [ref=e372]: 查看购物车 (3)
+        - generic [ref=e373]: ›
+        - generic [ref=e375]:
+          - generic [ref=e377]: 9:41
+          - generic [ref=e382]:
+            - generic [ref=e383]: ‹
+            - text: 确认订单
+            - generic [ref=e384]: ¥ 51.00
+          - generic [ref=e385]:
+            - generic [ref=e386]:
+              - generic [ref=e387]: 小计
+              - generic [ref=e388]: ¥ 53.00
+            - generic [ref=e389]:
+              - generic [ref=e390]: 积分抵扣 (200)
+              - generic [ref=e391]: "- ¥ 2.00"
+            - generic [ref=e392]:
+              - generic [ref=e393]: 余额支付
+              - generic [ref=e394]: ¥ 51.00
+            - generic [ref=e395]:
+              - generic [ref=e396]: 通联支付
+              - generic [ref=e397]: 余额
+              - generic [ref=e398]: 到店付
+            - generic [ref=e399]: 立即支付
+        - generic [ref=e400]: ›
+        - generic [ref=e402]:
+          - generic [ref=e404]: 9:41
+          - generic [ref=e409]:
+            - text: 下单成功
+            - generic [ref=e410]: order · 8821
+          - generic [ref=e411]:
+            - generic [ref=e412]:
+              - generic [ref=e414]: "8821"
+              - generic [ref=e415]: 出示自提码给商户核销
+            - generic [ref=e416]: 查看订单详情
+    - generic [ref=e417]:
+      - generic [ref=e418]:
+        - generic [ref=e419]:
+          - generic [ref=e420]: "3"
+          - text: AI VIDEO × 抖音
+        - heading "20 秒成片， 一键投到抖音" [level=3] [ref=e421]:
+          - text: 20 秒成片，
+          - text: 一键投到抖音
+        - paragraph [ref=e422]: 输入商品文字，AI 自动生成画面 + 配音 + 字幕，预览满意后授权抖音账号一键发布，24h 看到播放量与点赞数据。
+        - list [ref=e423]:
+          - listitem [ref=e424]:
+            - generic [ref=e425]: ✓
+            - generic [ref=e426]: 火山引擎 + 即梦 AI 双引擎，高清成片直发抖音
+          - listitem [ref=e427]:
+            - generic [ref=e428]: ✓
+            - generic [ref=e429]: 预览页直接修改文案 / 配音无需重头来
+          - listitem [ref=e430]:
+            - generic [ref=e431]: ✓
+            - generic [ref=e432]: 抖音播放量 / 点赞 / 订单全链路回流
+      - generic [ref=e433]:
+        - generic [ref=e435]:
+          - generic [ref=e437]: 9:41
+          - generic [ref=e442]:
+            - text: AI 视频生成
+            - generic [ref=e443]: pipeline
+          - generic [ref=e444]:
+            - generic [ref=e445]:
+              - generic [ref=e446]: ▶
+              - generic [ref=e447]:
+                - generic [ref=e448]: processing
+                - generic [ref=e449]: 67%
+            - generic [ref=e450]:
+              - generic [ref=e451]: 文案
+              - generic [ref=e452]: 配音
+              - generic [ref=e453]: 合成
+        - generic [ref=e456]: ›
+        - generic [ref=e458]:
+          - generic [ref=e460]: 9:41
+          - generic [ref=e465]:
+            - text: 预览 & 发布
+            - generic [ref=e466]: 高清 · 20s
+          - generic [ref=e467]:
+            - generic [ref=e468]:
+              - generic [ref=e469]: ▶
+              - generic [ref=e470]:
+                - generic [ref=e471]: output_v0427.mp4
+                - generic [ref=e472]: 00:30
+            - generic [ref=e473]:
+              - generic [ref=e474]: 文案
+              - generic [ref=e475]: 老王烤串 · 火焰炙烤
+            - generic [ref=e477]: ♪ 抖音
+            - generic [ref=e478]: 发布到抖音 →
+        - generic [ref=e479]: ›
+        - generic [ref=e481]:
+          - generic [ref=e483]: 9:41
+          - generic [ref=e488]:
+            - text: 投放数据
+            - generic [ref=e489]: 24h
+          - generic [ref=e490]:
+            - generic [ref=e491]:
+              - generic [ref=e492]: ▶
+              - generic [ref=e493]:
+                - generic [ref=e494]: 已发布
+                - generic [ref=e495]: 抖音
+            - generic [ref=e496]:
+              - generic [ref=e497]:
+                - generic [ref=e498]: 12.4k
+                - generic [ref=e499]: 播放量
+              - generic [ref=e500]: ↑ 218%
+            - generic [ref=e501]:
+              - generic [ref=e502]:
+                - generic [ref=e503]: "486"
+                - generic [ref=e504]: 点赞
+              - generic [ref=e505]: ↑ 92%
+            - generic [ref=e506]:
+              - generic [ref=e507]:
+                - generic [ref=e508]: "23"
+                - generic [ref=e509]: 引流订单
+              - generic [ref=e510]: ↑ 156%
+            - generic [ref=e511]: 查看完整报告
+  - generic [ref=e513]:
+    - generic [ref=e514]:
+      - generic [ref=e515]: 推广合伙人
+      - heading "让老客户帮你直推新客户" [level=2] [ref=e517]
+      - paragraph [ref=e518]:
+        - text: 仅 1 级直推 + 推广激励，
+        - strong [ref=e519]: 不做多级分销
+        - text: 。基于真实成交结算、合规归本，老板放心做。
+    - generic [ref=e520]:
+      - generic [ref=e521]:
+        - generic [ref=e522]: 直推 · 1 级
+        - heading "直推 1 级返佣，自动到账" [level=3] [ref=e523]
+        - paragraph [ref=e524]:
+          - text: 老客户分享商品/店铺，扫码下单成交即按比例返佣。
+          - strong [ref=e525]: 仅限 1 级直推关系
+          - text: ，无层级展开，不触碰多级分销红线。
+        - list [ref=e526]:
+          - listitem [ref=e527]:
+            - generic [ref=e528]: ✓
+            - text: 商户自定义返佣比例（1%-30%）
+          - listitem [ref=e529]:
+            - generic [ref=e530]: ✓
+            - text: 仅 1 级关系，依据真实订单结算
+          - listitem [ref=e531]:
+            - generic [ref=e532]: ✓
+            - text: 佣金冻结期可设，防止刷单退款
+          - listitem [ref=e533]:
+            - generic [ref=e534]: ✓
+            - text: 提现线上审核，流水全留痕
+        - text: ¥
+      - generic [ref=e535]:
+        - generic [ref=e536]: 推广激励
+        - heading "推广激励，按 GMV 归本" [level=3] [ref=e537]
+        - paragraph [ref=e538]:
+          - text: 商户可设立 1 名推广组长，组长每达成 GMV 目标可领取约定的
+          - strong [ref=e539]: 推广激励
+          - text: （不与下级人头挂钩，仅与销量挂钩），让老板回本节奏可控。
+        - list [ref=e540]:
+          - listitem [ref=e541]:
+            - generic [ref=e542]: ✓
+            - text: 固定档位/阶梯比例，老板自定
+          - listitem [ref=e543]:
+            - generic [ref=e544]: ✓
+            - text: 结算依据：成交 GMV，不计人头
+          - listitem [ref=e545]:
+            - generic [ref=e546]: ✓
+            - text: 合同/协议模板内置，直接用
+          - listitem [ref=e547]:
+            - generic [ref=e548]: ✓
+            - text: 所有结算可导出，备查备税
+        - text: "%"
+  - generic [ref=e550]:
+    - generic [ref=e551]:
+      - generic [ref=e552]: 定价
+      - heading "两个套餐，¥298 起开张 · ¥1688 全功能" [level=2] [ref=e554]
+      - paragraph [ref=e555]:
+        - text: 基础包够开张，全功能包做规模。所有套餐顾客付款
+        - strong [ref=e556]: T+0 直入商户通联账户
+        - text: ，平台不沾钱。
+    - generic [ref=e557]:
+      - generic [ref=e558]:
+        - generic [ref=e559]: 基础包 · 适合开张
+        - heading "¥298 / 年 · 基础包" [level=3] [ref=e560]
+        - paragraph [ref=e561]:
+          - text: ¥
+          - generic [ref=e562]: "298"
+          - generic [ref=e563]: / 年 · 一店一年
+        - paragraph [ref=e564]: 把店"先开起来"的最小投入：商城 + 收款 + 推广 + 第一波 AI 视频，全部齐活。
+        - list [ref=e565]:
+          - listitem [ref=e566]:
+            - generic [ref=e567]: ✓
+            - strong [ref=e568]: 全功能在线商城
+            - text: （商品 / 订单 / 会员 / 积分）
+          - listitem [ref=e569]:
+            - generic [ref=e570]: ✓
+            - strong [ref=e571]: 通联秒到收款
+            - text: （T+0 直入你的银行卡）
+          - listitem [ref=e572]:
+            - generic [ref=e573]: ✓
+            - text: 推广裂变工具（推广积分 + 邀请奖励 + 二维码海报）
+          - listitem [ref=e574]:
+            - generic [ref=e575]: ✓
+            - strong [ref=e576]: 赠送 10 条 AI 视频
+            - text: + 抖音发布通道
+          - listitem [ref=e577]:
+            - generic [ref=e578]: ✓
+            - text: 13 个行业模板（餐饮 / 零售 / 美容 …）
+          - listitem [ref=e579]:
+            - generic [ref=e580]: ✓
+            - text: 续费即送 AI 视频礼包
+        - link "¥298 / 年 立即开张 →" [ref=e581] [cursor=pointer]:
+          - /url: /m/#/pages/merchant-apply/index
+        - text: ¥
+      - generic [ref=e582]:
+        - generic: 热门首选
+        - generic [ref=e583]: 全功能包 · 适合做规模
+        - heading "¥1688 / 年 · 全功能包" [level=3] [ref=e584]
+        - paragraph [ref=e585]:
+          - text: ¥
+          - generic [ref=e586]: "1688"
+          - generic [ref=e587]: / 年 · 6 倍 AI + 智能推广
+        - paragraph [ref=e588]:
+          - text: 从单店扩到多店、要靠数据做运营的老板专享。
+          - strong [ref=e589]: 6 倍 AI 视频额度 + 智能推广引擎 + 数据看板
+          - text: 。
+        - list [ref=e590]:
+          - listitem [ref=e591]:
+            - generic [ref=e592]: ✓
+            - text: 包含
+            - strong [ref=e593]: 基础包全部功能
+          - listitem [ref=e594]:
+            - generic [ref=e595]: ✓
+            - strong [ref=e596]: 赠送 60 条 AI 视频
+            - text: （6 倍基础包）
+          - listitem [ref=e597]:
+            - generic [ref=e598]: ✓
+            - strong [ref=e599]: 「推 N 反 1」智能推广引擎
+            - text: （自动算多级返佣）
+          - listitem [ref=e600]:
+            - generic [ref=e601]: ✓
+            - text: 13 行业
+            - strong [ref=e602]: AI 风格定制
+            - text: （烧烤 / 茶楼 / 美容各一套）
+          - listitem [ref=e603]:
+            - generic [ref=e604]: ✓
+            - text: 数据看板：销售排行 / 用户画像 / 复购漏斗
+          - listitem [ref=e605]:
+            - generic [ref=e606]: ✓
+            - text: 商户提现
+            - strong [ref=e607]: 多级审批
+            - text: + 员工管理
+          - listitem [ref=e608]:
+            - generic [ref=e609]: ✓
+            - strong [ref=e610]: 优先客服支持
+            - text: （专属群 + 1v1 答疑）
+        - link "¥1688 / 年 升级全功能 →" [ref=e611] [cursor=pointer]:
+          - /url: /m/#/pages/merchant-apply/index
+        - text: ★
+      - generic [ref=e612]:
+        - generic [ref=e613]: 资金安全 · T+0
+        - heading "钱不过平台，直入老板账户" [level=3] [ref=e614]
+        - paragraph [ref=e615]:
+          - text: 顾客付款
+          - strong [ref=e616]: T+0 即时到账
+          - text: ，
+          - strong [ref=e617]: 平台不碰一分钱用户资金
+          - text: ——钱直接进到商户自己的
+          - strong [ref=e618]: 通联支付账号
+          - text: ，随时提现，老板心里踏实。
+        - list [ref=e619]:
+          - listitem [ref=e620]:
+            - generic [ref=e621]: ✓
+            - text: T+0 即时到账，资金不留过夜
+          - listitem [ref=e622]:
+            - generic [ref=e623]: ✓
+            - text: 平台不碰用户钱，零二清风险
+          - listitem [ref=e624]:
+            - generic [ref=e625]: ✓
+            - text: 资金落到商户自己的通联账号
+          - listitem [ref=e626]:
+            - generic [ref=e627]: ✓
+            - text: 余额随时提现到本人银行卡
+          - listitem [ref=e628]:
+            - generic [ref=e629]: ✓
+            - text: 商城 GMV 0 抽成、0 服务费
+        - text: 🤝
+    - paragraph [ref=e630]: "* AI 视频按\"成片条数\"计；建议单条 ≤20s。基础包 ¥298 全年 → 全功能包 ¥1688 全年。年内可一次性升级，差额抵扣。所有价格含税。 *"
+  - generic [ref=e633]:
+    - generic [ref=e634]:
+      - generic [ref=e635]: 使用流程
+      - heading "几步搞定，立即开业" [level=2] [ref=e637]
+      - paragraph [ref=e638]: 无需技术背景，跟着引导一步步完成，最快 10 分钟开起你的线上店铺。
+    - generic [ref=e639]:
+      - generic [ref=e640] [cursor=pointer]: 🏪 商户端流程
+      - generic [ref=e641] [cursor=pointer]: 🛒 顾客端流程
+    - generic [ref=e642]:
+      - generic [ref=e643]:
+        - generic [ref=e644]: "01"
+        - heading "注册登录" [level=4] [ref=e645]
+        - paragraph [ref=e646]: 手机号快速注册，填写商户基本信息，等待平台审核通过
+      - generic [ref=e647]:
+        - generic [ref=e648]: "02"
+        - heading "上架商品" [level=4] [ref=e649]
+        - paragraph [ref=e650]: 手动录入或 AI 识别上架，设置价格、库存、SKU 规格
+      - generic [ref=e651]:
+        - generic [ref=e652]: "03"
+        - heading "接单发货" [level=4] [ref=e653]
+        - paragraph [ref=e654]: 实时收到订单通知，确认收款或发货，一键核销自提码
+      - generic [ref=e655]:
+        - generic [ref=e656]: "04"
+        - heading "运营增长" [level=4] [ref=e657]
+        - paragraph [ref=e658]: 配置返佣积分，制作 AI 短视频，吸引更多回头客
+  - generic [ref=e660]:
+    - generic [ref=e661]:
+      - generic [ref=e662]: 双端入口
+      - heading "适合每一类用户" [level=2] [ref=e664]
+      - paragraph [ref=e665]: 无论你是经营者还是消费者，拓小二都为你提供专属的小程序体验。
+    - generic [ref=e666]:
+      - generic [ref=e667]:
+        - generic [ref=e668]: 🏪
+        - heading "商户端" [level=3] [ref=e669]
+        - paragraph [ref=e670]: 专为商户、连锁小店设计的经营管理小程序，从开店到收款再到营销推广，全流程一手掌握。
+        - list [ref=e671]:
+          - listitem [ref=e672]: 商品上架 & AI 识别录入
+          - listitem [ref=e674]: 订单管理 & 扫码核销
+          - listitem [ref=e676]: 用户提现审核
+          - listitem [ref=e678]: 返佣 & 积分配置
+          - listitem [ref=e680]: AI 视频一键生成
+          - listitem [ref=e682]: 在线支付开通申请
+        - link "商户登录 →" [ref=e684] [cursor=pointer]:
+          - /url: /m/#/pages/merchant-login/index
+      - generic [ref=e685]:
+        - generic [ref=e686]: 🛒
+        - heading "用户端" [level=3] [ref=e687]
+        - paragraph [ref=e688]: 顾客专属购物小程序，发现附近好店、下单购物、查看积分余额、邀好友赚返佣，一气呵成。
+        - list [ref=e689]:
+          - listitem [ref=e690]: 附近店铺发现
+          - listitem [ref=e692]: 商品浏览 & 购物车
+          - listitem [ref=e694]: 积分抵扣 & 余额支付
+          - listitem [ref=e696]: 订单追踪
+          - listitem [ref=e698]: 分享返佣提现
+          - listitem [ref=e700]: 余额转积分
+        - link "用户登录 →" [ref=e702] [cursor=pointer]:
+          - /url: /m/#/pages/login/index
+  - generic [ref=e704]:
+    - generic [ref=e705]: 立即开始
+    - heading "第一条 AI 带货视频 今天就能发出去" [level=2] [ref=e707]:
+      - text: 第一条 AI 带货视频
+      - text: 今天就能发出去
+    - paragraph [ref=e708]: ¥298 起开张，¥1688 全功能加速。商城 + 通联秒到 + AI 视频，一站搞定。
+    - generic [ref=e709]:
+      - link "¥298 起 立即入驻 →" [ref=e710] [cursor=pointer]:
+        - /url: /m/#/pages/merchant-apply/index
+      - link "看 ¥298 / ¥1688 对比" [ref=e711] [cursor=pointer]:
+        - /url: "#pricing"
+  - contentinfo [ref=e712]:
+    - generic [ref=e713]:
+      - generic [ref=e714]:
+        - generic [ref=e715]:
+          - generic [ref=e716]:
+            - generic [ref=e717]: 拓
+            - text: 拓小二
+          - paragraph [ref=e718]: 给所有小老板的 AI 视频带货 + 在线商城 SaaS。13 行业通用，¥298 起开张。
+        - generic [ref=e719]:
+          - heading "产品功能" [level=5] [ref=e720]
+          - list [ref=e721]:
+            - listitem [ref=e722]:
+              - link "AI 成片" [ref=e723] [cursor=pointer]:
+                - /url: "#ai"
+            - listitem [ref=e724]:
+              - link "实战演示" [ref=e725] [cursor=pointer]:
+                - /url: "#showcase"
+            - listitem [ref=e726]:
+              - link "附赠商城" [ref=e727] [cursor=pointer]:
+                - /url: "#features"
+            - listitem [ref=e728]:
+              - link "推广合伙人" [ref=e729] [cursor=pointer]:
+                - /url: "#promo"
+            - listitem [ref=e730]:
+              - link "定价 ¥298/年" [ref=e731] [cursor=pointer]:
+                - /url: "#pricing"
+        - generic [ref=e732]:
+          - heading "快速入口" [level=5] [ref=e733]
+          - list [ref=e734]:
+            - listitem [ref=e735]:
+              - link "¥298/年 入驻" [ref=e736] [cursor=pointer]:
+                - /url: /m/#/pages/merchant-apply/index
+            - listitem [ref=e737]:
+              - link "商户登录" [ref=e738] [cursor=pointer]:
+                - /url: /m/#/pages/merchant-login/index
+            - listitem [ref=e739]:
+              - link "用户登录" [ref=e740] [cursor=pointer]:
+                - /url: /m/#/pages/login/index
+            - listitem [ref=e741]:
+              - link "使用流程" [ref=e742] [cursor=pointer]:
+                - /url: "#flow"
+            - listitem [ref=e743]:
+              - link "续买 AI 视频" [ref=e744] [cursor=pointer]:
+                - /url: "#pricing"
+        - generic [ref=e745]:
+          - heading "资源" [level=5] [ref=e746]
+          - list [ref=e747]:
+            - listitem [ref=e748]:
+              - link "帮助中心" [ref=e749] [cursor=pointer]:
+                - /url: "#"
+            - listitem [ref=e750]:
+              - link "技术支持" [ref=e751] [cursor=pointer]:
+                - /url: "#"
+            - listitem [ref=e752]:
+              - link "服务协议" [ref=e753] [cursor=pointer]:
+                - /url: "#"
+            - listitem [ref=e754]:
+              - link "隐私政策" [ref=e755] [cursor=pointer]:
+                - /url: "#"
+      - generic [ref=e757]:
+        - text: © 2026 优航智创科技有限公司 · AI 视频带货工具，顺手送你一个店 ·
+        - link "蜀ICP备2026021394号" [ref=e758] [cursor=pointer]:
+          - /url: https://beian.miit.gov.cn/

@@ -1,0 +1,66 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e51]:
+    - generic [ref=e52]:
+      - generic [ref=e53]: 早上好 ☀
+      - generic [ref=e54]: 想吃点什么？
+      - generic [ref=e55]:
+        - generic [ref=e56]: 🔍
+        - generic [ref=e58]:
+          - generic: 搜店铺、找商品、看附近
+          - searchbox [ref=e60]
+        - generic [ref=e61]: 🎙
+    - generic [ref=e62]:
+      - generic [ref=e63]:
+        - generic [ref=e64]: 📍
+        - generic [ref=e65]: 附近
+      - generic [ref=e66]:
+        - generic [ref=e67]: 🛍
+        - generic [ref=e68]: 分类
+      - generic [ref=e69]:
+        - generic [ref=e70]: 🎁
+        - generic [ref=e71]: 优惠
+    - generic [ref=e72]:
+      - generic [ref=e73]: 最近去过
+      - generic [ref=e74]: 全部 ›
+    - generic [ref=e79]:
+      - generic [ref=e81]: 1 分钟前
+      - generic [ref=e82]:
+        - generic [ref=e83]: 爱家超市
+        - generic [ref=e85]: 19100 积分
+    - generic [ref=e86]:
+      - generic [ref=e87]: 🎬
+      - generic [ref=e88]:
+        - generic [ref=e89]: 商家 AI 一键成片
+        - generic [ref=e90]: 看看附近商家用 AI 拍的短视频，找新店
+      - generic [ref=e91]: ›
+    - generic [ref=e92]:
+      - generic [ref=e93]: 附近商家
+      - generic [ref=e94]: 距离 ↓
+    - generic [ref=e96]:
+      - generic [ref=e97]: 爱
+      - generic [ref=e98]:
+        - generic [ref=e99]:
+          - generic [ref=e100]: 爱家超市
+          - generic [ref=e101]: 营业中
+        - generic [ref=e102]: 欢迎光临
+        - generic [ref=e103]:
+          - generic [ref=e104]: ★ 5.0
+          - generic [ref=e105]: 月售 42
+    - generic [ref=e107]:
+      - generic [ref=e108]:
+        - generic [ref=e109]: 🏠
+        - generic [ref=e110]: 首页
+      - generic [ref=e111]:
+        - generic [ref=e112]: 📋
+        - generic [ref=e113]: 订单
+      - generic [ref=e114]:
+        - generic [ref=e115]: 🛒
+        - generic [ref=e116]: 购物车
+      - generic [ref=e117]:
+        - generic [ref=e118]: 👤
+        - generic [ref=e119]: 我的
+  - generic:
+    - generic:
+      - generic:
+        - img
+        - paragraph: 登录成功

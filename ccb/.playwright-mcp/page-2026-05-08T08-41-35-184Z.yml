@@ -1,0 +1,5 @@
+- generic [ref=e4]:
+  - generic [ref=e6]:
+    - img [ref=e9] [cursor=pointer]
+    - generic [ref=e12]: 商品详情
+  - generic [ref=e17]: 商品不存在

@@ -1,0 +1,29 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e7]:
+    - generic [ref=e8]:
+      - generic [ref=e9]: 客
+      - generic [ref=e10]: 客小二
+      - generic [ref=e11]: 扫码进店 · 下单更顺手
+    - generic [ref=e12]:
+      - generic [ref=e13]: 手机号登录
+      - generic [ref=e14]: 首次登录即注册，无需短信验证（演示环境）
+      - generic [ref=e15]:
+        - generic [ref=e16]: 手机号
+        - generic [ref=e18]:
+          - generic: 请输入手机号
+          - spinbutton [ref=e19]
+      - generic [ref=e20]:
+        - generic [ref=e21]: 密码（≥ 6 位）
+        - generic [ref=e23]:
+          - generic: 设置一个密码
+          - textbox [ref=e24]
+      - generic [ref=e25]: 登录 / 注册
+      - generic [ref=e27]: 登录后即可下单 · 收推广积分
+      - generic [ref=e28]:
+        - generic [ref=e29]: 已是商户？
+        - generic [ref=e30]: 商户登录 →
+      - generic [ref=e32]: 先逛逛 →
+  - generic:
+    - generic:
+      - generic:
+        - paragraph: 登录已失效，请重新登录

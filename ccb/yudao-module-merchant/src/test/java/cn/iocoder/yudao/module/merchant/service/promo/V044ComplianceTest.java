@@ -19,6 +19,8 @@ import java.math.BigDecimal;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
 /**
@@ -143,7 +145,7 @@ public class V044ComplianceTest {
             ReflectionTestUtils.invokeMethod(svc, "attemptUpgradeV8", 99001L, 99006L,
                     ReflectionTestUtils.invokeMethod(svc, "parseRulesV8", rules));
 
-            verify(userStarMapper, never()).upgradeStarIfHigherBySpu(any(), any(), any());
+            verify(userStarMapper, never()).upgradeStarIfHigherBySpu(anyLong(), anyLong(), anyInt());
         }
 
         @Test
@@ -161,7 +163,7 @@ public class V044ComplianceTest {
             ReflectionTestUtils.invokeMethod(svc, "attemptUpgradeV8", 99001L, 99006L,
                     ReflectionTestUtils.invokeMethod(svc, "parseRulesV8", rules));
 
-            verify(userStarMapper, never()).upgradeStarIfHigherBySpu(any(), any(), any());
+            verify(userStarMapper, never()).upgradeStarIfHigherBySpu(anyLong(), anyLong(), anyInt());
         }
     }
 

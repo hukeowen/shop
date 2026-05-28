@@ -1,0 +1,20 @@
+- generic [ref=e4]:
+  - generic [ref=e6]:
+    - img [ref=e9] [cursor=pointer]
+    - generic [ref=e12]: 附近店铺
+  - generic [ref=e16]:
+    - generic [ref=e17]: 📵 定位失败：getLocation:fail translate coordinate system faild, map provider not configured or not supported（H5 浏览器需 https + 用户授权）
+    - generic [ref=e20]: 地图加载中…
+    - generic [ref=e21]:
+      - generic [ref=e22]:
+        - generic [ref=e23]: 附近店铺（1）
+        - generic [ref=e24]: 🔄 刷新定位
+      - generic [ref=e25]:
+        - generic [ref=e26]: 🏪
+        - generic [ref=e27]:
+          - generic [ref=e28]: 新店1
+          - generic [ref=e29]:
+            - generic [ref=e30]: 📍 —
+            - generic [ref=e31]: ★ 5
+          - generic [ref=e32]: —
+        - generic [ref=e33] [cursor=pointer]: 进店

@@ -1,0 +1,55 @@
+- generic [ref=e253]:
+  - generic [ref=e255]:
+    - img [ref=e258] [cursor=pointer]
+    - generic [ref=e261]: 我的钱包
+  - generic [ref=e265]:
+    - generic [ref=e266]:
+      - generic [ref=e267]:
+        - generic [ref=e268]:
+          - generic [ref=e269]: 推广积分
+          - generic [ref=e270]: "2665"
+          - generic [ref=e271]: 分（26.65 元）
+        - generic [ref=e272]:
+          - generic [ref=e273]: 消费积分
+          - generic [ref=e274]: "0"
+          - generic [ref=e275]: 分
+      - generic [ref=e276]:
+        - generic [ref=e277]: 当前星级：
+        - generic [ref=e278]: "0"
+        - generic [ref=e279]: ★
+        - generic [ref=e280]: 直推 0 · 团队链 0
+    - generic [ref=e281]:
+      - generic [ref=e282]: 推广 → 消费 转换
+      - generic [ref=e283]:
+        - generic [ref=e285]:
+          - generic: 推广积分(分)
+          - spinbutton [ref=e286]
+        - generic [ref=e287] [cursor=pointer]: 确认转换
+      - generic [ref=e288]: 按商户配置 ratio 折算；不可逆。
+    - generic [ref=e289]:
+      - generic [ref=e290]: 操作
+      - generic [ref=e291]:
+        - generic [ref=e292]:
+          - generic [ref=e293]: ¥
+          - generic [ref=e294]: 申请提现
+        - generic [ref=e295]:
+          - generic [ref=e296]: +
+          - generic [ref=e297]: 邀请好友
+        - generic [ref=e298]:
+          - generic [ref=e299]: ≡
+          - generic [ref=e300]: 我的队列
+        - generic [ref=e301]:
+          - generic [ref=e302]: ★
+          - generic [ref=e303]: 积分池历史
+    - generic [ref=e304]:
+      - generic [ref=e305]:
+        - generic [ref=e306]: 推广积分流水
+        - generic [ref=e307]: 消费积分流水
+      - generic [ref=e431]:
+        - generic [ref=e432]:
+          - generic [ref=e433]: REFERRAL_PROGRESS
+          - generic [ref=e434]: "+165"
+        - generic [ref=e435]:
+          - generic [ref=e436]: 进行期下级首贡献 child=8 spu=2 pos=1
+          - generic [ref=e437]: 余额 2665
+        - generic [ref=e438]: 2026-05-08 17:14

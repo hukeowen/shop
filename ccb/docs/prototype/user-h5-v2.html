@@ -1,870 +1,2809 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8">
-<title>用户端 H5 · 时尚版 v2</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+<title>摊小二 · 普通用户 H5 原型 v2 · 街市编辑版</title>
 <style>
-  *{margin:0;padding:0;box-sizing:border-box;-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
-  body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;background:#070710;min-height:100vh;padding:32px 24px;display:flex;flex-wrap:wrap;gap:32px;justify-content:center;color:#fff}
-  :root{
-    --bg:#0a0a14;--bg-card:#13131f;--bg-card2:#1a1a2a;--line:rgba(255,255,255,.08);
-    --ink:#fff;--mute:#8a8aa0;--mute2:#5a5a70;
-    --p1:#ff4d8d;--p2:#ff7a3d;--p3:#ffb13d;
-    --a1:#7b61ff;--a2:#4dd6ff;--a3:#3df0c2;
-    --warn:#ffb13d;--danger:#ff4d6d;--ok:#3df0c2;
-  }
-  .frame{width:390px;height:844px;background:#0a0a14;border-radius:48px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.04);position:relative;display:flex;flex-direction:column}
-  .frame-label{position:absolute;top:-32px;left:50%;transform:translateX(-50%);color:#8a8aa0;font-size:11px;font-weight:600;letter-spacing:3px;text-transform:uppercase}
-  .statusbar{height:44px;display:flex;justify-content:space-between;align-items:center;padding:0 28px;font-size:14px;font-weight:700;color:#fff;flex-shrink:0}
-  .body{flex:1;overflow-y:auto;padding-bottom:88px}
-  .body::-webkit-scrollbar{display:none}
+/* ==========================================================================
+   Design tokens — editorial street-market system
+   ==========================================================================
+   奶油纸张底 · 暖墨字 · 节制橙 · 票据收据美学
+*/
+:root{
+  --paper:#FAF6F0; --paper-2:#F3ECE0; --card:#FFFFFF;
+  --ink:#1A1612; --ink-2:#5C544A; --ink-3:#8F8478;
+  --line:#EBE3D5; --line-2:#D9CFBE;
+  --brand:#F25C2A; --brand-d:#C8431B; --brand-soft:#FFE8D6; --brand-tint:#FFF3E8;
+  --forest:#1B6F4B; --forest-soft:#E0F0E6;
+  --gold:#B88838; --gold-soft:#FBEFCF;
+  --danger:#C2362F; --danger-soft:#F8DCD8;
+  --info:#3754A0; --info-soft:#E2E8F8;
+  --r-xs:4px; --r-sm:6px; --r-md:14px; --r-lg:20px; --r-pill:999px;
+  --shadow-1:0 2px 8px rgba(35,22,12,.05), 0 1px 2px rgba(35,22,12,.04);
+  --shadow-2:0 8px 24px rgba(35,22,12,.07), 0 2px 6px rgba(35,22,12,.04);
+  --shadow-brand:0 10px 26px rgba(242,92,42,.30);
+  --shadow-ink:0 12px 32px rgba(26,22,18,.18);
+  --ease:cubic-bezier(.2,.8,.2,1);
+  --font-display:'PingFang SC','Noto Sans SC','Microsoft YaHei',-apple-system,sans-serif;
+  --font-mono:'SF Mono','JetBrains Mono','Menlo',monospace;
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+html,body{margin:0; padding:0;}
+body{
+  font:14px/1.55 var(--font-display); color:var(--ink);
+  background:
+    radial-gradient(900px 600px at -200px -100px, rgba(242,92,42,.10), transparent 60%),
+    radial-gradient(800px 500px at calc(100% + 200px) -100px, rgba(27,111,75,.08), transparent 60%),
+    linear-gradient(180deg, #14110E 0%, #1F1C19 480px, #1F1C19 100%);
+  min-height:100vh; padding:48px 16px 80px;
+  font-variant-numeric:tabular-nums;
+}
+h1.page-title{
+  color:#FAF6F0; text-align:center; margin:0 0 8px;
+  font-size:30px; font-weight:800; letter-spacing:2px;
+  text-shadow:0 2px 12px rgba(0,0,0,.4);
+}
+h1.page-title .seal{
+  display:inline-block; vertical-align:middle;
+  width:42px; height:42px; line-height:38px; text-align:center;
+  border:2px solid var(--brand); color:var(--brand);
+  border-radius:50%; font-size:22px; font-weight:900;
+  margin-right:10px; transform:rotate(-6deg);
+  background:rgba(242,92,42,.10);
+}
+h1.page-title small{display:block; font-size:13px; font-weight:400; opacity:.55; margin-top:10px; letter-spacing:1px;}
+.subtitle-strip{
+  text-align:center; margin:0 auto 28px; max-width:680px;
+  color:rgba(250,246,240,.55); font-size:12px;
+  border:1px dashed rgba(250,246,240,.20); border-radius:var(--r-pill);
+  padding:6px 18px;
+}
+.subtitle-strip b{color:var(--brand); font-weight:600;}
+.group-title{
+  grid-column:1 / -1;
+  display:flex; align-items:baseline; gap:14px;
+  color:rgba(250,246,240,.85); padding:24px 0 4px;
+  border-bottom:1px solid rgba(250,246,240,.10); margin-bottom:8px;
+  font-size:15px; font-weight:700; letter-spacing:1px;
+}
+.group-title em{
+  font-style:normal; background:var(--brand); color:#fff;
+  padding:3px 12px; border-radius:var(--r-pill);
+  font-size:11px; font-weight:700; letter-spacing:0;
+}
+.group-title .count{margin-left:auto; font-size:12px; font-weight:400; color:rgba(250,246,240,.45);}
+.grid{
+  display:grid; grid-template-columns:repeat(auto-fill, minmax(395px, 1fr));
+  gap:40px 24px; max-width:1700px; margin:0 auto;
+}
+.phone-wrap{display:flex; flex-direction:column; align-items:center;}
+.phone{
+  width:375px; height:812px; background:var(--paper);
+  border-radius:42px; overflow:hidden; position:relative;
+  box-shadow:0 24px 60px rgba(0,0,0,.45), 0 0 0 6px #14110E, 0 0 0 8px #2C2620;
+  display:flex; flex-direction:column;
+}
+.phone-label{margin-top:14px; color:rgba(250,246,240,.85); font-size:12px; letter-spacing:.5px; text-align:center;}
+.phone-label .num{
+  display:inline-block; min-width:22px; height:22px; line-height:20px; text-align:center;
+  border:1px solid var(--brand); color:var(--brand);
+  border-radius:50%; margin-right:6px;
+  font-weight:700; font-size:11px;
+}
+.phone-label b{color:#fff; font-weight:700;}
+.phone-label small{display:block; color:rgba(250,246,240,.45); margin-top:4px;}
+.status-bar{
+  height:44px; flex-shrink:0; background:transparent;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0 24px; font-size:15px; font-weight:600; color:var(--ink);
+  position:relative; z-index:3;
+}
+.status-bar::before{
+  content:''; position:absolute; top:0; left:50%;
+  transform:translateX(-50%); width:124px; height:30px;
+  background:#14110E; border-radius:0 0 18px 18px;
+}
+.status-icons{display:flex; gap:6px; font-size:13px;}
+.view{flex:1; overflow-y:auto; overflow-x:hidden; padding-bottom:88px; background:var(--paper);}
+.view::-webkit-scrollbar{width:0;}
+.view.no-tab{padding-bottom:0;}
+.home-indicator{
+  position:absolute; bottom:6px; left:50%; transform:translateX(-50%);
+  width:134px; height:5px; background:var(--ink); border-radius:3px; opacity:.85; z-index:60;
+}
+.tab-bar{
+  position:absolute; bottom:0; left:0; right:0;
+  height:78px; padding:8px 12px 22px;
+  background:rgba(255,255,255,.92);
+  backdrop-filter:saturate(140%) blur(20px);
+  border-top:1px solid var(--line);
+  display:flex; align-items:stretch; gap:4px; z-index:50;
+}
+.tab-item{
+  flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  color:var(--ink-3); font-size:11px; font-weight:500;
+  border-radius:var(--r-md); transition:all .2s var(--ease); gap:3px;
+}
+.tab-item .ic{font-size:20px; line-height:1; transition:transform .2s var(--ease);}
+.tab-item.active{
+  background:linear-gradient(180deg, var(--brand-tint) 0%, var(--brand-soft) 100%);
+  color:var(--brand); font-weight:700;
+}
+.tab-item.active .ic{transform:translateY(-1px) scale(1.06);}
+.topbar{
+  height:48px; background:var(--paper);
+  display:flex; align-items:center; padding:0 8px;
+  border-bottom:1px solid var(--line); position:relative; z-index:2;
+}
+.topbar .back{width:36px; height:36px; line-height:32px; text-align:center; color:var(--ink); font-size:24px;}
+.topbar .title{flex:1; text-align:center; font-size:16px; font-weight:700; color:var(--ink); letter-spacing:.5px;}
+.topbar .right{min-width:36px; padding:0 10px; height:36px; line-height:36px; font-size:13px; color:var(--brand); font-weight:600; text-align:right;}
+.section-head{display:flex; align-items:baseline; justify-content:space-between; margin:20px 16px 10px;}
+.section-head h3{margin:0; font-size:16px; font-weight:800; color:var(--ink); letter-spacing:.5px; display:flex; align-items:center; gap:8px;}
+.section-head h3::before{content:''; width:4px; height:14px; background:var(--brand); border-radius:2px;}
+.section-head .more{font-size:12px; color:var(--ink-3); font-weight:500;}
+.chip{
+  display:inline-flex; align-items:center; gap:4px;
+  background:var(--paper-2); color:var(--ink-2);
+  padding:3px 10px; border-radius:var(--r-pill);
+  font-size:11px; font-weight:600;
+}
+.chip.brand{background:var(--brand-soft); color:var(--brand-d);}
+.chip.forest{background:var(--forest-soft); color:var(--forest);}
+.chip.gold{background:var(--gold-soft); color:var(--gold);}
+.chip.danger{background:var(--danger-soft); color:var(--danger);}
+.chip.info{background:var(--info-soft); color:var(--info);}
+.chip.ink{background:var(--ink); color:#FFEBD9;}
+.chip.outline{background:transparent; border:1px solid var(--line-2); color:var(--ink-2);}
+.btn{
+  display:inline-flex; align-items:center; justify-content:center;
+  padding:8px 18px; border-radius:var(--r-pill);
+  font-size:13px; font-weight:700; letter-spacing:.3px;
+  background:var(--card); color:var(--ink); border:1px solid var(--line-2);
+}
+.btn.primary{background:var(--brand); color:#fff; border-color:var(--brand); box-shadow:var(--shadow-brand);}
+.btn.ink{background:var(--ink); color:var(--paper); border-color:var(--ink);}
+.btn.ghost{background:transparent; border:1px solid var(--line-2); color:var(--ink-2);}
+.btn.danger{background:var(--danger); color:#fff; border-color:var(--danger);}
+.btn.lg{height:48px; padding:0 28px; font-size:15px;}
+.btn.block{display:flex; width:100%;}
+.btn.sharp{border-radius:var(--r-sm);}
+.stamp{
+  display:inline-flex; align-items:center; justify-content:center;
+  width:46px; height:46px; border-radius:50%;
+  background:linear-gradient(135deg, var(--brand) 0%, var(--brand-d) 100%);
+  color:#fff; font-weight:900; font-size:22px;
+  font-family:var(--font-display); position:relative;
+  box-shadow:0 4px 12px rgba(242,92,42,.30);
+  transform:rotate(-4deg);
+}
+.stamp::before{content:''; position:absolute; inset:3px; border:1.5px dashed rgba(255,255,255,.55); border-radius:50%;}
+.logo-block{
+  display:inline-flex; align-items:center; justify-content:center;
+  width:40px; height:40px; border-radius:var(--r-sm);
+  background:linear-gradient(135deg, #FFD2A8, var(--brand));
+  color:#fff; font-weight:800; font-size:18px; flex-shrink:0;
+}
+.logo-block.blue{background:linear-gradient(135deg, #C7DCFF, #5C8BE8);}
+.logo-block.green{background:linear-gradient(135deg, #C9EDC9, #4CB258);}
+.logo-block.pink{background:linear-gradient(135deg, #FCCDD7, #DE6189);}
+.logo-block.ink{background:linear-gradient(135deg, #4D4842, var(--ink));}
+.logo-block.gold{background:linear-gradient(135deg, #F1D38C, var(--gold));}
+.logo-block.sm{width:28px; height:28px; font-size:13px; border-radius:6px;}
+.logo-block.xs{width:22px; height:22px; font-size:11px; border-radius:5px;}
+.logo-block.md{width:48px; height:48px; font-size:22px;}
+.logo-block.lg{width:64px; height:64px; font-size:28px; border-radius:var(--r-md);}
+.bignum{
+  font-size:48px; font-weight:900; color:var(--ink);
+  line-height:1; letter-spacing:-1px;
+  font-variant-numeric:tabular-nums;
+  display:inline-flex; align-items:baseline;
+}
+.bignum .currency{font-size:.45em; font-weight:700; margin-right:2px; opacity:.7;}
+.bignum .cents{font-size:.45em; font-weight:700; opacity:.55; margin-left:1px;}
+.bignum.brand{color:var(--brand);}
+.bignum.invert{color:var(--paper);}
+.bignum.xl{font-size:64px; letter-spacing:-2px;}
+.status{
+  display:inline-block; font-size:11px; font-weight:700;
+  padding:3px 10px; border-radius:var(--r-sm); letter-spacing:.5px;
+}
+.status.pending{background:var(--danger-soft); color:var(--danger);}
+.status.shipping{background:var(--info-soft); color:var(--info);}
+.status.receiving{background:var(--gold-soft); color:var(--gold);}
+.status.done{background:var(--forest-soft); color:var(--forest);}
+.status.refund{background:var(--paper-2); color:var(--ink-3);}
+.form-label{display:block; font-size:12px; color:var(--ink-2); margin:0 0 8px 4px; font-weight:600; letter-spacing:.5px;}
+.field{
+  width:100%; background:var(--card);
+  border-radius:var(--r-sm); border:1.5px solid var(--line);
+  padding:14px; font-size:15px;
+  display:flex; align-items:center; gap:10px;
+  transition:border-color .15s var(--ease);
+}
+.field:focus-within{border-color:var(--brand);}
+.field input{flex:1; border:0; outline:0; font-size:15px; background:transparent; color:var(--ink); font-family:inherit;}
+.field .prefix{color:var(--ink-3); font-weight:600;}
+.field .suffix{font-size:12px; color:var(--brand); font-weight:700;}
+.switch{
+  width:46px; height:26px; border-radius:13px;
+  background:#D4CCBE; position:relative;
+  transition:background .2s var(--ease); flex-shrink:0;
+}
+.switch::after{
+  content:''; position:absolute; left:3px; top:3px;
+  width:20px; height:20px; border-radius:50%;
+  background:#fff; box-shadow:0 2px 6px rgba(0,0,0,.20);
+  transition:left .2s var(--ease);
+}
+.switch.on{background:var(--brand);}
+.switch.on::after{left:23px;}
+.progress-bar{display:flex; gap:4px; margin:8px 0;}
+.progress-bar .seg{flex:1; height:8px; border-radius:var(--r-pill); background:var(--line);}
+.progress-bar .seg.done{background:var(--brand);}
+.progress-bar .seg.cur{background:linear-gradient(90deg, var(--brand) 50%, var(--brand-soft) 50%);}
+.line-bar{
+  width:100%; height:6px; background:var(--line); border-radius:var(--r-pill); overflow:hidden;
+  position:relative;
+}
+.line-bar > i{
+  position:absolute; left:0; top:0; bottom:0;
+  background:linear-gradient(90deg, var(--brand), var(--brand-d));
+  border-radius:var(--r-pill);
+}
+@keyframes ring{0%{transform:scale(1); opacity:.4;} 100%{transform:scale(2.4); opacity:0;}}
+@keyframes confetti-fall{
+  0%{transform:translateY(-40px) rotate(0); opacity:0;}
+  10%{opacity:1;} 90%{opacity:1;}
+  100%{transform:translateY(540px) rotate(720deg); opacity:0;}
+}
+@keyframes draw-check{0%{stroke-dashoffset:60;} 100%{stroke-dashoffset:0;}}
+.live-dot{display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--forest); position:relative; vertical-align:middle;}
+.live-dot::after{content:''; position:absolute; inset:0; border-radius:50%; background:var(--forest); animation:ring 1.6s var(--ease) infinite;}
+.callout{
+  margin:12px 16px; padding:12px 14px;
+  background:var(--gold-soft); border-left:3px solid var(--gold);
+  border-radius:var(--r-sm); font-size:12px; color:#7A5B23; line-height:1.55;
+}
+.callout b{color:var(--gold);}
+.callout.brand{background:var(--brand-tint); border-left-color:var(--brand); color:#7C3414;}
+.callout.brand b{color:var(--brand);}
+.callout.forest{background:var(--forest-soft); border-left-color:var(--forest); color:#0F4D33;}
+.callout.forest b{color:var(--forest);}
+.callout.danger{background:var(--danger-soft); border-left-color:var(--danger); color:#8B231C;}
+.callout.danger b{color:var(--danger);}
 
-  /* 通用 */
-  .gradient-text{background:linear-gradient(135deg,var(--p1),var(--p2),var(--p3));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-  .glow-card{position:relative;overflow:hidden}
-  .glow-card::before{content:'';position:absolute;inset:0;background:radial-gradient(800px circle at var(--mx,30%) var(--my,20%),rgba(123,97,255,.15),transparent 60%);pointer-events:none}
+/* ⓪ Login */
+.login{
+  flex:1; overflow-y:auto; overflow-x:hidden;
+  background:
+    radial-gradient(420px 280px at 100% -10%, rgba(255,255,255,.55), transparent 60%),
+    linear-gradient(180deg, var(--brand) 0%, #F47A45 28%, #FAB57A 50%, var(--paper) 75%);
+  position:relative;
+}
+.login::after{
+  content:'摊'; position:absolute; right:-50px; top:120px;
+  font-size:300px; font-weight:900; color:rgba(255,255,255,.10);
+  pointer-events:none; line-height:1; font-family:var(--font-display); z-index:0;
+}
+.login-hero{text-align:center; padding:24px 24px 12px; position:relative; z-index:2; color:#fff;}
+.login-hero .seal-wrap{display:inline-flex; align-items:center; justify-content:center; position:relative; margin-bottom:14px;}
+.login-hero .seal-wrap .stamp{
+  width:80px; height:80px; font-size:42px; background:#fff; color:var(--brand);
+  transform:rotate(-6deg); box-shadow:0 12px 30px rgba(0,0,0,.18);
+}
+.login-hero .seal-wrap .stamp::before{border-color:rgba(242,92,42,.30);}
+.login-hero h1{margin:0; font-size:38px; font-weight:900; letter-spacing:3px; text-shadow:0 2px 12px rgba(0,0,0,.25);}
+.login-hero .slogan{margin-top:4px; font-size:14px; font-weight:500; opacity:.95; letter-spacing:.5px;}
+.login-hero .tag-line{
+  margin-top:14px; display:inline-flex; align-items:center; gap:6px;
+  padding:6px 14px; border-radius:var(--r-pill);
+  background:rgba(255,255,255,.22); border:1px solid rgba(255,255,255,.35);
+  font-size:12px; font-weight:600;
+}
+.login-body{position:relative; z-index:2; padding-bottom:28px;}
+.inviter-card{
+  margin:8px 16px 14px; padding:14px;
+  background:#fff; border-radius:var(--r-md);
+  display:flex; align-items:center; gap:12px;
+  box-shadow:var(--shadow-2); position:relative;
+  border:1.5px solid var(--brand-soft);
+}
+.inviter-card::before{
+  content:'✉ 邀请'; position:absolute; top:-10px; left:14px;
+  background:var(--ink); color:var(--paper); font-size:10px; font-weight:700;
+  letter-spacing:1px; padding:2px 8px; border-radius:var(--r-xs);
+}
+.inviter-card .inv-av{
+  width:44px; height:44px; border-radius:50%;
+  background:linear-gradient(135deg,#F8965B,var(--brand));
+  color:#fff; font-size:18px; font-weight:800;
+  display:flex; align-items:center; justify-content:center;
+  flex-shrink:0;
+}
+.inviter-card .ic-info{flex:1; min-width:0;}
+.inviter-card .ic-line1{font-size:12px; color:var(--ink-2);}
+.inviter-card .ic-line1 b{color:var(--brand); font-weight:700;}
+.inviter-card .ic-line2{margin-top:3px; font-size:14px; font-weight:800; color:var(--ink); display:flex; align-items:center; gap:6px;}
+.inviter-card .ic-gift{
+  background:linear-gradient(135deg, var(--brand-tint), var(--brand-soft));
+  color:var(--brand-d); border:1px dashed var(--brand);
+  font-size:11px; font-weight:800; padding:5px 10px; border-radius:var(--r-sm);
+  flex-shrink:0; text-align:center; line-height:1.3;
+}
+.gift-ticket{
+  margin:0 16px 14px; background:#fff; border-radius:var(--r-md);
+  padding:14px 16px; display:flex; align-items:center; gap:12px;
+  position:relative; box-shadow:var(--shadow-2);
+  border:1.5px dashed var(--brand);
+}
+.gift-ticket::before, .gift-ticket::after{
+  content:''; position:absolute; top:50%; transform:translateY(-50%);
+  width:14px; height:14px; border-radius:50%; background:var(--paper);
+}
+.gift-ticket::before{left:-8px;} .gift-ticket::after{right:-8px;}
+.gift-ticket .gt-icon{
+  width:50px; height:50px; border-radius:14px;
+  background:linear-gradient(135deg, var(--brand), var(--brand-d));
+  color:#fff; font-size:28px;
+  display:flex; align-items:center; justify-content:center;
+  flex-shrink:0; box-shadow:var(--shadow-brand); transform:rotate(-4deg);
+}
+.gift-ticket .gt-info{flex:1; min-width:0;}
+.gift-ticket .gt-title{font-size:13px; color:var(--ink); font-weight:700;}
+.gift-ticket .gt-title b{color:var(--brand); font-size:24px; font-weight:900; margin:0 4px; vertical-align:-2px;}
+.gift-ticket .gt-sub{font-size:11px; color:var(--ink-2); margin-top:4px;}
+.gift-ticket .gt-cta{
+  background:var(--brand); color:#fff;
+  font-size:12px; font-weight:800; padding:6px 14px;
+  border-radius:var(--r-pill);
+  box-shadow:var(--shadow-brand); flex-shrink:0;
+}
+.value-list{margin:0 16px 14px; padding:4px 0; background:#fff; border-radius:var(--r-md); box-shadow:var(--shadow-2);}
+.value-list .vl-row{display:flex; align-items:center; gap:14px; padding:14px 16px; border-bottom:1px solid var(--line);}
+.value-list .vl-row:last-child{border-bottom:0;}
+.value-list .vl-idx{
+  width:30px; height:30px; border-radius:8px;
+  background:var(--paper-2); color:var(--ink);
+  font-weight:900; font-size:14px;
+  display:flex; align-items:center; justify-content:center;
+  flex-shrink:0;
+}
+.value-list .vl-idx.brand{background:var(--brand-soft); color:var(--brand-d);}
+.value-list .vl-idx.forest{background:var(--forest-soft); color:var(--forest);}
+.value-list .vl-idx.gold{background:var(--gold-soft); color:var(--gold);}
+.value-list .vl-body{flex:1; min-width:0;}
+.value-list .vl-title{font-size:14px; color:var(--ink); font-weight:700;}
+.value-list .vl-title b{
+  color:var(--brand); font-weight:900;
+  background:linear-gradient(180deg, transparent 60%, rgba(242,92,42,.18) 60%);
+  padding:0 2px;
+}
+.value-list .vl-desc{margin-top:3px; font-size:11px; color:var(--ink-3); line-height:1.5;}
+.social-pill{
+  margin:0 16px 16px; padding:8px 14px;
+  background:rgba(255,255,255,.92); border-radius:var(--r-pill);
+  display:flex; align-items:center; gap:10px;
+  border:1px solid var(--line); position:relative;
+  box-shadow:var(--shadow-1);
+}
+.social-pill .avatars{display:flex;}
+.social-pill .avatars .av{
+  width:22px; height:22px; border-radius:50%;
+  border:2px solid #fff; margin-left:-6px;
+  display:flex; align-items:center; justify-content:center;
+  color:#fff; font-size:9px; font-weight:800;
+}
+.social-pill .avatars .av:first-child{margin-left:0;}
+.social-pill .txt{flex:1; font-size:12px; color:var(--ink-2); font-weight:500;}
+.social-pill .txt b{color:var(--brand); font-weight:800;}
+.social-pill .live-dot{margin-left:auto;}
+.cta-wrap{
+  margin:8px 16px 12px; padding:16px;
+  background:#fff; border-radius:var(--r-lg);
+  box-shadow:0 -4px 16px rgba(0,0,0,.05);
+}
+.cta-wx{
+  height:54px; border-radius:27px;
+  background:linear-gradient(135deg, #07C160 0%, #06A050 100%);
+  color:#fff; font-size:16px; font-weight:800; letter-spacing:.5px;
+  display:flex; align-items:center; justify-content:center; gap:8px;
+  box-shadow:0 8px 22px rgba(7,193,96,.30); position:relative;
+}
+.cta-wx .gift-badge{
+  position:absolute; right:-6px; top:-8px;
+  background:var(--brand); color:#fff;
+  font-size:10px; font-weight:900; padding:3px 8px;
+  border-radius:var(--r-sm) var(--r-sm) var(--r-sm) 0;
+  transform:rotate(6deg); box-shadow:0 4px 10px rgba(242,92,42,.40);
+}
+.cta-phone{
+  margin-top:10px; height:48px; border-radius:24px;
+  background:var(--paper-2); color:var(--ink);
+  display:flex; align-items:center; justify-content:center; gap:8px;
+  font-size:14px; font-weight:700; border:1px solid var(--line);
+}
+.cta-row{margin-top:14px; display:flex; align-items:center; justify-content:center; gap:18px; font-size:12px; color:var(--ink-3);}
+.cta-row a{color:var(--brand); font-weight:700; text-decoration:none;}
+.cta-row .v{width:1px; height:12px; background:var(--line-2);}
+.agreement{text-align:center; padding:14px 24px; font-size:11px; color:var(--ink-3); line-height:1.6;}
+.agreement .check{
+  display:inline-block; width:14px; height:14px;
+  border-radius:50%; background:var(--brand); color:#fff;
+  font-size:9px; line-height:14px; text-align:center;
+  vertical-align:middle; margin-right:4px;
+}
+.agreement a{color:var(--brand); text-decoration:none;}
 
-  /* ===== 首页 ===== */
-  .home-hd{padding:14px 22px 0;display:flex;justify-content:space-between;align-items:center}
-  .greet{display:flex;align-items:center;gap:10px}
-  .av{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#7b61ff,#4dd6ff);border:2px solid rgba(255,255,255,.1)}
-  .greet-t{font-size:13px;color:var(--mute);font-weight:500}
-  .greet-t b{color:#fff;font-weight:800}
-  .head-ics{display:flex;gap:8px}
-  .head-ic{width:36px;height:36px;border-radius:12px;background:rgba(255,255,255,.05);display:flex;align-items:center;justify-content:center;font-size:14px;position:relative}
-  .head-dot{position:absolute;top:8px;right:8px;width:6px;height:6px;background:#ff4d6d;border-radius:50%}
+/* ① Home */
+.home-cover{
+  padding:8px 16px 28px; color:var(--paper);
+  background:
+    radial-gradient(360px 200px at 100% 0, rgba(255,255,255,.18), transparent 60%),
+    linear-gradient(160deg, var(--ink) 0%, #2C2620 100%);
+  position:relative;
+}
+.home-cover::before{
+  content:'摊'; position:absolute; right:-40px; bottom:-40px; font-size:240px;
+  color:rgba(242,92,42,.18); font-weight:900;
+  line-height:1; pointer-events:none; font-family:var(--font-display);
+}
+.home-row1{display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;}
+.home-row1 .loc{display:flex; align-items:center; gap:6px; font-size:11px; color:rgba(250,246,240,.65);}
+.home-row1 .loc b{color:var(--paper); font-size:13px; font-weight:700; margin-left:2px;}
+.home-row1 .loc .live-dot{background:var(--brand);}
+.home-row1 .loc .live-dot::after{background:var(--brand);}
+.home-row1 .icons{display:flex; gap:10px;}
+.home-row1 .icon-btn{
+  width:34px; height:34px; border-radius:50%;
+  background:rgba(255,255,255,.10); color:var(--paper);
+  display:flex; align-items:center; justify-content:center; font-size:16px;
+  border:1px solid rgba(255,255,255,.10);
+}
+.home-greeting{position:relative; z-index:2; font-size:13px; color:rgba(250,246,240,.60); letter-spacing:.5px;}
+.home-title{position:relative; z-index:2; font-size:28px; font-weight:800; margin-top:2px; color:var(--paper); letter-spacing:.5px;}
+.home-title .accent{color:var(--brand); background:linear-gradient(180deg, transparent 65%, rgba(242,92,42,.30) 65%);}
+.home-search{
+  position:relative; z-index:2;
+  margin-top:18px; background:#fff;
+  border-radius:var(--r-pill); padding:8px 8px 8px 18px;
+  display:flex; align-items:center; gap:10px;
+  box-shadow:0 8px 22px rgba(0,0,0,.25);
+}
+.home-search .ic{font-size:14px; color:var(--ink-3);}
+.home-search input{flex:1; border:0; outline:0; background:transparent; font-size:14px; color:var(--ink); font-family:inherit;}
+.home-search input::placeholder{color:var(--ink-3);}
+.home-search .voice{
+  width:36px; height:36px; border-radius:50%;
+  background:linear-gradient(135deg, var(--brand), var(--brand-d));
+  color:#fff; font-size:14px;
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:var(--shadow-brand);
+}
+.quick-row{
+  margin:-12px 16px 0; background:#fff; border-radius:var(--r-md);
+  padding:18px 8px 14px;
+  display:grid; grid-template-columns:repeat(4,1fr); gap:4px;
+  position:relative; z-index:3; box-shadow:var(--shadow-2);
+}
+.quick-item{text-align:center; padding:4px 0;}
+.quick-icon{
+  width:44px; height:44px; margin:0 auto 6px;
+  border-radius:14px; position:relative;
+  background:var(--brand-soft); color:var(--brand-d);
+  display:flex; align-items:center; justify-content:center; font-size:22px;
+}
+.quick-item:nth-child(2) .quick-icon{background:var(--info-soft); color:var(--info);}
+.quick-item:nth-child(3) .quick-icon{background:var(--gold-soft); color:var(--gold);}
+.quick-item:nth-child(4) .quick-icon{background:var(--forest-soft); color:var(--forest);}
+.quick-item.dot .quick-icon::after{
+  content:''; position:absolute; right:-2px; top:-2px;
+  width:8px; height:8px; border-radius:50%; background:var(--brand);
+}
+.quick-text{font-size:12px; color:var(--ink); font-weight:600;}
+.recent-strip{display:flex; gap:12px; overflow-x:auto; padding:6px 16px 14px; margin-top:8px;}
+.recent-strip::-webkit-scrollbar{height:0;}
+.recent-tile{
+  flex:0 0 170px; background:#fff;
+  border-radius:var(--r-md); overflow:hidden;
+  box-shadow:var(--shadow-1); position:relative;
+}
+.recent-tile .recent-cover{
+  height:96px; position:relative;
+  background:linear-gradient(135deg, #FFD8B5 0%, #F48B45 100%);
+  display:flex; align-items:flex-end; padding:8px;
+}
+.recent-tile.t2 .recent-cover{background:linear-gradient(135deg, #CCDDF7 0%, #5C8BE8 100%);}
+.recent-tile.t3 .recent-cover{background:linear-gradient(135deg, #CFEED3 0%, #4DB258 100%);}
+.recent-tile.t4 .recent-cover{background:linear-gradient(135deg, #F8C9D4 0%, #DE6189 100%);}
+.recent-tile .recent-cover .emoji{position:absolute; right:8px; bottom:8px; font-size:42px; opacity:.85;}
+.recent-tile .recent-cover .recent-tag{
+  background:rgba(0,0,0,.35); color:#fff;
+  padding:2px 8px; border-radius:var(--r-sm);
+  font-size:10px; font-weight:700; letter-spacing:.5px;
+}
+.recent-tile .recent-body{padding:10px 12px 12px;}
+.recent-tile .recent-name{font-size:13px; font-weight:700; color:var(--ink);}
+.recent-tile .recent-meta{margin-top:4px; font-size:11px; color:var(--ink-3); display:flex; align-items:center; gap:6px;}
+.recent-tile .recent-meta .dot{width:3px; height:3px; border-radius:50%; background:var(--ink-3);}
+.recent-tile .recent-meta em{font-style:normal; color:var(--forest); font-weight:700;}
+.ai-banner{
+  margin:14px 16px; padding:16px 18px;
+  background:linear-gradient(135deg, var(--ink) 0%, #3D2419 100%);
+  border-radius:var(--r-md); color:var(--paper);
+  display:flex; align-items:center; gap:14px;
+  position:relative; overflow:hidden;
+}
+.ai-banner::before{
+  content:''; position:absolute; right:-30px; top:-30px;
+  width:120px; height:120px; border-radius:50%;
+  background:radial-gradient(circle, rgba(242,92,42,.30), transparent 65%);
+}
+.ai-banner .ai-icon{
+  width:48px; height:48px; border-radius:14px;
+  background:linear-gradient(135deg, var(--brand), var(--brand-d));
+  display:flex; align-items:center; justify-content:center;
+  font-size:24px; flex-shrink:0; box-shadow:var(--shadow-brand);
+}
+.ai-banner .ai-body{flex:1; min-width:0; position:relative;}
+.ai-banner .ai-tag{display:inline-block; font-size:9px; font-weight:800; letter-spacing:1.5px; color:var(--brand); margin-bottom:3px;}
+.ai-banner .ai-title{font-size:15px; font-weight:800;}
+.ai-banner .ai-desc{font-size:11px; opacity:.65; margin-top:3px;}
+.ai-banner .ai-arrow{font-size:22px; opacity:.55;}
+.shop-tile{
+  display:flex; gap:14px; padding:14px 16px;
+  background:#fff; border-radius:var(--r-md);
+  margin:0 16px 10px; box-shadow:var(--shadow-1);
+}
+.shop-tile .logo-block{width:64px; height:64px; font-size:26px; border-radius:var(--r-md);}
+.shop-tile .st-info{flex:1; min-width:0;}
+.shop-tile .st-row1{display:flex; align-items:center; gap:8px;}
+.shop-tile .st-name{flex:1; font-size:15px; font-weight:800; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.shop-tile .st-tag{font-size:11px; color:var(--ink-2); margin-top:3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.shop-tile .st-meta{margin-top:8px; display:flex; align-items:center; gap:12px; font-size:11px; color:var(--ink-3);}
+.shop-tile .st-meta .rating{color:var(--gold); font-weight:800;}
+.shop-tile .st-meta .distance{color:var(--forest); font-weight:700; display:flex; align-items:center; gap:3px;}
+.shop-tile .st-meta .sale b{color:var(--ink); font-weight:700;}
 
-  /* 收益 hero 卡 */
-  .earn-card{margin:18px 14px 0;background:linear-gradient(135deg,#1a0533 0%,#2d0a4d 50%,#430a5a 100%);border-radius:24px;padding:22px;position:relative;overflow:hidden;border:1px solid rgba(123,97,255,.3)}
-  .earn-card::before{content:'';position:absolute;top:-50%;right:-30%;width:300px;height:300px;background:radial-gradient(circle,rgba(255,77,141,.25),transparent 60%);pointer-events:none}
-  .earn-card::after{content:'';position:absolute;bottom:-30%;left:-20%;width:240px;height:240px;background:radial-gradient(circle,rgba(77,214,255,.18),transparent 60%);pointer-events:none}
-  .earn-l{display:flex;align-items:center;gap:6px;font-size:11px;color:#c0a8ff;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;position:relative}
-  .earn-l::before{content:'💎';font-size:13px}
-  .earn-v{font-size:46px;font-weight:900;letter-spacing:-2px;margin-top:8px;line-height:1;position:relative}
-  .earn-v small{font-size:18px;font-weight:700;opacity:.7;margin-left:3px}
-  .earn-tag{display:inline-block;margin-top:8px;padding:3px 10px;background:rgba(255,77,141,.18);color:#ff8aae;border-radius:6px;font-size:10px;font-weight:700;position:relative}
-  .earn-bot{margin-top:18px;display:flex;justify-content:space-between;align-items:center;position:relative}
-  .earn-act{display:flex;gap:8px}
-  .earn-btn{padding:8px 16px;background:rgba(255,255,255,.1);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.15);color:#fff;border-radius:12px;font-size:11px;font-weight:700;display:flex;align-items:center;gap:4px}
-  .earn-btn.primary{background:linear-gradient(135deg,#ff4d8d,#ff7a3d);border:none;box-shadow:0 6px 20px rgba(255,77,141,.4)}
-  .earn-mini{display:flex;gap:14px}
-  .em{font-size:10px;color:#a8a0d0;font-weight:600}
-  .em b{display:block;font-size:14px;font-weight:800;color:#fff;margin-top:2px}
+/* ② Orders */
+.order-top{background:var(--paper); padding:16px 16px 0; border-bottom:1px solid var(--line);}
+.order-h{display:flex; align-items:baseline; justify-content:space-between; margin-bottom:14px;}
+.order-h h2{margin:0; font-size:26px; font-weight:900; letter-spacing:.5px;}
+.order-h .count{font-size:12px; color:var(--ink-3);}
+.order-h .count b{color:var(--brand); font-weight:800; font-size:14px;}
+.order-tabs{display:flex; gap:0; overflow-x:auto; padding-bottom:12px;}
+.order-tabs::-webkit-scrollbar{height:0;}
+.order-tabs .tab{
+  font-size:13px; color:var(--ink-3); font-weight:600;
+  padding:6px 14px; flex-shrink:0;
+  border-radius:var(--r-pill); position:relative;
+}
+.order-tabs .tab.active{background:var(--ink); color:var(--paper); font-weight:800;}
+.order-tabs .tab .badge{
+  background:var(--brand); color:#fff; font-size:10px;
+  padding:1px 6px; border-radius:var(--r-pill);
+  margin-left:4px; font-weight:800;
+}
+.shop-grp{margin:14px 16px; background:#fff; border-radius:var(--r-md); overflow:hidden; box-shadow:var(--shadow-1);}
+.shop-grp .grp-head{
+  display:flex; align-items:center; gap:10px;
+  padding:14px 16px; border-bottom:1px dashed var(--line);
+  background:linear-gradient(180deg, var(--brand-tint) 0%, #fff 100%);
+}
+.shop-grp .grp-head .name{flex:1; font-size:14px; font-weight:800; color:var(--ink);}
+.shop-grp .grp-head .arrow{color:var(--ink-3); font-size:18px;}
+.order-row{padding:14px 16px; border-bottom:1px solid var(--line);}
+.order-row:last-child{border-bottom:0;}
+.order-row .row1{display:flex; align-items:center; margin-bottom:10px;}
+.order-row .order-no{flex:1; font-size:11px; color:var(--ink-3); font-family:var(--font-mono); letter-spacing:.5px;}
+.order-row .items{display:flex; gap:10px; margin-bottom:10px;}
+.order-row .o-pic{
+  width:56px; height:56px; border-radius:var(--r-sm);
+  background:linear-gradient(135deg, #FFE2C8, #F48B45);
+  display:flex; align-items:center; justify-content:center;
+  font-size:26px; flex-shrink:0;
+}
+.order-row .o-pic.blue{background:linear-gradient(135deg, #D4E1F7, #5C8BE8);}
+.order-row .o-pic.green{background:linear-gradient(135deg, #D7F1DC, #4DB258);}
+.order-row .o-info{flex:1; min-width:0;}
+.order-row .o-name{font-size:13px; font-weight:600; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.order-row .o-spec{font-size:11px; color:var(--ink-3); margin-top:3px;}
+.order-row .o-amt{text-align:right; flex-shrink:0;}
+.order-row .o-amt .price{font-size:14px; font-weight:800; color:var(--ink);}
+.order-row .o-amt .qty{font-size:11px; color:var(--ink-3); margin-top:3px;}
+.order-row .foot{display:flex; align-items:center; justify-content:space-between;}
+.order-row .total{font-size:12px; color:var(--ink-2);}
+.order-row .total b{font-size:16px; font-weight:900; color:var(--ink); margin-left:4px;}
+.order-row .actions{display:flex; gap:8px;}
+.order-row .actions .btn{padding:6px 14px; font-size:12px;}
 
-  /* 推 N 反 1 进度卡 */
-  .promo-card{margin:14px;background:var(--bg-card);border-radius:20px;padding:18px;border:1px solid var(--line);position:relative;overflow:hidden}
-  .promo-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(123,97,255,.08),transparent 60%);pointer-events:none}
-  .promo-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;position:relative}
-  .promo-t{font-size:14px;font-weight:800;display:flex;align-items:center;gap:8px}
-  .promo-t::before{content:'';width:6px;height:6px;border-radius:50%;background:#3df0c2;box-shadow:0 0 12px #3df0c2;animation:pulse 2s ease-in-out infinite}
-  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-  .promo-step{font-size:11px;color:var(--mute);font-weight:600}
-  .promo-step b{color:var(--ok);font-weight:800}
+/* ③ Me */
+.me-cover{
+  padding:22px 18px 56px;
+  background:
+    radial-gradient(280px 200px at 100% 100%, rgba(255,255,255,.10), transparent 60%),
+    linear-gradient(160deg, var(--ink) 0%, #3D2419 100%);
+  position:relative; color:var(--paper);
+}
+.me-cover::after{
+  content:'摊小二'; position:absolute;
+  left:18px; bottom:8px; font-size:46px;
+  color:rgba(255,255,255,.05); font-weight:900;
+  letter-spacing:6px; pointer-events:none;
+}
+.me-cover .row{display:flex; align-items:center; gap:14px; position:relative; z-index:2;}
+.me-cover .avatar{
+  width:60px; height:60px; border-radius:50%;
+  background:linear-gradient(135deg, var(--brand), var(--brand-d));
+  color:#fff; font-weight:900; font-size:24px;
+  display:flex; align-items:center; justify-content:center;
+  border:2px solid rgba(255,255,255,.30);
+  box-shadow:0 6px 18px rgba(0,0,0,.30);
+  position:relative;
+}
+.me-cover .avatar::after{
+  content:'⭐'; position:absolute; right:-4px; bottom:-4px;
+  width:22px; height:22px; border-radius:50%;
+  background:var(--gold); color:#fff;
+  font-size:11px; display:flex; align-items:center; justify-content:center;
+  border:2px solid var(--ink);
+}
+.me-cover .me-name{font-size:20px; font-weight:800; letter-spacing:.5px;}
+.me-cover .me-sub{font-size:12px; opacity:.55; margin-top:2px;}
+.me-cover .gear{
+  width:36px; height:36px; border-radius:50%;
+  background:rgba(255,255,255,.10);
+  display:flex; align-items:center; justify-content:center; font-size:14px;
+}
+.me-summary{
+  margin:-32px 16px 0;
+  background:#fff; border-radius:var(--r-md);
+  box-shadow:var(--shadow-2);
+  display:grid; grid-template-columns:repeat(3,1fr);
+  padding:18px 0; position:relative; z-index:2;
+}
+.me-summary .item{text-align:center; position:relative;}
+.me-summary .item + .item::before{content:''; position:absolute; left:0; top:14px; bottom:14px; width:1px; background:var(--line);}
+.me-summary .num{font-size:28px; font-weight:900; color:var(--ink); letter-spacing:-.5px; line-height:1;}
+.me-summary .num.brand{color:var(--brand);}
+.me-summary .lbl{font-size:11px; color:var(--ink-3); margin-top:6px; font-weight:600; letter-spacing:.5px;}
+.shop-list{margin:12px 16px; background:#fff; border-radius:var(--r-md); box-shadow:var(--shadow-1); overflow:hidden;}
+.shop-list .sl-head{display:flex; align-items:center; justify-content:space-between; padding:14px 16px; border-bottom:1px solid var(--line); background:var(--paper);}
+.shop-list .sl-head .t{font-size:13px; font-weight:800; color:var(--ink); letter-spacing:.5px;}
+.shop-list .sl-head .t b{color:var(--brand);}
+.shop-list .sl-head .more{font-size:11px; color:var(--ink-3); font-weight:600;}
+.sl-row{display:flex; gap:12px; padding:14px 16px; border-bottom:1px solid var(--line);}
+.sl-row:last-child{border-bottom:0;}
+.sl-row .sl-info{flex:1; min-width:0;}
+.sl-row .sl-name{font-size:14px; font-weight:700; color:var(--ink); display:flex; align-items:center; gap:6px;}
+.sl-row .sl-star{background:var(--gold-soft); color:var(--gold); font-size:10px; font-weight:800; padding:2px 7px; border-radius:var(--r-sm);}
+.sl-row .sl-stats{margin-top:8px; display:flex; gap:14px; font-size:11px; color:var(--ink-3);}
+.sl-row .sl-stats em{font-style:normal; color:var(--brand); font-weight:800; font-size:13px;}
+.sl-row .sl-stats em.ink{color:var(--ink);}
+.sl-row .arrow{font-size:18px; color:var(--ink-3); align-self:center;}
+.fn-card{margin:12px 16px; background:#fff; border-radius:var(--r-md); box-shadow:var(--shadow-1); overflow:hidden;}
+.fn-card .fn-title{padding:14px 16px 8px; font-size:11px; color:var(--ink-3); font-weight:800; letter-spacing:2px;}
+.fn-row{display:flex; align-items:center; gap:14px; padding:14px 16px; border-top:1px solid var(--line);}
+.fn-row:first-of-type{border-top:0;}
+.fn-icon{
+  width:36px; height:36px; border-radius:10px;
+  background:var(--brand-soft); color:var(--brand-d);
+  display:flex; align-items:center; justify-content:center;
+  font-size:18px; flex-shrink:0;
+}
+.fn-icon.info{background:var(--info-soft); color:var(--info);}
+.fn-icon.forest{background:var(--forest-soft); color:var(--forest);}
+.fn-icon.gold{background:var(--gold-soft); color:var(--gold);}
+.fn-icon.pink{background:#FCE0E8; color:#DE6189;}
+.fn-icon.ink{background:var(--paper-2); color:var(--ink-2);}
+.fn-name{flex:1; font-size:14px; color:var(--ink); font-weight:600;}
+.fn-tag{
+  font-size:11px; background:var(--brand-tint); color:var(--brand-d);
+  padding:2px 10px; border-radius:var(--r-pill); font-weight:700;
+}
+.fn-tag.gold{background:var(--gold-soft); color:var(--gold);}
+.fn-tag.forest{background:var(--forest-soft); color:var(--forest);}
+.fn-arrow{font-size:16px; color:var(--ink-3);}
 
-  .progress{display:flex;gap:6px;position:relative;height:32px;align-items:center}
-  .p-node{flex:1;height:6px;background:rgba(255,255,255,.08);border-radius:99px;position:relative;overflow:hidden}
-  .p-node.done{background:linear-gradient(90deg,#7b61ff,#4dd6ff);box-shadow:0 0 12px rgba(77,214,255,.5)}
-  .p-node.cur{background:linear-gradient(90deg,#ff4d8d 0%,#ff7a3d 50%,transparent 50%);background-size:200% 100%;animation:slide 2s linear infinite}
-  @keyframes slide{0%{background-position:200% 0}100%{background-position:0 0}}
-  .p-step{position:absolute;top:14px;font-size:9px;color:var(--mute);font-weight:600;left:0;width:100%;text-align:center;letter-spacing:1px}
-  .p-step.done{color:#3df0c2}
-  .p-step.cur{color:#ff7a3d;font-weight:800}
+/* ③.1 Wallet */
+.wallet-hero{
+  margin:14px 16px;
+  background:linear-gradient(135deg, var(--ink) 0%, #3D2419 100%);
+  color:var(--paper); border-radius:var(--r-md);
+  padding:22px; position:relative; overflow:hidden;
+}
+.wallet-hero::before{
+  content:'¥'; position:absolute;
+  right:-20px; bottom:-50px; font-size:200px;
+  color:rgba(242,92,42,.10); font-weight:900;
+  font-family:var(--font-display); line-height:1;
+}
+.wallet-hero .lbl{font-size:11px; opacity:.55; letter-spacing:1px; font-weight:600; display:flex; align-items:center; gap:6px;}
+.wallet-hero .lbl::before{content:''; width:14px; height:1px; background:var(--brand);}
+.wallet-hero .bignum{color:var(--paper); margin-top:8px;}
+.wallet-hero .note{margin-top:14px; padding-top:12px; border-top:1px dashed rgba(255,255,255,.18); font-size:11px; opacity:.65; line-height:1.5;}
+.wallet-row{display:flex; align-items:center; gap:12px; padding:16px 16px; border-bottom:1px solid var(--line);}
+.wallet-row:last-child{border-bottom:0;}
+.wallet-row .w-info{flex:1; min-width:0;}
+.wallet-row .w-name{font-size:14px; font-weight:700; color:var(--ink);}
+.wallet-row .w-mini{margin-top:5px; display:flex; gap:14px; font-size:11px; color:var(--ink-3);}
+.wallet-row .w-mini em{font-style:normal; color:var(--ink); font-weight:700;}
+.wallet-row .w-right{text-align:right; flex-shrink:0;}
+.wallet-row .w-bal{font-size:20px; font-weight:900; color:var(--brand); letter-spacing:-.5px; line-height:1;}
+.wallet-row .w-bal.muted{color:var(--ink-3);}
+.wallet-row .w-bal small{font-size:11px;}
+.wallet-row .w-act{
+  margin-top:6px; display:inline-block;
+  padding:4px 10px; border-radius:var(--r-pill);
+  font-size:11px; font-weight:700;
+  background:var(--brand-soft); color:var(--brand-d);
+}
+.wallet-row .w-act.disabled{background:var(--paper-2); color:var(--ink-3);}
 
-  .promo-tip{margin-top:14px;padding:10px 12px;background:rgba(61,240,194,.08);border-left:3px solid #3df0c2;border-radius:6px;font-size:11px;color:#a3f0d8;font-weight:500;position:relative}
-  .promo-tip b{color:#3df0c2;font-weight:800}
+/* ③.2 Points */
+.points-hero{
+  margin:14px 16px;
+  background:#fff; border:1.5px solid var(--brand);
+  border-radius:var(--r-md);
+  padding:18px; position:relative; overflow:hidden;
+}
+.points-hero::after{
+  content:''; position:absolute; left:-50px; top:-50px;
+  width:160px; height:160px; border-radius:50%;
+  background:radial-gradient(circle, var(--brand-soft), transparent 60%);
+}
+.points-hero .p-row{position:relative; z-index:2; display:flex; align-items:flex-end; gap:14px;}
+.points-hero .lbl{font-size:11px; color:var(--ink-3); letter-spacing:1px; font-weight:600;}
+.points-hero .lbl b{color:var(--ink); font-weight:800; font-size:13px;}
+.points-hero .bignum{color:var(--brand); font-size:54px; line-height:.95;}
+.points-hero .bignum small{font-size:14px; color:var(--ink-3); margin-left:6px; font-weight:600;}
+.points-hero .note{margin-top:14px; padding-top:12px; position:relative; z-index:2; border-top:1px dashed var(--line-2); font-size:11px; color:var(--ink-2); line-height:1.5;}
+.points-hero .note b{color:var(--brand);}
+.seg-ctrl{display:flex; gap:0; background:var(--paper-2); margin:12px 16px; border-radius:var(--r-md); padding:4px;}
+.seg-ctrl .seg{flex:1; text-align:center; padding:8px 6px; font-size:13px; color:var(--ink-2); font-weight:600; border-radius:var(--r-sm);}
+.seg-ctrl .seg.active{background:#fff; color:var(--ink); font-weight:800; box-shadow:var(--shadow-1);}
+.flow-row{display:flex; align-items:center; padding:14px 16px; border-bottom:1px solid var(--line); background:#fff;}
+.flow-row:last-child{border-bottom:0;}
+.flow-row .f-ic{
+  width:38px; height:38px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:16px; flex-shrink:0;
+  background:var(--forest-soft); color:var(--forest);
+}
+.flow-row.minus .f-ic{background:var(--danger-soft); color:var(--danger);}
+.flow-row.draw .f-ic{background:var(--gold-soft); color:var(--gold);}
+.flow-row.team .f-ic{background:var(--info-soft); color:var(--info);}
+.flow-row .f-body{flex:1; min-width:0; padding-left:12px;}
+.flow-row .f-name{font-size:13px; font-weight:600; color:var(--ink);}
+.flow-row .f-meta{margin-top:3px; font-size:11px; color:var(--ink-3);}
+.flow-row .f-amt{font-size:18px; font-weight:900; color:var(--forest); letter-spacing:-.5px;}
+.flow-row.minus .f-amt{color:var(--danger);}
 
-  /* 区块标题 */
-  .sec{padding:22px 22px 12px;display:flex;justify-content:space-between;align-items:flex-end}
-  .sec-t{font-size:20px;font-weight:900;letter-spacing:-.5px}
-  .sec-t small{font-size:10px;color:var(--mute);font-weight:600;margin-left:6px;letter-spacing:1px;text-transform:uppercase}
-  .sec-more{font-size:11px;color:var(--mute);font-weight:600}
+/* ③.3 Withdrawal */
+.form-group{margin:14px 16px;}
+.field.shop-pick{padding:12px 14px;}
+.field.shop-pick .ctx{flex:1; min-width:0;}
+.field.shop-pick .ctx .nm{font-size:14px; font-weight:700; color:var(--ink);}
+.field.shop-pick .ctx .bal{font-size:11px; color:var(--ink-3); margin-top:2px;}
+.field.shop-pick .change{color:var(--brand); font-size:12px; font-weight:700;}
+.field input.amount{font-size:28px; font-weight:900; letter-spacing:-1px;}
+.field .all-btn{background:var(--brand-soft); color:var(--brand-d); font-size:11px; font-weight:800; padding:4px 10px; border-radius:var(--r-pill);}
+.field.selected{border-color:var(--brand); border-width:2px;}
+.field .radio-dot{
+  width:18px; height:18px; border-radius:50%;
+  border:2px solid var(--brand);
+  display:flex; align-items:center; justify-content:center;
+  background:var(--brand); flex-shrink:0;
+}
+.field .radio-dot::after{content:''; width:6px; height:6px; border-radius:50%; background:#fff;}
 
-  /* 分类圆 */
-  .cats{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;padding:0 14px}
-  .cat-i{display:flex;flex-direction:column;align-items:center;gap:6px;padding:8px 0}
-  .cat-c{width:46px;height:46px;border-radius:16px;background:linear-gradient(135deg,#1a1a2a,#13131f);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:22px;position:relative}
-  .cat-c.hot::after{content:'热';position:absolute;top:-3px;right:-3px;font-size:8px;font-weight:800;padding:1px 4px;background:linear-gradient(135deg,#ff4d8d,#ff7a3d);border-radius:6px;color:#fff}
-  .cat-l{font-size:10px;color:var(--mute);font-weight:600}
+/* ③.4 Queue receipt */
+.queue-receipt{
+  margin:14px 16px; background:#fff;
+  border-radius:var(--r-md); box-shadow:var(--shadow-1);
+  position:relative; overflow:hidden;
+}
+.queue-receipt::before{
+  content:''; position:absolute; left:0; right:0; top:0;
+  height:6px;
+  background-image:radial-gradient(circle at 6px 0, var(--paper) 4px, transparent 4px);
+  background-size:12px 8px; background-position:0 -3px;
+}
+.queue-receipt::after{
+  content:''; position:absolute; left:0; right:0; bottom:0;
+  height:6px;
+  background-image:radial-gradient(circle at 6px 100%, var(--paper) 4px, transparent 4px);
+  background-size:12px 8px; background-position:0 3px;
+}
+.queue-receipt .qr-inner{padding:16px 18px;}
+.queue-receipt .qr-head{display:flex; align-items:center; gap:10px; margin-bottom:12px;}
+.queue-receipt .qr-name{flex:1; font-size:14px; font-weight:800; color:var(--ink); letter-spacing:.5px;}
+.queue-receipt .qr-layer{font-size:10px; font-weight:900; letter-spacing:1px; padding:3px 10px; border-radius:var(--r-sm);}
+.queue-receipt .qr-layer.a{background:var(--brand-soft); color:var(--brand-d);}
+.queue-receipt .qr-layer.b{background:var(--info-soft); color:var(--info);}
+.queue-receipt .qr-rule{font-size:11px; color:var(--ink-3); margin-bottom:14px; border-bottom:1px dashed var(--line); padding-bottom:12px;}
+.queue-receipt .qr-rule b{color:var(--brand); font-weight:800;}
+.queue-receipt .qr-foot{display:flex; justify-content:space-between; align-items:center; margin-top:8px; font-size:11px; color:var(--ink-3);}
+.queue-receipt .qr-foot b{color:var(--ink); font-weight:800; font-size:13px;}
+.queue-receipt .qr-foot .almost{color:var(--brand); font-weight:800;}
 
-  /* 中奖横滚 */
-  .ticker{margin:18px 14px 0;padding:10px 14px;background:linear-gradient(90deg,rgba(255,77,141,.12),rgba(255,123,61,.12));border:1px solid rgba(255,77,141,.2);border-radius:12px;display:flex;align-items:center;gap:10px;overflow:hidden;position:relative}
-  .ticker::before{content:'🎉';font-size:16px;flex-shrink:0}
-  .ticker-text{font-size:11px;color:#ffb13d;font-weight:600;animation:tick 12s linear infinite;white-space:nowrap}
-  @keyframes tick{0%{transform:translateX(100%)}100%{transform:translateX(-100%)}}
-  .ticker-text b{color:#ff8aae;font-weight:800;margin:0 4px}
+/* ③.5 Stars */
+.star-receipt{
+  margin:14px 16px; padding:18px;
+  background:linear-gradient(135deg, #fff 0%, var(--brand-tint) 100%);
+  border-radius:var(--r-md);
+  border:1px solid var(--gold-soft);
+  position:relative;
+}
+.star-receipt .sr-head{display:flex; align-items:center; gap:12px; margin-bottom:14px;}
+.star-receipt .sr-name{flex:1; font-size:15px; font-weight:800; color:var(--ink);}
+.star-receipt .stars{font-size:18px; color:var(--gold); letter-spacing:3px; line-height:1; display:flex; align-items:center; gap:1px;}
+.star-receipt .stars .empty{color:#E0D4BB;}
+.star-receipt .sr-rate{font-size:11px; color:var(--ink-3); display:flex; align-items:center; gap:6px; margin-bottom:10px;}
+.star-receipt .sr-rate b{color:var(--brand); font-weight:800; font-size:13px;}
+.star-receipt .sr-cond{background:rgba(255,255,255,.85); border-radius:var(--r-sm); padding:12px 14px;}
+.star-receipt .sr-cond .ct{font-size:12px; font-weight:700; color:var(--ink); margin-bottom:8px;}
+.star-receipt .sr-cond .crow{display:flex; align-items:center; gap:10px; margin-top:8px; font-size:11px; color:var(--ink-2);}
+.star-receipt .sr-cond .crow .nm{width:84px;}
+.star-receipt .sr-cond .crow em{font-style:normal; color:var(--ink); font-weight:800; font-size:12px; min-width:46px; text-align:right;}
 
-  /* 店铺/商品卡 */
-  .feat-list{display:flex;gap:12px;padding:0 22px;overflow-x:auto;scrollbar-width:none}
-  .feat-list::-webkit-scrollbar{display:none}
-  .fc{flex-shrink:0;width:260px;height:340px;border-radius:24px;position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;padding:20px}
-  .fc-1{background:linear-gradient(135deg,#ff4d8d 0%,#7b1b48 100%)}
-  .fc-2{background:linear-gradient(135deg,#7b61ff 0%,#3b2a8d 100%)}
-  .fc-3{background:linear-gradient(135deg,#4dd6ff 0%,#0a5d8a 100%)}
-  .fc::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 70% 30%,rgba(255,255,255,.25),transparent 50%);pointer-events:none}
-  .fc-tag{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;background:rgba(0,0,0,.4);backdrop-filter:blur(20px);color:#fff;border-radius:5px;font-size:10px;font-weight:700;align-self:flex-start;border:1px solid rgba(255,255,255,.15)}
-  .fc-tag.flame::before{content:'🔥'}
-  .fc-name{font-size:24px;font-weight:900;letter-spacing:-.5px;line-height:1.1;margin-top:auto}
-  .fc-sub{font-size:11px;opacity:.8;margin-top:6px}
-  .fc-bot{margin-top:14px;display:flex;justify-content:space-between;align-items:flex-end}
-  .fc-meta{display:flex;flex-direction:column;gap:2px}
-  .fc-l{font-size:10px;opacity:.7;letter-spacing:.5px;text-transform:uppercase}
-  .fc-v{font-size:22px;font-weight:900;letter-spacing:-.5px}
-  .fc-cta{padding:10px 18px;background:rgba(255,255,255,.95);color:#0a0a14;border-radius:99px;font-size:11px;font-weight:800}
+/* ③.6 Invite */
+.invite-hero{
+  margin:14px 16px; padding:22px 20px;
+  background:
+    radial-gradient(160px 100px at 100% 0, rgba(255,255,255,.20), transparent 60%),
+    linear-gradient(135deg, var(--ink) 0%, var(--brand-d) 100%);
+  border-radius:var(--r-md);
+  color:var(--paper);
+  position:relative; overflow:hidden;
+  box-shadow:var(--shadow-ink);
+}
+.invite-hero::after{
+  content:'+1'; position:absolute;
+  right:18px; top:50%; transform:translateY(-50%) rotate(-12deg);
+  font-size:80px; font-weight:900; color:rgba(242,92,42,.40); line-height:1;
+}
+.invite-hero .ih-tag{display:inline-block; font-size:10px; font-weight:800; letter-spacing:2px; color:var(--brand); margin-bottom:6px;}
+.invite-hero h2{margin:0; font-size:24px; font-weight:900; letter-spacing:.5px;}
+.invite-hero p{margin:8px 0 0; font-size:12px; opacity:.75; line-height:1.55; max-width:230px;}
+.invite-hero p b{color:var(--brand); font-weight:800;}
+.invite-pick{
+  margin:-30px 16px 12px; padding:14px;
+  background:#fff; border-radius:var(--r-md);
+  display:flex; align-items:center; gap:12px;
+  border:1px solid var(--line);
+  box-shadow:var(--shadow-1); position:relative;
+}
+.invite-pick .ip-info{flex:1; min-width:0;}
+.invite-pick .ip-lbl{font-size:11px; color:var(--ink-3); font-weight:600;}
+.invite-pick .ip-name{font-size:14px; font-weight:800; color:var(--ink); margin-top:2px;}
+.invite-pick .ip-switch{color:var(--brand); font-size:12px; font-weight:700;}
+.invite-qr{
+  margin:12px 16px; padding:20px;
+  background:#fff; border-radius:var(--r-md);
+  text-align:center; box-shadow:var(--shadow-1);
+  border:1px solid var(--line);
+}
+.qr-block{
+  width:190px; height:190px; margin:0 auto 14px;
+  background:
+    repeating-linear-gradient(0deg, var(--ink) 0 6px, transparent 6px 12px),
+    repeating-linear-gradient(90deg, var(--ink) 0 6px, transparent 6px 12px);
+  background-color:#fff;
+  border-radius:14px; border:8px solid #fff;
+  box-shadow:0 0 0 1px var(--line);
+  position:relative;
+}
+.qr-block::after{
+  content:'示意'; position:absolute; left:50%; top:50%;
+  transform:translate(-50%,-50%);
+  background:#fff; padding:6px 14px; border-radius:var(--r-sm);
+  font-size:11px; color:var(--ink-3); font-weight:700;
+}
+.invite-qr .qr-tip{font-size:13px; font-weight:700; color:var(--ink);}
+.invite-qr .qr-url{margin-top:6px; font-size:11px; color:var(--ink-3); word-break:break-all; font-family:var(--font-mono);}
+.invite-actions{display:flex; gap:10px; margin:12px 16px;}
+.invite-actions .btn{flex:1;}
+.friend-row{display:flex; align-items:center; gap:12px; padding:14px 16px; border-bottom:1px solid var(--line);}
+.friend-row:last-child{border-bottom:0;}
+.friend-row .av{
+  width:44px; height:44px; border-radius:50%;
+  background:linear-gradient(135deg, #F8965B, var(--brand));
+  color:#fff; font-weight:800; font-size:18px;
+  display:flex; align-items:center; justify-content:center;
+  flex-shrink:0;
+}
+.friend-row .av.blue{background:linear-gradient(135deg, #B7CDF2, #5C8BE8);}
+.friend-row .av.green{background:linear-gradient(135deg, #C0E5C4, #4DB258);}
+.friend-row .av.pink{background:linear-gradient(135deg, #F8C9D4, #DE6189);}
+.friend-row .av.purple{background:linear-gradient(135deg, #DCC9F2, #8B6FCC);}
+.friend-row .fr-info{flex:1; min-width:0;}
+.friend-row .fr-name{font-size:14px; font-weight:700; color:var(--ink); display:flex; align-items:center; gap:6px; overflow:hidden;}
+.friend-row .fr-meta{margin-top:3px; font-size:11px; color:var(--ink-3); font-family:var(--font-mono);}
+.friend-row .fr-amt{text-align:right; flex-shrink:0;}
+.friend-row .fr-amt .price{font-size:15px; font-weight:900; color:var(--brand);}
+.friend-row .fr-amt .price.muted{color:var(--ink-3); font-weight:600;}
+.friend-row .fr-amt .lbl{font-size:10px; color:var(--ink-3); margin-top:2px;}
 
-  /* 商品 grid */
-  .grid{padding:0 14px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
-  .p{background:var(--bg-card);border-radius:18px;padding:10px;border:1px solid var(--line);position:relative;overflow:hidden}
-  .p-pic{height:128px;border-radius:12px;background:linear-gradient(135deg,#2a1a3a,#1a1a2a);display:flex;align-items:center;justify-content:center;font-size:64px;margin-bottom:10px;position:relative;overflow:hidden}
-  .p-pic.flame{background:linear-gradient(135deg,#3a1a2a,#1a1a2a)}
-  .p-pic.lucky{background:linear-gradient(135deg,#2a1a3a,#1a2a3a)}
-  .p-badge{position:absolute;top:8px;left:8px;padding:3px 7px;background:linear-gradient(135deg,#ff4d8d,#ff7a3d);color:#fff;border-radius:5px;font-size:9px;font-weight:800;letter-spacing:.5px}
-  .p-badge.cool{background:linear-gradient(135deg,#7b61ff,#4dd6ff)}
-  .p-n{font-size:13px;font-weight:700;line-height:1.3;color:#fff;height:34px;overflow:hidden}
-  .p-meta{display:flex;justify-content:space-between;align-items:center;margin-top:6px}
-  .p-price{font-size:18px;font-weight:900;color:#fff;letter-spacing:-.5px}
-  .p-price small{font-size:10px;color:var(--mute);font-weight:600;margin-left:1px}
-  .p-earn{font-size:10px;color:#3df0c2;font-weight:700;background:rgba(61,240,194,.1);padding:2px 6px;border-radius:5px}
+/* ③.7 Address */
+.addr-card{margin:12px 16px; padding:16px; background:#fff; border-radius:var(--r-md); box-shadow:var(--shadow-1); position:relative;}
+.addr-card.default{border-left:4px solid var(--brand);}
+.addr-card.default::after{
+  content:'默认'; position:absolute; top:16px; right:14px;
+  background:var(--brand); color:#fff;
+  font-size:10px; font-weight:800; letter-spacing:1px;
+  padding:2px 9px; border-radius:var(--r-sm);
+}
+.addr-card .name-row{display:flex; align-items:baseline; gap:12px;}
+.addr-card .nm{font-size:16px; font-weight:800; color:var(--ink); letter-spacing:.5px;}
+.addr-card .ph{font-size:12px; color:var(--ink-2); font-family:var(--font-mono);}
+.addr-card .addr{margin-top:6px; font-size:13px; color:var(--ink-2); line-height:1.55;}
+.addr-card .ops{margin-top:12px; padding-top:10px; display:flex; gap:14px; border-top:1px dashed var(--line); font-size:12px; color:var(--ink-3); font-weight:600;}
 
-  /* Tab bar */
-  .tabbar{position:absolute;bottom:0;left:0;right:0;height:84px;background:rgba(10,10,20,.92);backdrop-filter:blur(28px);display:flex;border-top:1px solid var(--line);padding:6px 0 20px}
-  .tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:10px;color:var(--mute2);font-weight:600;position:relative}
-  .tab svg{width:22px;height:22px}
-  .tab.on{color:#fff}
-  .tab.on .tab-dot{position:absolute;top:8px;width:4px;height:4px;border-radius:50%;background:linear-gradient(135deg,#ff4d8d,#ff7a3d);box-shadow:0 0 8px #ff4d8d}
-  .tab .cart-circle{width:50px;height:50px;border-radius:50%;background:linear-gradient(135deg,#ff4d8d,#ff7a3d);display:flex;align-items:center;justify-content:center;margin-top:-12px;box-shadow:0 8px 24px rgba(255,77,141,.4)}
-  .tab .cart-circle svg{width:24px;height:24px;color:#fff}
-  .tab-badge{position:absolute;top:6px;right:24px;min-width:16px;height:16px;padding:0 4px;background:linear-gradient(135deg,#ff4d8d,#ff7a3d);color:#fff;border-radius:8px;font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center}
+/* ④ Shop home */
+.sh-cover{
+  height:260px; position:relative; overflow:hidden;
+  background:
+    radial-gradient(280px 200px at 30% 30%, rgba(255,255,255,.20), transparent 60%),
+    linear-gradient(160deg, #FFA15F 0%, var(--brand) 50%, var(--brand-d) 100%);
+}
+.sh-cover::before{
+  content:'🍠'; position:absolute;
+  right:-40px; bottom:-50px; font-size:240px;
+  opacity:.20; transform:rotate(-12deg);
+}
+.sh-nav{position:absolute; top:14px; left:14px; right:14px; display:flex; justify-content:space-between; align-items:center; z-index:3;}
+.sh-nav .group{display:flex; gap:8px;}
+.sh-icon-btn{
+  width:36px; height:36px; border-radius:50%;
+  background:rgba(0,0,0,.30); color:#fff; font-size:14px;
+  display:flex; align-items:center; justify-content:center;
+  border:1px solid rgba(255,255,255,.25);
+  backdrop-filter:blur(10px);
+}
+.sh-icon-btn.back{font-size:22px;}
+.sh-meta{position:absolute; left:18px; bottom:18px; right:18px; color:#fff; text-shadow:0 2px 12px rgba(0,0,0,.30); z-index:2;}
+.sh-meta .biz-tag{
+  display:inline-flex; align-items:center; gap:5px;
+  padding:4px 12px; border-radius:var(--r-pill);
+  background:rgba(0,0,0,.30); border:1px solid rgba(255,255,255,.30);
+  font-size:11px; font-weight:700; backdrop-filter:blur(8px);
+  margin-bottom:10px;
+}
+.sh-meta .biz-tag b{color:#FFE8D6;}
+.sh-meta .nm{font-size:30px; font-weight:900; letter-spacing:.5px; line-height:1.1;}
+.sh-meta .slogan{margin-top:4px; font-size:13px; opacity:.92; font-weight:500;}
+.sh-info-card{margin:-36px 16px 0; background:#fff; border-radius:var(--r-md); padding:16px; box-shadow:var(--shadow-2); position:relative; z-index:5;}
+.sh-stat-row{display:flex; align-items:flex-end; gap:18px; padding-bottom:12px; border-bottom:1px dashed var(--line);}
+.sh-stat{flex-shrink:0;}
+.sh-stat .num{font-size:22px; font-weight:900; color:var(--ink); letter-spacing:-.5px; line-height:1;}
+.sh-stat .num.brand{color:var(--brand);}
+.sh-stat .num .ic{font-size:16px; color:var(--gold); margin-right:2px;}
+.sh-stat .lbl{font-size:10px; color:var(--ink-3); margin-top:4px; font-weight:600; letter-spacing:.5px;}
+.sh-vert-line{width:1px; height:32px; background:var(--line); align-self:center;}
+.my-star-pill{
+  margin-left:auto; padding:8px 14px;
+  background:linear-gradient(135deg, var(--gold-soft), #F5DA9E);
+  border-radius:var(--r-sm); border:1px solid var(--gold);
+  text-align:center; font-size:11px; font-weight:800; color:var(--gold); line-height:1.3;
+}
+.sh-chips{margin-top:12px; display:flex; flex-wrap:wrap; gap:6px;}
+.sh-quick{margin-top:10px; display:flex; align-items:center; gap:8px; font-size:11px; color:var(--ink-2);}
+.sh-quick .pt{display:inline-flex; align-items:center; gap:3px;}
+.sh-quick .now{color:var(--forest); font-weight:800; display:inline-flex; align-items:center; gap:5px;}
+.sh-quick .dot{width:3px; height:3px; border-radius:50%; background:var(--ink-3);}
+.vip-bar{
+  margin:14px 16px; padding:14px;
+  background:linear-gradient(135deg, var(--ink) 0%, #3D2419 100%);
+  color:var(--paper); border-radius:var(--r-md);
+  display:flex; align-items:center; gap:14px;
+  position:relative; overflow:hidden;
+  box-shadow:var(--shadow-ink);
+}
+.vip-bar::after{
+  content:''; position:absolute; right:-30px; top:-30px;
+  width:120px; height:120px; border-radius:50%;
+  background:radial-gradient(circle, rgba(242,92,42,.35), transparent 65%);
+}
+.vip-bar .vp-ic{
+  width:46px; height:46px; border-radius:12px;
+  background:linear-gradient(135deg, var(--brand), var(--brand-d));
+  color:#fff; font-size:24px;
+  display:flex; align-items:center; justify-content:center;
+  flex-shrink:0; position:relative; z-index:2;
+  box-shadow:var(--shadow-brand);
+}
+.vip-bar .vp-info{flex:1; min-width:0; position:relative; z-index:2;}
+.vip-bar .vp-title{font-size:13px; font-weight:700;}
+.vip-bar .vp-title b{color:var(--brand); font-weight:900; font-size:15px;}
+.vip-bar .vp-sub{margin-top:3px; font-size:11px; opacity:.70;}
+.vip-bar .vp-cta{
+  background:var(--brand); color:#fff;
+  font-size:12px; font-weight:800;
+  padding:7px 14px; border-radius:var(--r-pill);
+  position:relative; z-index:2;
+  box-shadow:var(--shadow-brand);
+}
+.coupon-strip{margin:14px 16px; display:flex; gap:10px; overflow-x:auto; padding-bottom:4px;}
+.coupon-strip::-webkit-scrollbar{height:0;}
+.coupon-tk{
+  flex:0 0 auto; min-width:170px;
+  background:#fff;
+  border:1px dashed var(--brand);
+  border-radius:var(--r-sm);
+  padding:12px 14px;
+  display:flex; align-items:center; gap:10px;
+  position:relative;
+  box-shadow:0 4px 10px rgba(242,92,42,.10);
+}
+.coupon-tk::before, .coupon-tk::after{
+  content:''; position:absolute; top:50%;
+  width:12px; height:12px; border-radius:50%;
+  background:var(--paper);
+}
+.coupon-tk::before{left:-7px; transform:translateY(-50%);}
+.coupon-tk::after{right:-7px; transform:translateY(-50%);}
+.coupon-tk .amt{font-size:26px; font-weight:900; color:var(--brand); line-height:1; letter-spacing:-1px;}
+.coupon-tk .amt small{font-size:13px; font-weight:700;}
+.coupon-tk .info{flex:1;}
+.coupon-tk .cond{font-size:11px; color:var(--ink-2); font-weight:600;}
+.coupon-tk .grab{margin-top:5px; display:inline-block; background:var(--brand); color:#fff; font-size:10px; font-weight:800; padding:3px 8px; border-radius:var(--r-pill);}
+.coupon-tk.taken{opacity:.65;}
+.coupon-tk.taken .grab{background:var(--forest);}
+.coupon-tk.special .amt{font-size:14px; line-height:1.2; font-weight:900;}
+.social-proof-bar{
+  margin:0 16px 14px; padding:10px 14px;
+  background:#fff; border-radius:var(--r-md);
+  box-shadow:var(--shadow-1);
+  display:flex; align-items:center; gap:10px;
+}
+.social-proof-bar .avatars{display:flex;}
+.social-proof-bar .avatars .av{
+  width:24px; height:24px; border-radius:50%;
+  border:2px solid #fff; margin-left:-7px;
+  color:#fff; font-size:10px; font-weight:800;
+  display:flex; align-items:center; justify-content:center;
+}
+.social-proof-bar .avatars .av:first-child{margin-left:0;}
+.social-proof-bar .txt{flex:1; font-size:12px; color:var(--ink-2); line-height:1.4;}
+.social-proof-bar .txt b{color:var(--brand); font-weight:800;}
+.sig-card{
+  margin:0 16px 12px; background:#fff;
+  border:2px solid var(--brand);
+  border-radius:var(--r-md); overflow:hidden;
+  position:relative; box-shadow:var(--shadow-2);
+}
+.sig-card .sig-no{
+  position:absolute; top:14px; right:14px;
+  width:54px; height:54px; border-radius:50%;
+  background:var(--brand); color:#fff;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  transform:rotate(8deg);
+  box-shadow:var(--shadow-brand);
+  z-index:3; border:2px dashed rgba(255,255,255,.55);
+}
+.sig-card .sig-no .small{font-size:9px; font-weight:800; letter-spacing:1px;}
+.sig-card .sig-no .big{font-size:22px; font-weight:900; line-height:1;}
+.sig-card .sig-inner{display:flex; gap:14px; padding:18px;}
+.sig-card .sig-pic{
+  width:104px; height:104px; border-radius:var(--r-md);
+  background:linear-gradient(135deg, #FFE2C8, #F48B45);
+  color:#fff; font-size:58px;
+  display:flex; align-items:center; justify-content:center;
+  flex-shrink:0; box-shadow:0 6px 16px rgba(242,92,42,.25);
+}
+.sig-card .sig-info{flex:1; min-width:0;}
+.sig-card .sig-name{font-size:17px; font-weight:900; color:var(--ink); letter-spacing:.3px;}
+.sig-card .sig-tag{margin-top:4px; font-size:11px; color:var(--ink-3); line-height:1.45;}
+.sig-card .sig-meta{margin-top:8px; display:flex; gap:10px; font-size:11px; color:var(--ink-3);}
+.sig-card .sig-meta em{font-style:normal; color:var(--brand); font-weight:800;}
+.sig-card .sig-meta em.ink{color:var(--ink);}
+.sig-card .sig-bot{margin:0 18px; padding:14px 0; border-top:1px dashed var(--line); display:flex; align-items:center; justify-content:space-between;}
+.sig-card .sig-price{font-size:26px; font-weight:900; color:var(--brand); letter-spacing:-1px; line-height:1;}
+.sig-card .sig-price small{font-size:13px;}
+.sig-card .sig-orig{color:var(--ink-3); font-size:12px; text-decoration:line-through; margin-left:8px;}
+.sig-card .sig-add{
+  background:linear-gradient(135deg, var(--brand), var(--brand-d));
+  color:#fff; padding:0 18px; height:36px; line-height:36px;
+  border-radius:var(--r-pill); font-size:13px; font-weight:800;
+  box-shadow:var(--shadow-brand);
+}
+.cat-tab{display:flex; gap:6px; padding:4px; margin:14px 16px 0; background:var(--paper-2); border-radius:var(--r-pill);}
+.cat-tab .ct{flex:1; text-align:center; padding:7px; font-size:13px; color:var(--ink-2); font-weight:600; border-radius:var(--r-pill);}
+.cat-tab .ct.active{background:var(--ink); color:var(--paper); font-weight:800;}
+.prod-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:10px; padding:14px 16px;}
+.prod-card{background:#fff; border-radius:var(--r-md); overflow:hidden; box-shadow:var(--shadow-1); position:relative;}
+.prod-card .corner{
+  position:absolute; top:8px; left:0; z-index:2;
+  background:var(--brand); color:#fff;
+  font-size:10px; font-weight:800; padding:2px 10px 2px 8px;
+  border-radius:0 var(--r-pill) var(--r-pill) 0;
+}
+.prod-card .corner.new{background:var(--forest);}
+.prod-card .p-pic{height:114px; display:flex; align-items:center; justify-content:center; font-size:38px; background:linear-gradient(135deg, #FFE2C8, #F48B45);}
+.prod-card.blue .p-pic{background:linear-gradient(135deg, #D4E1F7, #5C8BE8);}
+.prod-card.green .p-pic{background:linear-gradient(135deg, #D7F1DC, #4DB258);}
+.prod-card.pink .p-pic{background:linear-gradient(135deg, #FAD2DC, #DE6189);}
+.prod-card .p-body{padding:10px 12px 12px;}
+.prod-card .p-name{font-size:13px; font-weight:700; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.prod-card .p-tag{margin-top:3px; font-size:10px; color:var(--ink-3);}
+.prod-card .p-row{margin-top:8px; display:flex; align-items:center; justify-content:space-between;}
+.prod-card .p-price{font-size:18px; font-weight:900; color:var(--brand); letter-spacing:-.5px; line-height:1;}
+.prod-card .p-price small{font-size:11px;}
+.prod-card .p-add{
+  width:28px; height:28px; border-radius:50%;
+  background:var(--brand); color:#fff; font-size:18px; font-weight:800;
+  line-height:26px; text-align:center;
+  box-shadow:var(--shadow-brand);
+}
+.cart-bar{
+  position:absolute; bottom:0; left:0; right:0;
+  background:rgba(255,255,255,.96);
+  backdrop-filter:saturate(160%) blur(20px);
+  padding:12px 16px 18px;
+  display:flex; align-items:center; gap:12px;
+  border-top:1px solid var(--line); z-index:50;
+}
+.cart-bar .cart-ic{
+  width:50px; height:50px; border-radius:50%;
+  background:linear-gradient(135deg, var(--brand), var(--brand-d));
+  color:#fff; font-size:22px;
+  display:flex; align-items:center; justify-content:center;
+  position:relative; box-shadow:var(--shadow-brand);
+}
+.cart-bar .cart-ic .b{
+  position:absolute; top:-2px; right:-2px;
+  min-width:20px; height:20px; border-radius:10px;
+  background:var(--ink); color:#fff;
+  font-size:11px; font-weight:800; padding:0 5px;
+  line-height:20px; text-align:center;
+  border:2px solid #fff;
+}
+.cart-bar .ttl{flex:1;}
+.cart-bar .ttl .price{font-size:20px; font-weight:900; color:var(--brand); letter-spacing:-.5px; line-height:1;}
+.cart-bar .ttl .delivery{font-size:11px; color:var(--ink-3); margin-top:3px;}
+.cart-bar .pay-btn{
+  background:var(--ink); color:#fff;
+  height:44px; padding:0 22px;
+  border-radius:22px; line-height:44px;
+  font-size:14px; font-weight:800; letter-spacing:.5px;
+}
 
-  /* ===== 钱包 ===== */
-  .wallet-hd{padding:18px 22px;background:linear-gradient(180deg,#0a0a14,transparent);position:relative}
-  .wl-back{width:38px;height:38px;border-radius:12px;background:rgba(255,255,255,.05);display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:18px}
-  .wl-hero{background:linear-gradient(135deg,#1a0533 0%,#430a5a 50%,#5a1a0a 100%);border-radius:28px;padding:24px;margin:0 0 18px;position:relative;overflow:hidden;border:1px solid rgba(255,77,141,.25)}
-  .wl-hero::before{content:'';position:absolute;top:-40%;right:-20%;width:280px;height:280px;background:radial-gradient(circle,rgba(255,77,141,.3),transparent 60%);pointer-events:none}
-  .wl-hero::after{content:'';position:absolute;bottom:-30%;left:-15%;width:220px;height:220px;background:radial-gradient(circle,rgba(77,214,255,.2),transparent 60%);pointer-events:none}
-  .wl-l{font-size:11px;color:#c0a8ff;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;position:relative}
-  .wl-v{font-size:52px;font-weight:900;letter-spacing:-2px;margin-top:6px;line-height:1;position:relative}
-  .wl-v small{font-size:18px;font-weight:700;opacity:.6;margin-left:4px}
-  .wl-grow{display:inline-flex;align-items:center;gap:4px;margin-top:8px;padding:3px 9px;background:rgba(61,240,194,.15);color:#3df0c2;border-radius:6px;font-size:10px;font-weight:800;position:relative}
-  .wl-acts{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:18px;position:relative}
-  .wl-act{padding:14px;background:rgba(255,255,255,.08);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.1);border-radius:14px;text-align:center}
-  .wl-act-i{font-size:22px;display:block;margin-bottom:4px}
-  .wl-act-t{font-size:11px;font-weight:700}
+/* ⑤ Product detail */
+.pd-pic{
+  height:340px; position:relative;
+  background:linear-gradient(160deg, #FFA15F 0%, var(--brand) 50%, var(--brand-d) 100%);
+  color:#fff; display:flex; align-items:center; justify-content:center;
+  font-size:120px;
+}
+.pd-pic .nav{
+  position:absolute; top:14px;
+  width:36px; height:36px; border-radius:50%;
+  background:rgba(0,0,0,.30); color:#fff; font-size:14px;
+  display:flex; align-items:center; justify-content:center;
+  border:1px solid rgba(255,255,255,.20);
+  backdrop-filter:blur(8px);
+}
+.pd-pic .nav.back{left:14px; font-size:22px;}
+.pd-pic .nav.share{right:14px;}
+.pd-pic .pager{
+  position:absolute; bottom:14px; left:50%; transform:translateX(-50%);
+  background:rgba(0,0,0,.40); color:#fff;
+  padding:4px 14px; border-radius:var(--r-pill);
+  font-size:11px; font-weight:700;
+}
+.pd-info{background:var(--paper); padding:18px 18px 8px; margin-top:-16px; position:relative; z-index:2; border-radius:var(--r-lg) var(--r-lg) 0 0;}
+.pd-price-row{display:flex; align-items:baseline; gap:10px;}
+.pd-price{color:var(--brand); font-size:36px; font-weight:900; letter-spacing:-1px; line-height:1;}
+.pd-price small{font-size:16px;}
+.pd-orig{color:var(--ink-3); font-size:13px; text-decoration:line-through;}
+.pd-promo-tag{
+  margin-left:auto; background:var(--ink); color:var(--brand);
+  font-size:11px; font-weight:800; letter-spacing:1px;
+  padding:4px 10px; border-radius:var(--r-sm);
+}
+.pd-name{margin-top:10px; font-size:20px; font-weight:900; color:var(--ink); letter-spacing:.3px;}
+.pd-intro{margin-top:5px; font-size:12px; color:var(--ink-2); line-height:1.55;}
+.pd-meta{margin-top:14px; display:flex; gap:20px; padding:12px 0; border-top:1px dashed var(--line); font-size:11px; color:var(--ink-3); font-weight:600;}
+.pd-meta b{color:var(--ink); font-size:14px; font-weight:900; display:block; margin-bottom:2px;}
+.pd-promo-banner{
+  margin:12px 16px; padding:14px;
+  background:linear-gradient(135deg, var(--ink) 0%, #3D2419 100%);
+  color:var(--paper); border-radius:var(--r-md);
+  display:flex; gap:12px; align-items:flex-start;
+  position:relative; overflow:hidden;
+  box-shadow:var(--shadow-ink);
+}
+.pd-promo-banner::after{
+  content:'100%'; position:absolute;
+  right:-10px; top:-8px; font-size:50px;
+  color:rgba(242,92,42,.30); font-weight:900;
+}
+.pd-promo-banner .pb-ic{
+  width:38px; height:38px; border-radius:10px;
+  background:linear-gradient(135deg, var(--brand), var(--brand-d));
+  display:flex; align-items:center; justify-content:center; font-size:20px;
+  flex-shrink:0; box-shadow:var(--shadow-brand);
+}
+.pd-promo-banner .pb-body{flex:1; position:relative; z-index:2;}
+.pd-promo-banner .pb-line1{font-size:13px; font-weight:700;}
+.pd-promo-banner .pb-line1 b{color:var(--brand); font-size:15px; font-weight:900;}
+.pd-promo-banner .pb-line2{margin-top:4px; font-size:11px; opacity:.65; line-height:1.5;}
+.pd-section{margin:12px 16px; padding:14px 16px; background:#fff; border-radius:var(--r-md); box-shadow:var(--shadow-1);}
+.pd-section .hdr{display:flex; align-items:center; justify-content:space-between; font-size:13px; font-weight:800; color:var(--ink);}
+.pd-section .hdr .sub{font-size:11px; font-weight:500; color:var(--brand);}
+.pd-section .body{margin-top:10px; font-size:13px; color:var(--ink-2); line-height:1.7;}
+.spec-pills{display:flex; gap:8px; flex-wrap:wrap;}
+.spec-pill{padding:6px 14px; border-radius:var(--r-pill); background:var(--card); border:1.5px solid var(--line-2); color:var(--ink-2); font-size:12px; font-weight:600;}
+.spec-pill.on{background:var(--brand-soft); color:var(--brand-d); border-color:var(--brand);}
+.review{display:flex; gap:10px; align-items:flex-start; margin-bottom:8px;}
+.review .av{width:26px; height:26px; border-radius:50%; background:var(--brand); color:#fff; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; flex-shrink:0;}
+.review .r-info{flex:1;}
+.review .r-line1{display:flex; align-items:center; gap:8px; font-size:12px;}
+.review .r-name{color:var(--ink); font-weight:700;}
+.review .r-stars{color:var(--gold); letter-spacing:1px;}
+.review .r-text{margin-top:6px; font-size:12px; color:var(--ink-2); line-height:1.55;}
+.pd-bottom{
+  position:absolute; bottom:0; left:0; right:0;
+  background:var(--paper);
+  border-top:1px solid var(--line);
+  padding:10px 14px 22px;
+  display:flex; align-items:center; gap:8px; z-index:50;
+}
+.pd-bottom .ic-btn{width:46px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; font-size:10px; color:var(--ink-2); font-weight:600;}
+.pd-bottom .ic-btn .ic{font-size:18px;}
+.pd-bottom .add-cart{
+  flex:1; background:#fff; color:var(--ink);
+  border:1.5px solid var(--ink);
+  height:46px; border-radius:23px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:14px; font-weight:800;
+}
+.pd-bottom .buy-now{
+  flex:1; background:var(--brand); color:#fff;
+  height:46px; border-radius:23px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:14px; font-weight:800;
+  box-shadow:var(--shadow-brand);
+}
 
-  .wl-tabs{display:flex;padding:0 22px;gap:24px;border-bottom:1px solid var(--line)}
-  .wl-tab{padding:14px 0;font-size:13px;color:var(--mute);font-weight:700;position:relative}
-  .wl-tab.on{color:#fff}
-  .wl-tab.on::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#ff4d8d,#ff7a3d);border-radius:2px}
+/* ⑥ Cart */
+.cart-grp{margin:12px 16px; background:#fff; border-radius:var(--r-md); overflow:hidden; box-shadow:var(--shadow-1);}
+.cart-grp.current{border:2px solid var(--brand);}
+.cart-grp.dimmed{opacity:.55;}
+.cart-grp .cg-head{
+  display:flex; align-items:center; gap:10px;
+  padding:12px 14px; border-bottom:1px solid var(--line);
+  background:linear-gradient(180deg, var(--brand-tint) 0%, #fff 100%);
+}
+.cart-grp.dimmed .cg-head{background:var(--paper-2);}
+.cart-grp .cg-head .nm{flex:1; font-size:14px; font-weight:800; color:var(--ink);}
+.cart-grp .cg-head .cur-tag{background:var(--brand); color:#fff; font-size:10px; font-weight:800; padding:3px 9px; border-radius:var(--r-sm); letter-spacing:.5px;}
+.cart-grp .cg-head .switch-tag{background:var(--paper-2); color:var(--ink-3); font-size:10px; font-weight:700; padding:3px 9px; border-radius:var(--r-sm);}
+.check{
+  width:20px; height:20px; border-radius:50%;
+  border:2px solid var(--brand);
+  display:flex; align-items:center; justify-content:center;
+  font-size:11px; color:var(--brand); font-weight:900; flex-shrink:0;
+}
+.check.on{background:var(--brand); color:#fff;}
+.check.muted{border-color:var(--ink-3); color:var(--ink-3);}
+.cart-row{display:flex; gap:12px; padding:14px; border-bottom:1px solid var(--line);}
+.cart-row:last-child{border-bottom:0;}
+.cart-row .cr-pic{
+  width:66px; height:66px; border-radius:var(--r-sm);
+  background:linear-gradient(135deg, #FFE2C8, #F48B45);
+  font-size:32px; color:#fff;
+  display:flex; align-items:center; justify-content:center;
+  flex-shrink:0;
+}
+.cart-row .cr-pic.blue{background:linear-gradient(135deg, #D4E1F7, #5C8BE8);}
+.cart-row .cr-info{flex:1; min-width:0;}
+.cart-row .cr-name{font-size:13px; font-weight:700; color:var(--ink);}
+.cart-row .cr-spec{font-size:11px; color:var(--ink-3); margin-top:4px;}
+.cart-row .cr-foot{margin-top:10px; display:flex; align-items:center; justify-content:space-between;}
+.cart-row .cr-price{font-size:16px; font-weight:900; color:var(--brand); letter-spacing:-.5px;}
+.qty-ctrl{display:flex; align-items:center; gap:0; background:var(--paper-2); border-radius:var(--r-pill); padding:3px;}
+.qty-ctrl .btn{
+  width:24px; height:24px; border-radius:50%;
+  background:#fff; color:var(--ink); font-size:14px; font-weight:700;
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:var(--shadow-1); padding:0; border:0;
+}
+.qty-ctrl .num{font-size:13px; font-weight:800; min-width:28px; text-align:center;}
+.cart-bottom-bar{
+  position:absolute; bottom:0; left:0; right:0;
+  background:rgba(255,255,255,.96);
+  backdrop-filter:saturate(160%) blur(20px);
+  padding:12px 16px 18px;
+  display:flex; align-items:center; gap:12px;
+  border-top:1px solid var(--line); z-index:50;
+}
+.cart-bottom-bar .lbl{font-size:12px; color:var(--ink-2); font-weight:600;}
+.cart-bottom-bar .total{flex:1; text-align:right; font-size:11px; color:var(--ink-3);}
+.cart-bottom-bar .total .price{font-size:22px; font-weight:900; color:var(--brand); letter-spacing:-1px; line-height:1;}
+.cart-bottom-bar .total .name{margin-right:6px; font-size:11px; color:var(--ink-3);}
+.cart-bottom-bar .checkout{background:var(--brand); color:#fff; height:42px; padding:0 22px; border-radius:21px; line-height:42px; font-size:14px; font-weight:800; box-shadow:var(--shadow-brand);}
 
-  /* 流水时间轴 */
-  .flow{padding:14px 22px}
-  .flow-d{font-size:11px;color:var(--mute);font-weight:700;letter-spacing:1px;margin:12px 0 8px;text-transform:uppercase}
-  .flow-i{display:flex;gap:14px;padding:14px;background:var(--bg-card);border-radius:14px;border:1px solid var(--line);margin-bottom:8px;position:relative;overflow:hidden}
-  .flow-i.win{border-color:rgba(255,77,141,.3);background:linear-gradient(135deg,rgba(255,77,141,.06),var(--bg-card))}
-  .flow-ic{width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
-  .flow-ic.in{background:linear-gradient(135deg,rgba(61,240,194,.18),rgba(61,240,194,.06));color:#3df0c2}
-  .flow-ic.out{background:rgba(255,255,255,.05);color:var(--mute)}
-  .flow-ic.win{background:linear-gradient(135deg,#ff4d8d,#ff7a3d);color:#fff;box-shadow:0 4px 14px rgba(255,77,141,.4)}
-  .flow-m{flex:1;min-width:0}
-  .flow-n{font-size:13px;font-weight:700}
-  .flow-d2{font-size:10px;color:var(--mute);margin-top:2px}
-  .flow-v{text-align:right}
-  .flow-amt{font-size:16px;font-weight:900;letter-spacing:-.3px}
-  .flow-amt.in{color:#3df0c2}
-  .flow-amt.out{color:var(--mute)}
-  .flow-amt.win{background:linear-gradient(135deg,#ff4d8d,#ff7a3d);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-  .flow-bal{font-size:9px;color:var(--mute);font-weight:600;margin-top:2px}
+/* ⑦ Checkout */
+.ck-addr{margin:12px 16px; padding:14px 16px; background:#fff; border-radius:var(--r-md); display:flex; align-items:center; gap:12px; box-shadow:var(--shadow-1); position:relative; border-left:4px solid var(--brand);}
+.ck-addr .ic{width:36px; height:36px; border-radius:10px; background:var(--brand-soft); color:var(--brand-d); display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0;}
+.ck-addr .body{flex:1; min-width:0;}
+.ck-addr .row1{font-size:14px; font-weight:800; color:var(--ink);}
+.ck-addr .row1 .ph{font-size:12px; color:var(--ink-2); margin-left:8px; font-weight:500; font-family:var(--font-mono);}
+.ck-addr .row2{margin-top:3px; font-size:12px; color:var(--ink-2); line-height:1.4;}
+.ck-addr .arrow{color:var(--ink-3); font-size:18px;}
+.ck-shop{margin:12px 16px; background:#fff; border-radius:var(--r-md); overflow:hidden; box-shadow:var(--shadow-1);}
+.ck-shop .cs-head{padding:12px 14px; display:flex; align-items:center; gap:10px; border-bottom:1px solid var(--line); background:var(--paper);}
+.ck-shop .cs-head .nm{flex:1; font-size:14px; font-weight:800; color:var(--ink);}
+.ck-row{display:flex; gap:12px; padding:12px 14px; border-bottom:1px solid var(--line);}
+.ck-row .pic{width:54px; height:54px; border-radius:var(--r-sm); background:linear-gradient(135deg, #FFE2C8, #F48B45); color:#fff; font-size:26px; display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+.ck-row .pic.blue{background:linear-gradient(135deg, #D4E1F7, #5C8BE8);}
+.ck-row .info{flex:1; min-width:0;}
+.ck-row .nm{font-size:13px; color:var(--ink); font-weight:600;}
+.ck-row .sp{font-size:11px; color:var(--ink-3); margin-top:3px;}
+.ck-row .right{text-align:right; flex-shrink:0;}
+.ck-row .right .price{font-size:14px; font-weight:800; color:var(--ink);}
+.ck-row .right .qty{font-size:11px; color:var(--ink-3); margin-top:3px;}
+.ck-fee{display:flex; justify-content:space-between; align-items:center; padding:10px 14px; border-bottom:1px solid var(--line); font-size:12px; color:var(--ink-2);}
+.ck-fee .v{color:var(--ink); font-weight:700;}
+.ck-fee.disc .v{color:var(--forest);}
+.ck-fee.total{font-size:13px; padding:14px;}
+.ck-fee.total .v{color:var(--brand); font-size:19px; font-weight:900; letter-spacing:-.5px;}
+.ck-method-card{margin:12px 16px; background:#fff; border-radius:var(--r-md); overflow:hidden; box-shadow:var(--shadow-1);}
+.ck-method-card .mh{padding:12px 14px; font-size:13px; font-weight:800; color:var(--ink); border-bottom:1px solid var(--line);}
+.ck-method-card .mh small{font-size:11px; color:var(--ink-3); font-weight:500; margin-left:6px;}
+.ck-method-row{display:flex; align-items:center; gap:10px; padding:14px; border-bottom:1px solid var(--line);}
+.ck-method-row:last-child{border-bottom:0;}
+.ck-method-row .ic{width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:14px; color:#fff; font-weight:800; flex-shrink:0;}
+.ck-method-row .ic.wx{background:#07C160;}
+.ck-method-row .ic.ali{background:#1678FF;}
+.ck-method-row .ic.bal{background:var(--brand);}
+.ck-method-row .ic.pts{background:var(--gold);}
+.ck-method-row .body{flex:1; min-width:0;}
+.ck-method-row .nm{font-size:14px; font-weight:700; color:var(--ink);}
+.ck-method-row .sub{font-size:11px; color:var(--ink-3); margin-top:2px;}
+.ck-method-row .right{display:flex; align-items:center; gap:10px; flex-shrink:0;}
+.ck-method-row .right .deduct{color:var(--brand); font-weight:800; font-size:13px;}
+.ck-method-row .right .unused{color:var(--ink-3); font-weight:600; font-size:12px;}
+.ck-method-row .right .desc{font-size:11px; color:var(--ink-3);}
+.ck-method-row .radio{width:18px; height:18px; border-radius:50%; border:1.5px solid var(--line-2);}
+.ck-method-row.on .radio{background:var(--brand); border-color:var(--brand); position:relative;}
+.ck-method-row.on .radio::after{content:''; position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:6px; height:6px; border-radius:50%; background:#fff;}
+.ck-summary{padding:14px; background:linear-gradient(135deg, var(--brand-tint), #fff); display:flex; justify-content:space-between; align-items:center; border-top:1px dashed var(--brand);}
+.ck-summary .lbl{font-size:12px; color:var(--ink-2); font-weight:600;}
+.ck-summary .v{font-size:22px; font-weight:900; color:var(--brand); letter-spacing:-.5px; line-height:1;}
+.ck-bottom{position:absolute; bottom:0; left:0; right:0; background:rgba(255,255,255,.96); backdrop-filter:saturate(160%) blur(20px); padding:12px 16px 18px; border-top:1px solid var(--line); display:flex; align-items:center; gap:12px; z-index:50;}
+.ck-bottom .info{flex:1; font-size:11px; color:var(--ink-3);}
+.ck-bottom .info .ttl{font-size:13px; color:var(--ink-2);}
+.ck-bottom .info b{font-size:22px; font-weight:900; color:var(--brand); letter-spacing:-.5px; line-height:1;}
+.ck-bottom .submit{background:var(--brand); color:#fff; height:46px; padding:0 28px; border-radius:23px; line-height:46px; font-size:15px; font-weight:800; box-shadow:var(--shadow-brand);}
 
-  /* ===== 中奖弹窗 demo ===== */
-  .win-frame{background:radial-gradient(circle at 50% 30%,#2d0a4d 0%,#0a0a14 70%)}
-  .win-overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px}
-  .conf{position:absolute;width:8px;height:8px;border-radius:2px;opacity:.85}
-  .c1{top:8%;left:18%;background:#ff4d8d;animation:fall1 3s ease-in infinite}
-  .c2{top:6%;left:35%;background:#ffb13d;animation:fall2 3.5s ease-in infinite}
-  .c3{top:5%;left:52%;background:#3df0c2;animation:fall1 2.8s ease-in infinite}
-  .c4{top:4%;left:68%;background:#7b61ff;animation:fall2 3.2s ease-in infinite}
-  .c5{top:7%;left:82%;background:#4dd6ff;animation:fall1 3.5s ease-in infinite}
-  .c6{top:9%;left:26%;background:#ff7a3d;animation:fall2 3s ease-in infinite}
-  .c7{top:6%;left:45%;background:#ff4d8d;animation:fall1 3.2s ease-in infinite}
-  .c8{top:5%;left:62%;background:#3df0c2;animation:fall2 2.7s ease-in infinite}
-  .c9{top:8%;left:75%;background:#ffb13d;animation:fall1 3.6s ease-in infinite}
-  @keyframes fall1{0%{transform:translateY(0) rotate(0)}100%{transform:translateY(900px) rotate(720deg)}}
-  @keyframes fall2{0%{transform:translateY(0) rotate(0)}100%{transform:translateY(900px) rotate(-720deg)}}
-
-  .trophy{font-size:96px;animation:trophy 2s ease-in-out infinite;text-shadow:0 0 40px rgba(255,179,61,.6)}
-  @keyframes trophy{0%,100%{transform:scale(1) rotate(-3deg)}50%{transform:scale(1.08) rotate(3deg)}}
-  .win-t{font-size:32px;font-weight:900;background:linear-gradient(135deg,#ffb13d,#ff7a3d,#ff4d8d);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-top:18px;letter-spacing:-.5px;line-height:1.1;text-align:center}
-  .win-sub{font-size:13px;color:#a8a0d0;font-weight:600;margin-top:8px;text-align:center}
-  .win-amt-card{margin-top:24px;background:linear-gradient(135deg,#1a0533,#430a5a);border:1px solid rgba(255,179,61,.4);border-radius:22px;padding:24px 40px;text-align:center;box-shadow:0 20px 60px rgba(255,77,141,.3),inset 0 1px 0 rgba(255,255,255,.1)}
-  .win-amt-l{font-size:11px;color:#ffb13d;font-weight:700;letter-spacing:2px;text-transform:uppercase}
-  .win-amt-v{font-size:56px;font-weight:900;letter-spacing:-2px;margin-top:4px;background:linear-gradient(135deg,#ffb13d,#ff7a3d);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1}
-  .win-amt-v small{font-size:18px;opacity:.7;margin-left:4px}
-  .win-detail{font-size:11px;color:#c0a8ff;font-weight:600;margin-top:10px}
-  .win-cta{margin-top:32px;padding:14px 46px;background:linear-gradient(135deg,#ff4d8d,#ff7a3d);color:#fff;border-radius:99px;font-size:14px;font-weight:800;box-shadow:0 12px 32px rgba(255,77,141,.5);border:none}
-
-  /* ===== 派单动画屏 ===== */
-  .ship-anim{background:linear-gradient(180deg,#070710 0%,#1a0533 50%,#070710 100%);position:relative}
-  .ship-stage{padding:32px 22px;height:100%;display:flex;flex-direction:column}
-  .ship-h{font-size:18px;font-weight:900;text-align:center;margin-bottom:8px}
-  .ship-sub{font-size:11px;color:var(--mute);text-align:center;margin-bottom:30px}
-  .timeline{flex:1;display:flex;flex-direction:column;gap:0;padding:0 14px}
-  .tl-i{display:flex;align-items:center;gap:14px;padding:18px 0;position:relative}
-  .tl-i+.tl-i::before{content:'';position:absolute;top:-8px;left:19px;width:2px;height:16px;background:linear-gradient(180deg,#7b61ff,rgba(255,255,255,.08))}
-  .tl-dot{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;position:relative;z-index:1}
-  .tl-dot.done{background:linear-gradient(135deg,#3df0c2,#0d4e30);box-shadow:0 0 16px rgba(61,240,194,.4)}
-  .tl-dot.cur{background:linear-gradient(135deg,#ff4d8d,#ff7a3d);box-shadow:0 0 24px rgba(255,77,141,.6);animation:cur 1.5s ease-in-out infinite}
-  @keyframes cur{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
-  .tl-dot.wait{background:rgba(255,255,255,.06);color:var(--mute2);border:1px dashed var(--mute2)}
-  .tl-m{flex:1}
-  .tl-n{font-size:14px;font-weight:800}
-  .tl-d{font-size:11px;color:var(--mute);margin-top:2px}
-  .tl-d.cur{color:#ff7a3d;font-weight:700}
-
-  .ship-cta-area{padding:20px 22px;border-top:1px solid var(--line)}
-  .ship-eta{background:linear-gradient(135deg,rgba(255,77,141,.12),rgba(255,123,61,.08));border:1px solid rgba(255,77,141,.25);border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:12px;margin-bottom:14px}
-  .ship-eta-ic{font-size:28px}
-  .ship-eta-m{flex:1}
-  .ship-eta-t{font-size:13px;font-weight:800}
-  .ship-eta-d{font-size:11px;color:#ff8aae;margin-top:2px}
-  .ship-eta-v{font-size:20px;font-weight:900;color:#fff;text-align:right}
-  .ship-eta-v small{font-size:10px;opacity:.6;font-weight:600;margin-left:2px}
-  .ship-row-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-  .ship-btn{padding:14px;border-radius:14px;font-size:13px;font-weight:800;text-align:center}
-  .ship-btn.s{background:rgba(255,255,255,.06);color:#fff;border:1px solid var(--line)}
-  .ship-btn.p{background:linear-gradient(135deg,#ff4d8d,#ff7a3d);color:#fff;box-shadow:0 8px 24px rgba(255,77,141,.35)}
-
-  /* ===== shop-home with promo card ===== */
-  .sh-hd{padding:14px 22px;background:linear-gradient(180deg,rgba(255,77,141,.15) 0%,transparent 100%);position:relative}
-  .sh-shop{display:flex;align-items:center;gap:14px}
-  .sh-logo{width:60px;height:60px;border-radius:18px;background:linear-gradient(135deg,#ff4d8d,#ff7a3d);display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:900;flex-shrink:0;box-shadow:0 10px 28px rgba(255,77,141,.35)}
-  .sh-meta{flex:1}
-  .sh-name{font-size:18px;font-weight:900}
-  .sh-stats{font-size:11px;color:var(--mute);margin-top:4px;display:flex;gap:10px}
-  .sh-stats b{color:#fff;font-weight:800}
-  .sh-stats .rate{color:#ffb13d}
-  .sh-fav{width:38px;height:38px;border-radius:12px;background:rgba(255,255,255,.05);display:flex;align-items:center;justify-content:center;font-size:16px}
-
-  /* 推 N 反 1 大卡 */
-  .nback-card{margin:18px 14px;background:linear-gradient(135deg,#1a0533 0%,#3b0a4d 100%);border-radius:24px;padding:20px;position:relative;overflow:hidden;border:1px solid rgba(255,77,141,.3)}
-  .nback-card::before{content:'';position:absolute;top:-50%;right:-30%;width:300px;height:300px;background:radial-gradient(circle,rgba(255,179,61,.2),transparent 60%);pointer-events:none}
-  .nb-h{display:flex;justify-content:space-between;align-items:flex-start;position:relative}
-  .nb-l{flex:1}
-  .nb-lbl{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;background:rgba(255,179,61,.18);color:#ffb13d;border-radius:5px;font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px}
-  .nb-lbl::before{content:'🔥'}
-  .nb-t{font-size:22px;font-weight:900;letter-spacing:-.5px;line-height:1.15}
-  .nb-t .h{background:linear-gradient(135deg,#ffb13d,#ff7a3d,#ff4d8d);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-  .nb-sub{font-size:11px;color:#c0a8ff;margin-top:6px}
-  .nb-money{text-align:right}
-  .nb-mv{font-size:30px;font-weight:900;letter-spacing:-.5px;background:linear-gradient(135deg,#3df0c2,#4dd6ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1}
-  .nb-ml{font-size:9px;color:var(--mute);margin-top:2px;letter-spacing:.5px;text-transform:uppercase}
-
-  .nb-bar{margin-top:18px;height:36px;background:rgba(0,0,0,.3);border-radius:18px;padding:4px;display:flex;align-items:center;position:relative;overflow:hidden}
-  .nb-fill{height:28px;background:linear-gradient(90deg,#ff4d8d,#ff7a3d,#ffb13d);border-radius:14px;width:73%;position:relative;box-shadow:0 0 16px rgba(255,123,61,.5)}
-  .nb-fill::after{content:'';position:absolute;top:0;right:0;width:24px;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.6));border-radius:14px;animation:shine 2s ease-in-out infinite}
-  @keyframes shine{0%,100%{opacity:.5}50%{opacity:1}}
-  .nb-txt{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:11px;font-weight:800;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.5);letter-spacing:.5px;z-index:2}
-
-  .nb-foot{margin-top:14px;display:flex;justify-content:space-between;font-size:10px;color:var(--mute);position:relative}
-  .nb-foot b{color:#fff;font-weight:800}
-  .nb-cta{padding:8px 16px;background:#fff;color:#0a0a14;border-radius:99px;font-size:11px;font-weight:800}
-
-  /* hot 商品列表（横滚）*/
-  .hot-prods{padding:0 14px;display:flex;gap:10px;overflow-x:auto;scrollbar-width:none}
-  .hot-prods::-webkit-scrollbar{display:none}
-  .hp{flex-shrink:0;width:160px;background:var(--bg-card);border-radius:18px;padding:10px;border:1px solid var(--line);position:relative}
-  .hp-pic{height:120px;border-radius:12px;background:linear-gradient(135deg,#2a1a3a,#1a1a2a);display:flex;align-items:center;justify-content:center;font-size:48px;margin-bottom:8px;position:relative}
-  .hp-rank{position:absolute;top:0;left:0;width:32px;height:32px;border-radius:0 0 12px 0;background:linear-gradient(135deg,#ff4d8d,#ff7a3d);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;color:#fff}
-  .hp-n{font-size:12px;font-weight:700;height:32px;overflow:hidden;line-height:1.3}
-  .hp-meta{display:flex;justify-content:space-between;align-items:center;margin-top:6px}
-  .hp-pr{font-size:16px;font-weight:900;color:#fff;letter-spacing:-.3px}
-  .hp-pr small{font-size:9px;color:var(--mute);font-weight:600}
-  .hp-sales{font-size:9px;color:var(--mute);font-weight:600}
+/* ⑧ Payment success */
+.succ-wrap{position:relative; padding:60px 20px 16px; text-align:center; overflow:hidden;}
+.succ-wrap::before{
+  content:''; position:absolute; inset:0;
+  background:radial-gradient(220px 180px at 50% 30%, rgba(27,111,75,.10), transparent 60%);
+  pointer-events:none;
+}
+.confetti{position:absolute; inset:0; pointer-events:none; overflow:hidden;}
+.confetti i{position:absolute; top:-20px; width:8px; height:14px; animation:confetti-fall 3.6s linear infinite; opacity:.8;}
+.confetti i:nth-child(1){left:8%; background:var(--brand); animation-delay:0s;}
+.confetti i:nth-child(2){left:20%; background:var(--forest); animation-delay:.4s;}
+.confetti i:nth-child(3){left:35%; background:var(--gold); animation-delay:.8s;}
+.confetti i:nth-child(4){left:50%; background:var(--brand); animation-delay:1.2s; width:6px; height:10px;}
+.confetti i:nth-child(5){left:65%; background:var(--info); animation-delay:1.6s;}
+.confetti i:nth-child(6){left:78%; background:var(--brand); animation-delay:2.0s;}
+.confetti i:nth-child(7){left:90%; background:var(--forest); animation-delay:.6s; width:6px; height:10px;}
+.confetti i:nth-child(8){left:14%; background:var(--gold); animation-delay:1.4s;}
+.confetti i:nth-child(9){left:42%; background:var(--brand); animation-delay:2.2s; width:6px; height:10px;}
+.confetti i:nth-child(10){left:72%; background:var(--info); animation-delay:.2s;}
+.succ-check{
+  width:96px; height:96px; border-radius:50%;
+  background:linear-gradient(135deg, #2BBE5F 0%, var(--forest) 100%);
+  display:inline-flex; align-items:center; justify-content:center;
+  position:relative; box-shadow:0 12px 32px rgba(27,111,75,.40);
+}
+.succ-check::before, .succ-check::after{
+  content:''; position:absolute; inset:-8px;
+  border:2px solid rgba(27,111,75,.20);
+  border-radius:50%;
+}
+.succ-check::after{inset:-18px; border-color:rgba(27,111,75,.10);}
+.succ-check svg{width:46px; height:46px;}
+.succ-check svg path{
+  fill:none; stroke:#fff; stroke-width:5;
+  stroke-linecap:round; stroke-linejoin:round;
+  stroke-dasharray:60; stroke-dashoffset:0;
+  animation:draw-check .8s var(--ease) .2s forwards;
+}
+.succ-wrap h2{margin:18px 0 4px; font-size:26px; font-weight:900; color:var(--ink); letter-spacing:.5px;}
+.succ-wrap p{margin:0; font-size:13px; color:var(--ink-2);}
+.succ-card{margin:18px 16px; padding:18px; background:#fff; border-radius:var(--r-md); box-shadow:var(--shadow-1); text-align:left;}
+.succ-card .sc-row{display:flex; justify-content:space-between; align-items:center; padding:7px 0; font-size:12px; color:var(--ink-2);}
+.succ-card .sc-row b{color:var(--ink); font-weight:700; font-family:var(--font-mono); font-size:12px;}
+.succ-card .sc-row.amt{margin-top:8px; padding-top:14px; border-top:1px dashed var(--line); font-size:13px;}
+.succ-card .sc-row.amt b{color:var(--brand); font-size:20px; font-weight:900; letter-spacing:-.5px; font-family:var(--font-display);}
+.succ-promo{margin:12px 16px; padding:18px; background:linear-gradient(135deg, var(--ink) 0%, #3D2419 100%); color:var(--paper); border-radius:var(--r-md); position:relative; overflow:hidden; box-shadow:var(--shadow-ink);}
+.succ-promo::after{content:'¥5'; position:absolute; right:-10px; top:-10px; font-size:70px; color:rgba(242,92,42,.30); font-weight:900; transform:rotate(-12deg);}
+.succ-promo .sp-hdr{display:inline-flex; align-items:center; gap:8px; font-size:11px; font-weight:800; letter-spacing:1.5px; color:var(--brand); padding:4px 10px; border-radius:var(--r-pill); background:rgba(242,92,42,.15); border:1px dashed rgba(242,92,42,.40); position:relative; z-index:2;}
+.succ-promo .sp-body{margin-top:10px; font-size:13px; line-height:1.6; position:relative; z-index:2;}
+.succ-promo .sp-body b{color:var(--brand); font-weight:800;}
+.succ-promo .sp-actions{display:flex; gap:10px; margin-top:14px; position:relative; z-index:2;}
+.succ-promo .sp-actions .b{flex:1; height:38px; line-height:38px; border-radius:var(--r-sm); text-align:center; font-size:13px; font-weight:800; letter-spacing:.5px;}
+.succ-promo .sp-actions .b.copy{background:rgba(255,255,255,.10); color:var(--paper); border:1px solid rgba(255,255,255,.20);}
+.succ-promo .sp-actions .b.share{background:var(--brand); color:#fff; box-shadow:var(--shadow-brand);}
+.succ-actions{display:flex; gap:10px; margin:14px 16px;}
+.succ-actions .btn{flex:1; height:46px;}
 </style>
 </head>
 <body>
 
-<!-- ============================ 1. 首页 ============================ -->
-<div class="frame">
-  <div class="frame-label">首页 · 时尚版</div>
-  <div class="statusbar"><span>9:41</span><span>⚡5G ▮▮▮▮</span></div>
-  <div class="body">
-    <div class="home-hd">
-      <div class="greet">
-        <div class="av"></div>
-        <div>
-          <div class="greet-t">下午好 · <b>小慧</b></div>
-          <div style="font-size:10px;color:var(--mute2);margin-top:2px">已是 <b style="color:#3df0c2">3 星</b> · 海淀区</div>
+<h1 class="page-title">
+  <span class="seal">摊</span>摊小二 · 普通用户 H5 原型 <span style="color:var(--brand);">v2</span>
+  <small>编辑街市 · 1 登录 + 3 主屏 + 7 子页 + 5 下单链路 = 16 屏</small>
+</h1>
+<div class="subtitle-strip"><b>设计方向：</b>奶油纸张底 · 暖墨字 · 节制橙 · 票据收据美学 · 编辑式大字号 · 小惊喜</div>
+
+<div class="grid">
+
+<!-- ============== ⓪ 登录注册页 ============== -->
+<div class="group-title"><em>入口</em>登录注册页<span class="count">⓪ / 16</span></div>
+
+<div class="phone-wrap">
+  <div class="phone">
+    <div class="status-bar"><span>9:41</span><div class="status-icons"><span>📶</span><span>📡</span><span>🔋</span></div></div>
+    <div class="login">
+      <div class="login-hero">
+        <div class="seal-wrap"><div class="stamp">摊</div></div>
+        <h1>摊小二</h1>
+        <div class="slogan">小摊主的生意伙伴</div>
+        <div class="tag-line">🎁 边吃边赚 · 邀请就返</div>
+      </div>
+
+      <div class="login-body">
+        <div class="inviter-card">
+          <div class="inv-av">李</div>
+          <div class="ic-info">
+            <div class="ic-line1"><b>小李 🌟</b> 邀请你来</div>
+            <div class="ic-line2"><span class="logo-block xs">王</span>王师傅烤地瓜</div>
+          </div>
+          <div class="ic-gift">登录得<br><b style="color:var(--brand);font-size:14px;">¥3</b> 见面礼</div>
         </div>
-      </div>
-      <div class="head-ics">
-        <div class="head-ic">🔍</div>
-        <div class="head-ic">🔔<div class="head-dot"></div></div>
-      </div>
-    </div>
 
-    <!-- 收益 hero -->
-    <div class="earn-card">
-      <div class="earn-l">本月你赚到了</div>
-      <div class="earn-v">¥<span style="background:linear-gradient(135deg,#ffb13d,#ff7a3d,#ff4d8d);-webkit-background-clip:text;-webkit-text-fill-color:transparent">128.50</span></div>
-      <div class="earn-tag">+ ¥18.20 较上月</div>
-      <div class="earn-bot">
-        <div class="earn-mini">
-          <div class="em">推广 · 12 单<b>¥86.40</b></div>
-          <div class="em">极差 · 5 单<b>¥32.10</b></div>
-          <div class="em">奖池 · 中奖 1 次<b>¥10.00</b></div>
+        <div class="gift-ticket">
+          <div class="gt-icon">🎁</div>
+          <div class="gt-info">
+            <div class="gt-title">新人见面礼<b>¥18</b>等你领</div>
+            <div class="gt-sub">注册即送 5 张优惠券 + 100 推广积分起步</div>
+          </div>
+          <div class="gt-cta">立即领</div>
         </div>
-        <button class="earn-btn primary">提现 →</button>
-      </div>
-    </div>
 
-    <!-- 推 N 反 1 进度 -->
-    <div class="promo-card">
-      <div class="promo-h">
-        <div class="promo-t">推 N 反 1 进度 · 红烧牛肉面</div>
-        <div class="promo-step"><b>3</b> / 3 · 已完成</div>
-      </div>
-      <div class="progress">
-        <div class="p-node done"></div>
-        <div class="p-node done"></div>
-        <div class="p-node done"></div>
-      </div>
-      <div style="display:flex;justify-content:space-between;margin-top:4px;font-size:9px;color:var(--mute);font-weight:600;letter-spacing:.5px">
-        <span style="color:#3df0c2">激活 ✓</span><span style="color:#3df0c2">+30% ✓</span><span style="color:#3df0c2">+50% ✓</span>
-      </div>
-      <div class="promo-tip">🎉 <b>已完成</b>，每件继续返 10%。下一笔朋友买就给你 ¥1，不会差一刀，已发就到账。</div>
-    </div>
-
-    <!-- ticker -->
-    <div class="ticker">
-      <div class="ticker-text"><b>用户***123</b> 刚拿了 <b>¥8.60</b> · <b>用户***456</b> 升到 4 星 · <b>用户***789</b> 中奖池 <b>¥30</b> · 你也在 <b>红烧牛肉面</b> 队列里</div>
-    </div>
-
-    <!-- 分类 -->
-    <div class="sec">
-      <div class="sec-t">分类逛逛</div>
-      <div class="sec-more">全部 ›</div>
-    </div>
-    <div class="cats">
-      <div class="cat-i"><div class="cat-c hot">🍱</div><div class="cat-l">外卖</div></div>
-      <div class="cat-i"><div class="cat-c">☕</div><div class="cat-l">咖啡</div></div>
-      <div class="cat-i"><div class="cat-c">🍜</div><div class="cat-l">面食</div></div>
-      <div class="cat-i"><div class="cat-c">🍰</div><div class="cat-l">甜品</div></div>
-      <div class="cat-i"><div class="cat-c">🛒</div><div class="cat-l">超市</div></div>
-    </div>
-
-    <!-- 精选 -->
-    <div class="sec">
-      <div class="sec-t">今日精选<small>FEATURED</small></div>
-      <div class="sec-more">›</div>
-    </div>
-    <div class="feat-list">
-      <div class="fc fc-1">
-        <div class="fc-tag flame">推 3 反 1 · 限时</div>
-        <div class="fc-name">爱家超市<br>麻辣红烧牛肉面</div>
-        <div class="fc-sub">3 件起返 · 邀请朋友也返</div>
-        <div class="fc-bot">
-          <div class="fc-meta"><div class="fc-l">¥/件</div><div class="fc-v">10.00</div></div>
-          <div class="fc-cta">去赚 →</div>
-        </div>
-      </div>
-      <div class="fc fc-2">
-        <div class="fc-tag">满 30 减 5</div>
-        <div class="fc-name">茶楼<br>菊花枸杞茶</div>
-        <div class="fc-sub">100% 实在不忽悠</div>
-        <div class="fc-bot">
-          <div class="fc-meta"><div class="fc-l">¥/份</div><div class="fc-v">15.00</div></div>
-          <div class="fc-cta">看看</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 热销榜 -->
-    <div class="sec">
-      <div class="sec-t">热销榜<small>TOP NOW</small></div>
-      <div class="sec-more">完整榜 ›</div>
-    </div>
-    <div class="hot-prods">
-      <div class="hp">
-        <div class="hp-pic">🍜<div class="hp-rank">1</div></div>
-        <div class="hp-n">红烧牛肉面</div>
-        <div class="hp-meta"><div class="hp-pr">¥10<small>.00</small></div><div class="hp-sales">已售 2.4K</div></div>
-      </div>
-      <div class="hp">
-        <div class="hp-pic">🥩<div class="hp-rank" style="background:linear-gradient(135deg,#94a3b8,#475569)">2</div></div>
-        <div class="hp-n">满小饱肥汁米线</div>
-        <div class="hp-meta"><div class="hp-pr">¥5<small>.00</small></div><div class="hp-sales">已售 1.8K</div></div>
-      </div>
-      <div class="hp">
-        <div class="hp-pic">🍚<div class="hp-rank" style="background:linear-gradient(135deg,#d97706,#92400e)">3</div></div>
-        <div class="hp-n">海福盛干贝粥</div>
-        <div class="hp-meta"><div class="hp-pr">¥10<small>.00</small></div><div class="hp-sales">已售 1.2K</div></div>
-      </div>
-    </div>
-
-    <!-- 推荐 grid -->
-    <div class="sec">
-      <div class="sec-t">猜你赚<small>FOR YOU</small></div>
-    </div>
-    <div class="grid">
-      <div class="p">
-        <div class="p-pic flame">🥓<div class="p-badge">推 3 反 1</div></div>
-        <div class="p-n">五花肉 · 鲜切批发</div>
-        <div class="p-meta"><div class="p-price">¥28<small>/斤</small></div><div class="p-earn">赚 ¥2.8</div></div>
-      </div>
-      <div class="p">
-        <div class="p-pic">🍳<div class="p-badge cool">星级返</div></div>
-        <div class="p-n">土鸡蛋 30 枚装</div>
-        <div class="p-meta"><div class="p-price">¥32<small>/板</small></div><div class="p-earn">2 星额外 +2%</div></div>
-      </div>
-      <div class="p">
-        <div class="p-pic lucky">🎁<div class="p-badge">入池抽奖</div></div>
-        <div class="p-n">中秋限量月饼礼盒</div>
-        <div class="p-meta"><div class="p-price">¥88<small>/盒</small></div><div class="p-earn">入池 5%</div></div>
-      </div>
-      <div class="p">
-        <div class="p-pic">🥬<div class="p-badge cool">满 50 减 5</div></div>
-        <div class="p-n">山东大白菜 包邮</div>
-        <div class="p-meta"><div class="p-price">¥1.6<small>/斤</small></div><div class="p-earn">消费 +5</div></div>
-      </div>
-    </div>
-
-  </div>
-  <div class="tabbar">
-    <div class="tab on"><div class="tab-dot"></div><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3 4 9v12h5v-7h6v7h5V9z"/></svg>主页</div>
-    <div class="tab"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 5h18v2H3zm0 6h18v2H3zm0 6h18v2H3z"/></svg>分类</div>
-    <div class="tab"><div class="cart-circle"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4h-2l-3 6 4 11h12l4-11-3-6h-2zM9 21a1 1 0 1 1 0-2 1 1 0 0 1 0 2zm6 0a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/></svg></div>购物车<div class="tab-badge" style="top:0">9</div></div>
-    <div class="tab"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 5h18v3H3zM3 10h18v3H3zM3 15h18v3H3z"/></svg>订单</div>
-    <div class="tab"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 22c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>我的</div>
-  </div>
-</div>
-
-<!-- ============================ 2. 钱包 ============================ -->
-<div class="frame">
-  <div class="frame-label">钱包 · 双积分</div>
-  <div class="statusbar"><span>9:41</span><span>⚡5G ▮▮▮▮</span></div>
-  <div class="body">
-    <div class="wallet-hd">
-      <div class="wl-back">‹</div>
-      <div class="wl-hero">
-        <div class="wl-l">推广积分余额 · 1:1 提现</div>
-        <div class="wl-v">128.50<small>积分</small></div>
-        <div class="wl-grow">↑ 本月 +¥18.20</div>
-        <div class="wl-acts">
-          <div class="wl-act"><span class="wl-act-i">💰</span><div class="wl-act-t">提现</div></div>
-          <div class="wl-act"><span class="wl-act-i">🔄</span><div class="wl-act-t">转消费</div></div>
-          <div class="wl-act"><span class="wl-act-i">📊</span><div class="wl-act-t">详细账单</div></div>
-        </div>
-      </div>
-    </div>
-
-    <div style="padding:0 22px;display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
-      <div style="background:var(--bg-card);border-radius:14px;padding:14px;border:1px solid var(--line)">
-        <div style="font-size:10px;color:var(--mute);font-weight:700;letter-spacing:.5px">消费积分</div>
-        <div style="font-size:22px;font-weight:900;margin-top:4px;color:#3df0c2">8.40<span style="font-size:11px;color:var(--mute);font-weight:600;margin-left:2px">积分</span></div>
-      </div>
-      <div style="background:var(--bg-card);border-radius:14px;padding:14px;border:1px solid var(--line)">
-        <div style="font-size:10px;color:var(--mute);font-weight:700;letter-spacing:.5px">店铺余额</div>
-        <div style="font-size:22px;font-weight:900;margin-top:4px;color:#4dd6ff">52.00<span style="font-size:11px;color:var(--mute);font-weight:600;margin-left:2px">元</span></div>
-      </div>
-    </div>
-
-    <div class="wl-tabs">
-      <div class="wl-tab on">全部流水</div>
-      <div class="wl-tab">收入</div>
-      <div class="wl-tab">支出</div>
-      <div class="wl-tab">中奖</div>
-    </div>
-
-    <div class="flow">
-      <div class="flow-d">今天 · 5/22</div>
-
-      <div class="flow-i win">
-        <div class="flow-ic win">🎁</div>
-        <div class="flow-m">
-          <div class="flow-n">奖池中奖<span style="font-size:9px;background:linear-gradient(135deg,#ff4d8d,#ff7a3d);padding:1px 6px;border-radius:4px;margin-left:5px;font-weight:800">WIN</span></div>
-          <div class="flow-d2">爱家超市 · 月饼礼盒 SPU 池 · 3 星抽中</div>
-        </div>
-        <div class="flow-v">
-          <div class="flow-amt win">+10.00</div>
-          <div class="flow-bal">余 128.50</div>
-        </div>
-      </div>
-
-      <div class="flow-i">
-        <div class="flow-ic in">⚡</div>
-        <div class="flow-m">
-          <div class="flow-n">朋友首单返利</div>
-          <div class="flow-d2">小红 在「爱家超市」首单 · 你拿 10%</div>
-        </div>
-        <div class="flow-v">
-          <div class="flow-amt in">+1.00</div>
-          <div class="flow-bal">余 118.50</div>
-        </div>
-      </div>
-
-      <div class="flow-i">
-        <div class="flow-ic in">🥩</div>
-        <div class="flow-m">
-          <div class="flow-n">自购返奖 · 推 3 反 1 第 3 件</div>
-          <div class="flow-d2">红烧牛肉面 · 件 3 完成期 +50%</div>
-        </div>
-        <div class="flow-v">
-          <div class="flow-amt in">+5.00</div>
-          <div class="flow-bal">余 117.50</div>
-        </div>
-      </div>
-
-      <div class="flow-d">昨天 · 5/21</div>
-
-      <div class="flow-i">
-        <div class="flow-ic in">🌟</div>
-        <div class="flow-m">
-          <div class="flow-n">团队极差奖</div>
-          <div class="flow-d2">下级小白下单 · 你 3 星拿 3% 实付</div>
-        </div>
-        <div class="flow-v">
-          <div class="flow-amt in">+0.60</div>
-          <div class="flow-bal">余 112.50</div>
-        </div>
-      </div>
-
-      <div class="flow-i">
-        <div class="flow-ic out">⬇️</div>
-        <div class="flow-m">
-          <div class="flow-n">下单抵扣（自购换）</div>
-          <div class="flow-d2">订单 #10118 · 推 N 反 1 自动抵 1 件</div>
-        </div>
-        <div class="flow-v">
-          <div class="flow-amt out">−10.00</div>
-          <div class="flow-bal">余 111.90</div>
-        </div>
-      </div>
-
-      <div class="flow-i">
-        <div class="flow-ic in">🎯</div>
-        <div class="flow-m">
-          <div class="flow-n">自然推队首奖</div>
-          <div class="flow-d2">新人下单 · 你排红烧牛肉面队首</div>
-        </div>
-        <div class="flow-v">
-          <div class="flow-amt in">+3.00</div>
-          <div class="flow-bal">余 121.90</div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ============================ 3. 中奖弹窗 ============================ -->
-<div class="frame win-frame">
-  <div class="frame-label">中奖弹窗 · WOW</div>
-  <div class="statusbar"><span>9:41</span><span>⚡5G ▮▮▮▮</span></div>
-  <div class="body" style="padding-bottom:0;background:rgba(0,0,0,.6)">
-    <div class="conf c1"></div>
-    <div class="conf c2"></div>
-    <div class="conf c3"></div>
-    <div class="conf c4"></div>
-    <div class="conf c5"></div>
-    <div class="conf c6"></div>
-    <div class="conf c7"></div>
-    <div class="conf c8"></div>
-    <div class="conf c9"></div>
-    <div class="win-overlay">
-      <div class="trophy">🏆</div>
-      <div class="win-t">恭喜中奖!</div>
-      <div class="win-sub">爱家超市 · 月饼礼盒 SPU 奖池</div>
-      <div class="win-amt-card">
-        <div class="win-amt-l">RECEIVED</div>
-        <div class="win-amt-v">¥10<small>.00</small></div>
-        <div class="win-detail">已发到推广积分余额 · 可立即提现</div>
-      </div>
-      <div style="margin-top:24px;text-align:center">
-        <div style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;background:rgba(255,255,255,.08);border-radius:99px;font-size:11px;font-weight:600;color:#c0a8ff;backdrop-filter:blur(10px)">
-          <span style="color:#3df0c2">●</span> 这一轮共 24 人中奖，你是 3 星抽签获选
-        </div>
-      </div>
-      <button class="win-cta">查看奖池详情 →</button>
-      <div style="margin-top:18px;font-size:11px;color:var(--mute);text-align:center">推广积分 1 积分 = 1 元 · 我们的承诺<br>不会"差一刀"，到账即可提现</div>
-    </div>
-  </div>
-</div>
-
-<!-- ============================ 4. 派单 / 订单进度动画 ============================ -->
-<div class="frame ship-anim">
-  <div class="frame-label">订单进度 · 派单</div>
-  <div class="statusbar"><span>9:41</span><span>⚡5G ▮▮▮▮</span></div>
-  <div class="body" style="padding-bottom:0">
-    <div class="ship-stage">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:24px">
-        <div style="width:36px;height:36px;border-radius:12px;background:rgba(255,255,255,.05);display:flex;align-items:center;justify-content:center;font-size:16px">‹</div>
-        <div>
-          <div style="font-size:11px;color:var(--mute);font-weight:600">订单</div>
-          <div style="font-size:13px;font-weight:800">#PO-20260522-0028</div>
-        </div>
-        <div style="margin-left:auto;padding:5px 12px;background:linear-gradient(135deg,#ff4d8d,#ff7a3d);border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px">配送中</div>
-      </div>
-
-      <div class="ship-h">您的订单已发车 🚀</div>
-      <div class="ship-sub">爱家超市 王师傅正在赶来</div>
-
-      <div class="timeline">
-        <div class="tl-i">
-          <div class="tl-dot done">✓</div>
-          <div class="tl-m">
-            <div class="tl-n">订单已确认</div>
-            <div class="tl-d">9:32 · 商家已接单 · ¥10 已扣，¥0 实付（积分抵扣）</div>
+        <div class="value-list">
+          <div class="vl-row">
+            <div class="vl-idx brand">01</div>
+            <div class="vl-body">
+              <div class="vl-title">边吃边赚 · 邀请最高 <b>返 100%</b> 商品价</div>
+              <div class="vl-desc">推 N 个朋友买同款，每位都给你返推广积分</div>
+            </div>
+          </div>
+          <div class="vl-row">
+            <div class="vl-idx forest">02</div>
+            <div class="vl-body">
+              <div class="vl-title">已有 <b>1280+</b> 家本地小店入驻</div>
+              <div class="vl-desc">三里屯 · 望京 · 国贸 · 五道口…身边好店一键直达</div>
+            </div>
+          </div>
+          <div class="vl-row">
+            <div class="vl-idx gold">03</div>
+            <div class="vl-body">
+              <div class="vl-title">多店独立会员 · <b>越买越省</b></div>
+              <div class="vl-desc">每家店独立星级 + 余额 + 优惠券，老回头客最赚</div>
+            </div>
           </div>
         </div>
-        <div class="tl-i">
-          <div class="tl-dot done">📦</div>
-          <div class="tl-m">
-            <div class="tl-n">商品已打包</div>
-            <div class="tl-d">9:45 · 红烧牛肉面 ×1</div>
+
+        <div class="social-pill">
+          <div class="avatars">
+            <div class="av" style="background:linear-gradient(135deg,#F8965B,var(--brand));">李</div>
+            <div class="av" style="background:linear-gradient(135deg,#B7CDF2,#5C8BE8);">王</div>
+            <div class="av" style="background:linear-gradient(135deg,#C0E5C4,#4DB258);">陈</div>
+            <div class="av" style="background:linear-gradient(135deg,#F8C9D4,#DE6189);">林</div>
+            <div class="av" style="background:linear-gradient(135deg,#DCC9F2,#8B6FCC);">张</div>
+          </div>
+          <div class="txt"><b>8.5 万</b>已在用 · 今日 <b>+152</b></div>
+          <span class="live-dot"></span>
+        </div>
+
+        <div class="cta-wrap">
+          <div class="cta-wx">
+            <span>💬</span><span>微信一键登录</span>
+            <span class="gift-badge">送 ¥18</span>
+          </div>
+          <div class="cta-phone">
+            <span>📱</span><span>手机号登录 / 注册</span>
+          </div>
+          <div class="cta-row">
+            <a>先逛逛 ›</a>
+            <span class="v"></span>
+            <span>商户入驻 ›</span>
           </div>
         </div>
-        <div class="tl-i">
-          <div class="tl-dot cur">🚀</div>
-          <div class="tl-m">
-            <div class="tl-n">骑手取货 · 配送中</div>
-            <div class="tl-d cur">9:58 · 王师傅 · 京 P·12345 · 距您 0.8km</div>
+
+        <div class="agreement">
+          <span class="check">✓</span>
+          我已阅读并同意 <a>《用户协议》</a> 和 <a>《隐私政策》</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="phone-label"><span class="num">0</span><b>登录注册</b> · 邀请场景 + 新人礼包 + 微信一键<small>邀请印章 · 价值主张编号 · 票据式礼包</small></div>
+</div>
+
+<!-- ============== ① 首页 ============== -->
+<div class="group-title"><em>主屏</em>底部 Tab 三屏<span class="count">① ② ③</span></div>
+
+<div class="phone-wrap">
+  <div class="phone">
+    <div class="status-bar"><span>9:41</span><div class="status-icons"><span>📶</span><span>📡</span><span>🔋</span></div></div>
+    <div class="view">
+      <div class="home-cover">
+        <div class="home-row1">
+          <div class="loc"><span class="live-dot"></span><span>定位</span><b>三里屯</b></div>
+          <div class="icons"><div class="icon-btn">🔔</div><div class="icon-btn">📜</div></div>
+        </div>
+        <div class="home-greeting">下午好 ☀</div>
+        <div class="home-title">想吃<span class="accent">点什么</span>？</div>
+        <div class="home-search">
+          <span class="ic">🔍</span>
+          <input placeholder="搜店铺、找商品、看附近" />
+          <span class="voice">🎙</span>
+        </div>
+      </div>
+
+      <div class="quick-row">
+        <div class="quick-item dot"><div class="quick-icon">📍</div><div class="quick-text">附近</div></div>
+        <div class="quick-item"><div class="quick-icon">🛍</div><div class="quick-text">分类</div></div>
+        <div class="quick-item"><div class="quick-icon">🎁</div><div class="quick-text">优惠</div></div>
+        <div class="quick-item"><div class="quick-icon">📷</div><div class="quick-text">扫码</div></div>
+      </div>
+
+      <div class="section-head"><h3>最近去过</h3><span class="more">全部 ›</span></div>
+      <div class="recent-strip">
+        <div class="recent-tile">
+          <div class="recent-cover"><span class="recent-tag">2H 前</span><span class="emoji">🍠</span></div>
+          <div class="recent-body"><div class="recent-name">王师傅烤地瓜</div><div class="recent-meta"><em>已下 5 单</em><span class="dot"></span><span>0.3km</span></div></div>
+        </div>
+        <div class="recent-tile t2">
+          <div class="recent-cover"><span class="recent-tag">昨天</span><span class="emoji">🍵</span></div>
+          <div class="recent-body"><div class="recent-name">林家茶馆</div><div class="recent-meta"><em>已下 2 单</em><span class="dot"></span><span>1.1km</span></div></div>
+        </div>
+        <div class="recent-tile t3">
+          <div class="recent-cover"><span class="recent-tag">3 天前</span><span class="emoji">🍇</span></div>
+          <div class="recent-body"><div class="recent-name">老张水果摊</div><div class="recent-meta"><em>已下 1 单</em><span class="dot"></span><span>0.8km</span></div></div>
+        </div>
+        <div class="recent-tile t4">
+          <div class="recent-cover"><span class="recent-tag">上周</span><span class="emoji">🧋</span></div>
+          <div class="recent-body"><div class="recent-name">小陈奶茶店</div><div class="recent-meta"><em>已下 8 单</em><span class="dot"></span><span>2.0km</span></div></div>
+        </div>
+      </div>
+
+      <div class="ai-banner">
+        <div class="ai-icon">🎬</div>
+        <div class="ai-body">
+          <div class="ai-tag">AI · BETA</div>
+          <div class="ai-title">商家 AI 一键成片</div>
+          <div class="ai-desc">看看附近商家用 AI 拍的短视频，发现新店</div>
+        </div>
+        <div class="ai-arrow">›</div>
+      </div>
+
+      <div class="section-head"><h3>附近商家</h3><span class="more">距离 ↓</span></div>
+      <div class="shop-tile">
+        <div class="logo-block">王</div>
+        <div class="st-info">
+          <div class="st-row1"><div class="st-name">王师傅烤地瓜</div><span class="chip brand">连续打卡</span></div>
+          <div class="st-tag">现烤蜜薯 · 流糖心 · 5 块一个</div>
+          <div class="st-meta"><span class="rating">★ 4.9</span><span class="distance">📍 0.3km</span><span class="sale">月售 <b>1280</b></span></div>
+        </div>
+      </div>
+      <div class="shop-tile">
+        <div class="logo-block blue">林</div>
+        <div class="st-info">
+          <div class="st-row1"><div class="st-name">林家茶馆</div><span class="chip forest">新店</span></div>
+          <div class="st-tag">手工茶饼 · 老白茶 · 现泡现喝</div>
+          <div class="st-meta"><span class="rating">★ 4.7</span><span class="distance">📍 1.1km</span><span class="sale">月售 <b>320</b></span></div>
+        </div>
+      </div>
+      <div class="shop-tile">
+        <div class="logo-block green">张</div>
+        <div class="st-info">
+          <div class="st-row1"><div class="st-name">老张水果摊</div></div>
+          <div class="st-tag">每日新鲜进货 · 凤梨 / 火龙果 / 阳光玫瑰</div>
+          <div class="st-meta"><span class="rating">★ 4.8</span><span class="distance">📍 0.8km</span><span class="sale">月售 <b>2150</b></span></div>
+        </div>
+      </div>
+      <div class="shop-tile">
+        <div class="logo-block pink">陈</div>
+        <div class="st-info">
+          <div class="st-row1"><div class="st-name">小陈奶茶店</div><span class="chip gold">满 30 减 5</span></div>
+          <div class="st-tag">手摇奶茶 · 杨枝甘露 · 现做现卖</div>
+          <div class="st-meta"><span class="rating">★ 4.6</span><span class="distance">📍 2.0km</span><span class="sale">月售 <b>580</b></span></div>
+        </div>
+      </div>
+      <div style="height:14px;"></div>
+    </div>
+    <div class="tab-bar">
+      <div class="tab-item active"><span class="ic">🏠</span><span>首页</span></div>
+      <div class="tab-item"><span class="ic">📋</span><span>订单</span></div>
+      <div class="tab-item"><span class="ic">👤</span><span>我的</span></div>
+    </div>
+    <div class="home-indicator"></div>
+  </div>
+  <div class="phone-label"><span class="num">1</span><b>首页</b> · 发现店铺 + 搜索<small>暗墨头图 · 编辑式标题 · 杂志条</small></div>
+</div>
+
+<!-- ============== ② 订单 ============== -->
+<div class="phone-wrap">
+  <div class="phone">
+    <div class="status-bar"><span>9:41</span><div class="status-icons"><span>📶</span><span>📡</span><span>🔋</span></div></div>
+    <div class="view">
+      <div class="order-top">
+        <div class="order-h">
+          <h2>我的订单</h2>
+          <div class="count">本月 <b>4</b> 单</div>
+        </div>
+        <div class="order-tabs">
+          <div class="tab active">全部</div>
+          <div class="tab">待付款<span class="badge">1</span></div>
+          <div class="tab">待发货</div>
+          <div class="tab">待收货<span class="badge">1</span></div>
+          <div class="tab">已完成</div>
+        </div>
+      </div>
+
+      <div class="shop-grp">
+        <div class="grp-head"><div class="logo-block sm">王</div><div class="name">王师傅烤地瓜</div><div class="arrow">›</div></div>
+        <div class="order-row">
+          <div class="row1"><div class="order-no">#TX2026050100123</div><div class="status receiving">待收货</div></div>
+          <div class="items">
+            <div class="o-pic">🍠</div>
+            <div class="o-info"><div class="o-name">现烤蜜薯（流糖心 大）</div><div class="o-spec">规格：大 × 2</div></div>
+            <div class="o-amt"><div class="price">¥10.00</div><div class="qty">x 2</div></div>
+          </div>
+          <div class="foot">
+            <div class="total">合计 <b>¥10.00</b></div>
+            <div class="actions"><span class="btn">查看物流</span><span class="btn primary">确认收货</span></div>
           </div>
         </div>
-        <div class="tl-i">
-          <div class="tl-dot wait">○</div>
-          <div class="tl-m">
-            <div class="tl-n" style="color:var(--mute)">预计送达</div>
-            <div class="tl-d">10:18 · 您家</div>
+        <div class="order-row">
+          <div class="row1"><div class="order-no">#TX2026042900876</div><div class="status done">已完成</div></div>
+          <div class="items">
+            <div class="o-pic">🍠</div>
+            <div class="o-info"><div class="o-name">蜜薯 + 烤玉米套餐</div><div class="o-spec">规格：经典套餐</div></div>
+            <div class="o-amt"><div class="price">¥18.00</div><div class="qty">x 1</div></div>
+          </div>
+          <div class="foot">
+            <div class="total">合计 <b>¥18.00</b></div>
+            <div class="actions"><span class="btn">再来一单</span><span class="btn">评价</span></div>
           </div>
         </div>
       </div>
-    </div>
 
-    <div class="ship-cta-area">
-      <div class="ship-eta">
-        <div class="ship-eta-ic">⏱️</div>
-        <div class="ship-eta-m">
-          <div class="ship-eta-t">预计还有</div>
-          <div class="ship-eta-d">王师傅正在加速赶来</div>
+      <div class="shop-grp">
+        <div class="grp-head"><div class="logo-block blue sm">林</div><div class="name">林家茶馆</div><div class="arrow">›</div></div>
+        <div class="order-row">
+          <div class="row1"><div class="order-no">#TX2026043000345</div><div class="status shipping">待发货</div></div>
+          <div class="items">
+            <div class="o-pic blue">🍵</div>
+            <div class="o-info"><div class="o-name">老白茶 · 100g 礼盒装</div><div class="o-spec">陈期 5 年</div></div>
+            <div class="o-amt"><div class="price">¥168.00</div><div class="qty">x 1</div></div>
+          </div>
+          <div class="foot">
+            <div class="total">合计 <b>¥168.00</b></div>
+            <div class="actions"><span class="btn">取消订单</span><span class="btn">联系商家</span></div>
+          </div>
         </div>
-        <div class="ship-eta-v">12<small>分钟</small></div>
       </div>
-      <div class="ship-row-btns">
-        <div class="ship-btn s">📞 联系骑手</div>
-        <div class="ship-btn p">查看地图</div>
+
+      <div class="shop-grp">
+        <div class="grp-head"><div class="logo-block green sm">张</div><div class="name">老张水果摊</div><div class="arrow">›</div></div>
+        <div class="order-row">
+          <div class="row1"><div class="order-no">#TX2026042700112</div><div class="status pending">待付款</div></div>
+          <div class="items">
+            <div class="o-pic green">🍇</div>
+            <div class="o-info"><div class="o-name">阳光玫瑰葡萄 · 1.5 斤装</div><div class="o-spec">果园直发 · 当日采摘</div></div>
+            <div class="o-amt"><div class="price">¥58.00</div><div class="qty">x 1</div></div>
+          </div>
+          <div class="foot">
+            <div class="total">合计 <b>¥58.00</b></div>
+            <div class="actions"><span class="btn">取消</span><span class="btn primary">立即付款</span></div>
+          </div>
+        </div>
       </div>
+      <div style="height:14px;"></div>
     </div>
+    <div class="tab-bar">
+      <div class="tab-item"><span class="ic">🏠</span><span>首页</span></div>
+      <div class="tab-item active"><span class="ic">📋</span><span>订单</span></div>
+      <div class="tab-item"><span class="ic">👤</span><span>我的</span></div>
+    </div>
+    <div class="home-indicator"></div>
   </div>
+  <div class="phone-label"><span class="num">2</span><b>订单</b> · 按店铺分组<small>状态色卡 · 暗墨 Tab · 编辑式订单号</small></div>
 </div>
 
-<!-- ============================ 5. 店铺主页 - 推 N 反 1 大卡 ============================ -->
-<div class="frame">
-  <div class="frame-label">店铺主页 · 比拼多多实在</div>
-  <div class="statusbar"><span>9:41</span><span>⚡5G ▮▮▮▮</span></div>
-  <div class="body">
-    <div class="sh-hd">
-      <div class="sh-shop">
-        <div class="sh-logo">爱</div>
+<!-- ============== ③ 我的 ============== -->
+<div class="phone-wrap">
+  <div class="phone">
+    <div class="status-bar"><span>9:41</span><div class="status-icons"><span>📶</span><span>📡</span><span>🔋</span></div></div>
+    <div class="view">
+      <div class="me-cover">
+        <div class="row">
+          <div class="avatar">小</div>
+          <div style="flex:1;"><div class="me-name">小明</div><div class="me-sub">138****8000 · 已加入 4 家店</div></div>
+          <div class="gear">⚙</div>
+        </div>
+      </div>
+
+      <div class="me-summary">
+        <div class="item"><div class="num">4</div><div class="lbl">加入店铺</div></div>
+        <div class="item"><div class="num">22</div><div class="lbl">累计订单</div></div>
+        <div class="item"><div class="num brand">12</div><div class="lbl">推荐好友</div></div>
+      </div>
+
+      <div class="callout brand">
+        <b>💡 资产按店铺独立</b>：余额、推广积分、消费积分、星级都隔离在每个店铺账户，点开下方"我加入的店铺"查看每家店的独立资产。
+      </div>
+
+      <div class="shop-list">
+        <div class="sl-head"><div class="t">我加入的店铺<b>（4）</b></div><div class="more">管理 ›</div></div>
+        <div class="sl-row">
+          <div class="logo-block">王</div>
+          <div class="sl-info">
+            <div class="sl-name">王师傅烤地瓜<span class="sl-star">⭐ 3 星</span></div>
+            <div class="sl-stats"><span>订单 <em class="ink">12</em></span><span>余额 <em>¥38.00</em></span><span>推广积分 <em>156</em></span></div>
+          </div>
+          <div class="arrow">›</div>
+        </div>
+        <div class="sl-row">
+          <div class="logo-block blue">林</div>
+          <div class="sl-info">
+            <div class="sl-name">林家茶馆<span class="sl-star">⭐ 1 星</span></div>
+            <div class="sl-stats"><span>订单 <em class="ink">2</em></span><span>余额 <em>¥18.00</em></span><span>推广积分 <em>72</em></span></div>
+          </div>
+          <div class="arrow">›</div>
+        </div>
+        <div class="sl-row">
+          <div class="logo-block green">张</div>
+          <div class="sl-info">
+            <div class="sl-name">老张水果摊<span class="sl-star">⭐ 2 星</span></div>
+            <div class="sl-stats"><span>订单 <em class="ink">6</em></span><span>余额 <em>¥30.50</em></span><span>推广积分 <em>100</em></span></div>
+          </div>
+          <div class="arrow">›</div>
+        </div>
+        <div class="sl-row">
+          <div class="logo-block pink">陈</div>
+          <div class="sl-info">
+            <div class="sl-name">小陈奶茶店</div>
+            <div class="sl-stats"><span>订单 <em class="ink">2</em></span><span>余额 <em>¥0.00</em></span><span>推广积分 <em>0</em></span></div>
+          </div>
+          <div class="arrow">›</div>
+        </div>
+      </div>
+
+      <div class="fn-card">
+        <div class="fn-title">资产 · 推广</div>
+        <div class="fn-row"><div class="fn-icon">💰</div><div class="fn-name">我的钱包（按店铺）</div><div class="fn-tag">4 家店余额</div><div class="fn-arrow">›</div></div>
+        <div class="fn-row"><div class="fn-icon info">📊</div><div class="fn-name">推广积分明细</div><div class="fn-arrow">›</div></div>
+        <div class="fn-row"><div class="fn-icon forest">🎯</div><div class="fn-name">我的队列（v6 推 N 反 1）</div><div class="fn-tag forest">3 个排队中</div><div class="fn-arrow">›</div></div>
+        <div class="fn-row"><div class="fn-icon gold">🏆</div><div class="fn-name">店铺星级</div><div class="fn-arrow">›</div></div>
+        <div class="fn-row"><div class="fn-icon">🔗</div><div class="fn-name">邀请好友（先选店铺）</div><div class="fn-tag">已邀 12 人</div><div class="fn-arrow">›</div></div>
+      </div>
+
+      <div class="fn-card">
+        <div class="fn-title">收藏 · 浏览</div>
+        <div class="fn-row"><div class="fn-icon pink">❤</div><div class="fn-name">我收藏的店铺</div><div class="fn-tag">8 家</div><div class="fn-arrow">›</div></div>
+        <div class="fn-row"><div class="fn-icon info">⭐</div><div class="fn-name">商品收藏夹</div><div class="fn-tag">23 件</div><div class="fn-arrow">›</div></div>
+        <div class="fn-row"><div class="fn-icon forest">🕒</div><div class="fn-name">最近浏览</div><div class="fn-arrow">›</div></div>
+      </div>
+
+      <div class="fn-card">
+        <div class="fn-title">平台 · 设置</div>
+        <div class="fn-row"><div class="fn-icon gold">📍</div><div class="fn-name">收货地址</div><div class="fn-arrow">›</div></div>
+        <div class="fn-row"><div class="fn-icon ink">❓</div><div class="fn-name">帮助与反馈</div><div class="fn-arrow">›</div></div>
+        <div class="fn-row"><div class="fn-icon ink">ℹ</div><div class="fn-name">关于摊小二</div><div class="fn-arrow">›</div></div>
+      </div>
+      <div style="height:14px;"></div>
+    </div>
+    <div class="tab-bar">
+      <div class="tab-item"><span class="ic">🏠</span><span>首页</span></div>
+      <div class="tab-item"><span class="ic">📋</span><span>订单</span></div>
+      <div class="tab-item active"><span class="ic">👤</span><span>我的</span></div>
+    </div>
+    <div class="home-indicator"></div>
+  </div>
+  <div class="phone-label"><span class="num">3</span><b>我的</b> · 按店独立资产 + 跨店聚合<small>暗墨头图 · 编辑式数字 · 分层卡片</small></div>
+</div>
+
+<!-- ============== ③.1 我的钱包 ============== -->
+<div class="group-title"><em>子页</em>「我的」7 个详情子页<span class="count">③.1 - ③.7</span></div>
+
+<div class="phone-wrap">
+  <div class="phone">
+    <div class="status-bar"><span>9:41</span><div class="status-icons"><span>📶</span><span>📡</span><span>🔋</span></div></div>
+    <div class="topbar"><span class="back">‹</span><span class="title">我的钱包</span><span class="right">明细</span></div>
+    <div class="view no-tab">
+      <div class="wallet-hero">
+        <div class="lbl">4 家店铺累计余额</div>
+        <div class="bignum xl invert"><span class="currency">¥</span>86<span class="cents">.50</span></div>
+        <div class="note">💡 各店余额仅可在该店内消费 / 提现，跨店不互通</div>
+      </div>
+
+      <div style="margin:0 16px; background:#fff; border-radius:var(--r-md); box-shadow:var(--shadow-1); overflow:hidden;">
+        <div class="wallet-row">
+          <div class="logo-block">王</div>
+          <div class="w-info">
+            <div class="w-name">王师傅烤地瓜</div>
+            <div class="w-mini"><span>积分 <em>156</em></span><span>消费积分 <em>820</em></span></div>
+          </div>
+          <div class="w-right"><div class="w-bal">¥38<small>.00</small></div><span class="w-act">提现 ›</span></div>
+        </div>
+        <div class="wallet-row">
+          <div class="logo-block blue">林</div>
+          <div class="w-info">
+            <div class="w-name">林家茶馆</div>
+            <div class="w-mini"><span>积分 <em>72</em></span><span>消费积分 <em>336</em></span></div>
+          </div>
+          <div class="w-right"><div class="w-bal">¥18<small>.00</small></div><span class="w-act">提现 ›</span></div>
+        </div>
+        <div class="wallet-row">
+          <div class="logo-block green">张</div>
+          <div class="w-info">
+            <div class="w-name">老张水果摊</div>
+            <div class="w-mini"><span>积分 <em>100</em></span><span>消费积分 <em>89</em></span></div>
+          </div>
+          <div class="w-right"><div class="w-bal">¥30<small>.50</small></div><span class="w-act">提现 ›</span></div>
+        </div>
+        <div class="wallet-row">
+          <div class="logo-block pink">陈</div>
+          <div class="w-info">
+            <div class="w-name">小陈奶茶店</div>
+            <div class="w-mini"><span>积分 <em>0</em></span><span>消费积分 <em>0</em></span></div>
+          </div>
+          <div class="w-right"><div class="w-bal muted">¥0<small>.00</small></div><span class="w-act disabled">无可提</span></div>
+        </div>
+      </div>
+
+      <div class="callout">⚠ 摊小二平台不直接管钱：余额是<b>商户预存</b>给你的奖励 / 退款，提现申请会到该商户的运营审批；提现到账时间以商户为准。</div>
+      <div style="height:18px;"></div>
+    </div>
+  </div>
+  <div class="phone-label"><span class="num">3.1</span><b>我的钱包</b> · 按店列表 · 各店独立<small>编辑式 ¥86 · 暗墨 hero · 票据风</small></div>
+</div>
+
+<!-- ============== ③.2 推广积分明细 ============== -->
+<div class="phone-wrap">
+  <div class="phone">
+    <div class="status-bar"><span>9:41</span><div class="status-icons"><span>📶</span><span>📡</span><span>🔋</span></div></div>
+    <div class="topbar"><span class="back">‹</span><span class="title">推广积分明细</span><span class="right">兑换</span></div>
+    <div class="view no-tab">
+      <div class="points-hero">
+        <div class="p-row">
+          <div style="flex:1;">
+            <div class="lbl"><b>王师傅烤地瓜</b> · 推广积分</div>
+            <div class="bignum brand" style="font-size:54px; margin-top:6px;">156<span class="cents" style="font-size:14px; color:var(--ink-3); font-weight:600;"> 分</span></div>
+          </div>
+          <div class="logo-block lg">王</div>
+        </div>
+        <div class="note">💡 1 推广积分 = 1 消费积分（可兑换）· 满 <b>100 分</b> 可提现到该店余额</div>
+      </div>
+
+      <div class="seg-ctrl">
+        <div class="seg active">王师傅</div>
+        <div class="seg">林家</div>
+        <div class="seg">老张</div>
+        <div class="seg">小陈</div>
+      </div>
+
+      <div class="section-head"><h3>积分流水</h3><span class="more">筛选</span></div>
+      <div style="margin:0 16px; background:#fff; border-radius:var(--r-md); box-shadow:var(--shadow-1); overflow:hidden;">
+        <div class="flow-row">
+          <div class="f-ic">↗</div>
+          <div class="f-body"><div class="f-name">直推奖（小李 下单 ¥58）</div><div class="f-meta">2026-05-01 14:23 · 推 N 反 1 第 1 位</div></div>
+          <div class="f-amt">+17</div>
+        </div>
+        <div class="flow-row">
+          <div class="f-ic">↗</div>
+          <div class="f-body"><div class="f-name">队列返奖（自然推第 2 位）</div><div class="f-meta">2026-04-30 10:11</div></div>
+          <div class="f-amt">+12</div>
+        </div>
+        <div class="flow-row team">
+          <div class="f-ic">🏆</div>
+          <div class="f-body"><div class="f-name">团队极差奖（5 星差额 1%）</div><div class="f-meta">2026-04-29 09:45</div></div>
+          <div class="f-amt" style="color:var(--info);">+5</div>
+        </div>
+        <div class="flow-row minus">
+          <div class="f-ic">↘</div>
+          <div class="f-body"><div class="f-name">提现到该店余额（¥38）</div><div class="f-meta">2026-04-28 商户已审批</div></div>
+          <div class="f-amt">−38</div>
+        </div>
+        <div class="flow-row draw">
+          <div class="f-ic">🎲</div>
+          <div class="f-body"><div class="f-name">星级积分池中奖（4 月）</div><div class="f-meta">2026-04-25 抽奖结算</div></div>
+          <div class="f-amt" style="color:var(--gold);">+30</div>
+        </div>
+        <div class="flow-row">
+          <div class="f-ic">↗</div>
+          <div class="f-body"><div class="f-name">直推奖（小王 下单 ¥10）</div><div class="f-meta">2026-04-22 16:30</div></div>
+          <div class="f-amt">+3</div>
+        </div>
+      </div>
+      <div style="height:18px;"></div>
+    </div>
+  </div>
+  <div class="phone-label"><span class="num">3.2</span><b>推广积分明细</b> · 按店切换 · v6 流水分类<small>大字号积分 · 分段色编码</small></div>
+</div>
+
+<!-- ============== ③.3 提现申请 ============== -->
+<div class="phone-wrap">
+  <div class="phone">
+    <div class="status-bar"><span>9:41</span><div class="status-icons"><span>📶</span><span>📡</span><span>🔋</span></div></div>
+    <div class="topbar"><span class="back">‹</span><span class="title">提现申请</span><span class="right"></span></div>
+    <div class="view no-tab">
+      <div class="form-group">
+        <label class="form-label">选择店铺</label>
+        <div class="field shop-pick">
+          <div class="logo-block">王</div>
+          <div class="ctx"><div class="nm">王师傅烤地瓜</div><div class="bal">可提余额：¥38.00</div></div>
+          <span class="change">切换 ›</span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">提现金额 · 仅可提该店余额</label>
+        <div class="field">
+          <span class="prefix">¥</span>
+          <input class="amount" value="38.00" />
+          <span class="all-btn">全部</span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">到账方式</label>
+        <div class="field selected">
+          <div class="logo-block" style="background:rgba(7,193,96,.12); color:#07C160; width:36px; height:36px; font-size:16px;">微</div>
+          <div class="ctx"><div class="nm">微信钱包</div><div class="bal">实名认证 · 138****8000</div></div>
+          <div class="radio-dot"></div>
+        </div>
+      </div>
+
+      <div class="callout">
+        <b>提现规则：</b><br>
+        · 余额仅可提到本人微信钱包（与登录手机号实名一致）<br>
+        · 提现申请会到 <b>王师傅烤地瓜</b> 的运营审批，预计 1-3 个工作日<br>
+        · 商户拒绝时余额会原路退回，可重新申请<br>
+        · 单笔最低 ¥10，每月最多 5 次
+      </div>
+      <div style="margin:18px 16px;"><div class="btn primary lg block">提交提现申请</div></div>
+
+      <div class="section-head"><h3>我的提现记录</h3><span class="more">全部 ›</span></div>
+      <div style="margin:0 16px; background:#fff; border-radius:var(--r-md); box-shadow:var(--shadow-1); overflow:hidden;">
+        <div class="flow-row draw">
+          <div class="f-ic">⏳</div>
+          <div class="f-body"><div class="f-name">王师傅烤地瓜 · 提现到微信钱包</div><div class="f-meta">2026-05-01 09:23 · W26050100123</div></div>
+          <div style="text-align:right; flex-shrink:0;">
+            <div style="color:var(--gold); font-weight:900; font-size:16px;">¥38.00</div>
+            <div style="font-size:10px; color:var(--gold); margin-top:2px; font-weight:700;">审核中</div>
+          </div>
+        </div>
+        <div class="flow-row">
+          <div class="f-ic">✓</div>
+          <div class="f-body"><div class="f-name">老张水果摊 · 提现到微信钱包</div><div class="f-meta">2026-04-22 18:14 · 商户审批 → 微信收款</div></div>
+          <div style="text-align:right; flex-shrink:0;">
+            <div style="color:var(--forest); font-weight:900; font-size:16px;">¥120.00</div>
+            <div style="font-size:10px; color:var(--forest); margin-top:2px; font-weight:700;">已到账</div>
+          </div>
+        </div>
+        <div class="flow-row">
+          <div class="f-ic">✓</div>
+          <div class="f-body"><div class="f-name">林家茶馆 · 提现到微信钱包</div><div class="f-meta">2026-04-15 11:02 · 1.5 工作日到账</div></div>
+          <div style="text-align:right; flex-shrink:0;">
+            <div style="color:var(--forest); font-weight:900; font-size:16px;">¥56.00</div>
+            <div style="font-size:10px; color:var(--forest); margin-top:2px; font-weight:700;">已到账</div>
+          </div>
+        </div>
+        <div class="flow-row minus">
+          <div class="f-ic">✕</div>
+          <div class="f-body"><div class="f-name">王师傅烤地瓜 · 提现到微信钱包</div><div class="f-meta">2026-04-08 · 驳回原因：实名信息不一致</div></div>
+          <div style="text-align:right; flex-shrink:0;">
+            <div style="color:var(--ink-3); font-weight:800; font-size:15px; text-decoration:line-through;">¥80.00</div>
+            <div style="font-size:10px; color:var(--danger); margin-top:2px; font-weight:700;">已驳回</div>
+          </div>
+        </div>
+      </div>
+      <div style="margin:12px 16px 24px; text-align:center; font-size:11px; color:var(--ink-3);">仅显示近 30 天 · 可查看全部</div>
+    </div>
+  </div>
+  <div class="phone-label"><span class="num">3.3</span><b>提现申请</b> · 表单 + 提现记录列表<small>大字号金额输入 · 选中态实色描边</small></div>
+</div>
+
+<!-- ============== ③.4 我的队列 ============== -->
+<div class="phone-wrap">
+  <div class="phone">
+    <div class="status-bar"><span>9:41</span><div class="status-icons"><span>📶</span><span>📡</span><span>🔋</span></div></div>
+    <div class="topbar"><span class="back">‹</span><span class="title">我的队列</span><span class="right">规则</span></div>
+    <div class="view no-tab">
+      <div class="callout brand">
+        <b>v6 推 N 反 1：</b> 你买过的商品会进入队列，朋友通过你或自然进店买同款 → 你按当前位置拿对应比例的推广积分；累计满 N 次出队，共得 100% 商品价。
+      </div>
+
+      <div class="queue-receipt">
+        <div class="qr-inner">
+          <div class="qr-head">
+            <div class="logo-block sm">王</div>
+            <div class="qr-name">王师傅烤地瓜 · 现烤蜜薯（大）</div>
+            <div class="qr-layer a">A 层</div>
+          </div>
+          <div class="qr-rule">推 <b>4</b> 反 1 · 25%/25%/25%/25% · 商品价 <b>¥10</b></div>
+          <div class="progress-bar">
+            <div class="seg done"></div>
+            <div class="seg done"></div>
+            <div class="seg cur"></div>
+            <div class="seg"></div>
+          </div>
+          <div class="qr-foot">
+            <span>已得 <b>¥5.00</b>（2/4 次）</span>
+            <span>距出队还差 <b>2 次</b></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="queue-receipt">
+        <div class="qr-inner">
+          <div class="qr-head">
+            <div class="logo-block blue sm">林</div>
+            <div class="qr-name">林家茶馆 · 老白茶 100g 礼盒</div>
+            <div class="qr-layer b">B 层</div>
+          </div>
+          <div class="qr-rule">推 <b>3</b> 反 1 · 30%/30%/40% · 商品价 <b>¥168</b></div>
+          <div class="progress-bar">
+            <div class="seg cur"></div>
+            <div class="seg"></div>
+            <div class="seg"></div>
+          </div>
+          <div class="qr-foot">
+            <span>已得 <b>¥0</b>（0/3 次）</span>
+            <span>等下个朋友买就触发</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="queue-receipt">
+        <div class="qr-inner">
+          <div class="qr-head">
+            <div class="logo-block green sm">张</div>
+            <div class="qr-name">老张水果摊 · 阳光玫瑰 1.5 斤</div>
+            <div class="qr-layer a">A 层</div>
+          </div>
+          <div class="qr-rule">推 <b>5</b> 反 1 · 20%/20%/20%/20%/20% · 商品价 <b>¥58</b></div>
+          <div class="progress-bar">
+            <div class="seg done"></div>
+            <div class="seg done"></div>
+            <div class="seg done"></div>
+            <div class="seg done"></div>
+            <div class="seg cur"></div>
+          </div>
+          <div class="qr-foot">
+            <span>已得 <b>¥46.40</b>（4/5 次）</span>
+            <span class="almost">⚡ 还差 1 次出队</span>
+          </div>
+        </div>
+      </div>
+      <div style="height:18px;"></div>
+    </div>
+  </div>
+  <div class="phone-label"><span class="num">3.4</span><b>我的队列</b> · v6 排队进度<small>票据齿孔卡片 · 分段进度条</small></div>
+</div>
+
+<!-- ============== ③.5 店铺星级 ============== -->
+<div class="phone-wrap">
+  <div class="phone">
+    <div class="status-bar"><span>9:41</span><div class="status-icons"><span>📶</span><span>📡</span><span>🔋</span></div></div>
+    <div class="topbar"><span class="back">‹</span><span class="title">店铺星级</span><span class="right">规则</span></div>
+    <div class="view no-tab">
+      <div class="callout brand">
+        <b>v6 星级体系：</b> 在每家店铺独立计算，<b>终生制</b> 永不降级。星级越高拿的团队极差奖差额比例越大；满足升星条件下次成交自动升星。
+      </div>
+
+      <div class="star-receipt">
+        <div class="sr-head">
+          <div class="logo-block sm">王</div>
+          <div class="sr-name">王师傅烤地瓜</div>
+          <div class="stars">★★★<span class="empty">★★</span></div>
+        </div>
+        <div class="sr-rate"><b>极差抽成 3%</b> · 当前 3 星</div>
+        <div class="sr-cond">
+          <div class="ct">距 4 星还差：</div>
+          <div class="crow">
+            <span class="nm">直推下级数</span>
+            <div class="line-bar"><i style="width:62%;"></i></div>
+            <em>5 / 8</em>
+          </div>
+          <div class="crow">
+            <span class="nm">团队销售份数</span>
+            <div class="line-bar"><i style="width:34%;"></i></div>
+            <em>28 / 81</em>
+          </div>
+        </div>
+      </div>
+
+      <div class="star-receipt">
+        <div class="sr-head">
+          <div class="logo-block blue sm">林</div>
+          <div class="sr-name">林家茶馆</div>
+          <div class="stars">★<span class="empty">★★★★</span></div>
+        </div>
+        <div class="sr-rate"><b>极差抽成 1%</b> · 当前 1 星</div>
+        <div class="sr-cond">
+          <div class="ct">距 2 星还差：</div>
+          <div class="crow">
+            <span class="nm">直推下级数</span>
+            <div class="line-bar"><i style="width:33%;"></i></div>
+            <em>1 / 3</em>
+          </div>
+          <div class="crow">
+            <span class="nm">团队销售份数</span>
+            <div class="line-bar"><i style="width:11%;"></i></div>
+            <em>1 / 9</em>
+          </div>
+        </div>
+      </div>
+
+      <div class="star-receipt">
+        <div class="sr-head">
+          <div class="logo-block green sm">张</div>
+          <div class="sr-name">老张水果摊</div>
+          <div class="stars">★★<span class="empty">★★★</span></div>
+        </div>
+        <div class="sr-rate"><b>极差抽成 2%</b> · 当前 2 星</div>
+        <div class="sr-cond">
+          <div class="ct">距 3 星还差：</div>
+          <div class="crow">
+            <span class="nm">直推下级数</span>
+            <div class="line-bar"><i style="width:80%;"></i></div>
+            <em>4 / 5</em>
+          </div>
+          <div class="crow">
+            <span class="nm">团队销售份数</span>
+            <div class="line-bar"><i style="width:55%;"></i></div>
+            <em>15 / 27</em>
+          </div>
+        </div>
+      </div>
+      <div style="height:18px;"></div>
+    </div>
+  </div>
+  <div class="phone-label"><span class="num">3.5</span><b>店铺星级</b> · 按店进度条<small>金色星级 · 双条进度</small></div>
+</div>
+
+<!-- ============== ③.6 邀请好友 ============== -->
+<div class="phone-wrap">
+  <div class="phone">
+    <div class="status-bar"><span>9:41</span><div class="status-icons"><span>📶</span><span>📡</span><span>🔋</span></div></div>
+    <div class="topbar"><span class="back">‹</span><span class="title">邀请好友</span><span class="right">邀请记录</span></div>
+    <div class="view no-tab">
+      <div class="invite-hero">
+        <div class="ih-tag">INVITE · v6</div>
+        <h2>邀请好友进店购物</h2>
+        <p>好友通过你的链接进店并下单，按 <b>商家配置的 v6 推 N 反 1 + 团队极差</b> 自动返奖到你的推广积分</p>
+      </div>
+
+      <div class="invite-pick">
+        <div class="logo-block">王</div>
+        <div class="ip-info">
+          <div class="ip-lbl">当前邀请的店铺</div>
+          <div class="ip-name">王师傅烤地瓜</div>
+        </div>
+        <span class="ip-switch">切换 ›</span>
+      </div>
+
+      <div class="invite-qr">
+        <div class="qr-block"></div>
+        <div class="qr-tip">长按图片分享给朋友</div>
+        <div class="qr-url">www.doupaidoudian.com/m/shop-home?tenantId=121&inviter=8001</div>
+      </div>
+
+      <div class="invite-actions">
+        <div class="btn lg">复制链接</div>
+        <div class="btn lg primary">微信分享</div>
+      </div>
+
+      <div class="callout brand">
+        <b>v6 终生制：</b><br>
+        · 朋友首次通过你的链接登录 → <b>永久</b> 绑定为你的下级（仅在 王师傅烤地瓜 这家店）<br>
+        · 朋友购买参与"推 N 反 1"的商品 → 你拿第 1 个比例的返奖<br>
+        · 朋友再推荐别人 → 你拿"团队极差差额"<br>
+        · 已绑定他人为上级的，不会被你覆盖
+      </div>
+
+      <div class="section-head"><h3>已推荐好友<span style="color:var(--ink-3); font-size:12px; font-weight:400; margin-left:6px;">· 王师傅 5 人</span></h3><span class="more">明细 ›</span></div>
+      <div style="margin:0 16px; background:#fff; border-radius:var(--r-md); box-shadow:var(--shadow-1); overflow:hidden;">
+        <div class="friend-row">
+          <div class="av">李</div>
+          <div class="fr-info">
+            <div class="fr-name"><span>小李 🌟</span><span class="chip forest">已下 3 单</span></div>
+            <div class="fr-meta">138****8000 · 加入 2 天前</div>
+          </div>
+          <div class="fr-amt"><div class="price">+¥5.40</div><div class="lbl">累计返奖</div></div>
+        </div>
+        <div class="friend-row">
+          <div class="av blue">王</div>
+          <div class="fr-info">
+            <div class="fr-name"><span>王小明</span><span class="chip forest">已下 1 单</span></div>
+            <div class="fr-meta">139****1234 · 加入 5 天前</div>
+          </div>
+          <div class="fr-amt"><div class="price">+¥1.25</div><div class="lbl">累计返奖</div></div>
+        </div>
+        <div class="friend-row">
+          <div class="av green">陈</div>
+          <div class="fr-info">
+            <div class="fr-name"><span style="overflow:hidden; text-overflow:ellipsis;">陈晨晨🍓</span><span class="chip forest">已下 2 单</span></div>
+            <div class="fr-meta">186****5566 · 加入 1 周前</div>
+          </div>
+          <div class="fr-amt"><div class="price">+¥3.75</div><div class="lbl">累计返奖</div></div>
+        </div>
+        <div class="friend-row">
+          <div class="av pink">林</div>
+          <div class="fr-info">
+            <div class="fr-name"><span>林晓莹</span><span class="chip outline">待下单</span></div>
+            <div class="fr-meta">137****8899 · 加入 1 周前</div>
+          </div>
+          <div class="fr-amt"><div class="price muted">¥0.00</div><div class="lbl">未消费</div></div>
+        </div>
+        <div class="friend-row">
+          <div class="av purple">张</div>
+          <div class="fr-info">
+            <div class="fr-name"><span>张三同学</span><span class="chip outline">待下单</span></div>
+            <div class="fr-meta">152****3344 · 加入 2 周前</div>
+          </div>
+          <div class="fr-amt"><div class="price muted">¥0.00</div><div class="lbl">未消费</div></div>
+        </div>
+      </div>
+
+      <div class="callout brand">💡 待下单的朋友可以点头像 → 进微信再发一遍邀请；每多一笔订单你都能拿对应位置的返奖（v6 推 N 反 1）</div>
+      <div style="height:18px;"></div>
+    </div>
+  </div>
+  <div class="phone-label"><span class="num">3.6</span><b>邀请好友</b> · 按店生成链接 + 已推荐<small>暗墨邀请 hero · QR 票据卡</small></div>
+</div>
+
+<!-- ============== ③.7 收货地址 ============== -->
+<div class="phone-wrap">
+  <div class="phone">
+    <div class="status-bar"><span>9:41</span><div class="status-icons"><span>📶</span><span>📡</span><span>🔋</span></div></div>
+    <div class="topbar"><span class="back">‹</span><span class="title">收货地址</span><span class="right">+ 添加</span></div>
+    <div class="view no-tab">
+      <div class="callout">📍 收货地址在<b>所有店铺通用</b>（不区分商户），结算时可切换。</div>
+
+      <div class="addr-card default">
+        <div class="name-row"><span class="nm">小明</span><span class="ph">138 0013 8000</span></div>
+        <div class="addr">北京市朝阳区三里屯 SOHO 1 号楼 3 单元 502 室</div>
+        <div class="ops"><span>📝 编辑</span><span>📋 复制</span><span>🗑 删除</span></div>
+      </div>
+      <div class="addr-card">
+        <div class="name-row"><span class="nm">小明（公司）</span><span class="ph">138 0013 8000</span></div>
+        <div class="addr">北京市海淀区中关村东路 1 号院搜狐大厦 12 层</div>
+        <div class="ops"><span>📝 编辑</span><span>📋 复制</span><span>🗑 删除</span></div>
+      </div>
+      <div class="addr-card">
+        <div class="name-row"><span class="nm">妈妈</span><span class="ph">139 1234 5678</span></div>
+        <div class="addr">江苏省南京市鼓楼区中山北路 200 号</div>
+        <div class="ops"><span>📝 编辑</span><span>📋 复制</span><span>🗑 删除</span></div>
+      </div>
+
+      <div style="margin:18px 16px;"><div class="btn lg block" style="background:var(--brand-tint); color:var(--brand-d); border:1px dashed var(--brand);">+ 添加新地址</div></div>
+    </div>
+  </div>
+  <div class="phone-label"><span class="num">3.7</span><b>收货地址</b> · 平台通用<small>默认标记 · 暗墨人名</small></div>
+</div>
+
+<!-- ============== ④ 店铺详情 ============== -->
+<div class="group-title"><em>下单链路</em>从店铺到付款完成<span class="count">④ ⑤ ⑥ ⑦ ⑧</span></div>
+
+<div class="phone-wrap">
+  <div class="phone">
+    <div class="status-bar"><span>9:41</span><div class="status-icons"><span>📶</span><span>📡</span><span>🔋</span></div></div>
+    <div class="view no-tab" style="background:var(--paper); padding-bottom:90px;">
+      <div class="sh-cover">
+        <div class="sh-nav">
+          <div class="sh-icon-btn back">‹</div>
+          <div class="group">
+            <div class="sh-icon-btn">♥</div>
+            <div class="sh-icon-btn">↗</div>
+          </div>
+        </div>
         <div class="sh-meta">
-          <div class="sh-name">爱家超市</div>
-          <div class="sh-stats">
-            <span><b>4.9</b> <span class="rate">★</span></span>
-            <span>月售 <b>2.4K</b></span>
-            <span><b>30</b> 分送达</span>
+          <div class="biz-tag">🔥 <b>老字号</b> · 三里屯排队 No.1</div>
+          <div class="nm">王师傅烤地瓜</div>
+          <div class="slogan">现烤蜜薯 · 流糖心 · 老式炭火 30 分钟</div>
+        </div>
+      </div>
+
+      <div class="sh-info-card">
+        <div class="sh-stat-row">
+          <div class="sh-stat">
+            <div class="num"><span class="ic">★</span>4.9</div>
+            <div class="lbl">128 评分</div>
+          </div>
+          <div class="sh-vert-line"></div>
+          <div class="sh-stat">
+            <div class="num">1280</div>
+            <div class="lbl">月售</div>
+          </div>
+          <div class="sh-vert-line"></div>
+          <div class="sh-stat">
+            <div class="num brand">¥38</div>
+            <div class="lbl">你已赚</div>
+          </div>
+          <div class="my-star-pill">⭐ 3 星会员<br>享 9 折</div>
+        </div>
+        <div class="sh-chips">
+          <span class="chip brand">🔥 招牌烤地瓜</span>
+          <span class="chip">炭火现烤</span>
+          <span class="chip">现做现卖</span>
+          <span class="chip">不赶时间</span>
+        </div>
+        <div class="sh-quick">
+          <span class="pt">📍 0.3km · 三里屯</span>
+          <span class="dot"></span>
+          <span class="now"><span class="live-dot"></span>营业中</span>
+          <span class="dot"></span>
+          <span class="pt">09:00-22:00</span>
+          <span style="margin-left:auto; color:var(--brand); font-weight:700;">详情 ›</span>
+        </div>
+      </div>
+
+      <div class="vip-bar">
+        <div class="vp-ic">🎁</div>
+        <div class="vp-info">
+          <div class="vp-title">你是 <b>3 星会员</b>，本单享 <b>9 折</b></div>
+          <div class="vp-sub">已邀请 5 位好友 · 累计返奖 ¥38 · 还差 3 单升 4 星</div>
+        </div>
+        <div class="vp-cta">邀请赚奖 ›</div>
+      </div>
+
+      <div class="coupon-strip">
+        <div class="coupon-tk">
+          <div class="amt"><small>¥</small>1</div>
+          <div class="info"><div class="cond">满 10 可用</div><div class="grab">领取</div></div>
+        </div>
+        <div class="coupon-tk taken">
+          <div class="amt"><small>¥</small>5</div>
+          <div class="info"><div class="cond">满 30 可用</div><div class="grab">已领取</div></div>
+        </div>
+        <div class="coupon-tk">
+          <div class="amt"><small>¥</small>10</div>
+          <div class="info"><div class="cond">满 50 可用</div><div class="grab">领取</div></div>
+        </div>
+        <div class="coupon-tk special">
+          <div class="amt">新人<br>专享</div>
+          <div class="info"><div class="cond">立减 ¥3</div><div class="grab">领取</div></div>
+        </div>
+      </div>
+
+      <div class="social-proof-bar">
+        <div class="avatars">
+          <div class="av" style="background:linear-gradient(135deg,#F8965B,var(--brand));">李</div>
+          <div class="av" style="background:linear-gradient(135deg,#B7CDF2,#5C8BE8);">王</div>
+          <div class="av" style="background:linear-gradient(135deg,#C0E5C4,#4DB258);">陈</div>
+          <div class="av" style="background:linear-gradient(135deg,#F8C9D4,#DE6189);">林</div>
+          <div class="av" style="background:linear-gradient(135deg,#DCC9F2,#8B6FCC);">+</div>
+        </div>
+        <div class="txt"><b>32 位</b>三里屯邻居常买这家 · 多人下午 5 点回购</div>
+      </div>
+
+      <div class="section-head"><h3>🏆 本店招牌</h3><span class="more">3 件招牌 ›</span></div>
+      <div class="sig-card">
+        <div class="sig-no"><span class="small">NO.</span><span class="big">1</span></div>
+        <div class="sig-inner">
+          <div class="sig-pic">🍠</div>
+          <div class="sig-info">
+            <div class="sig-name">现烤蜜薯（流糖心 大）</div>
+            <div class="sig-tag">山东烟台沙土地 · 老式炭火 30 分钟慢烤</div>
+            <div class="sig-meta">
+              <span>已售 <em class="ink">1280</em></span>
+              <span>★ <em>4.9</em></span>
+              <span>推 4 反 1</span>
+            </div>
           </div>
         </div>
-        <div class="sh-fav">❤️</div>
-      </div>
-    </div>
-
-    <!-- 推 N 反 1 大卡 -->
-    <div class="nback-card">
-      <div class="nb-h">
-        <div class="nb-l">
-          <div class="nb-lbl">推 3 反 1 · 不会差一刀</div>
-          <div class="nb-t">买够 4 件，<span class="h">1 件免单</span><br>朋友也下你 +¥1</div>
-          <div class="nb-sub">推广积分 1:1 提现 · 实在透明</div>
-        </div>
-        <div class="nb-money">
-          <div class="nb-mv">¥10.00</div>
-          <div class="nb-ml">已 拿 / 共可拿 ¥10</div>
+        <div class="sig-bot">
+          <div>
+            <span class="sig-price"><small>¥</small>5.00</span>
+            <span class="sig-orig">¥7</span>
+          </div>
+          <div class="sig-add">+ 加入</div>
         </div>
       </div>
-      <div class="nb-bar">
-        <div class="nb-fill"></div>
-        <div class="nb-txt">已完成 3 / 3 件 · 第 4 件已立即抵扣</div>
-      </div>
-      <div class="nb-foot">
-        <div>当前阶段 <b>完成期</b> · 每件返 10%</div>
-        <button class="nb-cta">分享朋友 +¥1</button>
-      </div>
-    </div>
 
-    <!-- 我们的承诺 vs 拼多多 -->
-    <div style="margin:0 14px 14px;padding:14px;background:linear-gradient(135deg,rgba(61,240,194,.08),rgba(77,214,255,.04));border:1px solid rgba(61,240,194,.2);border-radius:16px;display:flex;gap:12px">
-      <div style="font-size:22px">✅</div>
-      <div style="flex:1">
-        <div style="font-size:12px;font-weight:800;color:#3df0c2">我们的承诺</div>
-        <div style="font-size:10px;color:#a3f0d8;margin-top:4px;line-height:1.5">
-          ✓ 推广积分 <b>1:1 提现</b>，最低 100 元起<br>
-          ✓ 进度真实记录，不存在"差一刀"<br>
-          ✓ 中奖明细 + 链路可追溯
+      <div class="section-head"><h3>全部商品</h3></div>
+      <div class="cat-tab">
+        <div class="ct active">全部</div>
+        <div class="ct">招牌</div>
+        <div class="ct">套餐</div>
+        <div class="ct">饮料</div>
+      </div>
+
+      <div class="prod-grid">
+        <div class="prod-card">
+          <div class="corner">🔥 热销</div>
+          <div class="p-pic">🌽</div>
+          <div class="p-body">
+            <div class="p-name">水果玉米</div>
+            <div class="p-tag">现摘冰镇 · 已售 580</div>
+            <div class="p-row"><div class="p-price"><small>¥</small>3.00</div><div class="p-add">+</div></div>
+          </div>
+        </div>
+        <div class="prod-card green">
+          <div class="corner">🔥 热销</div>
+          <div class="p-pic">🥔</div>
+          <div class="p-body">
+            <div class="p-name">蜜薯 + 玉米套餐</div>
+            <div class="p-tag">经典组合 · 省 ¥3</div>
+            <div class="p-row"><div class="p-price"><small>¥</small>18.00</div><div class="p-add">+</div></div>
+          </div>
+        </div>
+        <div class="prod-card pink">
+          <div class="corner new">NEW</div>
+          <div class="p-pic">🥯</div>
+          <div class="p-body">
+            <div class="p-name">手工烤馒头</div>
+            <div class="p-tag">炭火慢烤 · 微焦</div>
+            <div class="p-row"><div class="p-price"><small>¥</small>2.50</div><div class="p-add">+</div></div>
+          </div>
+        </div>
+        <div class="prod-card blue">
+          <div class="p-pic">🥤</div>
+          <div class="p-body">
+            <div class="p-name">罐装酸梅汤</div>
+            <div class="p-tag">解腻必备</div>
+            <div class="p-row"><div class="p-price"><small>¥</small>4.00</div><div class="p-add">+</div></div>
+          </div>
         </div>
       </div>
+      <div style="height:14px;"></div>
     </div>
-
-    <!-- 分类 -->
-    <div style="padding:0 14px;display:flex;gap:8px;overflow-x:auto;scrollbar-width:none">
-      <div style="flex-shrink:0;padding:8px 16px;background:#fff;color:#0a0a14;border-radius:99px;font-size:11px;font-weight:800">全部</div>
-      <div style="flex-shrink:0;padding:8px 16px;background:var(--bg-card);border:1px solid var(--line);color:var(--mute);border-radius:99px;font-size:11px;font-weight:700">面食</div>
-      <div style="flex-shrink:0;padding:8px 16px;background:var(--bg-card);border:1px solid var(--line);color:var(--mute);border-radius:99px;font-size:11px;font-weight:700">米粉</div>
-      <div style="flex-shrink:0;padding:8px 16px;background:var(--bg-card);border:1px solid var(--line);color:var(--mute);border-radius:99px;font-size:11px;font-weight:700">粥品</div>
-      <div style="flex-shrink:0;padding:8px 16px;background:var(--bg-card);border:1px solid var(--line);color:var(--mute);border-radius:99px;font-size:11px;font-weight:700">饮品</div>
+    <div class="cart-bar">
+      <div class="cart-ic">🛒<span class="b">2</span></div>
+      <div class="ttl">
+        <div class="price">¥13.00</div>
+        <div class="delivery">满 30 立减 5 · 还差 ¥17</div>
+      </div>
+      <div class="pay-btn">去结算 ›</div>
     </div>
-
-    <div class="sec" style="padding-top:18px">
-      <div class="sec-t">热销商品</div>
-      <div class="sec-more">19 件</div>
-    </div>
-    <div class="grid">
-      <div class="p">
-        <div class="p-pic flame">🍜<div class="p-badge">推 3 反 1</div></div>
-        <div class="p-n">红烧牛肉面</div>
-        <div class="p-meta"><div class="p-price">¥10<small>.00</small></div><div class="p-earn">最高 ¥10</div></div>
-      </div>
-      <div class="p">
-        <div class="p-pic">🍱<div class="p-badge cool">入池 5%</div></div>
-        <div class="p-n">麻辣牛肉面 · 统一</div>
-        <div class="p-meta"><div class="p-price">¥5<small>.00</small></div><div class="p-earn">入池抽奖</div></div>
-      </div>
-      <div class="p">
-        <div class="p-pic lucky">🍝<div class="p-badge">星级 +3%</div></div>
-        <div class="p-n">满小饱肥汁米线</div>
-        <div class="p-meta"><div class="p-price">¥5<small>.00</small></div><div class="p-earn">3 星额外</div></div>
-      </div>
-      <div class="p">
-        <div class="p-pic">🍚<div class="p-badge cool">老客 ¥2</div></div>
-        <div class="p-n">海福盛干贝鸡粥</div>
-        <div class="p-meta"><div class="p-price">¥10<small>.00</small></div><div class="p-earn">老客返 ¥2</div></div>
-      </div>
-    </div>
+    <div class="home-indicator"></div>
   </div>
-  <div class="tabbar">
-    <div class="tab on"><div class="tab-dot"></div><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3 4 9v12h5v-7h6v7h5V9z"/></svg>店铺</div>
-    <div class="tab"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 5h18v2H3zm0 6h18v2H3zm0 6h18v2H3z"/></svg>分类</div>
-    <div class="tab"><div class="cart-circle"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4h-2l-3 6 4 11h12l4-11-3-6h-2zM9 21a1 1 0 1 1 0-2 1 1 0 0 1 0 2zm6 0a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/></svg></div>购物车<div class="tab-badge" style="top:0">2</div></div>
-    <div class="tab"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 5h18v3H3zM3 10h18v3H3zM3 15h18v3H3z"/></svg>订单</div>
-    <div class="tab"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 22c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>我的</div>
-  </div>
+  <div class="phone-label"><span class="num">4</span><b>店铺详情</b> · 沉浸式 · 会员 · 优惠券 · 招牌大卡<small>NO.1 印章 · 票据优惠券 · 暗墨会员条</small></div>
 </div>
 
-<!-- ============================ 6. 我的页 - 个人收益中心 ============================ -->
-<div class="frame">
-  <div class="frame-label">我的 · 收益中心</div>
-  <div class="statusbar"><span>9:41</span><span>⚡5G ▮▮▮▮</span></div>
-  <div class="body">
-    <!-- 个人 hero -->
-    <div style="padding:24px 22px 0;background:radial-gradient(ellipse at 50% 0%,rgba(123,97,255,.25),transparent 60%);position:relative">
-      <div style="display:flex;align-items:center;gap:14px">
-        <div style="width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,#7b61ff,#ff4d8d);border:3px solid rgba(255,255,255,.15);box-shadow:0 8px 24px rgba(255,77,141,.3)"></div>
-        <div style="flex:1">
-          <div style="display:flex;align-items:center;gap:8px">
-            <div style="font-size:18px;font-weight:900">小慧</div>
-            <div style="display:inline-flex;align-items:center;padding:2px 8px;background:linear-gradient(135deg,#ffb13d,#ff7a3d);border-radius:5px;font-size:9px;font-weight:800;color:#fff;letter-spacing:1px">★★★ 3 星</div>
-          </div>
-          <div style="font-size:11px;color:var(--mute);margin-top:3px">已邀请 <b style="color:#3df0c2">5</b> 位 · 累计赚 <b style="color:#fff">¥386.40</b></div>
+<!-- ============== ⑤ 商品详情 ============== -->
+<div class="phone-wrap">
+  <div class="phone">
+    <div class="status-bar"><span>9:41</span><div class="status-icons"><span>📶</span><span>📡</span><span>🔋</span></div></div>
+    <div class="view no-tab" style="background:var(--paper); padding-bottom:80px;">
+      <div class="pd-pic">
+        <div class="nav back">‹</div>
+        <div class="nav share">↗</div>
+        <span>🍠</span>
+        <div class="pager">1 / 3</div>
+      </div>
+      <div class="pd-info">
+        <div class="pd-price-row">
+          <span class="pd-price"><small>¥</small>5.00</span>
+          <span class="pd-orig">¥7.00</span>
+          <span class="pd-promo-tag">推 4 反 1</span>
         </div>
-        <div style="width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,.05);display:flex;align-items:center;justify-content:center;font-size:14px">⚙️</div>
+        <div class="pd-name">现烤蜜薯（流糖心 大）</div>
+        <div class="pd-intro">来自山东烟台的红心蜜薯，皮薄肉甜流糖心，炭火现烤 30 分钟，外皮微焦内里软糯</div>
+        <div class="pd-meta">
+          <span><b>1280</b>已售</span>
+          <span><b>4.9</b>评分</span>
+          <span><b>充足</b>库存</span>
+        </div>
       </div>
 
-      <!-- 收益概览 -->
-      <div style="margin-top:20px;background:linear-gradient(135deg,#1a0533,#430a5a);border-radius:22px;padding:20px;border:1px solid rgba(255,77,141,.25);position:relative;overflow:hidden">
-        <div style="position:absolute;top:-30%;right:-15%;width:200px;height:200px;background:radial-gradient(circle,rgba(255,179,61,.2),transparent 60%);pointer-events:none"></div>
-        <div style="font-size:11px;color:#c0a8ff;font-weight:700;letter-spacing:1.5px;text-transform:uppercase">本月已赚</div>
-        <div style="font-size:42px;font-weight:900;letter-spacing:-1.5px;margin-top:6px;background:linear-gradient(135deg,#ffb13d,#ff7a3d,#ff4d8d);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1">¥128.50</div>
-        <div style="margin-top:12px;display:flex;gap:12px">
-          <div style="flex:1;padding:10px;background:rgba(255,255,255,.05);border-radius:10px;border:1px solid rgba(255,255,255,.08)">
-            <div style="font-size:9px;color:var(--mute);font-weight:700;letter-spacing:.5px">推广积分</div>
-            <div style="font-size:18px;font-weight:900;color:#3df0c2;margin-top:2px">128.50</div>
-          </div>
-          <div style="flex:1;padding:10px;background:rgba(255,255,255,.05);border-radius:10px;border:1px solid rgba(255,255,255,.08)">
-            <div style="font-size:9px;color:var(--mute);font-weight:700;letter-spacing:.5px">消费积分</div>
-            <div style="font-size:18px;font-weight:900;color:#4dd6ff;margin-top:2px">8.40</div>
-          </div>
-          <div style="flex:1;padding:10px;background:rgba(255,255,255,.05);border-radius:10px;border:1px solid rgba(255,255,255,.08)">
-            <div style="font-size:9px;color:var(--mute);font-weight:700;letter-spacing:.5px">店铺余额</div>
-            <div style="font-size:18px;font-weight:900;color:#fff;margin-top:2px">52</div>
+      <div class="pd-promo-banner">
+        <div class="pb-ic">🎯</div>
+        <div class="pb-body">
+          <div class="pb-line1">推 4 个朋友买 → 你拿 <b>100% 商品价 ¥5</b>（25%/25%/25%/25% 累积）</div>
+          <div class="pb-line2">推第 1 个 +¥1.25 · 推第 2 个 +¥1.25 · 满 4 次出队累计 ¥5</div>
+        </div>
+      </div>
+
+      <div class="pd-section">
+        <div class="hdr"><span>已选规格</span><span class="sub">大 × 1 ›</span></div>
+        <div class="body">
+          <div class="spec-pills">
+            <span class="spec-pill on">大</span>
+            <span class="spec-pill">中</span>
+            <span class="spec-pill">小</span>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- 升星卡 -->
-    <div style="margin:18px 14px 0;background:var(--bg-card);border-radius:18px;padding:16px;border:1px solid var(--line);position:relative;overflow:hidden">
-      <div style="position:absolute;top:0;right:0;width:120px;height:120px;background:radial-gradient(circle,rgba(255,179,61,.15),transparent 60%);pointer-events:none"></div>
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;position:relative">
-        <div style="font-size:13px;font-weight:800">距 <span style="background:linear-gradient(135deg,#ffb13d,#ff7a3d);-webkit-background-clip:text;-webkit-text-fill-color:transparent">4 星</span> 还差</div>
-        <div style="font-size:10px;color:var(--mute);font-weight:600">3 星 / 5 星</div>
-      </div>
-      <div style="position:relative">
-        <div style="height:8px;background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden">
-          <div style="width:64%;height:100%;background:linear-gradient(90deg,#ffb13d,#ff7a3d);border-radius:99px;box-shadow:0 0 12px rgba(255,123,61,.5)"></div>
+      <div class="pd-section">
+        <div class="hdr"><span>用户评价（128）</span><span class="sub" style="color:var(--ink-3);">查看全部 ›</span></div>
+        <div class="body" style="margin-top:8px;">
+          <div class="review">
+            <div class="av">小</div>
+            <div class="r-info">
+              <div class="r-line1">
+                <span class="r-name">小李</span>
+                <span class="r-stars">★★★★★</span>
+              </div>
+              <div class="r-text">真是流糖心！外皮微焦内里黏糯，5 块钱性价比绝了，下次还来</div>
+            </div>
+          </div>
         </div>
-        <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:10px;color:var(--mute);font-weight:600">
-          <span>邀请 3/5 人</span>
-          <span>团队 ¥640/¥1000</span>
-        </div>
       </div>
-      <div style="margin-top:14px;display:flex;gap:10px">
-        <button style="flex:1;padding:10px;background:linear-gradient(135deg,#ff4d8d,#ff7a3d);border:none;color:#fff;border-radius:10px;font-size:12px;font-weight:800;box-shadow:0 6px 16px rgba(255,77,141,.3)">分享邀请</button>
-        <button style="flex:1;padding:10px;background:rgba(255,255,255,.06);border:1px solid var(--line);color:#fff;border-radius:10px;font-size:12px;font-weight:700">看晋级规则</button>
-      </div>
-    </div>
 
-    <!-- 功能 grid -->
-    <div style="padding:18px 14px 0">
-      <div style="font-size:14px;font-weight:800;padding:0 8px 12px">我的资产</div>
-      <div style="background:var(--bg-card);border-radius:18px;padding:8px;border:1px solid var(--line);display:grid;grid-template-columns:repeat(4,1fr)">
-        <div style="padding:14px 8px;text-align:center"><div style="font-size:22px;margin-bottom:4px">💎</div><div style="font-size:10px;color:#c0c0d0">钱包</div></div>
-        <div style="padding:14px 8px;text-align:center"><div style="font-size:22px;margin-bottom:4px">🎫</div><div style="font-size:10px;color:#c0c0d0">优惠券</div></div>
-        <div style="padding:14px 8px;text-align:center"><div style="font-size:22px;margin-bottom:4px">⭐</div><div style="font-size:10px;color:#c0c0d0">我的星级</div></div>
-        <div style="padding:14px 8px;text-align:center"><div style="font-size:22px;margin-bottom:4px">📦</div><div style="font-size:10px;color:#c0c0d0">我的队列</div></div>
-        <div style="padding:14px 8px;text-align:center"><div style="font-size:22px;margin-bottom:4px">📍</div><div style="font-size:10px;color:#c0c0d0">地址</div></div>
-        <div style="padding:14px 8px;text-align:center"><div style="font-size:22px;margin-bottom:4px">❤️</div><div style="font-size:10px;color:#c0c0d0">收藏</div></div>
-        <div style="padding:14px 8px;text-align:center"><div style="font-size:22px;margin-bottom:4px">🎁</div><div style="font-size:10px;color:#c0c0d0">邀请</div></div>
-        <div style="padding:14px 8px;text-align:center"><div style="font-size:22px;margin-bottom:4px">💬</div><div style="font-size:10px;color:#c0c0d0">客服</div></div>
-      </div>
-    </div>
-
-    <!-- 数据小卡 -->
-    <div style="padding:18px 14px 0">
-      <div style="font-size:14px;font-weight:800;padding:0 8px 12px">数据洞察</div>
-      <div style="background:var(--bg-card);border-radius:18px;padding:18px;border:1px solid var(--line)">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-          <div style="font-size:13px;font-weight:800">近 30 天</div>
-          <div style="font-size:10px;color:var(--mute)">5/22 更新</div>
-        </div>
-        <!-- mini bar chart -->
-        <div style="display:flex;align-items:flex-end;justify-content:space-between;height:80px;gap:4px">
-          <div style="flex:1;background:linear-gradient(180deg,#7b61ff,#ff4d8d);height:35%;border-radius:4px 4px 0 0"></div>
-          <div style="flex:1;background:linear-gradient(180deg,#7b61ff,#ff4d8d);height:55%;border-radius:4px 4px 0 0"></div>
-          <div style="flex:1;background:linear-gradient(180deg,#7b61ff,#ff4d8d);height:40%;border-radius:4px 4px 0 0"></div>
-          <div style="flex:1;background:linear-gradient(180deg,#7b61ff,#ff4d8d);height:62%;border-radius:4px 4px 0 0"></div>
-          <div style="flex:1;background:linear-gradient(180deg,#7b61ff,#ff4d8d);height:75%;border-radius:4px 4px 0 0"></div>
-          <div style="flex:1;background:linear-gradient(180deg,#7b61ff,#ff4d8d);height:48%;border-radius:4px 4px 0 0"></div>
-          <div style="flex:1;background:linear-gradient(180deg,#ffb13d,#ff7a3d);height:92%;border-radius:4px 4px 0 0;box-shadow:0 0 12px rgba(255,123,61,.6)"></div>
-        </div>
-        <div style="display:flex;justify-content:space-between;margin-top:10px;font-size:9px;color:var(--mute)">
-          <span>5/16</span><span>5/17</span><span>5/18</span><span>5/19</span><span>5/20</span><span>5/21</span><span>今</span>
+      <div class="pd-section">
+        <div class="hdr"><span>商品介绍</span></div>
+        <div class="body">
+          🌱 山东烟台红心蜜薯，海拔 600m+ 沙土地<br>
+          🔥 老式炭火 30 分钟慢烤，外皮微焦<br>
+          🍯 流糖心是天然糖分焦化，无添加任何糖<br>
+          📦 每日 16 时前下单，当日烤好次日送达
         </div>
       </div>
+      <div style="height:80px;"></div>
     </div>
+    <div class="pd-bottom">
+      <div class="ic-btn"><div class="ic">🏪</div><span>店铺</span></div>
+      <div class="ic-btn"><div class="ic">⭐</div><span>收藏</span></div>
+      <div class="ic-btn"><div class="ic">🛒</div><span>购物车</span></div>
+      <div class="add-cart">加入购物车</div>
+      <div class="buy-now">立即购买</div>
+    </div>
+    <div class="home-indicator"></div>
   </div>
-  <div class="tabbar">
-    <div class="tab"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3 4 9v12h5v-7h6v7h5V9z"/></svg>主页</div>
-    <div class="tab"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 5h18v2H3zm0 6h18v2H3zm0 6h18v2H3z"/></svg>分类</div>
-    <div class="tab"><div class="cart-circle"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4h-2l-3 6 4 11h12l4-11-3-6h-2zM9 21a1 1 0 1 1 0-2 1 1 0 0 1 0 2zm6 0a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/></svg></div>购物车</div>
-    <div class="tab"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 5h18v3H3zM3 10h18v3H3zM3 15h18v3H3z"/></svg>订单</div>
-    <div class="tab on"><div class="tab-dot"></div><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 22c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>我的</div>
+  <div class="phone-label"><span class="num">5</span><b>商品详情</b> · 推 N 反 1 透明展示<small>暗墨返奖说明 · 大字号价</small></div>
+</div>
+
+<!-- ============== ⑥ 购物车 ============== -->
+<div class="phone-wrap">
+  <div class="phone">
+    <div class="status-bar"><span>9:41</span><div class="status-icons"><span>📶</span><span>📡</span><span>🔋</span></div></div>
+    <div class="topbar"><span class="back">‹</span><span class="title">购物车（3）</span><span class="right">编辑</span></div>
+    <div class="view no-tab" style="background:var(--paper); padding-bottom:90px;">
+      <div class="callout">⚠ 一次只能在<b>同一家店</b>结算（订单按店独立 + v6 营销 / 余额 / 积分都按店隔离）。切换店铺会清空另一家店的勾选。</div>
+
+      <div class="cart-grp current">
+        <div class="cg-head">
+          <div class="check on">✓</div>
+          <div class="logo-block sm">王</div>
+          <div class="nm">王师傅烤地瓜</div>
+          <span class="cur-tag">本次结算</span>
+        </div>
+        <div class="cart-row">
+          <div class="check on">✓</div>
+          <div class="cr-pic">🍠</div>
+          <div class="cr-info">
+            <div class="cr-name">现烤蜜薯（流糖心 大）</div>
+            <div class="cr-spec">规格：大</div>
+            <div class="cr-foot">
+              <div class="cr-price">¥5.00</div>
+              <div class="qty-ctrl"><div class="btn">−</div><span class="num">2</span><div class="btn">+</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="cart-row">
+          <div class="check on">✓</div>
+          <div class="cr-pic blue">🌽</div>
+          <div class="cr-info">
+            <div class="cr-name">水果玉米</div>
+            <div class="cr-spec">规格：单根</div>
+            <div class="cr-foot">
+              <div class="cr-price">¥3.00</div>
+              <div class="qty-ctrl"><div class="btn">−</div><span class="num">1</span><div class="btn">+</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cart-grp dimmed">
+        <div class="cg-head">
+          <div class="check muted">○</div>
+          <div class="logo-block blue sm">林</div>
+          <div class="nm">林家茶馆</div>
+          <span class="switch-tag">点此切换</span>
+        </div>
+        <div class="cart-row" style="pointer-events:none;">
+          <div class="check muted">○</div>
+          <div class="cr-pic blue">🍵</div>
+          <div class="cr-info">
+            <div class="cr-name">老白茶 · 100g 礼盒</div>
+            <div class="cr-spec">陈期 5 年 · 礼盒装</div>
+            <div class="cr-foot">
+              <div class="cr-price">¥168.00</div>
+              <div class="qty-ctrl"><div class="btn">−</div><span class="num">1</span><div class="btn">+</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="text-align:center; color:var(--ink-3); font-size:11px; padding:14px; letter-spacing:2px;">— 本店猜你喜欢 —</div>
+    </div>
+    <div class="cart-bottom-bar">
+      <div class="check on">✓</div>
+      <div class="lbl">全选本店</div>
+      <div class="total">
+        <span class="name">王师傅 合计</span>
+        <span class="price">¥13.00</span>
+      </div>
+      <div class="checkout">结算（2）</div>
+    </div>
+    <div class="home-indicator"></div>
   </div>
+  <div class="phone-label"><span class="num">6</span><b>购物车</b> · 多店分组 · 独立结算<small>当前店描边 · 其他店半透</small></div>
+</div>
+
+<!-- ============== ⑦ 结算页 ============== -->
+<div class="phone-wrap">
+  <div class="phone">
+    <div class="status-bar"><span>9:41</span><div class="status-icons"><span>📶</span><span>📡</span><span>🔋</span></div></div>
+    <div class="topbar"><span class="back">‹</span><span class="title">订单结算</span><span class="right"></span></div>
+    <div class="view no-tab" style="background:var(--paper); padding-bottom:80px;">
+      <div class="ck-addr">
+        <div class="ic">📍</div>
+        <div class="body">
+          <div class="row1">小明<span class="ph">138 0013 8000</span></div>
+          <div class="row2">北京市朝阳区三里屯 SOHO 1 号楼 3 单元 502 室</div>
+        </div>
+        <div class="arrow">›</div>
+      </div>
+
+      <div class="ck-shop">
+        <div class="cs-head">
+          <div class="logo-block sm">王</div>
+          <div class="nm">王师傅烤地瓜</div>
+        </div>
+        <div class="ck-row">
+          <div class="pic">🍠</div>
+          <div class="info"><div class="nm">现烤蜜薯（流糖心 大）</div><div class="sp">大 · 现烤现卖</div></div>
+          <div class="right"><div class="price">¥5.00</div><div class="qty">x 2</div></div>
+        </div>
+        <div class="ck-row">
+          <div class="pic blue">🌽</div>
+          <div class="info"><div class="nm">水果玉米</div><div class="sp">单根</div></div>
+          <div class="right"><div class="price">¥3.00</div><div class="qty">x 1</div></div>
+        </div>
+        <div class="ck-fee"><span>商品小计</span><span class="v">¥13.00</span></div>
+        <div class="ck-fee"><span>配送费</span><span class="v">¥3.00</span></div>
+        <div class="ck-fee disc"><span>满减优惠</span><span class="v">-¥0.00</span></div>
+        <div class="ck-fee total"><span>店铺合计</span><span class="v">¥16.00</span></div>
+      </div>
+
+      <div class="ck-shop">
+        <div class="cs-head"><div class="nm" style="font-weight:500; color:var(--ink-2);">📝 订单备注</div></div>
+        <div style="padding:14px; color:var(--ink-3); font-size:13px;">点击填写（如：少糖 / 不要葱…）</div>
+      </div>
+
+      <div class="ck-method-card">
+        <div class="mh">店铺资产抵扣 <small>可叠加</small></div>
+        <div class="ck-method-row">
+          <div class="ic pts">🪙</div>
+          <div class="body">
+            <div class="nm">王师傅 · 消费积分</div>
+            <div class="sub">余 820 分（10 分=¥1）· 本单最多抵 ¥8</div>
+          </div>
+          <div class="right">
+            <span class="deduct">-¥4.00 ›</span>
+            <div class="switch on"></div>
+          </div>
+        </div>
+        <div class="ck-method-row">
+          <div class="ic bal">余</div>
+          <div class="body">
+            <div class="nm">王师傅 · 店铺余额</div>
+            <div class="sub">余 ¥38.00 · 点击开关用余额抵扣</div>
+          </div>
+          <div class="right">
+            <span class="unused">未使用</span>
+            <div class="switch"></div>
+          </div>
+        </div>
+        <div class="ck-summary">
+          <span class="lbl">抵扣后还需在线支付</span>
+          <span class="v">¥12.00</span>
+        </div>
+      </div>
+
+      <div class="ck-method-card">
+        <div class="mh glow">在线支付剩余 ¥12.00</div>
+        <div class="ck-method-row on">
+          <div class="ic wx">微</div>
+          <div class="body"><div class="nm">微信支付</div></div>
+          <div class="right"><span class="desc">推荐</span><div class="radio"></div></div>
+        </div>
+        <div class="ck-method-row">
+          <div class="ic ali">支</div>
+          <div class="body"><div class="nm">支付宝</div></div>
+          <div class="right"><div class="radio"></div></div>
+        </div>
+      </div>
+
+      <div class="callout">
+        <b>组合支付明细：</b><br>
+        · 消费积分抵扣 <b>-¥4.00</b>（已开启 · 用 40 分）<br>
+        · 店铺余额抵扣 <b>未开启</b>（点开关启用后可再叠加抵扣 ≤ ¥12）<br>
+        · 微信在线支付 <b>¥12.00</b><br>
+        · 两项合计 = 店铺合计 ¥16.00 ✓
+      </div>
+      <div style="height:18px;"></div>
+    </div>
+    <div class="ck-bottom">
+      <div class="info">
+        <div class="ttl">合计 ¥16.00 · 实付微信</div>
+        <b>¥12.00</b>
+      </div>
+      <div class="submit">提交订单</div>
+    </div>
+    <div class="home-indicator"></div>
+  </div>
+  <div class="phone-label"><span class="num">7</span><b>结算页</b> · 组合支付（积分 ON + 余额 OFF）<small>抵扣条 hero · 开关式切换</small></div>
+</div>
+
+<!-- ============== ⑧ 支付完成 ============== -->
+<div class="phone-wrap">
+  <div class="phone">
+    <div class="status-bar"><span>9:41</span><div class="status-icons"><span>📶</span><span>📡</span><span>🔋</span></div></div>
+    <div class="topbar"><span class="back">‹</span><span class="title">支付完成</span><span class="right">分享</span></div>
+    <div class="view no-tab">
+      <div class="succ-wrap">
+        <div class="confetti">
+          <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+        </div>
+        <div class="succ-check">
+          <svg viewBox="0 0 46 46"><path d="M12 24 L20 32 L34 16" /></svg>
+        </div>
+        <h2>支付成功</h2>
+        <p>订单已通知商家，预计 30 分钟内出餐</p>
+      </div>
+
+      <div class="succ-card">
+        <div class="sc-row"><span>订单号</span><b>TX2026050100456</b></div>
+        <div class="sc-row"><span>下单店铺</span><b style="font-family:var(--font-display);">王师傅烤地瓜</b></div>
+        <div class="sc-row"><span>商品数量</span><b style="font-family:var(--font-display);">2 件</b></div>
+        <div class="sc-row"><span>支付方式</span><b style="font-family:var(--font-display);">微信支付</b></div>
+        <div class="sc-row amt"><span>支付金额</span><b>¥12.00</b></div>
+      </div>
+
+      <div class="succ-promo">
+        <div class="sp-hdr">🎁 推广奖励已就绪</div>
+        <div class="sp-body">
+          · 你买了"现烤蜜薯（大）" → 自动进入推 N 反 1 队列<br>
+          · <b>推荐 4 个朋友</b>买同款 → 累计返 <b>¥5</b> 推广积分<br>
+          · 当前位置：<b>B 层第 3 位</b>，等下个朋友进店触发首次返奖
+        </div>
+        <div class="sp-actions">
+          <div class="b copy">复制邀请链接</div>
+          <div class="b share">微信分享 ›</div>
+        </div>
+      </div>
+
+      <div class="succ-actions">
+        <div class="btn lg ghost">查看订单</div>
+        <div class="btn lg primary">回首页继续逛</div>
+      </div>
+      <div style="height:14px;"></div>
+    </div>
+    <div class="home-indicator"></div>
+  </div>
+  <div class="phone-label"><span class="num">8</span><b>支付完成</b> · 推 N 反 1 引流分享<small>SVG 描线对勾 · 五彩纸屑 · 暗墨返奖卡</small></div>
+</div>
+
 </div>
 
 </body>

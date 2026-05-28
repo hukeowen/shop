@@ -1,0 +1,485 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]: 蓝
+        - generic [ref=e7]: BLUECOLLAR PLATFORM · PROTOTYPE v0.3
+      - heading "蓝工平台 · 千亿目标 MVP 原型" [level=1] [ref=e8]
+      - paragraph [ref=e9]: 蓝领招聘 BOSS + 派遣行业钉钉 + 蓝领芝麻信用 + 蓝领支付宝 — 四合一
+      - generic [ref=e10]:
+        - generic [ref=e11]: 47 页面
+        - generic [ref=e12]: 三端打通
+        - generic [ref=e13]: 飞轮闭环
+        - generic [ref=e14]: 融资演示就绪
+        - generic [ref=e15]: ⭐ AI 职业规划
+      - generic [ref=e16]:
+        - generic [ref=e17]:
+          - generic [ref=e18]: 5.23M
+          - generic [ref=e19]: 注册工人
+        - generic [ref=e20]:
+          - generic [ref=e21]: 8,234
+          - generic [ref=e22]: 合作甲方
+        - generic [ref=e23]:
+          - generic [ref=e24]: ¥328M
+          - generic [ref=e25]: 月度 GMV
+        - generic [ref=e26]:
+          - generic [ref=e27]: 12.8 亿
+          - generic [ref=e28]: 月 API 调用
+  - main [ref=e29]:
+    - link "⚡ ▶ NEW · 可交互演示 蜗薪云2.0 演示版 · 完整投资人 Demo 登录 → 打卡 → 预支 → 商城 → 职业导航 → 申请 → 流转模拟（你大爷永远是你大爷） → 9 大盈利模式" [ref=e30] [cursor=pointer]:
+      - /url: ./wosaiyun-v2/index.html
+      - generic [ref=e31]:
+        - generic [ref=e34]: ⚡
+        - generic [ref=e35]:
+          - generic [ref=e36]: ▶ NEW · 可交互演示
+          - generic [ref=e37]: 蜗薪云2.0 演示版 · 完整投资人 Demo
+          - generic [ref=e38]: 登录 → 打卡 → 预支 → 商城 → 职业导航 → 申请 → 流转模拟（你大爷永远是你大爷） → 9 大盈利模式
+    - generic [ref=e39]:
+      - link "C 端 · 蜗薪云2.0 可交互 · 27 页 ⭐ 蓝领工人 APP 登录 · 工分(D-SSS) · 打卡 · 预支(三重门槛) · 流转(你大爷) · 商城 · 职业 · 合同 · 工作记录 · 收入 · IM · 工友圈 · 保险 · 法务 · 健康 · 老乡 · 异常上报 进入蜗薪云2.0 演示 →" [ref=e40] [cursor=pointer]:
+        - /url: ./wosaiyun-v2/index.html
+        - img [ref=e42]
+        - generic [ref=e44]: C 端 · 蜗薪云2.0 可交互 · 27 页 ⭐
+        - heading "蓝领工人 APP" [level=3] [ref=e45]
+        - paragraph [ref=e46]: 登录 · 工分(D-SSS) · 打卡 · 预支(三重门槛) · 流转(你大爷) · 商城 · 职业 · 合同 · 工作记录 · 收入 · IM · 工友圈 · 保险 · 法务 · 健康 · 老乡 · 异常上报
+        - generic [ref=e47]: 进入蜗薪云2.0 演示 →
+      - link "B 端 · 桌面 SaaS · 16 页 派遣公司管家 招聘 · 人才 · IM · 在岗 · 合同 · 薪酬 · 社保 · 个税 · 对账 · 发票 · 甲方 · 数据 · 合规 进入桌面端 →" [ref=e48] [cursor=pointer]:
+        - /url: ./dispatch/dashboard.html
+        - img [ref=e50]
+        - generic [ref=e53]: B 端 · 桌面 SaaS · 16 页
+        - heading "派遣公司管家" [level=3] [ref=e54]
+        - paragraph [ref=e55]: 招聘 · 人才 · IM · 在岗 · 合同 · 薪酬 · 社保 · 个税 · 对账 · 发票 · 甲方 · 数据 · 合规
+        - generic [ref=e56]: 进入桌面端 →
+      - link "平台 · 桌面 后台 · 14 页 平台管理后台 驾驶舱 · 工人 · 派遣 · 甲方 · 招聘审核 · 工分 · 风控 · 审计 · 财务 · 客服 · 运营 · 通知 · 权限 · API 进入后台 →" [ref=e57] [cursor=pointer]:
+        - /url: ./admin/dashboard.html
+        - img [ref=e59]
+        - generic [ref=e62]: 平台 · 桌面 后台 · 14 页
+        - heading "平台管理后台" [level=3] [ref=e63]
+        - paragraph [ref=e64]: 驾驶舱 · 工人 · 派遣 · 甲方 · 招聘审核 · 工分 · 风控 · 审计 · 财务 · 客服 · 运营 · 通知 · 权限 · API
+        - generic [ref=e65]: 进入后台 →
+    - generic [ref=e69]:
+      - heading "🚀 四大飞轮 · 千亿故事讲给 VC 听" [level=2] [ref=e70]
+      - generic [ref=e71]:
+        - generic [ref=e72]:
+          - generic [ref=e73]: ① 工分信用飞轮（蓝领芝麻信用）
+          - paragraph [ref=e74]: 工人攒分 → 派遣公司付费看高分 → 金融机构付费查工分 → 工人更想攒分 → 数据资产指数增长
+        - generic [ref=e75]:
+          - generic [ref=e76]: ② SaaS 网络效应（派遣行业钉钉）
+          - paragraph [ref=e77]: 中小派遣公司用 SaaS → 接入工分体系 → 接入金融服务 → 客户黏性极强 → 行业标准制定者
+        - generic [ref=e78]:
+          - generic [ref=e79]: ③ C 端社交飞轮（蓝领抖音）
+          - paragraph [ref=e80]: 工友圈 + 老乡 + 邀请 → 自传播获客 → 派遣公司点评双向制约 → 工人离不开平台
+        - generic [ref=e81]:
+          - generic [ref=e82]: ④ AI 增量价值（蓝领私人导师）
+          - paragraph [ref=e83]: AI 职业规划 → 推荐课程 → 工分上涨 → 跳到更好工作 → 平台抽成 → AI 训练数据更好
+    - generic [ref=e84]:
+      - heading "全部页面索引（47 页）" [level=2] [ref=e85]
+      - generic [ref=e86]:
+        - generic [ref=e87]:
+          - generic [ref=e88]:
+            - generic [ref=e89]: 🔵 蜗薪云2.0 工人 APP
+            - generic [ref=e90]: 27 页 · 可交互
+          - generic [ref=e91]: 基础流程
+          - list [ref=e92]:
+            - listitem [ref=e93]:
+              - text: ·
+              - link "⭐ 启动页（推荐入口）" [ref=e94] [cursor=pointer]:
+                - /url: ./wosaiyun-v2/index.html
+            - listitem [ref=e95]:
+              - text: ·
+              - link "登录 / 注册（验证码 123456）" [ref=e96] [cursor=pointer]:
+                - /url: ./wosaiyun-v2/pages/login.html
+            - listitem [ref=e97]:
+              - text: ·
+              - link "⭐ 主页（打卡+工分+5入口）" [ref=e98] [cursor=pointer]:
+                - /url: ./wosaiyun-v2/pages/home.html
+            - listitem [ref=e99]:
+              - text: ·
+              - link "找工作（5 岗位+申请）" [ref=e100] [cursor=pointer]:
+                - /url: ./wosaiyun-v2/pages/jobs.html
+            - listitem [ref=e101]:
+              - text: ·
+              - link "消息 / IM 沟通 NEW" [ref=e102] [cursor=pointer]:
+                - /url: ./wosaiyun-v2/pages/chat.html
+                - text: 消息 / IM 沟通
+                - generic [ref=e103]: NEW
+            - listitem [ref=e104]:
+              - text: ·
+              - link "个人中心（含模拟流转）" [ref=e105] [cursor=pointer]:
+                - /url: ./wosaiyun-v2/pages/profile.html
+          - generic [ref=e106]: ⭐ 灵魂功能 · 工分体系
+          - list [ref=e107]:
+            - listitem [ref=e108]:
+              - text: ·
+              - link "⭐ 工分明细（D-SSS 等级）" [ref=e109] [cursor=pointer]:
+                - /url: ./wosaiyun-v2/pages/points.html
+            - listitem [ref=e110]:
+              - text: ·
+              - link "等级权益（7 档预支额度）" [ref=e111] [cursor=pointer]:
+                - /url: ./wosaiyun-v2/pages/level-rights.html
+            - listitem [ref=e112]:
+              - text: ·
+              - link "⭐ 工资预支 三重门槛" [ref=e113] [cursor=pointer]:
+                - /url: ./wosaiyun-v2/pages/advance.html
+                - text: ⭐ 工资预支
+                - generic [ref=e114]: 三重门槛
+            - listitem [ref=e115]:
+              - text: ·
+              - link "⭐ 你大爷规则 + 9 大模式" [ref=e116] [cursor=pointer]:
+                - /url: ./wosaiyun-v2/pages/transfer-rules.html
+            - listitem [ref=e117]:
+              - text: ·
+              - link "我的流转记录" [ref=e118] [cursor=pointer]:
+                - /url: ./wosaiyun-v2/pages/transfers.html
+            - listitem [ref=e119]:
+              - text: ·
+              - link "职业导航（五年百万）" [ref=e120] [cursor=pointer]:
+                - /url: ./wosaiyun-v2/pages/career.html
+          - generic [ref=e121]: 在岗 · 收入
+          - list [ref=e122]:
+            - listitem [ref=e123]:
+              - text: ·
+              - link "劳务派遣合同 NEW" [ref=e124] [cursor=pointer]:
+                - /url: ./wosaiyun-v2/pages/contract.html
+                - text: 劳务派遣合同
+                - generic [ref=e125]: NEW
+            - listitem [ref=e126]:
+              - text: ·
+              - link "工作记录（月历+监工评分） NEW" [ref=e127] [cursor=pointer]:
+                - /url: ./wosaiyun-v2/pages/work-record.html
+                - text: 工作记录（月历+监工评分）
+                - generic [ref=e128]: NEW
+            - listitem [ref=e129]:
+              - text: ·
+              - link "收入明细（未结算+工资条） NEW" [ref=e130] [cursor=pointer]:
+                - /url: ./wosaiyun-v2/pages/income.html
+                - text: 收入明细（未结算+工资条）
+                - generic [ref=e131]: NEW
+            - listitem [ref=e132]:
+              - text: ·
+              - link "我的申请" [ref=e133] [cursor=pointer]:
+                - /url: ./wosaiyun-v2/pages/applications.html
+          - generic [ref=e134]: 游戏化 · 任务
+          - list [ref=e135]:
+            - listitem [ref=e136]:
+              - text: ·
+              - link "每日任务（5 项 / 45 工分）" [ref=e137] [cursor=pointer]:
+                - /url: ./wosaiyun-v2/pages/tasks.html
+            - listitem [ref=e138]:
+              - text: ·
+              - link "工友排行榜（周/月/总）" [ref=e139] [cursor=pointer]:
+                - /url: ./wosaiyun-v2/pages/leaderboard.html
+            - listitem [ref=e140]:
+              - text: ·
+              - link "推荐有奖（裂变拉新）" [ref=e141] [cursor=pointer]:
+                - /url: ./wosaiyun-v2/pages/invite.html
+          - generic [ref=e142]: 商城 · 积分
+          - list [ref=e143]:
+            - listitem [ref=e144]:
+              - text: ·
+              - link "积分商城（8 商品+兑换码）" [ref=e145] [cursor=pointer]:
+                - /url: ./wosaiyun-v2/pages/mall.html
+            - listitem [ref=e146]:
+              - text: ·
+              - link "我的兑换" [ref=e147] [cursor=pointer]:
+                - /url: ./wosaiyun-v2/pages/exchange.html
+          - generic [ref=e148]: 增值服务
+          - list [ref=e149]:
+            - listitem [ref=e150]:
+              - text: ·
+              - link "工友圈 · 派遣点评" [ref=e151] [cursor=pointer]:
+                - /url: ./wosaiyun-v2/pages/circle.html
+            - listitem [ref=e152]:
+              - text: ·
+              - link "同乡圈" [ref=e153] [cursor=pointer]:
+                - /url: ./wosaiyun-v2/pages/local.html
+            - listitem [ref=e154]:
+              - text: ·
+              - link "我的培训" [ref=e155] [cursor=pointer]:
+                - /url: ./wosaiyun-v2/pages/training.html
+            - listitem [ref=e156]:
+              - text: ·
+              - link "保险保障" [ref=e157] [cursor=pointer]:
+                - /url: ./wosaiyun-v2/pages/insurance.html
+            - listitem [ref=e158]:
+              - text: ·
+              - link "法务咨询" [ref=e159] [cursor=pointer]:
+                - /url: ./wosaiyun-v2/pages/legal.html
+            - listitem [ref=e160]:
+              - text: ·
+              - link "健康档案" [ref=e161] [cursor=pointer]:
+                - /url: ./wosaiyun-v2/pages/health.html
+            - listitem [ref=e162]:
+              - text: ·
+              - link "异常上报 NEW" [ref=e163] [cursor=pointer]:
+                - /url: ./wosaiyun-v2/pages/complaint.html
+                - text: 异常上报
+                - generic [ref=e164]: NEW
+        - generic [ref=e165]:
+          - generic [ref=e166]:
+            - generic [ref=e167]: 🔷 派遣公司 SaaS
+            - generic [ref=e168]: 16 页
+          - generic [ref=e169]: 驾驶舱 / 招聘
+          - list [ref=e170]:
+            - listitem [ref=e171]:
+              - text: ·
+              - link "工作台 / 驾驶舱" [ref=e172] [cursor=pointer]:
+                - /url: ./dispatch/dashboard.html
+            - listitem [ref=e173]:
+              - text: ·
+              - link "招聘管理" [ref=e174] [cursor=pointer]:
+                - /url: ./dispatch/jobs.html
+            - listitem [ref=e175]:
+              - text: ·
+              - link "发布职位" [ref=e176] [cursor=pointer]:
+                - /url: ./dispatch/job-create.html
+          - generic [ref=e177]: 人才 / 沟通 / 用工
+          - list [ref=e178]:
+            - listitem [ref=e179]:
+              - text: ·
+              - link "⭐ 人才搜索（按工分）" [ref=e180] [cursor=pointer]:
+                - /url: ./dispatch/talents.html
+            - listitem [ref=e181]:
+              - text: ·
+              - link "人才详情" [ref=e182] [cursor=pointer]:
+                - /url: ./dispatch/talent-detail.html
+            - listitem [ref=e183]:
+              - text: ·
+              - link "IM 沟通" [ref=e184] [cursor=pointer]:
+                - /url: ./dispatch/chat.html
+            - listitem [ref=e185]:
+              - text: ·
+              - link "在岗管理（AI流失预警）" [ref=e186] [cursor=pointer]:
+                - /url: ./dispatch/onboarding.html
+            - listitem [ref=e187]:
+              - text: ·
+              - link "合同管理库 NEW" [ref=e188] [cursor=pointer]:
+                - /url: ./dispatch/contract-mgmt.html
+                - text: 合同管理库
+                - generic [ref=e189]: NEW
+          - generic [ref=e190]: ⭐ 财务管理（你最关心）
+          - list [ref=e191]:
+            - listitem [ref=e192]:
+              - text: ·
+              - link "⭐ 薪酬发放 NEW" [ref=e193] [cursor=pointer]:
+                - /url: ./dispatch/salary.html
+                - text: ⭐ 薪酬发放
+                - generic [ref=e194]: NEW
+            - listitem [ref=e195]:
+              - text: ·
+              - link "⭐ 薪资预支管理 核心" [ref=e196] [cursor=pointer]:
+                - /url: ./dispatch/advance-mgmt.html
+                - text: ⭐ 薪资预支管理
+                - generic [ref=e197]: 核心
+            - listitem [ref=e198]:
+              - text: ·
+              - link "⭐ 监工评价 驱动工分" [ref=e199] [cursor=pointer]:
+                - /url: ./dispatch/supervisor.html
+                - text: ⭐ 监工评价
+                - generic [ref=e200]: 驱动工分
+            - listitem [ref=e201]:
+              - text: ·
+              - link "工人 360 详情" [ref=e202] [cursor=pointer]:
+                - /url: ./dispatch/worker-detail.html
+            - listitem [ref=e203]:
+              - text: ·
+              - link "⭐ 派遣订单池 NEW" [ref=e204] [cursor=pointer]:
+                - /url: ./dispatch/dispatch-orders.html
+                - text: ⭐ 派遣订单池
+                - generic [ref=e205]: NEW
+            - listitem [ref=e206]:
+              - text: ·
+              - link "⭐ 工人厂区调配 流转" [ref=e207] [cursor=pointer]:
+                - /url: ./dispatch/mobility.html
+                - text: ⭐ 工人厂区调配
+                - generic [ref=e208]: 流转
+            - listitem [ref=e209]:
+              - text: ·
+              - link "考勤管理 NEW" [ref=e210] [cursor=pointer]:
+                - /url: ./dispatch/attendance.html
+                - text: 考勤管理
+                - generic [ref=e211]: NEW
+            - listitem [ref=e212]:
+              - text: ·
+              - link "在岗花名册 NEW" [ref=e213] [cursor=pointer]:
+                - /url: ./dispatch/roster.html
+                - text: 在岗花名册
+                - generic [ref=e214]: NEW
+            - listitem [ref=e215]:
+              - text: ·
+              - link "排班管理 NEW" [ref=e216] [cursor=pointer]:
+                - /url: ./dispatch/schedule.html
+                - text: 排班管理
+                - generic [ref=e217]: NEW
+            - listitem [ref=e218]:
+              - text: ·
+              - link "离职管理 NEW" [ref=e219] [cursor=pointer]:
+                - /url: ./dispatch/resignation.html
+                - text: 离职管理
+                - generic [ref=e220]: NEW
+            - listitem [ref=e221]:
+              - text: ·
+              - link "Offer 发放 NEW" [ref=e222] [cursor=pointer]:
+                - /url: ./dispatch/offer.html
+                - text: Offer 发放
+                - generic [ref=e223]: NEW
+            - listitem [ref=e224]:
+              - text: ·
+              - link "培训管理 NEW" [ref=e225] [cursor=pointer]:
+                - /url: ./dispatch/training-mgmt.html
+                - text: 培训管理
+                - generic [ref=e226]: NEW
+            - listitem [ref=e227]:
+              - text: ·
+              - link "社保公积金 NEW" [ref=e228] [cursor=pointer]:
+                - /url: ./dispatch/social.html
+                - text: 社保公积金
+                - generic [ref=e229]: NEW
+            - listitem [ref=e230]:
+              - text: ·
+              - link "个税申报 NEW" [ref=e231] [cursor=pointer]:
+                - /url: ./dispatch/tax.html
+                - text: 个税申报
+                - generic [ref=e232]: NEW
+            - listitem [ref=e233]:
+              - text: ·
+              - link "对账中心 NEW" [ref=e234] [cursor=pointer]:
+                - /url: ./dispatch/reconciliation.html
+                - text: 对账中心
+                - generic [ref=e235]: NEW
+            - listitem [ref=e236]:
+              - text: ·
+              - link "发票管理 NEW" [ref=e237] [cursor=pointer]:
+                - /url: ./dispatch/invoice.html
+                - text: 发票管理
+                - generic [ref=e238]: NEW
+          - generic [ref=e239]: 客户 / 数据 / 合规
+          - list [ref=e240]:
+            - listitem [ref=e241]:
+              - text: ·
+              - link "甲方管理 CRM NEW" [ref=e242] [cursor=pointer]:
+                - /url: ./dispatch/clients.html
+                - text: 甲方管理 CRM
+                - generic [ref=e243]: NEW
+            - listitem [ref=e244]:
+              - text: ·
+              - link "数据分析" [ref=e245] [cursor=pointer]:
+                - /url: ./dispatch/analytics.html
+            - listitem [ref=e246]:
+              - text: ·
+              - link "风控合规 NEW" [ref=e247] [cursor=pointer]:
+                - /url: ./dispatch/compliance.html
+                - text: 风控合规
+                - generic [ref=e248]: NEW
+        - generic [ref=e249]:
+          - generic [ref=e250]:
+            - generic [ref=e251]: 🟣 平台管理后台
+            - generic [ref=e252]: 14 页
+          - generic [ref=e253]: 驾驶舱 / 用户
+          - list [ref=e254]:
+            - listitem [ref=e255]:
+              - text: ·
+              - link "数据驾驶舱" [ref=e256] [cursor=pointer]:
+                - /url: ./admin/dashboard.html
+            - listitem [ref=e257]:
+              - text: ·
+              - link "工人管理 (5.2M)" [ref=e258] [cursor=pointer]:
+                - /url: ./admin/workers.html
+            - listitem [ref=e259]:
+              - text: ·
+              - link "⭐ 工人详细档案 (王刚) NEW" [ref=e260] [cursor=pointer]:
+                - /url: ./admin/worker-profile.html
+                - text: ⭐ 工人详细档案 (王刚)
+                - generic [ref=e261]: NEW
+            - listitem [ref=e262]:
+              - text: ·
+              - link "⭐ 流转抽佣账单 核心" [ref=e263] [cursor=pointer]:
+                - /url: ./admin/commission-billing.html
+                - text: ⭐ 流转抽佣账单
+                - generic [ref=e264]: 核心
+            - listitem [ref=e265]:
+              - text: ·
+              - link "派遣公司 (8,932)" [ref=e266] [cursor=pointer]:
+                - /url: ./admin/dispatches.html
+            - listitem [ref=e267]:
+              - text: ·
+              - link "⭐ 甲方 / 用工单位 (8,234) NEW" [ref=e268] [cursor=pointer]:
+                - /url: ./admin/clients.html
+                - text: ⭐ 甲方 / 用工单位 (8,234)
+                - generic [ref=e269]: NEW
+          - generic [ref=e270]: 业务 / 风控 / 财务
+          - list [ref=e271]:
+            - listitem [ref=e272]:
+              - text: ·
+              - link "招聘审核" [ref=e273] [cursor=pointer]:
+                - /url: ./admin/jobs-audit.html
+            - listitem [ref=e274]:
+              - text: ·
+              - link "⭐ 工分管理" [ref=e275] [cursor=pointer]:
+                - /url: ./admin/credit.html
+            - listitem [ref=e276]:
+              - text: ·
+              - link "风控告警（实时）" [ref=e277] [cursor=pointer]:
+                - /url: ./admin/risk.html
+            - listitem [ref=e278]:
+              - text: ·
+              - link "审计日志 NEW" [ref=e279] [cursor=pointer]:
+                - /url: ./admin/audit.html
+                - text: 审计日志
+                - generic [ref=e280]: NEW
+            - listitem [ref=e281]:
+              - text: ·
+              - link "财务对账" [ref=e282] [cursor=pointer]:
+                - /url: ./admin/finance.html
+          - generic [ref=e283]: 客服 / 运营
+          - list [ref=e284]:
+            - listitem [ref=e285]:
+              - text: ·
+              - link "⭐ 客服工单 NEW" [ref=e286] [cursor=pointer]:
+                - /url: ./admin/tickets.html
+                - text: ⭐ 客服工单
+                - generic [ref=e287]: NEW
+            - listitem [ref=e288]:
+              - text: ·
+              - link "运营活动 NEW" [ref=e289] [cursor=pointer]:
+                - /url: ./admin/campaigns.html
+                - text: 运营活动
+                - generic [ref=e290]: NEW
+            - listitem [ref=e291]:
+              - text: ·
+              - link "公告通知中心 NEW" [ref=e292] [cursor=pointer]:
+                - /url: ./admin/notifications.html
+                - text: 公告通知中心
+                - generic [ref=e293]: NEW
+          - generic [ref=e294]: 系统 / 开放
+          - list [ref=e295]:
+            - listitem [ref=e296]:
+              - text: ·
+              - link "权限管理 RBAC NEW" [ref=e297] [cursor=pointer]:
+                - /url: ./admin/roles.html
+                - text: 权限管理 RBAC
+                - generic [ref=e298]: NEW
+            - listitem [ref=e299]:
+              - text: ·
+              - link "⭐ API 开放平台 (¥3.85M/月) NEW" [ref=e300] [cursor=pointer]:
+                - /url: ./admin/api.html
+                - text: ⭐ API 开放平台 (¥3.85M/月)
+                - generic [ref=e301]: NEW
+    - generic [ref=e302]:
+      - heading "🎬 推荐的 VC 演示路径（5 分钟讲完故事）" [level=2] [ref=e303]
+      - list [ref=e304]:
+        - listitem [ref=e305]:
+          - generic [ref=e306]: "1"
+          - generic [ref=e307]: 蓝领工人首页 → 工分中心 → AI 职业规划（30 秒）→ 让 VC 感受到"这不是招聘工具，是蓝领的私人成长管家"
+        - listitem [ref=e308]:
+          - generic [ref=e309]: "2"
+          - generic [ref=e310]: 派遣公司管家 → 人才搜索 → 薪酬发放 → 对账中心（90 秒）→ 让 VC 理解"我们是派遣行业的钉钉，不是新增对手"
+        - listitem [ref=e311]:
+          - generic [ref=e312]: "3"
+          - generic [ref=e313]: 平台后台 → 驾驶舱 → 工分管理 → API 开放平台（90 秒）→ 让 VC 看到"千亿想象空间"（5.2M 工人 + 12.8 亿 API 调用 + 蓝领信用是央行盲区）
+        - listitem [ref=e314]:
+          - generic [ref=e315]: "4"
+          - generic [ref=e316]: 回到工人端 → 邀请工友 + 工友圈（30 秒）→ 让 VC 看见"获客成本被压到行业 1/3 的飞轮"
+        - listitem [ref=e317]:
+          - generic [ref=e318]: "5"
+          - generic [ref=e319]: 合规与防御（60 秒）→ 工人正规劳动合同、派遣端合规中心、平台审计日志 — 告诉 VC "我们不是灰色生意"
+    - paragraph [ref=e320]: Prototype v0.3 · HTML + Tailwind CDN · 无需安装 · 双击 HTML 文件即可预览 · 47 页全套

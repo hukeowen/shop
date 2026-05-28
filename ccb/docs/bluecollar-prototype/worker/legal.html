@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>蓝工 · 法务咨询</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="../shared/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  .grad-gold { background: linear-gradient(135deg,#D97706 0%,#F59E0B 40%,#FBBF24 100%); }
+  .grad-gold-deep { background: linear-gradient(135deg,#78350F 0%,#B45309 50%,#D97706 100%); }
+  .scale-icon { background: linear-gradient(135deg,#FBBF24,#F59E0B); }
+  .ai-bubble { background: linear-gradient(135deg,#FEF3C7,#FFFFFF); border: 1px solid #FDE68A; }
+  .user-bubble { background: linear-gradient(135deg,#1677FF,#4096FF); color: #fff; }
+  .typing-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #94A3B8; animation: typingDot 1.4s infinite; }
+  .typing-dot:nth-child(2) { animation-delay: .2s; }
+  .typing-dot:nth-child(3) { animation-delay: .4s; }
+  @keyframes typingDot { 0%,60%,100% { opacity:.3; } 30% { opacity:1; } }
+  .verified-stamp { background: rgba(220,38,38,.08); border: 2px dashed rgba(220,38,38,.4); transform: rotate(-8deg); color: #DC2626; }
+</style>
+</head>
+<body class="bg-slate-100 min-h-screen pb-10">
+
+<div class="text-center pt-6"><a href="../index.html" class="text-sm text-slate-500 hover:text-blue-600">← 返回原型导航</a></div>
+
+<div class="phone-frame">
+  <div class="phone-notch"></div>
+  <div class="phone-screen">
+    <div class="status-bar"><span>9:41</span><span class="flex gap-1 items-center"><span>●●●●●</span><span class="text-xs">5G</span><span class="text-xs">100%</span></span></div>
+
+    <div class="phone-content">
+
+      <!-- Hero -->
+      <div class="grad-gold-deep px-5 pt-3 pb-7 text-white relative overflow-hidden">
+        <div class="absolute -top-12 -right-12 w-48 h-48 bg-amber-300/15 rounded-full"></div>
+        <div class="absolute -bottom-16 -left-16 w-56 h-56 bg-yellow-200/10 rounded-full"></div>
+
+        <div class="relative flex items-center justify-between">
+          <a href="home.html" class="w-8 h-8 flex items-center justify-center">
+            <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+          </a>
+          <div class="text-base font-bold">蓝工法务</div>
+          <button class="w-8 h-8 flex items-center justify-center">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          </button>
+        </div>
+
+        <div class="relative mt-5 flex items-center gap-3">
+          <div class="scale-icon w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg">
+            <svg width="32" height="32" fill="none" stroke="#78350F" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="3" x2="12" y2="21"/><path d="M3 7l9-2 9 2"/><path d="M3 7l-1 8a4 4 0 0 0 8 0L9 7"/><path d="M21 7l1 8a4 4 0 0 1-8 0l1-8"/><line x1="6" y1="21" x2="18" y2="21"/></svg>
+          </div>
+          <div>
+            <div class="text-xs opacity-90">蓝领工人的</div>
+            <div class="text-2xl font-extrabold leading-tight">随身律师</div>
+            <div class="text-[11px] opacity-90 mt-0.5">已帮助 <b>8.6 万</b> 工友追回欠薪 <b>¥3.2 亿</b></div>
+          </div>
+        </div>
+
+        <!-- 入口卡片 -->
+        <div class="relative mt-5 grid grid-cols-3 gap-2 text-slate-900">
+          <div class="bg-white/95 rounded-xl p-2.5 text-center shadow-lg">
+            <div class="text-base font-extrabold text-rose-600">86,420</div>
+            <div class="text-[10px] text-slate-500 mt-0.5">服务工友</div>
+          </div>
+          <div class="bg-white/95 rounded-xl p-2.5 text-center shadow-lg">
+            <div class="text-base font-extrabold text-emerald-600">98.6%</div>
+            <div class="text-[10px] text-slate-500 mt-0.5">维权胜诉率</div>
+          </div>
+          <div class="bg-white/95 rounded-xl p-2.5 text-center shadow-lg">
+            <div class="text-base font-extrabold text-blue-600">24h</div>
+            <div class="text-[10px] text-slate-500 mt-0.5">极速响应</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI 法务问答 -->
+      <div class="px-5 mt-4">
+        <div class="bg-white rounded-2xl shadow-sm overflow-hidden">
+          <div class="bg-gradient-to-r from-amber-50 to-yellow-50 px-4 py-3 border-b border-amber-100 flex items-center gap-2">
+            <div class="w-8 h-8 rounded-full grad-gold flex items-center justify-center">
+              <svg width="16" height="16" fill="none" stroke="#fff" stroke-width="2.5" viewBox="0 0 24 24"><path d="M9.66 18a4 4 0 1 1 0-12"/><path d="M14.34 18a4 4 0 1 0 0-12"/></svg>
+            </div>
+            <div class="flex-1">
+              <div class="text-sm font-bold text-slate-900">AI 法务问答 <span class="text-[9px] bg-emerald-100 text-emerald-700 px-1.5 rounded ml-1">免费</span></div>
+              <div class="text-[10px] text-slate-500">已学习 12 万件劳动争议案例</div>
+            </div>
+            <span class="text-[10px] text-emerald-600 flex items-center gap-1">
+              <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>在线
+            </span>
+          </div>
+
+          <!-- 对话区 -->
+          <div class="p-4 bg-slate-50/50 space-y-3 max-h-[340px] overflow-y-auto">
+
+            <!-- AI 欢迎 -->
+            <div class="flex gap-2">
+              <div class="w-7 h-7 rounded-full grad-gold flex items-center justify-center flex-shrink-0 text-white text-xs font-bold">AI</div>
+              <div class="ai-bubble rounded-2xl rounded-tl-none px-3 py-2 max-w-[80%]">
+                <div class="text-[12px] text-slate-700">您好，王师傅！我是蓝工 AI 法务助手 ⚖️。<br/>有任何欠薪、工伤、合同、加班费、社保问题，都可以问我，免费！</div>
+              </div>
+            </div>
+
+            <!-- 用户问题 -->
+            <div class="flex gap-2 justify-end">
+              <div class="user-bubble rounded-2xl rounded-tr-none px-3 py-2 max-w-[80%]">
+                <div class="text-[12px]">老板拖欠 3 个月工资共 ¥18,600，电话不接微信不回，怎么办？</div>
+              </div>
+              <div class="w-7 h-7 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0 text-white text-xs font-bold">王</div>
+            </div>
+
+            <!-- AI 回复 -->
+            <div class="flex gap-2">
+              <div class="w-7 h-7 rounded-full grad-gold flex items-center justify-center flex-shrink-0 text-white text-xs font-bold">AI</div>
+              <div class="ai-bubble rounded-2xl rounded-tl-none px-3 py-2.5 max-w-[88%]">
+                <div class="text-[12px] text-slate-700 leading-relaxed">
+                  <div class="font-bold text-amber-700 mb-1">建议按 4 步走 ✅</div>
+                  <div class="space-y-1.5">
+                    <div class="flex gap-1.5"><span class="text-amber-600 font-bold flex-shrink-0">①</span><span>保留<b>劳动证据</b>：考勤截图、工资条、聊天记录、工作群对话、工服照片等</span></div>
+                    <div class="flex gap-1.5"><span class="text-amber-600 font-bold flex-shrink-0">②</span><span>到企业所在地<b>劳动监察大队</b>投诉（杭州 12333），<b>7 个工作日</b>内必有回复</span></div>
+                    <div class="flex gap-1.5"><span class="text-amber-600 font-bold flex-shrink-0">③</span><span>同时申请<b>劳动仲裁</b>（免费），平台可帮你一键提交</span></div>
+                    <div class="flex gap-1.5"><span class="text-amber-600 font-bold flex-shrink-0">④</span><span>金额 ≥ ¥5,000 或恶意欠薪 ≥ 2 个月可<b>报警</b>追究刑责</span></div>
+                  </div>
+                  <div class="mt-2 pt-2 border-t border-amber-100 text-[11px] text-emerald-700">
+                    💡 你的情况符合<b>劳动仲裁</b>条件，平台可<b>免费代办</b>。预计 25 天追回。
+                  </div>
+                </div>
+                <div class="mt-2 flex gap-1.5">
+                  <button class="text-[10px] bg-amber-500 text-white px-2.5 py-1 rounded-full font-bold">一键代办仲裁</button>
+                  <button class="text-[10px] bg-amber-50 text-amber-700 px-2.5 py-1 rounded-full">看更多案例</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 正在输入 -->
+            <div class="flex gap-2">
+              <div class="w-7 h-7 rounded-full grad-gold flex items-center justify-center flex-shrink-0 text-white text-xs font-bold">AI</div>
+              <div class="ai-bubble rounded-2xl rounded-tl-none px-3 py-2">
+                <span class="typing-dot"></span><span class="typing-dot mx-1"></span><span class="typing-dot"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 推荐问题 -->
+          <div class="px-4 pt-3 pb-2 bg-white border-t border-slate-100">
+            <div class="text-[10px] text-slate-400 mb-1.5">大家都在问 👇</div>
+            <div class="flex gap-1.5 overflow-x-auto pb-2 -mx-1 px-1" style="scrollbar-width: none;">
+              <button class="flex-shrink-0 text-[11px] bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-1 rounded-full whitespace-nowrap">欠薪追讨</button>
+              <button class="flex-shrink-0 text-[11px] bg-rose-50 text-rose-700 border border-rose-200 px-2.5 py-1 rounded-full whitespace-nowrap">工伤认定</button>
+              <button class="flex-shrink-0 text-[11px] bg-blue-50 text-blue-700 border border-blue-200 px-2.5 py-1 rounded-full whitespace-nowrap">合同解除赔偿</button>
+              <button class="flex-shrink-0 text-[11px] bg-purple-50 text-purple-700 border border-purple-200 px-2.5 py-1 rounded-full whitespace-nowrap">加班费索赔</button>
+              <button class="flex-shrink-0 text-[11px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-1 rounded-full whitespace-nowrap">社保断缴</button>
+            </div>
+          </div>
+
+          <!-- 输入框 -->
+          <div class="px-4 py-3 bg-white border-t border-slate-100 flex items-center gap-2">
+            <button class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center">
+              <svg width="16" height="16" fill="none" stroke="#475569" stroke-width="2" viewBox="0 0 24 24"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+            </button>
+            <input class="flex-1 bg-slate-100 rounded-full px-3 py-2 text-xs outline-none placeholder:text-slate-400" placeholder="问问我，比如「公司不交社保怎么办」"/>
+            <button class="w-9 h-9 rounded-full bg-amber-500 flex items-center justify-center">
+              <svg width="16" height="16" fill="none" stroke="#fff" stroke-width="2.5" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 我的咨询记录 -->
+      <div class="px-5 mt-4">
+        <div class="bg-white rounded-2xl p-4 shadow-sm">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="font-bold text-slate-900">我的咨询</h3>
+            <a href="#" class="text-xs text-slate-400">全部 →</a>
+          </div>
+          <ul class="space-y-2.5">
+            <li class="bg-amber-50 rounded-xl p-3 border border-amber-100">
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-[10px] bg-amber-500 text-white px-1.5 py-0.5 rounded font-bold">代办中</span>
+                <span class="text-[10px] text-slate-500">2026-05-15</span>
+              </div>
+              <div class="text-sm font-medium text-slate-900 truncate">欠薪 ¥18,600 · 浙江睿才人力</div>
+              <div class="text-[10px] text-slate-500 mt-0.5">已提交仲裁 · 预计 25 天内裁决 · 律师 张磊</div>
+            </li>
+            <li class="bg-emerald-50 rounded-xl p-3 border border-emerald-100">
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-[10px] bg-emerald-500 text-white px-1.5 py-0.5 rounded font-bold">已胜诉</span>
+                <span class="text-[10px] text-slate-500">2025-08-22</span>
+              </div>
+              <div class="text-sm font-medium text-slate-900 truncate">加班费索赔 ¥3,200 · 萧山某厂</div>
+              <div class="text-[10px] text-emerald-700 mt-0.5">✅ 已追回 ¥3,840（含赔偿）</div>
+            </li>
+            <li class="bg-slate-50 rounded-xl p-3 border border-slate-100">
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-[10px] bg-slate-400 text-white px-1.5 py-0.5 rounded font-bold">咨询</span>
+                <span class="text-[10px] text-slate-500">2025-06-10</span>
+              </div>
+              <div class="text-sm font-medium text-slate-900 truncate">合同到期续签条款咨询</div>
+              <div class="text-[10px] text-slate-500 mt-0.5">AI 解答 + 模板下载</div>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- 法务模板 -->
+      <div class="px-5 mt-4">
+        <div class="bg-white rounded-2xl p-4 shadow-sm">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="font-bold text-slate-900">维权模板</h3>
+            <span class="text-[10px] text-slate-400">在线编辑 · 一键打印</span>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <a href="#" class="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-3 border border-amber-100 flex gap-2 card-hover">
+              <div class="w-9 h-9 rounded-lg bg-amber-500 flex items-center justify-center flex-shrink-0">
+                <svg width="18" height="18" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="text-xs font-bold text-slate-900">劳动仲裁申请书</div>
+                <div class="text-[10px] text-amber-700">下载 6.2 万次</div>
+              </div>
+            </a>
+            <a href="#" class="bg-gradient-to-br from-rose-50 to-pink-50 rounded-xl p-3 border border-rose-100 flex gap-2 card-hover">
+              <div class="w-9 h-9 rounded-lg bg-rose-500 flex items-center justify-center flex-shrink-0">
+                <svg width="18" height="18" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="text-xs font-bold text-slate-900">工伤认定申请</div>
+                <div class="text-[10px] text-rose-700">下载 4.8 万次</div>
+              </div>
+            </a>
+            <a href="#" class="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-3 border border-blue-100 flex gap-2 card-hover">
+              <div class="w-9 h-9 rounded-lg bg-blue-500 flex items-center justify-center flex-shrink-0">
+                <svg width="18" height="18" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="text-xs font-bold text-slate-900">欠薪追讨函</div>
+                <div class="text-[10px] text-blue-700">下载 8.1 万次</div>
+              </div>
+            </a>
+            <a href="#" class="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl p-3 border border-emerald-100 flex gap-2 card-hover">
+              <div class="w-9 h-9 rounded-lg bg-emerald-500 flex items-center justify-center flex-shrink-0">
+                <svg width="18" height="18" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="text-xs font-bold text-slate-900">加班费计算书</div>
+                <div class="text-[10px] text-emerald-700">下载 3.6 万次</div>
+              </div>
+            </a>
+            <a href="#" class="bg-gradient-to-br from-purple-50 to-violet-50 rounded-xl p-3 border border-purple-100 flex gap-2 card-hover">
+              <div class="w-9 h-9 rounded-lg bg-purple-500 flex items-center justify-center flex-shrink-0">
+                <svg width="18" height="18" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="9" x2="15" y2="9"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="text-xs font-bold text-slate-900">劳动合同范本</div>
+                <div class="text-[10px] text-purple-700">下载 12 万次</div>
+              </div>
+            </a>
+            <a href="#" class="bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl p-3 border border-slate-200 flex gap-2 card-hover">
+              <div class="w-9 h-9 rounded-lg bg-slate-600 flex items-center justify-center flex-shrink-0">
+                <svg width="18" height="18" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h11"/></svg>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="text-xs font-bold text-slate-900">离职证明模板</div>
+                <div class="text-[10px] text-slate-700">下载 9.3 万次</div>
+              </div>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- 平台兜底承诺 -->
+      <div class="px-5 mt-4">
+        <div class="grad-gold rounded-2xl p-4 text-white relative overflow-hidden">
+          <div class="absolute -right-8 -top-8 w-32 h-32 bg-white/15 rounded-full"></div>
+          <div class="absolute -right-4 bottom-6 verified-stamp text-[10px] font-extrabold px-3 py-1 rounded text-center">
+            蓝工<br/>兜底
+          </div>
+          <div class="relative">
+            <div class="flex items-center gap-2 mb-1.5">
+              <svg width="20" height="20" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              <h3 class="font-extrabold">平台兜底承诺</h3>
+            </div>
+            <div class="text-sm leading-relaxed pr-16">
+              派遣公司倒闭/老板跑路？<br/>
+              <b>平台先行垫付欠薪</b>，由蓝工法务团队代追偿
+            </div>
+            <button class="mt-3 bg-white text-amber-700 text-xs font-bold px-4 py-1.5 rounded-full inline-flex items-center gap-1">
+              <span>一键申请兜底</span>
+              <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 真实维权案例 -->
+      <div class="px-5 mt-4">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-bold text-slate-900 text-lg">他们这样讨回了血汗钱</h3>
+          <a href="#" class="text-xs text-slate-400">更多 →</a>
+        </div>
+        <div class="space-y-2.5">
+          <div class="bg-white rounded-2xl p-3 shadow-sm">
+            <div class="flex items-center gap-2 mb-2">
+              <div class="w-8 h-8 rounded-full bg-rose-500 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">郭</div>
+              <div class="flex-1 min-w-0">
+                <div class="text-sm font-medium text-slate-900">郭师傅 · 山东聊城</div>
+                <div class="text-[10px] text-slate-500">立讯精密 · 流水线 · 2025.11</div>
+              </div>
+              <span class="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-bold">已结案</span>
+            </div>
+            <div class="text-xs text-slate-700 leading-relaxed">「老板跑路欠我半年工资 ¥31,500，平台 <b>3 天垫付到账</b>，比我自己跑断腿强 100 倍！」</div>
+            <div class="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between">
+              <span class="text-[10px] text-slate-500">追回金额</span>
+              <span class="text-rose-600 font-extrabold">¥31,500</span>
+            </div>
+          </div>
+          <div class="bg-white rounded-2xl p-3 shadow-sm">
+            <div class="flex items-center gap-2 mb-2">
+              <div class="w-8 h-8 rounded-full bg-cyan-500 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">何</div>
+              <div class="flex-1 min-w-0">
+                <div class="text-sm font-medium text-slate-900">何大姐 · 安徽阜阳</div>
+                <div class="text-[10px] text-slate-500">某餐厅 · 服务员 · 2025.09</div>
+              </div>
+              <span class="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-bold">已结案</span>
+            </div>
+            <div class="text-xs text-slate-700 leading-relaxed">「老板加班不给加班费，平台 AI 帮我算出来差 ¥8,400，仲裁 18 天判赔 ¥10,080。」</div>
+            <div class="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between">
+              <span class="text-[10px] text-slate-500">追回金额</span>
+              <span class="text-rose-600 font-extrabold">¥10,080</span>
+            </div>
+          </div>
+          <div class="bg-white rounded-2xl p-3 shadow-sm">
+            <div class="flex items-center gap-2 mb-2">
+              <div class="w-8 h-8 rounded-full bg-purple-500 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">梁</div>
+              <div class="flex-1 min-w-0">
+                <div class="text-sm font-medium text-slate-900">梁师傅 · 河南南阳</div>
+                <div class="text-[10px] text-slate-500">建筑工地 · 钢筋工 · 2025.07</div>
+              </div>
+              <span class="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-bold">已结案</span>
+            </div>
+            <div class="text-xs text-slate-700 leading-relaxed">「工地高空摔伤 8 级伤残，包工头不认。平台律师 60 天打赢工伤认定 + 赔偿 ¥26 万。」</div>
+            <div class="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between">
+              <span class="text-[10px] text-slate-500">追回金额</span>
+              <span class="text-rose-600 font-extrabold">¥260,000</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 律师直连 -->
+      <div class="px-5 mt-4 mb-4">
+        <div class="bg-white rounded-2xl p-4 shadow-sm">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="font-bold text-slate-900">资深律师 1v1</h3>
+            <span class="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-bold">蓝工补贴</span>
+          </div>
+
+          <div class="space-y-2.5">
+            <div class="flex items-center gap-3 p-2.5 rounded-xl border border-slate-100">
+              <div class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-200 to-cyan-300 flex items-center justify-center text-blue-900 font-extrabold text-base">张</div>
+              <div class="flex-1 min-w-0">
+                <div class="text-sm font-bold text-slate-900">张磊律师 <span class="text-[9px] bg-amber-100 text-amber-700 px-1 rounded ml-1">劳动法 12 年</span></div>
+                <div class="text-[10px] text-slate-500">浙江六和律师事务所 · 服务 3,260+ 工友</div>
+                <div class="text-[10px] text-amber-600 mt-0.5">★4.96 (218 评)</div>
+              </div>
+              <div class="text-right">
+                <div class="text-rose-600 font-extrabold">¥60</div>
+                <div class="text-[9px] text-slate-400 line-through">¥300</div>
+                <button class="mt-1 bg-amber-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-full">咨询</button>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 p-2.5 rounded-xl border border-slate-100">
+              <div class="w-12 h-12 rounded-full bg-gradient-to-br from-rose-200 to-pink-300 flex items-center justify-center text-rose-900 font-extrabold text-base">林</div>
+              <div class="flex-1 min-w-0">
+                <div class="text-sm font-bold text-slate-900">林雅律师 <span class="text-[9px] bg-rose-100 text-rose-700 px-1 rounded ml-1">工伤专家</span></div>
+                <div class="text-[10px] text-slate-500">上海段和段律师事务所 · 服务 1,890+ 工友</div>
+                <div class="text-[10px] text-amber-600 mt-0.5">★4.98 (167 评)</div>
+              </div>
+              <div class="text-right">
+                <div class="text-rose-600 font-extrabold">¥60</div>
+                <div class="text-[9px] text-slate-400 line-through">¥360</div>
+                <button class="mt-1 bg-amber-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-full">咨询</button>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 p-2.5 rounded-xl border border-slate-100">
+              <div class="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-200 to-teal-300 flex items-center justify-center text-emerald-900 font-extrabold text-base">魏</div>
+              <div class="flex-1 min-w-0">
+                <div class="text-sm font-bold text-slate-900">魏国强律师 <span class="text-[9px] bg-purple-100 text-purple-700 px-1 rounded ml-1">仲裁实战</span></div>
+                <div class="text-[10px] text-slate-500">北京盈科律师事务所 · 服务 4,120+ 工友</div>
+                <div class="text-[10px] text-amber-600 mt-0.5">★4.95 (286 评)</div>
+              </div>
+              <div class="text-right">
+                <div class="text-rose-600 font-extrabold">¥60</div>
+                <div class="text-[9px] text-slate-400 line-through">¥400</div>
+                <button class="mt-1 bg-amber-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-full">咨询</button>
+              </div>
+            </div>
+          </div>
+          <div class="mt-3 text-[10px] text-center text-slate-500">蓝工补贴 80% 律师费 · 你只需付 ¥60/次</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 底部 Tab -->
+    <div class="bg-white border-t border-slate-100 grid grid-cols-5 py-2">
+      <a href="home.html" class="flex flex-col items-center gap-0.5 text-slate-400">
+        <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+        <span class="text-[10px]">首页</span>
+      </a>
+      <a href="job-detail.html" class="flex flex-col items-center gap-0.5 text-slate-400">
+        <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <span class="text-[10px]">找活</span>
+      </a>
+      <a href="credit.html" class="flex flex-col items-center gap-0.5 text-slate-400">
+        <div class="w-10 h-10 -mt-4 rounded-full grad-credit flex items-center justify-center shadow-lg">
+          <span class="text-white text-xs font-bold">工分</span>
+        </div>
+      </a>
+      <a href="chat.html" class="flex flex-col items-center gap-0.5 text-slate-400">
+        <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <span class="text-[10px]">消息</span>
+      </a>
+      <a href="profile.html" class="flex flex-col items-center gap-0.5 text-slate-400">
+        <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span class="text-[10px]">我的</span>
+      </a>
+    </div>
+
+  </div>
+</div>
+</body>
+</html>

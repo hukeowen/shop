@@ -1,0 +1,1383 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>拓小二 — 给小老板的 AI 视频带货 + 在线商城 SaaS</title>
+<meta name="description" content="拓小二 · ¥298/年 基础包 → 商城 + 通联 T+0 收款 + 10 条 AI 视频；¥1688/年 全功能包 → 60 条 AI 视频 + 智能推广引擎 + 数据看板。13 行业模板，AI 20 秒出片，一键直发抖音。">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600&family=Noto+Serif+SC:wght@500;600;700;900&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<style>
+  :root {
+    /* Bold cream + navy + tangerine + acid-lime palette */
+    --cream:       #FFF6E3;
+    --cream-2:     #FCEBC5;
+    --cream-3:     #F8DC9C;
+    --ink:         #0A0F2C;            /* deep navy black */
+    --ink-soft:    #1B2244;
+    --muted:       #585F7F;
+    --line:        rgba(10,15,44,0.92);
+    --line-soft:   rgba(10,15,44,0.12);
+    --line-softer: rgba(10,15,44,0.06);
+
+    --navy:        #0E1E4F;            /* deep cobalt */
+    --navy-2:      #182C6E;
+    --tangerine:   #FF5A2C;            /* hot coral-orange */
+    --tangerine-2: #FF3B0F;
+    --lime:        #D7FF3A;            /* acid lime — surprise */
+    --magenta:     #FF2E7E;
+    --teal:        #00C896;
+  }
+  * { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--cream);
+    color: var(--ink);
+    font-family: 'PingFang SC','HarmonyOS Sans SC','Hiragino Sans GB','Microsoft YaHei',system-ui,-apple-system,sans-serif;
+    font-feature-settings: "kern","ss01";
+    overflow-x: hidden;
+  }
+  .font-serif-zh { font-family: 'Noto Serif SC','Songti SC',serif; font-weight: 700; }
+  .font-serif-en { font-family: 'Instrument Serif','Noto Serif SC',serif; font-weight: 400; }
+  .font-mono { font-family: 'JetBrains Mono','SF Mono',ui-monospace,monospace; }
+  .label-mono { font-family: 'JetBrains Mono',monospace; font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+  .tabular { font-variant-numeric: tabular-nums; }
+
+  /* ── Buttons (loud) ── */
+  .btn-tan{
+    display:inline-flex;align-items:center;gap:8px;
+    padding:14px 24px;background:var(--tangerine);color:#fff;
+    font-size:14px;font-weight:600;border-radius:0;
+    transition:transform .2s ease, box-shadow .2s ease, background .2s ease;
+    white-space:nowrap;letter-spacing:.02em;
+    box-shadow:4px 4px 0 0 var(--ink);
+  }
+  .btn-tan:hover{transform:translate(-2px,-2px);box-shadow:6px 6px 0 0 var(--ink);background:var(--tangerine-2);}
+  .btn-ink{
+    display:inline-flex;align-items:center;gap:8px;
+    padding:14px 24px;background:var(--ink);color:var(--cream);
+    font-size:14px;font-weight:600;border-radius:0;
+    transition:transform .2s ease, box-shadow .2s ease, background .2s ease;
+    white-space:nowrap;
+    box-shadow:4px 4px 0 0 var(--tangerine);
+  }
+  .btn-ink:hover{transform:translate(-2px,-2px);box-shadow:6px 6px 0 0 var(--tangerine);}
+  .btn-outline{
+    display:inline-flex;align-items:center;gap:8px;
+    padding:13px 23px;border:2px solid var(--ink);color:var(--ink);
+    font-size:14px;font-weight:600;background:transparent;
+    transition:background .2s ease,color .2s ease;white-space:nowrap;
+  }
+  .btn-outline:hover{background:var(--ink);color:var(--cream);}
+  .btn-lime{
+    display:inline-flex;align-items:center;gap:8px;
+    padding:14px 24px;background:var(--lime);color:var(--ink);
+    font-size:14px;font-weight:700;border-radius:0;
+    transition:transform .2s ease, box-shadow .2s ease;white-space:nowrap;
+    box-shadow:4px 4px 0 0 var(--ink);
+  }
+  .btn-lime:hover{transform:translate(-2px,-2px);box-shadow:6px 6px 0 0 var(--ink);}
+  .btn-paper{
+    display:inline-flex;align-items:center;gap:8px;
+    padding:14px 24px;background:var(--cream);color:var(--ink);
+    font-size:14px;font-weight:600;
+    transition:transform .2s ease, box-shadow .2s ease;white-space:nowrap;
+    box-shadow:4px 4px 0 0 var(--lime);
+  }
+  .btn-paper:hover{transform:translate(-2px,-2px);box-shadow:6px 6px 0 0 var(--lime);}
+
+  /* link underline */
+  .ulink{position:relative;}
+  .ulink::after{
+    content:'';position:absolute;left:0;bottom:-3px;
+    height:2px;width:0;background:var(--tangerine);
+    transition:width .3s cubic-bezier(.2,.7,.2,1);
+  }
+  .ulink:hover::after{width:100%;}
+
+  .hero-accent{font-family:'Instrument Serif',serif;font-style:italic;font-weight:400;}
+  .hero-h1{font-family:'Noto Serif SC',serif;font-weight:700;letter-spacing:-.028em;line-height:1.02;}
+
+  /* ── Tags ── */
+  .tag{
+    display:inline-flex;align-items:center;gap:6px;
+    padding:6px 12px;border:1.5px solid var(--ink);
+    font-size:10.5px;font-family:'JetBrains Mono',monospace;
+    letter-spacing:.10em;text-transform:uppercase;border-radius:999px;
+    background:var(--cream);font-weight:500;
+  }
+  .tag-tan{background:var(--tangerine);color:#fff;border-color:var(--tangerine);}
+  .tag-lime{background:var(--lime);color:var(--ink);border-color:var(--ink);}
+  .tag-navy{background:var(--navy);color:var(--cream);border-color:var(--navy);}
+
+  /* ── Hero blobs/glow ── */
+  .blob{position:absolute;border-radius:50%;filter:blur(80px);opacity:.7;pointer-events:none;}
+  @keyframes float { 0%,100%{transform:translate(0,0);} 50%{transform:translate(20px,-30px);} }
+  .blob-1{width:400px;height:400px;background:var(--tangerine);top:10%;left:-100px;animation:float 14s ease-in-out infinite;}
+  .blob-2{width:340px;height:340px;background:var(--lime);bottom:-50px;right:-80px;animation:float 18s ease-in-out infinite reverse;}
+  .blob-3{width:260px;height:260px;background:var(--magenta);top:40%;right:25%;animation:float 16s ease-in-out infinite;opacity:.35;}
+
+  /* ── Background patterns ── */
+  .bg-grid{
+    background-image:linear-gradient(var(--line-softer) 1px,transparent 1px),
+                     linear-gradient(90deg,var(--line-softer) 1px,transparent 1px);
+    background-size:48px 48px;
+  }
+  .bg-dotted{
+    background-image:radial-gradient(circle,rgba(10,15,44,.12) 1px,transparent 1.4px);
+    background-size:22px 22px;
+  }
+  .bg-stripe{
+    background-image:repeating-linear-gradient(45deg,var(--line-soft) 0,var(--line-soft) 1px,transparent 1px,transparent 12px);
+  }
+
+  /* ── Feature row ── */
+  .feature{
+    position:relative;padding:44px 36px 40px;background:var(--cream);
+    border-top:2px solid var(--ink);transition:background .3s ease;overflow:hidden;
+  }
+  .feature:hover{background:var(--cream-2);}
+  .feature::after{
+    content:'';position:absolute;top:0;left:0;height:4px;width:0;
+    background:var(--tangerine);transition:width .5s cubic-bezier(.2,.7,.2,1);
+  }
+  .feature:hover::after{width:100%;}
+
+  /* ── Pricing cards ── */
+  .price-card{
+    padding:40px 32px;border:2px solid var(--ink);background:var(--cream);
+    display:flex;flex-direction:column;position:relative;
+    transition:transform .3s ease, box-shadow .3s ease;
+    box-shadow:6px 6px 0 0 var(--ink);
+  }
+  .price-card:hover{transform:translate(-3px,-3px);box-shadow:9px 9px 0 0 var(--ink);}
+  .price-card.featured{background:var(--navy);color:var(--cream);box-shadow:6px 6px 0 0 var(--tangerine);}
+  .price-card.featured:hover{box-shadow:9px 9px 0 0 var(--tangerine);}
+  .price-card.featured .muted-on-dark{color:rgba(255,246,227,0.65);}
+  .price-card.featured .check-icn{color:var(--lime) !important;}
+  .price-card.mint{background:var(--lime);box-shadow:6px 6px 0 0 var(--ink);}
+
+  /* ── FAQ ── */
+  .faq-item{border-top:2px solid var(--line);}
+  .faq-item:last-child{border-bottom:2px solid var(--line);}
+  .faq-q{
+    width:100%;text-align:left;padding:26px 0;
+    display:flex;align-items:center;justify-content:space-between;
+    gap:24px;cursor:pointer;background:transparent;border:none;
+    color:var(--ink);font-size:17px;font-weight:600;font-family:inherit;
+  }
+  .faq-q .ic{transition:transform .4s cubic-bezier(.2,.7,.2,1);flex-shrink:0;}
+  .faq-item.open .faq-q .ic{transform:rotate(135deg);color:var(--tangerine);}
+  .faq-a{
+    max-height:0;overflow:hidden;
+    transition:max-height .5s cubic-bezier(.4,0,.2,1),padding .3s ease;
+    color:var(--ink-soft);font-size:15px;line-height:1.75;
+  }
+  .faq-item.open .faq-a{max-height:360px;padding:0 64px 28px 0;}
+
+  /* ── Marquee ── */
+  @keyframes scroll-x{from{transform:translateX(0);}to{transform:translateX(-50%);}}
+  .marquee-track{
+    display:flex;gap:16px;animation:scroll-x 70s linear infinite;
+    white-space:nowrap;width:max-content;align-items:center;
+  }
+  .marq-chip{
+    display:inline-flex;align-items:center;gap:8px;
+    padding:10px 18px;border:1.5px solid var(--ink);background:var(--cream);
+    font-size:13.5px;font-weight:500;
+  }
+  .marq-chip.tan{background:var(--tangerine);color:#fff;border-color:var(--tangerine);}
+  .marq-chip.lime{background:var(--lime);}
+  .marq-chip.navy{background:var(--navy);color:var(--cream);border-color:var(--navy);}
+
+  /* ── Animations ── */
+  @keyframes rise{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+  .rise{animation:rise .9s cubic-bezier(.2,.7,.2,1) both;}
+  .delay-1{animation-delay:.08s;}
+  .delay-2{animation-delay:.16s;}
+  .delay-3{animation-delay:.24s;}
+  .delay-4{animation-delay:.40s;}
+  .delay-5{animation-delay:.55s;}
+
+  @keyframes pulse-tan{0%,100%{box-shadow:0 0 0 0 rgba(255,90,44,0.5);}50%{box-shadow:0 0 0 14px rgba(255,90,44,0);}}
+  .pulse-tan{animation:pulse-tan 2.4s ease-in-out infinite;}
+
+  @keyframes spin-slow{from{transform:rotate(0);}to{transform:rotate(360deg);}}
+  .spin-slow{animation:spin-slow 24s linear infinite;}
+
+  /* ── Phone mockups ── */
+  .mock-phone{
+    width:194px;aspect-ratio:9/19;background:var(--cream-2);
+    border:3px solid var(--ink);border-radius:30px;
+    position:relative;overflow:hidden;
+    box-shadow:8px 8px 0 0 var(--ink);
+  }
+  .mock-phone .notch{
+    position:absolute;top:9px;left:50%;transform:translateX(-50%);
+    width:60px;height:7px;background:var(--ink);border-radius:4px;z-index:5;
+  }
+  .mock-phone .screen{
+    position:absolute;inset:14px 10px 10px;
+    background:var(--cream);border-radius:18px;padding:18px 10px;
+  }
+  .mock-card{
+    background:var(--cream-2);border:1px solid var(--line-softer);
+    height:30px;border-radius:4px;margin-top:8px;
+  }
+
+  /* ── Section tag ── */
+  .section-tag{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;letter-spacing:.20em;text-transform:uppercase;color:var(--ink);font-weight:600;
+    display:inline-block;padding:5px 10px;background:var(--lime);border:1.5px solid var(--ink);
+  }
+
+  .text-fluid-hero{font-size:clamp(48px,9.2vw,140px);}
+  .text-fluid-h2{font-size:clamp(34px,5vw,72px);}
+  .text-fluid-h3{font-size:clamp(22px,2.2vw,32px);}
+
+  ::selection{background:var(--tangerine);color:#fff;}
+
+  .deco-cross::before{content:'✦';color:var(--tangerine);margin-right:8px;font-family:'Instrument Serif',serif;}
+  .dot-sep{display:inline-block;width:5px;height:5px;background:var(--ink);border-radius:50%;vertical-align:middle;margin:0 8px 3px;}
+
+  /* ── Bento cells ── */
+  .bento-cell{
+    position:relative;background:var(--cream);padding:32px;
+    border:2px solid var(--ink);transition:transform .3s ease, box-shadow .3s ease;
+    display:flex;flex-direction:column;justify-content:space-between;min-height:240px;
+  }
+  .bento-cell:hover{transform:translate(-2px,-2px);box-shadow:5px 5px 0 0 var(--ink);}
+  .bento-cell.tan{background:var(--tangerine);color:#fff;}
+  .bento-cell.lime{background:var(--lime);}
+  .bento-cell.navy{background:var(--navy);color:var(--cream);}
+  .bento-cell .ico-box{
+    width:46px;height:46px;background:var(--cream);
+    display:flex;align-items:center;justify-content:center;
+    border:2px solid var(--ink);box-shadow:3px 3px 0 0 var(--ink);
+  }
+  .bento-cell.navy .ico-box{background:var(--lime);}
+  .bento-cell.tan .ico-box{background:var(--cream);box-shadow:3px 3px 0 0 var(--navy);}
+
+  /* ── Industry chip ── */
+  .indu-chip{
+    padding:16px 24px;border:2px solid var(--ink);background:var(--cream);
+    transition:transform .2s ease,box-shadow .2s ease,background .2s ease;
+    cursor:default;font-size:14.5px;font-weight:500;
+    display:inline-flex;align-items:center;gap:10px;
+    box-shadow:3px 3px 0 0 var(--ink);
+  }
+  .indu-chip:hover{transform:translate(-2px,-2px);box-shadow:5px 5px 0 0 var(--ink);}
+  .indu-chip:nth-child(3n){background:var(--cream-2);}
+  .indu-chip:nth-child(4n){background:var(--lime);}
+  .indu-chip:nth-child(5n){background:var(--tangerine);color:#fff;}
+  .indu-chip:nth-child(7n){background:var(--navy);color:var(--cream);}
+  .indu-chip .icn{font-size:20px;}
+
+  /* ── Flow step ── */
+  .flow-step{
+    padding:36px 30px 32px;border:2px solid var(--ink);background:var(--cream);
+    position:relative;box-shadow:5px 5px 0 0 var(--ink);
+    transition:transform .3s ease, box-shadow .3s ease;
+  }
+  .flow-step:hover{transform:translate(-3px,-3px);box-shadow:8px 8px 0 0 var(--ink);}
+  .flow-step:nth-child(2){background:var(--lime);}
+  .flow-step:nth-child(3){background:var(--tangerine);color:#fff;}
+  .flow-step:nth-child(3) .step-num{color:#fff;}
+  .flow-step:nth-child(4){background:var(--navy);color:var(--cream);}
+  .flow-step:nth-child(4) .step-num{color:var(--lime);}
+  .flow-step .step-num{
+    font-family:'Instrument Serif',serif;font-style:italic;
+    font-size:72px;line-height:1;color:var(--tangerine);
+  }
+
+  /* ── Mobile ── */
+  @media (max-width: 768px){
+    .feature{padding:32px 24px 28px;}
+    .price-card{padding:30px 24px;}
+    .faq-item.open .faq-a{padding-right:0;}
+    .bento-cell{padding:24px;min-height:180px;}
+    .flow-step{padding:28px 24px;}
+    .blob-1, .blob-2, .blob-3 { display: none; }
+  }
+
+  /* Star decoration */
+  .star-deco{
+    display:inline-block;
+    color:var(--tangerine);
+    font-size:1.2em;
+    font-family:'Instrument Serif',serif;
+  }
+
+  /* AI glow tag */
+  .ai-glow {
+    background: var(--lime);
+    padding: 2px 8px;
+    border: 1.5px solid var(--ink);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    display: inline-flex; align-items: center; gap: 4px;
+    position: relative;
+  }
+  .ai-glow::before {
+    content: ''; width: 6px; height: 6px; background: var(--ink); border-radius: 50%;
+    animation: blink-dot 1.4s ease-in-out infinite;
+  }
+  @keyframes blink-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+  /* Ticker number giant */
+  .num-giant {
+    font-family: 'Noto Serif SC', serif;
+    font-weight: 700;
+    letter-spacing: -0.04em;
+    line-height: 0.9;
+  }
+
+  /* Section dividers with stripe */
+  .stripe-divider {
+    height: 14px;
+    background-image: repeating-linear-gradient(135deg, var(--ink), var(--ink) 12px, var(--tangerine) 12px, var(--tangerine) 24px);
+    border-top: 2px solid var(--ink);
+    border-bottom: 2px solid var(--ink);
+  }
+
+  /* sticker */
+  .sticker {
+    position: absolute;
+    background: var(--lime);
+    border: 2px solid var(--ink);
+    padding: 6px 14px;
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    font-size: 17px;
+    box-shadow: 3px 3px 0 0 var(--ink);
+    z-index: 10;
+  }
+
+  /* big quote mark */
+  .quote-mark {
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    font-size: 96px;
+    line-height: 0.7;
+    color: var(--tangerine);
+  }
+</style>
+</head>
+<body>
+
+<!-- ============== NAV ============== -->
+<header class="sticky top-0 z-40 backdrop-blur-md bg-[color:var(--cream)]/90 border-b-2 border-[color:var(--ink)]">
+  <div class="max-w-[1400px] mx-auto px-5 lg:px-10 h-16 flex items-center justify-between">
+    <a href="#" class="flex items-center gap-2.5">
+      <div class="w-9 h-9 bg-[color:var(--tangerine)] text-[color:var(--cream)] flex items-center justify-center font-serif-zh text-lg border-2 border-[color:var(--ink)] shadow-[3px_3px_0_0_var(--ink)]" style="box-shadow:3px 3px 0 0 var(--ink);">拓</div>
+      <span class="font-serif-zh text-lg tracking-tight ml-1">拓小二</span>
+      <span class="hero-accent text-base text-[color:var(--muted)] hidden sm:inline">/ Tuoxiao'er</span>
+    </a>
+    <nav class="hidden lg:flex items-center gap-8 text-[14px] font-medium">
+      <a class="ulink" href="#ability">能为你做什么</a>
+      <a class="ulink" href="#features">附赠商城</a>
+      <a class="ulink" href="#pricing">套餐定价</a>
+      <a class="ulink" href="#promo">老客邀请</a>
+      <a class="ulink" href="#industry">行业模板</a>
+      <a class="ulink" href="#faq">常见问题</a>
+    </nav>
+    <div class="flex items-center gap-3">
+      <a class="hidden sm:inline-flex items-center text-sm ulink font-medium" href="#">登录</a>
+      <a href="#cta" class="btn-tan !py-2.5 !px-4 text-[13px]" style="box-shadow:3px 3px 0 0 var(--ink);">
+        ¥298 入驻 <i data-lucide="arrow-up-right" class="w-4 h-4"></i>
+      </a>
+    </div>
+  </div>
+</header>
+
+<!-- ============== HERO ============== -->
+<section class="relative overflow-hidden">
+  <!-- blobs -->
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+  <!-- grid -->
+  <div class="absolute inset-0 bg-grid opacity-60 pointer-events-none"></div>
+
+  <div class="relative max-w-[1400px] mx-auto px-5 lg:px-10 pt-14 lg:pt-20 pb-20 lg:pb-28">
+
+    <div class="grid grid-cols-12 gap-6">
+      <aside class="col-span-12 lg:col-span-2 lg:border-r-2 border-[color:var(--ink)] lg:pr-6">
+        <div class="section-tag mb-3">01 / 平台</div>
+        <p class="text-[12.5px] text-[color:var(--ink-soft)] leading-relaxed mt-2">
+          给所有<span class="text-[color:var(--ink)] font-semibold">小老板</span>的<br>
+          AI 视频带货 + 在线商城。<br><br>
+          ¥298 起开张，<br>
+          <span class="text-[color:var(--tangerine)] font-semibold">通联 T+0 直入</span>老板账户。
+        </p>
+        <div class="mt-6 flex flex-wrap gap-2">
+          <span class="tag tag-lime">v 7.0</span>
+          <span class="tag">2026</span>
+        </div>
+      </aside>
+
+      <div class="col-span-12 lg:col-span-10 lg:pl-2">
+        <div class="rise flex flex-wrap items-center gap-2">
+          <span class="tag tag-tan">¥298 起 · SaaS</span>
+          <span class="tag tag-lime">AI 视频 20 秒出片</span>
+          <span class="ai-glow">FIRE NOW</span>
+        </div>
+
+        <h1 class="hero-h1 mt-8 text-fluid-hero rise delay-1 relative">
+          给<span class="hero-accent text-[color:var(--tangerine)] italic mx-1">小老板</span>的<br>
+          AI 视频带货<br>
+          ＋ 在线<span class="relative">
+            商城<span class="hero-accent text-[0.5em] text-[color:var(--magenta)] absolute -top-1 ml-1">✦</span>
+            <span class="absolute -bottom-2 left-0 right-0 h-3 bg-[color:var(--lime)] -z-10 opacity-80" style="z-index:-1;"></span>
+          </span>。
+          <!-- sticker -->
+          <div class="sticker hidden lg:block" style="top:-20px;right:0;transform:rotate(6deg);">¥298/年 起 ✦</div>
+        </h1>
+
+        <div class="mt-10 lg:mt-14 grid grid-cols-12 gap-6 rise delay-2">
+          <p class="col-span-12 md:col-span-7 text-[15px] lg:text-[17.5px] text-[color:var(--ink-soft)] leading-[1.75]">
+            烧烤、奶茶、茶楼、美容院、服装鞋帽、超市便利 — 13 个行业都能开。<br>
+            输入商品 → 20 秒出片 → 一键发抖音；<span class="bg-[color:var(--lime)] px-1 font-semibold text-[color:var(--ink)]">商城 + 推广引擎</span>一并送上，开张就能跑起来。
+          </p>
+          <div class="col-span-12 md:col-span-5 flex flex-wrap items-end md:justify-end gap-3">
+            <a href="#cta" class="btn-tan pulse-tan">
+              ¥298/年 立即入驻 <i data-lucide="arrow-right" class="w-4 h-4"></i>
+            </a>
+            <a href="#pricing" class="btn-outline">
+              看 ¥298 / ¥1688 对比
+            </a>
+          </div>
+        </div>
+
+        <!-- hero stats - bold color blocks -->
+        <div class="mt-16 lg:mt-20 grid grid-cols-2 md:grid-cols-4 gap-0 rise delay-3 border-2 border-[color:var(--ink)]" style="box-shadow:6px 6px 0 0 var(--ink);">
+          <div class="px-5 lg:px-7 py-7 md:border-r-2 border-[color:var(--ink)] bg-[color:var(--cream)]">
+            <div class="label-mono mb-2.5">AI 出片</div>
+            <div class="num-giant text-3xl lg:text-5xl">20<span class="hero-accent text-[color:var(--tangerine)] text-base ml-1">秒/条</span></div>
+          </div>
+          <div class="px-5 lg:px-7 py-7 md:border-r-2 border-[color:var(--ink)] bg-[color:var(--tangerine)] text-[color:var(--cream)]">
+            <div class="label-mono mb-2.5" style="color:rgba(255,246,227,0.7);">基础包</div>
+            <div class="num-giant text-3xl lg:text-5xl">¥298<span class="hero-accent text-[color:var(--lime)] text-base ml-1">/年起</span></div>
+          </div>
+          <div class="px-5 lg:px-7 py-7 md:border-r-2 border-[color:var(--ink)] border-t-2 md:border-t-0 bg-[color:var(--lime)]">
+            <div class="label-mono mb-2.5">行业模板</div>
+            <div class="num-giant text-3xl lg:text-5xl">13<span class="hero-accent text-[color:var(--ink)] text-base ml-1">个</span></div>
+          </div>
+          <div class="px-5 lg:px-7 py-7 border-t-2 md:border-t-0 border-[color:var(--ink)] bg-[color:var(--navy)] text-[color:var(--cream)]">
+            <div class="label-mono mb-2.5" style="color:rgba(255,246,227,0.7);">通联到账</div>
+            <div class="num-giant text-3xl lg:text-5xl">T+0<span class="hero-accent text-[color:var(--lime)] text-base ml-1">秒到</span></div>
+          </div>
+        </div>
+
+        <!-- hero mockups -->
+        <div class="mt-20 lg:mt-24 grid grid-cols-12 gap-8 items-end rise delay-4">
+          <div class="col-span-12 lg:col-span-7 relative">
+            <div class="flex items-end gap-4 lg:gap-6 flex-wrap">
+              <!-- 商城 -->
+              <div class="mock-phone" style="transform:rotate(-4deg) translateY(8px);">
+                <div class="notch"></div>
+                <div class="screen">
+                  <div class="text-[8px] label-mono">小程序商城</div>
+                  <div class="font-serif-zh text-[10px] mt-1">茶里春和 · 烧烤</div>
+                  <div class="mock-card !h-16 !mt-3" style="background:var(--tangerine);"></div>
+                  <div class="grid grid-cols-2 gap-1.5 mt-2">
+                    <div class="mock-card !h-12 !mt-0"></div>
+                    <div class="mock-card !h-12 !mt-0"></div>
+                    <div class="mock-card !h-12 !mt-0" style="background:var(--lime);"></div>
+                    <div class="mock-card !h-12 !mt-0"></div>
+                  </div>
+                  <div class="mt-2 px-1.5 py-1 bg-[color:var(--ink)] text-[color:var(--cream)] text-[7px] inline-block font-mono">下单 · ¥48</div>
+                </div>
+              </div>
+              <!-- AI 视频 -->
+              <div class="mock-phone relative" style="transform:translateY(-16px);">
+                <div class="notch"></div>
+                <div class="absolute -top-3 -right-3 z-10 bg-[color:var(--lime)] border-2 border-[color:var(--ink)] px-2 py-0.5 font-mono text-[10px] font-bold" style="box-shadow:2px 2px 0 0 var(--ink);">AI</div>
+                <div class="screen">
+                  <div class="text-[8px] label-mono">AI 视频</div>
+                  <div class="font-serif-zh text-[10px] mt-1">20 秒成片中…</div>
+                  <div class="mock-card !h-24 !mt-3" style="background:var(--navy);position:relative;">
+                    <div class="absolute inset-0 flex items-center justify-center">
+                      <div class="w-6 h-6 rounded-full border-2 border-[color:var(--lime)] border-t-transparent animate-spin"></div>
+                    </div>
+                  </div>
+                  <div class="mock-card !mt-2 !h-3"></div>
+                  <div class="mock-card !mt-1 !h-3" style="width:70%;"></div>
+                  <div class="mt-3 px-1.5 py-1 bg-[color:var(--tangerine)] text-[color:var(--cream)] text-[7px] inline-block font-mono">即梦 AI · 78%</div>
+                </div>
+              </div>
+              <!-- 数据 -->
+              <div class="mock-phone" style="transform:rotate(4deg) translateY(2px);">
+                <div class="notch"></div>
+                <div class="screen">
+                  <div class="text-[8px] label-mono">数据看板</div>
+                  <div class="font-serif-zh text-[10px] mt-1">今日销售</div>
+                  <div class="font-serif-zh text-lg mt-1 tabular text-[color:var(--tangerine)]">¥4,820</div>
+                  <div class="text-[7px] text-[color:var(--ink)] mt-0.5 font-semibold">↑ 32% 视频带客</div>
+                  <svg viewBox="0 0 100 40" class="mt-3 w-full">
+                    <polyline fill="none" stroke="var(--ink)" stroke-width="1.5" points="0,30 12,24 24,28 36,18 48,22 60,12 72,16 84,6 100,10"/>
+                    <polyline fill="none" stroke="var(--tangerine)" stroke-width="1.2" stroke-dasharray="2 2" points="0,36 12,32 24,33 36,28 48,30 60,24 72,26 84,20 100,22"/>
+                  </svg>
+                  <div class="grid grid-cols-3 gap-1 mt-3">
+                    <div class="text-center"><div class="text-[7px] label-mono !text-[7px]">订单</div><div class="font-serif-zh text-[10px] mt-0.5">86</div></div>
+                    <div class="text-center"><div class="text-[7px] label-mono !text-[7px]">老客</div><div class="font-serif-zh text-[10px] mt-0.5">128</div></div>
+                    <div class="text-center"><div class="text-[7px] label-mono !text-[7px]">复购</div><div class="font-serif-zh text-[10px] mt-0.5">38%</div></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-span-12 lg:col-span-5">
+            <div class="section-tag mb-3">02 / 三件套</div>
+            <p class="font-serif-zh text-xl lg:text-2xl leading-relaxed mt-3">
+              一份后台，<br>
+              <span class="bg-[color:var(--lime)] px-2 py-0.5">同步</span>开商城、出 AI 视频、看经营数据 — <br>
+              小老板自己就能搞定。
+            </p>
+            <a href="#features" class="btn-outline mt-6 inline-flex">
+              看完整能力 <i data-lucide="arrow-right" class="w-4 h-4"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- stripe divider -->
+<div class="stripe-divider"></div>
+
+<!-- ============== TRUST MARQUEE ============== -->
+<section class="border-b-2 border-[color:var(--ink)] py-6 overflow-hidden bg-[color:var(--navy)]">
+  <div class="flex items-center">
+    <div class="label-mono whitespace-nowrap px-5 lg:px-10 border-r-2 border-[color:var(--lime)] mr-6 !text-[color:var(--lime)] !text-[11px]">拓小二能为你做什么 →</div>
+    <div class="marquee-track">
+      <span class="marq-chip tan">🎬 20 秒 AI 生成带货短视频</span>
+      <span class="marq-chip">📱 一键直发抖音不用剪辑</span>
+      <span class="marq-chip lime">🤖 火山引擎 + 即梦 AI 加持</span>
+      <span class="marq-chip">🎙️ 真人级 AI 配音 多种音色</span>
+      <span class="marq-chip tan">✍️ 商品卖点 AI 自动写文案</span>
+      <span class="marq-chip lime">💡 ¥298/年 首购送 10 条 AI 视频</span>
+      <span class="marq-chip">🛍️ 附赠全套商城 0 费上线</span>
+      <span class="marq-chip tan">📦 订单库存自提核销一站搞定</span>
+      <span class="marq-chip">💰 推广奖励工具 自动结算</span>
+      <span class="marq-chip lime">⭐ 积分会员锁回头客</span>
+      <span class="marq-chip">🛠️ 不会剪不会写都能用</span>
+      <!-- loop -->
+      <span class="marq-chip tan">🎬 20 秒 AI 生成带货短视频</span>
+      <span class="marq-chip">📱 一键直发抖音不用剪辑</span>
+      <span class="marq-chip lime">🤖 火山引擎 + 即梦 AI 加持</span>
+      <span class="marq-chip">🎙️ 真人级 AI 配音 多种音色</span>
+      <span class="marq-chip tan">✍️ 商品卖点 AI 自动写文案</span>
+      <span class="marq-chip lime">💡 ¥298/年 首购送 10 条 AI 视频</span>
+      <span class="marq-chip">🛍️ 附赠全套商城 0 费上线</span>
+      <span class="marq-chip tan">📦 订单库存自提核销一站搞定</span>
+      <span class="marq-chip">💰 推广奖励工具 自动结算</span>
+      <span class="marq-chip lime">⭐ 积分会员锁回头客</span>
+      <span class="marq-chip">🛠️ 不会剪不会写都能用</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============== ABILITY ============== -->
+<section id="ability" class="relative">
+  <div class="max-w-[1400px] mx-auto px-5 lg:px-10 pt-24 lg:pt-32 pb-8">
+    <div class="grid grid-cols-12 gap-6 mb-16">
+      <div class="col-span-12 lg:col-span-3">
+        <div class="section-tag">03 / 四件套</div>
+        <p class="label-mono !text-[11px] !tracking-wider mt-3">CAPABILITIES</p>
+      </div>
+      <div class="col-span-12 lg:col-span-9">
+        <h2 class="font-serif-zh text-fluid-h2 leading-[1.05] tracking-tight">
+          小老板要的，<span class="hero-accent text-[color:var(--tangerine)] italic">all-in-one</span><br>
+          全装好。
+        </h2>
+        <p class="mt-5 text-[15px] lg:text-[17px] text-[color:var(--ink-soft)] max-w-2xl leading-relaxed">
+          不用买四套 SaaS。AI 视频、商城收款、推广引擎、数据看板 — 全部进同一个后台，数据、库存、推广积分跑在同一张账本上。
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div class="border-y-2 border-[color:var(--ink)]">
+    <div class="max-w-[1400px] mx-auto grid grid-cols-1 lg:grid-cols-2 lg:divide-x-2 divide-[color:var(--ink)]">
+      <!-- 01 AI 视频 -->
+      <article class="feature">
+        <div class="flex items-start justify-between mb-12">
+          <span class="font-mono text-[12px] font-bold">01 / VIDEO</span>
+          <div class="w-11 h-11 border-2 border-[color:var(--ink)] flex items-center justify-center bg-[color:var(--tangerine)] text-[color:var(--cream)]" style="box-shadow:3px 3px 0 0 var(--ink);">
+            <i data-lucide="film" class="w-5 h-5"></i>
+          </div>
+        </div>
+        <h3 class="font-serif-zh text-fluid-h3 leading-tight mb-3">
+          AI 视频 <span class="hero-accent italic text-[color:var(--tangerine)]">20 秒</span> 出片
+        </h3>
+        <p class="text-[15px] text-[color:var(--ink-soft)] leading-[1.75] mb-6">
+          拍商品图，AI 自动写卖点文案 + 真人级 AI 配音 + 火山引擎即梦 AI 出片。15s / 20s / 30s 带货短视频，单条成本不到 ¥1。
+        </p>
+        <ul class="space-y-2.5 text-[13.5px] text-[color:var(--ink-soft)] mb-8">
+          <li class="deco-cross">商品图 → 卖点文案 → 视频成片 全自动</li>
+          <li class="deco-cross">多种音色 · 行业脚本风格定制</li>
+          <li class="deco-cross">不会剪、不会写都能用</li>
+        </ul>
+        <a href="#cta" class="inline-flex items-center gap-2 text-[14px] font-semibold ulink">立即体验 AI 视频 <i data-lucide="arrow-right" class="w-4 h-4"></i></a>
+      </article>
+
+      <!-- 02 一键发抖音 -->
+      <article class="feature">
+        <div class="flex items-start justify-between mb-12">
+          <span class="font-mono text-[12px] font-bold">02 / PUBLISH</span>
+          <div class="w-11 h-11 border-2 border-[color:var(--ink)] flex items-center justify-center bg-[color:var(--lime)]" style="box-shadow:3px 3px 0 0 var(--ink);">
+            <i data-lucide="upload-cloud" class="w-5 h-5"></i>
+          </div>
+        </div>
+        <h3 class="font-serif-zh text-fluid-h3 leading-tight mb-3">
+          一键<span class="bg-[color:var(--lime)] px-1.5">直发</span>抖音
+        </h3>
+        <p class="text-[15px] text-[color:var(--ink-soft)] leading-[1.75] mb-6">
+          OAuth 授权抖音账号，AI 视频出片后可直接挂车发布、带店铺二维码、定时排程。流量回流自动归因到商品 SKU。
+        </p>
+        <ul class="space-y-2.5 text-[13.5px] text-[color:var(--ink-soft)] mb-8">
+          <li class="deco-cross">抖音官方 OAuth · 全流程合规</li>
+          <li class="deco-cross">视频自动挂车 · 多账号矩阵管理</li>
+          <li class="deco-cross">播放量 / 转化率 / GMV 反向归因</li>
+        </ul>
+        <a href="#cta" class="inline-flex items-center gap-2 text-[14px] font-semibold ulink">看抖音发布演示 <i data-lucide="arrow-right" class="w-4 h-4"></i></a>
+      </article>
+
+      <!-- 03 在线商城 -->
+      <article class="feature">
+        <div class="flex items-start justify-between mb-12">
+          <span class="font-mono text-[12px] font-bold">03 / SHOP</span>
+          <div class="w-11 h-11 border-2 border-[color:var(--ink)] flex items-center justify-center bg-[color:var(--cream)]" style="box-shadow:3px 3px 0 0 var(--ink);">
+            <i data-lucide="store" class="w-5 h-5"></i>
+          </div>
+        </div>
+        <h3 class="font-serif-zh text-fluid-h3 leading-tight mb-3">
+          附赠<span class="hero-accent italic text-[color:var(--tangerine)]">在线商城</span>
+        </h3>
+        <p class="text-[15px] text-[color:var(--ink-soft)] leading-[1.75] mb-6">
+          订阅就送一套全功能商城：拍照上架、多 SKU 库存、订单核销、会员积分、消息提醒、推广海报 — 视频引来的客人能<span class="bg-[color:var(--lime)] px-1 font-semibold">用商城接住</span>。
+        </p>
+        <ul class="space-y-2.5 text-[13.5px] text-[color:var(--ink-soft)] mb-8">
+          <li class="deco-cross">拍照即上架 · AI 自动识别规格价</li>
+          <li class="deco-cross">到店自提 + 快递双模式</li>
+          <li class="deco-cross">会员积分 · 余额充值 · 抵扣下单</li>
+        </ul>
+        <a href="#features" class="inline-flex items-center gap-2 text-[14px] font-semibold ulink">看附赠商城清单 <i data-lucide="arrow-right" class="w-4 h-4"></i></a>
+      </article>
+
+      <!-- 04 通联 T+0 -->
+      <article class="feature">
+        <div class="flex items-start justify-between mb-12">
+          <span class="font-mono text-[12px] font-bold">04 / PAYMENT</span>
+          <div class="w-11 h-11 border-2 border-[color:var(--ink)] flex items-center justify-center bg-[color:var(--navy)] text-[color:var(--lime)]" style="box-shadow:3px 3px 0 0 var(--ink);">
+            <i data-lucide="banknote" class="w-5 h-5"></i>
+          </div>
+        </div>
+        <h3 class="font-serif-zh text-fluid-h3 leading-tight mb-3">
+          通联 <span class="hero-accent italic text-[color:var(--tangerine)]">T+0</span> 秒到
+        </h3>
+        <p class="text-[15px] text-[color:var(--ink-soft)] leading-[1.75] mb-6">
+          顾客付款 <strong>T+0 即时到账</strong>，钱直接进商户自己的通联账号 — 平台<span class="bg-[color:var(--tangerine)] text-[color:var(--cream)] px-1 font-semibold">不沾一分钱</span>用户资金，零二清风险，老板心里踏实。
+        </p>
+        <ul class="space-y-2.5 text-[13.5px] text-[color:var(--ink-soft)] mb-8">
+          <li class="deco-cross">资金落到商户自己的通联账号</li>
+          <li class="deco-cross">余额随时提现到本人银行卡</li>
+          <li class="deco-cross">商城 GMV 0 抽成、0 服务费</li>
+        </ul>
+        <a href="#pricing" class="inline-flex items-center gap-2 text-[14px] font-semibold ulink">查看资金路径 <i data-lucide="arrow-right" class="w-4 h-4"></i></a>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ============== FEATURES — 附赠商城 BENTO ============== -->
+<section id="features" class="relative bg-[color:var(--cream-2)]">
+  <div class="absolute inset-0 bg-dotted opacity-50 pointer-events-none"></div>
+  <div class="relative max-w-[1400px] mx-auto px-5 lg:px-10 pt-24 lg:pt-32 pb-20">
+    <div class="grid grid-cols-12 gap-6 mb-14">
+      <div class="col-span-12 lg:col-span-3">
+        <div class="section-tag">04 / 附赠商城</div>
+        <p class="label-mono !text-[11px] !tracking-wider mt-3">SHOP BUNDLE</p>
+      </div>
+      <div class="col-span-12 lg:col-span-9">
+        <h2 class="font-serif-zh text-fluid-h2 leading-[1.05] tracking-tight">
+          视频引来的客人，<br>
+          用<span class="hero-accent italic text-[color:var(--tangerine)]">商城</span>接住。
+        </h2>
+        <p class="mt-5 text-[15px] lg:text-[17px] text-[color:var(--ink-soft)] max-w-2xl leading-relaxed">
+          订阅 ¥298/年 即送下面这套全功能商城 — 商品、订单、会员、积分、数据，<span class="bg-[color:var(--lime)] px-1 font-semibold">全部开</span>。
+        </p>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <!-- big tan -->
+      <div class="bento-cell tan md:col-span-2 md:row-span-2" style="min-height:380px;">
+        <div>
+          <div class="flex items-center justify-between mb-6">
+            <span class="font-mono text-[11px] opacity-80">送 · 01</span>
+            <div class="ico-box"><i data-lucide="package" class="w-5 h-5 text-[color:var(--ink)]"></i></div>
+          </div>
+          <h3 class="font-serif-zh text-2xl lg:text-3xl mb-3 leading-tight">拍照上架 &amp; 订单履约闭环</h3>
+          <p class="text-[14px] leading-[1.75] opacity-95">
+            拍张照 AI 自动识别商品信息一键上架；订单到了扫码核销 / 发货，到店自提 + 快递双模式。从街边小店到连锁老板，5 分钟掌握。
+          </p>
+        </div>
+        <div class="mt-8 grid grid-cols-4 gap-2 pt-6 border-t-2 border-[color:rgba(255,246,227,0.3)]">
+          <div class="text-center">
+            <div class="hero-accent text-3xl text-[color:var(--lime)]">1</div>
+            <div class="text-[12.5px] mt-1">拍照上传</div>
+          </div>
+          <div class="text-center">
+            <div class="hero-accent text-3xl text-[color:var(--lime)]">2</div>
+            <div class="text-[12.5px] mt-1">AI 填规格</div>
+          </div>
+          <div class="text-center">
+            <div class="hero-accent text-3xl text-[color:var(--lime)]">3</div>
+            <div class="text-[12.5px] mt-1">顾客下单</div>
+          </div>
+          <div class="text-center">
+            <div class="hero-accent text-3xl text-[color:var(--lime)]">4</div>
+            <div class="text-[12.5px] mt-1">核销 / 发货</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bento-cell lime">
+        <div>
+          <div class="flex items-center justify-between mb-6">
+            <span class="font-mono text-[11px] text-[color:var(--ink-soft)]">送 · 02</span>
+            <div class="ico-box"><i data-lucide="layers" class="w-5 h-5"></i></div>
+          </div>
+          <h3 class="font-serif-zh text-xl mb-3 leading-tight">多 SKU &amp; 库存管理</h3>
+          <p class="text-[13.5px] text-[color:var(--ink-soft)] leading-[1.7]">
+            规格、价格、库存随时改；售罄自动下架，避免空单。
+          </p>
+        </div>
+      </div>
+
+      <div class="bento-cell">
+        <div>
+          <div class="flex items-center justify-between mb-6">
+            <span class="font-mono text-[11px] text-[color:var(--muted)]">送 · 03</span>
+            <div class="ico-box"><i data-lucide="star" class="w-5 h-5"></i></div>
+          </div>
+          <h3 class="font-serif-zh text-xl mb-3 leading-tight">会员积分 &amp; 余额</h3>
+          <p class="text-[13.5px] text-[color:var(--ink-soft)] leading-[1.7]">
+            消费自动积分、下单可抵扣，余额线上充值 / 提现，回头客留得住。
+          </p>
+        </div>
+      </div>
+
+      <div class="bento-cell">
+        <div>
+          <div class="flex items-center justify-between mb-6">
+            <span class="font-mono text-[11px] text-[color:var(--muted)]">送 · 04</span>
+            <div class="ico-box"><i data-lucide="message-square" class="w-5 h-5"></i></div>
+          </div>
+          <h3 class="font-serif-zh text-xl mb-3 leading-tight">消息提醒 &amp; 客服</h3>
+          <p class="text-[13.5px] text-[color:var(--ink-soft)] leading-[1.7]">
+            下单 / 到店 / 退款实时通知，店长不漏单、顾客不投诉。
+          </p>
+        </div>
+      </div>
+
+      <div class="bento-cell">
+        <div>
+          <div class="flex items-center justify-between mb-6">
+            <span class="font-mono text-[11px] text-[color:var(--muted)]">送 · 05</span>
+            <div class="ico-box"><i data-lucide="qr-code" class="w-5 h-5"></i></div>
+          </div>
+          <h3 class="font-serif-zh text-xl mb-3 leading-tight">推广海报 &amp; 二维码</h3>
+          <p class="text-[13.5px] text-[color:var(--ink-soft)] leading-[1.7]">
+            店铺 / 商品专属二维码海报一键生成，扫码就能下单。
+          </p>
+        </div>
+      </div>
+
+      <div class="bento-cell navy md:col-span-2">
+        <div>
+          <div class="flex items-center justify-between mb-6">
+            <span class="font-mono text-[11px] opacity-70">送 · 06</span>
+            <div class="ico-box"><i data-lucide="bar-chart-3" class="w-5 h-5 text-[color:var(--ink)]"></i></div>
+          </div>
+          <h3 class="font-serif-zh text-2xl mb-3 leading-tight">经营数据看板</h3>
+          <p class="text-[14px] leading-[1.7] opacity-90">
+            每日销售、客单价、视频带来的转化、老客邀请贡献，实时呈现。<span class="bg-[color:var(--lime)] text-[color:var(--ink)] px-1.5 font-semibold">哪条视频有效</span>一眼看穿。
+          </p>
+        </div>
+        <div class="mt-6 grid grid-cols-3 gap-3 pt-5 border-t-2 border-[color:rgba(215,255,58,0.2)]">
+          <div>
+            <div class="num-giant text-3xl text-[color:var(--lime)]">↑32%</div>
+            <div class="label-mono !text-[10px] mt-1" style="color:rgba(255,246,227,0.6);">视频带客转化</div>
+          </div>
+          <div>
+            <div class="num-giant text-3xl">128</div>
+            <div class="label-mono !text-[10px] mt-1" style="color:rgba(255,246,227,0.6);">活跃会员</div>
+          </div>
+          <div>
+            <div class="num-giant text-3xl">¥4.2<span class="hero-accent text-lg">k</span></div>
+            <div class="label-mono !text-[10px] mt-1" style="color:rgba(255,246,227,0.6);">老客邀请贡献</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============== PROMO 老客邀请 ============== -->
+<section id="promo" class="relative bg-[color:var(--navy)] text-[color:var(--cream)] border-y-2 border-[color:var(--ink)]">
+  <div class="absolute inset-0 opacity-[0.05]" style="background-image:radial-gradient(circle,rgba(255,246,227,1) 1px,transparent 1.5px);background-size:24px 24px;"></div>
+  <div class="relative max-w-[1400px] mx-auto px-5 lg:px-10 pt-24 lg:pt-32 pb-20 lg:pb-24">
+    <div class="grid grid-cols-12 gap-6 mb-14">
+      <div class="col-span-12 lg:col-span-3">
+        <div class="section-tag" style="background:var(--lime);color:var(--ink);">05 / 老客邀请</div>
+        <p class="label-mono !text-[11px] !tracking-wider mt-3" style="color:rgba(255,246,227,0.6);">REFERRAL</p>
+      </div>
+      <div class="col-span-12 lg:col-span-9">
+        <h2 class="font-serif-zh text-fluid-h2 leading-[1.05] tracking-tight">
+          让老客户帮你<br>
+          <span class="hero-accent italic" style="color:var(--lime);">邀请</span>新顾客。
+        </h2>
+        <p class="mt-5 text-[15px] lg:text-[17px] max-w-2xl leading-relaxed" style="color:rgba(255,246,227,0.78);">
+          单层推广激励，<span class="text-[color:var(--lime)] font-semibold">只奖励直接邀请人</span>。基于真实成交结算、合规归本 — 老板放心做。
+        </p>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+      <div class="price-card !p-10 !text-[color:var(--ink)]">
+        <span class="tag self-start mb-5">单层邀请 · 仅 1 级</span>
+        <h3 class="font-serif-zh text-2xl lg:text-3xl mb-3">老客邀请奖励，自动到账</h3>
+        <p class="text-[14px] text-[color:var(--ink-soft)] leading-[1.75] mb-5">
+          老客户分享商品 / 店铺，扫码下单成交即按比例发放推广积分到邀请人。<strong>只奖励直接邀请人</strong>，不发展层级，严守合规边界。
+        </p>
+        <ul class="space-y-3 text-[13.5px]">
+          <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 mt-0.5 text-[color:var(--tangerine)] flex-shrink-0"></i>商户自定义推广积分比例（1% – 30%）</li>
+          <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 mt-0.5 text-[color:var(--tangerine)] flex-shrink-0"></i>仅 1 级关系，依据真实订单结算</li>
+          <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 mt-0.5 text-[color:var(--tangerine)] flex-shrink-0"></i>积分冻结期可设，防止刷单退款</li>
+          <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 mt-0.5 text-[color:var(--tangerine)] flex-shrink-0"></i>提现线上审核，流水全留痕</li>
+        </ul>
+      </div>
+
+      <div class="price-card mint !text-[color:var(--ink)] !p-10">
+        <span class="tag tag-navy self-start mb-5">推广激励 · 按 GMV</span>
+        <h3 class="font-serif-zh text-2xl lg:text-3xl mb-3">推广激励，按 GMV 归本</h3>
+        <p class="text-[14px] text-[color:var(--ink-soft)] leading-[1.75] mb-5">
+          商户可设立 1 名推广伙伴，伙伴每达成 GMV 目标可领取约定的<strong>推广激励</strong>（不与人数挂钩，仅与成交销量挂钩），让老板回本节奏可控。
+        </p>
+        <ul class="space-y-3 text-[13.5px]">
+          <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 mt-0.5 text-[color:var(--navy)] flex-shrink-0"></i>固定档位 / 阶梯比例，老板自定</li>
+          <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 mt-0.5 text-[color:var(--navy)] flex-shrink-0"></i>结算依据：成交 GMV，不计人数</li>
+          <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 mt-0.5 text-[color:var(--navy)] flex-shrink-0"></i>合同 / 协议模板内置，直接用</li>
+          <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 mt-0.5 text-[color:var(--navy)] flex-shrink-0"></i>所有结算可导出，备查备税</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============== PRICING ============== -->
+<section id="pricing" class="relative">
+  <div class="absolute inset-0 bg-grid opacity-50 pointer-events-none"></div>
+  <div class="relative max-w-[1400px] mx-auto px-5 lg:px-10 pt-24 lg:pt-32 pb-20 lg:pb-28">
+    <div class="grid grid-cols-12 gap-6 mb-14">
+      <div class="col-span-12 lg:col-span-3">
+        <div class="section-tag">06 / 套餐定价</div>
+        <p class="label-mono !text-[11px] !tracking-wider mt-3">PRICING</p>
+      </div>
+      <div class="col-span-12 lg:col-span-9">
+        <h2 class="font-serif-zh text-fluid-h2 leading-[1.05] tracking-tight">
+          两个套餐 —<br>
+          <span class="hero-accent italic text-[color:var(--tangerine)]">¥298</span> 起开张，
+          <span class="hero-accent italic text-[color:var(--tangerine)]">¥1688</span> 做规模。
+        </h2>
+        <p class="mt-5 text-[15px] lg:text-[17px] text-[color:var(--ink-soft)] max-w-2xl leading-relaxed">
+          基础包够开张，全功能包做规模。所有套餐顾客付款 <span class="bg-[color:var(--lime)] px-1 font-semibold">T+0 直入商户通联账户</span> — 平台不沾钱。
+        </p>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 mt-8">
+      <!-- 基础包 ¥298 -->
+      <div class="price-card">
+        <div class="flex items-center justify-between mb-1">
+          <span class="font-serif-zh text-2xl">基础包</span>
+          <span class="tag">适合开张</span>
+        </div>
+        <p class="text-[13px] text-[color:var(--muted)] mb-7">把店"先开起来"的最小投入</p>
+        <div class="mb-1">
+          <span class="num-giant text-6xl tabular text-[color:var(--tangerine)]">¥298</span>
+          <span class="text-sm text-[color:var(--muted)] ml-1">/ 年</span>
+        </div>
+        <p class="text-[12px] text-[color:var(--muted)] mb-7">一店一年 · 续费即送 AI 视频礼包</p>
+        <a href="#cta" class="btn-outline w-full justify-center mb-7">¥298 / 年 立即开张 →</a>
+        <ul class="space-y-3 text-[13.5px]">
+          <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 mt-0.5 text-[color:var(--tangerine)] flex-shrink-0"></i><span><strong>全功能在线商城</strong>（商品 / 订单 / 会员 / 积分）</span></li>
+          <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 mt-0.5 text-[color:var(--tangerine)] flex-shrink-0"></i><span><strong>通联秒到收款</strong>（T+0 直入银行卡）</span></li>
+          <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 mt-0.5 text-[color:var(--tangerine)] flex-shrink-0"></i>推广奖励工具（积分 + 邀请）</li>
+          <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 mt-0.5 text-[color:var(--tangerine)] flex-shrink-0"></i><span><strong>赠送 10 条 AI 视频</strong> + 抖音通道</span></li>
+          <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 mt-0.5 text-[color:var(--tangerine)] flex-shrink-0"></i>13 个行业模板（餐饮 / 零售 / 美容）</li>
+          <li class="flex gap-2"><i data-lucide="x" class="w-4 h-4 mt-0.5 text-[color:var(--muted)] flex-shrink-0"></i><span class="text-[color:var(--muted)]">智能推广引擎</span></li>
+        </ul>
+      </div>
+
+      <!-- 全功能包 ¥1688 -->
+      <div class="price-card featured relative">
+        <div class="absolute -top-3.5 left-7 px-3 py-1 bg-[color:var(--lime)] text-[color:var(--ink)] text-[10px] font-mono font-bold tracking-widest uppercase border-2 border-[color:var(--ink)]" style="box-shadow:3px 3px 0 0 var(--ink);">热门首选 ✦</div>
+        <div class="flex items-center justify-between mb-1">
+          <span class="font-serif-zh text-2xl">全功能包</span>
+          <span class="tag tag-lime">适合做规模</span>
+        </div>
+        <p class="text-[13px] muted-on-dark mb-7">从单店扩到多店、要靠数据做运营</p>
+        <div class="mb-1">
+          <span class="num-giant text-6xl tabular text-[color:var(--lime)]">¥1688</span>
+          <span class="text-sm muted-on-dark ml-1">/ 年</span>
+        </div>
+        <p class="text-[12px] muted-on-dark mb-7">6 倍 AI 视频 + 智能推广 + 数据看板</p>
+        <a href="#cta" class="btn-paper w-full justify-center mb-7">¥1688 / 年 升级全功能 →</a>
+        <ul class="space-y-3 text-[13.5px]">
+          <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 mt-0.5 check-icn flex-shrink-0"></i><span>包含 <strong>基础包全部功能</strong></span></li>
+          <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 mt-0.5 check-icn flex-shrink-0"></i><span><strong>赠送 60 条 AI 视频</strong>（6 倍基础）</span></li>
+          <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 mt-0.5 check-icn flex-shrink-0"></i><span><strong>智能推广引擎</strong> · 老客带新客</span></li>
+          <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 mt-0.5 check-icn flex-shrink-0"></i>13 行业 <strong>AI 风格定制</strong></li>
+          <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 mt-0.5 check-icn flex-shrink-0"></i>数据看板 / 用户画像 / 复购漏斗</li>
+          <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 mt-0.5 check-icn flex-shrink-0"></i>商户提现 <strong>分级审批</strong></li>
+          <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 mt-0.5 check-icn flex-shrink-0"></i><strong>优先客服 + 1v1 答疑</strong></li>
+        </ul>
+      </div>
+
+      <!-- 资金安全卡 -->
+      <div class="price-card mint">
+        <div class="flex items-center justify-between mb-1">
+          <span class="font-serif-zh text-2xl">钱不过平台</span>
+          <span class="tag tag-navy">T+0 · 通联</span>
+        </div>
+        <p class="text-[13px] text-[color:var(--ink-soft)] mb-7">资金直入老板自己的账户</p>
+        <div class="mb-1">
+          <span class="num-giant text-6xl tabular text-[color:var(--navy)]">T+0</span>
+          <span class="text-sm text-[color:var(--ink-soft)] ml-1">秒到</span>
+        </div>
+        <p class="text-[12px] text-[color:var(--ink-soft)] mb-7">商城 GMV 0 抽成、0 服务费</p>
+        <a href="#cta" class="btn-ink w-full justify-center mb-7">联系顾问了解 →</a>
+        <ul class="space-y-3 text-[13.5px]">
+          <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 mt-0.5 text-[color:var(--navy)] flex-shrink-0"></i>T+0 即时到账，资金不留过夜</li>
+          <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 mt-0.5 text-[color:var(--navy)] flex-shrink-0"></i>平台不碰用户钱，<strong>零二清风险</strong></li>
+          <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 mt-0.5 text-[color:var(--navy)] flex-shrink-0"></i>资金落到商户自己的通联账号</li>
+          <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 mt-0.5 text-[color:var(--navy)] flex-shrink-0"></i>余额随时提现到本人银行卡</li>
+          <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 mt-0.5 text-[color:var(--navy)] flex-shrink-0"></i>商城 GMV <strong>0 抽成 / 0 费</strong></li>
+        </ul>
+      </div>
+    </div>
+
+    <p class="text-center mt-12 text-[13px] text-[color:var(--muted)]">
+      * AI 视频按"成片条数"计；建议单条 ≤ 20s。年内可一次性升级，差额抵扣。所有价格含税。
+    </p>
+  </div>
+</section>
+
+<!-- ============== USAGE FLOW ============== -->
+<section id="flow" class="relative bg-[color:var(--cream-2)] border-y-2 border-[color:var(--ink)]">
+  <div class="absolute inset-0 bg-stripe opacity-40 pointer-events-none"></div>
+  <div class="relative max-w-[1400px] mx-auto px-5 lg:px-10 pt-24 lg:pt-32 pb-20">
+    <div class="grid grid-cols-12 gap-6 mb-14">
+      <div class="col-span-12 lg:col-span-3">
+        <div class="section-tag">07 / 使用流程</div>
+        <p class="label-mono !text-[11px] !tracking-wider mt-3">FLOW</p>
+      </div>
+      <div class="col-span-12 lg:col-span-9">
+        <h2 class="font-serif-zh text-fluid-h2 leading-[1.05] tracking-tight">
+          几步搞定，<br>
+          <span class="hero-accent italic text-[color:var(--tangerine)]">10 分钟</span> 开起线上店铺。
+        </h2>
+        <p class="mt-5 text-[15px] lg:text-[17px] text-[color:var(--ink-soft)] max-w-2xl leading-relaxed">
+          无需技术背景，跟着引导一步步完成。下面是商户最常走的四步。
+        </p>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 lg:gap-7">
+      <div class="flow-step">
+        <div class="step-num">01</div>
+        <h3 class="font-serif-zh text-xl mt-5 mb-3">提交入驻 · 选行业模板</h3>
+        <p class="text-[13.5px] leading-[1.75]">
+          填资料 → 选 13 行业之一（如烧烤 / 奶茶 / 服装），平台 2 小时内审核通过。
+        </p>
+        <div class="mt-6 label-mono !text-[10px]">耗时 · 2 分钟</div>
+      </div>
+      <div class="flow-step">
+        <div class="step-num">02</div>
+        <h3 class="font-serif-zh text-xl mt-5 mb-3">拍照上架 · AI 自动识别</h3>
+        <p class="text-[13.5px] leading-[1.75]">
+          拍 1 张商品图，AI 自动填规格、价格、卖点文案 — 一次性把店铺铺好。
+        </p>
+        <div class="mt-6 label-mono !text-[10px]">耗时 · 3 分钟</div>
+      </div>
+      <div class="flow-step">
+        <div class="step-num">03</div>
+        <h3 class="font-serif-zh text-xl mt-5 mb-3">AI 出片 · 一键发抖音</h3>
+        <p class="text-[13.5px] leading-[1.75]" style="color:rgba(255,246,227,0.85);">
+          点"生成视频" → 20 秒得成片 → 授权抖音号一键直发，挂车带店铺二维码。
+        </p>
+        <div class="mt-6 label-mono !text-[10px]" style="color:rgba(255,246,227,0.7);">耗时 · 1 分钟</div>
+      </div>
+      <div class="flow-step">
+        <div class="step-num">04</div>
+        <h3 class="font-serif-zh text-xl mt-5 mb-3">收单到账 · 看数据复盘</h3>
+        <p class="text-[13.5px] leading-[1.75]" style="color:rgba(255,246,227,0.85);">
+          顾客付款 T+0 直入通联账户，数据看板实时看 — 哪条视频转化最高一目了然。
+        </p>
+        <div class="mt-6 label-mono !text-[10px]" style="color:rgba(255,246,227,0.7);">耗时 · 持续运营</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============== INDUSTRY ============== -->
+<section id="industry" class="relative">
+  <div class="max-w-[1400px] mx-auto px-5 lg:px-10 pt-24 lg:pt-32 pb-20">
+    <div class="grid grid-cols-12 gap-6 mb-14">
+      <div class="col-span-12 lg:col-span-3">
+        <div class="section-tag">08 / 行业模板</div>
+        <p class="label-mono !text-[11px] !tracking-wider mt-3">INDUSTRIES · 13</p>
+      </div>
+      <div class="col-span-12 lg:col-span-9">
+        <h2 class="font-serif-zh text-fluid-h2 leading-[1.05] tracking-tight">
+          13 个行业，<br>
+          <span class="hero-accent italic text-[color:var(--tangerine)]">开箱即用</span>。
+        </h2>
+        <p class="mt-5 text-[15px] lg:text-[17px] text-[color:var(--ink-soft)] max-w-2xl leading-relaxed">
+          每个行业都预置好商品分类、AI 视频风格、推广话术模板 — 不用从零搭建。
+        </p>
+      </div>
+    </div>
+
+    <div class="flex flex-wrap gap-3 mb-14">
+      <span class="indu-chip"><span class="icn">🍢</span>烧烤夜市</span>
+      <span class="indu-chip"><span class="icn">🧋</span>奶茶饮品</span>
+      <span class="indu-chip"><span class="icn">🍵</span>茶楼茶饮</span>
+      <span class="indu-chip"><span class="icn">💄</span>美容美甲</span>
+      <span class="indu-chip"><span class="icn">👕</span>服装鞋帽</span>
+      <span class="indu-chip"><span class="icn">🏪</span>超市便利</span>
+      <span class="indu-chip"><span class="icn">🍰</span>烘焙甜品</span>
+      <span class="indu-chip"><span class="icn">🥩</span>生鲜肉品</span>
+      <span class="indu-chip"><span class="icn">💐</span>鲜花植物</span>
+      <span class="indu-chip"><span class="icn">📚</span>母婴文创</span>
+      <span class="indu-chip"><span class="icn">🏠</span>家居杂货</span>
+      <span class="indu-chip"><span class="icn">🏋️</span>健身瑜伽</span>
+      <span class="indu-chip"><span class="icn">🐶</span>宠物服务</span>
+    </div>
+
+    <!-- Case studies -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+      <article class="bg-[color:var(--cream)] p-8 lg:p-10 border-2 border-[color:var(--ink)]" style="box-shadow:5px 5px 0 0 var(--tangerine);">
+        <div class="quote-mark">"</div>
+        <div class="flex items-center justify-between mt-2 mb-6">
+          <span class="font-serif-zh text-lg">夜市烧烤铺</span>
+          <span class="tag tag-tan">烧烤 · 街边</span>
+        </div>
+        <p class="font-serif-zh text-xl lg:text-2xl leading-snug">
+          一条 AI 视频带来<br>
+          <span class="hero-accent italic text-[color:var(--tangerine)]">单晚 +200</span> 顾客。
+        </p>
+        <div class="mt-8 grid grid-cols-3 gap-3 pt-6 border-t-2 border-[color:var(--ink)]">
+          <div><div class="label-mono !text-[10px]">日单</div><div class="font-mono text-base tabular mt-1 font-bold">420</div></div>
+          <div><div class="label-mono !text-[10px]">客单</div><div class="font-mono text-base tabular mt-1 font-bold">¥58</div></div>
+          <div><div class="label-mono !text-[10px]">回购</div><div class="font-mono text-base tabular mt-1 font-bold">42%</div></div>
+        </div>
+      </article>
+      <article class="bg-[color:var(--lime)] p-8 lg:p-10 border-2 border-[color:var(--ink)]" style="box-shadow:5px 5px 0 0 var(--ink);">
+        <div class="quote-mark" style="color:var(--ink);">"</div>
+        <div class="flex items-center justify-between mt-2 mb-6">
+          <span class="font-serif-zh text-lg">街角奶茶店</span>
+          <span class="tag tag-navy">奶茶 · 3 店</span>
+        </div>
+        <p class="font-serif-zh text-xl lg:text-2xl leading-snug">
+          老客推广积分回本<br>
+          <span class="hero-accent italic text-[color:var(--tangerine)]">不到 2 个月</span>。
+        </p>
+        <div class="mt-8 grid grid-cols-3 gap-3 pt-6 border-t-2 border-[color:var(--ink)]">
+          <div><div class="label-mono !text-[10px]">月单</div><div class="font-mono text-base tabular mt-1 font-bold">8.6k</div></div>
+          <div><div class="label-mono !text-[10px]">老客</div><div class="font-mono text-base tabular mt-1 font-bold">38%</div></div>
+          <div><div class="label-mono !text-[10px]">复购</div><div class="font-mono text-base tabular mt-1 font-bold">52%</div></div>
+        </div>
+      </article>
+      <article class="bg-[color:var(--navy)] text-[color:var(--cream)] p-8 lg:p-10 border-2 border-[color:var(--ink)]" style="box-shadow:5px 5px 0 0 var(--lime);">
+        <div class="quote-mark" style="color:var(--lime);">"</div>
+        <div class="flex items-center justify-between mt-2 mb-6">
+          <span class="font-serif-zh text-lg">小区美容院</span>
+          <span class="tag tag-lime">美容 · 私域</span>
+        </div>
+        <p class="font-serif-zh text-xl lg:text-2xl leading-snug">
+          视频带客占月营收<br>
+          <span class="hero-accent italic text-[color:var(--lime)]">62%</span>。
+        </p>
+        <div class="mt-8 grid grid-cols-3 gap-3 pt-6 border-t-2 border-[color:rgba(255,246,227,0.2)]">
+          <div><div class="label-mono !text-[10px]" style="color:rgba(255,246,227,0.6);">月营收</div><div class="font-mono text-base tabular mt-1 font-bold">¥48k</div></div>
+          <div><div class="label-mono !text-[10px]" style="color:rgba(255,246,227,0.6);">新客</div><div class="font-mono text-base tabular mt-1 font-bold">94</div></div>
+          <div><div class="label-mono !text-[10px]" style="color:rgba(255,246,227,0.6);">客单</div><div class="font-mono text-base tabular mt-1 font-bold">¥386</div></div>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ============== FAQ ============== -->
+<section id="faq" class="relative bg-[color:var(--cream-2)] border-t-2 border-[color:var(--ink)]">
+  <div class="max-w-[1400px] mx-auto px-5 lg:px-10 pt-24 lg:pt-32 pb-20 lg:pb-28">
+    <div class="grid grid-cols-12 gap-6 mb-10">
+      <div class="col-span-12 lg:col-span-4">
+        <div class="section-tag">09 / 常见问题</div>
+        <p class="label-mono !text-[11px] !tracking-wider mt-3">FAQ</p>
+        <h2 class="font-serif-zh text-fluid-h2 leading-[1.05] tracking-tight mt-6">
+          还在犹豫？<br>
+          <span class="hero-accent italic text-[color:var(--tangerine)]">先看看</span> 这些。
+        </h2>
+        <p class="mt-6 text-[14px] text-[color:var(--ink-soft)] leading-relaxed">
+          没看到你的问题？直接<a href="#cta" class="ulink text-[color:var(--ink)] font-semibold">联系我们</a>，或加客服微信 <span class="font-mono text-[color:var(--ink)] font-semibold bg-[color:var(--lime)] px-1.5 py-0.5">tuoxiaoer-help</span>。
+        </p>
+      </div>
+
+      <div class="col-span-12 lg:col-span-8 lg:pl-12">
+        <div class="faq-list">
+          <div class="faq-item open">
+            <button class="faq-q" onclick="toggleFaq(this)">
+              <span>¥298/年 真的能开起一家在线商城吗？</span>
+              <i data-lucide="plus" class="ic w-5 h-5"></i>
+            </button>
+            <div class="faq-a">
+              能。¥298 是全年订阅费，覆盖全功能商城 + 通联收款 + 10 条 AI 视频 + 13 行业模板。商城 GMV 0 抽成、0 服务费 — 钱直接进商户自己的通联账户。
+            </div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-q" onclick="toggleFaq(this)">
+              <span>AI 视频用的是哪个模型？质量怎么样？</span>
+              <i data-lucide="plus" class="ic w-5 h-5"></i>
+            </button>
+            <div class="faq-a">
+              视频生成基于火山引擎 + 即梦 AI，配音用真人级 AI 多音色。单条 20 秒成片，质量等同当前抖音商家自制内容，已被烧烤、奶茶、美容、服装等 13 行业商户验证。
+            </div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-q" onclick="toggleFaq(this)">
+              <span>钱真的不过平台？通联账号是什么？</span>
+              <i data-lucide="plus" class="ic w-5 h-5"></i>
+            </button>
+            <div class="faq-a">
+              通联（Allinpay）是央行牌照的持牌支付机构。顾客付款 T+0 直接清算到商户在通联开立的二级户里 — 平台不沾一分钱用户资金，零二清风险，资金不留过夜。
+            </div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-q" onclick="toggleFaq(this)">
+              <span>抖音一键发布要先授权吗？会不会封号？</span>
+              <i data-lucide="plus" class="ic w-5 h-5"></i>
+            </button>
+            <div class="faq-a">
+              通过抖音开放平台官方 OAuth 授权，全流程合规。不会出现刷量、批量异常行为，账号安全等同人工运营。商品挂车需要抖店蓝 V 资质（可代办）。
+            </div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-q" onclick="toggleFaq(this)">
+              <span>老客推广积分会不会有合规风险？</span>
+              <i data-lucide="plus" class="ic w-5 h-5"></i>
+            </button>
+            <div class="faq-a">
+              拓小二的推广是<strong>单层结构</strong> — 只奖励直接邀请人，不发展层级、不按人头计酬，仅以真实订单 GMV 结算。合同模板内置，所有结算流水可导出备查备税。
+            </div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-q" onclick="toggleFaq(this)">
+              <span>不会剪辑、不会写文案，真的能用吗？</span>
+              <i data-lucide="plus" class="ic w-5 h-5"></i>
+            </button>
+            <div class="faq-a">
+              真的能。拍 1 张商品照 → 选风格 → 点"生成" → 20 秒得成片 — 文案、配音、剪辑全部 AI 完成。13 行业内置脚本风格，拓小二专为不懂技术的小老板设计。
+            </div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-q" onclick="toggleFaq(this)">
+              <span>¥298 升级 ¥1688 数据会丢吗？</span>
+              <i data-lucide="plus" class="ic w-5 h-5"></i>
+            </button>
+            <div class="faq-a">
+              年内可一次性升级，<strong>差额抵扣</strong>，数据完全保留不丢失。即使整体迁出，也支持完整商品、订单、会员数据 CSV / API 导出 — 绝不绑架商户。
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============== FINAL CTA ============== -->
+<section id="cta" class="relative bg-[color:var(--tangerine)] text-[color:var(--cream)] overflow-hidden border-y-2 border-[color:var(--ink)]">
+  <!-- decorative -->
+  <div class="absolute inset-0 opacity-[0.10]" style="background-image:radial-gradient(circle,rgba(255,246,227,1) 1.5px,transparent 1.5px);background-size:28px 28px;"></div>
+  <!-- giant spinning star -->
+  <div class="absolute -bottom-32 -right-32 spin-slow opacity-25 pointer-events-none">
+    <svg width="380" height="380" viewBox="0 0 100 100"><text x="50" y="60" font-family="Instrument Serif" font-size="80" fill="currentColor" text-anchor="middle">✦</text></svg>
+  </div>
+
+  <div class="relative max-w-[1400px] mx-auto px-5 lg:px-10 py-24 lg:py-32">
+    <div class="grid grid-cols-12 gap-6">
+      <div class="col-span-12 lg:col-span-2">
+        <div class="section-tag" style="background:var(--lime);color:var(--ink);">10 / 开始</div>
+        <p class="label-mono !text-[11px] !tracking-wider mt-3" style="color:rgba(255,246,227,0.7);">START NOW</p>
+      </div>
+      <div class="col-span-12 lg:col-span-10">
+        <h2 class="font-serif-zh text-fluid-hero leading-[1.02] tracking-tight">
+          ¥298 起，<br>
+          做<span class="hero-accent italic" style="color:var(--lime);">那家</span> 能赚钱的小店。
+        </h2>
+        <p class="mt-10 text-[16px] lg:text-[17.5px] max-w-2xl leading-relaxed" style="color:rgba(255,246,227,0.85);">
+          注册 → 实名 → 上架商品 → 发抖音视频，全流程不超过 30 分钟。<br>
+          顾客付款 T+0 直入你的通联账户，<span class="bg-[color:var(--lime)] text-[color:var(--ink)] px-1.5 font-semibold">平台不沾一分钱</span>。
+        </p>
+        <div class="mt-12 flex flex-wrap items-center gap-4">
+          <a href="#" class="btn-lime text-base !py-4 !px-8">
+            ¥298/年 立即入驻 <i data-lucide="arrow-right" class="w-5 h-5"></i>
+          </a>
+          <a href="#" class="inline-flex items-center gap-2 text-sm hover:text-[color:var(--lime)] transition-colors ulink font-medium" style="color:rgba(255,246,227,0.85);">
+            <i data-lucide="message-square" class="w-4 h-4"></i>
+            找顾问聊聊
+          </a>
+          <a href="#" class="inline-flex items-center gap-2 text-sm hover:text-[color:var(--lime)] transition-colors ulink font-medium" style="color:rgba(255,246,227,0.85);">
+            <i data-lucide="play-circle" class="w-4 h-4"></i>
+            看 3 分钟产品视频
+          </a>
+        </div>
+
+        <div class="mt-16 lg:mt-20 grid grid-cols-2 md:grid-cols-4 gap-6 pt-10 border-t-2 border-[color:rgba(255,246,227,0.25)]">
+          <div>
+            <div class="font-mono text-[11px] !tracking-widest uppercase" style="color:rgba(255,246,227,0.65);">入驻时长</div>
+            <div class="num-giant text-3xl mt-2">≤ 30<span class="hero-accent text-lg ml-1">分钟</span></div>
+          </div>
+          <div>
+            <div class="font-mono text-[11px] !tracking-widest uppercase" style="color:rgba(255,246,227,0.65);">首单到账</div>
+            <div class="num-giant text-3xl mt-2">T+0</div>
+          </div>
+          <div>
+            <div class="font-mono text-[11px] !tracking-widest uppercase" style="color:rgba(255,246,227,0.65);">客服响应</div>
+            <div class="num-giant text-3xl mt-2">≤ 5<span class="hero-accent text-lg ml-1">分钟</span></div>
+          </div>
+          <div>
+            <div class="font-mono text-[11px] !tracking-widest uppercase" style="color:rgba(255,246,227,0.65);">服务时间</div>
+            <div class="num-giant text-3xl mt-2">7×16<span class="hero-accent text-lg ml-1">h</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============== FOOTER ============== -->
+<footer class="bg-[color:var(--ink)] text-[color:var(--cream)]">
+  <div class="max-w-[1400px] mx-auto px-5 lg:px-10 py-16">
+    <div class="grid grid-cols-12 gap-8">
+      <div class="col-span-12 lg:col-span-4">
+        <a href="#" class="flex items-center gap-2.5">
+          <div class="w-9 h-9 bg-[color:var(--tangerine)] text-[color:var(--cream)] flex items-center justify-center font-serif-zh text-lg border-2 border-[color:var(--cream)]" style="box-shadow:3px 3px 0 0 var(--lime);">拓</div>
+          <span class="font-serif-zh text-lg ml-1">拓小二</span>
+          <span class="hero-accent text-base" style="color:rgba(255,246,227,0.6);">/ Tuoxiao'er</span>
+        </a>
+        <p class="mt-5 text-[13.5px] leading-relaxed max-w-xs" style="color:rgba(255,246,227,0.7);">
+          给所有小老板的<br>
+          AI 视频带货 + 在线商城 SaaS。
+        </p>
+        <div class="mt-7 flex items-center gap-3">
+          <a href="#" class="w-9 h-9 border-2 border-[color:rgba(255,246,227,0.3)] hover:border-[color:var(--lime)] hover:bg-[color:var(--lime)] hover:text-[color:var(--ink)] flex items-center justify-center transition-colors"><i data-lucide="message-circle" class="w-4 h-4"></i></a>
+          <a href="#" class="w-9 h-9 border-2 border-[color:rgba(255,246,227,0.3)] hover:border-[color:var(--lime)] hover:bg-[color:var(--lime)] hover:text-[color:var(--ink)] flex items-center justify-center transition-colors"><i data-lucide="video" class="w-4 h-4"></i></a>
+          <a href="#" class="w-9 h-9 border-2 border-[color:rgba(255,246,227,0.3)] hover:border-[color:var(--lime)] hover:bg-[color:var(--lime)] hover:text-[color:var(--ink)] flex items-center justify-center transition-colors"><i data-lucide="github" class="w-4 h-4"></i></a>
+          <a href="#" class="w-9 h-9 border-2 border-[color:rgba(255,246,227,0.3)] hover:border-[color:var(--lime)] hover:bg-[color:var(--lime)] hover:text-[color:var(--ink)] flex items-center justify-center transition-colors"><i data-lucide="mail" class="w-4 h-4"></i></a>
+        </div>
+      </div>
+
+      <div class="col-span-6 lg:col-span-2">
+        <div class="label-mono mb-4" style="color:var(--lime);">产品</div>
+        <ul class="space-y-2.5 text-[13.5px]">
+          <li><a href="#ability" class="ulink">AI 视频</a></li>
+          <li><a href="#" class="ulink">抖音发布</a></li>
+          <li><a href="#features" class="ulink">在线商城</a></li>
+          <li><a href="#promo" class="ulink">老客邀请</a></li>
+          <li><a href="#" class="ulink">数据看板</a></li>
+        </ul>
+      </div>
+
+      <div class="col-span-6 lg:col-span-2">
+        <div class="label-mono mb-4" style="color:var(--lime);">资源</div>
+        <ul class="space-y-2.5 text-[13.5px]">
+          <li><a href="#" class="ulink">商户帮助</a></li>
+          <li><a href="#" class="ulink">视频教程</a></li>
+          <li><a href="#industry" class="ulink">行业模板</a></li>
+          <li><a href="#" class="ulink">运营学院</a></li>
+          <li><a href="#" class="ulink">更新日志</a></li>
+        </ul>
+      </div>
+
+      <div class="col-span-6 lg:col-span-2">
+        <div class="label-mono mb-4" style="color:var(--lime);">公司</div>
+        <ul class="space-y-2.5 text-[13.5px]">
+          <li><a href="#" class="ulink">关于我们</a></li>
+          <li><a href="#" class="ulink">客户案例</a></li>
+          <li><a href="#" class="ulink">合作伙伴</a></li>
+          <li><a href="#" class="ulink">招聘</a></li>
+          <li><a href="#" class="ulink">联系我们</a></li>
+        </ul>
+      </div>
+
+      <div class="col-span-6 lg:col-span-2">
+        <div class="label-mono mb-4" style="color:var(--lime);">联系</div>
+        <ul class="space-y-2.5 text-[13.5px]" style="color:rgba(255,246,227,0.7);">
+          <li>商务合作<br><span class="font-mono text-[12px]" style="color:var(--lime);">biz@tuoxiaoer.cn</span></li>
+          <li>商户客服<br><span class="font-mono text-[12px]" style="color:var(--lime);">400-820-1688</span></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="mt-14 pt-6 border-t-2 border-[color:rgba(255,246,227,0.15)] flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div class="text-[12px]" style="color:rgba(255,246,227,0.55);">
+        © 2026 拓小二科技有限公司 &nbsp;·&nbsp;
+        <a href="#" class="ulink">隐私协议</a> &nbsp;·&nbsp;
+        <a href="#" class="ulink">服务条款</a> &nbsp;·&nbsp;
+        <a href="#" class="ulink">沪 ICP 备 20260828 号</a>
+      </div>
+      <div class="text-[12px] font-mono" style="color:rgba(255,246,227,0.55);">
+        v 7.0 · build 2026.05
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+  if (window.lucide) lucide.createIcons();
+
+  function toggleFaq(btn) {
+    const item = btn.parentElement;
+    const wasOpen = item.classList.contains('open');
+    document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+    if (!wasOpen) item.classList.add('open');
+  }
+
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.style.animation = 'rise 0.9s cubic-bezier(0.2,0.7,0.2,1) both';
+        io.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.10, rootMargin: '0px 0px -8% 0px' });
+  document.querySelectorAll('.feature, .price-card, .bento-cell, .flow-step, article').forEach(el => {
+    if (!el.classList.contains('rise')) io.observe(el);
+  });
+</script>
+</body>
+</html>

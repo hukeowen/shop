@@ -1,0 +1,28 @@
+- generic [ref=e318]:
+  - generic [ref=e319]:
+    - generic [ref=e320]: 摊
+    - generic [ref=e321]:
+      - generic [ref=e322]: 商户登录
+      - generic [ref=e323]: 摊小二 SaaS 后台
+  - generic [ref=e324]:
+    - generic [ref=e325]: 欢迎回来
+    - generic [ref=e326]: 登录您的店铺管理后台
+    - generic [ref=e327]:
+      - generic [ref=e328]: 📱
+      - generic [ref=e330]:
+        - generic: 手机号（11 位）
+        - spinbutton [ref=e331]
+    - generic [ref=e332]:
+      - generic [ref=e333]: 🔒
+      - generic [ref=e335]:
+        - generic: 密码（≥6 位）
+        - textbox [ref=e336]
+    - generic [ref=e338]: 登录
+    - generic [ref=e340]: ·首次登录无需注册，输入即设密码
+  - generic [ref=e341]:
+    - generic [ref=e342]:
+      - text: 还没有店铺？
+      - generic [ref=e344]: 立即入驻 →
+    - generic [ref=e345]:
+      - text: 我是顾客？
+      - generic [ref=e347]: 用户登录

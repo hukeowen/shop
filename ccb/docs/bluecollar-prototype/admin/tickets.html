@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>客服工单 · 蓝工平台运营后台</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../shared/style.css">
+<style>
+  body { font-family: 'Inter', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif; background:#F8FAFC; }
+  .num-font { font-feature-settings: "tnum"; font-variant-numeric: tabular-nums; letter-spacing:-0.02em; }
+  .sidebar-link { display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:8px; color:#94A3B8; font-size:13px; font-weight:500; transition:all .15s; }
+  .sidebar-link:hover { background:rgba(255,255,255,.05); color:#fff; }
+  .sidebar-link.active { background:linear-gradient(135deg,#5046E5,#7C3AED); color:#fff; box-shadow:0 4px 12px rgba(80,70,229,.4); }
+  .sidebar-group { font-size:11px; font-weight:600; color:#475569; text-transform:uppercase; letter-spacing:0.08em; padding:14px 12px 6px; }
+  .stat-card { background:#fff; border:1px solid #E2E8F0; border-radius:12px; padding:16px 18px; transition:all .2s; }
+  .stat-card:hover { border-color:#5046E5; box-shadow:0 8px 24px -8px rgba(80,70,229,.18); }
+  .tag { display:inline-flex; align-items:center; gap:4px; padding:2px 7px; border-radius:4px; font-size:10px; font-weight:600; }
+  .tag-red { background:#FEE2E2; color:#B91C1C; }
+  .tag-amber { background:#FEF3C7; color:#B45309; }
+  .tag-blue { background:#DBEAFE; color:#1D4ED8; }
+  .tag-green { background:#DCFCE7; color:#15803D; }
+  .tag-purple { background:#F3E8FF; color:#7E22CE; }
+  .tag-slate { background:#F1F5F9; color:#475569; }
+  .ticket-item { padding:12px 14px; border-radius:8px; border:1px solid #E2E8F0; background:#fff; cursor:pointer; transition:all .15s; }
+  .ticket-item:hover { border-color:#5046E5; transform: translateX(2px); }
+  .ticket-item.selected { border-color:#5046E5; background:linear-gradient(135deg, rgba(80,70,229,0.06), rgba(124,58,237,0.04)); box-shadow:0 4px 12px -4px rgba(80,70,229,0.2); }
+  .ticket-item.unread { border-left:3px solid #5046E5; }
+  .priority-bar { width:3px; border-radius:2px; flex-shrink:0; align-self:stretch; }
+  .pulse-dot { position:relative; width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+  .pulse-dot::after { content:""; position:absolute; inset:-3px; border-radius:50%; background:inherit; opacity:.4; animation:pulse 1.5s ease-out infinite; }
+  @keyframes pulse { 0%{transform:scale(.8); opacity:.6;} 100%{transform:scale(2.5); opacity:0;} }
+  .live-tag { display:inline-flex; align-items:center; gap:5px; padding:3px 8px; border-radius:6px; font-size:10px; font-weight:700; background:#FEF2F2; color:#DC2626; }
+  .live-tag::before { content:""; width:6px; height:6px; border-radius:50%; background:#DC2626; animation:blink 1.2s ease-in-out infinite; }
+  @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:.3;} }
+  .scrollbar-thin::-webkit-scrollbar { width:6px; }
+  .scrollbar-thin::-webkit-scrollbar-thumb { background:#CBD5E1; border-radius:3px; }
+  .btn-icon { width:28px; height:28px; border-radius:6px; display:inline-flex; align-items:center; justify-content:center; color:#64748B; transition:all .15s; }
+  .btn-icon:hover { background:#F1F5F9; color:#5046E5; }
+  .msg-user { background:#F1F5F9; color:#0F172A; border-radius:12px 12px 12px 4px; }
+  .msg-cs { background:linear-gradient(135deg,#5046E5,#7C3AED); color:#fff; border-radius:12px 12px 4px 12px; }
+  .ai-suggest { background:linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%); border:1px solid #FBBF24; }
+</style>
+</head>
+<body class="text-slate-800">
+
+<div class="flex min-h-screen">
+
+  <aside class="w-[240px] bg-[#0F172A] text-white flex-shrink-0 flex flex-col">
+    <div class="px-5 pt-5 pb-4 border-b border-white/5">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-[#5046E5] to-[#7C3AED] flex items-center justify-center font-extrabold text-[15px]">蓝</div>
+        <div><div class="text-[13px] font-bold leading-tight">蓝工平台</div><div class="text-[10px] text-slate-400 leading-tight mt-0.5 tracking-wider">运营后台 · ADMIN</div></div>
+      </div>
+      <div class="mt-4 flex items-center gap-2.5 px-2.5 py-2 rounded-lg bg-white/5">
+        <div class="w-7 h-7 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center text-[11px] font-bold">A</div>
+        <div class="min-w-0 flex-1"><div class="text-[12px] font-medium truncate">admin@bluework</div><div class="text-[10px] text-emerald-400 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>超级管理员</div></div>
+      </div>
+    </div>
+    <nav class="flex-1 px-3 py-2 overflow-y-auto scrollbar-thin">
+      <div class="sidebar-group">驾驶舱</div>
+      <a href="./dashboard.html" class="sidebar-link"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>数据驾驶舱</a>
+      <div class="sidebar-group">用户管理</div>
+      <a href="./workers.html" class="sidebar-link"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>工人管理</a>
+      <a href="./dispatches.html" class="sidebar-link"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>派遣公司</a>
+      <a href="./clients.html" class="sidebar-link"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/></svg>甲方/用工单位</a>
+      <div class="sidebar-group">业务管理</div>
+      <a href="./jobs-audit.html" class="sidebar-link"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/></svg>招聘审核<span class="ml-auto px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-500 text-white">34</span></a>
+      <a href="./credit.html" class="sidebar-link"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4.5L6 21l1.5-7.5L2 9h7z"/></svg>工分管理</a>
+      <div class="sidebar-group">风控合规</div>
+      <a href="./risk.html" class="sidebar-link"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>风控告警<span class="ml-auto px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500 text-white">23</span></a>
+      <a href="./audit.html" class="sidebar-link"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/></svg>审计日志</a>
+      <div class="sidebar-group">财务管理</div>
+      <a href="./finance.html" class="sidebar-link"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>财务对账</a>
+      <div class="sidebar-group">客服支持</div>
+      <a href="./tickets.html" class="sidebar-link active"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>客服工单<span class="ml-auto px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-500 text-white">89</span></a>
+      <div class="sidebar-group">运营</div>
+      <a href="./campaigns.html" class="sidebar-link"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 11l18-5v12L3 14v-3z"/></svg>运营活动</a>
+      <a href="./notifications.html" class="sidebar-link"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/></svg>公告通知</a>
+      <div class="sidebar-group">系统</div>
+      <a href="./roles.html" class="sidebar-link"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="10" cy="7" r="4"/><path d="M4 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg>权限管理</a>
+      <a href="./api.html" class="sidebar-link"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>API 开放平台</a>
+      <a href="#" class="sidebar-link"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/></svg>系统设置</a>
+    </nav>
+    <div class="px-4 py-3 border-t border-white/5"><div class="text-[10px] text-slate-500">v3.2.1 · build 20260517</div></div>
+  </aside>
+
+  <main class="flex-1 min-w-0">
+
+    <header class="h-14 bg-white border-b border-slate-200 flex items-center px-6 sticky top-0 z-20">
+      <div class="flex items-center gap-2.5">
+        <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-red-50 text-red-600 border border-red-200">生产环境</span>
+        <h1 class="text-[15px] font-semibold text-slate-900">客服工单系统</h1>
+        <span class="live-tag ml-2">LIVE · 89 待处理</span>
+      </div>
+      <div class="ml-auto flex items-center gap-3">
+        <div class="relative">
+          <svg class="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input class="w-64 pl-8 pr-3 py-1.5 text-[13px] rounded-md bg-slate-100 border-0 focus:bg-white focus:ring-2 focus:ring-[#5046E5]/30 outline-none" placeholder="搜索工单号/手机号 ⌘K">
+        </div>
+        <button class="px-3 py-1.5 text-[12px] rounded-md bg-[#5046E5] text-white hover:bg-[#4338CA] flex items-center gap-1.5 font-medium">
+          <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          创建工单
+        </button>
+        <div class="w-px h-5 bg-slate-200"></div>
+        <div class="flex items-center gap-2">
+          <div class="w-7 h-7 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center text-white text-[11px] font-bold">A</div>
+          <div class="text-[12px]"><div class="font-semibold text-slate-800 leading-tight">Admin</div><div class="text-[10px] text-slate-500 leading-tight">超级管理员</div></div>
+        </div>
+      </div>
+    </header>
+
+    <div class="p-6 space-y-4">
+
+      <section class="grid grid-cols-4 gap-4">
+        <div class="stat-card">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-[11px] text-slate-500 font-medium">今日新增工单</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-600 font-semibold">↑ +12.4%</span>
+          </div>
+          <div class="num-font text-[26px] font-extrabold text-slate-900 leading-none">287</div>
+          <div class="mt-2 text-[11px] text-slate-500">截至 14:23 · 日均 312</div>
+        </div>
+        <div class="stat-card bg-gradient-to-br from-red-50 to-orange-50 border-red-200">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-[11px] text-red-700 font-medium">待处理</span>
+            <span class="pulse-dot bg-red-500"></span>
+          </div>
+          <div class="num-font text-[26px] font-extrabold text-red-700 leading-none">89</div>
+          <div class="mt-2 text-[11px] text-red-600">含 8 条 SLA 超时</div>
+        </div>
+        <div class="stat-card">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-[11px] text-slate-500 font-medium">已解决</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-600 font-semibold">完成 68.9%</span>
+          </div>
+          <div class="num-font text-[26px] font-extrabold text-slate-900 leading-none">198</div>
+          <div class="mt-2 text-[11px] text-slate-500">满意度 4.7 / 5.0</div>
+        </div>
+        <div class="stat-card bg-gradient-to-br from-[#5046E5] to-[#7C3AED] border-0 text-white">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-[11px] opacity-80 font-medium">平均响应时间</span>
+            <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="opacity-80"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <div class="num-font text-[26px] font-extrabold leading-none">12<span class="text-[16px] opacity-80"> 分钟</span></div>
+          <div class="mt-2 text-[11px] opacity-90">↓ 减少 23% vs 上月</div>
+        </div>
+      </section>
+
+      <section class="grid grid-cols-12 gap-4">
+
+        <!-- 左侧 工单队列 -->
+        <div class="col-span-3 bg-white border border-slate-200 rounded-xl flex flex-col" style="height:calc(100vh - 240px); min-height:680px;">
+          <div class="p-4 border-b border-slate-100">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-[13px] font-bold text-slate-900">工单队列</h3>
+              <span class="text-[10px] text-slate-400">实时更新</span>
+            </div>
+            <div class="flex gap-1 text-[10px] flex-wrap">
+              <button class="px-2 py-1 rounded bg-[#5046E5] text-white font-semibold">全部 89</button>
+              <button class="px-2 py-1 rounded text-slate-500 hover:bg-slate-100">投诉 32</button>
+              <button class="px-2 py-1 rounded text-slate-500 hover:bg-slate-100">咨询 28</button>
+              <button class="px-2 py-1 rounded text-slate-500 hover:bg-slate-100">纠纷 21</button>
+            </div>
+          </div>
+          <div class="flex-1 overflow-y-auto scrollbar-thin p-2 space-y-2">
+
+            <div class="ticket-item selected unread">
+              <div class="flex items-start gap-2">
+                <div class="priority-bar bg-red-500"></div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-1.5 mb-1"><span class="tag tag-red">投诉</span><span class="tag tag-red">高优</span></div>
+                  <div class="text-[12px] font-semibold text-slate-900 leading-tight">派遣公司克扣工资 3,200 元</div>
+                  <div class="text-[10px] text-slate-500 mt-1.5">TK20260517-0247</div>
+                  <div class="flex items-center justify-between mt-1.5">
+                    <span class="text-[10px] text-slate-500">王*强 · 苏州</span>
+                    <span class="text-[10px] text-red-600 font-semibold">8 分钟前</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="ticket-item">
+              <div class="flex items-start gap-2">
+                <div class="priority-bar bg-red-500"></div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-1.5 mb-1"><span class="tag tag-amber">纠纷</span></div>
+                  <div class="text-[12px] font-semibold text-slate-900 leading-tight">未签合同提前离岗扣分申诉</div>
+                  <div class="text-[10px] text-slate-500 mt-1.5">TK20260517-0246</div>
+                  <div class="flex items-center justify-between mt-1.5"><span class="text-[10px] text-slate-500">李*梅 · 深圳</span><span class="text-[10px] text-slate-500">15 分钟前</span></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="ticket-item">
+              <div class="flex items-start gap-2">
+                <div class="priority-bar bg-amber-500"></div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-1.5 mb-1"><span class="tag tag-blue">咨询</span></div>
+                  <div class="text-[12px] font-semibold text-slate-900 leading-tight">工分升级条件咨询</div>
+                  <div class="text-[10px] text-slate-500 mt-1.5">TK20260517-0245</div>
+                  <div class="flex items-center justify-between mt-1.5"><span class="text-[10px] text-slate-500">张*军 · 杭州</span><span class="text-[10px] text-slate-500">22 分钟前</span></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="ticket-item">
+              <div class="flex items-start gap-2">
+                <div class="priority-bar bg-red-500"></div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-1.5 mb-1"><span class="tag tag-red">投诉</span></div>
+                  <div class="text-[12px] font-semibold text-slate-900 leading-tight">用工单位虚假招聘，到岗无安排</div>
+                  <div class="text-[10px] text-slate-500 mt-1.5">TK20260517-0244</div>
+                  <div class="flex items-center justify-between mt-1.5"><span class="text-[10px] text-slate-500">陈*峰 · 东莞</span><span class="text-[10px] text-slate-500">35 分钟前</span></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="ticket-item">
+              <div class="flex items-start gap-2">
+                <div class="priority-bar bg-purple-500"></div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-1.5 mb-1"><span class="tag tag-purple">技术</span></div>
+                  <div class="text-[12px] font-semibold text-slate-900 leading-tight">App 打卡定位漂移问题</div>
+                  <div class="text-[10px] text-slate-500 mt-1.5">TK20260517-0243</div>
+                  <div class="flex items-center justify-between mt-1.5"><span class="text-[10px] text-slate-500">刘*伟 · 上海</span><span class="text-[10px] text-slate-500">48 分钟前</span></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="ticket-item">
+              <div class="flex items-start gap-2">
+                <div class="priority-bar bg-amber-500"></div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-1.5 mb-1"><span class="tag tag-amber">纠纷</span></div>
+                  <div class="text-[12px] font-semibold text-slate-900 leading-tight">押金未退还，已离职 15 天</div>
+                  <div class="text-[10px] text-slate-500 mt-1.5">TK20260517-0242</div>
+                  <div class="flex items-center justify-between mt-1.5"><span class="text-[10px] text-slate-500">赵*强 · 广州</span><span class="text-[10px] text-slate-500">1 小时前</span></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="ticket-item">
+              <div class="flex items-start gap-2">
+                <div class="priority-bar bg-blue-500"></div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-1.5 mb-1"><span class="tag tag-blue">咨询</span></div>
+                  <div class="text-[12px] font-semibold text-slate-900 leading-tight">提现到账时间询问</div>
+                  <div class="text-[10px] text-slate-500 mt-1.5">TK20260517-0241</div>
+                  <div class="flex items-center justify-between mt-1.5"><span class="text-[10px] text-slate-500">孙*红 · 武汉</span><span class="text-[10px] text-slate-500">1.2 小时前</span></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="ticket-item">
+              <div class="flex items-start gap-2">
+                <div class="priority-bar bg-red-500"></div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-1.5 mb-1"><span class="tag tag-red">投诉</span></div>
+                  <div class="text-[12px] font-semibold text-slate-900 leading-tight">食宿与招聘信息严重不符</div>
+                  <div class="text-[10px] text-slate-500 mt-1.5">TK20260517-0240</div>
+                  <div class="flex items-center justify-between mt-1.5"><span class="text-[10px] text-slate-500">吴*斌 · 苏州</span><span class="text-[10px] text-slate-500">1.5 小时前</span></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="ticket-item">
+              <div class="flex items-start gap-2">
+                <div class="priority-bar bg-purple-500"></div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-1.5 mb-1"><span class="tag tag-purple">技术</span></div>
+                  <div class="text-[12px] font-semibold text-slate-900 leading-tight">实名认证人脸识别失败</div>
+                  <div class="text-[10px] text-slate-500 mt-1.5">TK20260517-0239</div>
+                  <div class="flex items-center justify-between mt-1.5"><span class="text-[10px] text-slate-500">郑*超 · 重庆</span><span class="text-[10px] text-slate-500">2 小时前</span></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="ticket-item">
+              <div class="flex items-start gap-2">
+                <div class="priority-bar bg-blue-500"></div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-1.5 mb-1"><span class="tag tag-blue">咨询</span></div>
+                  <div class="text-[12px] font-semibold text-slate-900 leading-tight">职业培训补贴申请流程</div>
+                  <div class="text-[10px] text-slate-500 mt-1.5">TK20260517-0238</div>
+                  <div class="flex items-center justify-between mt-1.5"><span class="text-[10px] text-slate-500">黄*辉 · 长沙</span><span class="text-[10px] text-slate-500">2.3 小时前</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 中间 工单详情 -->
+        <div class="col-span-6 bg-white border border-slate-200 rounded-xl flex flex-col" style="height:calc(100vh - 240px); min-height:680px;">
+          <div class="p-4 border-b border-slate-100">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="tag tag-red">投诉</span>
+              <span class="tag tag-red">高优先级</span>
+              <span class="text-[11px] text-slate-500">TK20260517-0247</span>
+              <span class="text-[11px] text-slate-400">·</span>
+              <span class="text-[11px] text-red-600 font-semibold">SLA 剩余 1h 28m</span>
+              <div class="ml-auto flex items-center gap-1">
+                <button class="btn-icon"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="15 17 20 12 15 7"/><path d="M4 18v-2a4 4 0 0 1 4-4h12"/></svg></button>
+                <button class="btn-icon"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>
+                <button class="btn-icon"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg></button>
+              </div>
+            </div>
+            <h2 class="text-[16px] font-bold text-slate-900 leading-tight">派遣公司涉嫌克扣 3,200 元工资 · 已工作 45 天</h2>
+          </div>
+
+          <div class="flex-1 overflow-y-auto scrollbar-thin p-5 space-y-5">
+
+            <div class="bg-gradient-to-br from-slate-50 to-blue-50/50 border border-slate-200 rounded-lg p-4">
+              <div class="flex items-start gap-3">
+                <div class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white text-[16px] font-bold flex-shrink-0">王</div>
+                <div class="flex-1 grid grid-cols-3 gap-3">
+                  <div><div class="text-[10px] text-slate-500">工人姓名</div><div class="text-[13px] font-bold text-slate-900">王*强 (W2024-027341)</div></div>
+                  <div><div class="text-[10px] text-slate-500">所属派遣</div><div class="text-[13px] font-semibold text-slate-900">江苏汇丰劳务</div></div>
+                  <div><div class="text-[10px] text-slate-500">用工单位</div><div class="text-[13px] font-semibold text-slate-900">苏州 ABC 电子厂</div></div>
+                  <div><div class="text-[10px] text-slate-500">工分等级</div><div class="text-[13px] font-bold text-amber-600">黄金 · 742</div></div>
+                  <div><div class="text-[10px] text-slate-500">入职日期</div><div class="text-[13px] font-semibold text-slate-900">2026-04-02</div></div>
+                  <div><div class="text-[10px] text-slate-500">历史工单</div><div class="text-[13px] font-semibold text-slate-900">3 次 (均已解决)</div></div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-3">对话流 · 7 条消息</div>
+              <div class="space-y-3">
+
+                <div class="flex items-start gap-2.5">
+                  <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white text-[12px] font-bold flex-shrink-0">王</div>
+                  <div class="flex-1 max-w-[80%]">
+                    <div class="text-[10px] text-slate-500 mb-1">王*强 · 14:23</div>
+                    <div class="msg-user px-3 py-2 text-[13px] leading-relaxed">你好客服，我 4 月入职苏州 ABC 电子厂，到现在干了 45 天。说好的月工资 6,500 元，5 月发工资时只发了 3,300 元，派遣公司说扣了食宿费 800、押金 500、保险 400、还有"管理费"500。这跟当初承诺的不一样啊！</div>
+                  </div>
+                </div>
+
+                <div class="flex items-start gap-2.5">
+                  <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white text-[12px] font-bold flex-shrink-0">王</div>
+                  <div class="flex-1 max-w-[80%]">
+                    <div class="text-[10px] text-slate-500 mb-1">王*强 · 14:24</div>
+                    <div class="msg-user px-3 py-2 text-[13px]">
+                      <div class="flex gap-1.5 mb-1.5">
+                        <div class="w-20 h-20 rounded-md bg-slate-300 flex items-center justify-center text-[10px] text-slate-600">工资单.jpg</div>
+                        <div class="w-20 h-20 rounded-md bg-slate-300 flex items-center justify-center text-[10px] text-slate-600">合同.jpg</div>
+                      </div>
+                      <span>已上传工资单和最初的招聘截图</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="flex items-start gap-2.5 flex-row-reverse">
+                  <div class="w-8 h-8 rounded-full bg-gradient-to-br from-[#5046E5] to-[#7C3AED] flex items-center justify-center text-white text-[12px] font-bold flex-shrink-0">客</div>
+                  <div class="flex-1 max-w-[80%]">
+                    <div class="text-[10px] text-slate-500 mb-1 text-right">客服 小琴 · 14:28</div>
+                    <div class="msg-cs px-3 py-2 text-[13px] leading-relaxed">王先生您好，已收到您的诉求。我已立即调取您与江苏汇丰劳务的电子合同和招聘信息原始记录。请稍等 3-5 分钟，我会核实后给您回复。</div>
+                  </div>
+                </div>
+
+                <div class="flex items-start gap-2.5 flex-row-reverse">
+                  <div class="w-8 h-8 rounded-full bg-gradient-to-br from-[#5046E5] to-[#7C3AED] flex items-center justify-center text-white text-[12px] font-bold flex-shrink-0">客</div>
+                  <div class="flex-1 max-w-[80%]">
+                    <div class="text-[10px] text-slate-500 mb-1 text-right">客服 小琴 · 14:32</div>
+                    <div class="msg-cs px-3 py-2 text-[13px] leading-relaxed">
+                      核实结果：<br>
+                      ✓ 招聘信息承诺薪资：6,500 元/月<br>
+                      ✓ 合同约定扣款：食宿 800 + 保险 400<br>
+                      ✗ 押金 500 元 — 合同未约定<br>
+                      ✗ 管理费 500 元 — 合同未约定<br>
+                      <b>结论：派遣公司多扣 1,000 元，行为违规</b>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="flex items-start gap-2.5">
+                  <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white text-[12px] font-bold flex-shrink-0">王</div>
+                  <div class="flex-1 max-w-[80%]">
+                    <div class="text-[10px] text-slate-500 mb-1">王*强 · 14:34</div>
+                    <div class="msg-user px-3 py-2 text-[13px] leading-relaxed">就是！我说他们就是巧立名目！麻烦你们帮我处理一下，我现在没工资交房租了。</div>
+                  </div>
+                </div>
+
+                <div class="flex items-start gap-2.5 flex-row-reverse">
+                  <div class="w-8 h-8 rounded-full bg-gradient-to-br from-[#5046E5] to-[#7C3AED] flex items-center justify-center text-white text-[12px] font-bold flex-shrink-0">客</div>
+                  <div class="flex-1 max-w-[80%]">
+                    <div class="text-[10px] text-slate-500 mb-1 text-right">客服 小琴 · 14:36</div>
+                    <div class="msg-cs px-3 py-2 text-[13px] leading-relaxed">
+                      您放心，平台一定为您主持公道。我现在马上：<br>
+                      1. 联系江苏汇丰劳务核实并要求 48h 内补发<br>
+                      2. 对该派遣公司进行警告记录<br>
+                      3. 若 48h 未补发，平台将先行垫付，并启动违约金扣除<br>
+                      请保持手机畅通，我们会全程跟进。
+                    </div>
+                  </div>
+                </div>
+
+                <div class="flex justify-center">
+                  <span class="text-[10px] text-slate-400 bg-slate-100 px-3 py-1 rounded-full">客服 14:38 已联系派遣公司业务经理 · 等待响应中</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="ai-suggest rounded-lg p-4">
+              <div class="flex items-center gap-2 mb-3">
+                <div class="w-7 h-7 rounded-full bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center">
+                  <svg width="14" height="14" fill="none" stroke="white" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+                </div>
+                <div>
+                  <div class="text-[13px] font-bold text-amber-900">AI 智能处置建议</div>
+                  <div class="text-[10px] text-amber-700">基于 1,287 起相似案例分析</div>
+                </div>
+                <span class="ml-auto text-[10px] px-2 py-1 rounded bg-amber-200 text-amber-900 font-bold">置信度 96.4%</span>
+              </div>
+              <div class="space-y-2">
+                <div class="flex items-start gap-2 text-[12px]"><span class="w-4 h-4 rounded-full bg-amber-500 text-white text-[9px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">1</span><span class="text-amber-900">立即冻结派遣公司"江苏汇丰劳务"5,000 元保证金作为先行垫付资金</span></div>
+                <div class="flex items-start gap-2 text-[12px]"><span class="w-4 h-4 rounded-full bg-amber-500 text-white text-[9px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">2</span><span class="text-amber-900">向工人先行垫付被多扣的 1,000 元 (T+1 到账)</span></div>
+                <div class="flex items-start gap-2 text-[12px]"><span class="w-4 h-4 rounded-full bg-amber-500 text-white text-[9px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">3</span><span class="text-amber-900">该派遣公司近 30 天有 5 起类似投诉，建议下调信用评级 (B → C)</span></div>
+                <div class="flex items-start gap-2 text-[12px]"><span class="w-4 h-4 rounded-full bg-amber-500 text-white text-[9px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">4</span><span class="text-amber-900">类似投诉解决率 92%，平均处理时长 3.8 小时</span></div>
+              </div>
+              <button class="mt-3 w-full py-2 text-[12px] font-bold text-amber-900 bg-amber-200 hover:bg-amber-300 rounded-md flex items-center justify-center gap-2">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                一键采纳建议
+              </button>
+            </div>
+
+            <div>
+              <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">关联记录</div>
+              <div class="grid grid-cols-3 gap-2">
+                <div class="border border-slate-200 rounded-md p-2.5 hover:border-[#5046E5] cursor-pointer">
+                  <div class="text-[10px] text-slate-500">派遣公司档案</div>
+                  <div class="text-[12px] font-semibold text-slate-800">江苏汇丰劳务</div>
+                  <div class="text-[10px] text-amber-600 mt-1">信用 B · 近期 5 起投诉</div>
+                </div>
+                <div class="border border-slate-200 rounded-md p-2.5 hover:border-[#5046E5] cursor-pointer">
+                  <div class="text-[10px] text-slate-500">合同编号</div>
+                  <div class="text-[12px] font-semibold text-slate-800">CT-20260402-008</div>
+                  <div class="text-[10px] text-slate-500 mt-1">电子签 · 有效</div>
+                </div>
+                <div class="border border-slate-200 rounded-md p-2.5 hover:border-[#5046E5] cursor-pointer">
+                  <div class="text-[10px] text-slate-500">5月工资单</div>
+                  <div class="text-[12px] font-semibold text-slate-800">¥3,300 (应发 6,500)</div>
+                  <div class="text-[10px] text-red-600 mt-1">差额 ¥3,200</div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <div class="p-3 border-t border-slate-200">
+            <div class="flex items-end gap-2">
+              <div class="flex-1 border border-slate-200 rounded-lg overflow-hidden">
+                <textarea placeholder="输入回复内容，⌘ + ↵ 发送" rows="2" class="w-full px-3 py-2 text-[13px] resize-none outline-none"></textarea>
+                <div class="flex items-center px-2 py-1.5 border-t border-slate-100 gap-1">
+                  <button class="btn-icon"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg></button>
+                  <button class="btn-icon"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg></button>
+                  <button class="btn-icon"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg></button>
+                  <span class="ml-auto text-[10px] text-slate-400">⌘ + ↵ 发送</span>
+                </div>
+              </div>
+              <button class="px-4 py-2.5 text-[12px] rounded-lg bg-[#5046E5] text-white font-semibold hover:bg-[#4338CA]">发送</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 右侧 -->
+        <div class="col-span-3 space-y-4" style="max-height:calc(100vh - 240px); overflow-y:auto;">
+
+          <div class="bg-white border border-slate-200 rounded-xl p-4">
+            <h3 class="text-[13px] font-bold text-slate-900 mb-3">工单操作</h3>
+            <div class="space-y-2">
+              <button class="w-full py-2 text-[12px] rounded-md bg-emerald-500 hover:bg-emerald-600 text-white font-semibold flex items-center justify-center gap-2">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                标记已解决
+              </button>
+              <button class="w-full py-2 text-[12px] rounded-md border border-amber-300 text-amber-700 hover:bg-amber-50 font-semibold">升级到法务部</button>
+              <button class="w-full py-2 text-[12px] rounded-md border border-blue-300 text-blue-700 hover:bg-blue-50 font-semibold">转给运营部</button>
+              <button class="w-full py-2 text-[12px] rounded-md border border-purple-300 text-purple-700 hover:bg-purple-50 font-semibold">转给技术部</button>
+              <button class="w-full py-2 text-[12px] rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50">拨打电话</button>
+              <button class="w-full py-2 text-[12px] rounded-md border border-red-200 text-red-600 hover:bg-red-50">关闭工单</button>
+            </div>
+          </div>
+
+          <div class="bg-white border border-slate-200 rounded-xl p-4">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-[13px] font-bold text-slate-900">客服 SLA 监控</h3>
+              <span class="text-[10px] text-emerald-600 font-semibold">优秀</span>
+            </div>
+            <div class="space-y-3">
+              <div>
+                <div class="flex justify-between text-[11px] mb-1"><span class="text-slate-600">首次响应时长</span><span class="num-font font-bold text-emerald-600">12 分钟</span></div>
+                <div class="h-1.5 rounded-full bg-slate-100 overflow-hidden"><div class="h-full bg-emerald-500 rounded-full" style="width:88%"></div></div>
+                <div class="flex justify-between text-[9px] text-slate-400 mt-0.5"><span>目标 ≤ 15 分钟</span><span>达标 88%</span></div>
+              </div>
+              <div>
+                <div class="flex justify-between text-[11px] mb-1"><span class="text-slate-600">解决率</span><span class="num-font font-bold text-emerald-600">94.2%</span></div>
+                <div class="h-1.5 rounded-full bg-slate-100 overflow-hidden"><div class="h-full bg-emerald-500 rounded-full" style="width:94%"></div></div>
+                <div class="flex justify-between text-[9px] text-slate-400 mt-0.5"><span>目标 ≥ 90%</span><span>超额完成</span></div>
+              </div>
+              <div>
+                <div class="flex justify-between text-[11px] mb-1"><span class="text-slate-600">客户满意度</span><span class="num-font font-bold text-amber-600">4.7 / 5.0</span></div>
+                <div class="h-1.5 rounded-full bg-slate-100 overflow-hidden"><div class="h-full bg-amber-500 rounded-full" style="width:94%"></div></div>
+                <div class="flex justify-between text-[9px] text-slate-400 mt-0.5"><span>目标 ≥ 4.5</span><span>2,184 评价</span></div>
+              </div>
+              <div>
+                <div class="flex justify-between text-[11px] mb-1"><span class="text-slate-600">平均解决时长</span><span class="num-font font-bold text-blue-600">3.8 h</span></div>
+                <div class="h-1.5 rounded-full bg-slate-100 overflow-hidden"><div class="h-full bg-blue-500 rounded-full" style="width:76%"></div></div>
+                <div class="flex justify-between text-[9px] text-slate-400 mt-0.5"><span>目标 ≤ 5h</span><span>达标 76%</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white border border-slate-200 rounded-xl p-4">
+            <h3 class="text-[13px] font-bold text-slate-900 mb-3">今日客服 TOP 5</h3>
+            <div class="space-y-2">
+              <div class="flex items-center gap-2.5">
+                <div class="w-5 h-5 rounded text-[10px] font-bold flex items-center justify-center bg-gradient-to-br from-amber-400 to-orange-500 text-white">1</div>
+                <div class="w-7 h-7 rounded-full bg-gradient-to-br from-pink-400 to-rose-500 flex items-center justify-center text-white text-[10px] font-bold">琴</div>
+                <div class="flex-1 min-w-0 text-[12px] font-semibold truncate">小琴</div>
+                <div class="num-font text-[12px] font-bold">42 单</div>
+              </div>
+              <div class="flex items-center gap-2.5">
+                <div class="w-5 h-5 rounded text-[10px] font-bold flex items-center justify-center bg-gradient-to-br from-slate-400 to-slate-500 text-white">2</div>
+                <div class="w-7 h-7 rounded-full bg-gradient-to-br from-sky-400 to-blue-500 flex items-center justify-center text-white text-[10px] font-bold">伟</div>
+                <div class="flex-1 min-w-0 text-[12px] font-semibold truncate">阿伟</div>
+                <div class="num-font text-[12px] font-bold">38 单</div>
+              </div>
+              <div class="flex items-center gap-2.5">
+                <div class="w-5 h-5 rounded text-[10px] font-bold flex items-center justify-center bg-gradient-to-br from-orange-600 to-amber-700 text-white">3</div>
+                <div class="w-7 h-7 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white text-[10px] font-bold">梅</div>
+                <div class="flex-1 min-w-0 text-[12px] font-semibold truncate">小梅</div>
+                <div class="num-font text-[12px] font-bold">35 单</div>
+              </div>
+              <div class="flex items-center gap-2.5">
+                <div class="w-5 h-5 rounded text-[10px] font-bold flex items-center justify-center bg-slate-100 text-slate-500">4</div>
+                <div class="w-7 h-7 rounded-full bg-gradient-to-br from-purple-400 to-fuchsia-500 flex items-center justify-center text-white text-[10px] font-bold">芳</div>
+                <div class="flex-1 min-w-0 text-[12px] truncate">王芳</div>
+                <div class="num-font text-[12px] font-medium text-slate-600">31 单</div>
+              </div>
+              <div class="flex items-center gap-2.5">
+                <div class="w-5 h-5 rounded text-[10px] font-bold flex items-center justify-center bg-slate-100 text-slate-500">5</div>
+                <div class="w-7 h-7 rounded-full bg-gradient-to-br from-yellow-400 to-orange-400 flex items-center justify-center text-white text-[10px] font-bold">娟</div>
+                <div class="flex-1 min-w-0 text-[12px] truncate">陈娟</div>
+                <div class="num-font text-[12px] font-medium text-slate-600">28 单</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+    </div>
+  </main>
+</div>
+
+</body>
+</html>

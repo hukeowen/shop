@@ -1,0 +1,47 @@
+- generic [ref=e100]:
+  - generic [ref=e102]:
+    - img [ref=e105] [cursor=pointer]
+    - generic [ref=e108]: 商品详情
+  - generic [ref=e112]:
+    - generic [ref=e113]:
+      - generic [ref=e114]:
+        - generic [ref=e115]: ‹
+        - generic [ref=e116]: ↗
+        - img [ref=e119]
+      - generic [ref=e120]:
+        - generic [ref=e121]:
+          - generic [ref=e123]:
+            - generic [ref=e124]: ¥
+            - text: "5.50"
+          - generic [ref=e125]: 推 3 反 1
+        - generic [ref=e126]: 海福盛干贝炖鸡粥
+        - generic [ref=e127]: 干贝炖鸡风味，早餐好选择
+        - generic [ref=e128]:
+          - generic [ref=e130]:
+            - text: 已售
+            - generic [ref=e131]: "11"
+          - generic [ref=e133]:
+            - text: 评分
+            - generic [ref=e134]: "5.0"
+          - generic [ref=e136]:
+            - text: 库存
+            - generic [ref=e137]: "9988"
+      - generic [ref=e138]:
+        - generic [ref=e139]: 🎯
+        - generic [ref=e140]:
+          - text: 推 3 个朋友买 → 你拿
+          - generic [ref=e141]: 100% 商品价 ¥5.50
+          - generic [ref=e142]: 30% / 30% / 40% 累积，满 3 次出队
+      - generic [ref=e143]:
+        - generic [ref=e145]: 商品介绍
+        - generic [ref=e146]: 海福盛干贝炖鸡粥
+    - generic [ref=e148]:
+      - generic [ref=e149]:
+        - generic [ref=e150]: 🏪
+        - generic [ref=e151]: 店铺
+      - generic [ref=e152]:
+        - generic [ref=e153]: 🛒
+        - generic [ref=e154]: 购物车
+        - generic [ref=e155]: "8"
+      - generic [ref=e156]: 加入购物车
+      - generic [ref=e157]: 立即购买

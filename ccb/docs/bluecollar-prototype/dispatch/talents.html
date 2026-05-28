@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>蓝工·派遣管家 — 人才搜索</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="../shared/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  body { background: #F8FAFC; }
+  .filter-chip { padding: 4px 10px; border: 1px solid #E2E8F0; border-radius: 999px; font-size: 12px; color: #475569; background: #fff; cursor: pointer; transition: all .15s; }
+  .filter-chip:hover { border-color: #94A3B8; }
+  .filter-chip.on { background: #1677FF; color: #fff; border-color: #1677FF; font-weight: 600; }
+  .talent-card { transition: all .2s ease; }
+  .talent-card:hover { transform: translateY(-3px); box-shadow: 0 14px 30px -10px rgba(15,23,42,.12); border-color: #BFDBFE; }
+</style>
+</head>
+<body class="text-slate-800">
+
+<div class="flex min-h-screen">
+
+  <!-- ============ 侧边栏 ============ -->
+  <aside class="w-60 bg-[#0F172A] text-slate-300 flex flex-col flex-shrink-0">
+    <div class="px-5 pt-5 pb-4 border-b border-white/5">
+      <div class="flex items-center gap-2 mb-3">
+        <div class="w-9 h-9 rounded-xl grad-blue flex items-center justify-center font-extrabold text-white shadow-lg shadow-blue-500/30">蓝</div>
+        <div>
+          <div class="text-white text-sm font-bold leading-tight">蓝工·派遣管家</div>
+          <div class="text-[10px] text-slate-500 tracking-wider">DISPATCH SAAS</div>
+        </div>
+      </div>
+      <div class="bg-white/5 rounded-xl p-3 border border-white/5">
+        <div class="flex items-center justify-between mb-1">
+          <span class="text-xs text-slate-400">浙江睿才人力</span>
+          <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-gradient-to-r from-amber-400 to-orange-500 text-white">VIP</span>
+        </div>
+        <div class="flex items-end gap-1.5">
+          <span class="text-lg font-extrabold text-white leading-none">92</span>
+          <span class="text-[10px] text-slate-400 mb-0.5">企业信用分</span>
+        </div>
+        <div class="mt-1.5 h-1 bg-white/10 rounded-full overflow-hidden">
+          <div class="h-full bg-gradient-to-r from-emerald-400 to-cyan-400" style="width:92%"></div>
+        </div>
+      </div>
+    </div>
+    <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto text-sm">
+      <a href="dashboard.html" class="sidebar-link">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>工作台
+      </a>
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">招聘管理</div>
+      <a href="jobs.html" class="sidebar-link">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>职位列表
+      </a>
+      <a href="job-create.html" class="sidebar-link">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>发布职位
+      </a>
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">人才</div>
+      <a href="talents.html" class="sidebar-link active">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>人才搜索
+      </a>
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">沟通</div>
+      <a href="chat.html" class="sidebar-link">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>IM 沟通<span class="ml-auto px-1.5 py-0.5 rounded-full bg-red-500 text-white text-[10px] font-bold">12</span>
+      </a>
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">用工</div>
+      <a href="onboarding.html" class="sidebar-link">👥 在岗管理</a>
+      <a href="contract-mgmt.html" class="sidebar-link">📝 合同管理</a>
+
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold flex items-center gap-1.5">财务管理 <span class="px-1 py-0 rounded bg-gradient-to-r from-blue-500 to-cyan-500 text-white text-[9px]">NEW</span></div>
+      <a href="salary.html" class="sidebar-link">💰 薪酬发放</a>
+      <a href="social.html" class="sidebar-link">🏥 社保公积金</a>
+      <a href="tax.html" class="sidebar-link">📋 个税申报</a>
+      <a href="reconciliation.html" class="sidebar-link">⚖️ 对账中心</a>
+      <a href="invoice.html" class="sidebar-link">🧾 发票管理</a>
+
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">客户</div>
+      <a href="clients.html" class="sidebar-link">🏢 甲方管理 CRM</a>
+
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">数据 & 合规</div>
+      <a href="analytics.html" class="sidebar-link">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>数据分析
+      </a>
+      <div class="px-3 pt-3 pb-1 text-[10px] tracking-widest text-slate-500 font-semibold">系统</div>
+      <a href="#" class="sidebar-link">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/></svg>设置
+      </a>
+    </nav>
+    <div class="px-4 py-3 border-t border-white/5 text-xs text-slate-500 flex items-center justify-between">
+      <a href="../index.html" class="hover:text-white">← 原型导航</a><span>v0.1.0</span>
+    </div>
+  </aside>
+
+  <!-- ============ 主内容 ============ -->
+  <main class="flex-1 flex flex-col min-w-0">
+    <header class="h-14 bg-white border-b border-slate-200 px-6 flex items-center justify-between flex-shrink-0">
+      <div class="flex items-center gap-2 text-sm text-slate-500">
+        <a href="dashboard.html" class="hover:text-slate-900">工作台</a>
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+        <span class="text-slate-900 font-medium">人才搜索</span>
+      </div>
+      <div class="flex items-center gap-4">
+        <!-- 招聘币余额 -->
+        <div class="flex items-center gap-2 h-9 px-3 bg-amber-50 border border-amber-200 rounded-lg text-sm">
+          <svg width="16" height="16" fill="#F59E0B" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#FBBF24" stroke="#F59E0B" stroke-width="1.5"/><text x="12" y="16" text-anchor="middle" font-size="10" font-weight="700" fill="#92400E">¥</text></svg>
+          <span class="text-amber-700 font-bold tabular-nums">200</span>
+          <span class="text-xs text-amber-600">招聘币</span>
+          <a href="#" class="text-xs text-blue-600 font-medium hover:underline ml-1">充值 →</a>
+        </div>
+        <button class="relative w-9 h-9 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-600">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white"></span>
+        </button>
+        <div class="flex items-center gap-2 pl-3 border-l border-slate-200">
+          <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center text-xs font-bold">李</div>
+          <div class="leading-tight">
+            <div class="text-sm font-semibold text-slate-900">李珊珊</div>
+            <div class="text-[11px] text-slate-500">招聘主管</div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="flex-1 overflow-y-auto p-6 space-y-5">
+      <!-- 标题 -->
+      <div class="flex items-end justify-between">
+        <div>
+          <h1 class="text-2xl font-bold text-slate-900">人才搜索 <span class="ml-2 text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full align-middle">蓝领芝麻信用</span></h1>
+          <p class="text-sm text-slate-500 mt-1">为 <span class="text-blue-600 font-semibold">焊工 · 二保焊熟练工</span> 匹配人才 · 共找到 <span class="font-semibold text-slate-900">8,624</span> 位合适候选人</p>
+        </div>
+        <div class="flex items-center gap-2 text-sm">
+          <span class="text-slate-500">排序</span>
+          <select class="h-9 px-3 bg-white border border-slate-200 rounded-lg text-sm"><option>智能匹配</option><option>工分最高</option><option>距离最近</option><option>最近活跃</option></select>
+        </div>
+      </div>
+
+      <!-- 筛选区 -->
+      <div class="bg-white border border-slate-200 rounded-2xl p-5 space-y-3">
+        <!-- 工种 -->
+        <div class="flex items-start gap-4">
+          <span class="text-xs text-slate-500 font-semibold w-20 mt-1.5 flex-shrink-0">工种</span>
+          <div class="flex flex-wrap gap-2 flex-1">
+            <span class="filter-chip on">焊工</span><span class="filter-chip">普工</span><span class="filter-chip">叉车司机</span><span class="filter-chip">SMT 操作员</span><span class="filter-chip">分拣员</span><span class="filter-chip">数控车工</span><span class="filter-chip">电工</span><span class="filter-chip">品检员</span><span class="filter-chip">仓储员</span><span class="filter-chip">包装工</span>
+          </div>
+        </div>
+        <div class="flex items-start gap-4">
+          <span class="text-xs text-slate-500 font-semibold w-20 mt-1.5 flex-shrink-0">地区</span>
+          <div class="flex flex-wrap gap-2 flex-1">
+            <span class="filter-chip">全国</span><span class="filter-chip on">江苏</span><span class="filter-chip on">浙江</span><span class="filter-chip">广东</span><span class="filter-chip">河南</span><span class="filter-chip">上海</span><span class="filter-chip">福建</span><span class="filter-chip">安徽</span>
+          </div>
+        </div>
+        <div class="flex items-start gap-4">
+          <span class="text-xs text-slate-500 font-semibold w-20 mt-1.5 flex-shrink-0">工分等级</span>
+          <div class="flex flex-wrap gap-2 flex-1">
+            <span class="filter-chip">不限</span><span class="filter-chip">青铜</span><span class="filter-chip">白银</span><span class="filter-chip on">黄金</span><span class="filter-chip on">钻石</span><span class="filter-chip on">王者</span>
+          </div>
+        </div>
+        <div class="flex items-start gap-4">
+          <span class="text-xs text-slate-500 font-semibold w-20 mt-1.5 flex-shrink-0">工作经验</span>
+          <div class="flex flex-wrap gap-2 flex-1">
+            <span class="filter-chip">不限</span><span class="filter-chip">1 年以下</span><span class="filter-chip">1-2 年</span><span class="filter-chip on">2-3 年</span><span class="filter-chip on">3-5 年</span><span class="filter-chip on">5 年以上</span>
+          </div>
+        </div>
+        <div class="flex items-start gap-4">
+          <span class="text-xs text-slate-500 font-semibold w-20 mt-1.5 flex-shrink-0">年龄 / 状态</span>
+          <div class="flex flex-wrap gap-2 flex-1 items-center">
+            <span class="filter-chip on">18-45</span><span class="filter-chip">46-50</span>
+            <span class="text-slate-200 mx-1">|</span>
+            <span class="filter-chip on">求职中</span><span class="filter-chip">观望中</span>
+            <span class="text-slate-200 mx-1">|</span>
+            <span class="filter-chip">持证</span><span class="filter-chip">党员</span><span class="filter-chip">老乡聚集</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 人才卡片网格 -->
+      <div class="grid grid-cols-3 gap-4">
+
+        <!-- 卡片模板 - 12 张 -->
+        <!-- 1 -->
+        <div class="talent-card bg-white border border-slate-200 rounded-2xl p-5">
+          <div class="flex items-start gap-3 mb-3">
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-400 to-indigo-500 text-white flex items-center justify-center font-bold flex-shrink-0">陈</div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-1.5"><span class="font-semibold text-slate-900">陈*军</span><span class="text-xs text-slate-400">男 · 32</span></div>
+              <div class="text-xs text-slate-500 mt-0.5">焊工 · 8 年经验 · 苏州</div>
+              <div class="mt-1.5 flex items-center gap-1.5"><span class="badge-diamond text-[10px] px-1.5 py-0.5 rounded font-bold">钻石 III</span><span class="text-base font-extrabold text-cyan-600 tabular-nums">856</span></div>
+            </div>
+            <span class="text-emerald-600 text-xs font-bold flex items-center gap-0.5"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>在线</span>
+          </div>
+
+          <!-- 5维微缩雷达 -->
+          <div class="bg-slate-50 rounded-xl p-3 flex items-center gap-3 mb-3">
+            <svg width="64" height="64" viewBox="0 0 100 100">
+              <polygon points="50,15 85,38 73,80 27,80 15,38" fill="none" stroke="#E2E8F0" stroke-width="1"/>
+              <polygon points="50,25 75,42 67,72 33,72 25,42" fill="none" stroke="#E2E8F0" stroke-width="1"/>
+              <polygon points="50,35 65,46 60,64 40,64 35,46" fill="none" stroke="#E2E8F0" stroke-width="1"/>
+              <polygon points="50,18 82,40 70,76 28,76 22,42" fill="rgba(22,119,255,.25)" stroke="#1677FF" stroke-width="1.5"/>
+              <circle cx="50" cy="50" r="1.5" fill="#1677FF"/>
+            </svg>
+            <div class="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px] text-slate-600 flex-1">
+              <div class="flex justify-between"><span>技能</span><span class="font-bold text-slate-900">95</span></div>
+              <div class="flex justify-between"><span>出勤</span><span class="font-bold text-slate-900">98</span></div>
+              <div class="flex justify-between"><span>稳定</span><span class="font-bold text-slate-900">88</span></div>
+              <div class="flex justify-between"><span>协作</span><span class="font-bold text-slate-900">90</span></div>
+              <div class="flex justify-between col-span-2"><span>口碑</span><span class="font-bold text-slate-900">92</span></div>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 text-[11px] text-slate-500 mb-3">
+            <svg width="12" height="12" fill="#F59E0B" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <span>4.9</span>
+            <span class="text-slate-300">·</span>
+            <span>历史评价 28 条</span>
+            <span class="text-slate-300">·</span>
+            <span class="text-emerald-600">已实名</span>
+          </div>
+
+          <div class="flex gap-2">
+            <button class="flex-1 h-9 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg text-xs font-medium text-slate-700 flex items-center justify-center gap-1">
+              查看简历 <span class="text-[10px] text-amber-600">-5 币</span>
+            </button>
+            <a href="chat.html" class="flex-1 h-9 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold flex items-center justify-center">立即沟通</a>
+          </div>
+        </div>
+
+        <!-- 2 -->
+        <div class="talent-card bg-white border border-slate-200 rounded-2xl p-5">
+          <div class="flex items-start gap-3 mb-3">
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-pink-400 to-rose-500 text-white flex items-center justify-center font-bold flex-shrink-0">王</div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-1.5"><span class="font-semibold text-slate-900">王*红</span><span class="text-xs text-slate-400">女 · 28</span></div>
+              <div class="text-xs text-slate-500 mt-0.5">SMT 操作 · 5 年经验 · 郑州</div>
+              <div class="mt-1.5 flex items-center gap-1.5"><span class="badge-gold text-[10px] px-1.5 py-0.5 rounded font-bold">黄金 II</span><span class="text-base font-extrabold text-amber-600 tabular-nums">798</span></div>
+            </div>
+            <span class="text-emerald-600 text-xs font-bold flex items-center gap-0.5"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>在线</span>
+          </div>
+          <div class="bg-slate-50 rounded-xl p-3 flex items-center gap-3 mb-3">
+            <svg width="64" height="64" viewBox="0 0 100 100">
+              <polygon points="50,15 85,38 73,80 27,80 15,38" fill="none" stroke="#E2E8F0" stroke-width="1"/>
+              <polygon points="50,25 75,42 67,72 33,72 25,42" fill="none" stroke="#E2E8F0" stroke-width="1"/>
+              <polygon points="50,35 65,46 60,64 40,64 35,46" fill="none" stroke="#E2E8F0" stroke-width="1"/>
+              <polygon points="50,22 80,42 68,70 32,76 25,40" fill="rgba(245,158,11,.25)" stroke="#F59E0B" stroke-width="1.5"/>
+              <circle cx="50" cy="50" r="1.5" fill="#F59E0B"/>
+            </svg>
+            <div class="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px] text-slate-600 flex-1">
+              <div class="flex justify-between"><span>技能</span><span class="font-bold text-slate-900">88</span></div>
+              <div class="flex justify-between"><span>出勤</span><span class="font-bold text-slate-900">95</span></div>
+              <div class="flex justify-between"><span>稳定</span><span class="font-bold text-slate-900">82</span></div>
+              <div class="flex justify-between"><span>协作</span><span class="font-bold text-slate-900">85</span></div>
+              <div class="flex justify-between col-span-2"><span>口碑</span><span class="font-bold text-slate-900">86</span></div>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 text-[11px] text-slate-500 mb-3">
+            <svg width="12" height="12" fill="#F59E0B" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <span>4.7</span><span class="text-slate-300">·</span><span>历史评价 19 条</span><span class="text-slate-300">·</span><span class="text-emerald-600">已实名</span>
+          </div>
+          <div class="flex gap-2">
+            <button class="flex-1 h-9 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg text-xs font-medium text-slate-700 flex items-center justify-center gap-1">查看简历 <span class="text-[10px] text-amber-600">-5 币</span></button>
+            <a href="chat.html" class="flex-1 h-9 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold flex items-center justify-center">立即沟通</a>
+          </div>
+        </div>
+
+        <!-- 3 王者 -->
+        <div class="talent-card bg-white border-2 border-violet-300 rounded-2xl p-5 relative">
+          <div class="absolute -top-2 left-4 px-2 py-0.5 bg-gradient-to-r from-violet-500 to-purple-600 text-white text-[10px] font-bold rounded-full">TOP 0.5% · AI 强荐</div>
+          <div class="flex items-start gap-3 mb-3 mt-1">
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-400 to-purple-600 text-white flex items-center justify-center font-bold flex-shrink-0">刘</div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-1.5"><span class="font-semibold text-slate-900">刘*峰</span><span class="text-xs text-slate-400">男 · 35</span></div>
+              <div class="text-xs text-slate-500 mt-0.5">叉车司机 · 12 年经验 · 上海</div>
+              <div class="mt-1.5 flex items-center gap-1.5"><span class="badge-king text-[10px] px-1.5 py-0.5 rounded font-bold">王者 I</span><span class="text-base font-extrabold text-violet-600 tabular-nums">912</span></div>
+            </div>
+            <span class="text-amber-600 text-xs font-bold">求职中</span>
+          </div>
+          <div class="bg-slate-50 rounded-xl p-3 flex items-center gap-3 mb-3">
+            <svg width="64" height="64" viewBox="0 0 100 100">
+              <polygon points="50,15 85,38 73,80 27,80 15,38" fill="none" stroke="#E2E8F0" stroke-width="1"/>
+              <polygon points="50,25 75,42 67,72 33,72 25,42" fill="none" stroke="#E2E8F0" stroke-width="1"/>
+              <polygon points="50,35 65,46 60,64 40,64 35,46" fill="none" stroke="#E2E8F0" stroke-width="1"/>
+              <polygon points="50,16 86,38 75,80 25,80 14,38" fill="rgba(168,85,247,.3)" stroke="#A855F7" stroke-width="1.5"/>
+              <circle cx="50" cy="50" r="1.5" fill="#A855F7"/>
+            </svg>
+            <div class="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px] text-slate-600 flex-1">
+              <div class="flex justify-between"><span>技能</span><span class="font-bold text-slate-900">98</span></div>
+              <div class="flex justify-between"><span>出勤</span><span class="font-bold text-slate-900">99</span></div>
+              <div class="flex justify-between"><span>稳定</span><span class="font-bold text-slate-900">94</span></div>
+              <div class="flex justify-between"><span>协作</span><span class="font-bold text-slate-900">93</span></div>
+              <div class="flex justify-between col-span-2"><span>口碑</span><span class="font-bold text-slate-900">96</span></div>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 text-[11px] text-slate-500 mb-3">
+            <svg width="12" height="12" fill="#F59E0B" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <span>5.0</span><span class="text-slate-300">·</span><span>历史评价 42 条</span><span class="text-slate-300">·</span><span class="text-emerald-600">N1 证书</span>
+          </div>
+          <div class="flex gap-2">
+            <a href="talent-detail.html" class="flex-1 h-9 bg-white border border-violet-300 hover:bg-violet-50 rounded-lg text-xs font-semibold text-violet-700 flex items-center justify-center gap-1">查看简历 <span class="text-[10px]">-5 币</span></a>
+            <a href="chat.html" class="flex-1 h-9 bg-gradient-to-r from-violet-600 to-purple-600 hover:opacity-90 text-white rounded-lg text-xs font-semibold flex items-center justify-center">立即沟通</a>
+          </div>
+        </div>
+
+        <!-- 4 -->
+        <div class="talent-card bg-white border border-slate-200 rounded-2xl p-5">
+          <div class="flex items-start gap-3 mb-3">
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 text-white flex items-center justify-center font-bold flex-shrink-0">赵</div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-1.5"><span class="font-semibold text-slate-900">赵*梅</span><span class="text-xs text-slate-400">女 · 31</span></div>
+              <div class="text-xs text-slate-500 mt-0.5">分拣员 · 4 年经验 · 东莞</div>
+              <div class="mt-1.5 flex items-center gap-1.5"><span class="badge-gold text-[10px] px-1.5 py-0.5 rounded font-bold">黄金 III</span><span class="text-base font-extrabold text-amber-600 tabular-nums">745</span></div>
+            </div>
+            <span class="text-slate-400 text-xs font-medium">2 天前</span>
+          </div>
+          <div class="bg-slate-50 rounded-xl p-3 flex items-center gap-3 mb-3">
+            <svg width="64" height="64" viewBox="0 0 100 100">
+              <polygon points="50,15 85,38 73,80 27,80 15,38" fill="none" stroke="#E2E8F0" stroke-width="1"/>
+              <polygon points="50,25 75,42 67,72 33,72 25,42" fill="none" stroke="#E2E8F0" stroke-width="1"/>
+              <polygon points="50,35 65,46 60,64 40,64 35,46" fill="none" stroke="#E2E8F0" stroke-width="1"/>
+              <polygon points="50,26 76,44 66,72 34,75 24,42" fill="rgba(245,158,11,.25)" stroke="#F59E0B" stroke-width="1.5"/>
+              <circle cx="50" cy="50" r="1.5" fill="#F59E0B"/>
+            </svg>
+            <div class="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px] text-slate-600 flex-1">
+              <div class="flex justify-between"><span>技能</span><span class="font-bold text-slate-900">82</span></div>
+              <div class="flex justify-between"><span>出勤</span><span class="font-bold text-slate-900">92</span></div>
+              <div class="flex justify-between"><span>稳定</span><span class="font-bold text-slate-900">78</span></div>
+              <div class="flex justify-between"><span>协作</span><span class="font-bold text-slate-900">85</span></div>
+              <div class="flex justify-between col-span-2"><span>口碑</span><span class="font-bold text-slate-900">81</span></div>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 text-[11px] text-slate-500 mb-3">
+            <svg width="12" height="12" fill="#F59E0B" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <span>4.6</span><span class="text-slate-300">·</span><span>历史评价 15 条</span>
+          </div>
+          <div class="flex gap-2">
+            <button class="flex-1 h-9 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg text-xs font-medium text-slate-700 flex items-center justify-center gap-1">查看简历 <span class="text-[10px] text-amber-600">-5 币</span></button>
+            <a href="chat.html" class="flex-1 h-9 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold flex items-center justify-center">立即沟通</a>
+          </div>
+        </div>
+
+        <!-- 5 -->
+        <div class="talent-card bg-white border border-slate-200 rounded-2xl p-5">
+          <div class="flex items-start gap-3 mb-3">
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-500 text-white flex items-center justify-center font-bold flex-shrink-0">周</div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-1.5"><span class="font-semibold text-slate-900">周*强</span><span class="text-xs text-slate-400">男 · 29</span></div>
+              <div class="text-xs text-slate-500 mt-0.5">数控车工 · 6 年经验 · 杭州</div>
+              <div class="mt-1.5 flex items-center gap-1.5"><span class="badge-diamond text-[10px] px-1.5 py-0.5 rounded font-bold">钻石 IV</span><span class="text-base font-extrabold text-cyan-600 tabular-nums">823</span></div>
+            </div>
+            <span class="text-emerald-600 text-xs font-bold flex items-center gap-0.5"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>在线</span>
+          </div>
+          <div class="bg-slate-50 rounded-xl p-3 flex items-center gap-3 mb-3">
+            <svg width="64" height="64" viewBox="0 0 100 100">
+              <polygon points="50,15 85,38 73,80 27,80 15,38" fill="none" stroke="#E2E8F0" stroke-width="1"/>
+              <polygon points="50,25 75,42 67,72 33,72 25,42" fill="none" stroke="#E2E8F0" stroke-width="1"/>
+              <polygon points="50,35 65,46 60,64 40,64 35,46" fill="none" stroke="#E2E8F0" stroke-width="1"/>
+              <polygon points="50,20 82,40 70,75 30,78 22,40" fill="rgba(6,182,212,.25)" stroke="#06B6D4" stroke-width="1.5"/>
+              <circle cx="50" cy="50" r="1.5" fill="#06B6D4"/>
+            </svg>
+            <div class="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px] text-slate-600 flex-1">
+              <div class="flex justify-between"><span>技能</span><span class="font-bold text-slate-900">92</span></div>
+              <div class="flex justify-between"><span>出勤</span><span class="font-bold text-slate-900">95</span></div>
+              <div class="flex justify-between"><span>稳定</span><span class="font-bold text-slate-900">85</span></div>
+              <div class="flex justify-between"><span>协作</span><span class="font-bold text-slate-900">88</span></div>
+              <div class="flex justify-between col-span-2"><span>口碑</span><span class="font-bold text-slate-900">90</span></div>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 text-[11px] text-slate-500 mb-3">
+            <svg width="12" height="12" fill="#F59E0B" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <span>4.8</span><span class="text-slate-300">·</span><span>历史评价 23 条</span>
+          </div>
+          <div class="flex gap-2">
+            <button class="flex-1 h-9 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg text-xs font-medium text-slate-700 flex items-center justify-center gap-1">查看简历 <span class="text-[10px] text-amber-600">-5 币</span></button>
+            <a href="chat.html" class="flex-1 h-9 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold flex items-center justify-center">立即沟通</a>
+          </div>
+        </div>
+
+        <!-- 6 -->
+        <div class="talent-card bg-white border border-slate-200 rounded-2xl p-5">
+          <div class="flex items-start gap-3 mb-3">
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 text-white flex items-center justify-center font-bold flex-shrink-0">钱</div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-1.5"><span class="font-semibold text-slate-900">钱*平</span><span class="text-xs text-slate-400">男 · 34</span></div>
+              <div class="text-xs text-slate-500 mt-0.5">电工 · 10 年经验 · 郑州</div>
+              <div class="mt-1.5 flex items-center gap-1.5"><span class="badge-diamond text-[10px] px-1.5 py-0.5 rounded font-bold">钻石 II</span><span class="text-base font-extrabold text-cyan-600 tabular-nums">879</span></div>
+            </div>
+            <span class="text-emerald-600 text-xs font-bold flex items-center gap-0.5"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>在线</span>
+          </div>
+          <div class="bg-slate-50 rounded-xl p-3 flex items-center gap-3 mb-3">
+            <svg width="64" height="64" viewBox="0 0 100 100">
+              <polygon points="50,15 85,38 73,80 27,80 15,38" fill="none" stroke="#E2E8F0" stroke-width="1"/>
+              <polygon points="50,25 75,42 67,72 33,72 25,42" fill="none" stroke="#E2E8F0" stroke-width="1"/>
+              <polygon points="50,35 65,46 60,64 40,64 35,46" fill="none" stroke="#E2E8F0" stroke-width="1"/>
+              <polygon points="50,16 84,38 72,80 28,78 16,40" fill="rgba(6,182,212,.25)" stroke="#06B6D4" stroke-width="1.5"/>
+              <circle cx="50" cy="50" r="1.5" fill="#06B6D4"/>
+            </svg>
+            <div class="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px] text-slate-600 flex-1">
+              <div class="flex justify-between"><span>技能</span><span class="font-bold text-slate-900">96</span></div>
+              <div class="flex justify-between"><span>出勤</span><span class="font-bold text-slate-900">97</span></div>
+              <div class="flex justify-between"><span>稳定</span><span class="font-bold text-slate-900">90</span></div>
+              <div class="flex justify-between"><span>协作</span><span class="font-bold text-slate-900">88</span></div>
+              <div class="flex justify-between col-span-2"><span>口碑</span><span class="font-bold text-slate-900">93</span></div>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 text-[11px] text-slate-500 mb-3">
+            <svg width="12" height="12" fill="#F59E0B" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <span>4.9</span><span class="text-slate-300">·</span><span>历史评价 31 条</span>
+          </div>
+          <div class="flex gap-2">
+            <button class="flex-1 h-9 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg text-xs font-medium text-slate-700 flex items-center justify-center gap-1">查看简历 <span class="text-[10px] text-amber-600">-5 币</span></button>
+            <a href="chat.html" class="flex-1 h-9 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold flex items-center justify-center">立即沟通</a>
+          </div>
+        </div>
+
+        <!-- 7 -->
+        <div class="talent-card bg-white border border-slate-200 rounded-2xl p-5">
+          <div class="flex items-start gap-3 mb-3">
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-rose-400 to-pink-500 text-white flex items-center justify-center font-bold flex-shrink-0">吴</div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-1.5"><span class="font-semibold text-slate-900">吴*芳</span><span class="text-xs text-slate-400">女 · 33</span></div>
+              <div class="text-xs text-slate-500 mt-0.5">品检员 · 7 年经验 · 苏州</div>
+              <div class="mt-1.5 flex items-center gap-1.5"><span class="badge-gold text-[10px] px-1.5 py-0.5 rounded font-bold">黄金 II</span><span class="text-base font-extrabold text-amber-600 tabular-nums">812</span></div>
+            </div>
+            <span class="text-slate-400 text-xs font-medium">1 天前</span>
+          </div>
+          <div class="bg-slate-50 rounded-xl p-3 flex items-center gap-3 mb-3">
+            <svg width="64" height="64" viewBox="0 0 100 100">
+              <polygon points="50,15 85,38 73,80 27,80 15,38" fill="none" stroke="#E2E8F0" stroke-width="1"/>
+              <polygon points="50,25 75,42 67,72 33,72 25,42" fill="none" stroke="#E2E8F0" stroke-width="1"/>
+              <polygon points="50,35 65,46 60,64 40,64 35,46" fill="none" stroke="#E2E8F0" stroke-width="1"/>
+              <polygon points="50,22 78,40 70,75 30,75 22,40" fill="rgba(245,158,11,.25)" stroke="#F59E0B" stroke-width="1.5"/>
+              <circle cx="50" cy="50" r="1.5" fill="#F59E0B"/>
+            </svg>
+            <div class="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px] text-slate-600 flex-1">
+              <div class="flex justify-between"><span>技能</span><span class="font-bold text-slate-900">89</span></div>
+              <div class="flex justify-between"><span>出勤</span><span class="font-bold text-slate-900">93</span></div>
+              <div class="flex justify-between"><span>稳定</span><span class="font-bold text-slate-900">85</span></div>
+              <div class="flex justify-between"><span>协作</span><span class="font-bold text-slate-900">90</span></div>
+              <div class="flex justify-between col-span-2"><span>口碑</span><span class="font-bold text-slate-900">88</span></div>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 text-[11px] text-slate-500 mb-3">
+            <svg width="12" height="12" fill="#F59E0B" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <span>4.7</span><span class="text-slate-300">·</span><span>历史评价 22 条</span>
+          </div>
+          <div class="flex gap-2">
+            <button class="flex-1 h-9 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg text-xs font-medium text-slate-700 flex items-center justify-center gap-1">查看简历 <span class="text-[10px] text-amber-600">-5 币</span></button>
+            <a href="chat.html" class="flex-1 h-9 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold flex items-center justify-center">立即沟通</a>
+          </div>
+        </div>
+
+        <!-- 8 -->
+        <div class="talent-card bg-white border border-slate-200 rounded-2xl p-5">
+          <div class="flex items-start gap-3 mb-3">
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-400 to-blue-600 text-white flex items-center justify-center font-bold flex-shrink-0">郑</div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-1.5"><span class="font-semibold text-slate-900">郑*辉</span><span class="text-xs text-slate-400">男 · 30</span></div>
+              <div class="text-xs text-slate-500 mt-0.5">仓储员 · 3 年经验 · 上海</div>
+              <div class="mt-1.5 flex items-center gap-1.5"><span class="badge-silver text-[10px] px-1.5 py-0.5 rounded font-bold">白银 I</span><span class="text-base font-extrabold text-slate-500 tabular-nums">688</span></div>
+            </div>
+            <span class="text-amber-600 text-xs font-bold">求职中</span>
+          </div>
+          <div class="bg-slate-50 rounded-xl p-3 flex items-center gap-3 mb-3">
+            <svg width="64" height="64" viewBox="0 0 100 100">
+              <polygon points="50,15 85,38 73,80 27,80 15,38" fill="none" stroke="#E2E8F0" stroke-width="1"/>
+              <polygon points="50,25 75,42 67,72 33,72 25,42" fill="none" stroke="#E2E8F0" stroke-width="1"/>
+              <polygon points="50,35 65,46 60,64 40,64 35,46" fill="none" stroke="#E2E8F0" stroke-width="1"/>
+              <polygon points="50,30 72,46 66,68 36,68 28,46" fill="rgba(148,163,184,.3)" stroke="#94A3B8" stroke-width="1.5"/>
+              <circle cx="50" cy="50" r="1.5" fill="#94A3B8"/>
+            </svg>
+            <div class="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px] text-slate-600 flex-1">
+              <div class="flex justify-between"><span>技能</span><span class="font-bold text-slate-900">75</span></div>
+              <div class="flex justify-between"><span>出勤</span><span class="font-bold text-slate-900">85</span></div>
+              <div class="flex justify-between"><span>稳定</span><span class="font-bold text-slate-900">72</span></div>
+              <div class="flex justify-between"><span>协作</span><span class="font-bold text-slate-900">78</span></div>
+              <div class="flex justify-between col-span-2"><span>口碑</span><span class="font-bold text-slate-900">76</span></div>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 text-[11px] text-slate-500 mb-3">
+            <svg width="12" height="12" fill="#F59E0B" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <span>4.4</span><span class="text-slate-300">·</span><span>历史评价 11 条</span>
+          </div>
+          <div class="flex gap-2">
+            <button class="flex-1 h-9 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg text-xs font-medium text-slate-700 flex items-center justify-center gap-1">查看简历 <span class="text-[10px] text-amber-600">-5 币</span></button>
+            <a href="chat.html" class="flex-1 h-9 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold flex items-center justify-center">立即沟通</a>
+          </div>
+        </div>
+
+        <!-- 9 -->
+        <div class="talent-card bg-white border border-slate-200 rounded-2xl p-5">
+          <div class="flex items-start gap-3 mb-3">
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-teal-400 to-emerald-500 text-white flex items-center justify-center font-bold flex-shrink-0">何</div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-1.5"><span class="font-semibold text-slate-900">何*兰</span><span class="text-xs text-slate-400">女 · 27</span></div>
+              <div class="text-xs text-slate-500 mt-0.5">SMT 操作 · 4 年经验 · 杭州</div>
+              <div class="mt-1.5 flex items-center gap-1.5"><span class="badge-gold text-[10px] px-1.5 py-0.5 rounded font-bold">黄金 III</span><span class="text-base font-extrabold text-amber-600 tabular-nums">768</span></div>
+            </div>
+            <span class="text-emerald-600 text-xs font-bold flex items-center gap-0.5"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>在线</span>
+          </div>
+          <div class="bg-slate-50 rounded-xl p-3 flex items-center gap-3 mb-3">
+            <svg width="64" height="64" viewBox="0 0 100 100">
+              <polygon points="50,15 85,38 73,80 27,80 15,38" fill="none" stroke="#E2E8F0" stroke-width="1"/>
+              <polygon points="50,25 75,42 67,72 33,72 25,42" fill="none" stroke="#E2E8F0" stroke-width="1"/>
+              <polygon points="50,35 65,46 60,64 40,64 35,46" fill="none" stroke="#E2E8F0" stroke-width="1"/>
+              <polygon points="50,24 78,42 68,72 32,75 24,42" fill="rgba(245,158,11,.25)" stroke="#F59E0B" stroke-width="1.5"/>
+              <circle cx="50" cy="50" r="1.5" fill="#F59E0B"/>
+            </svg>
+            <div class="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px] text-slate-600 flex-1">
+              <div class="flex justify-between"><span>技能</span><span class="font-bold text-slate-900">85</span></div>
+              <div class="flex justify-between"><span>出勤</span><span class="font-bold text-slate-900">90</span></div>
+              <div class="flex justify-between"><span>稳定</span><span class="font-bold text-slate-900">80</span></div>
+              <div class="flex justify-between"><span>协作</span><span class="font-bold text-slate-900">88</span></div>
+              <div class="flex justify-between col-span-2"><span>口碑</span><span class="font-bold text-slate-900">85</span></div>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 text-[11px] text-slate-500 mb-3">
+            <svg width="12" height="12" fill="#F59E0B" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <span>4.6</span><span class="text-slate-300">·</span><span>历史评价 17 条</span>
+          </div>
+          <div class="flex gap-2">
+            <button class="flex-1 h-9 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg text-xs font-medium text-slate-700 flex items-center justify-center gap-1">查看简历 <span class="text-[10px] text-amber-600">-5 币</span></button>
+            <a href="chat.html" class="flex-1 h-9 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold flex items-center justify-center">立即沟通</a>
+          </div>
+        </div>
+
+        <!-- 10 -->
+        <div class="talent-card bg-white border border-slate-200 rounded-2xl p-5">
+          <div class="flex items-start gap-3 mb-3">
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-yellow-400 to-amber-500 text-white flex items-center justify-center font-bold flex-shrink-0">孙</div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-1.5"><span class="font-semibold text-slate-900">孙*伟</span><span class="text-xs text-slate-400">男 · 26</span></div>
+              <div class="text-xs text-slate-500 mt-0.5">普工 · 2 年经验 · 深圳</div>
+              <div class="mt-1.5 flex items-center gap-1.5"><span class="badge-silver text-[10px] px-1.5 py-0.5 rounded font-bold">白银 II</span><span class="text-base font-extrabold text-slate-500 tabular-nums">654</span></div>
+            </div>
+            <span class="text-amber-600 text-xs font-bold">求职中</span>
+          </div>
+          <div class="bg-slate-50 rounded-xl p-3 flex items-center gap-3 mb-3">
+            <svg width="64" height="64" viewBox="0 0 100 100">
+              <polygon points="50,15 85,38 73,80 27,80 15,38" fill="none" stroke="#E2E8F0" stroke-width="1"/>
+              <polygon points="50,25 75,42 67,72 33,72 25,42" fill="none" stroke="#E2E8F0" stroke-width="1"/>
+              <polygon points="50,35 65,46 60,64 40,64 35,46" fill="none" stroke="#E2E8F0" stroke-width="1"/>
+              <polygon points="50,32 72,46 64,68 36,70 30,46" fill="rgba(148,163,184,.3)" stroke="#94A3B8" stroke-width="1.5"/>
+              <circle cx="50" cy="50" r="1.5" fill="#94A3B8"/>
+            </svg>
+            <div class="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px] text-slate-600 flex-1">
+              <div class="flex justify-between"><span>技能</span><span class="font-bold text-slate-900">70</span></div>
+              <div class="flex justify-between"><span>出勤</span><span class="font-bold text-slate-900">82</span></div>
+              <div class="flex justify-between"><span>稳定</span><span class="font-bold text-slate-900">68</span></div>
+              <div class="flex justify-between"><span>协作</span><span class="font-bold text-slate-900">75</span></div>
+              <div class="flex justify-between col-span-2"><span>口碑</span><span class="font-bold text-slate-900">72</span></div>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 text-[11px] text-slate-500 mb-3">
+            <svg width="12" height="12" fill="#F59E0B" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <span>4.2</span><span class="text-slate-300">·</span><span>历史评价 8 条</span>
+          </div>
+          <div class="flex gap-2">
+            <button class="flex-1 h-9 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg text-xs font-medium text-slate-700 flex items-center justify-center gap-1">查看简历 <span class="text-[10px] text-amber-600">-5 币</span></button>
+            <a href="chat.html" class="flex-1 h-9 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold flex items-center justify-center">立即沟通</a>
+          </div>
+        </div>
+
+        <!-- 11 -->
+        <div class="talent-card bg-white border border-slate-200 rounded-2xl p-5">
+          <div class="flex items-start gap-3 mb-3">
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-400 to-violet-600 text-white flex items-center justify-center font-bold flex-shrink-0">林</div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-1.5"><span class="font-semibold text-slate-900">林*春</span><span class="text-xs text-slate-400">男 · 40</span></div>
+              <div class="text-xs text-slate-500 mt-0.5">焊工 · 15 年经验 · 福州</div>
+              <div class="mt-1.5 flex items-center gap-1.5"><span class="badge-king text-[10px] px-1.5 py-0.5 rounded font-bold">王者 III</span><span class="text-base font-extrabold text-violet-600 tabular-nums">901</span></div>
+            </div>
+            <span class="text-slate-400 text-xs font-medium">5 小时前</span>
+          </div>
+          <div class="bg-slate-50 rounded-xl p-3 flex items-center gap-3 mb-3">
+            <svg width="64" height="64" viewBox="0 0 100 100">
+              <polygon points="50,15 85,38 73,80 27,80 15,38" fill="none" stroke="#E2E8F0" stroke-width="1"/>
+              <polygon points="50,25 75,42 67,72 33,72 25,42" fill="none" stroke="#E2E8F0" stroke-width="1"/>
+              <polygon points="50,35 65,46 60,64 40,64 35,46" fill="none" stroke="#E2E8F0" stroke-width="1"/>
+              <polygon points="50,17 85,38 74,80 26,80 15,38" fill="rgba(168,85,247,.3)" stroke="#A855F7" stroke-width="1.5"/>
+              <circle cx="50" cy="50" r="1.5" fill="#A855F7"/>
+            </svg>
+            <div class="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px] text-slate-600 flex-1">
+              <div class="flex justify-between"><span>技能</span><span class="font-bold text-slate-900">97</span></div>
+              <div class="flex justify-between"><span>出勤</span><span class="font-bold text-slate-900">96</span></div>
+              <div class="flex justify-between"><span>稳定</span><span class="font-bold text-slate-900">95</span></div>
+              <div class="flex justify-between"><span>协作</span><span class="font-bold text-slate-900">92</span></div>
+              <div class="flex justify-between col-span-2"><span>口碑</span><span class="font-bold text-slate-900">94</span></div>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 text-[11px] text-slate-500 mb-3">
+            <svg width="12" height="12" fill="#F59E0B" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <span>5.0</span><span class="text-slate-300">·</span><span>历史评价 56 条</span><span class="text-slate-300">·</span><span class="text-emerald-600">高级焊工证</span>
+          </div>
+          <div class="flex gap-2">
+            <button class="flex-1 h-9 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg text-xs font-medium text-slate-700 flex items-center justify-center gap-1">查看简历 <span class="text-[10px] text-amber-600">-5 币</span></button>
+            <a href="chat.html" class="flex-1 h-9 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold flex items-center justify-center">立即沟通</a>
+          </div>
+        </div>
+
+        <!-- 12 -->
+        <div class="talent-card bg-white border border-slate-200 rounded-2xl p-5">
+          <div class="flex items-start gap-3 mb-3">
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-red-400 to-orange-500 text-white flex items-center justify-center font-bold flex-shrink-0">徐</div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-1.5"><span class="font-semibold text-slate-900">徐*斌</span><span class="text-xs text-slate-400">男 · 28</span></div>
+              <div class="text-xs text-slate-500 mt-0.5">叉车司机 · 5 年经验 · 苏州</div>
+              <div class="mt-1.5 flex items-center gap-1.5"><span class="badge-gold text-[10px] px-1.5 py-0.5 rounded font-bold">黄金 I</span><span class="text-base font-extrabold text-amber-600 tabular-nums">789</span></div>
+            </div>
+            <span class="text-emerald-600 text-xs font-bold flex items-center gap-0.5"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>在线</span>
+          </div>
+          <div class="bg-slate-50 rounded-xl p-3 flex items-center gap-3 mb-3">
+            <svg width="64" height="64" viewBox="0 0 100 100">
+              <polygon points="50,15 85,38 73,80 27,80 15,38" fill="none" stroke="#E2E8F0" stroke-width="1"/>
+              <polygon points="50,25 75,42 67,72 33,72 25,42" fill="none" stroke="#E2E8F0" stroke-width="1"/>
+              <polygon points="50,35 65,46 60,64 40,64 35,46" fill="none" stroke="#E2E8F0" stroke-width="1"/>
+              <polygon points="50,22 78,42 70,74 30,72 22,40" fill="rgba(245,158,11,.25)" stroke="#F59E0B" stroke-width="1.5"/>
+              <circle cx="50" cy="50" r="1.5" fill="#F59E0B"/>
+            </svg>
+            <div class="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px] text-slate-600 flex-1">
+              <div class="flex justify-between"><span>技能</span><span class="font-bold text-slate-900">86</span></div>
+              <div class="flex justify-between"><span>出勤</span><span class="font-bold text-slate-900">93</span></div>
+              <div class="flex justify-between"><span>稳定</span><span class="font-bold text-slate-900">82</span></div>
+              <div class="flex justify-between"><span>协作</span><span class="font-bold text-slate-900">87</span></div>
+              <div class="flex justify-between col-span-2"><span>口碑</span><span class="font-bold text-slate-900">85</span></div>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 text-[11px] text-slate-500 mb-3">
+            <svg width="12" height="12" fill="#F59E0B" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <span>4.7</span><span class="text-slate-300">·</span><span>历史评价 16 条</span><span class="text-slate-300">·</span><span class="text-emerald-600">N1 证</span>
+          </div>
+          <div class="flex gap-2">
+            <button class="flex-1 h-9 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg text-xs font-medium text-slate-700 flex items-center justify-center gap-1">查看简历 <span class="text-[10px] text-amber-600">-5 币</span></button>
+            <a href="chat.html" class="flex-1 h-9 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold flex items-center justify-center">立即沟通</a>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 分页 -->
+      <div class="flex items-center justify-center gap-1 pt-2">
+        <button class="w-9 h-9 rounded-lg border border-slate-200 text-slate-400 disabled:opacity-50" disabled>‹</button>
+        <button class="w-9 h-9 rounded-lg bg-blue-600 text-white font-semibold">1</button>
+        <button class="w-9 h-9 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50">2</button>
+        <button class="w-9 h-9 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50">3</button>
+        <span class="text-slate-400 px-1">...</span>
+        <button class="w-9 h-9 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50">719</button>
+        <button class="w-9 h-9 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50">›</button>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+</body>
+</html>

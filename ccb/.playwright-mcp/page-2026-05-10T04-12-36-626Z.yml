@@ -1,0 +1,8 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e646]:
+    - img [ref=e649] [cursor=pointer]
+    - generic [ref=e652]: 我的订单
+  - generic [ref=e560]:
+    - strong [ref=e562]: 下单失败
+    - generic [ref=e563]: 计算快递运费异常，配送方式不匹配
+    - generic [ref=e565] [cursor=pointer]: 确定
