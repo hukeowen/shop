@@ -365,7 +365,12 @@ import {
   settleSpuPool,
 } from '../../api/promo.js';
 
-const categories = CATEGORIES;
+// CATEGORIES 是 plain JS 数组，splice 替换内容时 Vue 不会响应；
+// 用 ref 持有副本，loadCategories 后手动同步。
+const categories = ref([...CATEGORIES]);
+function syncCategoriesRef() {
+  categories.value = [...CATEGORIES];
+}
 const isEdit = ref(false);
 const editingId = ref(0);
 const advancedOpen = ref(false);
@@ -672,9 +677,9 @@ function goSettleRecords() {
 
 // 分类下拉的实际选项：真实分类 + 末尾的「＋ 新增分类」哑元（id=-1）
 const ADD_CATEGORY_OPTION = { id: -1, name: '＋ 新增分类' };
-const categoryOptions = computed(() => [...categories, ADD_CATEGORY_OPTION]);
+const categoryOptions = computed(() => [...categories.value, ADD_CATEGORY_OPTION]);
 const categoryIdx = computed(() => {
-  const i = categories.findIndex((c) => c.id === form.categoryId);
+  const i = categories.value.findIndex((c) => c.id === form.categoryId);
   return i >= 0 ? i : 0;
 });
 
@@ -713,6 +718,7 @@ function onPickCategory(e) {
         }
         try {
           const newId = await createCategory(name);
+          syncCategoriesRef(); // 刷新本地响应式副本，让 picker 立刻显示
           if (newId) {
             form.categoryId = Number(newId);
             uni.showToast({ title: `已创建「${name}」`, icon: 'success' });
@@ -827,9 +833,8 @@ async function onDelete() {
 }
 
 onLoad(async (q) => {
-  // 显式预热商品分类（小程序环境无 window，模块加载时自动预热不会触发）
-  // CATEGORIES 是引用，loadCategories 内部 splice 替换内容；模板里 v-for 会响应
-  loadCategories().catch(() => {});
+  // 显式预热商品分类，并把结果同步进响应式 ref（splice 不会触发 Vue 响应）
+  loadCategories().then(syncCategoriesRef).catch(() => {});
   if (q.id) {
     isEdit.value = true;
     editingId.value = Number(q.id);
