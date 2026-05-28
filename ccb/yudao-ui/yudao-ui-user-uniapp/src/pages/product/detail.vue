@@ -6,6 +6,7 @@
       <!-- 主图 -->
       <view class="pd-pic">
         <view class="nav-back" @click="goBack">‹</view>
+        <view class="nav-home" @click="goHome">🏠</view>
         <view class="nav-share" @click="onShare">↗</view>
         <image v-if="product.picUrl" :src="product.picUrl" class="main-pic" mode="aspectFill" />
         <view v-else class="main-pic-emoji">{{ pickEmoji() }}</view>
@@ -251,6 +252,10 @@ function buyNow() {
 
 function onShare() { uni.showToast({ title: '从店铺页 ↗ 分享', icon: 'none' }); }
 function goShop() { uni.navigateTo({ url: `/pages/shop/home?tenantId=${tenantId.value}` }); }
+function goHome() {
+  // 直接落地分享链接打开商品详情时，navigateBack 无历史可回；统一 reLaunch 回 App 首页
+  uni.reLaunch({ url: '/pages/index/index' });
+}
 function goCart() { uni.navigateTo({ url: `/pages/cart/index?tenantId=${tenantId.value}` }); }
 function goBack() { uni.navigateBack(); }
 
@@ -281,7 +286,7 @@ onLoad((q) => {
 }
 .pd-pic .main-pic { width: 100%; height: 100%; }
 .pd-pic .main-pic-emoji { font-size: 200rpx; color: #fff; }
-.pd-pic .nav-back, .pd-pic .nav-share {
+.pd-pic .nav-back, .pd-pic .nav-share, .pd-pic .nav-home {
   position: absolute; top: calc(env(safe-area-inset-top) + 24rpx);
   width: 72rpx; height: 72rpx; border-radius: 50%;
   background: rgba(0,0,0,.30); color: #fff;
@@ -289,6 +294,7 @@ onLoad((q) => {
   z-index: 3; backdrop-filter: blur(12rpx);
 }
 .pd-pic .nav-back { left: 24rpx; font-size: 44rpx; }
+.pd-pic .nav-home { left: 112rpx; font-size: 30rpx; }
 .pd-pic .nav-share { right: 24rpx; font-size: 32rpx; }
 .pd-pic .pager {
   position: absolute; bottom: 24rpx; left: 50%; transform: translateX(-50%);
