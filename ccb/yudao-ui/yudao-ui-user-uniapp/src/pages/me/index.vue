@@ -20,9 +20,9 @@
       </view>
 
       <view class="me-earn">
-        <view class="me-earn-l">累计推广收益</view>
-        <view class="me-earn-v">¥{{ earnYuan }}</view>
-        <view v-if="user.isLogin" class="me-earn-grow">↑ 今日 +¥{{ todayEarnYuan }}</view>
+        <view class="me-earn-l">累计推广积分（按店申请兑付）</view>
+        <view class="me-earn-v">{{ earnPoints }} <text class="me-earn-u">积分</text></view>
+        <view v-if="user.isLogin" class="me-earn-grow">↑ 今日 +{{ todayEarnPoints }} 积分</view>
         <view class="me-earn-acts">
           <view class="me-earn-act primary" @click="goWithdraw">
             <view class="em">💸</view>
@@ -92,11 +92,11 @@
       </view>
       <view class="msb-stats">
         <view class="msb-stat" @click.stop="goShopRecords(s, 'promo')">
-          <view class="n gold">¥{{ s.promoYuan }}</view>
+          <view class="n gold">{{ s.promoPointsRaw || 0 }} <text class="u">积分</text></view>
           <view class="l">推广积分</view>
         </view>
         <view class="msb-stat" @click.stop="goShopRecords(s, 'consume')">
-          <view class="n purple">¥{{ s.consumeYuan }}</view>
+          <view class="n purple">{{ s.consumePointsRaw || 0 }} <text class="u">积分</text></view>
           <view class="l">消费积分</view>
         </view>
         <view class="msb-stat">
@@ -235,8 +235,8 @@ const maskedPhone = computed(() => {
   return p.slice(0, 3) + '****' + p.slice(-4);
 });
 
-const earnYuan = ref('0.00');
-const todayEarnYuan = ref('0.00');
+const earnPoints = ref(0);
+const todayEarnPoints = ref(0);
 const myShops = ref([]);
 const queueTotal = ref(0);
 const queues = ref([]);
@@ -337,16 +337,16 @@ async function load() {
   if (!user.isLogin) {
     myShops.value = [];
     earnYuan.value = '0.00';
-    todayEarnYuan.value = '0.00';
+    todayEarnPoints.value = 0;
     return;
   }
   try {
     const acct = await getAccount();
-    earnYuan.value = fen2yuan(acct?.promoPointBalance || 0, false);
+    earnPoints.value = acct?.promoPointBalance || 0;
   } catch {}
   try {
     const stat = await getTodayStat();
-    todayEarnYuan.value = fen2yuan(stat?.promoAmountToday || 0, false);
+    todayEarnPoints.value = stat?.promoAmountToday || 0;
   } catch {}
   try {
     queues.value = await listMyQueues() || [];
@@ -378,8 +378,8 @@ async function load() {
       return {
         ...s,
         starLevel: star,                      // 兼容旧模板引用
-        promoYuan: fen2yuan(s.promoPoints || 0, false),   // 推广积分 → ¥
-        consumeYuan: fen2yuan(s.points || 0, false),      // 消费积分 → ¥（100 积分=¥1）
+        promoPointsRaw: s.promoPoints || 0,               // 推广积分（原始整数）
+        consumePointsRaw: s.points || 0,                  // 消费积分（原始整数）
         lastVisitText: s.lastVisitAt ? `最近 ${fmtTime(s.lastVisitAt)}` : '',
         queueCount: queue ? 1 : 0,
         queueActive: !!queue,
@@ -470,6 +470,11 @@ onShow(load);
   background: linear-gradient(135deg, #fff, #FEF3C7);
   -webkit-background-clip: text; background-clip: text; color: transparent;
   text-shadow: 0 4px 20px rgba(254,243,199,.3);
+}
+.me-earn-u {
+  font-size: 16px; font-weight: 700;
+  -webkit-text-fill-color: #FEF3C7;
+  margin-left: 4px;
 }
 .me-earn-grow {
   display: inline-block;
@@ -630,6 +635,7 @@ onShow(load);
 .msb-stat { text-align: center; padding: 8px 4px; border-right: 1px dashed $line; position: relative; }
 .msb-stat:last-child { border-right: 0; }
 .msb-stat .n { font-size: 17px; font-weight: 900; color: $t1; line-height: 1; }
+.msb-stat .n .u { font-size: 10px; font-weight: 700; color: $t3; margin-left: 2px; }
 .msb-stat .n.orange {
   background: linear-gradient(135deg, $o, $o-d);
   -webkit-background-clip: text; background-clip: text; color: transparent;

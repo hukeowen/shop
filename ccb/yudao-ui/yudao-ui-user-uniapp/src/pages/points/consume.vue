@@ -3,8 +3,8 @@
     <nav-bar :title="shopName ? `${shopName} · 消费积分` : '消费积分明细'" />
     <view class="sum-card">
       <text class="l">{{ shopName ? `${shopName} · 消费积分` : '消费积分（跨店）' }}</text>
-      <view class="amt">¥{{ fen2yuan(balance, false) }}</view>
-      <text class="d">100 消费积分 = ¥1 · 下单可抵扣</text>
+      <view class="amt">{{ balance }} <text class="u">积分</text></view>
+      <text class="d">下单时按商户配置抵扣 · 兑付比例由商户独立设定</text>
     </view>
     <view v-if="loading && !records.length" class="loading">加载中…</view>
     <empty-state v-else-if="!records.length" title="暂无积分明细" />
@@ -13,9 +13,9 @@
         <view class="r-ic">{{ iconFor(r.sourceType) }}</view>
         <view class="body">
           <view class="t">{{ labelFor(r.sourceType) }}</view>
-          <view class="d">{{ fmtTime(r.createTime) }} · 余额 ¥{{ fen2yuan(r.balanceAfter || 0, false) }}</view>
+          <view class="d">{{ fmtTime(r.createTime) }} · 余额 {{ r.balanceAfter || 0 }} 积分</view>
         </view>
-        <view class="amt" :class="{ neg: r.amount < 0 }">{{ r.amount > 0 ? '+' : '' }}¥{{ fen2yuan(r.amount, false) }}</view>
+        <view class="amt" :class="{ neg: r.amount < 0 }">{{ r.amount > 0 ? '+' : '' }}{{ r.amount }} <text class="u">积分</text></view>
       </view>
       <view v-if="loadingMore" class="more">加载中…</view>
       <view v-else-if="hasMore" class="more click" @click="loadMore">点击加载更多</view>
@@ -27,7 +27,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { getAccount, listConsumeRecords } from '@/api/promo.js';
-import { fmtTime, fen2yuan } from '@/utils/format.js';
+import { fmtTime } from '@/utils/format.js';
 
 // 路由参数：tenantId 按店过滤 + shopName 标题
 const route = (() => {
@@ -94,6 +94,7 @@ onMounted(async () => {
 .sum-card { margin: 14px; padding: 20px; background: linear-gradient(135deg, $mint, #0E9E6D); color: #fff; border-radius: $r-lg; box-shadow: 0 8px 24px rgba(16,185,129,.3); }
 .sum-card .l { font-size: 12px; opacity: .8; }
 .sum-card .amt { font-size: 34px; font-weight: 900; margin-top: 4px; }
+.sum-card .amt .u { font-size: 14px; font-weight: 700; opacity: .85; margin-left: 4px; }
 .sum-card .d { font-size: 11px; opacity: .8; margin-top: 4px; }
 .loading { padding: 40px; text-align: center; color: $t4; }
 .list { padding-bottom: 20px; }
@@ -104,6 +105,7 @@ onMounted(async () => {
 .d { font-size: 11px; color: $t3; margin-top: 2px; }
 .amt { font-size: 16px; font-weight: 800; color: $mint; flex-shrink: 0; }
 .amt.neg { color: $t3; }
+.amt .u { font-size: 11px; font-weight: 600; color: $t3; margin-left: 2px; }
 .more { padding: 14px; text-align: center; font-size: 12px; color: $t4; }
 .more.click { color: $o; }
 </style>

@@ -2,20 +2,21 @@
   <view class="page">
     <nav-bar title="我的钱包" bg="transparent" txt="#fff" />
     <view class="hero">
-      <view class="hero-tag">💎 推广积分（可申请提现）</view>
-      <view class="hero-amt">¥{{ balanceYuan }}</view>
+      <view class="hero-tag">💎 推广积分（可向商户申请提现）</view>
+      <view class="hero-amt">{{ promoPoints }} <text class="unit">积分</text></view>
+      <view class="hero-sub">兑付规则与比例由各商户独立设定 · 平台不担保</view>
       <view class="hero-row">
         <view class="hr-col">
           <view class="hr-l">推广积分</view>
-          <view class="hr-v">{{ promoPoints }}</view>
+          <view class="hr-v">{{ promoPoints }} <text class="u">积分</text></view>
         </view>
         <view class="hr-col">
           <view class="hr-l">消费积分</view>
-          <view class="hr-v">{{ consumePoints }}</view>
+          <view class="hr-v">{{ consumePoints }} <text class="u">积分</text></view>
         </view>
         <view class="hr-col">
           <view class="hr-l">今日入账</view>
-          <view class="hr-v">¥{{ todayYuan }}</view>
+          <view class="hr-v">{{ todayPoints }} <text class="u">积分</text></view>
         </view>
       </view>
       <view class="hero-actions">
@@ -35,7 +36,7 @@
           <view class="r-t">{{ r.remark || labelFor(r.sourceType) }}</view>
           <view class="r-d">{{ fmtTime(r.createTime) }}</view>
         </view>
-        <view class="r-amt" :class="{ neg: r.amount < 0 }">{{ r.amount > 0 ? '+' : '' }}¥{{ fen2yuan(r.amount, false) }}</view>
+        <view class="r-amt" :class="{ neg: r.amount < 0 }">{{ r.amount > 0 ? '+' : '' }}{{ r.amount }} <text class="u">积分</text></view>
       </view>
     </view>
   </view>
@@ -45,15 +46,13 @@
 import { ref, computed, onMounted } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
 import { getAccount, listPromoRecords, getTodayStat } from '@/api/promo.js';
-import { fen2yuan, fmtTime } from '@/utils/format.js';
+import { fmtTime } from '@/utils/format.js';
 
 const promoPoints = ref(0);
 const consumePoints = ref(0);
-const todayYuan = ref('0.00');
+const todayPoints = ref(0);
 const loading = ref(false);
 const records = ref([]);
-
-const balanceYuan = computed(() => fen2yuan(promoPoints.value, false));
 
 function iconFor(t) {
   if (t === 'POOL')       return '🏆';
@@ -94,7 +93,7 @@ async function load() {
   } catch {}
   try {
     const stat = await getTodayStat();
-    todayYuan.value = fen2yuan(stat?.promoAmountToday || 0, false);
+    todayPoints.value = stat?.promoAmountToday || 0;
   } catch {}
   loading.value = true;
   try {
@@ -112,10 +111,13 @@ onShow(load);
 .hero { padding: 24px 14px 20px; background: linear-gradient(135deg, #18130E, #2A1A0F); color: #fff; border-bottom-left-radius: 28px; border-bottom-right-radius: 28px; }
 .hero-tag { font-size: 12px; opacity: .7; }
 .hero-amt { font-size: 38px; font-weight: 900; margin-top: 4px; background: linear-gradient(135deg, #fff, $gold-l); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.hero-amt .unit { font-size: 16px; font-weight: 700; -webkit-text-fill-color: $gold-l; }
+.hero-sub { margin-top: 6px; font-size: 11px; color: rgba(255,255,255,.55); }
 .hero-row { display: flex; margin-top: 16px; }
 .hr-col { flex: 1; }
 .hr-l { font-size: 11px; opacity: .6; }
 .hr-v { font-size: 18px; font-weight: 800; margin-top: 2px; }
+.hr-v .u { font-size: 11px; font-weight: 600; color: rgba(255,255,255,.7); margin-left: 2px; }
 .hero-actions { display: flex; gap: 8px; margin-top: 20px; }
 .btn { flex: 1; padding: 12px 0; text-align: center; border-radius: $r-pill; font-weight: 800; font-size: 13px; }
 .btn.warm { background: linear-gradient(135deg, $o, $o-d); color: #fff; box-shadow: $sh-warm; }
@@ -130,4 +132,5 @@ onShow(load);
 .r-d { font-size: 11px; color: $t3; margin-top: 2px; }
 .r-amt { font-size: 16px; font-weight: 800; color: $o; flex-shrink: 0; }
 .r-amt.neg { color: $t3; }
+.r-amt .u { font-size: 11px; font-weight: 600; color: $t3; margin-left: 2px; }
 </style>

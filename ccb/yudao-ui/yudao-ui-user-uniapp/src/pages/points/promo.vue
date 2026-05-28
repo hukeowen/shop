@@ -6,16 +6,16 @@
     <view class="hero">
       <view class="hero-bg"></view>
       <view class="hero-tag">{{ shopName ? `${shopName} · 推广积分` : '推广积分（跨店）' }}</view>
-      <view class="hero-amt">¥{{ lifetimeYuan }}</view>
-      <view class="hero-sub">累计已获 · 提现申请由商户审批兑付</view>
+      <view class="hero-amt">{{ lifetimeFen }} <text class="unit">积分</text></view>
+      <view class="hero-sub">累计已获 · 提现申请由商户审批兑付（兑付比例由商户独立设定）</view>
       <view class="hero-row">
         <view class="hero-stat">
-          <text class="v">¥{{ balanceYuan }}</text>
+          <text class="v">{{ promoBalance }} <text class="u">积分</text></text>
           <text class="l">当前可用</text>
         </view>
         <view class="hero-divider"></view>
         <view class="hero-stat">
-          <text class="v">¥{{ usedYuan }}</text>
+          <text class="v">{{ usedPoints }} <text class="u">积分</text></text>
           <text class="l">已抵扣/提现</text>
         </view>
       </view>
@@ -35,11 +35,11 @@
           </view>
           <view class="d">
             <text>{{ fmtTime(r.createTime) }}</text>
-            <text v-if="r.balanceAfter != null"> · 余额 ¥{{ fen2yuan(r.balanceAfter, false) }}</text>
+            <text v-if="r.balanceAfter != null"> · 余额 {{ r.balanceAfter }} 积分</text>
             <text v-if="explainOf(r)" class="exp"> · {{ explainOf(r) }}</text>
           </view>
         </view>
-        <view class="amt" :class="{ neg: r.amount < 0 }">{{ r.amount > 0 ? '+' : '' }}¥{{ fen2yuan(r.amount, false) }}</view>
+        <view class="amt" :class="{ neg: r.amount < 0 }">{{ r.amount > 0 ? '+' : '' }}{{ r.amount }} <text class="u">积分</text></view>
       </view>
       <view v-if="loadingMore" class="more">加载中…</view>
       <view v-else-if="hasMore" class="more click" @click="loadMore">点击加载更多</view>
@@ -53,7 +53,7 @@ import { ref, computed, onMounted } from 'vue';
 import { getAccount, listPromoRecords } from '@/api/promo.js';
 import { getMyPromoEarned } from '@/api/shop.js';
 import { listSpuByIds } from '@/api/product.js';
-import { fen2yuan, fmtTime } from '@/utils/format.js';
+import { fmtTime } from '@/utils/format.js';
 
 // 路由参数：tenantId（按店过滤）+ shopName（标题）
 const route = (() => {
@@ -64,9 +64,7 @@ const shopName = route.shopName ? decodeURIComponent(route.shopName) : '';
 
 const promoBalance = ref(0);
 const lifetimeFen = ref(0);
-const balanceYuan = computed(() => fen2yuan(promoBalance.value, false));
-const lifetimeYuan = computed(() => fen2yuan(lifetimeFen.value, false));
-const usedYuan = computed(() => fen2yuan(Math.max(0, lifetimeFen.value - promoBalance.value), false));
+const usedPoints = computed(() => Math.max(0, lifetimeFen.value - promoBalance.value));
 
 const loading = ref(false);
 const loadingMore = ref(false);
@@ -245,6 +243,7 @@ onMounted(async () => {
   letter-spacing: -1px;
   font-variant-numeric: tabular-nums;
 }
+.hero-amt .unit { font-size: 16px; font-weight: 700; opacity: .8; }
 .hero-sub {
   position: relative;
   font-size: 11px; opacity: .85; margin-top: 2px;
@@ -260,6 +259,7 @@ onMounted(async () => {
 }
 .hero-stat { flex: 1; display: flex; flex-direction: column; align-items: center; }
 .hero-stat .v { font-size: 16px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.hero-stat .v .u { font-size: 10px; font-weight: 600; opacity: .85; margin-left: 2px; }
 .hero-stat .l { font-size: 10.5px; opacity: .85; margin-top: 2px; }
 .hero-divider { width: 1px; height: 26px; background: rgba(255,255,255,.25); }
 
@@ -327,6 +327,7 @@ onMounted(async () => {
   font-variant-numeric: tabular-nums;
 }
 .amt.neg { color: $t3; }
+.amt .u { font-size: 11px; font-weight: 600; color: $t3; margin-left: 2px; }
 
 .more { padding: 18px; text-align: center; font-size: 12px; color: $t4; }
 .more.click { color: $o; font-weight: 700; }
