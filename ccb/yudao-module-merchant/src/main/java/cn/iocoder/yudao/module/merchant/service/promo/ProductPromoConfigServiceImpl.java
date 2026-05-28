@@ -99,13 +99,23 @@ public class ProductPromoConfigServiceImpl implements ProductPromoConfigService 
                 // 跨租户拉商户配置失败不致命，仅放过本次校验
             }
         }
-        // 团队极差启用时校验 starRatios / starUpgradeRules 长度 = starCount
+        // V044 合规：starRatios 重定义为"邀请奖按推荐人 VIP 等级差异化比例"
+        // starUpgradeRules 改为纯个人 KPI（直推付费数 OR 自购金额任一即升）
         Integer sc = req.getStarCount();
         if (sc != null && sc > 0) {
             List<BigDecimal> srs = parseDecArray(req.getStarRatios(), "starRatios");
             if (srs.size() != sc) {
                 throw ServiceExceptionUtil.exception0(1_031_002_004,
                         "starRatios 数组长度 (" + srs.size() + ") 必须等于 starCount (" + sc + ")");
+            }
+            // V044 合规 P0-4 硬约束：每个 VIP 等级邀请奖比例 ≤ 35%
+            BigDecimal cap = new BigDecimal("35");
+            for (int i = 0; i < srs.size(); i++) {
+                if (srs.get(i).compareTo(cap) > 0) {
+                    throw ServiceExceptionUtil.exception0(1_031_002_012,
+                            "starRatios[" + i + "] = " + srs.get(i)
+                                    + "% 超过 35% 合规上限。请调整后保存。");
+                }
             }
             // starUpgradeRules：每条 {directCount, teamSales}；长度需 = starCount
             try {

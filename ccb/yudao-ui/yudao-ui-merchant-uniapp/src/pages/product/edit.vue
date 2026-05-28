@@ -92,8 +92,8 @@
 
       <view class="switch-row">
         <view class="switch-body">
-          <view class="switch-title">参与邀请激励（v7）</view>
-          <view class="switch-desc">链上前 N 位推荐人按比例瓜分该商品的 1 笔订单推广奖励</view>
+          <view class="switch-title">参与「邀请有礼」活动</view>
+          <view class="switch-desc">老顾客邀请新人买本商品 → 累计 N 次完成本期，按比例分享激励</view>
         </view>
         <switch
           :checked="promo.tuijianEnabled"
@@ -103,17 +103,17 @@
       </view>
       <template v-if="promo.tuijianEnabled">
         <view class="field-v">
-          <text class="label-v">N 值（推几个）</text>
+          <text class="label-v">累积次数 N</text>
           <input
             class="input compact"
             type="number"
             v-model="promo.tuijianN"
             @blur="syncTuijianN"
-            placeholder="如 4"
+            placeholder="如 4（邀请新人 N 人买本商品完成本期）"
           />
         </view>
         <view class="field-v">
-          <text class="label-v">N 个推广奖励比例 % （从近到远）</text>
+          <text class="label-v">N 次分享激励 % （从第 1 次到第 N 次）</text>
           <view class="ratios-row">
             <view
               v-for="(r, i) in promo.tuijianRatios"
@@ -132,74 +132,69 @@
             </view>
           </view>
           <text class="hint inline" :class="{ warn: ratiosSum > 100 }">
-            合计 {{ ratiosSum.toFixed(1) }}% / 100%（超过 100% 不能保存）
+            合计 {{ ratiosSum.toFixed(1) }}% / 100%（来自商户营销让利预算；超 100% 拒绝保存）
           </text>
         </view>
       </template>
 
-      <!-- v8: 邀请奖比例（邀请激励 完成后每件按此比例返） -->
+      <!-- v8: 邀请奖比例（出队后老客继续邀请的感谢奖） -->
       <view class="field-v">
-        <text class="label-v">邀请奖比例</text>
+        <text class="label-v">出队后邀请感谢奖 %</text>
         <view class="star-row-input">
-          <input class="input compact" type="digit" v-model="promo.directRate" placeholder="例 10" />
+          <input class="input compact" type="digit" v-model="promo.directRate" placeholder="例 10（上限 35%）" />
           <text class="suffix">%</text>
         </view>
-        <text class="hint inline">buyer 完成 N 后自购按此返；parent 首贡献 1 件价 × 此</text>
+        <text class="hint inline">完成 N 次累积后，老客继续邀请新人成单时拿订单实付的此比例 · 单层 · ≤35%</text>
       </view>
 
-      <!-- v8: 店内星级奖励（按商品独立） -->
+      <!-- v8: 会员等级（VIP）配置 — V044 合规：纯个人等级，无团队/链式 -->
       <view class="field-v">
-        <text class="label-v">星级数（0=不启用）</text>
+        <text class="label-v">VIP 等级数（0=不启用）</text>
         <input class="input compact" type="number" v-model="promo.starCount" @blur="syncStarCount" placeholder="0" />
+        <text class="hint inline">会员升级仅看个人 KPI（自购累计 OR 直推付费数），等同京东 PLUS / 美团 VIP</text>
       </view>
       <template v-if="(parseInt(promo.starCount)||0) > 0">
-        <!-- 每星一张卡：返奖比例 + 升星条件 三项垂直排 -->
+        <!-- 每星一张卡：邀请奖比例（按推荐人 VIP 等级差异化）+ 升级条件 -->
         <view class="star-block">
-          <view class="star-block-title">各星级配置</view>
-          <view class="star-block-hint">链式升级规则：1 星 = 直推付费用户 X 个；N≥2 星 = 直推 (N-1) 星下级 X 个</view>
+          <view class="star-block-title">各 VIP 等级配置</view>
+          <view class="star-block-hint">升级条件：直推付费人数 <b>或</b> 个人自购累计金额，<b>任一达标即升</b>；不读下级等级、不读团队业绩（合规要求）</view>
           <view v-for="(rule, i) in promo.starUpgradeRules" :key="i" class="star-card">
             <view class="star-card-head">
               <view class="star-badge">{{ i + 1 }}星</view>
             </view>
             <view class="star-card-body">
               <view class="star-row">
-                <text class="star-row-label">返奖比例</text>
+                <text class="star-row-label">邀请奖比例</text>
                 <view class="star-row-input">
                   <input class="input" type="digit"
                     :value="promo.starRatios[i]"
                     @input="(e) => (promo.starRatios[i] = e.detail.value)"
-                    placeholder="0" />
+                    placeholder="0（上限 35）" />
                   <text class="suffix">%</text>
                 </view>
               </view>
               <view class="star-row">
-                <text class="star-row-label">{{ i === 0 ? '付费用户' : (i + '星下级') }}</text>
+                <text class="star-row-label">直推付费人数</text>
                 <view class="star-row-input">
                   <input class="input" type="number" :value="rule.requiredCount"
                     @input="(e) => (promo.starUpgradeRules[i].requiredCount = e.detail.value)"
-                    placeholder="升星所需直推人数" />
+                    placeholder="升此 VIP 等级所需直推付费人数" />
                   <text class="suffix">人</text>
                 </view>
               </view>
               <view class="star-row">
-                <text class="star-row-label">团队累计</text>
-                <view class="star-row-input">
-                  <input class="input" type="digit" :value="rule.teamSalesYuan"
-                    @input="(e) => (promo.starUpgradeRules[i].teamSalesYuan = e.detail.value)"
-                    placeholder="团队累计销售额" />
-                  <text class="suffix">元</text>
-                </view>
-              </view>
-              <view class="star-row">
-                <text class="star-row-label">或 自购</text>
+                <text class="star-row-label">或 自购金额</text>
                 <view class="star-row-input">
                   <input class="input" type="digit" :value="rule.selfPurchaseYuan"
                     @input="(e) => (promo.starUpgradeRules[i].selfPurchaseYuan = e.detail.value)"
-                    placeholder="自购累计也可升 (0=不启用)" />
+                    placeholder="个人自购累计达标也升 (0=不启用)" />
                   <text class="suffix">元</text>
                 </view>
               </view>
-              <view class="star-row-tip">同时满足上面"团队 + 直推"达标，<b>或</b>自购金额达标，任一即升此星</view>
+              <view class="star-row-tip">
+                <b>邀请奖比例</b>：推荐人为本 VIP 等级时，邀请新人成单可获订单实付的此比例（来自商户营销让利预算，单层，≤35%）<br/>
+                <b>升级条件</b>：上方两项个人 KPI <b>任一达标</b>即升本 VIP 等级
+              </view>
             </view>
           </view>
         </view>
@@ -398,7 +393,7 @@ const promo = reactive({
   directRate: '10',
   starCount: '0',
   starRatios: [],
-  starUpgradeRules: [],   // [{requiredCount, teamSalesYuan}]，提交时 requiredCount → JSON，teamSalesYuan ×100 转分
+  starUpgradeRules: [],   // [{requiredCount, selfPurchaseYuan}] V044 删除 teamSalesYuan，提交时 requiredCount → JSON，teamSalesYuan ×100 转分
   poolRatio: '0',
   poolEnabled: false,
   // v8: 奖池分配规则；每星一条 {star, ratio, mode:EQUAL|LOTTERY, winners}
@@ -546,6 +541,26 @@ async function onSavePromo() {
     });
     return;
   }
+  // V044 合规 P0-4：directRate ≤ 35%
+  if ((parseFloat(promo.directRate) || 0) > 35) {
+    uni.showToast({ title: '出队后邀请感谢奖 ≤ 35%（合规上限）', icon: 'none', duration: 2500 });
+    return;
+  }
+  // V044 合规：各 VIP 等级邀请奖 starRatios[i] 必须 ≤ 35%
+  const sc = parseInt(promo.starCount) || 0;
+  if (sc > 0) {
+    for (let i = 0; i < sc && i < promo.starRatios.length; i++) {
+      const r = parseFloat(promo.starRatios[i]) || 0;
+      if (r > 35) {
+        uni.showToast({
+          title: `${i + 1} 星邀请奖 ${r}% > 35%（合规上限）`,
+          icon: 'none',
+          duration: 2500,
+        });
+        return;
+      }
+    }
+  }
   // 奖池分配规则校验：入池比例 > 0 时才校验；强 sum=100
   const poolEnabled = (parseFloat(promo.poolRatio) || 0) > 0;
   let poolDistJson = '';
@@ -598,12 +613,11 @@ async function onSavePromo() {
       starRatios: sc > 0 ? JSON.stringify(promo.starRatios.slice(0, sc).map(r => Number(r) || 0)) : '[]',
       starUpgradeRules: sc > 0 ? JSON.stringify(promo.starUpgradeRules.slice(0, sc).map((r, i) => ({
         star: i + 1,
-        // 链式规则：升 i+1 星需要 i 星下级 X 个（1 星即 0 星下级 = 任意付费用户）
-        requiredStar: i,
-        requiredCount: parseInt(r.requiredCount) || 0,
-        teamSales: Math.round((parseFloat(r.teamSalesYuan) || 0) * 100),  // 元 → 分
-        // v8.1 OR 分支：自购累计金额阈值；0 = 不启用
-        selfPurchaseAmount: Math.round((parseFloat(r.selfPurchaseYuan) || 0) * 100),
+        // V044 合规：升星仅看个人 KPI — 直推付费数 OR 自购累计；不再依赖下级星级或团队业绩
+        requiredStar: 0,            // 已废，固定 0（后端忽略）
+        requiredCount: parseInt(r.requiredCount) || 0,  // 直推付费人数
+        teamSales: 0,               // V044 合规：永远 0（后端 attemptUpgradeV8 已不读）
+        selfPurchaseAmount: Math.round((parseFloat(r.selfPurchaseYuan) || 0) * 100),  // 个人自购阈值（分）
       }))) : '[]',
       poolRatio: parseFloat(promo.poolRatio) || 0,
       poolEnabled: !!promo.poolEnabled,
