@@ -36,7 +36,7 @@
           <view class="md-p">违规处理：封号 / 冻结账户余额 / 拒绝提现 / 已发放奖励追回 / 向工商监管举报 / 移交司法机关。</view>
 
           <view class="md-h2">第四条 资金兑付</view>
-          <view class="md-p">4.1 您的「分享奖励」「推广积分」等的提现申请，由对应<text class="b">商户处理</text>。</view>
+          <view class="md-p">4.1 您的「分享奖励」「推广奖励」等的提现申请，由对应<text class="b">商户处理</text>。</view>
           <view class="md-p">4.2 若商户因经营状况无法履行兑付义务，您应<text class="b">直接向商户主张权利</text>，平台仅作为技术通道，<text class="b">不承担兑付保证责任</text>。</view>
 
           <view class="md-h2">第五条 免责条款</view>

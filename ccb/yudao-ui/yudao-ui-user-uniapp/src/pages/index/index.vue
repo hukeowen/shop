@@ -79,7 +79,7 @@
       <view class="lt-em">👋</view>
       <view class="lt-body">
         <view class="lt-t">登录享老客分享激励</view>
-        <view class="lt-d">商户营销让利 · 邀请有礼 · 推广积分提现</view>
+        <view class="lt-d">商户营销让利 · 邀请有礼 · 推广奖励提现</view>
       </view>
       <view class="lt-cta">登录 →</view>
     </view>

@@ -36,7 +36,7 @@
       <view class="field"><text class="f-l">账号</text><input v-model="bankAccount" placeholder="手机号 / 邮箱" /></view>
     </view>
 
-    <view class="tip">说明：1 推广积分 = ¥0.01。<text class="b">提现申请由商户审批兑付</text>，到账时间以商户处理为准。平台为技术中介，<text class="b">不承担兑付保证</text>。</view>
+    <view class="tip">说明：1 推广奖励 = ¥0.01。<text class="b">提现申请由商户审批兑付</text>，到账时间以商户处理为准。平台为技术中介，<text class="b">不承担兑付保证</text>。</view>
     <view class="submit" :class="{ disabled: !canSubmit }" @click="onSubmit">{{ submitting ? '提交中…' : '申请提现' }}</view>
   </view>
 </template>

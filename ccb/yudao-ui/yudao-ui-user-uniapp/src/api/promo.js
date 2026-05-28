@@ -10,7 +10,7 @@ export const getPromoConfig = (tenantId) =>
 export const getAccount = (tenantId) =>
   get('/app-api/merchant/mini/promo/account', tenantId ? { tenantId } : {});
 
-// 推广积分流水（分页倒序）— 传 tenantId 则只看该店；不传 = 跨店
+// 推广奖励流水（分页倒序）— 传 tenantId 则只看该店；不传 = 跨店
 export const listPromoRecords = (pageNo = 1, pageSize = 20, tenantId) =>
   get(`/app-api/merchant/mini/promo/promo-records?pageNo=${pageNo}&pageSize=${pageSize}`, tenantId ? { tenantId } : {});
 
@@ -43,7 +43,7 @@ export const bindReferral = (inviterUserId, tenantId) =>
 export const listMySpuStars = (tenantId) =>
   get('/app-api/merchant/mini/promo/my-spu-stars', { tenantId });
 
-// 推广积分 → 消费积分
+// 推广奖励 → 消费积分
 export const convertPromoToConsume = (promoAmount, idempotencyKey) =>
   post(`/app-api/merchant/mini/promo/convert?promoAmount=${promoAmount}&idempotencyKey=${idempotencyKey}`);
 

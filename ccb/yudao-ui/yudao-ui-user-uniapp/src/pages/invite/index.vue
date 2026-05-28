@@ -3,7 +3,7 @@
     <view class="hero">
       <view class="hero-em">🎁</view>
       <view class="hero-t">邀请好友进店下单</view>
-      <view class="hero-d">每店一条专属链接 · 朋友首单立减 · 你拿推广积分</view>
+      <view class="hero-d">每店一条专属链接 · 朋友首单立减 · 你拿推广奖励</view>
     </view>
 
     <!-- 资格门槛：必须先在某店完成「推 N 反 1」商品购买 -->
@@ -58,9 +58,9 @@
     <view v-if="!loading && eligible" class="stat-card">
       <view class="stat-title">我的累计</view>
       <view class="stat-row"><text class="l">已邀朋友（跨店）</text><text class="hl">{{ totalChildren }} 人</text></view>
-      <view class="stat-row"><text class="l">推广积分余额</text><text class="hl">¥{{ totalEarn }}</text></view>
+      <view class="stat-row"><text class="l">推广奖励余额</text><text class="hl">¥{{ totalEarn }}</text></view>
       <view class="stat-foot">
-        推广积分用途：① 该店内消费抵扣 ② 申请向商户提现（线下兑付）
+        推广奖励用途：① 该店内消费抵扣 ② 申请向商户提现（线下兑付）
       </view>
     </view>
 
@@ -91,12 +91,12 @@
           <view v-else class="poster-spu empty">
             <view class="poster-spu-body">
               <view class="poster-spu-name">本店推广商品</view>
-              <view class="poster-spu-badge">推广积分活动</view>
+              <view class="poster-spu-badge">推广奖励活动</view>
             </view>
           </view>
           <view v-if="posterRule" class="poster-rule">
             <view class="poster-rule-title">📖 推 {{ posterRule.n }} 反 1 规则</view>
-            <view class="poster-rule-line">每邀 1 位朋友首单 → 返本品价 <text class="hl">¥{{ posterRule.stepYuan }}</text> 推广积分</view>
+            <view class="poster-rule-line">每邀 1 位朋友首单 → 返本品价 <text class="hl">¥{{ posterRule.stepYuan }}</text> 推广奖励</view>
             <view class="poster-rule-line">累计邀 <text class="hl">{{ posterRule.n }}</text> 位 → 总返 <text class="hl">¥{{ posterRule.totalYuan }}</text></view>
             <view class="poster-rule-line">积分可：① 本店消费抵扣 ② 找商户提现</view>
           </view>

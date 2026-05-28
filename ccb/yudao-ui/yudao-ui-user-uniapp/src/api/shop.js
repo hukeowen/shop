@@ -27,7 +27,7 @@ export const getShopPointConfig = (tenantId) =>
 export const listMyShops = () =>
   get('/app-api/merchant/mini/member-rel/my-shops');
 
-// 我加入的店铺（含余额 / 推广积分 / 消费积分）
+// 我加入的店铺（含余额 / 推广奖励 / 消费积分）
 export const listMyShopsEnriched = () =>
   get('/app-api/merchant/mini/member-rel/my-shops-enriched');
 
@@ -35,6 +35,6 @@ export const listMyShopsEnriched = () =>
 export const getMyRel = (tenantId) =>
   get('/app-api/merchant/mini/member-rel/my', { tenantId });
 
-// 当前用户在某店"累计已赚"的推广积分（lifetime，单位分）
+// 当前用户在某店"累计已赚"的推广奖励（lifetime，单位分）
 export const getMyPromoEarned = (tenantId) =>
   get(`/app-api/merchant/mini/member-rel/my-promo-earned?tenantId=${tenantId}`, { tenantId });

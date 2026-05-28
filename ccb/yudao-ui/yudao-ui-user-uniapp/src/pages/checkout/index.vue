@@ -118,15 +118,15 @@
             </view>
           </view>
         </view>
-        <!-- 推广积分抵扣（用户主动；1 推广积分 = 1 分钱） -->
+        <!-- 推广奖励抵扣（用户主动；1 推广奖励 = 1 分钱） -->
         <view class="m-row" :class="{ disabled: !promoPointAvailable }">
           <view class="m-icon i-points">推</view>
           <view class="m-info">
-            <view class="m-name">推广积分抵扣</view>
+            <view class="m-name">推广奖励抵扣</view>
             <view class="m-sub" v-if="promoPointAvailable">
               余 ¥{{ fen2yuan(userPromoPoints) }} · 最多抵 ¥{{ fen2yuan(maxPromoPointDeductFen) }}
             </view>
-            <view class="m-sub" v-else>推广积分余额为 0 或剩余订单已无可抵</view>
+            <view class="m-sub" v-else>推广奖励余额为 0 或剩余订单已无可抵</view>
           </view>
           <view class="m-trail">
             <text class="amt" :class="{ off: !usePromoPoint }">{{ usePromoPoint ? `-¥${fen2yuan(promoPointDeductFen)}` : '未使用' }}</text>
@@ -163,7 +163,7 @@
         </view>
       </view>
 
-      <!-- v8 推广积分抵扣预演（仅在有可抵扣商品时展示） -->
+      <!-- v8 推广奖励抵扣预演（仅在有可抵扣商品时展示） -->
       <view class="promo-deduct-card" v-if="promoPreview && promoPreview.deductFen > 0">
         <view class="pd-head">
           <text class="pd-title">🎁 邀请激励 抵扣</text>
@@ -208,7 +208,7 @@
         <text class="b">支付明细：</text><br>
         · 店铺余额抵扣：<text class="hl">{{ useBalance ? `-¥${fen2yuan(balanceDeductFen)}` : '未启用' }}</text><br>
         · 消费积分抵扣：<text class="hl">{{ useConsumePoint ? `-¥${fen2yuan(consumePointDeductFen)}` : '未启用' }}</text><br>
-        · 推广积分抵扣：<text class="hl">{{ usePromoPoint ? `-¥${fen2yuan(promoPointDeductFen)}` : '未启用' }}</text><br>
+        · 推广奖励抵扣：<text class="hl">{{ usePromoPoint ? `-¥${fen2yuan(promoPointDeductFen)}` : '未启用' }}</text><br>
         · 推广奖励自动抵：<text class="hl">{{ promoPreview && promoPreview.deductFen > 0 ? `-¥${fen2yuan(promoPreview.deductFen)}（${promoPreview.deductCount} 件）` : '当前无可抵扣商品' }}</text><br>
         · 优惠券抵扣：<text class="hl">{{ selectedCoupon ? `-¥${fen2yuan(selectedCoupon.discountAmount)}` : '未选用' }}</text><br>
         · 在线支付：<text class="hl">¥{{ fen2yuan(finalRemainFen) }}</text>
@@ -250,7 +250,7 @@ const receiverMobile = ref('');
 const receiverAddress = ref('');
 const onlinePayEnabled = ref(true);
 const payType = ref('wx');
-// v8 推广积分抵扣预演结果（onMounted 后由 loadPromoPreview 填）
+// v8 推广奖励抵扣预演结果（onMounted 后由 loadPromoPreview 填）
 const promoPreview = ref(null);
 const shopName = ref('');
 const usePoints = ref(false);
@@ -286,12 +286,12 @@ function toggleConsumePoint() {
   useConsumePoint.value = !useConsumePoint.value;
 }
 
-// ===== 推广积分抵扣（1 推广积分 = 1 分钱） =====
+// ===== 推广奖励抵扣（1 推广奖励 = 1 分钱） =====
 const userPromoPoints = ref(0);
 const usePromoPoint = ref(false);
 const maxPromoPointDeductFen = computed(() => {
   if (userPromoPoints.value <= 0) return 0;
-  // 抵扣顺序：余额 → 消费积分 → 推广积分，三者叠后须留 1 分线上支付
+  // 抵扣顺序：余额 → 消费积分 → 推广奖励，三者叠后须留 1 分线上支付
   const remain = Math.max(0, grossFen.value - balanceDeductFen.value - consumePointDeductFen.value);
   return Math.min(userPromoPoints.value, remain);
 });
@@ -301,7 +301,7 @@ const promoPointDeductFen = computed(() =>
 );
 function togglePromoPoint() {
   if (!promoPointAvailable.value) {
-    uni.showToast({ title: '推广积分余额不足或订单无可抵', icon: 'none' });
+    uni.showToast({ title: '推广奖励余额不足或订单无可抵', icon: 'none' });
     return;
   }
   usePromoPoint.value = !usePromoPoint.value;
@@ -375,7 +375,7 @@ const couponDeductFen = computed(() => {
   return c.discountAmount || 0;
 });
 
-// v8: 在 remainFen 基础上再减"推广积分预演抵扣 + 优惠券"，得到底部展示的最终实付
+// v8: 在 remainFen 基础上再减"推广奖励预演抵扣 + 优惠券"，得到底部展示的最终实付
 const finalRemainFen = computed(() => {
   const base = remainFen.value;
   const promoDeduct = (promoPreview.value && promoPreview.value.deductFen) || 0;
@@ -456,7 +456,7 @@ async function loadShopAndItems() {
       }
       items.value = [{ skuId: skuId.value, count: count.value, spuName, name: spuName, picUrl, price: realPrice, stock }];
     }
-    // 4. v8 预演推广积分抵扣（仅在拉到 items 后调一次）— 不影响主流程，失败仅静默
+    // 4. v8 预演推广奖励抵扣（仅在拉到 items 后调一次）— 不影响主流程，失败仅静默
     await loadPromoPreview();
   } catch (e) {
     uni.showToast({ title: '加载失败', icon: 'none' });
@@ -574,7 +574,7 @@ async function submitOrder() {
       // 消费积分抵扣：传分钱金额，后端按 ratio 反推积分数量 + 扣减 + 写流水
       useConsumePoint: useConsumePoint.value,
       consumePointDeductFen: useConsumePoint.value ? consumePointDeductFen.value : 0,
-      // 推广积分抵扣：1:1 fen，无 ratio
+      // 推广奖励抵扣：1:1 fen，无 ratio
       usePromoPoint: usePromoPoint.value,
       promoPointDeductFen: usePromoPoint.value ? promoPointDeductFen.value : 0,
       couponUserId: selectedCouponId.value || undefined,
@@ -596,7 +596,7 @@ async function submitOrder() {
     }
     if (promoDeductFen > 0) {
       uni.showToast({
-        title: `推广积分抵扣 ${promoDeductCount} 件，少付 ¥${(promoDeductFen / 100).toFixed(2)}`,
+        title: `推广奖励抵扣 ${promoDeductCount} 件，少付 ¥${(promoDeductFen / 100).toFixed(2)}`,
         icon: 'none',
         duration: 2500,
       });
@@ -622,7 +622,7 @@ async function submitOrder() {
       try {
         uni.setStorageSync('pay-success-amount', res?.payPrice || 0);
         if (promoDeductFen > 0) {
-          uni.setStorageSync('pay-success-reward', { amount: promoDeductFen, source: '推广积分抵扣' });
+          uni.setStorageSync('pay-success-reward', { amount: promoDeductFen, source: '推广奖励抵扣' });
         }
       } catch {}
       setTimeout(() => uni.reLaunch({ url: '/pages/pay-success/index' }), 600);
@@ -991,7 +991,7 @@ onShow(() => {
   font-size: 30rpx; font-weight: 700;
 }
 
-/* v8 推广积分抵扣展示卡 */
+/* v8 推广奖励抵扣展示卡 */
 .promo-deduct-card {
   margin: 24rpx 0;
   padding: 24rpx;

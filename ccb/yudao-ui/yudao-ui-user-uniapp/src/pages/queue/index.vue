@@ -7,7 +7,7 @@
 
     <view v-if="queues.length" class="rule-tip">
       💡 <text class="b">出队条件</text>：本商品被你<text class="b">推荐 N 次</text>（或自购 N 件）后自动出队。
-      <text class="dim">店铺的促销让利抽中 / 分享激励等其他奖励，会进入你的"推广积分"但不影响出队进度。</text>
+      <text class="dim">店铺的促销让利抽中 / 分享激励等其他奖励，会进入你的"推广奖励"但不影响出队进度。</text>
     </view>
 
     <view v-else>

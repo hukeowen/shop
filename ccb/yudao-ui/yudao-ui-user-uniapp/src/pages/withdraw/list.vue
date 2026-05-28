@@ -3,7 +3,7 @@
     <nav-bar title="我的提现记录" />
 
     <view v-if="loading" class="loading">加载中…</view>
-    <empty-state v-else-if="!records.length" title="暂无提现记录" desc="去申请提现把推广积分换成现金" />
+    <empty-state v-else-if="!records.length" title="暂无提现记录" desc="去申请提现把推广奖励换成现金" />
 
     <view v-else class="list">
       <view v-for="r in records" :key="r.id" class="card">
@@ -60,7 +60,7 @@
           ✓ 已完成（您已确认收款）
         </view>
         <view v-else-if="r.status === 'REJECTED'" class="rej-row">
-          申请被驳回 · 推广积分已退回
+          申请被驳回 · 推广奖励已退回
         </view>
       </view>
     </view>

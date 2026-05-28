@@ -12,7 +12,7 @@
         </view>
       </view>
       <view v-if="shop" class="sh-info">
-        <view class="sh-tag-row">🔥 {{ shop.tagRow || '扫码下单 · 每单返推广积分' }}</view>
+        <view class="sh-tag-row">🔥 {{ shop.tagRow || '扫码下单 · 每单返推广奖励' }}</view>
         <view class="sh-name">{{ shop.shopName || shop.name || '店铺' }}</view>
         <view class="sh-slogan">{{ shop.slogan || '商户营销让利活动' }}</view>
       </view>
@@ -102,7 +102,7 @@
           </view>
           <view class="rule-list">
             <view class="rule-item"><text class="b">推几反 1</text>：本品 N = <text class="hl">{{ nback.n }}</text>，邀请 {{ nback.n }} 位朋友在本店成功下单</view>
-            <view class="rule-item"><text class="b">每次反多少</text>：每位朋友首单结算时，按本品单价 × 配置比例返还到你的「推广积分」</view>
+            <view class="rule-item"><text class="b">每次反多少</text>：每位朋友首单结算时，按本品单价 × 配置比例返还到你的「推广奖励」</view>
             <view class="rule-item"><text class="b">怎么反</text>：朋友支付完成即刻入账，无人工审核；订单 30 天内退款自动扣回</view>
             <view class="rule-item"><text class="b">积分用途</text>：
               <text class="usage">① 本店消费抵扣</text> ·
@@ -487,7 +487,7 @@ async function loadVip() {
       vip.discountText = rel.discount ? `${(rel.discount * 10).toFixed(0)}` : '';
     }
   } catch {}
-  // "你已赚" / "在该店赚" = 推广积分 lifetime（累计 amount > 0 的流水，含已抵扣/转换/提现），
+  // "你已赚" / "在该店赚" = 推广奖励 lifetime（累计 amount > 0 的流水，含已抵扣/转换/提现），
   // 而非剩余余额；按 fen 转 ¥ 显示
   try {
     const earn = await getMyPromoEarned(route.tenantId);

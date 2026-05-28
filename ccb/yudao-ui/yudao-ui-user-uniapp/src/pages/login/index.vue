@@ -17,7 +17,7 @@
     <view class="va-form-wrap">
       <view class="va-form">
         <view class="va-form-t">手机号登录 / 注册</view>
-        <view class="va-form-s">登录享首单立减 + 推广积分赠送</view>
+        <view class="va-form-s">登录享首单立减 + 推广奖励赠送</view>
         <view class="va-field">
           <text class="l">+86</text>
           <input v-model="mobile" type="number" maxlength="11" placeholder="请输入手机号" />
