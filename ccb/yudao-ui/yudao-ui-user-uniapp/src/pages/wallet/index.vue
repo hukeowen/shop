@@ -3,20 +3,20 @@
     <nav-bar title="我的钱包" bg="transparent" txt="#fff" />
     <view class="hero">
       <view class="hero-tag">💎 推广积分（商户营销活动凭证）</view>
-      <view class="hero-amt">{{ promoPoints }} <text class="unit">积分</text></view>
+      <view class="hero-amt">{{ fen2yuan(promoPoints, false) }} <text class="unit">积分</text></view>
       <view class="hero-sub">积分为商户营销凭证 · 商户承诺：可买本店所有商品 / 线下兑换现金 · 平台不担保</view>
       <view class="hero-row">
         <view class="hr-col">
           <view class="hr-l">推广积分</view>
-          <view class="hr-v">{{ promoPoints }} <text class="u">积分</text></view>
+          <view class="hr-v">{{ fen2yuan(promoPoints, false) }} <text class="u">积分</text></view>
         </view>
         <view class="hr-col">
           <view class="hr-l">消费积分</view>
-          <view class="hr-v">{{ consumePoints }} <text class="u">积分</text></view>
+          <view class="hr-v">{{ fen2yuan(consumePoints, false) }} <text class="u">积分</text></view>
         </view>
         <view class="hr-col">
           <view class="hr-l">今日入账</view>
-          <view class="hr-v">{{ todayPoints }} <text class="u">积分</text></view>
+          <view class="hr-v">{{ fen2yuan(todayPoints, false) }} <text class="u">积分</text></view>
         </view>
       </view>
       <view class="hero-actions">
@@ -36,7 +36,7 @@
           <view class="r-t">{{ r.remark || labelFor(r.sourceType) }}</view>
           <view class="r-d">{{ fmtTime(r.createTime) }}</view>
         </view>
-        <view class="r-amt" :class="{ neg: r.amount < 0 }">{{ r.amount > 0 ? '+' : '' }}{{ r.amount }} <text class="u">积分</text></view>
+        <view class="r-amt" :class="{ neg: r.amount < 0 }">{{ r.amount > 0 ? '+' : '' }}{{ fen2yuan(r.amount, false) }} <text class="u">积分</text></view>
       </view>
     </view>
   </view>
@@ -46,7 +46,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
 import { getAccount, listPromoRecords, getTodayStat } from '@/api/promo.js';
-import { fmtTime } from '@/utils/format.js';
+import { fen2yuan, fmtTime } from '@/utils/format.js';
 
 const promoPoints = ref(0);
 const consumePoints = ref(0);

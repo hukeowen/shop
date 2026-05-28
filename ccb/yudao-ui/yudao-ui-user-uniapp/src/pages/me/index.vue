@@ -21,8 +21,8 @@
 
       <view class="me-earn">
         <view class="me-earn-l">累计推广积分（按店申请兑付）</view>
-        <view class="me-earn-v">{{ earnPoints }} <text class="me-earn-u">积分</text></view>
-        <view v-if="user.isLogin" class="me-earn-grow">↑ 今日 +{{ todayEarnPoints }} 积分</view>
+        <view class="me-earn-v">{{ fen2yuan(earnPoints, false) }} <text class="me-earn-u">积分</text></view>
+        <view v-if="user.isLogin" class="me-earn-grow">↑ 今日 +{{ fen2yuan(todayEarnPoints, false) }} 积分</view>
         <view class="me-earn-acts">
           <view class="me-earn-act primary" @click="goWithdraw">
             <view class="em">💸</view>
@@ -92,11 +92,11 @@
       </view>
       <view class="msb-stats">
         <view class="msb-stat" @click.stop="goShopRecords(s, 'promo')">
-          <view class="n gold">{{ s.promoPointsRaw }} <text class="u">积分</text></view>
+          <view class="n gold">{{ fen2yuan(s.promoPointsRaw, false) }} <text class="u">积分</text></view>
           <view class="l">推广积分</view>
         </view>
         <view class="msb-stat" @click.stop="goShopRecords(s, 'consume')">
-          <view class="n purple">{{ s.consumePointsRaw }} <text class="u">积分</text></view>
+          <view class="n purple">{{ fen2yuan(s.consumePointsRaw, false) }} <text class="u">积分</text></view>
           <view class="l">消费积分</view>
         </view>
         <view class="msb-stat">
@@ -322,8 +322,9 @@ const posterRule = computed(() => {
   const totalRebateFen = Math.floor(totalFen * sumRatio / 100);
   return {
     n,
-    stepPoints: stepFen,
-    totalPoints: totalRebateFen,
+    // 1 积分 = 1 元；底层 fen 要 /100
+    stepPoints: fen2yuan(stepFen, false),
+    totalPoints: fen2yuan(totalRebateFen, false),
   };
 });
 

@@ -58,7 +58,7 @@
     <view v-if="!loading && eligible" class="stat-card">
       <view class="stat-title">我的累计</view>
       <view class="stat-row"><text class="l">已邀朋友（跨店）</text><text class="hl">{{ totalChildren }} 人</text></view>
-      <view class="stat-row"><text class="l">推广积分余额</text><text class="hl">{{ totalEarn }} 积分</text></view>
+      <view class="stat-row"><text class="l">推广积分余额</text><text class="hl">{{ fen2yuan(totalEarn, false) }} 积分</text></view>
       <view class="stat-foot">
         推广积分用途：① 本店消费抵扣 ② 向商户申请兑付（商户独立审批）<br>
         积分为商户营销活动凭证 · 不构成货币 · 平台仅提供技术服务
@@ -173,8 +173,9 @@ const posterRule = computed(() => {
   const totalRebateFen = Math.floor(totalFen * sumRatio / 100);
   return {
     n,
-    stepPoints: stepFen,
-    totalPoints: totalRebateFen,
+    // 1 积分 = 1 元；底层 fen 要 /100
+    stepPoints: fen2yuan(stepFen, false),
+    totalPoints: fen2yuan(totalRebateFen, false),
   };
 });
 

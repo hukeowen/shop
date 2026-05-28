@@ -13,7 +13,7 @@
         </view>
         <view class="row big">
           <text class="lbl">申请积分</text>
-          <text class="val amt">{{ r.amount }} 积分</text>
+          <text class="val amt">{{ fen2yuan(r.amount, false) }} 积分</text>
         </view>
         <view class="row">
           <text class="lbl">申请时间</text>
@@ -77,7 +77,7 @@
 import { ref, onMounted } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
 import { request } from '@/utils/request.js';
-import { fmtTime } from '@/utils/format.js';
+import { fen2yuan, fmtTime } from '@/utils/format.js';
 
 const loading = ref(true);
 const records = ref([]);
@@ -117,7 +117,7 @@ async function load() {
 async function onConfirm(r) {
   uni.showModal({
     title: '确认已收到打款',
-    content: `您确认已收到商户对应 ${r.amount} 积分的线下兑付吗？\n\n确认后本次申请完成，无法撤销。`,
+    content: `您确认已收到商户对应 ${fen2yuan(r.amount, false)} 积分的线下兑付吗？\n\n确认后本次申请完成，无法撤销。`,
     success: async (res) => {
       if (!res.confirm) return;
       try {

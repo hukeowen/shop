@@ -444,11 +444,11 @@ function buildNback(n, cur, totalFen, ratiosJson) {
   const pct = n > 0 ? Math.min(100, Math.round((cur / n) * 100)) : 0;
   return {
     n, cur, pct,
-    // V044 合规：以"积分"为单位（fen 数值 = 1 积分），不再用 ¥ 元 显示
-    stepPoints: stepFen,
-    gotPoints: gotFen,
-    gapPoints: gapFen,
-    totalPoints: totalRebateFen,
+    // 1 积分 = 1 元；底层存的是 fen，显示要 /100（保留 2 位小数）
+    stepPoints: fen2yuan(stepFen, false),
+    gotPoints: fen2yuan(gotFen, false),
+    gapPoints: fen2yuan(gapFen, false),
+    totalPoints: fen2yuan(totalRebateFen, false),
   };
 }
 

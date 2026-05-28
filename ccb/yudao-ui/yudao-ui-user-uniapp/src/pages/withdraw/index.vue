@@ -4,15 +4,15 @@
     <view class="card">
       <view class="card-row">
         <text class="l">可申请兑付积分</text>
-        <text class="hl">{{ promoBalance }} 积分</text>
+        <text class="hl">{{ fen2yuan(promoBalance, false) }} 积分</text>
       </view>
     </view>
     <view class="card">
       <view class="card-title">申请兑付积分数</view>
       <view class="amt-input">
-        <input v-model="amount" type="number" placeholder="请输入积分数" @input="onAmountInput" />
+        <input v-model="amount" type="digit" placeholder="请输入积分数（1 积分 = ¥1）" @input="onAmountInput" />
         <text class="unit">积分</text>
-        <text class="all" @click="amount = String(promoBalance)">全部</text>
+        <text class="all" @click="amount = fen2yuan(promoBalance, false)">全部</text>
       </view>
       <view v-if="amtFenInt > 0 && amtFenInt > promoBalance" class="warn">超出可兑付余额</view>
     </view>
@@ -47,13 +47,14 @@
 import { ref, computed, onMounted } from 'vue';
 import { getAccount } from '@/api/promo.js';
 import { applyWithdraw } from '@/api/brokerage.js';
+import { fen2yuan } from '@/utils/format.js';
 const promoBalance = ref(0);
 const amount = ref('');
-// 入参为积分整数，等同于底层 fen 数值
+// 用户输入"积分"数（= 元值，1 积分 = ¥1）；底层 fen = 积分 × 100
 const amtFenInt = computed(() => {
   const v = Number(amount.value);
   if (Number.isNaN(v) || v <= 0) return 0;
-  return Math.round(v);
+  return Math.round(v * 100);
 });
 function onAmountInput(e) { /* v-model already syncs */ }
 
@@ -71,7 +72,7 @@ const bankBank = ref('');
 const submitting = ref(false);
 const canSubmit = computed(() => {
   if (submitting.value) return false;
-  if (amtFenInt.value < 100) return false; // 最低 100 积分
+  if (amtFenInt.value < 100) return false; // 最低 1 积分（=¥1，底层 100 fen）
   if (amtFenInt.value > promoBalance.value) return false;
   if (method.value === 'bank' && (!bankName.value || !bankAccount.value || !bankBank.value)) return false;
   if (method.value === 'alipay' && (!bankName.value || !bankAccount.value)) return false;
