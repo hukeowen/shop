@@ -74,6 +74,7 @@ public class AppMerchantShopController {
         update.setLongitude(updateDO.getLongitude());
         update.setLatitude(updateDO.getLatitude());
         update.setAddress(updateDO.getAddress());
+        update.setFeatureTags(updateDO.getFeatureTags()); // 之前漏了：特色标签保存不进 DB
         shopInfoMapper.updateById(update);
         return success(true);
     }

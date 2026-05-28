@@ -3,6 +3,20 @@
     <view v-if="loading" class="empty-tip">加载中...</view>
     <template v-else>
       <view class="card section">
+        <view class="field cover-field">
+          <text class="label">店铺照片</text>
+          <view class="cover-wrap">
+            <view class="cover-box" @click="pickCover">
+              <image v-if="form.coverUrl" :src="form.coverUrl" mode="aspectFill" class="cover-img" />
+              <view v-else class="cover-empty">
+                <text class="cover-plus">+</text>
+                <text class="cover-tip">点击上传</text>
+              </view>
+              <view v-if="form.coverUrl" class="cover-replace">📷 更换</view>
+            </view>
+            <text class="hint">展示在用户端店铺主页顶部封面；建议横向 3:2 比例 · 单张 ≤ 5MB</text>
+          </view>
+        </view>
         <view class="field">
           <text class="label">店铺名称</text>
           <input class="input" v-model="form.shopName" placeholder="请输入店铺名称" />
@@ -114,6 +128,7 @@ const BIZ_TYPES = [
 const loading = ref(true);
 const form = ref({
   shopName: '',
+  coverUrl: '',
   mobile: '',
   businessHours: '',
   businessType: '',
@@ -127,6 +142,30 @@ const form = ref({
   notice: '',
   featureTags: '',
 });
+
+async function pickCover() {
+  const tempPath = await new Promise((resolve) => {
+    uni.chooseImage({
+      count: 1,
+      sizeType: ['compressed'],
+      success: (r) => resolve(r.tempFilePaths[0]),
+      fail: () => resolve(null),
+    });
+  });
+  if (!tempPath) return;
+  uni.showLoading({ title: '上传中…' });
+  try {
+    const { blobUrlToBase64, uploadImage } = await import('../../api/oss.js');
+    const base64 = await blobUrlToBase64(tempPath);
+    const { url: publicUrl } = await uploadImage(base64, { ext: 'jpg' });
+    form.value.coverUrl = publicUrl;
+    uni.hideLoading();
+    uni.showToast({ title: '上传成功', icon: 'success' });
+  } catch (e) {
+    uni.hideLoading();
+    uni.showToast({ title: '上传失败：' + (e?.message || e), icon: 'none' });
+  }
+}
 
 function toggleDay(d) {
   if (form.value.days.includes(d)) {
@@ -152,6 +191,7 @@ onLoad(async () => {
     const res = await request({ url: '/app-api/merchant/mini/shop/info' });
     if (res) {
       form.value.shopName = res.shopName || '';
+      form.value.coverUrl = res.coverUrl || '';
       form.value.mobile = res.mobile || '';
       form.value.businessHours = res.businessHours || '';
       form.value.businessType = res.businessType || ''; // V040
@@ -259,6 +299,39 @@ async function save() {
   font-size: 22rpx;
   color: $text-secondary;
   line-height: 1.4;
+}
+
+/* 店铺照片 */
+.cover-field { align-items: flex-start; }
+.cover-wrap { flex: 1; min-width: 0; }
+.cover-box {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  border-radius: 16rpx;
+  background: $bg-page;
+  border: 2rpx dashed $border-color;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.cover-img { width: 100%; height: 100%; }
+.cover-empty {
+  display: flex; flex-direction: column;
+  align-items: center; gap: 8rpx;
+  color: $text-placeholder;
+}
+.cover-plus { font-size: 56rpx; font-weight: 300; line-height: 1; }
+.cover-tip { font-size: 24rpx; }
+.cover-replace {
+  position: absolute; bottom: 12rpx; right: 12rpx;
+  padding: 8rpx 16rpx;
+  background: rgba(0,0,0,.55);
+  color: #fff;
+  border-radius: 999rpx;
+  font-size: 22rpx;
+  font-weight: 600;
 }
 
 /* V040 行业类型 13 选 1 */
