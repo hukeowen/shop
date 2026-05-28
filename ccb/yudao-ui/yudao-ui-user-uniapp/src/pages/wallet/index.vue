@@ -2,7 +2,7 @@
   <view class="page">
     <nav-bar title="我的钱包" bg="transparent" txt="#fff" />
     <view class="hero">
-      <view class="hero-tag">💎 推广积分（可提现）</view>
+      <view class="hero-tag">💎 推广积分（可申请提现）</view>
       <view class="hero-amt">¥{{ balanceYuan }}</view>
       <view class="hero-row">
         <view class="hr-col">

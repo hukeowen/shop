@@ -128,7 +128,7 @@
 
     <!-- ━━━━━━━━━━ 营销双卡 ━━━━━━━━━━ -->
     <view class="section-title">
-      <view class="h3">玩法专区 <text class="small">商户让利 · 1:1 提现</text></view>
+      <view class="h3">玩法专区 <text class="small">商户营销让利活动</text></view>
     </view>
     <view class="home-feats">
       <view class="home-feat rank" @click="goWinners">

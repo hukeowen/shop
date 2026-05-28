@@ -4,7 +4,7 @@
       <view class="hero-title">
         <text class="trophy">🏆</text>
         <text class="t">商户让利公告</text>
-        <text class="sub">商户营销让利 · 1:1 现金提现</text>
+        <text class="sub">商户营销让利活动 · 提现由商户审批</text>
       </view>
       <view class="tabs">
         <view class="tab" :class="{ on: tab === 'live' }" @click="switchTab('live')">🔴 实时中奖</view>

@@ -14,7 +14,7 @@
       <view v-if="shop" class="sh-info">
         <view class="sh-tag-row">🔥 {{ shop.tagRow || '扫码下单 · 每单返推广积分' }}</view>
         <view class="sh-name">{{ shop.shopName || shop.name || '店铺' }}</view>
-        <view class="sh-slogan">{{ shop.slogan || '商户实时让利 · 1:1 现金提现' }}</view>
+        <view class="sh-slogan">{{ shop.slogan || '商户营销让利活动' }}</view>
       </view>
     </view>
 

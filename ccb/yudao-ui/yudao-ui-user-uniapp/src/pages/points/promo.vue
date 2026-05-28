@@ -7,7 +7,7 @@
       <view class="hero-bg"></view>
       <view class="hero-tag">{{ shopName ? `${shopName} · 推广积分` : '推广积分（跨店）' }}</view>
       <view class="hero-amt">¥{{ lifetimeYuan }}</view>
-      <view class="hero-sub">累计已赚 · 1 推广积分 = ¥0.01 · 1:1 现金提现</view>
+      <view class="hero-sub">累计已获 · 提现申请由商户审批兑付</view>
       <view class="hero-row">
         <view class="hero-stat">
           <text class="v">¥{{ balanceYuan }}</text>
