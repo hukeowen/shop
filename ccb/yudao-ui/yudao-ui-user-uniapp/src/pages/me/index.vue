@@ -113,7 +113,64 @@
       <view class="msb-acts">
         <view class="msb-act primary" @click.stop="goShopRecords(s, 'promo')"><text class="em">📊</text>积分明细</view>
         <view class="msb-act" @click.stop="goShop(s)"><text class="em">🏪</text>进店</view>
-        <view class="msb-act" @click.stop="goInvite"><text class="em">🤝</text>邀请</view>
+        <view class="msb-act"
+              :class="{ disabled: !s.inviteEligible }"
+              @click.stop="onShopInvite(s)">
+          <text class="em">🤝</text>{{ s.inviteEligible ? '邀请' : '邀请·待激活' }}
+        </view>
+      </view>
+    </view>
+
+    <!-- ━━━━━━━━━━ 推广海报弹层（按店）━━━━━━━━━━ -->
+    <view v-if="posterShop" class="poster-mask" @click="posterShop = null">
+      <view class="poster-wrap" @click.stop>
+        <view class="poster" id="invite-poster">
+          <view class="poster-deco"></view>
+          <view class="poster-head">
+            <view class="poster-brand">客小二 · 商户营销让利</view>
+            <view class="poster-shop">🏪 {{ posterShop.shopName }}</view>
+          </view>
+          <view v-if="posterShop.topTuijianSpu" class="poster-spu">
+            <view class="poster-spu-pic">
+              <image v-if="posterShop.topTuijianSpu.spuPic" :src="posterShop.topTuijianSpu.spuPic" mode="aspectFill" class="poster-spu-img" />
+              <text v-else class="poster-spu-em">🍠</text>
+            </view>
+            <view class="poster-spu-body">
+              <view class="poster-spu-name">{{ posterShop.topTuijianSpu.spuName }}</view>
+              <view class="poster-spu-price">
+                <text class="cny">¥</text>
+                <text class="v">{{ fen2yuan(posterShop.topTuijianSpu.price || 0, false) }}</text>
+                <text v-if="posterShop.topTuijianSpu.marketPrice && posterShop.topTuijianSpu.marketPrice > posterShop.topTuijianSpu.price" class="orig">¥{{ fen2yuan(posterShop.topTuijianSpu.marketPrice, false) }}</text>
+              </view>
+              <view class="poster-spu-badge">推 {{ posterShop.topTuijianSpu.tuijianN }} 反 1</view>
+            </view>
+          </view>
+          <view v-else class="poster-spu empty">
+            <view class="poster-spu-body">
+              <view class="poster-spu-name">本店推广商品</view>
+              <view class="poster-spu-badge">推广积分活动</view>
+            </view>
+          </view>
+          <view v-if="posterRule" class="poster-rule">
+            <view class="poster-rule-title">📖 推 {{ posterRule.n }} 反 1 规则</view>
+            <view class="poster-rule-line">每邀 1 位朋友在本店首单 → 返本品价 <text class="hl">¥{{ posterRule.stepYuan }}</text> 推广积分</view>
+            <view class="poster-rule-line">累计邀 <text class="hl">{{ posterRule.n }}</text> 位 → 总返 <text class="hl">¥{{ posterRule.totalYuan }}</text></view>
+            <view class="poster-rule-line">积分可：① 本店消费抵扣 ② 找商户提现</view>
+          </view>
+          <view class="poster-qr">
+            <image v-if="posterShop.qrUrl" :src="posterShop.qrUrl" mode="aspectFit" class="poster-qr-img" />
+            <view class="poster-qr-tip">长按二维码 · 加好友进店</view>
+          </view>
+          <view class="poster-foot">
+            <view class="poster-by">邀请人：{{ user.nickname || user.phone?.slice(-4) || '客小二用户' }}</view>
+            <view class="poster-disclaim">营销规则由商户独立负责 · 平台不担保兑付</view>
+          </view>
+        </view>
+        <view class="poster-actions">
+          <view class="poster-btn primary" @click="onCopyPosterLink">复制邀请链接</view>
+          <view class="poster-btn ghost" @click="posterShop = null">关闭</view>
+        </view>
+        <view class="poster-hint">💡 长按上方图片或截图保存为海报分享</view>
       </view>
     </view>
 
@@ -163,7 +220,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
 import { useUserStore } from '@/store/user.js';
-import { getAccount, getTodayStat, listMyQueues } from '@/api/promo.js';
+import { getAccount, getTodayStat, listMyQueues, getInviteEligibility } from '@/api/promo.js';
 import { listMyShopsEnriched } from '@/api/shop.js';
 import { getCartCount } from '@/api/cart.js';
 import { getUnusedCouponCount } from '@/api/coupon.js';
@@ -185,6 +242,8 @@ const queueTotal = ref(0);
 const queues = ref([]);
 const favCount = ref(0);
 const couponCount = ref(0);
+const eligibilityMap = ref({}); // tenantId → { topTuijianSpu, ... }
+const posterShop = ref(null);
 
 const maxStar = computed(() => myShops.value.reduce((m, s) => Math.max(m, s.starLevel || 0), 0));
 const totalOrders = computed(() => myShops.value.reduce((s, x) => s + (x.orderCount || 0), 0));
@@ -217,6 +276,57 @@ function goAgreement(type) { uni.navigateTo({ url: `/pages/agreement/index?type=
 function goWinners()       { uni.reLaunch({ url: '/pages/winners/index' }); }
 function goShop(s) { uni.navigateTo({ url: `/pages/shop/home?id=${s.id || s.tenantId}&tenantId=${s.tenantId || s.id}` }); }
 
+// 跨店海报：按店邀请入口 ——
+//   有资格（购买过推 N 反 1）→ 弹出海报；
+//   无资格 → 弹 toast 引导先购买。
+function onShopInvite(s) {
+  if (!user.isLogin) return goLogin();
+  if (!s.inviteEligible) {
+    uni.showToast({ title: '先在本店完成「推 N 反 1」购买才能开启邀请', icon: 'none', duration: 2200 });
+    return;
+  }
+  // 构造海报数据 + QR 链接
+  const baseOrigin = (typeof location !== 'undefined' && location.origin) || 'https://ke.doupaidoudian.com';
+  const inviteLink = `${baseOrigin}/#/pages/shop/home?tenantId=${s.tenantId}&inviter=${user.userId || ''}`;
+  const enc = encodeURIComponent(inviteLink);
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${enc}`;
+  posterShop.value = {
+    tenantId: s.tenantId,
+    shopName: s.shopName || s.name,
+    topTuijianSpu: s.topTuijianSpu || null,
+    inviteLink,
+    qrUrl,
+  };
+}
+
+function onCopyPosterLink() {
+  if (!posterShop.value) return;
+  uni.setClipboardData({
+    data: posterShop.value.inviteLink,
+    success: () => uni.showToast({ title: '链接已复制', icon: 'success' }),
+  });
+}
+
+// 海报上的规则计算 —— 复用 shop home 的算法（按真实 ratios，没有就均分）
+const posterRule = computed(() => {
+  const spu = posterShop.value?.topTuijianSpu;
+  if (!spu || !spu.tuijianN) return null;
+  const n = spu.tuijianN;
+  let ratios = [];
+  try { ratios = spu.tuijianRatios ? JSON.parse(spu.tuijianRatios) : []; } catch {}
+  if (!Array.isArray(ratios) || ratios.length !== n) ratios = Array.from({ length: n }, () => 100 / n);
+  const totalFen = Number(spu.price) || 0;
+  const avgRatio = ratios.reduce((s, r) => s + Number(r || 0), 0) / n;
+  const stepFen = Math.floor(totalFen * avgRatio / 100);
+  const sumRatio = ratios.reduce((s, r) => s + Number(r || 0), 0);
+  const totalRebateFen = Math.floor(totalFen * sumRatio / 100);
+  return {
+    n,
+    stepYuan: fen2yuan(stepFen, false),
+    totalYuan: fen2yuan(totalRebateFen, false),
+  };
+});
+
 function onLogout() {
   uni.showModal({ title: '退出登录', content: '确定退出吗？', success: ({ confirm }) => {
     if (confirm) { user.logout(); uni.reLaunch({ url: '/pages/me/index' }); }
@@ -242,6 +352,17 @@ async function load() {
     queues.value = await listMyQueues() || [];
     queueTotal.value = queues.value.length;
   } catch {}
+  // 邀请资格：按店判断 — 只有在该店买过推 N 反 1 才能分享
+  try {
+    const r = await getInviteEligibility();
+    const map = {};
+    if (r && Array.isArray(r.shops)) {
+      for (const sh of r.shops) {
+        if (sh && sh.tenantId) map[sh.tenantId] = sh;
+      }
+    }
+    eligibilityMap.value = map;
+  } catch { eligibilityMap.value = {}; }
   try {
     const list = await listMyShopsEnriched();
     myShops.value = (list || []).map((s) => {
@@ -253,6 +374,7 @@ async function load() {
       } : null;
       // VO 字段：promoPoints (Long 分) / points (Long 分，消费积分) / star (Integer) / lastVisitAt
       const star = s.star || s.starLevel || 0;
+      const elig = eligibilityMap.value[s.tenantId];
       return {
         ...s,
         starLevel: star,                      // 兼容旧模板引用
@@ -264,6 +386,9 @@ async function load() {
         hasQueue: !!queue,
         queueBar,
         starExtraText: star >= 3 ? `${star} 星额外 +${star}%` : '',
+        // 邀请门槛：购买过推 N 反 1 商品（queueing OR completed 均算）
+        inviteEligible: !!elig,
+        topTuijianSpu: elig?.topTuijianSpu || null,
       };
     });
   } catch {}
@@ -556,6 +681,155 @@ onShow(load);
 }
 .msb-act .em { font-size: 14px; }
 .msb-act.primary { color: $o-d; }
+.msb-act.disabled { color: $t4; opacity: .65; }
+
+/* ━━━━━━━━━━ 推广海报弹层 ━━━━━━━━━━ */
+.poster-mask {
+  position: fixed; inset: 0; z-index: 999;
+  background: rgba(0,0,0,.78);
+  display: flex; align-items: center; justify-content: center;
+  padding: 18px;
+  overflow-y: auto;
+}
+.poster-wrap {
+  width: 100%; max-width: 360px;
+  display: flex; flex-direction: column; align-items: center;
+}
+.poster {
+  width: 100%;
+  background: linear-gradient(160deg, #FFF9F0 0%, #FFEFE0 50%, #FFE4CC 100%);
+  border-radius: 18px;
+  padding: 22px 18px 20px;
+  position: relative; overflow: hidden;
+  box-shadow: 0 16px 48px rgba(0,0,0,.4);
+}
+.poster-deco {
+  position: absolute; inset: 0;
+  background-image:
+    radial-gradient(180px 120px at 0% 0%, rgba(255,107,53,.18), transparent 60%),
+    radial-gradient(180px 120px at 100% 100%, rgba(212,146,10,.18), transparent 60%);
+  pointer-events: none;
+}
+.poster-head {
+  text-align: center; position: relative; z-index: 1;
+}
+.poster-brand {
+  font-size: 11px; color: $o-d; font-weight: 800; letter-spacing: 2px;
+}
+.poster-shop {
+  font-size: 22px; font-weight: 900; color: $t1; margin-top: 4px;
+}
+.poster-spu {
+  margin-top: 16px;
+  display: flex; gap: 12px; align-items: center;
+  background: rgba(255,255,255,.85);
+  border: 1px solid $o-100;
+  border-radius: 14px;
+  padding: 10px;
+  position: relative; z-index: 1;
+}
+.poster-spu.empty {
+  justify-content: center; padding: 14px;
+}
+.poster-spu-pic {
+  width: 80px; height: 80px;
+  flex-shrink: 0;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #FFE0D1, $o-l);
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+}
+.poster-spu-img { width: 100%; height: 100%; }
+.poster-spu-em { font-size: 42px; }
+.poster-spu-body { flex: 1; min-width: 0; }
+.poster-spu-name {
+  font-size: 15px; font-weight: 800; color: $t1;
+  overflow: hidden; text-overflow: ellipsis;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  line-height: 1.3;
+}
+.poster-spu-price {
+  margin-top: 4px;
+  display: flex; align-items: baseline; gap: 6px;
+}
+.poster-spu-price .cny { color: $o-d; font-size: 12px; font-weight: 800; }
+.poster-spu-price .v   { color: $o-d; font-size: 22px; font-weight: 900; }
+.poster-spu-price .orig { color: $t4; font-size: 11px; text-decoration: line-through; }
+.poster-spu-badge {
+  display: inline-block; margin-top: 5px;
+  padding: 3px 10px;
+  background: linear-gradient(135deg, $o, $o-d); color: #fff;
+  border-radius: 99px; font-size: 11px; font-weight: 800;
+}
+.poster-rule {
+  margin-top: 14px;
+  background: rgba(255,255,255,.85);
+  border: 1px dashed $o-200;
+  border-radius: 12px;
+  padding: 10px 12px;
+  position: relative; z-index: 1;
+}
+.poster-rule-title {
+  font-size: 12px; font-weight: 800; color: $t1;
+  margin-bottom: 6px;
+}
+.poster-rule-line {
+  font-size: 11px; color: $t2; line-height: 1.7;
+}
+.poster-rule-line .hl { color: $o-d; font-weight: 800; }
+
+.poster-qr {
+  margin-top: 16px;
+  background: #fff;
+  border-radius: 14px;
+  padding: 14px;
+  text-align: center;
+  position: relative; z-index: 1;
+  box-shadow: 0 4px 12px rgba(0,0,0,.08);
+}
+.poster-qr-img {
+  width: 180px; height: 180px;
+  display: block; margin: 0 auto;
+}
+.poster-qr-tip {
+  font-size: 11px; color: $t3; margin-top: 8px; font-weight: 700;
+}
+.poster-foot {
+  margin-top: 14px; text-align: center;
+  position: relative; z-index: 1;
+}
+.poster-by {
+  font-size: 11px; color: $t2; font-weight: 700;
+}
+.poster-disclaim {
+  margin-top: 6px;
+  font-size: 9.5px; color: $t4; line-height: 1.5;
+}
+
+.poster-actions {
+  margin-top: 14px;
+  display: flex; gap: 10px; width: 100%;
+}
+.poster-btn {
+  flex: 1; padding: 13px;
+  text-align: center; border-radius: 999px;
+  font-size: 14px; font-weight: 800;
+}
+.poster-btn.primary {
+  background: linear-gradient(135deg, $o, $o-d);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(255,107,53,.4);
+}
+.poster-btn.ghost {
+  background: rgba(255,255,255,.18);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,.3);
+}
+.poster-hint {
+  margin-top: 10px;
+  font-size: 11px; color: rgba(255,255,255,.7);
+  text-align: center;
+}
 
 /* V044 合规：底部声明 */
 .legal-footer {

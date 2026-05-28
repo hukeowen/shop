@@ -607,16 +607,59 @@ public class AppMerchantPromoController {
             log.warn("[getInviteEligibility] 批量查 shop_info 失败：{}", e.getMessage());
         }
         for (Map.Entry<Long, int[]> e : tenantAgg.entrySet()) {
+            Long tid = e.getKey();
             Map<String, Object> shop = new HashMap<>();
-            shop.put("tenantId", e.getKey());
-            shop.put("shopName", shopNameMap.getOrDefault(e.getKey(), "店铺 #" + e.getKey()));
+            shop.put("tenantId", tid);
+            shop.put("shopName", shopNameMap.getOrDefault(tid, "店铺 #" + tid));
             shop.put("queueingCount", e.getValue()[0]);
             shop.put("completedCount", e.getValue()[1]);
+            // 每店挑一个「推 N 反 1」招牌商品给海报展示用 ——
+            // 优先 tuijianEnabled=true 且 tuijianN>0；同店多个则取 tuijianN 最大的
+            Map<String, Object> topSpu = pickTopTuijianSpuForShop(tid);
+            if (topSpu != null) shop.put("topTuijianSpu", topSpu);
             shopList.add(shop);
         }
         result.put("eligible", true);
         result.put("shops", shopList);
         return success(result);
+    }
+
+    /**
+     * 海报用：挑该店启用了「推 N 反 1」的招牌商品。
+     * 选择策略：tuijianEnabled=true 且 tuijianN>0；多个时取 N 最大；
+     * 没有时返回 null（前端用兜底文案）。
+     */
+    private Map<String, Object> pickTopTuijianSpuForShop(Long tenantId) {
+        try {
+            return cn.iocoder.yudao.framework.tenant.core.util.TenantUtils.execute(tenantId, () -> {
+                java.util.List<cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ProductPromoConfigDO> cfgs =
+                        productPromoConfigMapper.selectList(
+                                new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ProductPromoConfigDO>()
+                                        .eq(cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ProductPromoConfigDO::getTuijianEnabled, Boolean.TRUE)
+                                        .gt(cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ProductPromoConfigDO::getTuijianN, 0)
+                                        .orderByDesc(cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ProductPromoConfigDO::getTuijianN));
+                if (cfgs == null || cfgs.isEmpty()) return null;
+                cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ProductPromoConfigDO best = cfgs.get(0);
+                Map<String, Object> spuRet = new HashMap<>();
+                spuRet.put("spuId", best.getSpuId());
+                spuRet.put("tuijianN", best.getTuijianN());
+                spuRet.put("tuijianRatios", best.getTuijianRatios());
+                try {
+                    cn.iocoder.yudao.module.product.dal.dataobject.spu.ProductSpuDO spu =
+                            productSpuService.getSpu(best.getSpuId());
+                    if (spu != null) {
+                        spuRet.put("spuName", spu.getName());
+                        spuRet.put("spuPic", spu.getPicUrl());
+                        spuRet.put("price", spu.getPrice());
+                        spuRet.put("marketPrice", spu.getMarketPrice());
+                    }
+                } catch (Exception ignore) {}
+                return spuRet;
+            });
+        } catch (Exception e) {
+            log.warn("[pickTopTuijianSpuForShop] tenant={} 失败：{}", tenantId, e.getMessage());
+            return null;
+        }
     }
 
     // ==================== 中奖公榜 / 滚动条 / 今日入账 ====================

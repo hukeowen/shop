@@ -44,8 +44,8 @@
         <view v-if="activeIdx === i" class="shop-expand">
           <view class="link-box">{{ s.inviteLink }}</view>
           <view class="link-actions">
-            <view class="link-btn primary" @click="onCopy(s.inviteLink)">复制链接</view>
-            <view class="link-btn ghost" @click="onShowQr(s)">查看二维码</view>
+            <view class="link-btn primary" @click="onShowPoster(s)">生成推广海报</view>
+            <view class="link-btn ghost" @click="onCopy(s.inviteLink)">复制链接</view>
           </view>
           <view class="rule-tip">
             朋友点开链接 → 进入「{{ s.shopName }}」 → 注册登录 → 即与你绑定为本店「直推关系」（终身仅此一店）
@@ -64,14 +64,56 @@
       </view>
     </view>
 
-    <!-- QR 弹层 -->
-    <view v-if="qrVisible" class="qr-mask" @click="qrVisible = false">
-      <view class="qr-box" @click.stop>
-        <view class="qr-title">{{ qrShop?.shopName }}</view>
-        <image v-if="qrShop?.qrUrl" :src="qrShop.qrUrl" class="qr-img" mode="aspectFit" />
-        <view v-else class="qr-fallback">长按复制链接发给朋友</view>
-        <view class="qr-link">{{ qrShop?.inviteLink }}</view>
-        <view class="qr-close" @click="qrVisible = false">关闭</view>
+    <!-- 推广海报弹层 -->
+    <view v-if="posterShop" class="poster-mask" @click="posterShop = null">
+      <view class="poster-wrap" @click.stop>
+        <view class="poster">
+          <view class="poster-deco"></view>
+          <view class="poster-head">
+            <view class="poster-brand">客小二 · 商户营销让利</view>
+            <view class="poster-shop">🏪 {{ posterShop.shopName }}</view>
+          </view>
+          <view v-if="posterShop.topTuijianSpu" class="poster-spu">
+            <view class="poster-spu-pic">
+              <image v-if="posterShop.topTuijianSpu.spuPic" :src="posterShop.topTuijianSpu.spuPic" mode="aspectFill" class="poster-spu-img" />
+              <text v-else class="poster-spu-em">🍠</text>
+            </view>
+            <view class="poster-spu-body">
+              <view class="poster-spu-name">{{ posterShop.topTuijianSpu.spuName }}</view>
+              <view class="poster-spu-price">
+                <text class="cny">¥</text>
+                <text class="v">{{ fen2yuan(posterShop.topTuijianSpu.price || 0, false) }}</text>
+                <text v-if="posterShop.topTuijianSpu.marketPrice && posterShop.topTuijianSpu.marketPrice > posterShop.topTuijianSpu.price" class="orig">¥{{ fen2yuan(posterShop.topTuijianSpu.marketPrice, false) }}</text>
+              </view>
+              <view class="poster-spu-badge">推 {{ posterShop.topTuijianSpu.tuijianN }} 反 1</view>
+            </view>
+          </view>
+          <view v-else class="poster-spu empty">
+            <view class="poster-spu-body">
+              <view class="poster-spu-name">本店推广商品</view>
+              <view class="poster-spu-badge">推广积分活动</view>
+            </view>
+          </view>
+          <view v-if="posterRule" class="poster-rule">
+            <view class="poster-rule-title">📖 推 {{ posterRule.n }} 反 1 规则</view>
+            <view class="poster-rule-line">每邀 1 位朋友首单 → 返本品价 <text class="hl">¥{{ posterRule.stepYuan }}</text> 推广积分</view>
+            <view class="poster-rule-line">累计邀 <text class="hl">{{ posterRule.n }}</text> 位 → 总返 <text class="hl">¥{{ posterRule.totalYuan }}</text></view>
+            <view class="poster-rule-line">积分可：① 本店消费抵扣 ② 找商户提现</view>
+          </view>
+          <view class="poster-qr">
+            <image v-if="posterShop.qrUrl" :src="posterShop.qrUrl" mode="aspectFit" class="poster-qr-img" />
+            <view class="poster-qr-tip">长按二维码 · 加好友进店</view>
+          </view>
+          <view class="poster-foot">
+            <view class="poster-by">邀请人：{{ user.nickname || user.phone?.slice(-4) || '客小二用户' }}</view>
+            <view class="poster-disclaim">营销规则由商户独立负责 · 平台不担保兑付</view>
+          </view>
+        </view>
+        <view class="poster-actions">
+          <view class="poster-btn primary" @click="onCopy(posterShop.inviteLink)">复制邀请链接</view>
+          <view class="poster-btn ghost" @click="posterShop = null">关闭</view>
+        </view>
+        <view class="poster-hint">💡 长按上方图片或截图保存为海报分享</view>
       </view>
     </view>
 
@@ -92,8 +134,7 @@ const shops = ref([]);
 const activeIdx = ref(0);
 const totalChildren = ref(0);
 const totalEarn = ref('0.00');
-const qrVisible = ref(false);
-const qrShop = ref(null);
+const posterShop = ref(null);
 
 const baseOrigin = computed(() => (typeof location !== 'undefined' ? location.origin : 'https://ke.doupaidoudian.com'));
 
@@ -108,12 +149,33 @@ function onCopy(link) {
   uni.setClipboardData({ data: link, success: () => uni.showToast({ title: '已复制', icon: 'success' }) });
 }
 
-function onShowQr(s) {
-  // 暂用 google chart QR API 兜底（没接公司图库时）
+function onShowPoster(s) {
   const enc = encodeURIComponent(s.inviteLink);
-  qrShop.value = { ...s, qrUrl: `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${enc}` };
-  qrVisible.value = true;
+  posterShop.value = {
+    ...s,
+    qrUrl: `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${enc}`,
+  };
 }
+
+// 海报规则计算（按 spu.tuijianRatios，没有就均分）
+const posterRule = computed(() => {
+  const spu = posterShop.value?.topTuijianSpu;
+  if (!spu || !spu.tuijianN) return null;
+  const n = spu.tuijianN;
+  let ratios = [];
+  try { ratios = spu.tuijianRatios ? JSON.parse(spu.tuijianRatios) : []; } catch {}
+  if (!Array.isArray(ratios) || ratios.length !== n) ratios = Array.from({ length: n }, () => 100 / n);
+  const totalFen = Number(spu.price) || 0;
+  const avgRatio = ratios.reduce((s, r) => s + Number(r || 0), 0) / n;
+  const stepFen = Math.floor(totalFen * avgRatio / 100);
+  const sumRatio = ratios.reduce((s, r) => s + Number(r || 0), 0);
+  const totalRebateFen = Math.floor(totalFen * sumRatio / 100);
+  return {
+    n,
+    stepYuan: fen2yuan(stepFen, false),
+    totalYuan: fen2yuan(totalRebateFen, false),
+  };
+});
 
 function goNearby() {
   uni.switchTab({ url: '/pages/nearby/index', fail: () => uni.navigateTo({ url: '/pages/nearby/index' }) });
@@ -300,29 +362,122 @@ onMounted(async () => {
   font-size: 22rpx; color: $t4; line-height: 1.6;
 }
 
-/* QR */
-.qr-mask {
+/* ━━ 推广海报弹层 ━━ */
+.poster-mask {
   position: fixed; inset: 0; z-index: 999;
-  background: rgba(0,0,0,.7);
+  background: rgba(0,0,0,.78);
   display: flex; align-items: center; justify-content: center;
+  padding: 36rpx;
+  overflow-y: auto;
 }
-.qr-box {
-  width: 80vw; max-width: 600rpx;
-  background: #fff; border-radius: 24rpx;
-  padding: 32rpx; text-align: center;
+.poster-wrap {
+  width: 100%; max-width: 720rpx;
+  display: flex; flex-direction: column; align-items: center;
 }
-.qr-title { font-size: 28rpx; font-weight: 800; color: $t1; }
-.qr-img { width: 480rpx; height: 480rpx; margin: 20rpx auto; display: block; }
-.qr-fallback { padding: 80rpx 20rpx; color: $t3; font-size: 26rpx; }
-.qr-link {
-  padding: 12rpx; background: $bg-2; border-radius: 12rpx;
-  font-size: 20rpx; color: $t3; word-break: break-all;
+.poster {
+  width: 100%;
+  background: linear-gradient(160deg, #FFF9F0 0%, #FFEFE0 50%, #FFE4CC 100%);
+  border-radius: 32rpx;
+  padding: 44rpx 36rpx 40rpx;
+  position: relative; overflow: hidden;
+  box-shadow: 0 16px 48px rgba(0,0,0,.4);
 }
-.qr-close {
-  margin-top: 16rpx; padding: 18rpx;
-  background: $bg-2; border-radius: 999rpx;
-  font-weight: 700; font-size: 26rpx; color: $t2;
+.poster-deco {
+  position: absolute; inset: 0;
+  background-image:
+    radial-gradient(360rpx 240rpx at 0% 0%, rgba(255,107,53,.18), transparent 60%),
+    radial-gradient(360rpx 240rpx at 100% 100%, rgba(212,146,10,.18), transparent 60%);
+  pointer-events: none;
 }
+.poster-head { text-align: center; position: relative; z-index: 1; }
+.poster-brand { font-size: 22rpx; color: $o-d; font-weight: 800; letter-spacing: 4rpx; }
+.poster-shop  { font-size: 44rpx; font-weight: 900; color: $t1; margin-top: 8rpx; }
+
+.poster-spu {
+  margin-top: 32rpx;
+  display: flex; gap: 24rpx; align-items: center;
+  background: rgba(255,255,255,.85);
+  border: 2rpx solid $o-100;
+  border-radius: 28rpx;
+  padding: 20rpx;
+  position: relative; z-index: 1;
+}
+.poster-spu.empty { justify-content: center; padding: 28rpx; }
+.poster-spu-pic {
+  width: 160rpx; height: 160rpx;
+  flex-shrink: 0; border-radius: 24rpx;
+  background: linear-gradient(135deg, #FFE0D1, $o-l);
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+}
+.poster-spu-img { width: 100%; height: 100%; }
+.poster-spu-em  { font-size: 84rpx; }
+.poster-spu-body { flex: 1; min-width: 0; }
+.poster-spu-name {
+  font-size: 30rpx; font-weight: 800; color: $t1;
+  line-height: 1.3;
+  overflow: hidden; text-overflow: ellipsis;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+}
+.poster-spu-price { margin-top: 8rpx; display: flex; align-items: baseline; gap: 12rpx; }
+.poster-spu-price .cny { color: $o-d; font-size: 24rpx; font-weight: 800; }
+.poster-spu-price .v   { color: $o-d; font-size: 44rpx; font-weight: 900; }
+.poster-spu-price .orig { color: $t4; font-size: 22rpx; text-decoration: line-through; }
+.poster-spu-badge {
+  display: inline-block; margin-top: 10rpx;
+  padding: 6rpx 20rpx;
+  background: linear-gradient(135deg, $o, $o-d); color: #fff;
+  border-radius: 99rpx; font-size: 22rpx; font-weight: 800;
+}
+
+.poster-rule {
+  margin-top: 28rpx;
+  background: rgba(255,255,255,.85);
+  border: 2rpx dashed $o-200;
+  border-radius: 24rpx;
+  padding: 20rpx 24rpx;
+  position: relative; z-index: 1;
+}
+.poster-rule-title { font-size: 24rpx; font-weight: 800; color: $t1; margin-bottom: 12rpx; }
+.poster-rule-line  { font-size: 22rpx; color: $t2; line-height: 1.7; }
+.poster-rule-line .hl { color: $o-d; font-weight: 800; }
+
+.poster-qr {
+  margin-top: 32rpx;
+  background: #fff; border-radius: 28rpx;
+  padding: 28rpx;
+  text-align: center;
+  position: relative; z-index: 1;
+  box-shadow: 0 8rpx 24rpx rgba(0,0,0,.08);
+}
+.poster-qr-img  { width: 360rpx; height: 360rpx; display: block; margin: 0 auto; }
+.poster-qr-tip  { font-size: 22rpx; color: $t3; margin-top: 16rpx; font-weight: 700; }
+
+.poster-foot {
+  margin-top: 28rpx; text-align: center;
+  position: relative; z-index: 1;
+}
+.poster-by { font-size: 22rpx; color: $t2; font-weight: 700; }
+.poster-disclaim { margin-top: 12rpx; font-size: 19rpx; color: $t4; line-height: 1.5; }
+
+.poster-actions {
+  margin-top: 28rpx;
+  display: flex; gap: 20rpx; width: 100%;
+}
+.poster-btn {
+  flex: 1; padding: 26rpx;
+  text-align: center; border-radius: 999rpx;
+  font-size: 28rpx; font-weight: 800;
+}
+.poster-btn.primary {
+  background: linear-gradient(135deg, $o, $o-d); color: #fff;
+  box-shadow: 0 8rpx 28rpx rgba(255,107,53,.4);
+}
+.poster-btn.ghost {
+  background: rgba(255,255,255,.18); color: #fff;
+  border: 2rpx solid rgba(255,255,255,.3);
+}
+.poster-hint { margin-top: 20rpx; font-size: 22rpx; color: rgba(255,255,255,.7); text-align: center; }
 
 .loading { text-align: center; padding: 60rpx 0; color: $t4; font-size: 26rpx; }
 </style>
