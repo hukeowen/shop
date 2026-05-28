@@ -74,10 +74,10 @@
         </view>
         <view class="vip-sub">
           <text v-if="myRel">已邀请 {{ inviterCount }} 位好友 · 在该店赚 ¥{{ fen2yuan(myRel?.balance || 0) }}</text>
-          <text v-else>每邀 1 位好友购买，按 v8 邀请激励 拿返奖</text>
+          <text v-else>每邀 1 位好友购买，按邀请有礼活动获分享激励</text>
         </view>
       </view>
-      <view class="vip-cta">邀请赚奖 ›</view>
+      <view class="vip-cta">邀请有礼 ›</view>
     </view>
 
     <!-- 社交证明：近 30 天访客数（仅文案展示，无名单/无头像，避免假数据） -->

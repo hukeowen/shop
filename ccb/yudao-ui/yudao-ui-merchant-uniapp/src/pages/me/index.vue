@@ -43,11 +43,11 @@
           class="saas-btn ghost"
           @click="goShareCode"
         >
-          🚀 分享开店赚奖励
+          🚀 分享开店领奖励
         </view>
       </view>
       <view v-else class="saas-actions">
-        <view class="saas-btn ghost" @click="goShareCode">🚀 分享开店赚奖励</view>
+        <view class="saas-btn ghost" @click="goShareCode">🚀 分享开店领奖励</view>
       </view>
     </view>
 
