@@ -33,7 +33,7 @@
         </view>
       </view>
       <view class="sc-net">
-        <text class="l">净收入 = 实付 - 退款 - 推广积分支出</text>
+        <text class="l">净收入 = 实付 - 退款</text>
         <text class="v">¥{{ fen2yuan(data.netIncome) }}</text>
       </view>
     </view>

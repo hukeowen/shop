@@ -107,7 +107,8 @@ public class MerchantStatsServiceImpl implements MerchantStatsService {
         long promoIssued = sumPromoRecord(start, end);
         long poolDeposit = sumQueueEvent(start, end, "POOL_DEPOSIT_V8");
         long refundAmount = sumRefund(start, end);
-        long netIncome = actualPayAmount - refundAmount - promoIssued;
+        // 净收入 = 实付 - 退款。推广积分是商户内部营销让利凭证，不计入财务净收入扣项
+        long netIncome = actualPayAmount - refundAmount;
 
         // 资金分布
         long pendingBalance = sumMemberShopRelBalance();

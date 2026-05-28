@@ -37,7 +37,7 @@ public class AppMerchantSalesStatsRespVO {
     @Schema(description = "退款 / 售后金额（分）")
     private Long refundAmount;
 
-    @Schema(description = "净收入 = 实付 - 退款 - 推广积分支出（分）")
+    @Schema(description = "净收入 = 实付 - 退款（分）")
     private Long netIncome;
 
     @Schema(description = "订单数")
