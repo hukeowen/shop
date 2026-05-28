@@ -51,26 +51,6 @@
       </view>
     </view>
 
-    <!-- 快捷功能 4 宫格：最常用的「商品/统计/会员/优惠券」一击到位 -->
-    <view class="quick-grid">
-      <view class="quick-item" @click="goProducts">
-        <view class="qi-ic" style="background:linear-gradient(135deg,#FFC8A8,#FF6B35);">🛒</view>
-        <text class="qi-lbl">商品管理</text>
-      </view>
-      <view class="quick-item" @click="goSalesStats">
-        <view class="qi-ic" style="background:linear-gradient(135deg,#A8D8FF,#5B95E0);">📊</view>
-        <text class="qi-lbl">销售统计</text>
-      </view>
-      <view class="quick-item" @click="goShopMembers">
-        <view class="qi-ic" style="background:linear-gradient(135deg,#C8FFC8,#4CB84C);">👥</view>
-        <text class="qi-lbl">店铺会员</text>
-      </view>
-      <view class="quick-item" @click="goCoupon">
-        <view class="qi-ic" style="background:linear-gradient(135deg,#FFD0DC,#EE5A8B);">🎁</view>
-        <text class="qi-lbl">优惠券</text>
-      </view>
-    </view>
-
     <!-- 营销 -->
     <view class="section-title">营销</view>
     <view class="menu card">

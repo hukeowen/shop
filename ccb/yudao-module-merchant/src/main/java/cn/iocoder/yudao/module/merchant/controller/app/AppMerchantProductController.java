@@ -57,17 +57,14 @@ public class AppMerchantProductController {
     // ==================== #16 极简商品发布 ====================
 
     @PostMapping("/simple-create")
-    @Operation(summary = "极简商品发布（拍照+名称+价格，默认立即上架）")
+    @Operation(summary = "极简商品发布 → 进入待审核状态，平台审核通过后自动上架")
     public CommonResult<Long> simpleCreate(@Valid @RequestBody AppSimpleSpuCreateReqVO reqVO) {
         ProductSpuSaveReqVO spuReqVO = buildSpuSaveReqVO(reqVO);
         Long spuId = productSpuService.createSpu(spuReqVO);
-        // 简易发布立即上架（mall ProductSpuStatusEnum.ENABLE=1）：
-        // yudao mall createSpu 默认 status=0 (DISABLE)，C 端 /app-api/product/spu/page
-        // 和 shop-home 公开接口都按 status=1 过滤，不上架则商品在 C 端不可见。
-        ProductSpuUpdateStatusReqVO statusReq = new ProductSpuUpdateStatusReqVO();
-        statusReq.setId(spuId);
-        statusReq.setStatus(1);
-        productSpuService.updateSpuStatus(statusReq);
+        // V044 合规：商品默认进入「审核中」(PENDING_REVIEW=2) 状态，不再直接上架。
+        // ProductSpuServiceImpl.initSpuFromSkus 已强制 setStatus=PENDING_REVIEW，
+        // 不需要在这里 updateSpuStatus(1)；C 端公开接口按 status=1 过滤 → 待审核期间不可见，
+        // 平台审核通过后由 admin 端 updateSpuStatus(1) 上架。
         return success(spuId);
     }
 

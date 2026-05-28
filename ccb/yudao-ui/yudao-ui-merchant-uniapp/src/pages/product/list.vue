@@ -37,6 +37,8 @@
               <text v-if="s._tuijianEnabled" class="tag v7-tuijian">推 {{ s._tuijianN || '?' }} 反 1</text>
               <text v-if="s.stock === 0" class="tag oos">已售罄</text>
               <text v-if="s.status === 0" class="tag offline">已下架</text>
+              <text v-if="s.status === 2" class="tag review">审核中</text>
+              <text v-if="s.status === 3" class="tag rejected">审核拒绝</text>
             </view>
             <view class="bottom">
               <text class="price">¥{{ fen2yuan(s.price) }}</text>
@@ -45,7 +47,19 @@
           </view>
         </view>
         <view class="actions">
+          <!-- 审核中 / 审核拒绝 状态：商户不能直接上下架，只能等审核 / 修改重提 -->
           <button
+            v-if="s.status === 2"
+            class="act review-pending"
+            disabled
+          >待平台审核</button>
+          <button
+            v-else-if="s.status === 3"
+            class="act rejected-act"
+            disabled
+          >审核被拒</button>
+          <button
+            v-else
             class="act"
             :class="s.status === 1 ? 'down' : 'up'"
             @click="onToggleStatus(s)"
@@ -80,6 +94,8 @@ const current = ref(-1);
 const tabs = computed(() => [
   { label: '全部', value: -1, count: all.value.length },
   { label: '在售', value: 1, count: all.value.filter((s) => s.status === 1).length },
+  { label: '审核中', value: 2, count: all.value.filter((s) => s.status === 2).length },
+  { label: '审核拒绝', value: 3, count: all.value.filter((s) => s.status === 3).length },
   { label: '已下架', value: 0, count: all.value.filter((s) => s.status === 0).length },
 ]);
 
@@ -350,7 +366,24 @@ onShow(() => {
       background: #f1f5f9;
       color: $text-secondary;
     }
+    &.review {
+      background: #fef3c7;
+      color: #d97706;
+      font-weight: 700;
+    }
+    &.rejected {
+      background: #fee2e2;
+      color: #dc2626;
+      font-weight: 700;
+    }
   }
+}
+
+.act.review-pending,
+.act.rejected-act {
+  background: #f1f5f9 !important;
+  color: $text-placeholder !important;
+  opacity: .85;
 }
 
 .bottom {

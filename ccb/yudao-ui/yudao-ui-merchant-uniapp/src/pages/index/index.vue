@@ -51,7 +51,7 @@
       </view>
     </view>
 
-    <!-- 4 grid 快捷功能 -->
+    <!-- 8 grid 快捷功能：核心操作 4 个 + 经营管理 4 个 一并放首页 -->
     <view class="quick-grid">
       <view class="quick-item" @click="jumpAi">
         <view class="qi-ic" style="background:linear-gradient(135deg,#FFC8A8,#FF6B35);"><text>🎬</text></view>
@@ -68,6 +68,22 @@
       <view class="quick-item" @click="jumpOrders">
         <view class="qi-ic" style="background:linear-gradient(135deg,#E5D6FF,#8B5CF6);"><text>📋</text></view>
         <text class="qi-lbl">订单</text>
+      </view>
+      <view class="quick-item" @click="goProducts">
+        <view class="qi-ic" style="background:linear-gradient(135deg,#FFE0CC,#FF8C42);"><text>🛒</text></view>
+        <text class="qi-lbl">商品管理</text>
+      </view>
+      <view class="quick-item" @click="jumpSalesStats">
+        <view class="qi-ic" style="background:linear-gradient(135deg,#A8D8FF,#5B95E0);"><text>📊</text></view>
+        <text class="qi-lbl">销售统计</text>
+      </view>
+      <view class="quick-item" @click="goShopMembers">
+        <view class="qi-ic" style="background:linear-gradient(135deg,#D7F5D7,#4CB84C);"><text>👥</text></view>
+        <text class="qi-lbl">店铺会员</text>
+      </view>
+      <view class="quick-item" @click="goCoupon">
+        <view class="qi-ic" style="background:linear-gradient(135deg,#FFD0DC,#EE5A8B);"><text>🎁</text></view>
+        <text class="qi-lbl">优惠券</text>
       </view>
     </view>
 
@@ -285,6 +301,9 @@ function jumpAi() { uni.reLaunch({ url: '/pages/ai-video/index' }); }
 function jumpOrders() { uni.reLaunch({ url: '/pages/order/list' }); }
 function jumpVerify() { uni.reLaunch({ url: '/pages/order/list' }); }
 function jumpAddProduct() { uni.navigateTo({ url: '/pages/product/batch' }); }
+function goProducts() { uni.navigateTo({ url: '/pages/product/list' }); }
+function goShopMembers() { uni.navigateTo({ url: '/pages/me/members' }); }
+function goCoupon() { uni.navigateTo({ url: '/pages/me/coupon' }); }
 function jumpSalesStats() { uni.navigateTo({ url: '/pages/me/sales-stats' }); }
 function jumpOrderTab(tab) { uni.reLaunch({ url: `/pages/order/list?tab=${tab}` }); }
 function jumpMembers() { uni.navigateTo({ url: '/pages/me/members' }); }
@@ -502,11 +521,11 @@ onPullDownRefresh(async () => {
   }
 }
 
-/* ─── 4 宫格快捷 ─── */
+/* ─── 4 列 N 行宫格快捷（2 行 8 项）─── */
 .quick-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 16rpx;
+  gap: 24rpx 16rpx;
   background: $bg-card;
   padding: 28rpx 20rpx;
   border-radius: 24rpx;
