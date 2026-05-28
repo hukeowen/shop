@@ -71,7 +71,6 @@ public class V044TestTriggerController {
         item.setSkuId(0L);
         item.setCount(count);
         item.setPayPrice(payPrice);
-        item.setOriginalPrice(payPrice);
 
         log.info("[V044 e2e] 触发 afterPayOrder order={} user={} spu={} paid={} count={}",
                 order.getId(), userId, spuId, payPrice, count);
