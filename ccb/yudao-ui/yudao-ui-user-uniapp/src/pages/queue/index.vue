@@ -1,9 +1,9 @@
 <template>
   <view class="page">
-    <nav-bar title="我的队列（推 N 免费商品）" />
+    <nav-bar title="我的队列（推 N 反 1）" />
 
     <view v-if="loading" class="loading">加载中…</view>
-    <empty-state v-else-if="!queues.length" icon="🔥" title="还没有在排队的商品" desc="到店购买开通「推 N 免费商品」的商品自动入队" />
+    <empty-state v-else-if="!queues.length" icon="🔥" title="还没有在排队的商品" desc="到店购买开通「推 N 反 1」的商品自动入队" />
 
     <view v-if="queues.length" class="rule-tip">
       💡 <text class="b">出队条件</text>：本商品被你<text class="b">推荐 N 次</text>（或自购 N 件）后自动出队。
@@ -14,7 +14,7 @@
       <view v-for="(q, i) in queues" :key="`${q.tenantId}-${q.spuId}-${i}`" class="qcard">
         <view class="q-head">
           <text class="q-shop">{{ q.shopName || `店铺#${q.tenantId}` }}</text>
-          <text v-if="q.maxN" class="q-rule">推 {{ q.maxN }} 免费</text>
+          <text v-if="q.maxN" class="q-rule">推 {{ q.maxN }} 反 1</text>
           <text v-if="q.layer" class="q-layer" :class="`l-${q.layer.toLowerCase()}`">{{ layerLabel(q.layer) }}</text>
         </view>
 

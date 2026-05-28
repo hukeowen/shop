@@ -46,7 +46,7 @@
               <text v-if="s.star" class="m-star">★{{ s.star }} 星店</text>
             </view>
             <view v-if="s.promoLine || s.tuijianN" class="m-tags">
-              <view class="m-tag promo">🔥 {{ s.promoLine || `推 ${s.tuijianN} 免费` }}</view>
+              <view class="m-tag promo">🔥 {{ s.promoLine || `推 ${s.tuijianN} 反 1` }}</view>
             </view>
             <!-- 明星商品 / 销量第一 -->
             <view v-if="s.topSpu" class="m-spu" @click.stop="goSpu(s)">
@@ -144,7 +144,7 @@ async function load() {
       rating: s.avgRating,
       monthSold: s.sales30d,
       distance: s.distance != null && s.distance > 0 ? fmtDistance(s.distance) : '',
-      promoLine: s.tuijianN ? `推 ${s.tuijianN} 免费 进行中` : '',
+      promoLine: s.tuijianN ? `推 ${s.tuijianN} 反 1 进行中` : '',
     }));
   } catch { shops.value = []; }
   finally { loading.value = false; }

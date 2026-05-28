@@ -37,7 +37,7 @@
     </view>
 
     <view class="tip">
-      说明：积分为商户营销活动凭证。<text class="b">兑付申请由商户独立审批</text>，兑付额度、形式（现金 / 优惠券 / 实物）与到账时间均由商户决定。平台仅提供技术信息撮合，<text class="b">不构成兑付承诺 / 担保</text>。
+      说明：积分为商户营销凭证。<text class="b">商户承诺</text>积分可：① 在本店所有商品消费抵扣 ② 线下找商家兑换现金。本兑付申请将由商户独立审批，<text class="b">兑付形式与到账时间由商户决定</text>。平台仅提供技术信息撮合，<text class="b">不构成兑付承诺 / 担保</text>。
     </view>
     <view class="submit" :class="{ disabled: !canSubmit }" @click="onSubmit">{{ submitting ? '提交中…' : '提交申请' }}</view>
   </view>

@@ -47,7 +47,7 @@
       <view class="va-sell">
         <view class="va-card warm"><view class="em">💰</view><view class="t">下单返积分</view></view>
         <view class="va-card gold"><view class="em">🎁</view><view class="t">让利池</view></view>
-        <view class="va-card mint"><view class="em">🔥</view><view class="t">推N免费商品</view></view>
+        <view class="va-card mint"><view class="em">🔥</view><view class="t">推N反1</view></view>
         <view class="va-card purple"><view class="em">💸</view><view class="t">支持提现</view></view>
       </view>
     </view>

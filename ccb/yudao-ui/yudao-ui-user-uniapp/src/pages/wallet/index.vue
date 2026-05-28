@@ -4,7 +4,7 @@
     <view class="hero">
       <view class="hero-tag">💎 推广积分（商户营销活动凭证）</view>
       <view class="hero-amt">{{ promoPoints }} <text class="unit">积分</text></view>
-      <view class="hero-sub">积分为商户独立营销活动凭证 · 不构成货币 · 兑付规则与额度由商户独立设定与审批</view>
+      <view class="hero-sub">积分为商户营销凭证 · 商户承诺：可买本店所有商品 / 线下兑换现金 · 平台不担保</view>
       <view class="hero-row">
         <view class="hr-col">
           <view class="hr-l">推广积分</view>

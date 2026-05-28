@@ -17,7 +17,7 @@
         <view class="price-row">
           <text class="price"><text class="cny">¥</text>{{ fen2yuan(currentPrice) }}</text>
           <text v-if="originalPrice && originalPrice > currentPrice" class="original">¥{{ fen2yuan(originalPrice) }}</text>
-          <text v-if="promoConfig?.tuijianEnabled" class="promo-tag">推 {{ promoConfig.tuijianN }} 免费</text>
+          <text v-if="promoConfig?.tuijianEnabled" class="promo-tag">推 {{ promoConfig.tuijianN }} 反 1</text>
         </view>
         <view class="name">{{ product.name }}</view>
         <view class="intro" v-if="product.introduction">{{ product.introduction }}</view>
@@ -32,8 +32,8 @@
       <view class="promo-banner" v-if="promoConfig?.tuijianEnabled">
         <view class="ic">🎯</view>
         <view class="txt">
-          推荐 {{ promoConfig.tuijianN }} 位朋友首单 → 累计获得 <text class="b">本品价对应营销积分</text>
-          <view class="sub">商户独立营销活动 · 积分按 {{ formatRatios(promoConfig) }} 分配 · 积分仅供本店消费抵扣 / 申请商户兑付</view>
+          推 {{ promoConfig.tuijianN }} 反 1：推荐 {{ promoConfig.tuijianN }} 位朋友首单，累计获得 <text class="b">本品 1 件价值的积分</text>
+          <view class="sub">商户独立营销活动 · 积分按 {{ formatRatios(promoConfig) }} 分配 · 商户承诺积分可用于<text class="b">本店所有商品消费</text>或<text class="b">线下找商家兑换现金</text></view>
         </view>
       </view>
 
