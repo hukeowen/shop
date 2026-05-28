@@ -179,6 +179,7 @@
 import { ref, reactive, computed, onMounted } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
 import { getShopInfo, listShopProducts, getShopVisitorCount, getMyRel, getMyPromoEarned } from '@/api/shop.js';
+import { savePendingReferrer, flushPendingReferrer } from '@/utils/referral.js';
 import { listCategories } from '@/api/product.js';
 import { listWinners, getAccount } from '@/api/promo.js';
 import { addCart, listCart, getCartCount } from '@/api/cart.js';
@@ -481,6 +482,15 @@ function refreshAll() {
 
 onMounted(() => {
   try { statusH.value = uni.getSystemInfoSync().statusBarHeight || 20; } catch {}
+  // V044 推广绑定：onLoad 时若 URL 有 inviter 参数，先存 pending
+  // （兜底：万一 App.vue 没抓到，比如直接 navigate 进来）
+  if (route.inviter && route.tenantId) {
+    savePendingReferrer(route.inviter, route.tenantId);
+  }
+  // 已登录用户进店：立即尝试 flush（已绑会被后端拒，幂等安全）
+  if (user.isLogin && user.userId && route.tenantId) {
+    flushPendingReferrer(user.userId, route.tenantId).catch(() => {});
+  }
   refreshAll();
 });
 onShow(refreshAll);

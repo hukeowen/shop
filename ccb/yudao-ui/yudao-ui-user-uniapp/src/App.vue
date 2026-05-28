@@ -1,7 +1,34 @@
 <script setup>
 import { onLaunch, onShow, onHide } from '@dcloudio/uni-app';
+import { savePendingReferrer } from '@/utils/referral.js';
+
+// V044：落地 H5 URL 含 ?inviter=X&tenantId=Y 时先存 localStorage，
+// 等用户登录/进店后由 flushPendingReferrer 真正绑定。
+function captureLandingInviter() {
+  try {
+    if (typeof location === 'undefined') return;
+    // 顶层 query 形如：?tenantId=1010&inviter=99043
+    if (location.search) {
+      const sp = new URLSearchParams(location.search);
+      const inviter = sp.get('inviter') || sp.get('referrerUserId');
+      const tenantId = sp.get('tenantId');
+      if (inviter) savePendingReferrer(inviter, tenantId);
+    }
+    // hash 路由：#/pages/shop/home?tenantId=1010&inviter=99043
+    if (location.hash && location.hash.includes('?')) {
+      const q = location.hash.slice(location.hash.indexOf('?') + 1);
+      const sp = new URLSearchParams(q);
+      const inviter = sp.get('inviter') || sp.get('referrerUserId');
+      const tenantId = sp.get('tenantId');
+      if (inviter) savePendingReferrer(inviter, tenantId);
+    }
+  } catch {}
+}
 
 onLaunch(() => {
+  // V044：首先捕获 URL 上的 inviter（无论是否登录都先存起来）
+  captureLandingInviter();
+
   // v9 风格主题色（H5 状态栏 / safari 顶部）
   // eslint-disable-next-line no-undef
   // #ifdef H5

@@ -57,6 +57,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { sendSmsCode, smsLogin } from '@/api/auth.js';
+import { flushPendingReferrer } from '@/utils/referral.js';
 import { listWinnersTicker, getTodayStat } from '@/api/promo.js';
 import { useUserStore } from '@/store/user.js';
 import { fen2yuan } from '@/utils/format.js';
@@ -88,6 +89,9 @@ async function onLogin() {
     const r = await smsLogin(mobile.value, code.value);
     user.setLogin({ ...r, phone: mobile.value });
     uni.showToast({ title: '登录成功', icon: 'success' });
+    // V044：落地时存的 inviter+tenantId pending bind，登录后立即 flush
+    // 后端 visit/bindReferral 严格语义：仅在该 tenant 首次绑定生效，已绑则吞
+    try { await flushPendingReferrer(r.userId || user.userId); } catch {}
     const redirect = (typeof localStorage !== 'undefined' && localStorage.getItem('redirect:after-login')) || '/pages/index/index';
     try { if (typeof localStorage !== 'undefined') localStorage.removeItem('redirect:after-login'); } catch {}
     setTimeout(() => uni.reLaunch({ url: redirect }), 600);
