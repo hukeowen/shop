@@ -317,7 +317,7 @@ async function loadProducts() {
     const list = (r?.list || []).map((s) => {
       let badge = '', badgeClass = '';
       if (s.tuijianN) { badge = `推 ${s.tuijianN} 反 1`; }
-      else if (s.starCount) { badge = '派奖商品'; badgeClass = 'gold'; }
+      else if (s.starCount) { badge = '让利商品'; badgeClass = 'gold'; }
       return reactive({ ...s, badge, badgeClass, imgErr: false });
     });
     spus.value = list;
@@ -448,7 +448,7 @@ async function loadTicker() {
     const list = await listWinners(route.tenantId, 10);
     tickerText.value = (list || []).map((w) => {
       const amt = fen2yuan(w.amount, false);
-      return `${w.userMask || '****'} ${w.sourceLabel || '派奖'} +¥${amt}`;
+      return `${w.userMask || '****'} ${w.sourceLabel || '促销让利'} +¥${amt}`;
     });
   } catch {}
 }
