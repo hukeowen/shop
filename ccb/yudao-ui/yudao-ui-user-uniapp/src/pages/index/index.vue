@@ -89,7 +89,7 @@
 
     <!-- ━━━━━━ 分类 ━━━━━━ -->
     <view class="sec"><text class="h">逛分类</text></view>
-    <scroll-view scroll-x class="cats">
+    <scroll-view scroll-x :show-scrollbar="false" class="cats">
       <view class="cat" @click="goCategory('snack')"><view class="b"><svg viewBox="0 0 24 24"><path d="M5 11h14M6 11a6 6 0 0 1 12 0M9 4v2M15 4v2M3 15h18a2 2 0 0 1-2 4H5a2 2 0 0 1-2-4z"/></svg></view><text class="t">小吃</text></view>
       <view class="cat" @click="goCategory('drink')"><view class="b"><svg viewBox="0 0 24 24"><path d="M6 8h12l-1 11a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L6 8z"/><path d="M9 8V5a3 3 0 0 1 6 0v3M9 13h6"/></svg></view><text class="t">奶茶</text></view>
       <view class="cat" @click="goCategory('bbq')"><view class="b"><svg viewBox="0 0 24 24"><path d="M7 3v6M10 3v6M7 9h3v2a1.5 1.5 0 0 1-3 0V9zM8.5 13v8M17 3c-1.5 2-1.5 4 0 6s1.5 4 0 6v6"/></svg></view><text class="t">烧烤</text></view>
@@ -122,7 +122,7 @@
     <!-- ━━━━━━ 最近去过 ━━━━━━ -->
     <template v-if="recentShops.length">
       <view class="sec"><text class="h">最近去过</text><text class="more" @click="goNearby">全部 ›</text></view>
-      <scroll-view scroll-x class="recent">
+      <scroll-view scroll-x :show-scrollbar="false" class="recent">
         <view v-for="s in recentShops" :key="s.id" class="rc" @click="goShop(s)">
           <view class="rc-cv" :class="s.coverTone"><text class="rc-ph">{{ (s.name || '店')[0] }}</text><text class="vt">{{ s.lastVisit }}</text></view>
           <view class="rc-bd"><view class="n">{{ s.name }}</view><view class="m">余 <text class="b num">¥{{ s.balanceYuan }}</text><text v-if="s.promoPoint"> · 推 <text class="b num">{{ s.promoPoint }}</text></text></view></view>
@@ -507,6 +507,10 @@ onShow(refreshAll);
 .sec .h{font-size:17px;font-weight:800;letter-spacing:-.3px}
 .sec .sub{font-size:11.5px;color:var(--ink3);margin-left:8px}
 .sec .more{margin-left:auto;font-size:12px;color:var(--ink2)}
+
+/* 横滚滚动条隐藏（uniapp H5 scroll-view 内部）*/
+.cats ::-webkit-scrollbar, .recent ::-webkit-scrollbar{width:0;height:0;display:none}
+.cats, .recent{scrollbar-width:none;-ms-overflow-style:none}
 
 /* 分类横滚 */
 .cats{white-space:nowrap;padding:0 16px}
