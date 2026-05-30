@@ -65,56 +65,18 @@
       </view>
     </view>
 
-    <!-- 推广海报弹层 -->
-    <view v-if="posterShop" class="poster-mask" @click="posterShop = null">
+    <!-- 推广海报弹层（canvas 合成的整张图，可长按 / 下载保存）-->
+    <view v-if="posterShop" class="poster-mask" @click="closePoster">
       <view class="poster-wrap" @click.stop>
-        <view class="poster">
-          <view class="poster-deco"></view>
-          <view class="poster-head">
-            <view class="poster-brand">客小二 · 商户营销让利</view>
-            <view class="poster-shop">🏪 {{ posterShop.shopName }}</view>
-          </view>
-          <view v-if="posterShop.topTuijianSpu" class="poster-spu">
-            <view class="poster-spu-pic">
-              <image v-if="posterShop.topTuijianSpu.spuPic" :src="posterShop.topTuijianSpu.spuPic" mode="aspectFill" class="poster-spu-img" />
-              <text v-else class="poster-spu-em">🍠</text>
-            </view>
-            <view class="poster-spu-body">
-              <view class="poster-spu-name">{{ posterShop.topTuijianSpu.spuName }}</view>
-              <view class="poster-spu-price">
-                <text class="cny">¥</text>
-                <text class="v">{{ fen2yuan(posterShop.topTuijianSpu.price || 0, false) }}</text>
-                <text v-if="posterShop.topTuijianSpu.marketPrice && posterShop.topTuijianSpu.marketPrice > posterShop.topTuijianSpu.price" class="orig">¥{{ fen2yuan(posterShop.topTuijianSpu.marketPrice, false) }}</text>
-              </view>
-              <view class="poster-spu-badge">推 {{ posterShop.topTuijianSpu.tuijianN }} 反 1</view>
-            </view>
-          </view>
-          <view v-else class="poster-spu empty">
-            <view class="poster-spu-body">
-              <view class="poster-spu-name">本店推广商品</view>
-              <view class="poster-spu-badge">推广积分活动</view>
-            </view>
-          </view>
-          <view v-if="posterRule" class="poster-rule">
-            <view class="poster-rule-title">📖 推 {{ posterRule.n }} 反 1 活动规则</view>
-            <view class="poster-rule-line">推荐 1 位朋友本店首单 → 你获 <text class="hl">{{ posterRule.stepPoints }}</text> 积分</view>
-            <view class="poster-rule-line">累计推 <text class="hl">{{ posterRule.n }}</text> 位 → 积分可买本店所有商品 / 找商家兑换现金</view>
-            <view class="poster-rule-line">商户承诺独立兑付 · 平台仅技术服务 · 不构成担保</view>
-          </view>
-          <view class="poster-qr">
-            <image v-if="posterShop.qrUrl" :src="posterShop.qrUrl" mode="aspectFit" class="poster-qr-img" />
-            <view class="poster-qr-tip">长按二维码 · 加好友进店</view>
-          </view>
-          <view class="poster-foot">
-            <view class="poster-by">邀请人：{{ user.nickname || user.phone?.slice(-4) || '客小二用户' }}</view>
-            <view class="poster-disclaim">营销规则由商户独立负责 · 平台不担保兑付</view>
-          </view>
-        </view>
+        <view v-if="posterLoading" class="poster-loading">海报生成中…</view>
+        <image v-else-if="posterImage" :src="posterImage" mode="widthFix" class="poster-img" show-menu-by-longpress />
+        <view v-else class="poster-loading">海报生成失败，请重试</view>
         <view class="poster-actions">
-          <view class="poster-btn primary" @click="onCopy(posterShop.inviteLink)">复制邀请链接</view>
-          <view class="poster-btn ghost" @click="posterShop = null">关闭</view>
+          <view class="poster-btn primary" @click="onSavePoster">保存海报</view>
+          <view class="poster-btn ghost" @click="onCopy(posterShop.inviteLink)">复制链接</view>
+          <view class="poster-btn ghost" @click="closePoster">关闭</view>
         </view>
-        <view class="poster-hint">💡 长按上方图片或截图保存为海报分享</view>
+        <view class="poster-hint">💡 长按上图可直接保存到相册，或点「保存海报」下载</view>
       </view>
     </view>
 
@@ -127,6 +89,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useUserStore } from '@/store/user.js';
 import { getInviteEligibility, getAccount, getMyChildrenCount } from '@/api/promo.js';
 import { fen2yuan } from '@/utils/format.js';
+import { buildInvitePoster, downloadDataUrl } from '@/utils/poster.js';
 
 const user = useUserStore();
 const loading = ref(true);
@@ -136,6 +99,8 @@ const activeIdx = ref(0);
 const totalChildren = ref(0);
 const totalEarn = ref(0);
 const posterShop = ref(null);
+const posterImage = ref('');
+const posterLoading = ref(false);
 
 const baseOrigin = computed(() => (typeof location !== 'undefined' ? location.origin : 'https://ke.doupaidoudian.com'));
 
@@ -150,17 +115,8 @@ function onCopy(link) {
   uni.setClipboardData({ data: link, success: () => uni.showToast({ title: '已复制', icon: 'success' }) });
 }
 
-function onShowPoster(s) {
-  const enc = encodeURIComponent(s.inviteLink);
-  posterShop.value = {
-    ...s,
-    qrUrl: `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${enc}`,
-  };
-}
-
-// 海报规则计算（按 spu.tuijianRatios，没有就均分）
-const posterRule = computed(() => {
-  const spu = posterShop.value?.topTuijianSpu;
+// 规则计算（按 spu.tuijianRatios，没有就均分）；1 积分 = 1 元，底层 fen /100
+function calcRule(spu) {
   if (!spu || !spu.tuijianN) return null;
   const n = spu.tuijianN;
   let ratios = [];
@@ -171,13 +127,44 @@ const posterRule = computed(() => {
   const stepFen = Math.floor(totalFen * avgRatio / 100);
   const sumRatio = ratios.reduce((s, r) => s + Number(r || 0), 0);
   const totalRebateFen = Math.floor(totalFen * sumRatio / 100);
-  return {
-    n,
-    // 1 积分 = 1 元；底层 fen 要 /100
-    stepPoints: fen2yuan(stepFen, false),
-    totalPoints: fen2yuan(totalRebateFen, false),
-  };
-});
+  return { n, stepPoints: fen2yuan(stepFen, false), totalPoints: fen2yuan(totalRebateFen, false) };
+}
+
+async function onShowPoster(s) {
+  posterShop.value = s;
+  posterImage.value = '';
+  posterLoading.value = true;
+  try {
+    const spu = s.topTuijianSpu || null;
+    const rule = calcRule(spu);
+    posterImage.value = await buildInvitePoster({
+      shopName: s.shopName,
+      inviteLink: s.inviteLink,
+      inviter: user.nickname || (user.phone ? user.phone.slice(-4) : '') || '客小二用户',
+      spuName: spu?.spuName,
+      spuPic: spu?.spuPic,
+      priceYuan: spu ? fen2yuan(spu.price || 0, false) : null,
+      n: rule?.n,
+      stepPoints: rule?.stepPoints,
+      totalPoints: rule?.totalPoints,
+    });
+  } catch {
+    posterImage.value = '';
+  } finally {
+    posterLoading.value = false;
+  }
+}
+
+function onSavePoster() {
+  if (!posterImage.value) return;
+  const ok = downloadDataUrl(posterImage.value, `invite-${posterShop.value?.tenantId || ''}.png`);
+  uni.showToast({ title: ok ? '已保存/下载' : '请长按上图保存', icon: 'none' });
+}
+
+function closePoster() {
+  posterShop.value = null;
+  posterImage.value = '';
+}
 
 function goNearby() {
   uni.switchTab({ url: '/pages/nearby/index', fail: () => uni.navigateTo({ url: '/pages/nearby/index' }) });
@@ -376,91 +363,19 @@ onMounted(async () => {
   width: 100%; max-width: 720rpx;
   display: flex; flex-direction: column; align-items: center;
 }
-.poster {
-  width: 100%;
-  background: linear-gradient(160deg, #FFF9F0 0%, #FFEFE0 50%, #FFE4CC 100%);
-  border-radius: 32rpx;
-  padding: 44rpx 36rpx 40rpx;
-  position: relative; overflow: hidden;
-  box-shadow: 0 16px 48px rgba(0,0,0,.4);
-}
-.poster-deco {
-  position: absolute; inset: 0;
-  background-image:
-    radial-gradient(360rpx 240rpx at 0% 0%, rgba(255,107,53,.18), transparent 60%),
-    radial-gradient(360rpx 240rpx at 100% 100%, rgba(212,146,10,.18), transparent 60%);
-  pointer-events: none;
-}
-.poster-head { text-align: center; position: relative; z-index: 1; }
-.poster-brand { font-size: 22rpx; color: $o-d; font-weight: 800; letter-spacing: 4rpx; }
-.poster-shop  { font-size: 44rpx; font-weight: 900; color: $t1; margin-top: 8rpx; }
-
-.poster-spu {
-  margin-top: 32rpx;
-  display: flex; gap: 24rpx; align-items: center;
-  background: rgba(255,255,255,.85);
-  border: 2rpx solid $o-100;
-  border-radius: 28rpx;
-  padding: 20rpx;
-  position: relative; z-index: 1;
-}
-.poster-spu.empty { justify-content: center; padding: 28rpx; }
-.poster-spu-pic {
-  width: 160rpx; height: 160rpx;
-  flex-shrink: 0; border-radius: 24rpx;
-  background: linear-gradient(135deg, #FFE0D1, $o-l);
-  display: flex; align-items: center; justify-content: center;
-  overflow: hidden;
-}
-.poster-spu-img { width: 100%; height: 100%; }
-.poster-spu-em  { font-size: 84rpx; }
-.poster-spu-body { flex: 1; min-width: 0; }
-.poster-spu-name {
-  font-size: 30rpx; font-weight: 800; color: $t1;
-  line-height: 1.3;
-  overflow: hidden; text-overflow: ellipsis;
-  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
-}
-.poster-spu-price { margin-top: 8rpx; display: flex; align-items: baseline; gap: 12rpx; }
-.poster-spu-price .cny { color: $o-d; font-size: 24rpx; font-weight: 800; }
-.poster-spu-price .v   { color: $o-d; font-size: 44rpx; font-weight: 900; }
-.poster-spu-price .orig { color: $t4; font-size: 22rpx; text-decoration: line-through; }
-.poster-spu-badge {
-  display: inline-block; margin-top: 10rpx;
-  padding: 6rpx 20rpx;
-  background: linear-gradient(135deg, $o, $o-d); color: #fff;
-  border-radius: 99rpx; font-size: 22rpx; font-weight: 800;
-}
-
-.poster-rule {
-  margin-top: 28rpx;
-  background: rgba(255,255,255,.85);
-  border: 2rpx dashed $o-200;
+.poster-img {
+  width: 100%; max-width: 640rpx;
   border-radius: 24rpx;
-  padding: 20rpx 24rpx;
-  position: relative; z-index: 1;
+  box-shadow: 0 16px 48px rgba(0,0,0,.4);
+  background: #FFF9F0;
 }
-.poster-rule-title { font-size: 24rpx; font-weight: 800; color: $t1; margin-bottom: 12rpx; }
-.poster-rule-line  { font-size: 22rpx; color: $t2; line-height: 1.7; }
-.poster-rule-line .hl { color: $o-d; font-weight: 800; }
-
-.poster-qr {
-  margin-top: 32rpx;
-  background: #fff; border-radius: 28rpx;
-  padding: 28rpx;
-  text-align: center;
-  position: relative; z-index: 1;
-  box-shadow: 0 8rpx 24rpx rgba(0,0,0,.08);
+.poster-loading {
+  width: 100%; max-width: 640rpx; height: 900rpx;
+  border-radius: 24rpx;
+  background: rgba(255,255,255,.1);
+  display: flex; align-items: center; justify-content: center;
+  color: rgba(255,255,255,.85); font-size: 28rpx;
 }
-.poster-qr-img  { width: 360rpx; height: 360rpx; display: block; margin: 0 auto; }
-.poster-qr-tip  { font-size: 22rpx; color: $t3; margin-top: 16rpx; font-weight: 700; }
-
-.poster-foot {
-  margin-top: 28rpx; text-align: center;
-  position: relative; z-index: 1;
-}
-.poster-by { font-size: 22rpx; color: $t2; font-weight: 700; }
-.poster-disclaim { margin-top: 12rpx; font-size: 19rpx; color: $t4; line-height: 1.5; }
 
 .poster-actions {
   margin-top: 28rpx;
