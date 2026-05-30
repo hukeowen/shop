@@ -10,8 +10,21 @@
  *
  * 仅 H5 可用（依赖 document.createElement('canvas') + new Image()）。
  */
-// 显式走浏览器入口（canvas 渲染），避免 Vite 误打包 Node 版（fs / pngjs）
-import QRCode from 'qrcode/lib/browser.js';
+// 零运行时依赖的 QR 编码器（拿模块矩阵自己画格子，不引入 dijkstrajs/pngjs，
+// 规避 Vite 把子依赖当 external 导致运行时 require 失败）
+import qrcode from 'qrcode-generator';
+
+/** 生成 QR 模块矩阵；失败返回 null（调用方兜底） */
+function makeQrMatrix(text) {
+  try {
+    const qr = qrcode(0, 'M'); // typeNumber=0 自动选版本，纠错级 M
+    qr.addData(String(text || ''));
+    qr.make();
+    return qr;
+  } catch {
+    return null;
+  }
+}
 
 const W = 750;          // 逻辑宽度
 const PAD = 40;         // 左右留白
@@ -79,16 +92,8 @@ export async function buildInvitePoster(o) {
   // 仅 H5 有 DOM canvas；小程序 / APP 无 document，直接返回空（调用方兜底）
   if (typeof document === 'undefined') return '';
 
-  // 先生成二维码 base64（本地，不外泄链接）
-  let qrDataUrl = '';
-  try {
-    qrDataUrl = await QRCode.toDataURL(o.inviteLink, {
-      margin: 1,
-      width: 320,
-      color: { dark: '#18130E', light: '#FFFFFF' },
-    });
-  } catch {}
-  const qrImg = await loadImage(qrDataUrl);
+  // 本地生成 QR 模块矩阵（不外泄链接、无运行时依赖）
+  const qr = makeQrMatrix(o.inviteLink);
   const spuImg = await loadImage(o.spuPic);
 
   const dpr = Math.min(3, Math.max(2, (typeof window !== 'undefined' && window.devicePixelRatio) || 2));
@@ -237,8 +242,19 @@ export async function buildInvitePoster(o) {
       ctx.fillStyle = '#fff';
       roundRect(ctx, qX - 24, qY - 24, qS + 48, qS + 96, 24);
       ctx.fill();
-      if (qrImg) {
-        ctx.drawImage(qrImg, qX, qY, qS, qS);
+      // 画 QR 模块矩阵（黑格）
+      if (qr) {
+        const count = qr.getModuleCount();
+        const cell = qS / count;
+        ctx.fillStyle = '#18130E';
+        for (let r = 0; r < count; r++) {
+          for (let c = 0; c < count; c++) {
+            if (qr.isDark(r, c)) {
+              // +1 像素消除格子间发丝缝隙
+              ctx.fillRect(qX + c * cell, qY + r * cell, Math.ceil(cell) + 0.5, Math.ceil(cell) + 0.5);
+            }
+          }
+        }
       }
       ctx.fillStyle = '#5A4A3A';
       ctx.font = '700 24px -apple-system, "PingFang SC", sans-serif';
