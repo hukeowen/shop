@@ -10,6 +10,9 @@
 # Claude Code 工具状态（子目录权限缓存，不入仓）
 
 docs/.claude/
+**/.claude/settings.local.json
+docs/env.back
+*.localbak
 
 ######################################################################
 # Build Tools
