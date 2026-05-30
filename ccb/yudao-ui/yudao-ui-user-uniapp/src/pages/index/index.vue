@@ -1,232 +1,169 @@
 <template>
   <view class="page">
-    <!-- V044 合规：首次访问强制阅读合规警告（已阅记 localStorage 不再弹） -->
+    <!-- ━━━━━━ 首次访问 合规协议弹窗 ━━━━━━ -->
     <view v-if="showCompliance" class="cmp-mask" @click.stop>
-      <view class="cmp-card">
-        <view class="cmp-h">📢 平台使用提示</view>
-        <view class="cmp-body">
-          <view class="cmp-p"><text class="b">1. 平台定位</text>：本平台为「商户营销服务工具」，性质为<text class="hl">纯技术信息中介</text>。平台<text class="hl">不销售商品</text>、不沉淀资金，不对商户经营行为及结果承担任何责任。</view>
-          <view class="cmp-p"><text class="b">2. 交易关系</text>：您在平台购买的商品/享受的服务，均由独立经营的<text class="hl">商户提供</text>。您与商户之间形成独立买卖合同关系，与平台无关。</view>
-          <view class="cmp-p"><text class="b">3. 营销激励</text>：您参与的「分享激励」「邀请有礼」等活动，奖励来自<text class="hl">商户自费</text>营销让利预算，严格单层奖励直接邀请人，<text class="hl">不构成投资</text>，不存在保证收益。</view>
-          <view class="cmp-p"><text class="b">4. 解释权</text>：商户对营销活动具体规则保留<text class="hl">「最终解释权」</text>。任何争议<text class="hl">请直接联系商户</text>处理，平台不承担兑付保证责任。</view>
-          <view class="cmp-p"><text class="b">5. 禁止行为</text>：禁止在第三方平台传播"投资/躺赚/暴富"等误导性话术，禁止任何形式的传销/资金盘。违规者平台有权封号 + 移交司法机关。</view>
+      <view class="cmp">
+        <view class="cmp-hd">
+          <view class="cmp-i"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z"/><path d="M9.5 12l2 2 3.5-4"/></svg></view>
+          <text class="cmp-t">平台使用提示</text>
         </view>
-        <view class="cmp-foot">
-          <view class="cmp-link" @click="goCmpAgreement('user')">查看《用户服务协议》</view>
-          <view class="cmp-link" @click="goCmpAgreement('privacy')">查看《隐私协议》</view>
+        <scroll-view scroll-y class="cmp-bd">
+          <view class="cmp-p"><text class="b">1. 平台定位</text>：本平台为「商户营销服务工具」，性质为<text class="hl">纯技术信息中介</text>，不销售商品、不沉淀资金，不对商户经营行为及结果承担责任。</view>
+          <view class="cmp-p"><text class="b">2. 交易关系</text>：您购买的商品 / 服务均由独立经营的<text class="hl">商户提供</text>，您与商户形成独立买卖合同关系，与平台无关。</view>
+          <view class="cmp-p"><text class="b">3. 营销激励</text>：「分享激励」「邀请有礼」等活动奖励来自<text class="hl">商户自费</text>营销让利预算，严格单层奖励直接邀请人，<text class="hl">不构成投资</text>、无保证收益。</view>
+          <view class="cmp-p"><text class="b">4. 解释权</text>：商户对营销活动规则保留<text class="hl">最终解释权</text>，任何争议<text class="hl">请直接联系商户</text>处理，平台不承担兑付保证。</view>
+          <view class="cmp-p"><text class="b">5. 禁止行为</text>：禁止传播"投资 / 躺赚 / 暴富"等误导话术，禁止任何形式的传销 / 资金盘。违规将封号并移交司法机关。</view>
+        </scroll-view>
+        <view class="cmp-links">
+          <text class="lk" @click="goCmpAgreement('user')">《用户服务协议》</text>
+          <text class="lk" @click="goCmpAgreement('privacy')">《隐私协议》</text>
         </view>
         <view class="cmp-cta" @click="acceptCompliance">我已阅读并同意</view>
       </view>
     </view>
 
-    <!-- ━━━━━━━━━━ HERO（暖橙渐变 + 圆点底纹 + 右上柔光球）━━━━━━━━━━ -->
-    <view class="home-hero">
-      <view class="hero-deco-dots"></view>
-      <view class="hero-deco-glow"></view>
-
-      <view class="home-greet-row">
-        <view class="home-avatar">{{ avatarText }}</view>
-        <view class="home-greet">
-          <view class="hi">{{ greeting }} ☀</view>
-          <view class="name">{{ greetTitle }}</view>
-        </view>
-        <view class="home-head-ics">
-          <view class="home-head-ic">📍</view>
-          <view class="home-head-ic">🔔<view class="dot"></view></view>
-        </view>
-      </view>
-
-      <view class="home-search" @click="goSearch">
-        <text class="ic">🔍</text>
-        <text class="ph">搜店铺、找商品、看附近</text>
-        <view class="voice">🎙</view>
-      </view>
-
-      <view class="home-ticker">
-        <text class="trophy">🏆</text>
-        <view class="roll">
-          <view class="roll-track">
-            <text v-for="(t, i) in tickerText" :key="i">{{ t }} · </text>
+    <!-- ━━━━━━ 顶栏：问候 + 定位 + 通知 + 搜索 + ticker ━━━━━━ -->
+    <view class="top">
+      <view class="greet">
+        <view class="av">{{ avatarText }}</view>
+        <view class="g">
+          <view class="hi">{{ greeting }}，欢迎回来</view>
+          <view class="loc" @click="goNearby">
+            <svg viewBox="0 0 24 24"><path d="M12 21s-7-6.3-7-11a7 7 0 0 1 14 0c0 4.7-7 11-7 11z"/><circle cx="12" cy="10" r="2.6"/></svg>
+            当前位置 · 看附近
+            <svg class="cv" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
           </view>
         </view>
-      </view>
-    </view>
-
-    <!-- ━━━━━━━━━━ 我今日刚到账 — 仅登录后 + 有记录显示 ━━━━━━━━━━ -->
-    <view v-if="user.isLogin && todayRecords.length" class="mae-card">
-      <view class="mae-head">
-        <view class="mae-tag">💎 你今日刚到账</view>
-        <text class="mae-more" @click="goWallet">明细 ›</text>
-      </view>
-      <view class="mae-list">
-        <view v-for="r in todayRecords" :key="r.id" class="mae-row" :class="{ normal: !r.highlight }">
-          <view class="mae-ic" :class="r.cls">{{ r.icon }}</view>
-          <view class="mae-body">
-            <view class="mae-name">{{ r.title }}</view>
-            <view class="mae-d">{{ r.time }} · {{ r.sourceLabel }}</view>
-          </view>
-          <view class="mae-amt" :class="{ normal: !r.highlight }">+¥{{ r.amount }}</view>
+        <view class="ico-wrap" @click="goWallet">
+          <svg class="ico" viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
         </view>
       </view>
-      <view class="mae-foot">
-        <view class="sum">今日合计入账 <text class="b">¥{{ todaySumYuan }}</text>
-          <text v-if="todayStat.consume > 0"> + <text class="b">{{ todaySumPoints }} 分</text></text></view>
-        <view class="mae-btn" @click="goWithdraw">💸 提现 →</view>
+      <view class="searchbar" @click="goSearch">
+        <svg class="s" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <text class="ph">搜店铺、商品</text>
+        <text class="go">搜索</text>
       </view>
-    </view>
-    <!-- 未登录态：登录引导卡 -->
-    <view v-else-if="!user.isLogin" class="mae-card login-tip" @click="goLogin">
-      <view class="lt-em">👋</view>
-      <view class="lt-body">
-        <view class="lt-t">登录享老客分享激励</view>
-        <view class="lt-d">商户营销让利 · 邀请有礼 · 推广积分提现</view>
-      </view>
-      <view class="lt-cta">登录 →</view>
-    </view>
-    <!-- 已登录但今日还没到账：兜底空状态卡（同样上拉与 hero 重叠，避免大块橙色空白） -->
-    <view v-else class="mae-card empty-today" @click="goNearby">
-      <view class="lt-em">🌅</view>
-      <view class="lt-body">
-        <view class="lt-t">今日还没到账</view>
-        <view class="lt-d">逛逛附近店铺 · 下单参与「推 N 反 1」立即领</view>
-      </view>
-      <view class="lt-cta">去看看 →</view>
-    </view>
-
-    <!-- ━━━━━━━━━━ 5 快入口 ━━━━━━━━━━ -->
-    <view class="home-quick">
-      <view class="qk" @click="goNearby"><view class="qk-ic">📍</view><view class="qk-text">附近</view></view>
-      <view class="qk" @click="goWinners"><view class="qk-ic">🏆<view class="live-dot"></view></view><view class="qk-text">商户让利公告</view></view>
-      <view class="qk" @click="goQueue"><view class="qk-ic">🔥</view><view class="qk-text">我的队列</view></view>
-      <view class="qk" @click="goCoupon"><view class="qk-ic">🎟</view><view class="qk-text">优惠券</view></view>
-      <view class="qk" @click="onScan"><view class="qk-ic">📜</view><view class="qk-text">扫码</view></view>
-    </view>
-
-    <!-- ━━━━━━━━━━ 推 N 反 1 进行中提醒 — 仅有进行中队列时显示 ━━━━━━━━━━ -->
-    <view v-if="queueTip" class="home-queue-tip" @click="goQueue">
-      <view class="hqt-ic">🔥</view>
-      <view class="hqt-body">
-        <view class="hqt-t">{{ queueTip.shopName }} · {{ queueTip.spuName }} <text class="b">还差 {{ queueTip.gap }} 人即出队 +¥{{ queueTip.amount }}</text></view>
-        <view class="hqt-d">分享给朋友扫码下单 → 你立即出队拿全额</view>
-      </view>
-      <view class="hqt-cta">分享 →</view>
-    </view>
-
-    <!-- ━━━━━━━━━━ 分类（与系统 BUSINESS_CONTEXT_MAP 编码对齐：snack/drink/bbq/restaurant/tea_house/fruit/super/bakery/beauty/other）━━━━━━━━━━ -->
-    <view class="home-cats">
-      <view class="home-cat" @click="goCategory('snack')"><view class="em">🥟</view><view class="l">小吃</view></view>
-      <view class="home-cat" @click="goCategory('drink')"><view class="em">🧋</view><view class="l">奶茶</view></view>
-      <view class="home-cat" @click="goCategory('bbq')"><view class="em">🍢</view><view class="l">烧烤</view></view>
-      <view class="home-cat" @click="goCategory('restaurant')"><view class="em">🍽</view><view class="l">餐厅</view></view>
-      <view class="home-cat" @click="goCategory('tea_house')"><view class="em">🏯</view><view class="l">茶馆</view></view>
-      <view class="home-cat" @click="goCategory('fruit')"><view class="em">🍓</view><view class="l">水果</view></view>
-      <view class="home-cat" @click="goCategory('super')"><view class="em">🛒</view><view class="l">超市</view></view>
-      <view class="home-cat" @click="goCategory('bakery')"><view class="em">🥐</view><view class="l">烘焙</view></view>
-      <view class="home-cat" @click="goCategory('beauty')"><view class="em">💄</view><view class="l">美容</view></view>
-      <view class="home-cat" @click="goCategory('')"><view class="em">🏪</view><view class="l">全部</view></view>
-    </view>
-
-    <!-- ━━━━━━━━━━ 营销双卡 ━━━━━━━━━━ -->
-    <view class="section-title">
-      <view class="h3">玩法专区 <text class="small">商户营销让利活动</text></view>
-    </view>
-    <view class="home-feats">
-      <view class="home-feat rank" @click="goWinners">
-        <text class="em-bg">🏆</text>
-        <view class="hf-tag">🏆 商户让利公告</view>
-        <view>
-          <view class="hf-title">看谁刚拿到奖</view>
-          <view class="hf-sub">榜一排名 · 按店</view>
-        </view>
-        <view class="hf-bot">
-          <view class="hf-meta">今日让利 <text>¥{{ stat.todayAward }}</text></view>
-          <view class="hf-cta">查看榜单 →</view>
-        </view>
-      </view>
-      <view class="home-feat nback" @click="goQueue">
-        <text class="em-bg">🔥</text>
-        <view class="hf-tag">🔥 推 N 反 1</view>
-        <view>
-          <view class="hf-title">买 N 件 免单 1 件</view>
-          <view class="hf-sub">朋友买你也得返</view>
-        </view>
-        <view class="hf-bot">
-          <view class="hf-meta">在队列 <text>{{ stat.myQueueCount }} 个</text></view>
-          <view class="hf-cta">查看 →</view>
-        </view>
+      <view v-if="tickerText.length" class="ticker">
+        <svg class="tp" viewBox="0 0 24 24"><path d="M8 21h8M12 17v4M6 4h12v5a6 6 0 0 1-12 0V4z"/><path d="M18 5h2.5a1.5 1.5 0 0 1 0 5H18M6 5H3.5a1.5 1.5 0 0 0 0 5H6"/></svg>
+        <view class="roll"><text class="rt num">{{ tickerText.join('　·　') }}</text></view>
       </view>
     </view>
 
-    <!-- ━━━━━━━━━━ 最近去过 横滚 — 仅登录后 + 有数据 ━━━━━━━━━━ -->
+    <!-- ━━━━━━ 今日到账（可关闭提示，无兑付 CTA）/ 未登录引导 / 空状态 ━━━━━━ -->
+    <view v-if="user.isLogin && todayRecords.length && !maeHidden" class="mae">
+      <view class="mae-h">
+        <view class="t"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9 6.8 19.2l1-5.8L3.5 9.2l5.9-.9z"/></svg>你今日刚到账</view>
+        <view class="close" @click="maeHidden = true"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></view>
+      </view>
+      <view v-for="r in todayRecords" :key="r.id" class="mae-row">
+        <view class="r-ic" :class="r.cls"><svg viewBox="0 0 24 24"><path d="M4 7h16M6 7l1.5 12.5A1.5 1.5 0 0 0 9 21h6a1.5 1.5 0 0 0 1.5-1.5L18 7"/><path d="M9 7V5a3 3 0 0 1 6 0v2"/></svg></view>
+        <view class="r-bd"><view class="n">{{ r.title }}</view><view class="d">{{ r.time }} · {{ r.sourceLabel }}</view></view>
+        <view class="r-amt num">+¥{{ r.amount }}</view>
+      </view>
+      <view class="mae-ft">
+        <view class="sum">今日合计入账 <text class="b num">¥{{ todaySumYuan }}</text></view>
+        <view class="look" @click="goWallet">查看明细 <svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></view>
+      </view>
+    </view>
+    <view v-else-if="!user.isLogin" class="tipcard" @click="goLogin">
+      <view class="tc-ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-3.5 3.5-6 8-6s8 2.5 8 6"/></svg></view>
+      <view class="tc-bd"><view class="t">登录享老客分享激励</view><view class="d">商户营销让利 · 邀请有礼 · 推广积分</view></view>
+      <view class="tc-cta">登录</view>
+    </view>
+
+    <!-- ━━━━━━ 5 快入口 ━━━━━━ -->
+    <view class="quick">
+      <view class="qk" @click="goNearby"><view class="b"><svg viewBox="0 0 24 24"><path d="M12 21s-7-6.3-7-11a7 7 0 0 1 14 0c0 4.7-7 11-7 11z"/><circle cx="12" cy="10" r="2.4"/></svg></view><text class="t">附近</text></view>
+      <view class="qk" @click="goWinners"><view class="b"><svg viewBox="0 0 24 24"><path d="M8 21h8M12 17v4M6 4h12v5a6 6 0 0 1-12 0V4z"/><path d="M18 5h2.5a1.5 1.5 0 0 1 0 5H18M6 5H3.5a1.5 1.5 0 0 0 0 5H6"/></svg></view><text class="t">让利榜</text><view class="live"></view></view>
+      <view class="qk" @click="goQueue"><view class="b"><svg viewBox="0 0 24 24"><path d="M4 7h16M6 7l1.5 12.5A1.5 1.5 0 0 0 9 21h6a1.5 1.5 0 0 0 1.5-1.5L18 7"/><path d="M9 7V5a3 3 0 0 1 6 0v2"/></svg></view><text class="t">我的队列</text></view>
+      <view class="qk" @click="goCoupon"><view class="b"><svg viewBox="0 0 24 24"><path d="M4 8a2 2 0 0 0 0 8v2a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-2a2 2 0 0 1 0-8V6a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1z"/><path d="M12 7v10" stroke-dasharray="1.5 2.5"/></svg></view><text class="t">优惠券</text></view>
+      <view class="qk" @click="onScan"><view class="b"><svg viewBox="0 0 24 24"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3"/><path d="M4 12h16"/></svg></view><text class="t">扫码</text></view>
+    </view>
+
+    <!-- ━━━━━━ 推 N 反 1 进行中提醒 ━━━━━━ -->
+    <view v-if="queueTip" class="qtip" @click="goQueue">
+      <view class="ic"><svg viewBox="0 0 24 24"><path d="M4 7h16M6 7l1.5 12.5A1.5 1.5 0 0 0 9 21h6a1.5 1.5 0 0 0 1.5-1.5L18 7"/><path d="M9 7V5a3 3 0 0 1 6 0v2"/></svg></view>
+      <view class="bd"><view class="t">{{ queueTip.shopName }} · {{ queueTip.spuName }} <text class="b">还差 {{ queueTip.gap }} 人出队 +¥{{ queueTip.amount }}</text></view><view class="d">分享给朋友扫码下单 → 你立即出队拿全额</view></view>
+      <view class="cta">分享</view>
+    </view>
+
+    <!-- ━━━━━━ 分类 ━━━━━━ -->
+    <view class="sec"><text class="h">逛分类</text></view>
+    <scroll-view scroll-x class="cats">
+      <view class="cat" @click="goCategory('snack')"><view class="b"><svg viewBox="0 0 24 24"><path d="M5 11h14M6 11a6 6 0 0 1 12 0M9 4v2M15 4v2M3 15h18a2 2 0 0 1-2 4H5a2 2 0 0 1-2-4z"/></svg></view><text class="t">小吃</text></view>
+      <view class="cat" @click="goCategory('drink')"><view class="b"><svg viewBox="0 0 24 24"><path d="M6 8h12l-1 11a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L6 8z"/><path d="M9 8V5a3 3 0 0 1 6 0v3M9 13h6"/></svg></view><text class="t">奶茶</text></view>
+      <view class="cat" @click="goCategory('bbq')"><view class="b"><svg viewBox="0 0 24 24"><path d="M7 3v6M10 3v6M7 9h3v2a1.5 1.5 0 0 1-3 0V9zM8.5 13v8M17 3c-1.5 2-1.5 4 0 6s1.5 4 0 6v6"/></svg></view><text class="t">烧烤</text></view>
+      <view class="cat" @click="goCategory('restaurant')"><view class="b"><svg viewBox="0 0 24 24"><path d="M7 3v8a2 2 0 0 1-2 2v8M5 3v6M17 3c-1 2-1 5 0 7v11"/></svg></view><text class="t">餐厅</text></view>
+      <view class="cat" @click="goCategory('tea_house')"><view class="b"><svg viewBox="0 0 24 24"><path d="M5 21h14M6 21V10h12v11M4 10l2-5h12l2 5M9 14h6"/></svg></view><text class="t">茶馆</text></view>
+      <view class="cat" @click="goCategory('fruit')"><view class="b"><svg viewBox="0 0 24 24"><circle cx="12" cy="14" r="6"/><path d="M12 8c0-2 1-4 4-4M12 8c0-1.5-.5-3-2-3.5"/></svg></view><text class="t">水果</text></view>
+      <view class="cat" @click="goCategory('super')"><view class="b"><svg viewBox="0 0 24 24"><path d="M4 6h2l2 11h10l2-8H7"/><circle cx="9.5" cy="20" r="1.3"/><circle cx="17" cy="20" r="1.3"/></svg></view><text class="t">超市</text></view>
+      <view class="cat" @click="goCategory('bakery')"><view class="b"><svg viewBox="0 0 24 24"><path d="M5 13a7 7 0 0 1 14 0v6H5z"/><path d="M5 16h14M9 9V6M15 9V6"/></svg></view><text class="t">烘焙</text></view>
+      <view class="cat" @click="goCategory('beauty')"><view class="b"><svg viewBox="0 0 24 24"><rect x="6" y="3" width="12" height="18" rx="2"/><path d="M10 3v4h4V3M9 14h6"/></svg></view><text class="t">美容</text></view>
+      <view class="cat" @click="goCategory('')"><view class="b"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg></view><text class="t">全部</text></view>
+    </scroll-view>
+
+    <!-- ━━━━━━ 玩法专区 ━━━━━━ -->
+    <view class="sec"><text class="h">玩法专区</text><text class="sub">商户营销让利</text></view>
+    <view class="plays">
+      <view class="play rank" @click="goWinners">
+        <view class="ppic"><svg viewBox="0 0 24 24"><path d="M8 21h8M12 17v4M6 4h12v5a6 6 0 0 1-12 0V4z"/><path d="M18 5h2.5a1.5 1.5 0 0 1 0 5H18M6 5H3.5a1.5 1.5 0 0 0 0 5H6"/></svg></view>
+        <text class="ptag">商户让利榜</text>
+        <text class="ph2">看谁刚得奖</text>
+        <view class="pft"><view class="m">今日让利<text class="b num">¥{{ stat.todayAward }}</text></view><text class="pgo">查看</text></view>
+      </view>
+      <view class="play nb" @click="goQueue">
+        <view class="ppic"><svg viewBox="0 0 24 24"><path d="M4 7h16M6 7l1.5 12.5A1.5 1.5 0 0 0 9 21h6a1.5 1.5 0 0 0 1.5-1.5L18 7"/><path d="M9 7V5a3 3 0 0 1 6 0v2"/></svg></view>
+        <text class="ptag">推 N 反 1</text>
+        <text class="ph2">买 N 反 1 件</text>
+        <view class="pft"><view class="m">在队列<text class="b num">{{ stat.myQueueCount }} 个</text></view><text class="pgo">查看</text></view>
+      </view>
+    </view>
+
+    <!-- ━━━━━━ 最近去过 ━━━━━━ -->
     <template v-if="recentShops.length">
-      <view class="section-title">
-        <view class="h3">最近去过</view>
-        <text class="more" @click="goNearby">全部 ›</text>
-      </view>
-      <scroll-view scroll-x class="recent-scroll">
-        <view v-for="s in recentShops" :key="s.id" class="recent-card" @click="goShop(s)">
-          <view class="recent-cover" :class="s.coverTone">
-            <view class="recent-tag">{{ s.lastVisit }}</view>
-            <view v-if="s.star > 0" class="recent-star">★{{ s.star }}</view>
-          </view>
-          <view class="recent-body">
-            <view class="recent-name">{{ s.name }}</view>
-            <view class="recent-meta">
-              <text>余 <text class="b">¥{{ s.balanceYuan }}</text></text>
-              <view v-if="s.promoPoint > 0" class="dot"></view>
-              <text v-if="s.promoPoint > 0">推 <text class="b">{{ s.promoPoint }}</text></text>
-            </view>
-          </view>
+      <view class="sec"><text class="h">最近去过</text><text class="more" @click="goNearby">全部 ›</text></view>
+      <scroll-view scroll-x class="recent">
+        <view v-for="s in recentShops" :key="s.id" class="rc" @click="goShop(s)">
+          <view class="rc-cv" :class="s.coverTone"><text class="rc-ph">{{ (s.name || '店')[0] }}</text><text class="vt">{{ s.lastVisit }}</text></view>
+          <view class="rc-bd"><view class="n">{{ s.name }}</view><view class="m">余 <text class="b num">¥{{ s.balanceYuan }}</text><text v-if="s.promoPoint"> · 推 <text class="b num">{{ s.promoPoint }}</text></text></view></view>
         </view>
       </scroll-view>
     </template>
 
-    <!-- ━━━━━━━━━━ 附近商家 — 真数据 ━━━━━━━━━━ -->
-    <view class="section-title">
-      <view class="h3">附近商家 <text class="small">店主推明星商品</text></view>
-      <text class="more" @click="goNearby">全部 ›</text>
-    </view>
+    <!-- ━━━━━━ 附近好店（单列大卡）━━━━━━ -->
+    <view class="sec"><text class="h">附近好店</text><text class="sub">店主推招牌</text><text class="more" @click="goNearby">全部 ›</text></view>
     <view v-if="loadingShops" class="loading">加载中…</view>
     <empty-state v-else-if="!nearbyShops.length" icon="🏪" title="附近暂无店铺" desc="换个位置或允许定位试试" />
-    <view v-else class="hshop-list">
-      <view v-for="s in nearbyShops" :key="s.id" class="hs-card" @click="goShop(s)">
-        <view class="hs-cover">
-          <image v-if="s.coverUrl" :src="s.coverUrl" mode="aspectFill" class="hs-cover-img" />
-          <text v-else class="hs-cover-em">{{ (s.name || '店')[0] }}</text>
+    <view v-else class="shops">
+      <view v-for="s in nearbyShops" :key="s.id" class="shop" @click="goShop(s)">
+        <view class="cv">
+          <image v-if="s.coverUrl || s.topSpu?.picUrl" :src="s.coverUrl || s.topSpu.picUrl" mode="aspectFill" class="cv-img" />
+          <text v-else class="cv-ph">{{ (s.name || '店')[0] }}</text>
+          <view class="st" :class="s.open ? 'open' : 'close'"><text class="d"></text>{{ s.open ? '营业中' : '休息中' }}</view>
         </view>
-        <view class="hs-body">
-          <view class="hs-row1">
-            <text class="hs-name">{{ s.name }}</text>
-            <view class="hs-status" :class="{ closed: !s.open }">
-              <text class="dot"></text>{{ s.open ? '营业中' : '休息中' }}
-            </view>
+        <view class="bd">
+          <view class="nm">{{ s.name }}</view>
+          <view class="mt">
+            <text v-if="s.rating" class="rate">★ {{ Number(s.rating).toFixed(1) }}</text>
+            <text v-if="s.rating && s.monthSold != null" class="dot"></text>
+            <text v-if="s.monthSold != null" class="num">月售 {{ s.monthSold }}</text>
+            <text v-if="s.distance" class="dot"></text>
+            <text v-if="s.distance" class="num">{{ s.distance }}</text>
           </view>
-          <view class="hs-row2">
-            <text v-if="s.rating" class="hs-rate">★ {{ s.rating }}</text>
-            <text v-if="s.monthSold != null" class="hs-sales">月售 {{ s.monthSold }}</text>
-            <text v-if="s.distance" class="hs-dist">· {{ s.distance }}</text>
-            <text v-if="s.star" class="hs-star">★{{ s.star }} 星店</text>
+          <view v-if="s.promoLine || s.star" class="tags">
+            <text v-if="s.promoLine" class="tag">{{ s.promoLine }}</text>
+            <text v-if="s.star" class="tag line">{{ s.star }} 星店</text>
           </view>
-          <view v-if="s.promoLine" class="hs-tags">
-            <view class="hs-tag promo">🔥 {{ s.promoLine }}</view>
-          </view>
-          <!-- 明星商品 / 招牌 -->
-          <view v-if="s.topSpu" class="hs-spu" @click.stop="goSpu(s)">
-            <text class="hs-spu-tag">⭐ 招牌</text>
-            <text class="hs-spu-name">{{ s.topSpu.name }}</text>
-            <text class="hs-spu-price">¥{{ fmtYuan(s.topSpu.price) }}</text>
+          <view v-if="s.topSpu" class="spu" @click.stop="goSpu(s)">
+            <text class="l">招牌</text>
+            <text class="n">{{ s.topSpu.name }}</text>
+            <text class="p num"><text class="c">¥</text>{{ fmtYuan(s.topSpu.price) }}</text>
           </view>
         </view>
       </view>
     </view>
+
     <view class="bottom-pad"></view>
-
-    <!-- 浮动收益球（仅登录后有今日入账时显示） -->
-    <view v-if="user.isLogin && todayStat.promo > 0" class="float-earn" @click="goWallet">
-      <view class="n">{{ todaySumYuan }}</view>
-      <view class="l">今日</view>
-    </view>
-
     <bottom-nav active="index" :cart-count="cartCount" />
   </view>
 </template>
@@ -242,6 +179,7 @@ import { fen2yuan, fmtTime, fmtDistance } from '@/utils/format.js';
 
 const user = useUserStore();
 const avatarText = computed(() => (user.nickname?.[0] || '客'));
+const maeHidden = ref(false); // 今日到账提示可关闭
 
 const greeting = computed(() => {
   const h = new Date().getHours();
@@ -280,7 +218,6 @@ async function loadTodayMae() {
       consume: stat?.consumeAmountToday || 0,
       count: stat?.awardCountToday || 0,
     };
-    // 只保留今日的（接口已分页倒序，前端再按 createTime 过滤）
     const today = new Date().toDateString();
     const labelOf = (t) => ({
       DIRECT: '邀请有礼', QUEUE: '活动完成奖', COMMISSION: '分享激励',
@@ -293,12 +230,12 @@ async function loadTodayMae() {
     const rows = (page?.list || [])
       .filter((r) => new Date(String(r.createTime).replace('T', ' ').replace(/-/g, '/')).toDateString() === today)
       .map((r) => {
-        let icon = '🏆', cls = '';
-        if (r.sourceType === 'QUEUE')           { icon = '💰'; cls = 'coin'; }
-        else if (r.sourceType === 'COMMISSION') { icon = '⭐'; cls = 'pt'; }
+        let cls = '';
+        if (r.sourceType === 'QUEUE')           { cls = 'coin'; }
+        else if (r.sourceType === 'COMMISSION') { cls = 'pt'; }
         return {
           id: r.id,
-          icon, cls,
+          cls,
           title: r.remark || labelOf(r.sourceType),
           sourceLabel: labelOf(r.sourceType),
           time: fmtTime(r.createTime),
@@ -327,7 +264,6 @@ async function loadQueueTip() {
       const q = sorted[0];
       const gap = (q.requiredCount || 0) - (q.currentCount || 0);
       const amt = q.rewardAmount || 0;
-      // gap<=0 或 amount<=0 视为脏数据，不显示
       if (gap > 0 && amt > 0) {
         queueTip.value = {
           shopName: q.shopName || '店铺',
@@ -345,7 +281,7 @@ async function loadQueueTip() {
   } catch {}
 }
 
-// 今日全网派奖（feat 卡 hero stat） — 跨店统计
+// 今日全网派奖（玩法卡 stat） — 跨店统计
 async function loadFeatStat() {
   try {
     const s = await getTodayStat();
@@ -360,9 +296,7 @@ const recentShops = ref([]);
 async function loadRecent() {
   if (!user.isLogin) { recentShops.value = []; return; }
   try {
-    // /my-shops 只返关系（无 shopName）→ 改用 /my-shops-enriched 拿名字 + 余额
     const list = await listMyShopsEnriched();
-    // 按最后访问时间倒序
     const sorted = [...(list || [])].sort((a, b) => (b.lastVisitAt || 0) - (a.lastVisitAt || 0));
     recentShops.value = sorted.slice(0, 4).map((s, i) => ({
       id: s.id || s.tenantId,
@@ -377,13 +311,12 @@ async function loadRecent() {
   } catch {}
 }
 
-// 附近店铺 — 真接口，前 3 个展示
+// 附近店铺 — 真接口
 const nearbyShops = ref([]);
 const loadingShops = ref(false);
 async function loadNearby() {
   loadingShops.value = true;
   try {
-    // 默认 20 个 → 取前 10 展示；无坐标 / 未开业 都展示，让用户知道有哪些店
     const r = await listShops({ pageNo: 1, pageSize: 20 });
     const items = r?.list || r || [];
     nearbyShops.value = items.slice(0, 10).map((s) => ({
@@ -394,24 +327,21 @@ async function loadNearby() {
       star: s.starLevel || s.star,
       newTag: s.newShop ? '新店送 ¥5' : '',
       rating: s.avgRating || s.rating,
-      // 距离仅在后端真返了 distance（用户给了坐标）才显示，否则不占位
       distance: s.distance != null && s.distance > 0 ? fmtDistance(s.distance) : '',
       monthSold: s.sales30d != null ? s.sales30d : (s.monthSold != null ? s.monthSold : null),
-      // 营业状态：后端 /public/list 已计算 isOpenNow（综合 status / todayOpenAt / manualClosed / businessHours）
       open: s.isOpenNow === true,
-      promoLine: s.promoLine || (s.tuijianN ? `推 ${s.tuijianN} 反 1 进行中` : ''),
-      // 后端 V043 注入：每店"明星商品"（推 N 反 1 启用 → 销量最高 / 兜底全店销量第一）
+      promoLine: s.promoLine || (s.tuijianN ? `推 ${s.tuijianN} 反 1` : ''),
       topSpu: s.topSpu || null,
     }));
   } catch {} finally { loadingShops.value = false; }
 }
 
 // 购物车角标
+const cartCount = ref(0);
 async function loadCart() {
   if (!user.isLogin) { cartCount.value = 0; return; }
   try { cartCount.value = (await getCartCount()) || 0; } catch {}
 }
-const cartCount = ref(0);
 
 function goSearch() { uni.navigateTo({ url: '/pages/search/index' }); }
 function goNearby() { uni.navigateTo({ url: '/pages/nearby/index' }); }
@@ -420,7 +350,6 @@ function goQueue() { uni.navigateTo({ url: '/pages/queue/index' }); }
 function goCoupon() { uni.navigateTo({ url: '/pages/coupon/index' }); }
 function goWallet() { uni.navigateTo({ url: '/pages/wallet/index' }); }
 function goWithdraw() { uni.navigateTo({ url: '/pages/withdraw/index' }); }
-// 首页"餐饮/茶饮/烘焙/生鲜/美容"是商家业务类型（不是商品分类），跳附近店铺并自动按 businessType 筛选
 function goCategory(k) { uni.navigateTo({ url: `/pages/nearby/index?bt=${k}` }); }
 function goShop(s) {
   const tid = s.tenantId || s.id;
@@ -430,13 +359,6 @@ const fmtYuan = (fen) => fen2yuan(fen, false);
 function goSpu(s) {
   if (!s.topSpu?.id) return goShop(s);
   uni.navigateTo({ url: `/pages/product/detail?id=${s.topSpu.id}&tenantId=${s.tenantId || s.id}` });
-}
-function goStarSpu(s) {
-  if (s.starSpu?.id) {
-    uni.navigateTo({ url: `/pages/product/detail?id=${s.starSpu.id}&tenantId=${s.tenantId}` });
-  } else {
-    goShop(s);
-  }
 }
 function goLogin() { uni.navigateTo({ url: '/pages/login/index' }); }
 function onScan() {
@@ -479,743 +401,172 @@ onShow(refreshAll);
 </script>
 
 <style lang="scss" scoped>
-@import '@/uni.scss';
+/* v15 设计语言：亮色现代 · 单一品牌橙 · 线性 SVG · 分级圆角 · 真实图 */
+.page{
+  --bg:#F4F5F7;--card:#FFFFFF;--ink:#15171A;--ink2:#767C85;--ink3:#A8AEB7;--line:#EEF0F3;--fill:#F2F3F5;
+  --br:#FF5A2C;--br-d:#E8431A;--br-50:#FFF1EC;--br-100:#FFE2D6;
+  --grad:linear-gradient(135deg,#FF8A4B,#FF5A2C 60%,#F1430F);
+  --price:#F5331F;--star:#FF9F1C;--ok:#13B26A;--gold:#B07D2B;--gold-50:#FBF3E2;
+  --r1:18px;--r2:14px;--r3:10px;
+  --sh:0 1px 2px rgba(20,22,26,.04),0 8px 22px -10px rgba(20,22,26,.12);
+  --sh-sm:0 1px 2px rgba(20,22,26,.05);
+  min-height:100vh;background:var(--bg);padding-bottom:96px;
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;color:var(--ink);
+}
+.page svg{display:block;stroke-linecap:round;stroke-linejoin:round}
+.num{font-variant-numeric:tabular-nums}
 
-.page {
-  min-height: 100vh;
-  background: $bg;
-  padding-bottom: 90px;
-}
+/* 合规弹窗 */
+.cmp-mask{position:fixed;inset:0;z-index:9999;background:rgba(20,22,26,.52);display:flex;align-items:center;justify-content:center;padding:26px;backdrop-filter:blur(5px)}
+.cmp{width:100%;max-height:78vh;background:var(--card);border-radius:20px;padding:22px 20px 20px;display:flex;flex-direction:column;box-shadow:0 24px 60px rgba(0,0,0,.3)}
+.cmp-hd{display:flex;align-items:center;gap:9px;padding-bottom:13px;border-bottom:1px solid var(--line)}
+.cmp-i{width:34px;height:34px;border-radius:10px;background:var(--br-50);display:flex;align-items:center;justify-content:center;flex:none}
+.cmp-i svg{width:19px;height:19px;stroke:var(--br-d);fill:none;stroke-width:1.8}
+.cmp-t{font-size:16px;font-weight:700;letter-spacing:-.3px}
+.cmp-bd{flex:1;padding:14px 0 4px}
+.cmp-p{font-size:12.5px;color:var(--ink2);line-height:1.72;margin-bottom:10px}
+.cmp-p .b{color:var(--ink);font-weight:700}
+.cmp-p .hl{color:var(--br-d);font-weight:600}
+.cmp-links{display:flex;gap:16px;justify-content:center;padding:12px 0 14px}
+.cmp-links .lk{font-size:12px;color:var(--br-d);text-decoration:underline}
+.cmp-cta{height:46px;border-radius:23px;background:var(--grad);color:#fff;font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 18px -6px rgba(232,67,26,.5)}
 
-/* V044 合规警告弹窗 */
-.cmp-mask {
-  position: fixed; inset: 0; z-index: 9999;
-  background: rgba(0,0,0,.55);
-  display: flex; align-items: center; justify-content: center;
-  padding: 24px;
-  backdrop-filter: blur(4px);
-}
-.cmp-card {
-  width: 100%; max-width: 360px;
-  background: #fff; border-radius: 16px;
-  padding: 22px 20px;
-  max-height: 80vh; overflow-y: auto;
-  box-shadow: 0 20px 50px rgba(0,0,0,.25);
-}
-.cmp-h {
-  font-size: 17px; font-weight: 900; color: $t1;
-  text-align: center;
-  padding-bottom: 12px;
-  border-bottom: 1px solid $line;
-}
-.cmp-body { padding: 14px 0; }
-.cmp-p {
-  font-size: 12.5px; color: $t2; line-height: 1.7;
-  margin-bottom: 10px;
-}
-.cmp-p .b { color: $t1; font-weight: 800; }
-.cmp-p .hl { color: $o-d; font-weight: 700; }
-.cmp-foot {
-  display: flex; gap: 12px; justify-content: center;
-  padding: 6px 0 14px;
-}
-.cmp-link {
-  font-size: 12px; color: $o; text-decoration: underline;
-}
-.cmp-cta {
-  padding: 12px 0;
-  background: linear-gradient(135deg, $o, $o-d);
-  color: #fff;
-  border-radius: 99px;
-  font-size: 14px; font-weight: 800;
-  text-align: center;
-  box-shadow: $sh-warm;
-}
+/* 顶栏 */
+.top{position:sticky;top:0;z-index:30;background:var(--card);padding:6px 16px 12px}
+.greet{display:flex;align-items:center;gap:10px;height:42px}
+.av{width:38px;height:38px;border-radius:50%;background:var(--grad);color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;flex:none}
+.g{flex:1;min-width:0}
+.g .hi{font-size:11.5px;color:var(--ink3)}
+.g .loc{display:flex;align-items:center;gap:3px;font-size:15px;font-weight:600;letter-spacing:-.3px;margin-top:1px}
+.g .loc svg{width:14px;height:14px;stroke:var(--br);fill:none;stroke-width:2}
+.g .loc .cv{width:13px;height:13px;stroke:var(--ink3);stroke-width:2.4}
+.ico-wrap{flex:none}
+.ico{width:24px;height:24px;stroke:var(--ink);fill:none;stroke-width:1.7}
+.searchbar{margin-top:10px;height:40px;background:var(--fill);border-radius:20px;display:flex;align-items:center;gap:8px;padding:0 6px 0 14px}
+.searchbar .s{width:17px;height:17px;stroke:var(--ink3);fill:none;stroke-width:2;flex:none}
+.searchbar .ph{flex:1;font-size:13.5px;color:var(--ink3)}
+.searchbar .go{height:30px;padding:0 16px;border-radius:16px;background:var(--grad);color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center}
+.ticker{margin-top:10px;height:30px;background:var(--gold-50);border-radius:9px;display:flex;align-items:center;gap:8px;padding:0 12px;overflow:hidden}
+.ticker .tp{width:15px;height:15px;stroke:var(--gold);fill:none;stroke-width:1.8;flex:none}
+.ticker .roll{flex:1;overflow:hidden;height:16px;position:relative}
+.ticker .rt{position:absolute;white-space:nowrap;font-size:11px;color:var(--gold);font-weight:600;animation:rollx 22s linear infinite}
+@keyframes rollx{0%{transform:translateX(100%)}100%{transform:translateX(-100%)}}
 
-/* ━━━━━━━━━━━━━━━ HERO ━━━━━━━━━━━━━━━ */
-.home-hero {
-  position: relative;
-  padding: 8px 18px 40px;  /* 美团风：紧凑 hero，不留大块底色空白 */
-  background:
-    radial-gradient(600px 400px at 100% 0%, rgba(255,178,121,.5), transparent 60%),
-    linear-gradient(160deg, #FFB174 0%, $o 55%, $o-d 100%);
-  color: #fff;
-  overflow: hidden;
-}
-.hero-deco-dots {
-  position: absolute; inset: 0;
-  background-image: radial-gradient(rgba(255,255,255,.06) 1px, transparent 1px);
-  background-size: 22px 22px;
-  pointer-events: none;
-}
-.hero-deco-glow {
-  position: absolute;
-  top: -30%; right: -20%; width: 280px; height: 280px;
-  background: radial-gradient(circle, rgba(255,255,255,.25), transparent 60%);
-  pointer-events: none;
-}
-.home-greet-row {
-  display: flex; align-items: center; gap: 12px;
-  padding-top: 6px; position: relative; z-index: 2;
-}
-.home-avatar {
-  width: 42px; height: 42px; border-radius: 50%;
-  background: linear-gradient(135deg, #fff, #FFE0D1);
-  color: $o-d;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 18px; font-weight: 800;
-  border: 2px solid rgba(255,255,255,.3);
-  box-shadow: 0 4px 12px rgba(0,0,0,.15);
-}
-.home-greet { flex: 1; min-width: 0; }
-.home-greet .hi { font-size: 12px; opacity: .9; font-weight: 500; color: #fff; }
-.home-greet .name { font-size: 18px; font-weight: 800; letter-spacing: -.3px; color: #fff; }
-.home-head-ics { display: flex; gap: 6px; }
-.home-head-ic {
-  width: 36px; height: 36px; border-radius: 11px;
-  background: rgba(255,255,255,.18);
-  backdrop-filter: blur(10px);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 15px; color: #fff;
-  position: relative;
-  border: 1px solid rgba(255,255,255,.15);
-}
-.home-head-ic .dot {
-  position: absolute; top: 7px; right: 7px;
-  width: 6px; height: 6px; border-radius: 99px;
-  background: #FEF3C7; box-shadow: 0 0 8px #FEF3C7;
-}
-.home-search {
-  margin-top: 16px;
-  background: rgba(255,255,255,.98);
-  border-radius: $r-pill;
-  padding: 10px 8px 10px 18px;
-  display: flex; align-items: center; gap: 8px;
-  box-shadow: 0 8px 24px rgba(0,0,0,.15);
-  position: relative; z-index: 2;
-}
-.home-search .ic { font-size: 15px; color: $t3; }
-.home-search .ph { flex: 1; font-size: 14px; color: $t3; }
-.home-search .voice {
-  width: 32px; height: 32px; border-radius: 50%;
-  background: $o-50; color: $o-d;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 15px;
-}
-.home-ticker {
-  margin-top: 14px;
-  padding: 8px 14px;
-  background: rgba(0,0,0,.18);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255,255,255,.15);
-  border-radius: 99px;
-  display: flex; align-items: center; gap: 10px;
-  overflow: hidden;
-  position: relative; z-index: 2;
-}
-.home-ticker .trophy {
-  font-size: 16px;
-}
-.home-ticker .roll {
-  flex: 1; overflow: hidden; height: 18px; position: relative;
-}
-.home-ticker .roll-track {
-  position: absolute; white-space: nowrap;
-  font-size: 11.5px; font-weight: 600; color: #FFEAD8;
-  animation: rollx 22s linear infinite;
-}
-@keyframes rollx { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
+/* 今日到账 */
+.mae{margin:12px 16px 0;background:var(--card);border-radius:var(--r1);box-shadow:var(--sh);padding:14px 16px}
+.mae-h{display:flex;align-items:center;margin-bottom:11px}
+.mae-h .t{font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px}
+.mae-h .t .ic{width:16px;height:16px;stroke:var(--gold);fill:none;stroke-width:1.8}
+.mae-h .close{margin-left:auto}
+.mae-h .close svg{width:16px;height:16px;stroke:var(--ink3);stroke-width:2;fill:none}
+.mae-row{display:flex;align-items:center;gap:10px;padding:9px 0}
+.mae-row+.mae-row{border-top:1px solid var(--line)}
+.mae-row .r-ic{width:32px;height:32px;border-radius:9px;background:var(--gold-50);display:flex;align-items:center;justify-content:center;flex:none}
+.mae-row .r-ic svg{width:17px;height:17px;stroke:var(--gold);fill:none;stroke-width:1.8}
+.mae-row .r-ic.coin{background:var(--br-50)}.mae-row .r-ic.coin svg{stroke:var(--br-d)}
+.mae-row .r-ic.pt{background:#EDE9FE}.mae-row .r-ic.pt svg{stroke:#6D28D9}
+.mae-row .r-bd{flex:1;min-width:0}
+.mae-row .r-bd .n{font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mae-row .r-bd .d{font-size:11px;color:var(--ink3);margin-top:1px}
+.mae-row .r-amt{font-size:16px;font-weight:800;color:var(--gold)}
+.mae-ft{display:flex;align-items:center;margin-top:11px;padding-top:11px;border-top:1px dashed var(--line)}
+.mae-ft .sum{font-size:11.5px;color:var(--ink2)}
+.mae-ft .sum .b{color:var(--ink);font-weight:800;font-size:15px}
+.mae-ft .look{margin-left:auto;font-size:11.5px;color:var(--ink3);display:flex;align-items:center;gap:2px}
+.mae-ft .look svg{width:13px;height:13px;stroke:var(--ink3);stroke-width:2;fill:none}
 
-/* ━━━━━━━━━━━━━━━ 未登录引导卡 / 已登录空状态卡（取代 mae-card）━━━━━━━━━━━━━━━ */
-.mae-card.login-tip,
-.mae-card.empty-today {
-  display: flex; align-items: center; gap: 14px;
-  padding: 14px 16px;
-}
-.lt-em { font-size: 32px; }
-.lt-body { flex: 1; }
-.lt-t { font-size: 15px; font-weight: 800; color: $t1; }
-.lt-d { font-size: 11px; color: $t3; margin-top: 2px; }
-.lt-cta {
-  padding: 8px 16px; border-radius: 99px;
-  background: linear-gradient(135deg, $o, $o-d); color: #fff;
-  font-size: 12px; font-weight: 800;
-  box-shadow: $sh-warm;
-}
+/* 登录引导卡 */
+.tipcard{margin:12px 16px 0;background:var(--card);border-radius:var(--r1);box-shadow:var(--sh);padding:14px 16px;display:flex;align-items:center;gap:12px}
+.tc-ic{width:40px;height:40px;border-radius:12px;background:var(--br-50);display:flex;align-items:center;justify-content:center;flex:none}
+.tc-ic svg{width:22px;height:22px;stroke:var(--br-d);fill:none;stroke-width:1.7}
+.tc-bd{flex:1;min-width:0}
+.tc-bd .t{font-size:15px;font-weight:700}
+.tc-bd .d{font-size:11px;color:var(--ink3);margin-top:2px}
+.tc-cta{flex:none;height:34px;padding:0 18px;border-radius:10px;background:var(--grad);color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center}
 
-/* 加载占位 */
-.loading { padding: 30px; text-align: center; color: $t4; font-size: 12px; }
+/* 5 快入口 */
+.quick{margin:12px 16px 0;background:var(--card);border-radius:var(--r1);box-shadow:var(--sh);padding:16px 6px;display:flex}
+.qk{flex:1;display:flex;flex-direction:column;align-items:center;gap:7px;position:relative}
+.qk .b{width:44px;height:44px;border-radius:13px;background:var(--br-50);display:flex;align-items:center;justify-content:center}
+.qk .b svg{width:23px;height:23px;stroke:var(--br-d);fill:none;stroke-width:1.7}
+.qk .t{font-size:11.5px;color:var(--ink2);font-weight:500}
+.qk .live{position:absolute;top:-1px;left:calc(50% + 12px);width:7px;height:7px;border-radius:4px;background:var(--price);box-shadow:0 0 0 2.5px var(--card)}
 
-/* 店铺图 fallback */
-.pic-img { width: 100%; height: 100%; }
+/* 推N反1提醒 */
+.qtip{margin:12px 16px 0;background:var(--br-50);border:1px solid var(--br-100);border-radius:var(--r2);padding:12px 14px;display:flex;align-items:center;gap:11px}
+.qtip .ic{width:38px;height:38px;border-radius:11px;background:var(--grad);display:flex;align-items:center;justify-content:center;flex:none}
+.qtip .ic svg{width:20px;height:20px;stroke:#fff;fill:none;stroke-width:1.8}
+.qtip .bd{flex:1;min-width:0}
+.qtip .bd .t{font-size:12.5px;font-weight:600}
+.qtip .bd .t .b{color:var(--br-d)}
+.qtip .bd .d{font-size:11px;color:var(--ink2);margin-top:1px}
+.qtip .cta{flex:none;height:30px;padding:0 13px;border-radius:8px;background:#fff;border:1px solid var(--br-100);color:var(--br-d);font-size:12px;font-weight:700;display:flex;align-items:center}
 
-/* ━━━━━━━━━━━━━━━ MAE 卡（上拉负 margin 与 hero 重叠）━━━━━━━━━━━━━━━ */
-.mae-card {
-  margin: -28px 14px 0;  /* 配合紧凑 hero 调小负 margin */
-  background: linear-gradient(135deg, #fff 0%, #FFFBF6 100%);
-  border-radius: $r-xl;
-  padding: 16px 18px;
-  box-shadow: $sh-3;
-  position: relative; overflow: hidden;
-  z-index: 5;
-  border: 1px solid $o-100;
-}
-.mae-head {
-  display: flex; justify-content: space-between; align-items: center;
-  margin-bottom: 10px;
-}
-.mae-tag {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 4px 10px; border-radius: 99px;
-  background: linear-gradient(135deg, $gold, $gold-l);
-  color: #fff; font-size: 10px; font-weight: 800;
-  letter-spacing: .5px;
-  box-shadow: $sh-gold;
-}
-.mae-more { font-size: 11px; color: $t3; font-weight: 600; }
-.mae-list { display: flex; flex-direction: column; gap: 8px; }
-.mae-row {
-  display: flex; align-items: center; gap: 10px;
-  padding: 10px 12px;
-  background: linear-gradient(90deg, $gold-50, $o-50);
-  border: 1px solid $o-100;
-  border-radius: 12px;
-  position: relative; overflow: hidden;
-}
-.mae-row.normal {
-  background: $bg-2;
-  border-color: $line;
-}
-.mae-ic {
-  width: 32px; height: 32px; border-radius: 10px;
-  background: linear-gradient(135deg, $gold, $gold-l);
-  color: #fff;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 16px; flex-shrink: 0;
-  box-shadow: 0 4px 10px rgba(212,146,10,.3);
-}
-.mae-ic.coin { background: linear-gradient(135deg, $o, $o-d); box-shadow: 0 4px 10px rgba(255,107,53,.3); }
-.mae-ic.pt   { background: $purple; box-shadow: 0 4px 10px rgba(99,102,241,.3); }
-.mae-body { flex: 1; min-width: 0; }
-.mae-name {
-  font-size: 13px; font-weight: 800; color: $t1;
-  display: flex; align-items: center; gap: 6px;
-}
-.mae-name .badge {
-  font-size: 9px; padding: 1px 6px; border-radius: 4px; font-weight: 800;
-  background: linear-gradient(135deg, $gold, $gold-l);
-  color: #fff;
-}
-.mae-d { font-size: 11px; color: $t3; margin-top: 2px; }
-.mae-d .b { color: $t1; font-weight: 700; }
-.mae-amt {
-  font-size: 18px; font-weight: 900; letter-spacing: -.3px;
-  background: linear-gradient(135deg, $gold, $o);
-  -webkit-background-clip: text; background-clip: text; color: transparent;
-  font-variant-numeric: tabular-nums;
-}
-.mae-amt text { font-size: 11px; }
-.mae-amt.normal {
-  background: none;
-  color: $o-d;
-  -webkit-text-fill-color: $o-d;
-}
-.mae-foot {
-  margin-top: 10px;
-  display: flex; justify-content: space-between; align-items: center;
-  padding-top: 10px; border-top: 1px dashed $line;
-}
-.mae-foot .sum { font-size: 11px; color: $t3; font-weight: 600; }
-.mae-foot .sum .b {
-  color: $o-d; font-weight: 900; font-size: 15px; margin: 0 2px;
-  font-variant-numeric: tabular-nums;
-}
-.mae-btn {
-  padding: 7px 14px; border-radius: 99px;
-  background: linear-gradient(135deg, $o, $o-d);
-  color: #fff; font-size: 11px; font-weight: 800;
-  box-shadow: $sh-warm;
-}
+/* 区块标题 */
+.sec{display:flex;align-items:baseline;margin:20px 16px 11px}
+.sec .h{font-size:17px;font-weight:800;letter-spacing:-.3px}
+.sec .sub{font-size:11.5px;color:var(--ink3);margin-left:8px}
+.sec .more{margin-left:auto;font-size:12px;color:var(--ink2)}
 
-/* ━━━━━━━━━━━━━━━ 5 快入口 ━━━━━━━━━━━━━━━ */
-.home-quick {
-  display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px;
-  margin: 14px 14px 0; padding: 12px 6px;
-  background: $card; border-radius: $r-lg;
-  box-shadow: $sh-1;
-}
-.qk { text-align: center; padding: 4px 0; position: relative; }
-.qk-ic {
-  width: 40px; height: 40px; margin: 0 auto 5px;
-  border-radius: 12px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 20px;
-  position: relative;
-}
-.qk:nth-child(1) .qk-ic { background: linear-gradient(135deg, $o-50, $o-100); color: $o-d; }
-.qk:nth-child(2) .qk-ic { background: linear-gradient(135deg, $gold-50, #FCD34D); color: #92400E; }
-.qk:nth-child(3) .qk-ic { background: linear-gradient(135deg, $mint-50, $mint-l); color: #047857; }
-.qk:nth-child(4) .qk-ic { background: linear-gradient(135deg, #DBEAFE, #93C5FD); color: #1E40AF; }
-.qk:nth-child(5) .qk-ic { background: linear-gradient(135deg, #FCE7F3, #F9A8D4); color: #BE185D; }
-.qk-ic .live-dot {
-  position: absolute; top: -2px; right: -2px;
-  width: 8px; height: 8px; border-radius: 99px;
-  background: $danger;
-  box-shadow: 0 0 6px $danger;
-}
-.qk-text { font-size: 11px; color: $t1; font-weight: 600; }
+/* 分类横滚 */
+.cats{white-space:nowrap;padding:0 16px}
+.cat{display:inline-flex;flex-direction:column;align-items:center;gap:7px;width:56px;vertical-align:top}
+.cat .b{width:46px;height:46px;border-radius:50%;background:var(--card);box-shadow:var(--sh-sm);display:flex;align-items:center;justify-content:center;margin:0 auto}
+.cat .b svg{width:24px;height:24px;stroke:var(--ink);fill:none;stroke-width:1.4}
+.cat .t{font-size:11.5px;color:var(--ink2)}
 
-/* ━━━━━━━━━━━━━━━ 推 N 反 1 提醒 ━━━━━━━━━━━━━━━ */
-.home-queue-tip {
-  margin: 14px 14px 0;
-  padding: 14px 16px;
-  border-radius: $r-lg;
-  background: linear-gradient(135deg, #FFF8F4 0%, #FFEFE3 100%);
-  border: 1px solid $o-100;
-  display: flex; align-items: center; gap: 12px;
-  position: relative; overflow: hidden;
-}
-.hqt-ic {
-  width: 40px; height: 40px; border-radius: 12px;
-  background: linear-gradient(135deg, $o, $o-d);
-  color: #fff;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 18px; flex-shrink: 0;
-  box-shadow: $sh-warm;
-}
-.hqt-body { flex: 1; min-width: 0; }
-.hqt-t { font-size: 13px; font-weight: 800; color: $t1; }
-.hqt-t .b { color: $o-d; }
-.hqt-d { font-size: 11px; color: $t3; margin-top: 2px; }
-.hqt-cta {
-  padding: 7px 12px; border-radius: 99px;
-  background: $card; color: $o-d;
-  font-size: 11px; font-weight: 800;
-  border: 1px solid $o-100;
-}
+/* 玩法双卡 */
+.plays{display:flex;gap:11px;margin:0 16px}
+.play{flex:1;border-radius:var(--r2);padding:14px;position:relative;overflow:hidden;min-height:106px;display:flex;flex-direction:column;justify-content:space-between;color:#fff}
+.play.rank{background:linear-gradient(135deg,#C99A4B,#9A6E22)}
+.play.nb{background:var(--grad)}
+.play .ppic{position:absolute;right:-8px;bottom:-10px;opacity:.2}
+.play .ppic svg{width:64px;height:64px;stroke:#fff;fill:none;stroke-width:1.4}
+.play .ptag{font-size:10px;font-weight:700;letter-spacing:.5px;opacity:.95;position:relative;z-index:1}
+.play .ph2{font-size:15.5px;font-weight:800;letter-spacing:-.3px;position:relative;z-index:1;margin-top:4px}
+.play .pft{display:flex;align-items:center;justify-content:space-between;position:relative;z-index:1}
+.play .pft .m{font-size:10px;opacity:.9}
+.play .pft .m .b{font-size:14px;font-weight:800;display:block;letter-spacing:-.3px}
+.play .pft .pgo{font-size:10px;font-weight:700;background:rgba(255,255,255,.94);color:var(--ink);height:22px;padding:0 9px;border-radius:6px;display:flex;align-items:center}
 
-/* ━━━━━━━━━━━━━━━ 分类 5 格（美团风圆形彩色图标）━━━━━━━━━━━━━━━ */
-.home-cats {
-  display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px;
-  margin: 14px 10px 0; padding: 14px 4px;
-  background: #fff;
-  border-radius: $r-lg;
-  box-shadow: $sh-1;
-}
-.home-cat { text-align: center; padding: 6px 0; }
-.home-cat .em {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 44px; height: 44px; border-radius: 50%;
-  font-size: 22px;
-  background: linear-gradient(135deg, $o-50, $o-100);
-  box-shadow: 0 2px 6px rgba(255,107,53,.12);
-  margin-bottom: 6px;
-}
-/* 每格不同色系，更鲜活（按 nth-child 给 grid item 上色，复用 emoji 圆形底） */
-.home-cat:nth-child(1) .em { background: linear-gradient(135deg, #FEF3C7, #FDE68A); }   /* 小吃 黄 */
-.home-cat:nth-child(2) .em { background: linear-gradient(135deg, #FCE7F3, #FBCFE8); }   /* 奶茶 粉 */
-.home-cat:nth-child(3) .em { background: linear-gradient(135deg, #FFEDD5, #FED7AA); }   /* 烧烤 橙 */
-.home-cat:nth-child(4) .em { background: linear-gradient(135deg, #FEE2E2, #FECACA); }   /* 餐厅 红 */
-.home-cat:nth-child(5) .em { background: linear-gradient(135deg, #EDE9FE, #DDD6FE); }   /* 茶馆 紫 */
-.home-cat:nth-child(6) .em { background: linear-gradient(135deg, #FCE7F3, #F9A8D4); }   /* 水果 桃 */
-.home-cat:nth-child(7) .em { background: linear-gradient(135deg, #DBEAFE, #BFDBFE); }   /* 超市 蓝 */
-.home-cat:nth-child(8) .em { background: linear-gradient(135deg, #FEF3C7, #FCD34D); }   /* 烘焙 金 */
-.home-cat:nth-child(9) .em { background: linear-gradient(135deg, #FCE7F3, #F9A8D4); }   /* 美容 粉 */
-.home-cat:nth-child(10) .em { background: linear-gradient(135deg, #F1F5F9, #E2E8F0); }  /* 全部 灰 */
-.home-cat .l { font-size: 11.5px; color: $t1; font-weight: 600; margin-top: 4px; }
+/* 最近去过 */
+.recent{white-space:nowrap;padding:2px 16px 0}
+.rc{display:inline-block;width:142px;margin-right:11px;background:var(--card);border-radius:var(--r2);box-shadow:var(--sh-sm);overflow:hidden;vertical-align:top}
+.rc-cv{height:74px;position:relative;background:linear-gradient(135deg,#FFD8B8,#FF9A4A);display:flex;align-items:center;justify-content:center}
+.rc-cv.t2{background:linear-gradient(135deg,#FFE8C9,#FFCF6B)}
+.rc-cv.t3{background:linear-gradient(135deg,#D6F0E5,#7FD6B5)}
+.rc-cv.t4{background:linear-gradient(135deg,#FFDDE5,#F9A8D4)}
+.rc-cv .rc-ph{font-size:28px;font-weight:800;color:rgba(255,255,255,.92)}
+.rc-cv .vt{position:absolute;left:6px;bottom:6px;height:18px;padding:0 7px;border-radius:5px;background:rgba(0,0,0,.4);color:#fff;font-size:9.5px;font-weight:600;display:flex;align-items:center}
+.rc-bd{padding:8px 10px 10px}
+.rc-bd .n{font-size:12.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rc-bd .m{font-size:10.5px;color:var(--ink3);margin-top:3px}
+.rc-bd .m .b{color:var(--br-d);font-weight:700}
 
-/* ━━━━━━━━━━━━━━━ 区块标题 ━━━━━━━━━━━━━━━ */
-.section-title {
-  display: flex; align-items: center; justify-content: space-between;
-  margin: 18px 16px 10px;
-}
-.section-title .h3 {
-  font-size: 16px; font-weight: 800; color: $t1;
-  letter-spacing: -.3px;
-}
-.section-title .small { font-size: 11px; color: $t3; font-weight: 500; margin-left: 6px; }
-.section-title .more { font-size: 12px; color: $t3; }
+/* 附近好店 单列卡 */
+.loading{padding:30px;text-align:center;color:var(--ink3);font-size:12px}
+.shops{padding:0 16px}
+.shop{background:var(--card);border-radius:var(--r1);box-shadow:var(--sh);padding:12px;display:flex;gap:12px;margin-bottom:11px}
+.shop .cv{width:108px;height:108px;flex:none;border-radius:13px;overflow:hidden;position:relative;background:var(--fill);display:flex;align-items:center;justify-content:center}
+.shop .cv .cv-img{width:100%;height:100%}
+.shop .cv .cv-ph{font-size:34px;font-weight:800;color:#C4C9D0}
+.shop .cv .st{position:absolute;left:7px;bottom:7px;display:flex;align-items:center;gap:4px;height:21px;padding:0 8px;border-radius:6px;font-size:10px;font-weight:700;color:#fff}
+.shop .cv .st.open{background:rgba(19,178,106,.95)}
+.shop .cv .st.close{background:rgba(80,86,94,.92)}
+.shop .cv .st .d{width:4px;height:4px;border-radius:2px;background:#fff}
+.shop .bd{flex:1;min-width:0;display:flex;flex-direction:column}
+.shop .nm{font-size:16px;font-weight:600;letter-spacing:-.3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.shop .mt{display:flex;align-items:center;gap:7px;margin-top:5px;font-size:12px;color:var(--ink2)}
+.shop .mt .rate{color:var(--star);font-weight:700}
+.shop .mt .dot{width:3px;height:3px;border-radius:2px;background:var(--line)}
+.shop .tags{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.shop .tag{font-size:11px;font-weight:600;height:21px;padding:0 8px;border-radius:6px;display:inline-flex;align-items:center;background:var(--br-50);color:var(--br-d)}
+.shop .tag.line{background:transparent;border:1px solid var(--line);color:var(--ink2);font-weight:500}
+.shop .spu{display:flex;align-items:center;gap:8px;margin-top:auto;padding-top:9px}
+.shop .spu .l{flex:none;font-size:10px;font-weight:700;color:#fff;background:var(--gold);height:18px;padding:0 6px;border-radius:5px;display:flex;align-items:center}
+.shop .spu .n{flex:1;min-width:0;font-size:12px;color:var(--ink2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.shop .spu .p{flex:none;font-size:15px;font-weight:800;color:var(--price)}
+.shop .spu .p .c{font-size:10px}
 
-/* ━━━━━━━━━━━━━━━ 营销双卡 ━━━━━━━━━━━━━━━ */
-.home-feats {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
-  margin: 0 14px;
-}
-.home-feat {
-  border-radius: $r-lg;
-  padding: 14px; position: relative; overflow: hidden;
-  min-height: 130px;
-  display: flex; flex-direction: column; justify-content: space-between;
-  color: #fff;
-}
-.home-feat.rank  { background: linear-gradient(135deg, $gold 0%, #B07300 100%); box-shadow: $sh-gold; }
-.home-feat.nback { background: linear-gradient(135deg, $o 0%, $o-d 100%); box-shadow: $sh-warm; }
-.home-feat .em-bg {
-  position: absolute; bottom: -10px; right: -8px;
-  font-size: 72px; opacity: .25;
-}
-.hf-tag {
-  display: inline-block;
-  padding: 3px 8px; border-radius: 99px;
-  background: rgba(255,255,255,.25);
-  backdrop-filter: blur(10px);
-  font-size: 10px; font-weight: 800; letter-spacing: .5px;
-  align-self: flex-start;
-  position: relative; z-index: 1;
-}
-.hf-title {
-  font-size: 16px; font-weight: 900; letter-spacing: -.3px;
-  line-height: 1.2; position: relative; z-index: 1;
-}
-.hf-sub {
-  font-size: 10px; opacity: .9; margin-top: 2px;
-  position: relative; z-index: 1;
-}
-.hf-bot {
-  display: flex; justify-content: space-between; align-items: center;
-  position: relative; z-index: 1;
-}
-.hf-meta { font-size: 10px; opacity: .85; font-weight: 600; }
-.hf-meta text { font-size: 14px; font-weight: 900; opacity: 1; display: block; }
-.hf-cta {
-  padding: 6px 10px; border-radius: 99px;
-  background: #fff; color: $t1;
-  font-size: 10px; font-weight: 800;
-}
-
-/* ━━━━━━━━━━━━━━━ 最近横滚 ━━━━━━━━━━━━━━━ */
-.recent-scroll {
-  white-space: nowrap;
-  padding: 4px 14px 12px;
-}
-.recent-card {
-  display: inline-block; vertical-align: top;
-  width: 158px; margin-right: 10px;
-  background: $card; border-radius: $r-lg;
-  box-shadow: $sh-1; overflow: hidden;
-  border: 1px solid $line;
-}
-.recent-cover {
-  height: 84px; position: relative;
-  background: linear-gradient(135deg, #FFD8B8, #FF9A4A);
-  display: flex; align-items: flex-end; padding: 8px;
-}
-.recent-cover.t2 { background: linear-gradient(135deg, #FFE8C9, $gold-l); }
-.recent-cover.t3 { background: linear-gradient(135deg, #D6F0E5, $mint-l); }
-.recent-cover.t4 { background: linear-gradient(135deg, #FFDDE5, #F9A8D4); }
-.recent-tag {
-  background: rgba(0,0,0,.4);
-  color: #fff; border-radius: 99px;
-  padding: 2px 9px; font-size: 10px; font-weight: 600;
-  position: relative; z-index: 1;
-}
-.recent-body { padding: 9px 10px 10px; }
-.recent-name { font-size: 13px; font-weight: 700; color: $t1; }
-.recent-meta {
-  display: flex; align-items: center; gap: 5px; margin-top: 4px;
-  font-size: 10px; color: $t3;
-}
-.recent-meta .b { color: $o-d; font-weight: 800; }
-.recent-meta .dot { width: 3px; height: 3px; background: $t4; border-radius: 50%; }
-.recent-star {
-  position: absolute; top: 6px; right: 6px;
-  padding: 2px 7px; border-radius: 99px;
-  background: linear-gradient(135deg, $gold, $gold-d);
-  color: #fff; font-size: 10px; font-weight: 800;
-  box-shadow: 0 2px 6px rgba(212,146,10,.4);
-}
-
-/* ━━━━━━━━━━━━━━━ 附近商家 美团风 1 列密集卡 ━━━━━━━━━━━━━━━ */
-.hshop-list { padding: 0 12px; }
-.hs-card {
-  display: flex; gap: 12px;
-  padding: 12px;
-  margin-bottom: 10px;
-  background: $card;
-  border-radius: $r-lg;
-  border: 1px solid $line;
-  box-shadow: 0 1px 2px rgba(15,23,42,.04), 0 4px 12px rgba(15,23,42,.04);
-  transition: transform .15s ease;
-}
-.hs-card:active { transform: scale(.99); }
-.hs-cover {
-  width: 92px; height: 92px; flex-shrink: 0;
-  border-radius: $r-md;
-  overflow: hidden;
-  background: linear-gradient(135deg, #FFF5EB, #FFE9D5);
-  display: flex; align-items: center; justify-content: center;
-}
-.hs-cover-img { width: 100%; height: 100%; }
-.hs-cover-em {
-  font-size: 36px; font-weight: 800;
-  color: $o-d;
-  text-shadow: 0 2px 4px rgba(255,107,53,.15);
-  letter-spacing: -1px;
-}
-.hs-body {
-  flex: 1; min-width: 0;
-  display: flex; flex-direction: column; gap: 6px;
-}
-.hs-row1 { display: flex; align-items: center; gap: 8px; }
-.hs-name {
-  flex: 1; min-width: 0;
-  font-size: 15px; font-weight: 800; color: $t1;
-  letter-spacing: -.3px;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-.hs-status {
-  flex-shrink: 0;
-  display: inline-flex; align-items: center; gap: 4px;
-  padding: 2px 7px; border-radius: 99px;
-  background: rgba(16,185,129,.95);
-  color: #fff; font-size: 10px; font-weight: 800;
-}
-.hs-status .dot {
-  width: 4px; height: 4px; border-radius: 50%;
-  background: #fff;
-  animation: hs-pulse 1.8s ease-in-out infinite;
-}
-.hs-status.closed { background: rgba(100,116,139,.9); }
-.hs-status.closed .dot { animation: none; }
-@keyframes hs-pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: .5; transform: scale(.7); }
-}
-.hs-row2 {
-  display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
-  font-size: 12px; color: $t3;
-  font-variant-numeric: tabular-nums;
-}
-.hs-rate { color: $gold-d; font-weight: 800; }
-.hs-sales, .hs-dist { color: $t3; }
-.hs-star {
-  margin-left: auto;
-  font-size: 10.5px;
-  padding: 2px 7px;
-  background: linear-gradient(135deg, $gold-50, $gold-l);
-  color: $gold-d;
-  border-radius: 4px;
-  font-weight: 800;
-}
-.hs-tags { display: flex; gap: 6px; flex-wrap: wrap; }
-.hs-tag {
-  display: inline-block;
-  padding: 3px 8px;
-  font-size: 11px; font-weight: 700;
-  border-radius: 4px;
-}
-.hs-tag.promo {
-  background: linear-gradient(135deg, #FFF1EB, #FFE0D1);
-  color: $o-d;
-  border: 1px solid $o-100;
-}
-.hs-spu {
-  display: flex; align-items: center; gap: 6px;
-  margin-top: 2px;
-  padding: 5px 8px;
-  background: linear-gradient(135deg, $gold-50, #FEF3C7);
-  border-radius: 6px;
-  border: 1px dashed $gold-l;
-  overflow: hidden;
-}
-.hs-spu-tag { flex-shrink: 0; font-size: 10px; font-weight: 800; color: $gold-d; }
-.hs-spu-name {
-  flex: 1; min-width: 0;
-  font-size: 11.5px; font-weight: 700; color: $t1;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-.hs-spu-price {
-  flex-shrink: 0;
-  font-size: 12px; font-weight: 800; color: $o-d;
-  font-variant-numeric: tabular-nums;
-}
-
-/* ━━━━━━━━━━━━━━━ 旧 shop-card（仍在用于 with-star 等其它位置）━━━━━━━━━━━━━━━ */
-.shop-card {
-  display: flex; gap: 12px; padding: 12px 14px 12px 18px;
-  align-items: center;
-  background: $card; border-radius: $r-lg;
-  margin: 0 14px 10px;
-  box-shadow: 0 1px 2px rgba(15,23,42,.04), 0 4px 12px rgba(15,23,42,.05);
-  position: relative; overflow: hidden;
-  border: 1px solid $line;
-  transition: transform .15s ease, box-shadow .15s ease;
-}
-.shop-card:active {
-  transform: scale(.985);
-  box-shadow: 0 1px 2px rgba(15,23,42,.06), 0 2px 6px rgba(15,23,42,.04);
-}
-.shop-card.has-promo::before {
-  content: ''; position: absolute;
-  top: 12px; left: 0; bottom: 12px; width: 3px;
-  background: linear-gradient(180deg, $o, $gold);
-  border-radius: 0 3px 3px 0;
-}
-.shop-card.with-star {
-  flex-direction: column;
-  padding: 0; gap: 0;
-  align-items: stretch;
-}
-.shop-card.with-star .shop-head {
-  display: flex; gap: 12px;
-  padding: 14px 14px 12px;
-  align-items: center;
-}
-.shop-pic {
-  flex: 0 0 60px; width: 60px; height: 60px; border-radius: 14px;
-  background: linear-gradient(135deg, #FFD1BA, $o);
-  color: #fff;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 26px; font-weight: 800;
-  position: relative; overflow: hidden;
-  box-shadow: 0 4px 12px rgba(255,107,53,.25), inset 0 1px 0 rgba(255,255,255,.25);
-}
-.shop-pic::after {
-  content: ''; position: absolute; inset: 0;
-  background: radial-gradient(circle at 30% 20%, rgba(255,255,255,.35), transparent 50%);
-  pointer-events: none;
-}
-.shop-pic.alt-1 { background: linear-gradient(135deg, #C9E0FF, #6196F0); box-shadow: 0 4px 12px rgba(97,150,240,.25); }
-.shop-pic.alt-2 { background: linear-gradient(135deg, #D3F4D3, #4CB84C); box-shadow: 0 4px 12px rgba(76,184,76,.25); }
-.shop-pic.alt-3 { background: linear-gradient(135deg, #FFD0DC, #EE5A8B); box-shadow: 0 4px 12px rgba(238,90,139,.25); }
-.shop-pic .badge {
-  position: absolute; top: -4px; right: -4px;
-  padding: 2px 6px;
-  background: linear-gradient(135deg, $gold, $gold-l);
-  color: #fff; font-size: 9px; font-weight: 800;
-  border-radius: 6px;
-  box-shadow: 0 2px 8px rgba(212,146,10,.4);
-}
-.shop-info { flex: 1; min-width: 0; }
-.shop-row1 { display: flex; align-items: center; gap: 6px; }
-.shop-name {
-  font-size: 16px; font-weight: 800; color: $t1; flex: 1;
-  letter-spacing: -.3px;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-.shop-badge {
-  background: $o-50; color: $o-d;
-  font-size: 10px; padding: 2px 7px; border-radius: 99px;
-  font-weight: 700; flex-shrink: 0;
-  border: 1px solid $o-100;
-}
-.shop-badge.gold {
-  background: $gold-50; color: $gold-d;
-  border-color: rgba(212,146,10,.25);
-}
-.shop-badge.closed {
-  background: $bg-2; color: $t4;
-  border-color: $line-d;
-}
-.shop-promo-row {
-  margin-top: 6px;
-  display: inline-flex; align-items: center; gap: 4px;
-  padding: 3px 8px; border-radius: 6px;
-  background: linear-gradient(135deg, $o-50, $gold-50);
-  color: $o-d;
-  font-size: 11px; font-weight: 700;
-  border: 1px solid $o-100;
-}
-.shop-meta {
-  margin-top: 8px; display: flex; align-items: center; gap: 10px;
-  font-size: 11.5px; color: $t3; font-weight: 500;
-}
-.shop-meta .rating { color: $gold; font-weight: 700; }
-.shop-meta .dist { color: $mint; font-weight: 700; }
-
-/* 右侧营业状态 pill */
-.shop-status {
-  flex-shrink: 0;
-  display: inline-flex; align-items: center; gap: 5px;
-  padding: 5px 10px;
-  border-radius: 99px;
-  font-size: 10.5px; font-weight: 800;
-  background: $mint-50; color: #047857;
-}
-.shop-status .dot {
-  width: 6px; height: 6px; border-radius: 50%;
-  background: $mint;
-  box-shadow: 0 0 6px $mint;
-  animation: shop-pulse 1.8s ease-in-out infinite;
-}
-.shop-status.closed {
-  background: $bg-2; color: $t4;
-}
-.shop-status.closed .dot {
-  background: $t4; box-shadow: none; animation: none;
-}
-@keyframes shop-pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: .5; transform: scale(.8); }
-}
-
-/* with-star: 店主推商品 */
-.shop-card.with-star .star-prod {
-  display: flex; gap: 10px; align-items: center;
-  padding: 12px 14px 13px;
-  background: linear-gradient(135deg, $bg-3, #fff);
-  border-top: 1px dashed $line;
-  position: relative;
-}
-.sp-pic {
-  width: 56px; height: 56px; border-radius: $r-md;
-  background: linear-gradient(135deg, #FFE5D1, #FFC09A);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 30px; flex-shrink: 0;
-}
-.sp-pic.green { background: linear-gradient(135deg, #DFF3DF, #A4DBA4); }
-.sp-pic.cream { background: linear-gradient(135deg, #F3E5C5, #E0BD7E); }
-.sp-info { flex: 1; min-width: 0; }
-.sp-name {
-  font-size: 13px; font-weight: 700; color: $t1;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-.sp-tag-row { display: flex; gap: 4px; margin-top: 4px; }
-.sp-tag {
-  font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: 700;
-}
-.sp-tag.promo { background: $o-50; color: $o-d; border: 1px solid $o-100; }
-.sp-tag.promo.gold { background: $gold-50; color: $gold-d; border-color: rgba(212,146,10,.25); }
-.sp-tag.got { background: $mint-50; color: #047857; border: 1px solid $mint-l; }
-.sp-price { text-align: right; flex-shrink: 0; }
-.sp-price .v {
-  font-size: 18px; font-weight: 900;
-  background: linear-gradient(135deg, $o, $o-d);
-  -webkit-background-clip: text; background-clip: text; color: transparent;
-}
-.sp-price .v text { font-size: 11px; }
-.sp-price .enter { font-size: 10px; color: $o-d; font-weight: 700; margin-top: 2px; }
-
-/* more-shops */
-.more-shops {
-  margin: 0 14px;
-  padding: 14px 16px;
-  background: linear-gradient(135deg, $bg-3, #fff);
-  border: 1px dashed $o-100;
-  border-radius: $r-lg;
-  display: flex; align-items: center; gap: 12px;
-}
-.ms-em { font-size: 32px; }
-.ms-t { flex: 1; }
-.ms-t .t { font-size: 14px; font-weight: 800; color: $t1; }
-.ms-t .d { font-size: 11px; color: $t3; margin-top: 2px; }
-.ms-arrow { font-size: 24px; color: $o-d; font-weight: 800; }
-
-.bottom-pad { height: 12px; }
-
-/* ━━━━━━━━━━━━━━━ 浮动收益球 ━━━━━━━━━━━━━━━ */
-.float-earn {
-  position: fixed;
-  right: 14px; bottom: 92px;
-  width: 60px; height: 60px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, $gold, #B07300);
-  color: #fff;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  box-shadow: $sh-gold;
-  z-index: 20;
-  border: 2px solid #fff;
-}
-.float-earn .n { font-size: 14px; font-weight: 900; }
-.float-earn .l { font-size: 9px; opacity: .9; margin-top: -2px; }
+.bottom-pad{height:12px}
 </style>
