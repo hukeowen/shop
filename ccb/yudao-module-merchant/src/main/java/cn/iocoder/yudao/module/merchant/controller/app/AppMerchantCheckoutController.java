@@ -390,10 +390,14 @@ public class AppMerchantCheckoutController {
                 upd.setPayStatus(Boolean.TRUE);
                 upd.setPayTime(java.time.LocalDateTime.now());
                 upd.setStatus(30); // COMPLETED
+                upd.setPayPrice(0); // 全额抵扣免支付：trade_order.payPrice 归 0
+                                    // 修商户端订单详情「实付 ¥0.01」（原先 updateOrderPrice 受
+                                    // newPayPrice>0 限制只能降到 1 分，残留的 1 分这里清掉）
                 tradeOrderMapper.updateById(upd);
 
                 // 发事件：OrderPaidListener 会异步跑 merchantPromoOrderHandler.afterPayOrder（v8 营销）
-                int payPriceForEvent = finalPayPrice;  // 1 fen 或 0
+                // 全额抵扣实付为 0 → 返积分基于 0，避免「抵扣后又按原价返积分」刷分
+                int payPriceForEvent = 0;
                 eventPublisher.publishEvent(new cn.iocoder.yudao.module.merchant.event.OrderOfflineConfirmedEvent(
                         this, orderId, tenantId, userId, payPriceForEvent));
                 resp.setPayPrice(0);

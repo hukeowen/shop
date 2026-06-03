@@ -50,11 +50,11 @@
           <text class="dr-v dr-neg">- ¥{{ fen2yuan(order.balanceDeductFen) }}</text>
         </view>
         <view v-if="order.consumePointDeductFen > 0" class="dr">
-          <text>消费积分抵扣 ({{ (order.consumePointUsed / 100).toFixed(2) }} 积分)</text>
+          <text>消费积分抵扣 (用 {{ order.consumePointUsed }} 积分)</text>
           <text class="dr-v dr-neg">- ¥{{ fen2yuan(order.consumePointDeductFen) }}</text>
         </view>
         <view v-if="order.promoPointRedeemFen > 0" class="dr">
-          <text>推广积分抵扣 ({{ (order.promoPointRedeemFen / 100).toFixed(2) }} 积分)</text>
+          <text>推广积分抵扣 (用 {{ order.promoPointRedeemFen }} 积分)</text>
           <text class="dr-v dr-neg">- ¥{{ fen2yuan(order.promoPointRedeemFen) }}</text>
         </view>
         <view v-if="order.promoAutoDeductFen > 0" class="dr">
