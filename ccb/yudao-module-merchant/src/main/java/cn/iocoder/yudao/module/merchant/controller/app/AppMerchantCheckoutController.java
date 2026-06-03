@@ -180,48 +180,62 @@ public class AppMerchantCheckoutController {
                 ratio = java.math.BigDecimal.ONE;
             }
             int requestFen = req.getConsumePointDeductFen();
-            int maxByRemain = Math.max(0, finalPayPrice - 1);
-            int actualDeductFen = Math.min(requestFen, maxByRemain);
-            if (actualDeductFen > 0) {
-                // 反推积分数量 = ceil(actualDeductFen / ratio)，向上取整保证扣足额度
-                java.math.BigDecimal points = java.math.BigDecimal.valueOf(actualDeductFen)
-                        .divide(ratio, 0, java.math.RoundingMode.CEILING);
-                long pointsUsed = points.longValueExact();
-                if (pointsUsed <= 0) {
-                    throw ServiceExceptionUtil.exception0(1_031_001_032,
-                            "积分抵扣金额过小");
+            // 修复（1 分 bug）：trade.updateOrderPrice 不允许把订单价改到 0（newPayPrice>0），
+            // 整单只能降到 1 分，剩 1 分由后面的「全额抵扣免支付」路径吃掉。原先调价与扣积分
+            // 都按 (finalPayPrice-1) 计，导致 10 元订单纯积分全抵时只扣 999 积分、抵扣额记 ¥9.99，
+            // 与前端展示(-¥10.00 / 1000 积分)、用户预期对不上。
+            // 修法：意图抵光整单(coversAll)时，积分 / 抵扣记录按订单全额(含最后 1 分)计，
+            //       调价仍只降到 1 分（trade 约束），那 1 分由免支付路径归零。
+            // guard finalPayPrice >= 2：若前序抵扣已把订单压到 1 分，本块不再重复抵这 1 分。
+            if (finalPayPrice >= 2) {
+                int maxByRemain = finalPayPrice - 1;                   // 调价上限（保留 1 分线上）
+                boolean coversAll = requestFen >= finalPayPrice;       // 消费积分足以抵光整单
+                int redeemFen = coversAll ? finalPayPrice : Math.min(requestFen, maxByRemain);
+                int priceDeductFen = Math.min(redeemFen, maxByRemain); // 实际调价（≤ 留 1 分）
+                if (redeemFen > 0) {
+                    // 反推积分数量 = ceil(redeemFen / ratio)，向上取整保证扣足额度
+                    java.math.BigDecimal points = java.math.BigDecimal.valueOf(redeemFen)
+                            .divide(ratio, 0, java.math.RoundingMode.CEILING);
+                    long pointsUsed = points.longValueExact();
+                    if (pointsUsed <= 0) {
+                        throw ServiceExceptionUtil.exception0(1_031_001_032,
+                                "积分抵扣金额过小");
+                    }
+                    // 扣减消费积分（带余额不足校验 + 幂等：sourceType=REDEEM, sourceId=orderId）
+                    // submit 已切到 merchant tenant，promoPointService 内部 MyBatis-Plus 自动 where tenant_id
+                    // → 与 OrderPaidListener / MerchantPromoOrderHandler 的 addConsumePoint 写入维度一致
+                    boolean ok = promoPointService.deductConsumePoint(userId, pointsUsed,
+                            "REDEEM", orderId, "下单消费积分抵扣");
+                    if (!ok) {
+                        throw ServiceExceptionUtil.exception0(1_031_001_033,
+                                "消费积分扣减失败（余额不足或重复抵扣）");
+                    }
+                    // 改价（coversAll 时只降到 1 分，剩 1 分走免支付路径；否则正常留 1 分线上）
+                    if (priceDeductFen > 0) {
+                        TradeOrderUpdatePriceReqVO priceReq = new TradeOrderUpdatePriceReqVO();
+                        priceReq.setId(orderId);
+                        priceReq.setAdjustPrice(-priceDeductFen);
+                        tradeOrderUpdateService.updateOrderPrice(priceReq);
+                        finalPayPrice -= priceDeductFen;
+                    }
+                    finalConsumePointDeductFen = redeemFen;            // 抵扣额按全额(含最后 1 分)
+                    finalConsumePointUsed = pointsUsed;
+                    // 落抵扣记录（COMMITTED：balance 已扣 + 改价已成功；cancel 时退回）
+                    // deductAmount 用 redeemFen，与扣减积分口径一致，退款时也一致
+                    cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopConsumePointDeductDO deduct =
+                            cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopConsumePointDeductDO
+                                    .builder()
+                                    .orderId(orderId)
+                                    .userId(userId)
+                                    .pointsUsed(pointsUsed)
+                                    .ratioSnapshot(ratio)
+                                    .deductAmount((long) redeemFen)
+                                    .status(cn.iocoder.yudao.module.merchant.dal.dataobject.promo
+                                            .ShopConsumePointDeductDO.STATUS_COMMITTED)
+                                    .commitTime(java.time.LocalDateTime.now())
+                                    .build();
+                    consumePointDeductMapper.insert(deduct);
                 }
-                // 扣减消费积分（带余额不足校验 + 幂等：sourceType=REDEEM, sourceId=orderId）
-                // submit 已切到 merchant tenant，promoPointService 内部 MyBatis-Plus 自动 where tenant_id
-                // → 与 OrderPaidListener / MerchantPromoOrderHandler 的 addConsumePoint 写入维度一致
-                boolean ok = promoPointService.deductConsumePoint(userId, pointsUsed,
-                        "REDEEM", orderId, "下单消费积分抵扣");
-                if (!ok) {
-                    throw ServiceExceptionUtil.exception0(1_031_001_033,
-                            "消费积分扣减失败（余额不足或重复抵扣）");
-                }
-                // 改价
-                TradeOrderUpdatePriceReqVO priceReq = new TradeOrderUpdatePriceReqVO();
-                priceReq.setId(orderId);
-                priceReq.setAdjustPrice(-actualDeductFen);
-                tradeOrderUpdateService.updateOrderPrice(priceReq);
-                finalPayPrice -= actualDeductFen;
-                finalConsumePointDeductFen = actualDeductFen;
-                finalConsumePointUsed = pointsUsed;
-                // 落抵扣记录（COMMITTED：balance 已扣 + 改价已成功；cancel 时退回）
-                cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopConsumePointDeductDO deduct =
-                        cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopConsumePointDeductDO
-                                .builder()
-                                .orderId(orderId)
-                                .userId(userId)
-                                .pointsUsed(pointsUsed)
-                                .ratioSnapshot(ratio)
-                                .deductAmount((long) actualDeductFen)
-                                .status(cn.iocoder.yudao.module.merchant.dal.dataobject.promo
-                                        .ShopConsumePointDeductDO.STATUS_COMMITTED)
-                                .commitTime(java.time.LocalDateTime.now())
-                                .build();
-                consumePointDeductMapper.insert(deduct);
             }
         }
 
