@@ -85,6 +85,9 @@ public class AppMerchantCheckoutController {
     /** 直接 mapper：积分全额抵扣免支付场景下绕过 updateOrderPrice 强校验 newPayPrice>0 */
     @Resource
     private cn.iocoder.yudao.module.trade.dal.mysql.order.TradeOrderMapper tradeOrderMapper;
+    /** 订单行 mapper：免支付时把订单行 pay_price 也清零，避免残留 1 分被入账引擎读成"返 1 积分" */
+    @Resource
+    private cn.iocoder.yudao.module.trade.dal.mysql.order.TradeOrderItemMapper tradeOrderItemMapper;
     /** 全部 TradeOrderHandler bean —— 全额抵扣免支付时同 offline-confirm 跑一遍 afterPayOrder */
     @Resource
     private java.util.List<cn.iocoder.yudao.module.trade.service.order.handler.TradeOrderHandler> tradeOrderHandlers;
@@ -394,6 +397,19 @@ public class AppMerchantCheckoutController {
                                     // 修商户端订单详情「实付 ¥0.01」（原先 updateOrderPrice 受
                                     // newPayPrice>0 限制只能降到 1 分，残留的 1 分这里清掉）
                 tradeOrderMapper.updateById(upd);
+
+                // 订单行实付也清零：updateOrderPrice 只能把订单行降到 1 分（newPayPrice>0 约束），
+                // 残留的 1 分会被 MerchantPromoOrderHandler.afterPayOrder 读成 item.payPrice → 倒返 1 积分。
+                // 全额积分/余额抵扣实付为 0，不应再返任何消费积分（防"用积分付款又赚积分"刷分），
+                // 故订单行 pay_price 一并归 0，让入账引擎读到的实付 = 0。
+                cn.iocoder.yudao.module.trade.dal.dataobject.order.TradeOrderItemDO itemZero =
+                        new cn.iocoder.yudao.module.trade.dal.dataobject.order.TradeOrderItemDO();
+                itemZero.setPayPrice(0);
+                tradeOrderItemMapper.update(itemZero,
+                        new com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<
+                                cn.iocoder.yudao.module.trade.dal.dataobject.order.TradeOrderItemDO>()
+                                .eq(cn.iocoder.yudao.module.trade.dal.dataobject.order.TradeOrderItemDO::getOrderId,
+                                        orderId));
 
                 // 发事件：OrderPaidListener 会异步跑 merchantPromoOrderHandler.afterPayOrder（v8 营销）
                 // 全额抵扣实付为 0 → 返积分基于 0，避免「抵扣后又按原价返积分」刷分
