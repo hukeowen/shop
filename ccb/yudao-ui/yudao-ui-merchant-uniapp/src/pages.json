@@ -202,6 +202,12 @@
       }
     },
     {
+      "path": "pages/me/payment-qr",
+      "style": {
+        "navigationBarTitleText": "线下收款码"
+      }
+    },
+    {
       "path": "pages/user-home/index",
       "style": {
         "navigationBarTitleText": "客小二",

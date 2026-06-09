@@ -104,6 +104,10 @@
         <view class="mi-l"><text class="mi-ic">💳</text><text>在线支付开通</text></view>
         <text class="arrow">›</text>
       </view>
+      <view class="menu-item" @click="goPaymentQr">
+        <view class="mi-l"><text class="mi-ic">💰</text><text>线下收款码（微信/支付宝）</text></view>
+        <text class="arrow">›</text>
+      </view>
     </view>
 
     <!-- AI 视频工具 -->
@@ -279,6 +283,10 @@ function goMemberWithdraw() {
 
 function goPayApply() {
   uni.navigateTo({ url: '/pages/me/pay-apply' });
+}
+
+function goPaymentQr() {
+  uni.navigateTo({ url: '/pages/me/payment-qr' });
 }
 
 async function onLogout() {
