@@ -43,3 +43,12 @@ export const cancelOrder = (id) =>
 // 删除订单
 export const deleteOrder = (id) =>
   del(`/app-api/trade/order/delete?id=${id}`);
+
+// ===== 线下转账收款（商户未开通在线支付时） =====
+// 取收款信息（商户收款码 + 应付 + 凭证状态）
+export const getOfflinePayInfo = (orderId) =>
+  get(`/app-api/merchant/mini/offline-pay/info?orderId=${orderId}`);
+
+// 上传付款凭证
+export const submitOfflineProof = (body) =>
+  post('/app-api/merchant/mini/offline-pay/submit-proof', body);

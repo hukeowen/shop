@@ -96,6 +96,33 @@
         </view>
       </view>
 
+      <!-- 线下转账收款码：未开通在线支付时，顾客扫这里的码付款 + 上传凭证 -->
+      <view class="card section">
+        <view class="qr-head">
+          <text class="qr-title">线下收款码</text>
+          <text class="qr-sub">没开通在线支付？传微信/支付宝收款码，顾客下单后扫码付款并上传凭证，你核对后点「确认收款」</text>
+        </view>
+        <view class="qr-row">
+          <view class="qr-item">
+            <text class="qr-label">微信收款码</text>
+            <view class="qr-box" @click="pickQr('wechat')">
+              <image v-if="form.wechatPayQrUrl" :src="form.wechatPayQrUrl" mode="aspectFit" class="qr-img" />
+              <view v-else class="qr-empty"><text class="qr-plus">+</text><text class="qr-tip">上传</text></view>
+            </view>
+            <text v-if="form.wechatPayQrUrl" class="qr-del" @click="form.wechatPayQrUrl = ''">删除</text>
+          </view>
+          <view class="qr-item">
+            <text class="qr-label">支付宝收款码</text>
+            <view class="qr-box" @click="pickQr('alipay')">
+              <image v-if="form.alipayPayQrUrl" :src="form.alipayPayQrUrl" mode="aspectFit" class="qr-img" />
+              <view v-else class="qr-empty"><text class="qr-plus">+</text><text class="qr-tip">上传</text></view>
+            </view>
+            <text v-if="form.alipayPayQrUrl" class="qr-del" @click="form.alipayPayQrUrl = ''">删除</text>
+          </view>
+        </view>
+        <text class="hint">在微信/支付宝「收款 → 保存收款码」截图后上传；两个可只传一个</text>
+      </view>
+
       <view class="bottom-bar safe-bottom">
         <view class="save-btn" @click="save">保存</view>
       </view>
@@ -141,6 +168,9 @@ const form = ref({
   description: '',
   notice: '',
   featureTags: '',
+  // 线下转账收款码
+  wechatPayQrUrl: '',
+  alipayPayQrUrl: '',
 });
 
 async function pickCover() {
@@ -159,6 +189,32 @@ async function pickCover() {
     const base64 = await blobUrlToBase64(tempPath);
     const { url: publicUrl } = await uploadImage(base64, { ext: 'jpg' });
     form.value.coverUrl = publicUrl;
+    uni.hideLoading();
+    uni.showToast({ title: '上传成功', icon: 'success' });
+  } catch (e) {
+    uni.hideLoading();
+    uni.showToast({ title: '上传失败：' + (e?.message || e), icon: 'none' });
+  }
+}
+
+// 上传收款码（微信 / 支付宝），复用店铺封面同一条 OSS 上传链路
+async function pickQr(type) {
+  const tempPath = await new Promise((resolve) => {
+    uni.chooseImage({
+      count: 1,
+      sizeType: ['compressed'],
+      success: (r) => resolve(r.tempFilePaths[0]),
+      fail: () => resolve(null),
+    });
+  });
+  if (!tempPath) return;
+  uni.showLoading({ title: '上传中…' });
+  try {
+    const { blobUrlToBase64, uploadImage } = await import('../../api/oss.js');
+    const base64 = await blobUrlToBase64(tempPath);
+    const { url: publicUrl } = await uploadImage(base64, { ext: 'jpg' });
+    if (type === 'wechat') form.value.wechatPayQrUrl = publicUrl;
+    else form.value.alipayPayQrUrl = publicUrl;
     uni.hideLoading();
     uni.showToast({ title: '上传成功', icon: 'success' });
   } catch (e) {
@@ -201,6 +257,8 @@ onLoad(async () => {
       form.value.description = res.description || '';
       form.value.notice = res.notice || '';
       form.value.featureTags = res.featureTags || '';
+      form.value.wechatPayQrUrl = res.wechatPayQrUrl || '';
+      form.value.alipayPayQrUrl = res.alipayPayQrUrl || '';
     }
   } catch {}
   loading.value = false;
@@ -333,6 +391,50 @@ async function save() {
   font-size: 22rpx;
   font-weight: 600;
 }
+
+/* 线下收款码 */
+.qr-head { padding: 16rpx 0 8rpx; }
+.qr-title { font-size: 30rpx; font-weight: 700; color: $text-primary; }
+.qr-sub {
+  display: block;
+  margin-top: 8rpx;
+  font-size: 22rpx;
+  color: $text-secondary;
+  line-height: 1.5;
+}
+.qr-row {
+  display: flex;
+  gap: 24rpx;
+  padding: 16rpx 0 8rpx;
+}
+.qr-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12rpx;
+}
+.qr-label { font-size: 26rpx; color: $text-secondary; }
+.qr-box {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 16rpx;
+  background: $bg-page;
+  border: 2rpx dashed $border-color;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.qr-img { width: 100%; height: 100%; }
+.qr-empty {
+  display: flex; flex-direction: column;
+  align-items: center; gap: 8rpx;
+  color: $text-placeholder;
+}
+.qr-plus { font-size: 56rpx; font-weight: 300; line-height: 1; }
+.qr-tip { font-size: 24rpx; }
+.qr-del { font-size: 22rpx; color: #e63946; }
 
 /* V040 行业类型 13 选 1 */
 .biz-field { align-items: flex-start; }

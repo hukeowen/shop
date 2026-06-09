@@ -71,6 +71,9 @@ public class AppMerchantOrderController {
     private cn.iocoder.yudao.module.merchant.dal.mysql.promo.ShopPromoRecordMapper promoRecordMapper;
     @Resource
     private cn.iocoder.yudao.module.merchant.dal.mysql.promo.ShopPromoDeductionRecordMapper promoDeductionRecordMapper;
+    /** 线下转账收款记录 mapper：订单详情展示顾客凭证 + 确认收款时回写状态 */
+    @Resource
+    private cn.iocoder.yudao.module.merchant.dal.mysql.promo.ShopOfflinePaymentMapper shopOfflinePaymentMapper;
 
     /** 跨租户读各抵扣日志，填充订单 VO 的抵扣明细 4 项。失败不阻断订单展示。 */
     private void fillDeductionDetail(AppMerchantOrderRespVO vo, TradeOrderDO order) {
@@ -385,6 +388,49 @@ public class AppMerchantOrderController {
                 tenantId,
                 order.getUserId(),
                 order.getPayPrice()));
+
+        // ---- (4) 线下转账单：回写收款记录为「已确认」（无记录则跳过，兼容到店付款场景） ----
+        try {
+            cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopOfflinePaymentDO offlineRec =
+                    shopOfflinePaymentMapper.selectByOrderId(id);
+            if (offlineRec != null
+                    && !Integer.valueOf(cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopOfflinePaymentDO.STATUS_CONFIRMED)
+                            .equals(offlineRec.getStatus())) {
+                cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopOfflinePaymentDO upd =
+                        new cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopOfflinePaymentDO();
+                upd.setId(offlineRec.getId());
+                upd.setStatus(cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopOfflinePaymentDO.STATUS_CONFIRMED);
+                upd.setConfirmTime(LocalDateTime.now());
+                shopOfflinePaymentMapper.updateById(upd);
+            }
+        } catch (Exception e) {
+            log.warn("[offlineConfirm] 回写线下收款记录失败 order={}: {}", id, e.getMessage());
+        }
+        return success(true);
+    }
+
+    // ==================== 线下转账 - 商户驳回顾客凭证 ====================
+
+    @PostMapping("/offline-reject")
+    @Operation(summary = "驳回顾客线下付款凭证（凭证不符，要求重传）")
+    @Parameter(name = "id", description = "订单编号", required = true)
+    public CommonResult<Boolean> offlineReject(@RequestParam("id") Long id,
+                                               @RequestParam(value = "reason", required = false) String reason) {
+        cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopOfflinePaymentDO rec =
+                shopOfflinePaymentMapper.selectByOrderId(id);
+        if (rec == null) {
+            throw exception0(400, "该订单不是线下转账单");
+        }
+        if (Integer.valueOf(cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopOfflinePaymentDO.STATUS_CONFIRMED)
+                .equals(rec.getStatus())) {
+            throw exception0(400, "订单已确认收款，无法驳回");
+        }
+        cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopOfflinePaymentDO upd =
+                new cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopOfflinePaymentDO();
+        upd.setId(rec.getId());
+        upd.setStatus(cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopOfflinePaymentDO.STATUS_REJECTED);
+        upd.setRejectReason(reason == null || reason.trim().isEmpty() ? "凭证不符，请重新上传" : reason.trim());
+        shopOfflinePaymentMapper.updateById(upd);
         return success(true);
     }
 
@@ -460,6 +506,24 @@ public class AppMerchantOrderController {
 
         // ========== 抵扣明细：跨租户读各扣减日志表 ==========
         fillDeductionDetail(vo, order);
+
+        // ========== 线下转账凭证：未支付单才可能有线下收款记录 ==========
+        if (!Boolean.TRUE.equals(order.getPayStatus())) {
+            try {
+                cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopOfflinePaymentDO offlineRec =
+                        shopOfflinePaymentMapper.selectByOrderId(order.getId());
+                if (offlineRec != null) {
+                    vo.setOfflinePay(true);
+                    vo.setOfflinePayStatus(offlineRec.getStatus());
+                    vo.setOfflineProofUrl(offlineRec.getProofUrl());
+                    vo.setOfflinePayChannel(offlineRec.getPayChannel());
+                    vo.setOfflineBuyerRemark(offlineRec.getBuyerRemark());
+                    vo.setOfflineSubmitTime(offlineRec.getSubmitTime());
+                }
+            } catch (Exception e) {
+                log.warn("[toRespVO] 读线下收款记录失败 order={}: {}", order.getId(), e.getMessage());
+            }
+        }
         List<AppMerchantOrderRespVO.Item> itemVOs = items.stream().map(item -> {
             AppMerchantOrderRespVO.Item i = new AppMerchantOrderRespVO.Item();
             i.setSpuName(item.getSpuName());

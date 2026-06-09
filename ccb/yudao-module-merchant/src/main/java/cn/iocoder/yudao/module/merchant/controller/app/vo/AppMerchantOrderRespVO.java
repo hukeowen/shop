@@ -74,6 +74,25 @@ public class AppMerchantOrderRespVO {
     @Schema(description = "优惠券抵扣（分）")
     private Integer couponDeductFen;
 
+    // ========== 线下转账收款（商户未开通在线支付时） ==========
+    @Schema(description = "是否线下转账单")
+    private Boolean offlinePay;
+
+    @Schema(description = "线下收款状态：0=待付款上传 1=已上传待确认 2=已确认 3=已驳回")
+    private Integer offlinePayStatus;
+
+    @Schema(description = "顾客上传的付款凭证截图 URL")
+    private String offlineProofUrl;
+
+    @Schema(description = "顾客付款渠道：wechat / alipay")
+    private String offlinePayChannel;
+
+    @Schema(description = "顾客付款备注")
+    private String offlineBuyerRemark;
+
+    @Schema(description = "顾客提交凭证时间")
+    private LocalDateTime offlineSubmitTime;
+
     @Schema(description = "订单明细")
     private List<Item> items;
 

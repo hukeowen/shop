@@ -113,7 +113,8 @@ function onAct(o, k) {
       try { await receiveOrder(o.id); uni.showToast({ title: '已收货', icon: 'success' }); switchTab(tab.value); } catch {}
     }});
   } else if (k === 'pay') {
-    uni.showToast({ title: '支付待接通联', icon: 'none' });
+    // 线下转账单 → 收款码 + 上传凭证页（在线单会提示未找到线下收款信息）
+    uni.navigateTo({ url: `/pages/order/offline-pay?orderId=${o.id}` });
   } else if (k === 'track') {
     uni.navigateTo({ url: `/pages/order/detail?id=${o.id}&tab=express` });
   } else if (k === 'reorder' || k === 'comment') {

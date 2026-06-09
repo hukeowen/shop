@@ -602,6 +602,12 @@ async function submitOrder() {
       });
     }
     const tid = tenantId.value || uni.getStorageSync('lastShopTenantId') || '';
+    // 商户未开通在线支付 → 线下转账模式：跳收款码 + 上传凭证页
+    if (res?.payMode === 'OFFLINE') {
+      uni.showToast({ title: '请扫码付款并上传凭证', icon: 'none', duration: 1500 });
+      setTimeout(() => uni.redirectTo({ url: `/pages/order/offline-pay?orderId=${orderId}` }), 800);
+      return;
+    }
     if (finalPayPrice > 0) {
       // 还需线上支付：拿到通联支付链接直接跳通联；否则 fallback 订单列表"立即付款"
       const cashierUrl = res?.cashierUrl;

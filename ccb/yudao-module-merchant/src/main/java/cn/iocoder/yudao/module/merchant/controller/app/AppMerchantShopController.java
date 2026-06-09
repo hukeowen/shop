@@ -75,6 +75,8 @@ public class AppMerchantShopController {
         update.setLatitude(updateDO.getLatitude());
         update.setAddress(updateDO.getAddress());
         update.setFeatureTags(updateDO.getFeatureTags()); // 之前漏了：特色标签保存不进 DB
+        update.setWechatPayQrUrl(updateDO.getWechatPayQrUrl()); // 线下转账微信收款码
+        update.setAlipayPayQrUrl(updateDO.getAlipayPayQrUrl()); // 线下转账支付宝收款码
         shopInfoMapper.updateById(update);
         return success(true);
     }

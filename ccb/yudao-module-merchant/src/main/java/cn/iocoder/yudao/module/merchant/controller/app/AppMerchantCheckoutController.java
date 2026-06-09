@@ -88,6 +88,9 @@ public class AppMerchantCheckoutController {
     /** 订单行 mapper：免支付时把订单行 pay_price 也清零，避免残留 1 分被入账引擎读成"返 1 积分" */
     @Resource
     private cn.iocoder.yudao.module.trade.dal.mysql.order.TradeOrderItemMapper tradeOrderItemMapper;
+    /** 线下转账收款记录 mapper：商户未开通在线支付时建单 + 回传收款码 */
+    @Resource
+    private cn.iocoder.yudao.module.merchant.dal.mysql.promo.ShopOfflinePaymentMapper shopOfflinePaymentMapper;
     /** 全部 TradeOrderHandler bean —— 全额抵扣免支付时同 offline-confirm 跑一遍 afterPayOrder */
     @Resource
     private java.util.List<cn.iocoder.yudao.module.trade.service.order.handler.TradeOrderHandler> tradeOrderHandlers;
@@ -369,6 +372,7 @@ public class AppMerchantCheckoutController {
         resp.setPromoDeductCount(totalPromoDeductCount);
         resp.setCouponDeductFen(couponDeductFen);
         resp.setPayPrice(finalPayPrice);
+        resp.setPayMode("ONLINE"); // 默认在线支付；下方按"免支付 / 线下转账"覆盖
 
         // 5.5 全额积分/余额抵扣免支付：若用户主动抵扣（balance/consume/promo）已覆盖到只剩 ≤1 分，
         //     trade.updateOrderPrice 拒 newPayPrice=0，所以 1 分留给"内部免单"路径处理：
@@ -417,6 +421,7 @@ public class AppMerchantCheckoutController {
                 eventPublisher.publishEvent(new cn.iocoder.yudao.module.merchant.event.OrderOfflineConfirmedEvent(
                         this, orderId, tenantId, userId, payPriceForEvent));
                 resp.setPayPrice(0);
+                resp.setPayMode("FREE"); // 全额抵扣免支付
                 finalPayPrice = 0;  // 跳过通联
                 org.slf4j.LoggerFactory.getLogger(getClass())
                         .info("[checkout 免支付] orderId={} 余额/积分全额抵扣，跳过通联", orderId);
@@ -426,10 +431,45 @@ public class AppMerchantCheckoutController {
             }
         }
 
-        // 6. 调用通联拿支付链接 + 调度兜底轮询（仅在还有线上支付金额时）
-        //    主路径是通联异步通知；轮询是漏发兜底，5/15/25/35/60/120s 6 段
-        //    集群安全由 TradeOrderAllinpayPollingService 内部的 Redisson 锁保证
+        // 6. 还有线上支付金额时：按商户是否开通在线支付通道分流
+        //    - 已开通通联 → 走通联收银台（原逻辑）
+        //    - 未开通通联 → 线下转账模式：建 shop_offline_payment 记录 + 回传商户收款码，
+        //      顾客看码付款 + 上传凭证，商户核对后手动「确认收款」(offline-confirm)
         if (finalPayPrice > 0) {
+            boolean merchantOnlinePay = shopForCheck != null
+                    && (Boolean.TRUE.equals(shopForCheck.getOnlinePayEnabled())
+                        || Boolean.TRUE.equals(shopForCheck.getTlEnabled()));
+            if (!merchantOnlinePay) {
+                // ===== 线下转账模式 =====
+                resp.setPayMode("OFFLINE");
+                try {
+                    // 显式标记订单支付渠道，便于商户端 / 对账区分线下单
+                    cn.iocoder.yudao.module.trade.dal.dataobject.order.TradeOrderDO mark =
+                            new cn.iocoder.yudao.module.trade.dal.dataobject.order.TradeOrderDO();
+                    mark.setId(orderId);
+                    mark.setPayChannelCode("offline_transfer");
+                    tradeOrderMapper.updateById(mark);
+                    // 建线下收款记录（status=0 待顾客付款 + 上传凭证）；order_id UNIQUE 幂等
+                    shopOfflinePaymentMapper.insert(cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopOfflinePaymentDO.builder()
+                            .orderId(orderId)
+                            .userId(userId)
+                            .payPrice(finalPayPrice)
+                            .status(cn.iocoder.yudao.module.merchant.dal.dataobject.promo.ShopOfflinePaymentDO.STATUS_WAIT_PAY)
+                            .build());
+                } catch (Exception e) {
+                    org.slf4j.LoggerFactory.getLogger(getClass())
+                            .warn("[checkout 线下转账] 建收款记录失败 orderId={}: {}", orderId, e.getMessage());
+                }
+                // 回传商户收款码 + 店铺信息，C 端付款页直接展示
+                resp.setWechatPayQrUrl(shopForCheck == null ? null : shopForCheck.getWechatPayQrUrl());
+                resp.setAlipayPayQrUrl(shopForCheck == null ? null : shopForCheck.getAlipayPayQrUrl());
+                resp.setMerchantMobile(shopForCheck == null ? null : shopForCheck.getMobile());
+                resp.setShopName(shopForCheck == null ? null : shopForCheck.getShopName());
+                org.slf4j.LoggerFactory.getLogger(getClass())
+                        .info("[checkout 线下转账] orderId={} 商户未开通在线支付，转线下收款 应付={}分", orderId, finalPayPrice);
+                return success(resp);
+            }
+            // ===== 在线支付（通联）模式 =====
             try {
                 // 透传客户端 UA：通联根据 UA 推支付方式（微信浏览器→微信支付）。
                 //     null 时通联兜底 Android Chrome → iPhone/微信里可能推 Apple Pay（错的）
@@ -695,6 +735,23 @@ public class AppMerchantCheckoutController {
          * 前端拿到后直接 location.href 跳转通联收银台。
          */
         private String cashierUrl;
+
+        /**
+         * 支付方式：
+         *   ONLINE  = 通联在线支付（用 cashierUrl 跳转）
+         *   OFFLINE = 线下转账（商户未开通在线支付，用下方收款码 + 上传凭证页）
+         *   FREE    = 余额/积分全额抵扣免支付（直接成功）
+         */
+        private String payMode;
+
+        /** 线下转账：商户微信收款码 URL */
+        private String wechatPayQrUrl;
+        /** 线下转账：商户支付宝收款码 URL */
+        private String alipayPayQrUrl;
+        /** 线下转账：商户客服电话 */
+        private String merchantMobile;
+        /** 线下转账：店铺名称 */
+        private String shopName;
     }
 
 }

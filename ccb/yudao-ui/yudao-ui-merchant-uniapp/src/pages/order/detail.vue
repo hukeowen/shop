@@ -72,6 +72,32 @@
       </view>
     </view>
 
+    <!-- 线下转账：顾客付款凭证 -->
+    <view v-if="order.offlinePay" class="card">
+      <view class="section-title">线下转账凭证</view>
+      <view class="info-row">
+        <text class="k">收款状态</text>
+        <text class="v" :class="offlineStatusCls(order.offlinePayStatus)">{{ offlineStatusText(order.offlinePayStatus) }}</text>
+      </view>
+      <view v-if="order.offlinePayChannel" class="info-row">
+        <text class="k">付款方式</text>
+        <text class="v">{{ order.offlinePayChannel === 'wechat' ? '微信' : (order.offlinePayChannel === 'alipay' ? '支付宝' : order.offlinePayChannel) }}</text>
+      </view>
+      <view v-if="order.offlineSubmitTime" class="info-row">
+        <text class="k">提交时间</text>
+        <text class="v">{{ order.offlineSubmitTime }}</text>
+      </view>
+      <view v-if="order.offlineBuyerRemark" class="info-row">
+        <text class="k">买家备注</text>
+        <text class="v">{{ order.offlineBuyerRemark }}</text>
+      </view>
+      <view v-if="order.offlineProofUrl" class="proof-wrap">
+        <image :src="order.offlineProofUrl" mode="widthFix" class="proof-img" @click="previewProof" />
+        <text class="proof-tip">点击查看大图 · 核对金额无误后点「确认收款」</text>
+      </view>
+      <view v-else class="proof-empty">顾客尚未上传付款凭证</view>
+    </view>
+
     <view v-if="order.remark" class="card">
       <view class="section-title">买家备注</view>
       <view class="remark">{{ order.remark }}</view>
@@ -86,6 +112,14 @@
         @click="onCancel"
       >
         取消订单
+      </button>
+      <button
+        v-if="order.offlinePay && order.offlinePayStatus === 1 && !order.payStatus"
+        class="btn danger"
+        :disabled="acting"
+        @click="onReject"
+      >
+        驳回凭证
       </button>
       <button
         v-if="(order.status === 0 || order.status === 10) && !order.payStatus"
@@ -128,7 +162,7 @@
 <script setup>
 import { ref } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
-import { getOrder, pickUpVerify, confirmDelivered, offlineConfirm, offlineCancel } from '../../api/order.js';
+import { getOrder, pickUpVerify, confirmDelivered, offlineConfirm, offlineCancel, offlineReject } from '../../api/order.js';
 import { fen2yuan, ORDER_STATUS } from '../../utils/format.js';
 
 const order = ref(null);
@@ -141,6 +175,38 @@ function statusText(s) {
 function statusBg(s) {
   const c = ORDER_STATUS[s]?.color || '#999';
   return `linear-gradient(135deg, ${c}, ${c}cc)`;
+}
+
+function offlineStatusText(s) {
+  return { 0: '待顾客付款', 1: '待确认（顾客已上传凭证）', 2: '已确认收款', 3: '已驳回' }[s] || '';
+}
+function offlineStatusCls(s) {
+  if (s === 1) return 'code'; // 高亮：需要商户处理
+  return '';
+}
+function previewProof() {
+  if (!order.value?.offlineProofUrl) return;
+  uni.previewImage({ urls: [order.value.offlineProofUrl] });
+}
+
+async function onReject() {
+  const m = await uni.showModal({
+    title: '驳回凭证',
+    content: '确认驳回顾客上传的付款凭证？顾客需重新上传。',
+    editable: true,
+    placeholderText: '驳回原因（选填，如金额不符）',
+  });
+  if (!m.confirm) return;
+  acting.value = true;
+  try {
+    await offlineReject(orderId.value, m.content || '');
+    uni.showToast({ title: '已驳回', icon: 'success' });
+    await load();
+  } catch (e) {
+    uni.showToast({ title: e?.message || '操作失败', icon: 'none' });
+  } finally {
+    acting.value = false;
+  }
 }
 
 async function load() {
@@ -370,6 +436,30 @@ onLoad((q) => {
   color: $text-regular;
   font-size: 26rpx;
   line-height: 1.6;
+  border-radius: $radius-md;
+}
+
+.proof-wrap {
+  margin-top: 16rpx;
+}
+.proof-img {
+  width: 100%;
+  border-radius: $radius-md;
+  background: $bg-page;
+}
+.proof-tip {
+  display: block;
+  margin-top: 10rpx;
+  font-size: 22rpx;
+  color: $text-secondary;
+}
+.proof-empty {
+  margin-top: 12rpx;
+  padding: 24rpx;
+  text-align: center;
+  color: $text-placeholder;
+  font-size: 24rpx;
+  background: $bg-page;
   border-radius: $radius-md;
 }
 

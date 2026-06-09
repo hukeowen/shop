@@ -123,6 +123,12 @@ public class ShopInfoDO extends BaseDO {
     /** 签名算法 RSA / RSA2 */
     private String tlSignType;
 
+    // ========== 线下转账收款码（未开通在线支付通道时用） ==========
+    /** 微信收款码图片 URL */
+    private String wechatPayQrUrl;
+    /** 支付宝收款码图片 URL */
+    private String alipayPayQrUrl;
+
     // ========== 进件 KYC 资质（TOS key 私有存储） ==========
     // 仅存 TOS key（VARCHAR(512)），不存 URL：
     //   · 上传走 sidecar /oss/upload acl='private'，TOS 不开放公网读

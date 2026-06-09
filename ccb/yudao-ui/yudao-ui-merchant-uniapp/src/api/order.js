@@ -44,6 +44,13 @@ function normalizeOrder(o) {
     promoAutoDeductFen: o.promoAutoDeductFen ?? 0,
     promoAutoDeductCount: o.promoAutoDeductCount ?? 0,
     couponDeductFen: o.couponDeductFen ?? 0,
+    // ===== 线下转账收款 =====
+    offlinePay: !!o.offlinePay,
+    offlinePayStatus: o.offlinePayStatus,            // 0待付款上传 1待确认 2已确认 3已驳回
+    offlineProofUrl: o.offlineProofUrl || '',
+    offlinePayChannel: o.offlinePayChannel || '',    // wechat / alipay
+    offlineBuyerRemark: o.offlineBuyerRemark || '',
+    offlineSubmitTime: formatCreateTime(o.offlineSubmitTime),
     items: (o.items || []).map((it) => ({
       spuName: it.spuName,
       skuName: it.skuName || it.spuName,
@@ -115,6 +122,12 @@ export function offlineConfirm(id) {
 /** 商户取消订单（仅未支付） */
 export function offlineCancel(id) {
   return request({ url: `${BASE}/offline-cancel?id=${id}`, method: 'POST' });
+}
+
+/** 驳回顾客线下付款凭证（要求重传） */
+export function offlineReject(id, reason) {
+  const q = reason ? `&reason=${encodeURIComponent(reason)}` : '';
+  return request({ url: `${BASE}/offline-reject?id=${id}${q}`, method: 'POST' });
 }
 
 /** 商户主动确认送达（同城配送 / 自营配送 → 等价于代用户确认收货） */

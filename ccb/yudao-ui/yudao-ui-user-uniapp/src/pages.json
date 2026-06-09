@@ -33,6 +33,7 @@
     { "path": "pages/checkout/index",     "style": { "navigationStyle": "custom", "navigationBarTitleText": "结算" } },
     { "path": "pages/pay-success/index",  "style": { "navigationStyle": "custom", "navigationBarTitleText": "支付完成" } },
     { "path": "pages/order/list",         "style": { "navigationStyle": "custom", "navigationBarTitleText": "我的订单" } },
+    { "path": "pages/order/offline-pay",  "style": { "navigationStyle": "custom", "navigationBarTitleText": "线下转账付款" } },
     { "path": "pages/shop/home",          "style": { "navigationStyle": "custom", "navigationBarTitleText": "店铺主页" } },
     { "path": "pages/wallet/index",       "style": { "navigationStyle": "custom", "navigationBarTitleText": "我的钱包" } },
     { "path": "pages/withdraw/index",     "style": { "navigationStyle": "custom", "navigationBarTitleText": "提现申请" } },
