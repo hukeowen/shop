@@ -10,13 +10,31 @@
 --   A. shop_info 增加两列收款码 URL
 --   B. 新增 shop_offline_payment 表（按 order_id 一条，记录顾客凭证 + 状态机）
 --
--- 幂等：可重复执行（列/表存在时 IF NOT EXISTS 跳过）。
+-- 兼容：MySQL 8.0（不支持 ALTER ... ADD COLUMN IF NOT EXISTS，用存储过程守卫幂等）。
+-- 可重复执行。
 -- =====================================================================
 
--- A. 店铺收款码 -------------------------------------------------------
-ALTER TABLE `shop_info`
-    ADD COLUMN IF NOT EXISTS `wechat_pay_qr_url` varchar(512) NULL COMMENT '微信收款码图片 URL（线下转账用）' AFTER `tl_sign_type`,
-    ADD COLUMN IF NOT EXISTS `alipay_pay_qr_url` varchar(512) NULL COMMENT '支付宝收款码图片 URL（线下转账用）' AFTER `wechat_pay_qr_url`;
+-- A. 店铺收款码（幂等加列）-------------------------------------------
+DROP PROCEDURE IF EXISTS `_v045_add_shop_pay_qr`;
+DELIMITER $$
+CREATE PROCEDURE `_v045_add_shop_pay_qr`()
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.COLUMNS
+                   WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'shop_info'
+                     AND COLUMN_NAME = 'wechat_pay_qr_url') THEN
+        ALTER TABLE `shop_info` ADD COLUMN `wechat_pay_qr_url` varchar(512) NULL
+            COMMENT '微信收款码图片 URL（线下转账用）';
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.COLUMNS
+                   WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'shop_info'
+                     AND COLUMN_NAME = 'alipay_pay_qr_url') THEN
+        ALTER TABLE `shop_info` ADD COLUMN `alipay_pay_qr_url` varchar(512) NULL
+            COMMENT '支付宝收款码图片 URL（线下转账用）';
+    END IF;
+END$$
+DELIMITER ;
+CALL `_v045_add_shop_pay_qr`();
+DROP PROCEDURE IF EXISTS `_v045_add_shop_pay_qr`;
 
 -- B. 线下转账收款记录 -------------------------------------------------
 CREATE TABLE IF NOT EXISTS `shop_offline_payment` (
