@@ -141,4 +141,36 @@ public class ShopInfoDO extends BaseDO {
     /** 营业执照 TOS key */
     private String businessLicenseKey;
 
+    // ========== 进件结构化资料（通联商户进件 merchantapi/add 必填项） ==========
+    /** 商户性质：1企业 3个体户 4个人 5其他组织 6事业单位 */
+    private String comproperty;
+    /** 商户全称（进件 merchantname，空则用 shopName） */
+    private String merchantFullName;
+    /** 法人/经营者姓名 */
+    private String legalName;
+    /** 法人证件号（AES 加密存储） */
+    @TableField(typeHandler = cn.iocoder.yudao.framework.mybatis.core.type.EncryptTypeHandler.class)
+    private String legalIdNo;
+    /** 法人证件有效期（yyyy-MM-dd 或 长期） */
+    private String legalIdExpire;
+    /** 统一社会信用代码 / 营业执照号 */
+    private String creditCode;
+    /** 营业执照有效期（yyyy-MM-dd 或 长期） */
+    private String creditCodeExpire;
+    /** 结算账户名（开户名） */
+    private String settleAcctName;
+    /** 结算账户号（AES 加密存储） */
+    @TableField(typeHandler = cn.iocoder.yudao.framework.mybatis.core.type.EncryptTypeHandler.class)
+    private String settleAcctNo;
+    /** 账户类型：0对私 1对公 */
+    private String settleAcctType;
+    /** 开户银行名称（展示用） */
+    private String settleBankName;
+    /** 所属银行代码（通联附录8.3，可空待补） */
+    private String settleBankCode;
+    /** 支付行号（通联附录8.5，对公必填，可空待补） */
+    private String settleCnapsNo;
+    /** 联系邮箱 */
+    private String contactEmail;
+
 }

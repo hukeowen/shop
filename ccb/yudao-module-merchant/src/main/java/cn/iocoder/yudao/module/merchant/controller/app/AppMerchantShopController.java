@@ -218,6 +218,7 @@ public class AppMerchantShopController {
         ShopInfoDO resp = new ShopInfoDO();
         resp.setId(shop.getId());
         resp.setTenantId(shop.getTenantId());
+        resp.setShopName(shop.getShopName());
         resp.setTlMchId(shop.getTlMchId());
         resp.setPayApplyStatus(shop.getPayApplyStatus());
         resp.setOnlinePayEnabled(shop.getOnlinePayEnabled());
@@ -226,6 +227,22 @@ public class AppMerchantShopController {
         resp.setIdCardFrontKey(shop.getIdCardFrontKey());
         resp.setIdCardBackKey(shop.getIdCardBackKey());
         resp.setBusinessLicenseKey(shop.getBusinessLicenseKey());
+        // 进件结构化资料回显（非敏感字段明文回显，便于驳回后重提；敏感字段脱敏）
+        resp.setComproperty(shop.getComproperty());
+        resp.setMerchantFullName(shop.getMerchantFullName());
+        resp.setLegalName(shop.getLegalName());
+        resp.setLegalIdExpire(shop.getLegalIdExpire());
+        resp.setCreditCode(shop.getCreditCode());
+        resp.setCreditCodeExpire(shop.getCreditCodeExpire());
+        resp.setSettleAcctName(shop.getSettleAcctName());
+        resp.setSettleAcctType(shop.getSettleAcctType());
+        resp.setSettleBankName(shop.getSettleBankName());
+        resp.setSettleBankCode(shop.getSettleBankCode());
+        resp.setSettleCnapsNo(shop.getSettleCnapsNo());
+        resp.setContactEmail(shop.getContactEmail());
+        // 敏感字段脱敏（@TableField EncryptTypeHandler 读出来已是明文，这里只回前4后4）
+        resp.setLegalIdNo(maskTail(shop.getLegalIdNo()));
+        resp.setSettleAcctNo(maskTail(shop.getSettleAcctNo()));
         // 通联密钥脱敏（开通后由系统下发，前端只读展示前4后4）
         if (shop.getTlMchKey() != null) {
             try {
@@ -261,7 +278,7 @@ public class AppMerchantShopController {
     }
 
     @PostMapping("/pay-apply")
-    @Operation(summary = "提交在线支付开通申请（KYC 资质：身份证正反 + 营业执照）")
+    @Operation(summary = "提交在线支付开通申请（进件资料：法人 + 营业执照 + 结算账户 + 资质照）")
     public CommonResult<Boolean> submitPayApply(@RequestBody ShopInfoDO reqDO) {
         Long tenantId = TenantContextHolder.getTenantId();
         ShopInfoDO existing = shopInfoMapper.selectByTenantId(tenantId);
@@ -275,21 +292,84 @@ public class AppMerchantShopController {
         if (currentStatus != null && currentStatus == 2) {
             throw exception0(1_020_005_002, "在线支付已开通，无需重复申请");
         }
-        // 必填校验：3 张资质照（前端走 acl='private' 上传，提交的是 TOS key）
-        if (reqDO.getIdCardFrontKey() == null || reqDO.getIdCardFrontKey().isEmpty()
-                || reqDO.getIdCardBackKey() == null || reqDO.getIdCardBackKey().isEmpty()
-                || reqDO.getBusinessLicenseKey() == null || reqDO.getBusinessLicenseKey().isEmpty()) {
-            throw exception0(1_020_005_003, "请上传身份证正反面与营业执照");
+        boolean personal = "4".equals(reqDO.getComproperty()); // 个人商户无营业执照
+        // 必填校验：身份证正反面始终必填；营业执照非个人必填
+        if (isBlank(reqDO.getIdCardFrontKey()) || isBlank(reqDO.getIdCardBackKey())) {
+            throw exception0(1_020_005_003, "请上传法人身份证正反面");
         }
+        if (!personal && isBlank(reqDO.getBusinessLicenseKey())) {
+            throw exception0(1_020_005_003, "请上传营业执照");
+        }
+        // 必填校验：进件结构化资料
+        if (isBlank(reqDO.getComproperty())) {
+            throw exception0(1_020_005_005, "请选择商户性质");
+        }
+        if (isBlank(reqDO.getLegalName())) {
+            throw exception0(1_020_005_005, "请填写法人/经营者姓名");
+        }
+        if (isBlank(reqDO.getLegalIdNo()) || reqDO.getLegalIdNo().contains("****")) {
+            throw exception0(1_020_005_005, "请填写法人证件号");
+        }
+        if (isBlank(reqDO.getSettleAcctName())) {
+            throw exception0(1_020_005_005, "请填写结算账户名");
+        }
+        if (isBlank(reqDO.getSettleAcctNo()) || reqDO.getSettleAcctNo().contains("****")) {
+            throw exception0(1_020_005_005, "请填写结算账户号");
+        }
+        if (isBlank(reqDO.getSettleAcctType())) {
+            throw exception0(1_020_005_005, "请选择账户类型（对私/对公）");
+        }
+        if (isBlank(reqDO.getSettleBankName())) {
+            throw exception0(1_020_005_005, "请填写开户银行");
+        }
+        if (!personal && isBlank(reqDO.getCreditCode())) {
+            throw exception0(1_020_005_005, "请填写统一社会信用代码（营业执照号）");
+        }
+
         ShopInfoDO update = new ShopInfoDO();
         update.setId(existing.getId());
         update.setIdCardFrontKey(reqDO.getIdCardFrontKey());
         update.setIdCardBackKey(reqDO.getIdCardBackKey());
         update.setBusinessLicenseKey(reqDO.getBusinessLicenseKey());
+        // 进件结构化资料
+        update.setComproperty(reqDO.getComproperty());
+        update.setMerchantFullName(reqDO.getMerchantFullName());
+        update.setLegalName(reqDO.getLegalName());
+        update.setLegalIdExpire(reqDO.getLegalIdExpire());
+        update.setCreditCode(reqDO.getCreditCode());
+        update.setCreditCodeExpire(reqDO.getCreditCodeExpire());
+        update.setSettleAcctName(reqDO.getSettleAcctName());
+        update.setSettleAcctType(reqDO.getSettleAcctType());
+        update.setSettleBankName(reqDO.getSettleBankName());
+        update.setSettleBankCode(reqDO.getSettleBankCode());
+        update.setSettleCnapsNo(reqDO.getSettleCnapsNo());
+        update.setContactEmail(reqDO.getContactEmail());
+        // 敏感字段：仅当提交了真实值（非脱敏）才更新，避免重提时把明文写成 ****
+        if (!isBlank(reqDO.getLegalIdNo()) && !reqDO.getLegalIdNo().contains("****")) {
+            update.setLegalIdNo(reqDO.getLegalIdNo());
+        }
+        if (!isBlank(reqDO.getSettleAcctNo()) && !reqDO.getSettleAcctNo().contains("****")) {
+            update.setSettleAcctNo(reqDO.getSettleAcctNo());
+        }
         update.setPayApplyStatus(1); // 审核中
         update.setPayApplyRejectReason(null);
         shopInfoMapper.updateById(update);
         return success(true);
+    }
+
+    private static boolean isBlank(String s) {
+        return s == null || s.trim().isEmpty();
+    }
+
+    /** 敏感串脱敏：保留前 4 后 4，中间 ****；不足 8 位整体 ****。 */
+    private static String maskTail(String s) {
+        if (s == null || s.isEmpty()) {
+            return s;
+        }
+        if (s.length() <= 8) {
+            return "****";
+        }
+        return s.substring(0, 4) + "****" + s.substring(s.length() - 4);
     }
 
 }

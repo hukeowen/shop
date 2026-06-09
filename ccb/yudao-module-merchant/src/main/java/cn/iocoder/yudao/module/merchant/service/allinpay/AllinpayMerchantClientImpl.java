@@ -64,24 +64,59 @@ public class AllinpayMerchantClientImpl implements AllinpayMerchantClient {
     public OpenMerchantResult openMerchant(ShopInfoDO shop) {
         String outOrderId = "TX" + System.currentTimeMillis() + UUID.randomUUID().toString().substring(0, 6);
 
-        // 通联进件参数（关键字段，完整列表参见官方文档）
+        boolean personal = "4".equals(shop.getComproperty());
+        String merchantName = shop.getMerchantFullName() != null && !shop.getMerchantFullName().isEmpty()
+                ? shop.getMerchantFullName() : shop.getShopName();
+
+        // 通联商户进件参数（对齐《商户进件》文档 merchantapi/add 字段；EncryptTypeHandler 读出已是明文）
         Map<String, String> params = new LinkedHashMap<>();
-        params.put("orgid", props.getOrgId());
-        params.put("outorderid", outOrderId);
-        params.put("mchntname", safe(shop.getShopName()));      // 商户名
-        params.put("mchntshortname", safe(shop.getShopName()));  // 商户简称
-        params.put("contact", safe(shop.getMobile()));            // 联系电话
+        params.put("orgid", safe(props.getOrgId()));
+        params.put("cusid", safe(props.getOrgId()));            // 文档：cusid = orgid
+        params.put("version", "11");
+        params.put("randomstr", outOrderId);                    // 商户自生成随机串
+        params.put("merchantid", outOrderId);                   // 代理商系统商户唯一识别号（反查回调用）
+        params.put("merchantname", safe(merchantName));         // 商户名称
+        params.put("shortname", safe(shop.getShopName()));      // 商户简称
+        params.put("servicephone", safe(shop.getMobile()));     // 客服电话
+        params.put("comproperty", safe(shop.getComproperty())); // 商户性质
+        // 法人/经营者
+        params.put("legal", safe(shop.getLegalName()));
+        params.put("legalidtype", "01");                        // 默认身份证
+        params.put("legalidno", safe(shop.getLegalIdNo()));
+        params.put("legalidexpire", safe(shop.getLegalIdExpire(), "长期"));
+        // 营业执照（非个人）
+        if (!personal) {
+            params.put("corpbusname", safe(merchantName));
+            params.put("creditcode", safe(shop.getCreditCode()));
+            params.put("creditcodeexpire", safe(shop.getCreditCodeExpire(), "长期"));
+        }
+        // 地址 / 联系人
         params.put("address", safe(shop.getAddress()));
+        params.put("busaddress", safe(shop.getAddress()));
+        params.put("contactperson", safe(shop.getLegalName()));
+        params.put("contactphone", safe(shop.getMobile()));
+        // 结算账户
+        params.put("clearmode", "1");                           // 1=银行卡
+        params.put("acctname", safe(shop.getSettleAcctName()));
+        params.put("acctid", safe(shop.getSettleAcctNo()));
+        params.put("accttype", safe(shop.getSettleAcctType()));
+        params.put("accttp", "00");                             // 00=借记卡
+        params.put("bankcode", safe(shop.getSettleBankCode()));
+        params.put("cnapsno", safe(shop.getSettleCnapsNo()));
         params.put("notifyurl", safe(props.getRegisterNotifyUrl()));
-        // KYC 资质 TOS key（通联会反查我们这一侧拿真图，或要求我们 base64 上传 — 接入时按文档调整）
-        params.put("idcardfront", safe(shop.getIdCardFrontKey()));
-        params.put("idcardback", safe(shop.getIdCardBackKey()));
-        params.put("license", safe(shop.getBusinessLicenseKey()));
-        // TODO 生产前补全：法人姓名 / 法人身份证号 / 银行卡号 / 开户行 / 经营类目码 等
+        // 资质照（文档要求 URL；私有 TOS key 需现签可公网访问的 URL — 接入真实凭据时补签发逻辑）
+        params.put("legalidpicfront", safe(shop.getIdCardFrontKey()));
+        params.put("legalidpicback", safe(shop.getIdCardBackKey()));
+        if (!personal) {
+            params.put("corpbuspic", safe(shop.getBusinessLicenseKey()));
+        }
+        // TODO 真实进件还需附录编码：mccid(所属行业) / districtcode(所在区) / cnapsno/bankcode 附录映射，
+        //      以及把私有 TOS key 现签成通联可拉取的临时 URL（注意有效期需覆盖审核时长）。
 
         params.put("sign", AllinpaySignUtils.signRequest(params, props.getPlatformRsaPrivateKey()));
 
-        return postForm("/apiweb/cusreg/cusreg", params, outOrderId);
+        // 端点对齐《商户进件》文档：测试 /vsppcusapi/merchantapi/add，生产 /cusapi/merchantapi/add
+        return postForm("/vsppcusapi/merchantapi/add", params, outOrderId);
     }
 
     @Override
@@ -135,4 +170,7 @@ public class AllinpayMerchantClientImpl implements AllinpayMerchantClient {
     }
 
     private static String safe(String s) { return s == null ? "" : s; }
+
+    /** 空值兜底为 def（用于有默认值的进件字段，如证件有效期默认"长期"）。 */
+    private static String safe(String s, String def) { return s == null || s.isEmpty() ? def : s; }
 }
