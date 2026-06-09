@@ -54,16 +54,11 @@
       </view>
 
       <view v-if="form.consumePointRedeemEnabled" class="field">
-        <text class="label">抵扣比例（1 积分 = X 元）</text>
-        <input
-          class="input"
-          type="digit"
-          v-model="form.consumePointRedeemRatio"
-          placeholder="如 0.01（即 1 积分=1分钱）或 1（即 1 积分=1元）"
-        />
+        <text class="label">折抵比例</text>
+        <view class="input" style="color:#FF6B35;font-weight:700;">100 积分 = ¥1（1 积分 = 1 分）</view>
         <text class="hint inline">
-          单位：元 / 积分。默认 0.01（1 积分=1分钱=1:1 分账）。后端按"分钱"存储，输入元自动 ×100。<br/>
-          上限不超过订单总价的 100%（顾客可全额积分支付）。
+          消费积分按 1:1 折抵现金（1 积分 = 1 分钱），固定不可改 —— 即 100 积分抵 ¥1。<br/>
+          上限不超过订单总价的 100%（顾客可用积分全额抵扣）。
         </text>
       </view>
     </view>
@@ -316,12 +311,9 @@ async function onSave() {
     directCommissionRatio: parseFloat(form.value.directCommissionRatio) > 0
       ? parseFloat(form.value.directCommissionRatio) : 0,
     naturalPushEnabled: !!form.value.naturalPushEnabled,
-    // 消费积分抵扣：前端「元」→ 后端「分钱」(×100)
+    // 消费积分折抵恒为 1:1（1 积分=1 分=¥0.01 → 100 积分=¥1），固定不可改
     consumePointRedeemEnabled: !!form.value.consumePointRedeemEnabled,
-    consumePointRedeemRatio: (() => {
-      const yuan = parseFloat(form.value.consumePointRedeemRatio);
-      return yuan > 0 ? Number((yuan * 100).toFixed(4)) : 1;
-    })(),
+    consumePointRedeemRatio: 1,
   };
 
   saving.value = true;

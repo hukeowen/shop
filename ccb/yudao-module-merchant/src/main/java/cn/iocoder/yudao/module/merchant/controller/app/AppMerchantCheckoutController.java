@@ -178,13 +178,10 @@ public class AppMerchantCheckoutController {
                 && req.getConsumePointDeductFen() != null
                 && req.getConsumePointDeductFen() > 0) {
             // 不再校验商户开关：消费积分是用户资产，永远可抵扣（与推广积分一致）
-            cn.iocoder.yudao.module.merchant.dal.dataobject.promo.PromoConfigDO promoConfig =
-                    promoConfigService.getConfig();
-            java.math.BigDecimal ratio = promoConfig == null ? null : promoConfig.getConsumePointRedeemRatio();
-            if (ratio == null || ratio.signum() <= 0) {
-                // 商户没配比例 → 默认 1 积分 = 1 分钱（即 100 积分 = 1 元）
-                ratio = java.math.BigDecimal.ONE;
-            }
+            // 消费积分 ≡ 分（1 积分 = 1 分 = ¥0.01）→ 折抵恒为 1:1，即 100 积分 = ¥1。
+            // 锁死 ratio=1，不再读商户配置：历史「1 积分 = X 元」配置易被误设成「1 积分 = 1 元」，
+            // 会算出 100 积分抵 ¥100 的 100× 超抵（已修数据 + 此处锁死，双保险）。
+            java.math.BigDecimal ratio = java.math.BigDecimal.ONE;
             int requestFen = req.getConsumePointDeductFen();
             // 修复（1 分 bug）：trade.updateOrderPrice 不允许把订单价改到 0（newPayPrice>0），
             // 整单只能降到 1 分，剩 1 分由后面的「全额抵扣免支付」路径吃掉。原先调价与扣积分

@@ -422,7 +422,8 @@ async function loadShopAndItems() {
     try {
       const cfg = await request({ url: `/app-api/merchant/mini/promo/config?tenantId=${tenantId.value}` });
       consumePointEnabled.value = !!cfg?.consumePointRedeemEnabled;
-      consumePointRatio.value = Number(cfg?.consumePointRedeemRatio || 1);
+      // 积分=分，折抵恒 1:1（100 积分=¥1），锁死 1 不再受商户配置影响（防 100× 超抵显示）
+      consumePointRatio.value = 1;
     } catch {}
     // 2.2 拉用户在该 merchant tenant 的双积分余额（与扣减侧用同一 tenant）
     try {
