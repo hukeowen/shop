@@ -9,6 +9,10 @@ import cn.iocoder.yudao.module.merchant.service.allinpay.AllinpaySignUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
+import okhttp3.FormBody;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -17,7 +21,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 通联收付通异步通知 webhook
@@ -44,6 +50,120 @@ public class AllinpayNotifyController {
 
     @Value("${merchant.field-encrypt-key:dev_key_12345678}")
     private String fieldEncryptKey;
+
+    @Value("${ALLINPAY_DIAG_TOKEN:}")
+    private String diagToken;
+
+    /**
+     * 进件对接诊断（测试用）：用指定 tenant 的通联凭据（appid + RSA 私钥）签名，
+     * 提交一笔【全测试数据】的进件到通联，返回原始响应，用来验证「对接 / 签名 / 端点」是否通。
+     *
+     * <p>用测试数据（不含真实身份证），即便通联因字段不合法驳回，也能证明：
+     * 签名通过 + 端点正确 + 请求被解析 = 对接成功。失败的进件可再次提交，不留垃圾记录。</p>
+     *
+     * <p>token 校验：必须传对 ALLINPAY_DIAG_TOKEN，否则拒绝。已加入 permit-all 白名单。</p>
+     */
+    @PostMapping(value = "/allinpay/diag-register", produces = "application/json")
+    @Operation(summary = "通联进件对接诊断（测试）")
+    public Map<String, Object> diagRegister(
+            @RequestParam("token") String token,
+            @RequestParam(value = "credTenantId", defaultValue = "1010") Long credTenantId,
+            @RequestParam(value = "url", required = false) String url,
+            @RequestParam(value = "dryRun", defaultValue = "false") boolean dryRun) {
+        Map<String, Object> out = new HashMap<>();
+        if (diagToken == null || diagToken.isEmpty() || !diagToken.equals(token)) {
+            out.put("ok", false);
+            out.put("error", "token 无效");
+            return out;
+        }
+        // 取代理商进件凭据（appid + RSA 私钥），shop_info 平台级表，TenantIgnore 读
+        ShopInfoDO cred = TenantUtils.executeIgnore(() -> {
+            return shopInfoMapper.selectByTenantId(credTenantId);
+        });
+        if (cred == null) {
+            out.put("ok", false);
+            out.put("error", "凭据店铺不存在 tenant=" + credTenantId);
+            return out;
+        }
+        String orgid = props.getOrgId();
+        String appid = cred.getTlAppId();
+        String rsaPriv = cred.getTlRsaPrivateKey(); // EncryptTypeHandler 读出已是明文
+        String testNo = "TEST" + System.currentTimeMillis();
+
+        // 构造一笔【测试】进件（全部测试值，带「测试」字样，便于识别且不含真实 PII）
+        Map<String, String> p = new LinkedHashMap<>();
+        p.put("orgid", nz(orgid));
+        p.put("cusid", nz(orgid));
+        p.put("appid", nz(appid));
+        p.put("version", "11");
+        p.put("randomstr", testNo);
+        p.put("merchantid", testNo);
+        p.put("merchantname", "测试商户请勿审核");
+        p.put("shortname", "测试商户");
+        p.put("servicephone", "02888888888");
+        p.put("comproperty", "1");
+        p.put("legal", "测试");
+        p.put("legalidtype", "01");
+        p.put("legalidno", "510104199001011234");
+        p.put("legalidexpire", "长期");
+        p.put("address", "四川省成都市测试地址");
+        p.put("busaddress", "四川省成都市测试地址");
+        p.put("contactperson", "测试");
+        p.put("contactphone", "02888888888");
+        p.put("clearmode", "1");
+        p.put("acctname", "测试商户");
+        p.put("acctid", "6225880000000000");
+        p.put("accttype", "1");
+        p.put("accttp", "00");
+        p.put("bankcode", "0102");
+        p.put("creditcode", "91510100000000000X");
+
+        String sign;
+        try {
+            sign = AllinpaySignUtils.signRequest(p, rsaPriv);
+        } catch (Exception e) {
+            out.put("ok", false);
+            out.put("error", "签名失败：" + e.getMessage());
+            out.put("signSource", AllinpaySignUtils.buildSignSource(p));
+            return out;
+        }
+        p.put("sign", sign);
+
+        out.put("orgid", orgid);
+        out.put("appid", appid);
+        out.put("credTenant", credTenantId);
+        out.put("signSource", AllinpaySignUtils.buildSignSource(p));
+        out.put("signLen", sign.length());
+
+        if (dryRun) {
+            out.put("ok", true);
+            out.put("dryRun", true);
+            return out;
+        }
+
+        String endpoint = (url != null && !url.isEmpty()) ? url
+                : "https://cus.allinpay.com/cusapi/merchantapi/add";
+        out.put("endpoint", endpoint);
+        try {
+            OkHttpClient http = new OkHttpClient.Builder()
+                    .connectTimeout(8, TimeUnit.SECONDS).readTimeout(20, TimeUnit.SECONDS).build();
+            FormBody.Builder fb = new FormBody.Builder();
+            p.forEach((k, v) -> fb.add(k, v == null ? "" : v));
+            Request req = new Request.Builder().url(endpoint).post(fb.build()).build();
+            try (Response resp = http.newCall(req).execute()) {
+                String body = resp.body() != null ? resp.body().string() : "";
+                out.put("ok", true);
+                out.put("httpCode", resp.code());
+                out.put("response", body.length() > 2000 ? body.substring(0, 2000) : body);
+            }
+        } catch (Exception e) {
+            out.put("ok", false);
+            out.put("error", "通联请求异常：" + e.getMessage());
+        }
+        return out;
+    }
+
+    private static String nz(String s) { return s == null ? "" : s; }
 
     /**
      * 进件结果异步通知

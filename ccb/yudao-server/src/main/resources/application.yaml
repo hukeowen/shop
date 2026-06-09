@@ -288,6 +288,7 @@ yudao:
       - /admin-api/merchant/allinpay/register-notify
       - /admin-api/merchant/allinpay/diag # 通联诊断端点
       - /admin-api/merchant/allinpay/diag-unionorder # 通联下单实测端点
+      - /admin-api/merchant/allinpay/diag-register # 通联进件对接诊断（测试）
       - /admin-api/merchant/promo/test/** # v7 全链路模拟支付（仅本地/测试用）
   api-encrypt:
     enable: true # 是否开启 API 加密
@@ -334,6 +335,7 @@ yudao:
       - /admin-api/merchant/allinpay/register-notify
       - /admin-api/merchant/allinpay/diag # 通联诊断端点
       - /admin-api/merchant/allinpay/diag-unionorder # 通联下单实测端点
+      - /admin-api/merchant/allinpay/diag-register # 通联进件对接诊断（测试）
       - /admin-api/merchant/promo/test/** # v7 模拟支付测试 endpoint（自带 tenantId 参数）
       # C 端 /app-api 入口由 JWT 解析商户/租户，不强制 tenant-id header；
       # 前端 request.js 也对 /app-api 不传 tenant-id（线上长期实测可用）
