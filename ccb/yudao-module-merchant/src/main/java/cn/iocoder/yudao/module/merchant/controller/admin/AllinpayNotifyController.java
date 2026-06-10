@@ -68,6 +68,7 @@ public class AllinpayNotifyController {
     public Map<String, Object> diagRegister(
             @RequestParam("token") String token,
             @RequestParam(value = "credTenantId", defaultValue = "1010") Long credTenantId,
+            @RequestParam(value = "appidOverride", required = false) String appidOverride,
             @RequestParam(value = "url", required = false) String url,
             @RequestParam(value = "dryRun", defaultValue = "false") boolean dryRun) {
         Map<String, Object> out = new HashMap<>();
@@ -86,7 +87,7 @@ public class AllinpayNotifyController {
             return out;
         }
         String orgid = props.getOrgId();
-        String appid = cred.getTlAppId();
+        String appid = (appidOverride != null && !appidOverride.isEmpty()) ? appidOverride : cred.getTlAppId();
         String rsaPriv = cred.getTlRsaPrivateKey(); // EncryptTypeHandler 读出已是明文
         String testNo = "TEST" + System.currentTimeMillis();
 
