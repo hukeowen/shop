@@ -69,6 +69,8 @@ public class AllinpayNotifyController {
             @RequestParam("token") String token,
             @RequestParam(value = "credTenantId", defaultValue = "1010") Long credTenantId,
             @RequestParam(value = "appidOverride", required = false) String appidOverride,
+            @RequestParam(value = "signMode", defaultValue = "md5") String signMode,
+            @RequestParam(value = "md5KeyOverride", required = false) String md5KeyOverride,
             @RequestParam(value = "url", required = false) String url,
             @RequestParam(value = "dryRun", defaultValue = "false") boolean dryRun) {
         Map<String, Object> out = new HashMap<>();
@@ -120,20 +122,34 @@ public class AllinpayNotifyController {
         p.put("creditcode", "91510100000000000X");
 
         String sign;
+        String signSource = AllinpaySignUtils.buildSignSource(p);
         try {
-            sign = AllinpaySignUtils.signRequest(p, rsaPriv);
+            if ("rsa".equalsIgnoreCase(signMode)) {
+                sign = AllinpaySignUtils.signRequest(p, rsaPriv);
+            } else {
+                // 通联收银宝 MD5：sorted(key=value&...) + "&key=" + MD5密钥 → MD5 大写
+                String md5Key = (md5KeyOverride != null && !md5KeyOverride.isEmpty())
+                        ? md5KeyOverride : props.getMd5Key();
+                if (md5Key == null || md5Key.isEmpty()) {
+                    out.put("ok", false);
+                    out.put("error", "MD5 密钥未配置（ALLINPAY_MD5_KEY 为空，且未传 md5KeyOverride）");
+                    return out;
+                }
+                sign = cn.hutool.crypto.SecureUtil.md5(signSource + "&key=" + md5Key).toUpperCase();
+            }
         } catch (Exception e) {
             out.put("ok", false);
             out.put("error", "签名失败：" + e.getMessage());
-            out.put("signSource", AllinpaySignUtils.buildSignSource(p));
+            out.put("signSource", signSource);
             return out;
         }
         p.put("sign", sign);
 
         out.put("orgid", orgid);
         out.put("appid", appid);
+        out.put("signMode", signMode);
         out.put("credTenant", credTenantId);
-        out.put("signSource", AllinpaySignUtils.buildSignSource(p));
+        out.put("signSource", signSource);
         out.put("signLen", sign.length());
 
         if (dryRun) {
