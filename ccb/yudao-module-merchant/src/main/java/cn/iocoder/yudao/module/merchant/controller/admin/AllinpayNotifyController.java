@@ -69,7 +69,7 @@ public class AllinpayNotifyController {
             @RequestParam("token") String token,
             @RequestParam(value = "credTenantId", defaultValue = "1010") Long credTenantId,
             @RequestParam(value = "appidOverride", required = false) String appidOverride,
-            @RequestParam(value = "signMode", defaultValue = "md5") String signMode,
+            @RequestParam(value = "signMode", defaultValue = "rsa1") String signMode,
             @RequestParam(value = "md5KeyOverride", required = false) String md5KeyOverride,
             @RequestParam(value = "url", required = false) String url,
             @RequestParam(value = "dryRun", defaultValue = "false") boolean dryRun) {
@@ -121,28 +121,35 @@ public class AllinpayNotifyController {
         p.put("bankcode", "0102");
         p.put("creditcode", "91510100000000000X");
 
+        String sm2Priv = cred.getTlSm2PrivateKey();
         String sign;
-        String signSource = AllinpaySignUtils.buildSignSource(p);
         try {
-            if ("rsa".equalsIgnoreCase(signMode)) {
+            if ("sm2".equalsIgnoreCase(signMode)) {
+                p.put("signtype", "SM2");
+                sign = cn.iocoder.yudao.module.merchant.service.allinpay.AllinpayCashierService
+                        .signSm2(p, sm2Priv, appid);
+            } else if ("rsa".equalsIgnoreCase(signMode)) {
+                // 旧：SHA256withRSA（收银宝实际是 SHA1，这个只留作对比）
+                p.put("signtype", "RSA");
                 sign = AllinpaySignUtils.signRequest(p, rsaPriv);
-            } else {
-                // 通联收银宝 MD5：sorted(key=value&...) + "&key=" + MD5密钥 → MD5 大写
+            } else if ("md5".equalsIgnoreCase(signMode)) {
                 String md5Key = (md5KeyOverride != null && !md5KeyOverride.isEmpty())
                         ? md5KeyOverride : props.getMd5Key();
-                if (md5Key == null || md5Key.isEmpty()) {
-                    out.put("ok", false);
-                    out.put("error", "MD5 密钥未配置（ALLINPAY_MD5_KEY 为空，且未传 md5KeyOverride）");
-                    return out;
-                }
-                sign = cn.hutool.crypto.SecureUtil.md5(signSource + "&key=" + md5Key).toUpperCase();
+                sign = cn.hutool.crypto.SecureUtil.md5(
+                        AllinpaySignUtils.buildSignSource(p) + "&key=" + nz(md5Key)).toUpperCase();
+            } else {
+                // 默认 rsa1：SHA1withRSA（收银宝标准，与收银台支付同款 signRsa）
+                p.put("signtype", "RSA");
+                sign = cn.iocoder.yudao.module.merchant.service.allinpay.AllinpayCashierService
+                        .signRsa(p, rsaPriv);
             }
         } catch (Exception e) {
             out.put("ok", false);
             out.put("error", "签名失败：" + e.getMessage());
-            out.put("signSource", signSource);
+            out.put("signSource", AllinpaySignUtils.buildSignSource(p));
             return out;
         }
+        String signSource = AllinpaySignUtils.buildSignSource(p); // 含 signtype，供核对
         p.put("sign", sign);
 
         out.put("orgid", orgid);
