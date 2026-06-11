@@ -379,6 +379,7 @@ public class AppMerchantShopController {
         update.setMccId(reqDO.getMccId());
         update.setServicePhone(reqDO.getServicePhone());
         update.setLegalIdType(reqDO.getLegalIdType());
+        update.setAddress(reqDO.getAddress());        // 注册地址（进件用，预填=店铺地址，可改）
         update.setBusAddress(reqDO.getBusAddress());
         update.setDistrictCode(reqDO.getDistrictCode());
         update.setContactPerson(reqDO.getContactPerson());
