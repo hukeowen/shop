@@ -173,4 +173,64 @@ public class ShopInfoDO extends BaseDO {
     /** 联系邮箱 */
     private String contactEmail;
 
+    // ========== v047 进件全类型补全（通联 merchantapi/add） ==========
+    /** 所属行业 mccid（通联附录8.4） */
+    private String mccId;
+    /** 客服电话 */
+    private String servicePhone;
+    /** 法人证件类型 01身份证/03护照/... */
+    private String legalIdType;
+    /** 经营地址 */
+    private String busAddress;
+    /** 所在区代码（通联附录8.2 / 国标区划） */
+    private String districtCode;
+    /** 商户负责人 */
+    private String contactPerson;
+    /** 负责人电话 */
+    private String contactPhone;
+    /** 结算方式 0自主提现/1银行卡/2电子账户 */
+    private String clearMode;
+    /** 卡折类型 00借记卡/01存折 */
+    private String acctTp;
+    /** 控股股东姓名 */
+    private String holderName;
+    /** 控股股东证件号（AES 加密） */
+    @TableField(typeHandler = cn.iocoder.yudao.framework.mybatis.core.type.EncryptTypeHandler.class)
+    private String holderIdNo;
+    /** 控股股东证件有效期 */
+    private String holderExpire;
+    /** 注册资本档 1-5 */
+    private String registerFund;
+    /** 员工人数档 1-5 */
+    private String staffTotal;
+    /** 经营区域 1城区/2郊区/3边远 */
+    private String operateLimit;
+    /** 经营地段 1商业区/2工业区/3住宅区 */
+    private String inspect;
+    /** 是否三证合一 0否/1是 */
+    private String thrCertFlag;
+    /** 组织机构代码证号（三证不合一） */
+    private String organCode;
+    /** 组织机构代码证有效期 */
+    private String organExpire;
+    /** 业务联系人 */
+    private String busContactPerson;
+    /** 业务联系人电话 */
+    private String busContactTel;
+    /** 结算人证件号（对私，AES 加密） */
+    @TableField(typeHandler = cn.iocoder.yudao.framework.mybatis.core.type.EncryptTypeHandler.class)
+    private String settleIdNo;
+    /** 对公账户信息 */
+    private String pubAcctInfo;
+    /** 经营者手持身份证照 TOS key（个人） */
+    private String legalHoldPicKey;
+    /** 经营场所证明照 TOS key（个人） */
+    private String bizPlacePicKey;
+    /** 结算账户照 TOS key（对私） */
+    private String settleBankPicKey;
+    /** 对公账户照 TOS key（对公） */
+    private String acctLicensePicKey;
+    /** 经营者与门头合照 TOS key（非个人） */
+    private String personHeadPicKey;
+
 }

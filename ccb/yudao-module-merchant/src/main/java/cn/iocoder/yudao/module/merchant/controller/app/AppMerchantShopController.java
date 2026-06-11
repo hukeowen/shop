@@ -240,9 +240,38 @@ public class AppMerchantShopController {
         resp.setSettleBankCode(shop.getSettleBankCode());
         resp.setSettleCnapsNo(shop.getSettleCnapsNo());
         resp.setContactEmail(shop.getContactEmail());
+        // v047 进件全类型字段回显
+        resp.setMccId(shop.getMccId());
+        resp.setServicePhone(shop.getServicePhone());
+        resp.setLegalIdType(shop.getLegalIdType());
+        resp.setBusAddress(shop.getBusAddress());
+        resp.setDistrictCode(shop.getDistrictCode());
+        resp.setContactPerson(shop.getContactPerson());
+        resp.setContactPhone(shop.getContactPhone());
+        resp.setClearMode(shop.getClearMode());
+        resp.setAcctTp(shop.getAcctTp());
+        resp.setHolderName(shop.getHolderName());
+        resp.setHolderExpire(shop.getHolderExpire());
+        resp.setRegisterFund(shop.getRegisterFund());
+        resp.setStaffTotal(shop.getStaffTotal());
+        resp.setOperateLimit(shop.getOperateLimit());
+        resp.setInspect(shop.getInspect());
+        resp.setThrCertFlag(shop.getThrCertFlag());
+        resp.setOrganCode(shop.getOrganCode());
+        resp.setOrganExpire(shop.getOrganExpire());
+        resp.setBusContactPerson(shop.getBusContactPerson());
+        resp.setBusContactTel(shop.getBusContactTel());
+        resp.setPubAcctInfo(shop.getPubAcctInfo());
+        resp.setLegalHoldPicKey(shop.getLegalHoldPicKey());
+        resp.setBizPlacePicKey(shop.getBizPlacePicKey());
+        resp.setSettleBankPicKey(shop.getSettleBankPicKey());
+        resp.setAcctLicensePicKey(shop.getAcctLicensePicKey());
+        resp.setPersonHeadPicKey(shop.getPersonHeadPicKey());
         // 敏感字段脱敏（@TableField EncryptTypeHandler 读出来已是明文，这里只回前4后4）
         resp.setLegalIdNo(maskTail(shop.getLegalIdNo()));
         resp.setSettleAcctNo(maskTail(shop.getSettleAcctNo()));
+        resp.setHolderIdNo(maskTail(shop.getHolderIdNo()));
+        resp.setSettleIdNo(maskTail(shop.getSettleIdNo()));
         // 通联密钥脱敏（开通后由系统下发，前端只读展示前4后4）
         if (shop.getTlMchKey() != null) {
             try {
@@ -266,10 +295,12 @@ public class AppMerchantShopController {
         if (shop == null) {
             throw exception0(1_020_005_000, "店铺信息不存在");
         }
-        // 必须是自己店铺持有的 3 个 key 之一，否则越权
-        if (!key.equals(shop.getIdCardFrontKey())
-                && !key.equals(shop.getIdCardBackKey())
-                && !key.equals(shop.getBusinessLicenseKey())) {
+        // 必须是自己店铺持有的资质照 key 之一，否则越权
+        java.util.Set<String> ownKeys = new java.util.HashSet<>(java.util.Arrays.asList(
+                shop.getIdCardFrontKey(), shop.getIdCardBackKey(), shop.getBusinessLicenseKey(),
+                shop.getLegalHoldPicKey(), shop.getBizPlacePicKey(), shop.getSettleBankPicKey(),
+                shop.getAcctLicensePicKey(), shop.getPersonHeadPicKey()));
+        if (!ownKeys.contains(key)) {
             throw exception0(1_020_005_004, "key 不属于当前店铺");
         }
         java.util.Map<String, String> resp = new java.util.HashMap<>();
@@ -344,12 +375,45 @@ public class AppMerchantShopController {
         update.setSettleBankCode(reqDO.getSettleBankCode());
         update.setSettleCnapsNo(reqDO.getSettleCnapsNo());
         update.setContactEmail(reqDO.getContactEmail());
+        // ===== v047 进件全类型字段 =====
+        update.setMccId(reqDO.getMccId());
+        update.setServicePhone(reqDO.getServicePhone());
+        update.setLegalIdType(reqDO.getLegalIdType());
+        update.setBusAddress(reqDO.getBusAddress());
+        update.setDistrictCode(reqDO.getDistrictCode());
+        update.setContactPerson(reqDO.getContactPerson());
+        update.setContactPhone(reqDO.getContactPhone());
+        update.setClearMode(reqDO.getClearMode());
+        update.setAcctTp(reqDO.getAcctTp());
+        update.setHolderName(reqDO.getHolderName());
+        update.setHolderExpire(reqDO.getHolderExpire());
+        update.setRegisterFund(reqDO.getRegisterFund());
+        update.setStaffTotal(reqDO.getStaffTotal());
+        update.setOperateLimit(reqDO.getOperateLimit());
+        update.setInspect(reqDO.getInspect());
+        update.setThrCertFlag(reqDO.getThrCertFlag());
+        update.setOrganCode(reqDO.getOrganCode());
+        update.setOrganExpire(reqDO.getOrganExpire());
+        update.setBusContactPerson(reqDO.getBusContactPerson());
+        update.setBusContactTel(reqDO.getBusContactTel());
+        update.setPubAcctInfo(reqDO.getPubAcctInfo());
+        update.setLegalHoldPicKey(reqDO.getLegalHoldPicKey());
+        update.setBizPlacePicKey(reqDO.getBizPlacePicKey());
+        update.setSettleBankPicKey(reqDO.getSettleBankPicKey());
+        update.setAcctLicensePicKey(reqDO.getAcctLicensePicKey());
+        update.setPersonHeadPicKey(reqDO.getPersonHeadPicKey());
         // 敏感字段：仅当提交了真实值（非脱敏）才更新，避免重提时把明文写成 ****
         if (!isBlank(reqDO.getLegalIdNo()) && !reqDO.getLegalIdNo().contains("****")) {
             update.setLegalIdNo(reqDO.getLegalIdNo());
         }
         if (!isBlank(reqDO.getSettleAcctNo()) && !reqDO.getSettleAcctNo().contains("****")) {
             update.setSettleAcctNo(reqDO.getSettleAcctNo());
+        }
+        if (!isBlank(reqDO.getHolderIdNo()) && !reqDO.getHolderIdNo().contains("****")) {
+            update.setHolderIdNo(reqDO.getHolderIdNo());
+        }
+        if (!isBlank(reqDO.getSettleIdNo()) && !reqDO.getSettleIdNo().contains("****")) {
+            update.setSettleIdNo(reqDO.getSettleIdNo());
         }
         update.setPayApplyStatus(1); // 审核中
         update.setPayApplyRejectReason(null);
