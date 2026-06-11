@@ -71,6 +71,8 @@ public class AllinpayNotifyController {
             @RequestParam(value = "appidOverride", required = false) String appidOverride,
             @RequestParam(value = "signMode", defaultValue = "rsa1") String signMode,
             @RequestParam(value = "md5KeyOverride", required = false) String md5KeyOverride,
+            @RequestParam(value = "rsaKeyFile", required = false) String rsaKeyFile,
+            @RequestParam(value = "sm2KeyFile", required = false) String sm2KeyFile,
             @RequestParam(value = "url", required = false) String url,
             @RequestParam(value = "dryRun", defaultValue = "false") boolean dryRun) {
         Map<String, Object> out = new HashMap<>();
@@ -91,6 +93,15 @@ public class AllinpayNotifyController {
         String orgid = props.getOrgId();
         String appid = (appidOverride != null && !appidOverride.isEmpty()) ? appidOverride : cred.getTlAppId();
         String rsaPriv = cred.getTlRsaPrivateKey(); // EncryptTypeHandler 读出已是明文
+        // 进件专用密钥覆盖：从服务器文件读 PEM（多行 OK），用于测进件 appid 自己的密钥对
+        if (rsaKeyFile != null && !rsaKeyFile.isEmpty()) {
+            try {
+                rsaPriv = new String(java.nio.file.Files.readAllBytes(java.nio.file.Paths.get(rsaKeyFile)),
+                        java.nio.charset.StandardCharsets.UTF_8);
+            } catch (Exception e) {
+                out.put("ok", false); out.put("error", "读 rsaKeyFile 失败：" + e.getMessage()); return out;
+            }
+        }
         String testNo = "TEST" + System.currentTimeMillis();
 
         // 构造一笔【测试】进件（全部测试值，带「测试」字样，便于识别且不含真实 PII）
@@ -122,6 +133,14 @@ public class AllinpayNotifyController {
         p.put("creditcode", "91510100000000000X");
 
         String sm2Priv = cred.getTlSm2PrivateKey();
+        if (sm2KeyFile != null && !sm2KeyFile.isEmpty()) {
+            try {
+                sm2Priv = new String(java.nio.file.Files.readAllBytes(java.nio.file.Paths.get(sm2KeyFile)),
+                        java.nio.charset.StandardCharsets.UTF_8);
+            } catch (Exception e) {
+                out.put("ok", false); out.put("error", "读 sm2KeyFile 失败：" + e.getMessage()); return out;
+            }
+        }
         String sign;
         try {
             if ("sm2".equalsIgnoreCase(signMode)) {
