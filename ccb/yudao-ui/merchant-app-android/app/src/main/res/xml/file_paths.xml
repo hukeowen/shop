@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- 相机拍照临时文件目录：app 专属外部目录 Pictures/upload -->
+    <external-files-path name="upload" path="Pictures/upload" />
+    <external-files-path name="ext_files" path="." />
+    <cache-path name="cache" path="." />
+</paths>
