@@ -1,7 +1,7 @@
 {
   "name": "客小二",
   "appid": "",
-  "description": "客小二 SaaS C 端 — 扫码下单、推 N 反 1、中奖公榜、推广积分",
+  "description": "客小二 SaaS C 端 — 扫码下单、会员优惠、积分好礼",
   "versionName": "0.1.0",
   "versionCode": "1",
   "transformPx": false,
@@ -36,7 +36,7 @@
     }
   },
   "mp-weixin": {
-    "appid": "",
+    "appid": "wx4d3f94a7cd45479c",
     "setting": {
       "urlCheck": false,
       "minified": true,
