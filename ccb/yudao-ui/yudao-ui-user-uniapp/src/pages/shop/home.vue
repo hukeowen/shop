@@ -220,7 +220,7 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue';
-import { onShow } from '@dcloudio/uni-app';
+import { onShow, onLoad } from '@dcloudio/uni-app';
 import { getShopInfo, listShopProducts, getShopVisitorCount, getMyRel, getMyPromoEarned } from '@/api/shop.js';
 import { savePendingReferrer, flushPendingReferrer } from '@/utils/referral.js';
 import { listCategories } from '@/api/product.js';
@@ -232,9 +232,12 @@ import { fen2yuan } from '@/utils/format.js';
 import { useUserStore } from '@/store/user.js';
 
 const user = useUserStore();
-const route = (() => {
-  try { const ps = getCurrentPages(); return ps[ps.length - 1]?.options || {}; } catch { return {}; }
+// 路由参数：小程序 setup 阶段 getCurrentPages().options 可能尚未挂上，必须在 onLoad 再同步一次
+const route = reactive({});
+(function initRoute() {
+  try { const ps = getCurrentPages(); Object.assign(route, ps[ps.length - 1]?.options || {}); } catch {}
 })();
+onLoad((opts) => { if (opts) Object.assign(route, opts); });
 
 const statusH = ref(20);
 const shop = ref(null);
