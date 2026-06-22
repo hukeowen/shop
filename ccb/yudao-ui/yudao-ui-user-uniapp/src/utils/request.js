@@ -8,6 +8,15 @@
 
 const USER_STORE_STORAGE_KEY = 'kexiaoer-user-store-v1';
 
+// 小程序没有同源代理，uni.request 必须用绝对 https 地址（且需在小程序后台「request 合法域名」里加上）；
+// H5 保持相对路径，仍走 nginx 同源代理 /app-api，逻辑不变。
+// #ifdef MP-WEIXIN
+const API_BASE = 'https://ke.doupaidoudian.com';
+// #endif
+// #ifndef MP-WEIXIN
+const API_BASE = '';
+// #endif
+
 function readToken() {
   try {
     if (typeof localStorage !== 'undefined') {
@@ -96,7 +105,7 @@ export function request({ url, method = 'GET', data, header, responseType, raw =
   return new Promise((resolve, reject) => {
     const isArrayBuffer = responseType === 'arraybuffer';
     uni.request({
-      url,
+      url: /^https?:\/\//.test(url) ? url : API_BASE + url,
       method,
       data,
       header: { ...getHeader(url, tenantId), ...header },

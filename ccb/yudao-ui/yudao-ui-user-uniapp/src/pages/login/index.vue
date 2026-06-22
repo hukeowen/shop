@@ -12,6 +12,26 @@
 
     <!-- ━━━━━━━━━━ 中间登录表单（flex:1 居中） ━━━━━━━━━━ -->
     <view class="form-wrap">
+      <!-- #ifdef MP-WEIXIN -->
+      <!-- 微信小程序：一键授权手机号登录（企业/个体主体方可用 getPhoneNumber） -->
+      <view class="form">
+        <view class="form-t">欢迎使用客小二</view>
+        <view class="form-s">授权微信手机号，一键登录</view>
+        <button
+          class="wx-btn"
+          open-type="getPhoneNumber"
+          :loading="submitting"
+          :disabled="submitting"
+          @getphonenumber="onWxLogin"
+        >{{ submitting ? '登录中…' : '微信手机号一键登录' }}</button>
+        <view class="agree">
+          登录即代表同意 <text class="link">《用户协议》</text> 与 <text class="link">《隐私政策》</text>
+        </view>
+      </view>
+      <!-- #endif -->
+
+      <!-- #ifndef MP-WEIXIN -->
+      <!-- H5 / 其它端：手机号 + 短信验证码登录（保持原样） -->
       <view class="form">
         <view class="form-t">手机号登录 / 注册</view>
         <view class="form-s">登录即享会员优惠与积分好礼</view>
@@ -35,6 +55,7 @@
           登录即代表同意 <text class="link">《用户协议》</text> 与 <text class="link">《隐私政策》</text>
         </view>
       </view>
+      <!-- #endif -->
     </view>
 
     <!-- ━━━━━━━━━━ 底部权益（合规中性） ━━━━━━━━━━ -->
@@ -49,7 +70,7 @@
 
 <script setup>
 import { ref } from 'vue';
-import { sendSmsCode, smsLogin } from '@/api/auth.js';
+import { sendSmsCode, smsLogin, weixinMiniAppLogin } from '@/api/auth.js';
 import { flushPendingReferrer } from '@/utils/referral.js';
 import { useUserStore } from '@/store/user.js';
 
@@ -59,6 +80,7 @@ const code = ref('');
 const cd = ref(0);
 const submitting = ref(false);
 
+// #ifndef MP-WEIXIN
 async function onSend() {
   if (cd.value > 0) return;
   if (!/^1[3-9]\d{9}$/.test(mobile.value)) return uni.showToast({ title: '请输入正确的手机号', icon: 'none' });
@@ -84,6 +106,45 @@ async function onLogin() {
     setTimeout(() => uni.reLaunch({ url: redirect }), 600);
   } catch {} finally { submitting.value = false; }
 }
+// #endif
+
+// #ifdef MP-WEIXIN
+// 微信小程序：点「手机号一键登录」按钮触发 @getphonenumber → 拿 phoneCode；
+// 再 wx.login 拿 loginCode；一起调后端 weixin-mini-app-login 完成登录 + 绑微信手机号。
+async function onWxLogin(e) {
+  const d = e && e.detail ? e.detail : {};
+  // 新版返 d.code；用户拒绝/取消时 errMsg 含 deny / cancel / fail
+  if (!d.code) {
+    if (/deny|cancel/i.test(d.errMsg || '')) uni.showToast({ title: '已取消授权', icon: 'none' });
+    else uni.showToast({ title: '获取手机号失败，请重试', icon: 'none' });
+    return;
+  }
+  if (submitting.value) return;
+  submitting.value = true;
+  uni.showLoading({ title: '登录中…', mask: true });
+  try {
+    const loginCode = await new Promise((resolve, reject) => {
+      uni.login({
+        provider: 'weixin',
+        success: (r) => (r && r.code ? resolve(r.code) : reject(new Error('微信登录失败'))),
+        fail: (err) => reject(new Error(err?.errMsg || '微信登录失败')),
+      });
+    });
+    const state = `kxe_${Date.now()}_${Math.floor(Math.random() * 1e6)}`;
+    const r = await weixinMiniAppLogin(loginCode, d.code, state);
+    user.setLogin({ ...r, phone: r.mobile || r.phone || '' });
+    uni.hideLoading();
+    uni.showToast({ title: '登录成功', icon: 'success' });
+    try { await flushPendingReferrer(r.userId || user.userId); } catch {}
+    setTimeout(() => uni.reLaunch({ url: '/pages/index/index' }), 600);
+  } catch (err) {
+    uni.hideLoading();
+    uni.showToast({ title: err?.message || '登录失败，请重试', icon: 'none' });
+  } finally {
+    submitting.value = false;
+  }
+}
+// #endif
 </script>
 
 <style lang="scss" scoped>
@@ -190,6 +251,20 @@ async function onLogin() {
   box-shadow: 0 12px 28px rgba(255,107,53,.36);
 }
 .submit.loading { opacity: .65; }
+
+/* 微信小程序「手机号一键登录」按钮（重置 uni button 默认样式） */
+.wx-btn {
+  margin-top: 10px;
+  height: 52px; line-height: 52px;
+  background: linear-gradient(135deg, $o, $o-d);
+  color: #fff; text-align: center;
+  border-radius: 14px;
+  font-weight: 800; font-size: 17px; letter-spacing: 2px;
+  box-shadow: 0 12px 28px rgba(255,107,53,.36);
+  border: none;
+}
+.wx-btn::after { border: none; }
+.wx-btn[disabled] { opacity: .65; background: linear-gradient(135deg, $o, $o-d); color: #fff; }
 .agree { margin-top: 18px; text-align: center; font-size: 12px; color: $t4; line-height: 1.6; }
 .agree .link { color: $o; }
 

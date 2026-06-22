@@ -12,6 +12,11 @@ export const smsLogin = (mobile, code) =>
 export const passwordLogin = (mobile, password) =>
   post('/app-api/member/auth/login', { mobile, password });
 
+// 微信小程序一键登录：loginCode=wx.login 拿到的 code，phoneCode=getPhoneNumber 拿到的 code
+// 后端 /weixin-mini-app-login 一次完成「登录 + 绑定微信手机号」，返回与短信登录同结构的 token
+export const weixinMiniAppLogin = (loginCode, phoneCode, state) =>
+  post('/app-api/member/auth/weixin-mini-app-login', { loginCode, phoneCode, state });
+
 // 当前用户信息
 export const getProfile = () => get('/app-api/member/user/get');
 

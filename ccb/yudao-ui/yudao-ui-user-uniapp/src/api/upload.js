@@ -8,6 +8,13 @@
 
 const USER_STORE_STORAGE_KEY = 'kexiaoer-user-store-v1';
 
+// #ifdef MP-WEIXIN
+const API_BASE = 'https://ke.doupaidoudian.com';
+// #endif
+// #ifndef MP-WEIXIN
+const API_BASE = '';
+// #endif
+
 function readToken() {
   try {
     if (typeof localStorage !== 'undefined') {
@@ -50,7 +57,7 @@ export function uploadImage(filePath) {
   const token = readToken();
   return new Promise((resolve, reject) => {
     uni.uploadFile({
-      url: '/app-api/infra/file/upload',
+      url: API_BASE + '/app-api/infra/file/upload',
       filePath,
       name: 'file',
       formData: { directory: 'offline-pay' },
