@@ -1,14 +1,15 @@
 import { get } from '@/utils/request.js';
+import { toQuery } from '@/utils/qs.js';
 
 // 店铺列表（公开，可按位置距离 / 关键词过滤）
 //   params: { pageNo, pageSize, kw, businessType, userLng, userLat }
 export const listShops = (params = {}) =>
-  get(`/app-api/merchant/shop/public/list?${new URLSearchParams(params).toString()}`);
+  get(`/app-api/merchant/shop/public/list?${toQuery(params)}`);
 
 // 店铺详情（含距离 / 营业状态）
 //   tenantId 或 shopId 必传其一，userLng/userLat 可选
 export const getShopInfo = (params = {}) =>
-  get(`/app-api/merchant/shop/public/info?${new URLSearchParams(params).toString()}`);
+  get(`/app-api/merchant/shop/public/info?${toQuery(params)}`);
 
 // 店内上架商品分页
 export const listShopProducts = (tenantId, pageNo = 1, pageSize = 20) =>

@@ -115,8 +115,12 @@ async function onWxLogin(e) {
   const d = e && e.detail ? e.detail : {};
   // 新版返 d.code；用户拒绝/取消时 errMsg 含 deny / cancel / fail
   if (!d.code) {
-    if (/deny|cancel/i.test(d.errMsg || '')) uni.showToast({ title: '已取消授权', icon: 'none' });
-    else uni.showToast({ title: '获取手机号失败，请重试', icon: 'none' });
+    if (/deny|cancel/i.test(d.errMsg || '')) {
+      uni.showToast({ title: '已取消授权', icon: 'none' });
+    } else {
+      // 弹出微信返回的真实 errMsg，便于定位（如未配隐私协议 / 模拟器不支持等）
+      uni.showModal({ title: '获取手机号失败', content: d.errMsg || '未知错误（请用真机预览）', showCancel: false });
+    }
     return;
   }
   if (submitting.value) return;

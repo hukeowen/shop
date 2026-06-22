@@ -1,4 +1,5 @@
 import { get, post, del } from '@/utils/request.js';
+import { toQuery } from '@/utils/qs.js';
 
 // SPU 详情（含 SKU + 规格）
 export const getSpuDetail = (id, tenantId) =>
@@ -6,7 +7,7 @@ export const getSpuDetail = (id, tenantId) =>
 
 // SPU 分页（支持 keyword / categoryId 过滤）
 export const pageSpu = (params = {}, tenantId) =>
-  get(`/app-api/product/spu/page?${new URLSearchParams(params).toString()}`, tenantId ? { tenantId } : {});
+  get(`/app-api/product/spu/page?${toQuery(params)}`, tenantId ? { tenantId } : {});
 
 // 按 ids 拉 SPU 列表
 export const listSpuByIds = (ids, tenantId) =>

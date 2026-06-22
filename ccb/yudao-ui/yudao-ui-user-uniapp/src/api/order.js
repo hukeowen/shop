@@ -1,9 +1,10 @@
 import { get, post, put, del } from '@/utils/request.js';
+import { toQuery } from '@/utils/qs.js';
 
 // 结算页（含优惠 / 运费）
 //   params: { shopId, items: [{skuId, count}], couponId? }
 export const settlement = (params) =>
-  get(`/app-api/trade/order/settlement?${new URLSearchParams(params).toString()}`);
+  get(`/app-api/trade/order/settlement?${toQuery(params)}`);
 
 // 商品结算价格（参与活动后）
 export const settlementProduct = (spuIds) =>

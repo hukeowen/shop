@@ -1,4 +1,5 @@
 import { get, post } from '@/utils/request.js';
+import { toQuery } from '@/utils/qs.js';
 
 // 领取优惠券
 export const takeCoupon = (templateId) =>
@@ -19,4 +20,4 @@ export const getCouponTemplate = (id) =>
   get(`/app-api/promotion/coupon-template/get?id=${id}`);
 
 export const listCouponTemplates = (params = {}) =>
-  get(`/app-api/promotion/coupon-template/list?${new URLSearchParams(params).toString()}`);
+  get(`/app-api/promotion/coupon-template/list?${toQuery(params)}`);
