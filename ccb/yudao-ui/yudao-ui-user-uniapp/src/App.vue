@@ -54,7 +54,9 @@ page {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* #ifdef H5 */
 * { box-sizing: border-box; }
+/* #endif */
 view, scroll-view, swiper, swiper-item { box-sizing: border-box; }
 
 /* 全局工具 class */
