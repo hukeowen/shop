@@ -1,66 +1,57 @@
 <template>
   <view class="page">
     <view class="bg-deco"></view>
+    <view class="bg-glow"></view>
 
-    <!-- ━━━━━━━━━━ 顶部紧凑品牌行 ━━━━━━━━━━ -->
-    <view class="va-hero">
-      <view class="va-logo">🏆</view>
-      <view class="va-brand">客小二</view>
-      <view class="va-tag">商户营销让利 · 邀请有礼 · 老客感谢奖</view>
-      <view class="va-stats">
-        <view class="va-pill"><text class="em">💎</text>今日商户让利 <text class="hl">¥{{ stat.amount }}</text></view>
-        <view class="va-pill mint"><text class="em">👥</text><text class="hl">{{ stat.count }}</text> 人到账</view>
-      </view>
+    <!-- ━━━━━━━━━━ 顶部品牌 ━━━━━━━━━━ -->
+    <view class="hero">
+      <view class="logo">客</view>
+      <view class="brand">客小二</view>
+      <view class="tagline">发现身边好店 · 会员专享优惠</view>
     </view>
 
-    <!-- ━━━━━━━━━━ 中间居中表单（flex:1） ━━━━━━━━━━ -->
-    <view class="va-form-wrap">
-      <view class="va-form">
-        <view class="va-form-t">手机号登录 / 注册</view>
-        <view class="va-form-s">登录享首单立减 + 推广积分赠送</view>
-        <view class="va-field">
-          <text class="l">+86</text>
+    <!-- ━━━━━━━━━━ 中间登录表单（flex:1 居中） ━━━━━━━━━━ -->
+    <view class="form-wrap">
+      <view class="form">
+        <view class="form-t">手机号登录 / 注册</view>
+        <view class="form-s">登录即享会员优惠与积分好礼</view>
+
+        <view class="field">
+          <text class="cc">+86</text>
           <input v-model="mobile" type="number" maxlength="11" placeholder="请输入手机号" />
         </view>
-        <view class="va-field">
-          <text class="l">🔒</text>
-          <input v-model="code" type="number" maxlength="6" placeholder="6 位短信验证码" />
-          <view class="va-send" :class="{ disabled: cd > 0 }" @click="onSend">{{ cd > 0 ? `${cd}s` : '获取' }}</view>
+        <view class="field">
+          <input v-model="code" type="number" maxlength="6" placeholder="请输入短信验证码" />
+          <view class="send" :class="{ disabled: cd > 0 }" @click="onSend">
+            {{ cd > 0 ? `${cd}s 后重发` : '获取验证码' }}
+          </view>
         </view>
-        <view class="va-submit" :class="{ loading: submitting }" @click="onLogin">
+
+        <view class="submit" :class="{ loading: submitting }" @click="onLogin">
           {{ submitting ? '登录中…' : '登 录' }}
         </view>
-        <view class="va-agree">
-          登录即同意 <text class="link">《用户协议》</text> <text class="link">《隐私政策》</text>
+
+        <view class="agree">
+          登录即代表同意 <text class="link">《用户协议》</text> 与 <text class="link">《隐私政策》</text>
         </view>
       </view>
     </view>
 
-    <!-- ━━━━━━━━━━ 底部社会证明 ━━━━━━━━━━ -->
-    <view class="va-bottom">
-      <view v-if="tickerLine" class="va-ticker">
-        <text class="em">🔥</text>
-        <view class="roll">
-          <view class="track">{{ tickerLine }}</view>
-        </view>
-      </view>
-      <view class="va-sell">
-        <view class="va-card warm"><view class="em">💰</view><view class="t">下单返积分</view></view>
-        <view class="va-card gold"><view class="em">🎁</view><view class="t">让利池</view></view>
-        <view class="va-card mint"><view class="em">🔥</view><view class="t">推N反1</view></view>
-        <view class="va-card purple"><view class="em">💸</view><view class="t">支持提现</view></view>
-      </view>
+    <!-- ━━━━━━━━━━ 底部权益（合规中性） ━━━━━━━━━━ -->
+    <view class="benefits">
+      <view class="b"><view class="b-ic warm">🛍️</view><text>好店精选</text></view>
+      <view class="b"><view class="b-ic gold">🎟️</view><text>会员优惠</text></view>
+      <view class="b"><view class="b-ic mint">⭐</view><text>积分好礼</text></view>
+      <view class="b"><view class="b-ic purple">🛡️</view><text>安全保障</text></view>
     </view>
   </view>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref } from 'vue';
 import { sendSmsCode, smsLogin } from '@/api/auth.js';
 import { flushPendingReferrer } from '@/utils/referral.js';
-import { listWinnersTicker, getTodayStat } from '@/api/promo.js';
 import { useUserStore } from '@/store/user.js';
-import { fen2yuan } from '@/utils/format.js';
 
 const user = useUserStore();
 const mobile = ref('');
@@ -68,12 +59,9 @@ const code = ref('');
 const cd = ref(0);
 const submitting = ref(false);
 
-const stat = ref({ amount: '0', count: 0 });
-const tickerLine = ref('');
-
 async function onSend() {
   if (cd.value > 0) return;
-  if (!/^1[3-9]\d{9}$/.test(mobile.value)) return uni.showToast({ title: '手机号格式错', icon: 'none' });
+  if (!/^1[3-9]\d{9}$/.test(mobile.value)) return uni.showToast({ title: '请输入正确的手机号', icon: 'none' });
   try {
     await sendSmsCode(mobile.value, 21);
     uni.showToast({ title: '验证码已发送', icon: 'success' });
@@ -82,35 +70,20 @@ async function onSend() {
   } catch {}
 }
 async function onLogin() {
-  if (!/^1[3-9]\d{9}$/.test(mobile.value)) return uni.showToast({ title: '手机号格式错', icon: 'none' });
-  if (!/^\d{4,6}$/.test(code.value)) return uni.showToast({ title: '验证码错', icon: 'none' });
+  if (!/^1[3-9]\d{9}$/.test(mobile.value)) return uni.showToast({ title: '请输入正确的手机号', icon: 'none' });
+  if (!/^\d{4,6}$/.test(code.value)) return uni.showToast({ title: '请输入短信验证码', icon: 'none' });
   submitting.value = true;
   try {
     const r = await smsLogin(mobile.value, code.value);
     user.setLogin({ ...r, phone: mobile.value });
     uni.showToast({ title: '登录成功', icon: 'success' });
-    // V044：落地时存的 inviter+tenantId pending bind，登录后立即 flush
-    // 后端 visit/bindReferral 严格语义：仅在该 tenant 首次绑定生效，已绑则吞
+    // V044：落地时存的 inviter+tenantId pending bind，登录后立即 flush（后端仅首次绑定生效）
     try { await flushPendingReferrer(r.userId || user.userId); } catch {}
     const redirect = (typeof localStorage !== 'undefined' && localStorage.getItem('redirect:after-login')) || '/pages/index/index';
     try { if (typeof localStorage !== 'undefined') localStorage.removeItem('redirect:after-login'); } catch {}
     setTimeout(() => uni.reLaunch({ url: redirect }), 600);
   } catch {} finally { submitting.value = false; }
 }
-
-onMounted(async () => {
-  try {
-    const s = await getTodayStat();
-    if (s) stat.value = { amount: fen2yuan(s.promoAmountToday || 0, false), count: s.awardCountToday || 0 };
-  } catch {}
-  try {
-    const list = await listWinnersTicker(1);
-    if (list && list[0]) {
-      const w = list[0];
-      tickerLine.value = `${w.userMask || '****'} 在 ${w.shopName || '某店'} ${w.sourceLabel || '促销让利'} +¥${fen2yuan(w.amount, false)}`;
-    }
-  } catch {}
-});
 </script>
 
 <style lang="scss" scoped>
@@ -120,157 +93,124 @@ onMounted(async () => {
   position: relative;
   min-height: 100vh;
   display: flex; flex-direction: column;
-  padding: 24px 22px 20px;
-  padding-bottom: calc(20px + env(safe-area-inset-bottom));
+  padding: 36px 26px 22px;
+  padding-bottom: calc(24px + env(safe-area-inset-bottom));
   background:
-    radial-gradient(500px 350px at 0% 0%, rgba(212,146,10,.4), transparent 60%),
-    linear-gradient(180deg, #18130E 0%, #2A1A0F 60%, #1F1208 100%);
+    radial-gradient(620px 440px at 50% -10%, rgba(255,107,53,.30), transparent 62%),
+    radial-gradient(440px 340px at 100% 102%, rgba(212,146,10,.16), transparent 60%),
+    linear-gradient(180deg, #1A140E 0%, #241813 55%, #1B120B 100%);
   color: #fff;
   overflow: hidden;
 }
 .bg-deco {
   position: absolute; inset: 0;
-  background-image: radial-gradient(rgba(255,255,255,.05) 1px, transparent 1px);
-  background-size: 22px 22px;
+  background-image: radial-gradient(rgba(255,255,255,.045) 1px, transparent 1px);
+  background-size: 26px 26px;
+  pointer-events: none;
+}
+.bg-glow {
+  position: absolute; top: -120px; left: 50%; transform: translateX(-50%);
+  width: 320px; height: 320px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,107,53,.35), transparent 70%);
+  filter: blur(20px);
   pointer-events: none;
 }
 
-/* ━━ 顶部品牌行 ━━ */
-.va-hero { text-align: center; padding: 4px 0 0; position: relative; z-index: 1; }
-.va-logo {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 56px; height: 56px; border-radius: 18px;
-  background: linear-gradient(135deg, $o, $o-d);
-  font-size: 28px; line-height: 1;
-  box-shadow: $sh-warm, inset 0 1px 0 rgba(255,255,255,.3);
+/* ━━ 顶部品牌 ━━ */
+.hero { text-align: center; padding-top: 18px; position: relative; z-index: 1; }
+.logo {
+  width: 66px; height: 66px; margin: 0 auto;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 21px;
+  background: linear-gradient(135deg, $o-l, $o-d);
+  font-size: 32px; font-weight: 900; line-height: 1;
+  box-shadow: 0 14px 32px rgba(255,107,53,.42), inset 0 1px 0 rgba(255,255,255,.4);
 }
-.va-brand {
-  margin-top: 10px; font-size: 26px; font-weight: 900; letter-spacing: -.5px;
-  background: linear-gradient(135deg, #fff, $gold-l);
+.brand {
+  margin-top: 18px; font-size: 29px; font-weight: 800; letter-spacing: 4px;
+  background: linear-gradient(135deg, #ffffff, $gold-l);
   -webkit-background-clip: text; background-clip: text; color: transparent;
-  text-shadow: 0 4px 24px rgba(255,107,53,.3);
 }
-.va-tag { margin-top: 4px; font-size: 12px; color: rgba(255,255,255,.7); letter-spacing: .8px; }
-.va-stats {
-  margin-top: 12px;
-  display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;
+.tagline {
+  margin-top: 10px; font-size: 13px; color: rgba(255,255,255,.6);
+  letter-spacing: 1.5px;
 }
-.va-pill {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 5px 12px; border-radius: 99px;
-  background: rgba(255,107,53,.22);
-  border: 1px solid rgba(255,107,53,.4);
-  backdrop-filter: blur(10px);
-  font-size: 11.5px;
-}
-.va-pill.mint { background: rgba(16,185,129,.22); border-color: rgba(16,185,129,.4); }
-.va-pill .em { font-size: 13px; }
-.va-pill .hl { color: $gold-l; font-weight: 800; margin: 0 2px; }
-.va-pill.mint .hl { color: $mint-l; }
 
 /* ━━ 中间表单 flex:1 ━━ */
-.va-form-wrap {
+.form-wrap {
   flex: 1;
   display: flex; align-items: center; justify-content: center;
-  padding: 18px 0;
+  padding: 28px 0;
   position: relative; z-index: 1;
 }
-.va-form {
+.form {
   width: 100%;
   background: #fff; color: $t1;
-  border-radius: 22px;
-  padding: 26px 22px 22px;
-  box-shadow: 0 20px 60px rgba(0,0,0,.4);
+  border-radius: 24px;
+  padding: 30px 24px 24px;
+  box-shadow: 0 24px 70px rgba(0,0,0,.45);
 }
-.va-form-t {
-  font-size: 18px; font-weight: 900; text-align: center; color: $t1;
+.form-t {
+  font-size: 20px; font-weight: 800; text-align: center; color: $t1;
   letter-spacing: .5px;
 }
-.va-form-s {
-  font-size: 11.5px; color: $o-d; text-align: center;
-  margin-top: 6px;
+.form-s {
+  font-size: 13px; color: $t3; text-align: center; margin-top: 8px;
 }
-.va-field {
+.field {
   display: flex; align-items: center; gap: 10px;
-  padding: 14px 14px;
+  height: 52px; padding: 0 16px;
   background: $bg-2;
-  border-radius: 12px;
-  margin-top: 12px;
-  border: 1px solid transparent;
+  border-radius: 14px;
+  margin-top: 14px;
+  border: 1.5px solid transparent;
   transition: border-color .15s, background .15s;
 }
-.va-field:focus-within {
-  border-color: $o-200;
-  background: $o-50;
+.field:focus-within { border-color: $o-200; background: $o-50; }
+.field .cc {
+  flex-shrink: 0; font-size: 15px; color: $t2; font-weight: 700;
+  padding-right: 10px; border-right: 1px solid $line-d;
 }
-.va-field .l {
+.field input { flex: 1; font-size: 16px; color: $t1; }
+.send {
   flex-shrink: 0;
-  font-size: 13px; color: $t2; font-weight: 700;
-  min-width: 30px; text-align: center;
-}
-.va-field input {
-  flex: 1; font-size: 15px; color: $t1;
-  text-align: center;
-  letter-spacing: 1px;
-}
-.va-send {
-  flex-shrink: 0;
-  padding: 7px 14px; border-radius: 99px;
+  padding: 8px 15px; border-radius: 999px;
   background: $o-50; color: $o;
   border: 1px solid $o-100;
-  font-size: 12px; font-weight: 700;
+  font-size: 13px; font-weight: 700;
 }
-.va-send.disabled { background: $bg-2; color: $t4; border-color: $line; }
+.send.disabled { background: $bg-2; color: $t4; border-color: $line; }
 
-.va-submit {
-  margin-top: 18px;
-  padding: 15px;
+.submit {
+  margin-top: 22px; height: 52px; line-height: 52px;
   background: linear-gradient(135deg, $o, $o-d);
   color: #fff; text-align: center;
-  border-radius: 99px;
-  font-weight: 900; font-size: 16px; letter-spacing: 4px;
-  box-shadow: $sh-warm;
+  border-radius: 14px;
+  font-weight: 800; font-size: 17px; letter-spacing: 3px;
+  box-shadow: 0 12px 28px rgba(255,107,53,.36);
 }
-.va-submit.loading { opacity: .7; }
-.va-agree { margin-top: 14px; text-align: center; font-size: 11px; color: $t4; }
-.va-agree .link { color: $o; }
+.submit.loading { opacity: .65; }
+.agree { margin-top: 18px; text-align: center; font-size: 12px; color: $t4; line-height: 1.6; }
+.agree .link { color: $o; }
 
-/* ━━ 底部社会证明 ━━ */
-.va-bottom {
-  position: relative;
-  margin-top: auto;
-  z-index: 1;
+/* ━━ 底部权益 ━━ */
+.benefits {
+  margin-top: auto; padding-top: 26px;
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
+  position: relative; z-index: 1;
 }
-.va-ticker {
-  padding: 8px 12px;
-  background: rgba(255,255,255,.06);
-  border: 1px solid rgba(255,255,255,.1);
-  border-radius: 99px;
-  display: flex; align-items: center; gap: 8px;
-  overflow: hidden;
-}
-.va-ticker .em { font-size: 12px; flex-shrink: 0; }
-.va-ticker .roll { flex: 1; overflow: hidden; height: 14px; position: relative; }
-.va-ticker .track {
-  position: absolute; white-space: nowrap;
-  font-size: 11px; color: rgba(255,255,255,.75);
-}
-.va-sell {
-  margin-top: 10px;
-  display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;
-}
-.va-card {
-  padding: 10px 4px;
-  border-radius: 12px;
-  background: rgba(255,255,255,.08);
-  border: 1px solid rgba(255,255,255,.12);
+.b { text-align: center; }
+.b-ic {
+  width: 50px; height: 50px; margin: 0 auto 8px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 16px; font-size: 23px; line-height: 1;
+  background: rgba(255,255,255,.07);
+  border: 1px solid rgba(255,255,255,.13);
   backdrop-filter: blur(10px);
-  text-align: center;
 }
-.va-card.warm   { background: linear-gradient(135deg, rgba(255,107,53,.28), rgba(255,107,53,.08)); border-color: rgba(255,107,53,.38); }
-.va-card.gold   { background: linear-gradient(135deg, rgba(212,146,10,.28), rgba(212,146,10,.08)); border-color: rgba(212,146,10,.38); }
-.va-card.mint   { background: linear-gradient(135deg, rgba(16,185,129,.28), rgba(16,185,129,.08)); border-color: rgba(16,185,129,.38); }
-.va-card.purple { background: linear-gradient(135deg, rgba(99,102,241,.28), rgba(99,102,241,.08)); border-color: rgba(99,102,241,.38); }
-.va-card .em { font-size: 18px; line-height: 1; }
-.va-card .t { font-size: 11px; font-weight: 800; margin-top: 4px; line-height: 1.2; }
+.b-ic.warm   { background: linear-gradient(135deg, rgba(255,107,53,.26), rgba(255,107,53,.06)); border-color: rgba(255,107,53,.34); }
+.b-ic.gold   { background: linear-gradient(135deg, rgba(212,146,10,.26), rgba(212,146,10,.06)); border-color: rgba(212,146,10,.34); }
+.b-ic.mint   { background: linear-gradient(135deg, rgba(16,185,129,.26), rgba(16,185,129,.06)); border-color: rgba(16,185,129,.34); }
+.b-ic.purple { background: linear-gradient(135deg, rgba(99,102,241,.26), rgba(99,102,241,.06)); border-color: rgba(99,102,241,.34); }
+.b text { font-size: 12px; color: rgba(255,255,255,.76); font-weight: 600; letter-spacing: .5px; }
 </style>
