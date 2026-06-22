@@ -158,3 +158,18 @@ export const get  = (url, opt = {}) => request({ ...opt, url, method: 'GET' });
 export const post = (url, data, opt = {}) => request({ ...opt, url, method: 'POST', data });
 export const put  = (url, data, opt = {}) => request({ ...opt, url, method: 'PUT', data });
 export const del  = (url, opt = {}) => request({ ...opt, url, method: 'DELETE' });
+
+/**
+ * 跨端 query string 拼接（替代 URLSearchParams —— 小程序运行时无此全局，会 ReferenceError）。
+ * 放在 request.js 里随核心模块一起打包，避免新建独立 util 文件在小程序增量构建时漏 emit。
+ * 跳过 undefined / null / 空字符串；H5 与小程序结果一致。返回不含前导 ? 的 `a=1&b=2`。
+ */
+export function toQuery(params = {}) {
+  const parts = [];
+  Object.keys(params || {}).forEach((k) => {
+    const v = params[k];
+    if (v === undefined || v === null || v === '') return;
+    parts.push(`${encodeURIComponent(k)}=${encodeURIComponent(v)}`);
+  });
+  return parts.join('&');
+}

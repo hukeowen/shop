@@ -1,5 +1,4 @@
-import { get, post } from '@/utils/request.js';
-import { toQuery } from '@/utils/qs.js';
+import { get, post, toQuery } from '@/utils/request.js';
 
 // 领取优惠券
 export const takeCoupon = (templateId) =>

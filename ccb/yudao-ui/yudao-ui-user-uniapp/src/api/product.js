@@ -1,5 +1,4 @@
-import { get, post, del } from '@/utils/request.js';
-import { toQuery } from '@/utils/qs.js';
+import { get, post, del, toQuery } from '@/utils/request.js';
 
 // SPU 详情（含 SKU + 规格）
 export const getSpuDetail = (id, tenantId) =>

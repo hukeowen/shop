@@ -1,5 +1,4 @@
-import { get, post, put, del } from '@/utils/request.js';
-import { toQuery } from '@/utils/qs.js';
+import { get, post, put, del, toQuery } from '@/utils/request.js';
 
 // 结算页（含优惠 / 运费）
 //   params: { shopId, items: [{skuId, count}], couponId? }
