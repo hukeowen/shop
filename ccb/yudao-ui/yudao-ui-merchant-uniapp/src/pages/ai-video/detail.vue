@@ -152,16 +152,16 @@
           <view class="act-icon mg">⇩</view>
           <text>{{ merging ? '合并中…' : '合并下载 MP4' }}</text>
         </view>
-        <view class="act" @click="onPublishDouyin" :class="{ disabled: publishing || task.publishedToDouyin }">
+        <view class="act" @click="onPublishDouyin" :class="{ disabled: publishing }">
           <view class="act-icon dy">♪</view>
           <text>{{ publishLabel }}</text>
         </view>
       </view>
 
       <view class="card tips">
-        <view class="tip-title">💡 这是无需 FFmpeg 的"前端拼接"播放</view>
-        <view class="tip-item">{{ task.scenes.length }} 段 × {{ duration }}s 视频 + 同步语音，每段用对应图独立生成</view>
-        <view class="tip-item">分享/下载成单一 mp4 需要 FFmpeg，后面上服务器再加</view>
+        <view class="tip-title">💡 怎么发到抖音</view>
+        <view class="tip-item">点「下载去抖音发」：自动合成并下载视频 + 复制文案 + 打开抖音</view>
+        <view class="tip-item">在抖音里「+」→ 相册选刚下载的视频 → 长按粘贴文案 → 发布</view>
       </view>
     </view>
 
@@ -179,7 +179,7 @@
 <script setup>
 import { computed, nextTick, ref, watch } from 'vue';
 import { onLoad, onUnload } from '@dcloudio/uni-app';
-import { getTask, shareToDouyinApp, ensurePosterForTask } from '../../api/aiVideo.js';
+import { getTask, downloadAndOpenDouyin, ensurePosterForTask } from '../../api/aiVideo.js';
 import { findVoice } from '../../api/voice.js';
 
 const task = ref(null);
@@ -399,30 +399,27 @@ async function downloadPoster() {
 }
 
 const publishLabel = computed(() => {
-  if (task.value?.publishedToDouyin) return '已发布到抖音';
-  if (!publishing.value) return '发布到抖音';
+  if (!publishing.value) return '下载去抖音发';
   switch (publishStage.value) {
-    case 'merging': return '合并视频中…';
-    case 'authorizing': return '等待抖音授权…';
-    case 'downloading': return '下载视频…';
-    case 'saving': return '保存到相册…';
-    case 'launching': return '拉起抖音 App…';
+    case 'merging': return '合成视频中…';
+    case 'saving': return '下载视频…';
+    case 'launching': return '打开抖音…';
     default: return '处理中…';
   }
 });
 
 async function onPublishDouyin() {
-  if (publishing.value || task.value?.publishedToDouyin) return;
+  if (publishing.value) return;
   if (!playableScenes.value.length) {
     uni.showToast({ title: '没有可发布的分镜', icon: 'none' });
     return;
   }
   const confirm = await new Promise((r) =>
     uni.showModal({
-      title: '发布到抖音',
+      title: '下载视频去抖音发',
       content:
-        '将弹出抖音授权页，授权后跳转到抖音 App 的发布页面，视频和文案已预填，你只需在抖音里点「发送」。',
-      confirmText: '继续',
+        '会先把视频合成下载到手机（相册/下载里），并自动复制好文案，再打开抖音。\n在抖音里：点「+」→ 选相册里刚下载的视频 → 长按粘贴文案 → 发布。',
+      confirmText: '开始',
       success: (x) => r(x.confirm),
       fail: () => r(false),
     })
@@ -432,18 +429,22 @@ async function onPublishDouyin() {
   publishStage.value = 'merging';
   uni.showLoading({ title: publishLabel.value, mask: true });
   try {
-    const ret = await shareToDouyinApp(taskId.value, (stage) => {
+    const ret = await downloadAndOpenDouyin(taskId.value, (stage) => {
       publishStage.value = stage;
-      if (stage === 'authorizing') uni.hideLoading();
-      else uni.showLoading({ title: publishLabel.value, mask: true });
+      uni.showLoading({ title: publishLabel.value, mask: true });
     });
     uni.hideLoading();
-    if (!ret?.launchedApp) {
-      const tip = ret?.savedToAlbum
-        ? '抖音授权完成，视频已保存到相册。\n请打开抖音 App →「+」→ 相册 → 选最新视频 → 长按粘贴文案 → 发送'
-        : '抖音授权完成。视频已合成（可在播放页长按保存），请到抖音 App 手动选相册视频发布。';
-      uni.showModal({ title: '下一步：去抖音点发送', content: tip, showCancel: false });
-    }
+    const savedTip = ret?.downloaded
+      ? '视频已开始下载（到手机「相册/下载/文件」里找）'
+      : '视频已合成（可在播放页长按保存）';
+    const launchTip = ret?.launchedApp
+      ? '已为你打开抖音。'
+      : '没检测到抖音被唤起，请手动打开抖音 App。';
+    uni.showModal({
+      title: '下一步：去抖音点发布',
+      content: `${savedTip}，文案已复制好。\n${launchTip}\n步骤：抖音「+」→ 相册选最新视频 → 长按粘贴文案 → 发布。`,
+      showCancel: false,
+    });
   } catch (e) {
     uni.hideLoading();
     uni.showModal({ title: '操作失败', content: e.message || String(e), showCancel: false });

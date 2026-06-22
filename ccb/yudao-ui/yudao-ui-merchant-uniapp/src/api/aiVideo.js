@@ -1375,4 +1375,95 @@ export async function shareToDouyinApp(taskId, onStage, clientKey) {
   return { ok: true, mergedUrl, savedToAlbum, launchedApp, clipText };
 }
 
+/**
+ * 「下载视频 + 复制文案 + 打开抖音」纯手动发布流程 —— 不依赖抖音 OAuth / 不需要白名单。
+ *
+ * 背景：抖音开放平台的「视频直发(create_video)」和 OpenSDK「分享到抖音」都要先在开放平台
+ * 后台开通对应能力并审核（主体认证 + 能力申请，部分还要录屏 demo / 加白名单），没过审就走不通
+ * （shareToDouyinApp 卡在 OAuth 授权那步就是这个原因）。这条流程完全绕开抖音 API：
+ *   ① 合并分镜成单个 mp4（同源 /video/merge 返回 blob，H5/WebView 下载最稳）
+ *   ② 触发下载到手机（「下载/文件」，相册里一般也能看到）
+ *   ③ 把标题 + 话题复制到剪贴板
+ *   ④ best-effort 拉起抖音 App；用户在抖音里「+」→ 相册选刚下载的视频 → 长按粘贴文案 → 发布
+ * 主体没认证、没开通发布能力也能用，用户在抖音内手动点「发布」，天然合规。
+ *
+ * @param {number} taskId
+ * @param {(stage:'merging'|'saving'|'launching'|'done')=>void} [onStage]
+ * @returns {Promise<{ok:boolean, downloaded:boolean, copied:boolean, launchedApp:boolean, clipText:string}>}
+ */
+export async function downloadAndOpenDouyin(taskId, onStage) {
+  const t = store.tasks.find((x) => x.id === taskId);
+  if (!t) throw new Error('任务不存在');
+  const urls = (t.scenes || []).filter((s) => s.clipUrl).map((s) => s.clipUrl);
+  if (!urls.length) throw new Error('没有可下载的分镜');
+
+  // ① 合并成单个 mp4（同源，拿 blob）
+  onStage?.('merging');
+  const res = await fetch('/video/merge', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ urls }),
+  });
+  if (!res.ok) {
+    const errTxt = await res.text().catch(() => '');
+    throw new Error('合并失败：' + (errTxt.slice(0, 200) || `HTTP ${res.status}`));
+  }
+  const blob = await res.blob();
+
+  // ② 触发下载
+  onStage?.('saving');
+  let downloaded = false;
+  if (typeof document !== 'undefined') {
+    try {
+      const objectUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = objectUrl;
+      a.download = `${t.title || 'tanxiaoer-video'}-${t.id}.mp4`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
+      downloaded = true;
+    } catch (e) {
+      console.warn('[douyin/manual] 下载失败：', e?.message || e);
+    }
+  }
+
+  // ③ 复制文案到剪贴板
+  const title = (t.title || t.userDescription || '').slice(0, 55);
+  const clipText = `${title}\n#拓小二 #探店`;
+  let copied = false;
+  try {
+    await new Promise((resolve) => {
+      uni.setClipboardData({
+        data: clipText,
+        showToast: false,
+        success: () => { copied = true; resolve(); },
+        fail: () => resolve(),
+      });
+    });
+  } catch {}
+
+  // ④ best-effort 拉起抖音 App（隐藏 iframe，跳不过去也不影响当前页）
+  //    抖音不允许外部 schema 预填视频，只能把 App 打开，发布页要用户在抖音内手动选相册。
+  let launchedApp = false;
+  if (typeof document !== 'undefined' && typeof window !== 'undefined') {
+    onStage?.('launching');
+    const onVisibility = () => { if (document.hidden) launchedApp = true; };
+    document.addEventListener('visibilitychange', onVisibility);
+    try {
+      const iframe = document.createElement('iframe');
+      iframe.style.display = 'none';
+      iframe.src = 'snssdk1128://aweme/share';
+      document.body.appendChild(iframe);
+      setTimeout(() => iframe.remove(), 2000);
+    } catch {}
+    await new Promise((r) => setTimeout(r, 1500));
+    document.removeEventListener('visibilitychange', onVisibility);
+  }
+
+  onStage?.('done');
+  return { ok: true, downloaded, copied, launchedApp, clipText };
+}
+
 export const CONFIG = { MAX_SCENES };
