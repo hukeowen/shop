@@ -4,8 +4,8 @@
     <view class="me-hero">
       <view class="me-hero-bg"></view>
       <view class="me-top-row">
-        <image v-if="user.avatar" :src="user.avatar" class="me-avatar-img" mode="aspectFill" />
-        <view v-else class="me-avatar">{{ avatarText }}</view>
+        <image v-if="user.avatar" :src="user.avatar" class="me-avatar-img" mode="aspectFill" @click="goEditProfile" />
+        <view v-else class="me-avatar" @click="goEditProfile">{{ avatarText }}</view>
         <view class="me-info">
           <view class="me-name-row">
             <view v-if="user.isLogin" class="me-name">{{ user.nickname || user.phone?.slice(-4) || '客小二' }}</view>
@@ -17,7 +17,7 @@
           </view>
           <view v-else class="me-phone">登录即解锁推广积分 / 商户优惠 / 提现</view>
         </view>
-        <view class="me-set">⚙</view>
+        <view class="me-set" @click="goEditProfile">⚙</view>
       </view>
 
       <view class="me-earn">
@@ -225,6 +225,7 @@ const upgradeInfo = computed(() => {
 });
 
 function goLogin()         { uni.navigateTo({ url: '/pages/login/index' }); }
+function goEditProfile()   { user.isLogin ? uni.navigateTo({ url: '/pages/profile/edit' }) : goLogin(); }
 function goWallet()        { user.isLogin ? uni.navigateTo({ url: '/pages/wallet/index' })   : goLogin(); }
 function goWithdraw()      { user.isLogin ? uni.navigateTo({ url: '/pages/withdraw/index' }) : goLogin(); }
 function goPromoRecords()  { user.isLogin ? uni.navigateTo({ url: '/pages/points/promo' })   : goLogin(); }

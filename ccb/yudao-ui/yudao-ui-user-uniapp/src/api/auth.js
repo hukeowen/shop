@@ -1,4 +1,4 @@
-import { post, get } from '@/utils/request.js';
+import { post, get, put } from '@/utils/request.js';
 
 // 发短信验证码（scene=21 = 会员登录）
 export const sendSmsCode = (mobile, scene = 21) =>
@@ -19,6 +19,9 @@ export const weixinMiniAppLogin = (loginCode, phoneCode, state) =>
 
 // 当前用户信息
 export const getProfile = () => get('/app-api/member/user/get');
+
+// 修改基本资料（昵称 / 头像）
+export const updateProfile = (body) => put('/app-api/member/user/update', body);
 
 // 退出登录
 export const logout = () => post('/app-api/member/auth/logout');

@@ -26,6 +26,7 @@
       "style": { "navigationStyle": "custom", "navigationBarTitleText": "我的" }
     },
 
+    { "path": "pages/profile/edit",       "style": { "navigationStyle": "custom", "navigationBarTitleText": "编辑资料" } },
     { "path": "pages/category/index",     "style": { "navigationStyle": "custom", "navigationBarTitleText": "分类" } },
     { "path": "pages/search/index",       "style": { "navigationStyle": "custom", "navigationBarTitleText": "搜索" } },
     { "path": "pages/product/detail",     "style": { "navigationStyle": "custom", "navigationBarTitleText": "商品详情" } },
