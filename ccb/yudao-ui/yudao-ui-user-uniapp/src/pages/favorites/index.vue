@@ -27,6 +27,7 @@
 import { ref, onMounted } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
 import { favoritePage } from '@/api/product.js';
+import { listFavoriteShops } from '@/api/shop.js';
 import { fen2yuan } from '@/utils/format.js';
 
 const tab = ref('spu');
@@ -40,8 +41,14 @@ async function switchTab(k) {
       const r = await favoritePage(1, 50);
       items.value = r?.list || [];
     } else {
-      // 店铺收藏接口暂无（后端待加），先返空
-      items.value = [];
+      const list = await listFavoriteShops();
+      items.value = (list || []).map((s) => ({
+        id: s.tenantId,
+        tenantId: s.tenantId,
+        shopName: s.shopName || `店铺 #${s.tenantId}`,
+        picUrl: s.coverUrl || '',
+        metaText: s.address || (s.balance ? `余额 ¥${fen2yuan(s.balance, false)}` : '已收藏'),
+      }));
     }
   } catch { items.value = []; }
   finally { loading.value = false; }

@@ -1,4 +1,4 @@
-import { get, toQuery } from '@/utils/request.js';
+import { get, post, toQuery } from '@/utils/request.js';
 
 // 店铺列表（公开，可按位置距离 / 关键词过滤）
 //   params: { pageNo, pageSize, kw, businessType, userLng, userLat }
@@ -36,6 +36,14 @@ export const getShopPointConfig = (tenantId) =>
 //   实际控制器 AppMemberShopRelController @RequestMapping("/merchant/mini/member-rel")
 export const listMyShops = () =>
   get('/app-api/merchant/mini/member-rel/my-shops');
+
+// 切换店铺收藏（true=收藏 / false=取消）；不存在 rel 时后端自动建
+export const toggleShopFavorite = (tenantId, favorite) =>
+  post(`/app-api/merchant/mini/member-rel/favorite/toggle?${toQuery({ tenantId, favorite })}`);
+
+// 我收藏的店铺（onlyFavorite=true）
+export const listFavoriteShops = () =>
+  get('/app-api/merchant/mini/member-rel/my-shops-enriched?onlyFavorite=true');
 
 // 我加入的店铺（含余额 / 推广积分 / 消费积分）
 export const listMyShopsEnriched = () =>

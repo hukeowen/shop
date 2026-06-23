@@ -231,7 +231,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue';
 import { onShow, onLoad } from '@dcloudio/uni-app';
-import { getShopInfo, listShopProducts, getShopVisitorCount, getMyRel, getMyPromoEarned, getShopLicense } from '@/api/shop.js';
+import { getShopInfo, listShopProducts, getShopVisitorCount, getMyRel, getMyPromoEarned, getShopLicense, toggleShopFavorite } from '@/api/shop.js';
 import { savePendingReferrer, flushPendingReferrer } from '@/utils/referral.js';
 import { listCategories } from '@/api/product.js';
 import { listWinners, getAccount } from '@/api/promo.js';
@@ -326,10 +326,18 @@ function goWinners() {
   // 跳中奖公榜（派奖详情），带 tenantId 让 winners 页过滤本店
   uni.navigateTo({ url: `/pages/winners/index?tenantId=${route.tenantId || ''}` });
 }
-function toggleFav() {
+async function toggleFav() {
   if (!user.isLogin) return requireLogin();
-  isFav.value = !isFav.value;
-  uni.showToast({ title: isFav.value ? '已收藏' : '取消', icon: 'none' });
+  if (!route.tenantId) return;
+  const next = !isFav.value;
+  isFav.value = next; // 乐观更新
+  try {
+    await toggleShopFavorite(route.tenantId, next);
+    uni.showToast({ title: next ? '已收藏' : '已取消收藏', icon: 'none' });
+  } catch (e) {
+    isFav.value = !next; // 失败回滚
+    uni.showToast({ title: '操作失败，请重试', icon: 'none' });
+  }
 }
 function onShare() {
   const base = typeof location !== 'undefined' ? location.origin : 'https://ke.doupaidoudian.com';
@@ -509,6 +517,7 @@ async function loadVip() {
     if (rel) {
       vip.myStar = rel.star || 0;
       vip.discountText = rel.discount ? `${(rel.discount * 10).toFixed(0)}` : '';
+      isFav.value = !!rel.favorite; // 收藏状态来自后端 member_shop_rel.favorite
     }
   } catch {}
   // "你已赚" / "在该店赚" = 推广积分 lifetime（累计 amount > 0 的流水，含已抵扣/转换/提现），
