@@ -31,8 +31,11 @@ function onSelect(a) {
     uni.navigateBack();
   }
 }
-function onEdit(a) { uni.showToast({ title: '编辑功能待加', icon: 'none' }); }
-function onAdd()    { uni.showToast({ title: '新增功能待加', icon: 'none' }); }
+function onEdit(a) {
+  try { uni.setStorageSync('editing-address', a); } catch {}
+  uni.navigateTo({ url: `/pages/address/edit?id=${a.id}` });
+}
+function onAdd() { uni.navigateTo({ url: '/pages/address/edit' }); }
 
 async function load() {
   const opts = (() => { try { const ps = getCurrentPages(); return ps[ps.length - 1]?.options || {}; } catch { return {}; } })();
