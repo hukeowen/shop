@@ -21,6 +21,7 @@
           <text class="name">{{ o.shopName || o.merchantName || '订单' }}</text>
           <text class="status" :class="statusClass(o.status)">{{ statusText(o.status) }}</text>
         </view>
+        <view v-if="o.createTime" class="order-time">下单时间 {{ fmtTime(o.createTime) }}</view>
         <view v-if="o.rewardTag" class="order-win-tag" :class="o.rewardTag.cls">
           <text class="em">{{ o.rewardTag.em }}</text>
           <text>{{ o.rewardTag.text }} <text class="b">+¥{{ o.rewardTag.amount }}</text> · 已入推广积分</text>
@@ -228,6 +229,9 @@ onShow(() => { switchTab(tab.value); loadCounts(); });
 .order-card-head .status.warn   { background: rgba(245,158,11,.14);  color: $warn; }
 .order-card-head .status.danger { background: rgba(230,57,70,.12);   color: $danger; }
 .order-card-head .status.ok     { background: $mint-50;              color: $mint; }
+
+/* 下单时间 */
+.order-time { padding: 8px 14px 0; font-size: 11px; color: $t3; }
 
 /* 返奖标签 */
 .order-win-tag {
