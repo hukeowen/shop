@@ -184,8 +184,9 @@ import { ref, computed, onMounted } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
 import { useUserStore } from '@/store/user.js';
 import { getProfile } from '@/api/auth.js';
-import { getAccount, getTodayStat, listMyQueues, getInviteEligibility } from '@/api/promo.js';
+import { getAccount, getTodayStat, listMyQueues, getInviteEligibility, getMyChildrenCount } from '@/api/promo.js';
 import { listMyShopsEnriched } from '@/api/shop.js';
+import { pageOrders } from '@/api/order.js';
 import { getCartCount } from '@/api/cart.js';
 import { getUnusedCouponCount } from '@/api/coupon.js';
 import { favoriteCount } from '@/api/product.js';
@@ -193,7 +194,7 @@ import { fen2yuan, fmtTime } from '@/utils/format.js';
 import { buildInvitePoster, downloadDataUrl } from '@/utils/poster.js';
 
 const user = useUserStore();
-const avatarText = computed(() => (user.nickname?.[0] || user.phone?.[0] || '客'));
+const avatarText = computed(() => (user.nickname?.[0] || user.phone?.[0] || '邀'));
 const maskedPhone = computed(() => {
   const p = user.phone || '';
   if (p.length < 11) return p;
@@ -213,8 +214,9 @@ const posterImage = ref('');
 const posterLoading = ref(false);
 
 const maxStar = computed(() => myShops.value.reduce((m, s) => Math.max(m, s.starLevel || 0), 0));
-const totalOrders = computed(() => myShops.value.reduce((s, x) => s + (x.orderCount || 0), 0));
-const totalInvited = computed(() => myShops.value.reduce((s, x) => s + (x.invitedCount || 0), 0));
+// 累计订单 / 推荐好友：VO 不含这俩字段，单独拉真实计数（订单总数 + 各店直推数求和）
+const totalOrders = ref(0);
+const totalInvited = ref(0);
 
 // 升星：选取最近一家有 nextStar 的店
 const upgradeInfo = computed(() => {
@@ -382,6 +384,14 @@ async function load() {
         topTuijianSpu: elig?.topTuijianSpu || null,
       };
     });
+  } catch {}
+  // 累计订单：跨店订单总数
+  try { const op = await pageOrders(undefined, 1, 1); totalOrders.value = op?.total || 0; } catch {}
+  // 推荐好友：各加入店铺「我的直推数」求和
+  try {
+    const tids = (myShops.value || []).map((s) => s.tenantId).filter(Boolean);
+    const counts = await Promise.all(tids.map((tid) => getMyChildrenCount(tid).then((n) => Number(n) || 0).catch(() => 0)));
+    totalInvited.value = counts.reduce((a, b) => a + b, 0);
   } catch {}
   try { favCount.value = (await favoriteCount()) || 0; } catch {}
   try { couponCount.value = (await getUnusedCouponCount()) || 0; } catch {}

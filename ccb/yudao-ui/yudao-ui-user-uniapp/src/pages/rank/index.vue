@@ -13,7 +13,7 @@
         <view class="rank">{{ i + 1 }}</view>
         <view class="ava">
           <image v-if="u.avatar" :src="u.avatar" class="ava-img" mode="aspectFill" />
-          <text v-else>{{ (u.nickname || '客')?.[0] }}</text>
+          <text v-else>{{ (u.nickname || '邀')?.[0] }}</text>
         </view>
         <view class="body">
           <view class="name">{{ u.nickname || u.userName || '匿名用户' }}</view>

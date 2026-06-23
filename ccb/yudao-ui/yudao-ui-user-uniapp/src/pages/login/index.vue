@@ -5,7 +5,7 @@
 
     <!-- ━━━━━━━━━━ 顶部品牌 ━━━━━━━━━━ -->
     <view class="hero">
-      <view class="logo">客</view>
+      <view class="logo">邀</view>
       <view class="brand">邀三惠</view>
       <view class="tagline">发现身边好店 · 会员专享优惠</view>
     </view>

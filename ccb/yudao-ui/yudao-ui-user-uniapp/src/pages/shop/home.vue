@@ -23,7 +23,7 @@
       <view class="sh-stat-row">
         <view class="sh-stat">
           <view class="v gold"><text class="star">★</text>{{ shop?.rating || '5.0' }}</view>
-          <view class="l">{{ shop?.ratingCount ? shop.ratingCount + ' 评分' : '新店' }}</view>
+          <view class="l">{{ shop?.ratingCount ? shop.ratingCount + ' 评分' : (shop?.monthSold > 0 ? '综合评分' : '新店') }}</view>
         </view>
         <view class="sh-stat-divider"></view>
         <view class="sh-stat">
@@ -380,6 +380,9 @@ async function loadShop() {
     const info = await getShopInfo({ tenantId: route.tenantId });
     shop.value = info ? {
       ...info,
+      // VO 字段是 sales30d / avgRating，模板读 monthSold / rating，需映射（否则月售恒显 0）
+      monthSold: info.sales30d != null ? info.sales30d : (info.monthSold != null ? info.monthSold : 0),
+      rating: info.avgRating || info.rating || null,
       slogan: info.slogan || info.shopDesc || info.introduction || '',
       tagRow: info.tagRow || (info.starLevel ? `⭐ ${info.starLevel} 星店铺` : ''),
       ratingCount: info.ratingCount || info.commentCount || 0,

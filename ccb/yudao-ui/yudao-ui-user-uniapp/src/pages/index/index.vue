@@ -178,7 +178,7 @@ import { getCartCount } from '@/api/cart.js';
 import { fen2yuan, fmtTime, fmtDistance } from '@/utils/format.js';
 
 const user = useUserStore();
-const avatarText = computed(() => (user.nickname?.[0] || '客'));
+const avatarText = computed(() => (user.nickname?.[0] || '邀'));
 const maeHidden = ref(false); // 今日到账提示可关闭
 
 const greeting = computed(() => {

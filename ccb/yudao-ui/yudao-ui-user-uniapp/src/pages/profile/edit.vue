@@ -53,7 +53,7 @@ import { uploadImage, chooseAndUploadImage } from '@/api/upload.js';
 const user = useUserStore();
 const form = reactive({ nickname: user.nickname || '', avatar: user.avatar || '' });
 const saving = ref(false);
-const avatarText = computed(() => (user.nickname?.[0] || user.phone?.[0] || '客'));
+const avatarText = computed(() => (user.nickname?.[0] || user.phone?.[0] || '邀'));
 
 // #ifdef MP-WEIXIN
 // 微信头像填写组件回调：e.detail.avatarUrl 是临时路径，要上传换公网 URL
