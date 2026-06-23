@@ -103,7 +103,7 @@
     </scroll-view>
 
     <!-- ━━━━━━ 玩法专区 ━━━━━━ -->
-    <view class="sec"><text class="h">玩法专区</text><text class="sub">商户营销优惠</text></view>
+    <view class="sec"><text class="h">优惠专区</text><text class="sub">商户营销优惠</text></view>
     <view class="plays">
       <view class="play rank" @click="goWinners">
         <view class="ppic"><text class="emo">🏆</text></view>
