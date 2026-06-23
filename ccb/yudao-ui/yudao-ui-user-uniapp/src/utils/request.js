@@ -1,5 +1,5 @@
 /**
- * 客小二 C 端统一请求封装。
+ * 邀三惠 C 端统一请求封装。
  *
  * - /app-api 走业务后端（CommonResult<T>{code,data,msg}，code=0 视为成功）
  * - /admin-api 老接口保留（带 tenant-id header）

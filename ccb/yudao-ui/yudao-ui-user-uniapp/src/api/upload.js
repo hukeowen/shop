@@ -1,5 +1,5 @@
 /**
- * 客小二 C 端图片上传。
+ * 邀三惠 C 端图片上传。
  *
  * 走后端标准 app 文件上传：POST /app-api/infra/file/upload（@PermitAll，multipart）
  * 返回 CommonResult<String>，data 即公网可访问的文件 URL。

@@ -56,7 +56,19 @@
 import { ref, reactive, onMounted } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
 import { pageOrders, getOrderCount, cancelOrder, receiveOrder } from '@/api/order.js';
+import { getShopInfo } from '@/api/shop.js';
 import { fen2yuan, fmtTime } from '@/utils/format.js';
+
+// tenantId → 店铺名 缓存（订单只带 tenantId，多商户需解析店铺名）
+const shopNameCache = {};
+async function resolveShopNames(list) {
+  const tids = [...new Set((list || []).map((o) => o.tenantId).filter((t) => t && !shopNameCache[t]))];
+  if (!tids.length) return;
+  await Promise.all(tids.map(async (tid) => {
+    try { const info = await getShopInfo({ tenantId: tid }); if (info && info.shopName) shopNameCache[tid] = info.shopName; } catch {}
+  }));
+  orders.value = orders.value.map((o) => ({ ...o, shopName: o.shopName || shopNameCache[o.tenantId] || '' }));
+}
 
 const tab = ref('all');
 const tabs = [
@@ -139,6 +151,7 @@ async function switchTab(k) {
       }
       return { ...o, rewardTag };
     });
+    resolveShopNames(orders.value); // 异步填充店铺名，不阻塞首屏
   } catch { orders.value = []; }
   finally { loading.value = false; }
 }

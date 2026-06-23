@@ -6,7 +6,7 @@
     <!-- ━━━━━━━━━━ 顶部品牌 ━━━━━━━━━━ -->
     <view class="hero">
       <view class="logo">客</view>
-      <view class="brand">客小二</view>
+      <view class="brand">邀三惠</view>
       <view class="tagline">发现身边好店 · 会员专享优惠</view>
     </view>
 
@@ -15,7 +15,7 @@
       <!-- #ifdef MP-WEIXIN -->
       <!-- 微信小程序：一键授权手机号登录（企业/个体主体方可用 getPhoneNumber） -->
       <view class="form">
-        <view class="form-t">欢迎使用客小二</view>
+        <view class="form-t">欢迎使用邀三惠</view>
         <view class="form-s">授权微信手机号，一键登录</view>
         <button
           class="wx-btn"

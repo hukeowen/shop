@@ -131,7 +131,7 @@ export async function buildInvitePoster(o) {
     ctx.fillStyle = '#C2410C';
     ctx.font = '700 22px -apple-system, "PingFang SC", sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('客小二 · 商户营销优惠', W / 2, y);
+    ctx.fillText('邀三惠 · 商户营销优惠', W / 2, y);
     y += 36;
 
     // 店名
@@ -268,7 +268,7 @@ export async function buildInvitePoster(o) {
     ctx.textAlign = 'center';
     ctx.fillStyle = '#5A4A3A';
     ctx.font = '700 22px -apple-system, "PingFang SC", sans-serif';
-    ctx.fillText('邀请人：' + (o.inviter || '客小二用户'), W / 2, y);
+    ctx.fillText('邀请人：' + (o.inviter || '邀三惠用户'), W / 2, y);
     y += 34;
     ctx.fillStyle = '#A0917F';
     ctx.font = '400 19px -apple-system, "PingFang SC", sans-serif';

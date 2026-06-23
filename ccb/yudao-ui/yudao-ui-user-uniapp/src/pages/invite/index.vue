@@ -140,7 +140,7 @@ async function onShowPoster(s) {
     posterImage.value = await buildInvitePoster({
       shopName: s.shopName,
       inviteLink: s.inviteLink,
-      inviter: user.nickname || (user.phone ? user.phone.slice(-4) : '') || '客小二用户',
+      inviter: user.nickname || (user.phone ? user.phone.slice(-4) : '') || '邀三惠用户',
       spuName: spu?.spuName,
       spuPic: spu?.spuPic,
       priceYuan: spu ? fen2yuan(spu.price || 0, false) : null,

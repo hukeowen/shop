@@ -1,7 +1,7 @@
 {
-  "name": "客小二",
+  "name": "邀三惠",
   "appid": "",
-  "description": "客小二 SaaS C 端 — 扫码下单、会员优惠、积分好礼",
+  "description": "邀三惠 SaaS C 端 — 扫码下单、会员优惠、积分好礼",
   "versionName": "0.1.0",
   "versionCode": "1",
   "transformPx": false,
@@ -51,7 +51,7 @@
     "requiredPrivateInfos": ["getLocation", "chooseLocation"]
   },
   "h5": {
-    "title": "客小二",
+    "title": "邀三惠",
     "template": "index.html",
     "publicPath": "/",
     "router": {

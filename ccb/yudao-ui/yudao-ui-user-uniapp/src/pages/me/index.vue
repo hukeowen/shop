@@ -8,7 +8,7 @@
         <view v-else class="me-avatar" @click="goEditProfile">{{ avatarText }}</view>
         <view class="me-info">
           <view class="me-name-row">
-            <view v-if="user.isLogin" class="me-name">{{ user.nickname || user.phone?.slice(-4) || '客小二' }}</view>
+            <view v-if="user.isLogin" class="me-name">{{ user.nickname || user.phone?.slice(-4) || '邀三惠' }}</view>
             <view v-else class="me-name" @click="goLogin">点我登录 ›</view>
             <view v-if="maxStar > 0" class="me-star">{{ '★'.repeat(maxStar) }} {{ maxStar }} 星</view>
           </view>
@@ -73,7 +73,7 @@
     <!-- 我加入的店铺 (大卡) -->
     <view v-if="myShops.length" class="section-title">
       <text class="h3">我加入的店铺 <text class="small">{{ myShops.length }} 家 · 资产独立</text></text>
-      <text class="more">管理 ›</text>
+      <text class="more" @click="goJoinedShops">管理 ›</text>
     </view>
     <view v-for="(s, i) in myShops" :key="s.tenantId || s.id" class="ms-big" :class="{ 'gold-border': s.starLevel >= 3, 'has-queue': s.hasQueue }">
       <view class="msb-head">
@@ -163,7 +163,7 @@
       <view class="me-row"><view class="me-row-icon alt-2">❓</view><text class="me-row-name">帮助与反馈</text><text class="me-row-arrow">›</text></view>
       <view class="me-row" @click="goAgreement('user')"><view class="me-row-icon alt-1">📄</view><text class="me-row-name">用户服务协议</text><text class="me-row-arrow">›</text></view>
       <view class="me-row" @click="goAgreement('privacy')"><view class="me-row-icon alt-1">🔒</view><text class="me-row-name">隐私协议</text><text class="me-row-arrow">›</text></view>
-      <view class="me-row"><view class="me-row-icon alt-1">ℹ</view><text class="me-row-name">关于客小二</text><text class="me-row-arrow">›</text></view>
+      <view class="me-row"><view class="me-row-icon alt-1">ℹ</view><text class="me-row-name">关于邀三惠</text><text class="me-row-arrow">›</text></view>
       <view v-if="user.isLogin" class="me-row logout-row" @click="onLogout"><view class="me-row-icon danger">⏻</view><text class="me-row-name danger">退出登录</text><text class="me-row-arrow">›</text></view>
     </view>
 
@@ -226,6 +226,7 @@ const upgradeInfo = computed(() => {
 
 function goLogin()         { uni.navigateTo({ url: '/pages/login/index' }); }
 function goEditProfile()   { user.isLogin ? uni.navigateTo({ url: '/pages/profile/edit' }) : goLogin(); }
+function goJoinedShops()   { user.isLogin ? uni.navigateTo({ url: '/pages/shops/joined' }) : goLogin(); }
 function goWallet()        { user.isLogin ? uni.navigateTo({ url: '/pages/wallet/index' })   : goLogin(); }
 function goWithdraw()      { user.isLogin ? uni.navigateTo({ url: '/pages/withdraw/index' }) : goLogin(); }
 function goPromoRecords()  { user.isLogin ? uni.navigateTo({ url: '/pages/points/promo' })   : goLogin(); }
@@ -278,7 +279,7 @@ async function onShopInvite(s) {
     posterImage.value = await buildInvitePoster({
       shopName: s.shopName || s.name,
       inviteLink,
-      inviter: user.nickname || (user.phone ? user.phone.slice(-4) : '') || '客小二用户',
+      inviter: user.nickname || (user.phone ? user.phone.slice(-4) : '') || '邀三惠用户',
       spuName: spu?.spuName,
       spuPic: spu?.spuPic,
       priceYuan: spu ? fen2yuan(spu.price || 0, false) : null,
