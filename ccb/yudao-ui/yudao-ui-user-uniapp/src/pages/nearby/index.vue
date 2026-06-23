@@ -64,7 +64,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { listShops } from '@/api/shop.js';
+import { listShops, reverseGeo } from '@/api/shop.js';
 import { fmtDistance, fen2yuan } from '@/utils/format.js';
 
 const fmtYuan = (fen) => fen2yuan(fen, false);
@@ -101,6 +101,18 @@ function goSpu(s) {
 }
 function setFilter(k) { filter.value = k; load(); }
 
+// 逆地理解析 → 具体地址（门牌级）。失败/无 key 时回退到坐标
+async function resolveAddress(lng, lat) {
+  try {
+    const g = await reverseGeo(lng, lat);
+    location.value = (g && (g.recommend || g.address))
+      ? (g.recommend || g.address)
+      : `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+  } catch {
+    location.value = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+  }
+}
+
 function onRelocate() {
   location.value = '正在定位…';
   let settled = false;
@@ -115,7 +127,8 @@ function onRelocate() {
     success: (r) => {
       if (settled) return; settled = true; clearTimeout(timer);
       userLng.value = r.longitude; userLat.value = r.latitude;
-      location.value = `${r.latitude.toFixed(4)}, ${r.longitude.toFixed(4)}`;
+      location.value = '定位成功，获取地址中…';
+      resolveAddress(r.longitude, r.latitude);
       load();
     },
     fail: () => {
