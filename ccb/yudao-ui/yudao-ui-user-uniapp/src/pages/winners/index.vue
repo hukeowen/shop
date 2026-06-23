@@ -44,7 +44,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { onShow } from '@dcloudio/uni-app';
+import { onShow, onLoad } from '@dcloudio/uni-app';
 import { listWinners, getTodayStat } from '@/api/promo.js';
 import { fen2yuan, fmtTime } from '@/utils/format.js';
 
@@ -108,9 +108,9 @@ function switchTab(k) { tab.value = k; load(); }
 function goRank() { uni.navigateTo({ url: '/pages/rank/index' }); }
 
 // 从路由读 tenantId — 从店铺主页 ticker 点过来会带，过滤本店派奖
-const routeTenantId = (() => {
-  try { const ps = getCurrentPages(); return ps[ps.length - 1]?.options?.tenantId || null; } catch { return null; }
-})();
+// 小程序 setup 阶段 query 尚未挂上，必须用 onLoad 读（onLoad 先于 onMounted/onShow）
+let routeTenantId = null;
+onLoad((q) => { routeTenantId = (q && q.tenantId) || null; });
 
 async function load() {
   loading.value = true;

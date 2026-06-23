@@ -25,16 +25,15 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed } from 'vue';
+import { onLoad } from '@dcloudio/uni-app';
 import { getAccount, listConsumeRecords } from '@/api/promo.js';
 import { fen2yuan, fmtTime } from '@/utils/format.js';
 
 // 路由参数：tenantId 按店过滤 + shopName 标题
-const route = (() => {
-  try { const ps = getCurrentPages(); return ps[ps.length - 1]?.options || {}; } catch { return {}; }
-})();
-const tenantId = route.tenantId ? Number(route.tenantId) : null;
-const shopName = route.shopName ? decodeURIComponent(route.shopName) : '';
+// 小程序 setup 阶段 getCurrentPages().options 尚未挂上，必须用 onLoad 读 query
+let tenantId = null;
+const shopName = ref('');
 
 const balance = ref(0);
 const loading = ref(false);
@@ -79,7 +78,9 @@ async function loadMore() {
   } finally { loadingMore.value = false; }
 }
 
-onMounted(async () => {
+onLoad(async (q) => {
+  tenantId = q && q.tenantId ? Number(q.tenantId) : null;
+  shopName.value = q && q.shopName ? decodeURIComponent(q.shopName) : '';
   try {
     const acct = await getAccount(tenantId);
     balance.value = acct?.consumePointBalance || 0;
