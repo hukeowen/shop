@@ -4,13 +4,7 @@
       <view class="hero-title">
         <text class="trophy">🏆</text>
         <text class="t">优惠公告</text>
-        <text class="sub">商户营销优惠活动 · 提现由商户审批</text>
       </view>
-      <view class="tabs">
-        <view class="tab" :class="{ on: tab === 'live' }" @click="switchTab('live')">🔴 实时优惠</view>
-        <view class="tab" :class="{ on: tab === 'rank' }" @click="goRank">📊 榜一排名</view>
-      </view>
-      <view v-if="todayAmt" class="hero-stat">今日全网商户优惠 <text class="hl">¥{{ todayAmt }}</text> · {{ todayCnt }} 笔</view>
     </view>
 
     <view v-if="loading" class="loading">加载中…</view>
