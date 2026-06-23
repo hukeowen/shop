@@ -19,7 +19,7 @@
     },
     {
       "path": "pages/winners/index",
-      "style": { "navigationStyle": "custom", "navigationBarTitleText": "商户让利公告" }
+      "style": { "navigationStyle": "custom", "navigationBarTitleText": "商户优惠公告" }
     },
     {
       "path": "pages/me/index",

@@ -22,7 +22,7 @@
 
           <view class="md-h2">第三条 商户主体责任（重点）</view>
           <view class="md-p">3.1 <text class="b">您是商品销售方</text>：商品资质、税务发票、退换货、售后服务，全部由您独立承担。</view>
-          <view class="md-p">3.2 <text class="b">您是营销活动主办方</text>：包括但不限于「推 N 反 1」「邀请有礼」「让利池抽奖」「老客感谢奖」「消费积分」等所有营销规则，由您独立设定、独立审批、独立兑付。</view>
+          <view class="md-p">3.2 <text class="b">您是营销活动主办方</text>：包括但不限于「推 N 反 1」「邀请有礼」「优惠池抽奖」「老客感谢奖」「消费积分」等所有营销规则，由您独立设定、独立审批、独立兑付。</view>
           <view class="md-p">3.3 <text class="b">您是积分兑付义务人</text>：用户获得的"推广积分"由您独立承诺兑现，兑付形式（购买本店所有商品 / 线下兑换现金 / 优惠券 / 实物）与额度由您决定。如因您经营状况无法兑付，<text class="b">用户应直接向您主张权利</text>，与平台无关。</view>
           <view class="md-p">3.4 <text class="b">营销争议最终解释权归您</text>：但您对营销规则与兑付承诺<text class="b">不得擅自违约</text>。</view>
 
@@ -62,9 +62,9 @@
           <view class="md-p">1.3 <text class="b">平台不对商品质量、商户经营行为、营销规则承担担保责任</text>。您与商户之间形成独立的买卖合同关系，与平台无关。</view>
 
           <view class="md-h2">第二条 营销激励性质说明</view>
-          <view class="md-p">2.1 您在平台参与的「老顾客分享激励」「邀请有礼」「促销让利抽奖」等营销活动，性质为：</view>
+          <view class="md-p">2.1 您在平台参与的「老顾客分享激励」「邀请有礼」「促销优惠抽奖」等营销活动，性质为：</view>
           <view class="md-p md-quote">- <text class="b">商户对老顾客的复购感谢奖励</text></view>
-          <view class="md-p md-quote">- 奖励来自<text class="b">商户自费</text>投入的营销让利预算</view>
+          <view class="md-p md-quote">- 奖励来自<text class="b">商户自费</text>投入的营销优惠预算</view>
           <view class="md-p md-quote">- 与平台无关，与"投资"无关，与"传销"无关</view>
           <view class="md-p">2.2 上述激励严格符合以下规则：</view>
           <view class="md-p">（一）<text class="b">严格单层奖励</text>：仅奖励您的直接邀请人，不存在多层级返佣；</view>

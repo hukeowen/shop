@@ -64,6 +64,9 @@ public class AppShopPublicController {
     @org.springframework.beans.factory.annotation.Value("${merchant.map.tencent-key:}")
     private String tencentMapKey;
 
+    @Resource
+    private cn.iocoder.yudao.module.merchant.dal.mysql.MerchantApplyMapper merchantApplyMapper;
+
     @GetMapping("/list")
     @Operation(summary = "分页查询店铺列表（V039 三层闸门过滤：今日未打卡/主动打烊的店不返回；营业时间外的店权重靠后）")
     @PermitAll
@@ -411,6 +414,30 @@ public class AppShopPublicController {
             }
         } catch (Exception e) {
             log.warn("[geoReverse] 调用腾讯逆地理异常 lng={} lat={}: {}", lng, lat, e.getMessage());
+        }
+        return success(resp);
+    }
+
+    @GetMapping("/license")
+    @Operation(summary = "商家资质公示：营业执照图片（取入驻申请，仅返营业执照，绝不下发身份证）")
+    @Parameter(name = "tenantId", description = "店铺所属租户 ID", required = true)
+    @PermitAll
+    @TenantIgnore
+    public CommonResult<Map<String, Object>> getShopLicense(@RequestParam("tenantId") Long tenantId) {
+        Map<String, Object> resp = new HashMap<>();
+        // merchant_apply 平台级表（无租户隔离），取该租户「审核通过(status=1)」的最新一条申请。
+        // 安全红线：只暴露 licenseUrl（营业执照），idCardFront / idCardBack 身份证绝不下发。
+        java.util.List<cn.iocoder.yudao.module.merchant.dal.dataobject.MerchantApplyDO> applies =
+                merchantApplyMapper.selectList(
+                        new LambdaQueryWrapper<cn.iocoder.yudao.module.merchant.dal.dataobject.MerchantApplyDO>()
+                                .eq(cn.iocoder.yudao.module.merchant.dal.dataobject.MerchantApplyDO::getTenantId, tenantId)
+                                .eq(cn.iocoder.yudao.module.merchant.dal.dataobject.MerchantApplyDO::getStatus, 1)
+                                .orderByDesc(cn.iocoder.yudao.module.merchant.dal.dataobject.MerchantApplyDO::getId)
+                                .last("LIMIT 1"));
+        if (applies != null && !applies.isEmpty()) {
+            cn.iocoder.yudao.module.merchant.dal.dataobject.MerchantApplyDO a = applies.get(0);
+            resp.put("licenseUrl", a.getLicenseUrl());
+            resp.put("shopName", a.getShopName());
         }
         return success(resp);
     }

@@ -14,7 +14,7 @@
       <view v-if="shop" class="sh-info">
         <view class="sh-tag-row">🔥 {{ shop.tagRow || '扫码下单 · 每单返推广积分' }}</view>
         <view class="sh-name">{{ shop.shopName || shop.name || '店铺' }}</view>
-        <view class="sh-slogan">{{ shop.slogan || '商户营销让利活动' }}</view>
+        <view class="sh-slogan">{{ shop.slogan || '商户营销优惠活动' }}</view>
       </view>
     </view>
 
@@ -38,6 +38,16 @@
       </view>
     </view>
 
+    <!-- ━━━━━━━━━━ 商家资质（营业执照公示）━━━━━━━━━━ -->
+    <view class="sh-qual" @click="viewLicense">
+      <text class="q-ic">🏢</text>
+      <view class="q-body">
+        <text class="q-t">商家资质</text>
+        <text class="q-sub">查看营业执照</text>
+      </view>
+      <text class="q-arr">查看 ›</text>
+    </view>
+
     <!-- ━━━━━━━━━━ 招牌商品大卡（推 N 反 1 活动）━━━━━━━━━━ -->
     <view v-if="signatureSpu" class="signature-card" @click="goSignature">
       <view class="sig-crown">👑 招牌 No.1{{ nback ? ` · 推 ${nback.n} 反 1` : '' }}</view>
@@ -53,7 +63,7 @@
             <view v-if="nback" class="sig-tag promo">推 {{ nback.n }} 反 1</view>
             <view v-if="nback" class="sig-tag amount">每位约 {{ nback.stepPoints }} 积分</view>
             <view v-if="nback && nback.cur > 0" class="sig-tag got">你已获 {{ nback.gotPoints }} 积分</view>
-            <view v-else-if="signatureSpu.starCount" class="sig-tag gold">让利商品</view>
+            <view v-else-if="signatureSpu.starCount" class="sig-tag gold">优惠商品</view>
           </view>
           <view class="sig-bot">
             <view class="sig-price-block">
@@ -221,7 +231,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue';
 import { onShow, onLoad } from '@dcloudio/uni-app';
-import { getShopInfo, listShopProducts, getShopVisitorCount, getMyRel, getMyPromoEarned } from '@/api/shop.js';
+import { getShopInfo, listShopProducts, getShopVisitorCount, getMyRel, getMyPromoEarned, getShopLicense } from '@/api/shop.js';
 import { savePendingReferrer, flushPendingReferrer } from '@/utils/referral.js';
 import { listCategories } from '@/api/product.js';
 import { listWinners, getAccount } from '@/api/promo.js';
@@ -293,6 +303,17 @@ function goBack() {
   const pages = getCurrentPages();
   if (pages.length > 1) uni.navigateBack();
   else uni.reLaunch({ url: '/pages/index/index' });
+}
+
+// 商家资质：拉营业执照图片，全屏预览（后端只返营业执照，无身份证）
+let _licenseCache = null;
+async function viewLicense() {
+  try {
+    if (!_licenseCache) _licenseCache = (await getShopLicense(route.tenantId)) || {};
+    const url = _licenseCache.licenseUrl;
+    if (!url) { uni.showToast({ title: '该商家暂未公示营业执照', icon: 'none' }); return; }
+    uni.previewImage({ urls: [url], current: url });
+  } catch { uni.showToast({ title: '资质加载失败', icon: 'none' }); }
 }
 function goProduct(p) {
   uni.navigateTo({ url: `/pages/product/detail?id=${p.id}&tenantId=${route.tenantId || ''}` });
@@ -385,7 +406,7 @@ async function loadProducts() {
       const starCount = cfg.starCount || 0;
       let badge = '', badgeClass = '';
       if (tuijianN > 0) { badge = `推 ${tuijianN} 反 1`; }
-      else if (starCount) { badge = '让利商品'; badgeClass = 'gold'; }
+      else if (starCount) { badge = '优惠商品'; badgeClass = 'gold'; }
       return reactive({ ...s, tuijianN, tuijianRatios, starCount, badge, badgeClass, imgErr: false });
     });
     spus.value = list;
@@ -527,7 +548,7 @@ async function loadTicker() {
     const list = await listWinners(route.tenantId, 10);
     tickerText.value = (list || []).map((w) => {
       const amt = fen2yuan(w.amount, false);
-      return `${w.userMask || '****'} ${w.sourceLabel || '促销让利'} +¥${amt}`;
+      return `${w.userMask || '****'} ${w.sourceLabel || '促销优惠'} +¥${amt}`;
     });
   } catch {}
 }
@@ -647,6 +668,20 @@ onShow(refreshAll);
 .sh-stat .v .star { color: $gold; margin-right: 2px; }
 .sh-stat .l { font-size: 11px; color: $t3; margin-top: 4px; font-weight: 500; }
 .sh-stat-divider { width: 1px; align-self: stretch; background: $line; }
+
+/* ━━ 商家资质 ━━ */
+.sh-qual {
+  margin: 10px 14px 0;
+  background: $card; border-radius: $r-md;
+  padding: 12px 14px; box-shadow: $sh-1;
+  border: 1px solid $line;
+  display: flex; align-items: center; gap: 10px;
+}
+.sh-qual .q-ic { font-size: 20px; flex: none; }
+.sh-qual .q-body { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.sh-qual .q-t { font-size: 14px; font-weight: 700; color: $t1; }
+.sh-qual .q-sub { font-size: 11px; color: $t3; margin-top: 2px; }
+.sh-qual .q-arr { font-size: 12px; color: $o; font-weight: 700; flex: none; }
 
 /* ━━ Signature card ━━ */
 .signature-card {

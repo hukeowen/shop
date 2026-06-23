@@ -131,7 +131,7 @@ export async function buildInvitePoster(o) {
     ctx.fillStyle = '#C2410C';
     ctx.font = '700 22px -apple-system, "PingFang SC", sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('客小二 · 商户营销让利', W / 2, y);
+    ctx.fillText('客小二 · 商户营销优惠', W / 2, y);
     y += 36;
 
     // 店名

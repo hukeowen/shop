@@ -19,6 +19,11 @@ export const reverseGeo = (lng, lat) =>
 export const listShopProducts = (tenantId, pageNo = 1, pageSize = 20) =>
   get(`/app-api/merchant/shop/public/products?tenantId=${tenantId}&pageNo=${pageNo}&pageSize=${pageSize}`);
 
+// 商家资质公示：营业执照图片（仅营业执照，后端不下发身份证）
+//   返回 { licenseUrl, shopName }
+export const getShopLicense = (tenantId) =>
+  get(`/app-api/merchant/shop/public/license?tenantId=${tenantId}`);
+
 // 店铺访客数（近 30 天）
 export const getShopVisitorCount = (tenantId) =>
   get(`/app-api/merchant/shop/public/info/visitor?tenantId=${tenantId}`);

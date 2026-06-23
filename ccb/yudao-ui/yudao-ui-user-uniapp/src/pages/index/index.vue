@@ -10,7 +10,7 @@
         <scroll-view scroll-y class="cmp-bd">
           <view class="cmp-p"><text class="b">1. 平台定位</text>：本平台为「商户营销服务工具」，性质为<text class="hl">纯技术信息中介</text>，不销售商品、不沉淀资金，不对商户经营行为及结果承担责任。</view>
           <view class="cmp-p"><text class="b">2. 交易关系</text>：您购买的商品 / 服务均由独立经营的<text class="hl">商户提供</text>，您与商户形成独立买卖合同关系，与平台无关。</view>
-          <view class="cmp-p"><text class="b">3. 营销激励</text>：「分享激励」「邀请有礼」等活动奖励来自<text class="hl">商户自费</text>营销让利预算，严格单层奖励直接邀请人，<text class="hl">不构成投资</text>、无保证收益。</view>
+          <view class="cmp-p"><text class="b">3. 营销激励</text>：「分享激励」「邀请有礼」等活动奖励来自<text class="hl">商户自费</text>营销优惠预算，严格单层奖励直接邀请人，<text class="hl">不构成投资</text>、无保证收益。</view>
           <view class="cmp-p"><text class="b">4. 解释权</text>：商户对营销活动规则保留<text class="hl">最终解释权</text>，任何争议<text class="hl">请直接联系商户</text>处理，平台不承担兑付保证。</view>
           <view class="cmp-p"><text class="b">5. 禁止行为</text>：禁止传播"投资 / 躺赚 / 暴富"等误导话术，禁止任何形式的传销 / 资金盘。违规将封号并移交司法机关。</view>
         </scroll-view>
@@ -67,14 +67,14 @@
     </view>
     <view v-else-if="!user.isLogin" class="tipcard" @click="goLogin">
       <view class="tc-ic"><text class="emo">👤</text></view>
-      <view class="tc-bd"><view class="t">登录享老客分享激励</view><view class="d">商户营销让利 · 邀请有礼 · 推广积分</view></view>
+      <view class="tc-bd"><view class="t">登录享老客分享激励</view><view class="d">商户营销优惠 · 邀请有礼 · 推广积分</view></view>
       <view class="tc-cta">登录</view>
     </view>
 
     <!-- ━━━━━━ 5 快入口 ━━━━━━ -->
     <view class="quick">
       <view class="qk" @click="goNearby"><view class="b"><text class="emo">📍</text></view><text class="t">附近</text></view>
-      <view class="qk" @click="goWinners"><view class="b"><text class="emo">🏆</text></view><text class="t">让利榜</text><view class="live"></view></view>
+      <view class="qk" @click="goWinners"><view class="b"><text class="emo">🏆</text></view><text class="t">优惠榜</text><view class="live"></view></view>
       <view class="qk" @click="goQueue"><view class="b"><text class="emo">📋</text></view><text class="t">我的队列</text></view>
       <view class="qk" @click="goCoupon"><view class="b"><text class="emo">🎟️</text></view><text class="t">优惠券</text></view>
       <view class="qk" @click="onScan"><view class="b"><text class="emo">📷</text></view><text class="t">扫码</text></view>
@@ -103,13 +103,13 @@
     </scroll-view>
 
     <!-- ━━━━━━ 玩法专区 ━━━━━━ -->
-    <view class="sec"><text class="h">玩法专区</text><text class="sub">商户营销让利</text></view>
+    <view class="sec"><text class="h">玩法专区</text><text class="sub">商户营销优惠</text></view>
     <view class="plays">
       <view class="play rank" @click="goWinners">
         <view class="ppic"><text class="emo">🏆</text></view>
-        <text class="ptag">商户让利榜</text>
+        <text class="ptag">商户优惠榜</text>
         <text class="ph2">看谁刚得奖</text>
-        <view class="pft"><view class="m">今日让利<text class="b num">¥{{ stat.todayAward }}</text></view><text class="pgo">查看</text></view>
+        <view class="pft"><view class="m">今日优惠<text class="b num">¥{{ stat.todayAward }}</text></view><text class="pgo">查看</text></view>
       </view>
       <view class="play nb" @click="goQueue">
         <view class="ppic"><text class="emo">📋</text></view>
@@ -218,14 +218,14 @@ async function reverseGeocode(lng, lat) {
   } catch { locText.value = '已定位 · 看附近'; }
 }
 
-// 滚动条：跨店最新让利
+// 滚动条：跨店最新优惠
 const tickerText = ref([]);
 async function loadTicker() {
   try {
     const list = await listWinnersTicker(8);
     tickerText.value = (list || []).map((w) => {
       const amt = fen2yuan(w.amount, false);
-      return `${w.shopName || '店铺'} ${w.sourceLabel || '促销让利'} ${w.userMask || ''} ¥${amt}`;
+      return `${w.shopName || '店铺'} ${w.sourceLabel || '促销优惠'} ${w.userMask || ''} ¥${amt}`;
     });
   } catch {}
 }

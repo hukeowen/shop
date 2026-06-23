@@ -2,7 +2,7 @@
   <view v-if="visible" class="aw-mask" @click="onClose">
     <view class="aw-card" :class="{ 'aw-card-in': visible }" @click.stop>
       <view class="aw-confetti">🎉</view>
-      <view class="aw-title">恭喜！让利到账</view>
+      <view class="aw-title">恭喜！优惠到账</view>
       <view class="aw-amount">+ ¥{{ (amount/100).toFixed(2) }}</view>
       <view class="aw-source">{{ source || '推广积分' }}</view>
       <view v-if="hint" class="aw-hint">{{ hint }}</view>
