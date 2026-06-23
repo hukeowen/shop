@@ -68,8 +68,8 @@ function labelFor(t) {
   if (t === 'QUEUE')                                 return '活动完成奖';
   if (t === 'DIRECT')                                return '邀请有礼';
   if (t === 'COMMISSION')                            return '分享激励';
-  if (t === 'SELF_BATCH' || t === 'SELF_PROGRESS')   return '复购感谢奖';
-  if (t === 'SELF_COMMISSION')                       return '复购感谢奖';
+  if (t === 'SELF_BATCH' || t === 'SELF_PROGRESS')   return '复购优惠';
+  if (t === 'SELF_COMMISSION')                       return '复购优惠';
   if (t === 'REFERRAL_PROGRESS' ||
       t === 'REFERRAL_COMMISSION')                   return '分享感谢奖';
   if (t === 'WITHDRAW')                              return '提现';

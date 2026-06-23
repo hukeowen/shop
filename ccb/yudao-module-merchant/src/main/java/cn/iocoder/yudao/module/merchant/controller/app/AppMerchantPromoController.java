@@ -681,7 +681,7 @@ public class AppMerchantPromoController {
             case "POOL_V8":             return "促销优惠";
             case "SELF_BATCH":
             case "SELF_PROGRESS":
-            case "SELF_COMMISSION":     return "复购感谢奖";
+            case "SELF_COMMISSION":     return "复购优惠";
             case "REFERRAL_PROGRESS":
             case "REFERRAL_COMMISSION": return "分享感谢奖";
             case "CONVERT":             return "积分兑换";

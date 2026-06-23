@@ -63,7 +63,7 @@
 
           <view class="md-h2">第二条 营销激励性质说明</view>
           <view class="md-p">2.1 您在平台参与的「老顾客分享激励」「邀请有礼」「促销优惠抽奖」等营销活动，性质为：</view>
-          <view class="md-p md-quote">- <text class="b">商户对老顾客的复购感谢奖励</text></view>
+          <view class="md-p md-quote">- <text class="b">商户对老顾客的复购优惠</text></view>
           <view class="md-p md-quote">- 奖励来自<text class="b">商户自费</text>投入的营销优惠预算</view>
           <view class="md-p md-quote">- 与平台无关，与"投资"无关，与"传销"无关</view>
           <view class="md-p">2.2 上述激励严格符合以下规则：</view>
