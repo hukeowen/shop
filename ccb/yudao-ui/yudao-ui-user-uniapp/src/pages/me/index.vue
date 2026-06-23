@@ -4,7 +4,8 @@
     <view class="me-hero">
       <view class="me-hero-bg"></view>
       <view class="me-top-row">
-        <view class="me-avatar">{{ avatarText }}</view>
+        <image v-if="user.avatar" :src="user.avatar" class="me-avatar-img" mode="aspectFill" />
+        <view v-else class="me-avatar">{{ avatarText }}</view>
         <view class="me-info">
           <view class="me-name-row">
             <view v-if="user.isLogin" class="me-name">{{ user.nickname || user.phone?.slice(-4) || '客小二' }}</view>
@@ -12,7 +13,7 @@
             <view v-if="maxStar > 0" class="me-star">{{ '★'.repeat(maxStar) }} {{ maxStar }} 星</view>
           </view>
           <view v-if="user.isLogin" class="me-phone">
-            {{ maskedPhone }} · 已加入 <text class="b">{{ myShops.length }}</text> 家店
+            <text class="ph">📱 {{ user.phone || '—' }}</text> · 已加入 <text class="b">{{ myShops.length }}</text> 家店
           </view>
           <view v-else class="me-phone">登录即解锁推广积分 / 商户优惠 / 提现</view>
         </view>
@@ -182,6 +183,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
 import { useUserStore } from '@/store/user.js';
+import { getProfile } from '@/api/auth.js';
 import { getAccount, getTodayStat, listMyQueues, getInviteEligibility } from '@/api/promo.js';
 import { listMyShopsEnriched } from '@/api/shop.js';
 import { getCartCount } from '@/api/cart.js';
@@ -322,6 +324,11 @@ async function load() {
     todayEarnPoints.value = 0;
     return;
   }
+  // 补拉手机号/昵称/头像（登录响应不含，靠 /member/user/get 回填）
+  try {
+    const info = await getProfile();
+    if (info) user.setProfile(info);
+  } catch {}
   try {
     const acct = await getAccount();
     earnPoints.value = acct?.promoPointBalance || 0;
@@ -408,6 +415,7 @@ onShow(load);
   font-size: 22px; font-weight: 700;
   box-shadow: 0 6px 16px rgba(0,0,0,.12);
 }
+.me-avatar-img { width: 54px; height: 54px; border-radius: 50%; background: #fff; box-shadow: 0 6px 16px rgba(0,0,0,.12); }
 .me-info { flex: 1; min-width: 0; }
 .me-name-row { display: flex; align-items: center; gap: 8px; }
 .me-name { font-size: 18px; font-weight: 700; }

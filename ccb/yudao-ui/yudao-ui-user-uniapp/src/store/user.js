@@ -75,6 +75,14 @@ export const useUserStore = defineStore('user', {
       try { uni.setStorageSync('token', this.token); } catch {}
       try { uni.setStorageSync('tenantId', this.tenantId); } catch {}
     },
+    // 登录后补拉资料：/member/auth 登录响应只有 token，手机号/昵称/头像要靠 /member/user/get 回填
+    setProfile(info) {
+      if (!info) return;
+      if (info.mobile) this.phone = info.mobile;
+      if (info.nickname) this.nickname = info.nickname;
+      if (info.avatar) this.avatar = info.avatar;
+      persist(this.$state);
+    },
     logout() {
       this.token = '';
       this.refreshToken = '';
