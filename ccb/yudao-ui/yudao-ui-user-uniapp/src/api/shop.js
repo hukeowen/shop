@@ -10,6 +10,11 @@ export const listShops = (params = {}) =>
 export const getShopInfo = (params = {}) =>
   get(`/app-api/merchant/shop/public/info?${toQuery(params)}`);
 
+// 逆地理解析：坐标 → 具体地址（街道/门牌）。地图 key 在后端，前端只传坐标
+//   后端返回 { address, recommend, city, district, province }
+export const reverseGeo = (lng, lat) =>
+  get(`/app-api/merchant/shop/public/geo-reverse?${toQuery({ lng, lat })}`);
+
 // 店内上架商品分页
 export const listShopProducts = (tenantId, pageNo = 1, pageSize = 20) =>
   get(`/app-api/merchant/shop/public/products?tenantId=${tenantId}&pageNo=${pageNo}&pageSize=${pageSize}`);
