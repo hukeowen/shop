@@ -248,7 +248,7 @@ async function loadTodayMae() {
     const today = new Date().toDateString();
     const labelOf = (t) => ({
       DIRECT: '邀请有礼', QUEUE: '活动完成奖', COMMISSION: '分享激励',
-      POOL_V8: '促销让利抽中', POOL: '促销让利抽中',
+      POOL_V8: '促销优惠', POOL: '促销优惠',
       SELF_BATCH: '复购感谢奖', SELF_PROGRESS: '复购感谢奖', SELF_COMMISSION: '复购感谢奖',
       REFERRAL_PROGRESS: '分享感谢奖', REFERRAL_COMMISSION: '分享感谢奖',
       CONVERT: '积分兑换', WITHDRAW: '提现', MANUAL_PATCH: '账户调整',

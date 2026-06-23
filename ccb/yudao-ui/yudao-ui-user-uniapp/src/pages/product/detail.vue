@@ -60,14 +60,14 @@
       <!-- v8 本期中奖名单 + 池余额 -->
       <view v-if="poolBalance > 0 || latestWinners.length > 0" class="pd-section pool-section">
         <view class="hdr">
-          <text>奖池公示</text>
+          <text>优惠公示</text>
           <text class="t-brand" @click="goPoolPublic">查看全部 ›</text>
         </view>
         <view class="pool-strip">
-          <text class="pool-bal">当前奖池 <text class="b">¥{{ fen2yuan(poolBalance) }}</text></text>
+          <text class="pool-bal">当前优惠池 <text class="b">¥{{ fen2yuan(poolBalance) }}</text></text>
           <text class="pool-out" v-if="poolTotalOut > 0">已发 ¥{{ fen2yuan(poolTotalOut) }}</text>
         </view>
-        <view v-if="latestWinners.length === 0" class="pool-empty">暂无中奖记录</view>
+        <view v-if="latestWinners.length === 0" class="pool-empty">暂无优惠记录</view>
         <view v-else class="winners-list">
           <view v-for="(w, idx) in latestWinners.slice(0, 6)" :key="w.id" class="winner-row" :class="{ self: w.isSelf }">
             <text class="rank">{{ idx + 1 }}</text>
@@ -79,7 +79,7 @@
                 <text v-if="w.isSelf" class="self-tag">我</text>
                 <text class="star-tag">{{ w.star }}星</text>
               </view>
-              <text class="r2">{{ w.mode === 'LOTTERY' ? '抽中' : '均分' }}</text>
+              <text class="r2">{{ w.mode === 'LOTTERY' ? '优惠到账' : '均分到账' }}</text>
             </view>
             <text class="amt">+¥{{ fen2yuan(w.amount) }}</text>
           </view>

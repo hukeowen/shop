@@ -678,7 +678,7 @@ public class AppMerchantPromoController {
             case "QUEUE":               return "邀请累积奖";
             case "COMMISSION":          return "分享激励";       // 原"团队佣金"已下线（V044）
             case "POOL":
-            case "POOL_V8":             return "促销让利抽中";
+            case "POOL_V8":             return "促销优惠";
             case "SELF_BATCH":
             case "SELF_PROGRESS":
             case "SELF_COMMISSION":     return "复购感谢奖";

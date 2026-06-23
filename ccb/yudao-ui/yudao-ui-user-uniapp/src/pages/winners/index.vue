@@ -3,18 +3,18 @@
     <view class="hero">
       <view class="hero-title">
         <text class="trophy">🏆</text>
-        <text class="t">商户让利公告</text>
-        <text class="sub">商户营销让利活动 · 提现由商户审批</text>
+        <text class="t">优惠公告</text>
+        <text class="sub">商户营销优惠活动 · 提现由商户审批</text>
       </view>
       <view class="tabs">
-        <view class="tab" :class="{ on: tab === 'live' }" @click="switchTab('live')">🔴 实时中奖</view>
+        <view class="tab" :class="{ on: tab === 'live' }" @click="switchTab('live')">🔴 实时优惠</view>
         <view class="tab" :class="{ on: tab === 'rank' }" @click="goRank">📊 榜一排名</view>
       </view>
-      <view v-if="todayAmt" class="hero-stat">今日全网商户让利 <text class="hl">¥{{ todayAmt }}</text> · {{ todayCnt }} 笔</view>
+      <view v-if="todayAmt" class="hero-stat">今日全网商户优惠 <text class="hl">¥{{ todayAmt }}</text> · {{ todayCnt }} 笔</view>
     </view>
 
     <view v-if="loading" class="loading">加载中…</view>
-    <empty-state v-else-if="!winners.length" icon="🪙" title="暂无让利记录" desc="去店铺下单参与商户让利活动" />
+    <empty-state v-else-if="!winners.length" icon="🪙" title="暂无优惠记录" desc="去店铺下单参与商户优惠活动" />
     <view v-else class="list">
       <view v-for="(w, i) in winners" :key="w.id" class="row" :class="rankRowClass(i)" @click="goSource(w)">
         <view class="rank" :class="rankClass(i)">
@@ -26,7 +26,7 @@
         <view class="row-body">
           <view class="row-t1">
             <text class="shop">{{ w.shopName || '某店铺' }}</text>
-            让利给 <text class="phone">{{ w.userMask || '****' }}</text>
+            优惠给 <text class="phone">{{ w.userMask || '****' }}</text>
           </view>
           <view class="row-t2">{{ labelFor(w.sourceType) }} · {{ fmtTime(w.createTime) }}</view>
         </view>
@@ -66,8 +66,8 @@ function iconFor(t) {
 }
 function labelFor(t) {
   return {
-    POOL: '中奖派发', POOL_V8: '中奖派发',
-    QUEUE: '排队中奖',
+    POOL: '优惠到账', POOL_V8: '优惠到账',
+    QUEUE: '排队优惠',
     SELF_BATCH: '购物奖励',
     REFERRAL_PROGRESS: '分享感谢奖',
     REFERRAL_COMMISSION: '分享感谢奖', DIRECT: '邀请有礼',

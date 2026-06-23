@@ -64,7 +64,7 @@ function iconFor(t) {
   return '🪙';
 }
 function labelFor(t) {
-  if (t === 'POOL' || t === 'POOL_V8')              return '促销让利抽中';
+  if (t === 'POOL' || t === 'POOL_V8')              return '促销优惠';
   if (t === 'QUEUE')                                 return '活动完成奖';
   if (t === 'DIRECT')                                return '邀请有礼';
   if (t === 'COMMISSION')                            return '分享激励';

@@ -96,8 +96,8 @@ function labelFor(t) {
   return {
     SELF_BATCH: '购物奖励',
     ORDER_DEDUCT: '下单抵扣',
-    POOL_V8: '中奖派发', POOL: '中奖派发',
-    QUEUE: '排队中奖',
+    POOL_V8: '优惠到账', POOL: '优惠到账',
+    QUEUE: '排队优惠',
     REFERRAL_PROGRESS: '推荐奖励',
     REFERRAL_COMMISSION: '分享感谢奖', DIRECT: '邀请有礼',
     COMMISSION: '分享激励',
@@ -139,9 +139,9 @@ function explainOf(r) {
     return Number(d) > 0 ? `购买 ${c} 件 · ${d} 件已立减` : `购买 ${c} 件`;
   }
   if (r.sourceType === 'ORDER_DEDUCT') return '下单立减';
-  if (r.sourceType === 'POOL_V8' || r.sourceType === 'POOL') return '本期奖池派发';
+  if (r.sourceType === 'POOL_V8' || r.sourceType === 'POOL') return '本期促销优惠';
   if (r.sourceType === 'COMMISSION' && m4) return `${m4[1]} 星会员`;
-  if (r.sourceType === 'QUEUE') return '当期排队中奖';
+  if (r.sourceType === 'QUEUE') return '当期排队优惠';
   if (r.sourceType === 'REFERRAL_PROGRESS' || r.sourceType === 'REFERRAL_COMMISSION') return '好友下单';
   if (r.sourceType === 'CONVERT') return '兑换为消费积分';
   return '';
