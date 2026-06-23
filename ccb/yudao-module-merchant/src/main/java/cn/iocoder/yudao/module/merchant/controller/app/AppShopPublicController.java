@@ -60,6 +60,10 @@ public class AppShopPublicController {
     @Resource
     private cn.iocoder.yudao.module.merchant.dal.mysql.promo.ProductPromoConfigMapper productPromoConfigMapper;
 
+    /** 腾讯位置服务 WebService key（仅服务端持有，前端只传坐标）。未配置则逆地理优雅降级为空。 */
+    @org.springframework.beans.factory.annotation.Value("${merchant.map.tencent-key:}")
+    private String tencentMapKey;
+
     @GetMapping("/list")
     @Operation(summary = "分页查询店铺列表（V039 三层闸门过滤：今日未打卡/主动打烊的店不返回；营业时间外的店权重靠后）")
     @PermitAll
@@ -360,6 +364,55 @@ public class AppShopPublicController {
                 * Math.sin(dLng / 2) * Math.sin(dLng / 2);
         double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         return (int) Math.round(R * c);
+    }
+
+    @GetMapping("/geo-reverse")
+    @Operation(summary = "逆地理解析：坐标 → 具体地址（腾讯位置服务代理，key 在服务端不下发前端）")
+    @Parameter(name = "lng", description = "经度（gcj02，与小程序 uni.getLocation type=gcj02 对齐）", required = true)
+    @Parameter(name = "lat", description = "纬度（gcj02）", required = true)
+    @PermitAll
+    @TenantIgnore
+    @RateLimiter(time = 60, count = 20, keyResolver = ClientIpRateLimiterKeyResolver.class,
+                 message = "定位过于频繁，请稍后再试")
+    public CommonResult<Map<String, Object>> geoReverse(
+            @RequestParam("lng") java.math.BigDecimal lng,
+            @RequestParam("lat") java.math.BigDecimal lat) {
+        Map<String, Object> resp = new HashMap<>();
+        // 未配置地图 key：返回空，前端回退到「已定位 · 看附近」。绝不下发 key 到前端。
+        if (tencentMapKey == null || tencentMapKey.trim().isEmpty()) {
+            return success(resp);
+        }
+        try {
+            // 腾讯位置服务逆地址解析：location 顺序是 纬度,经度
+            String url = "https://apis.map.qq.com/ws/geocoder/v1/?location="
+                    + lat.toPlainString() + "," + lng.toPlainString()
+                    + "&key=" + tencentMapKey + "&get_poi=0";
+            String body = cn.hutool.http.HttpUtil.get(url, 3000);
+            cn.hutool.json.JSONObject json = cn.hutool.json.JSONUtil.parseObj(body);
+            if (json.getInt("status", -1) != 0) {
+                log.warn("[geoReverse] 腾讯逆地理失败 status={} msg={}",
+                        json.getInt("status", -1), json.getStr("message"));
+                return success(resp);
+            }
+            cn.hutool.json.JSONObject result = json.getJSONObject("result");
+            if (result == null) {
+                return success(resp);
+            }
+            resp.put("address", result.getStr("address"));
+            cn.hutool.json.JSONObject fa = result.getJSONObject("formatted_addresses");
+            if (fa != null) {
+                resp.put("recommend", fa.getStr("recommend"));
+            }
+            cn.hutool.json.JSONObject ac = result.getJSONObject("address_component");
+            if (ac != null) {
+                resp.put("province", ac.getStr("province"));
+                resp.put("city", ac.getStr("city"));
+                resp.put("district", ac.getStr("district"));
+            }
+        } catch (Exception e) {
+            log.warn("[geoReverse] 调用腾讯逆地理异常 lng={} lat={}: {}", lng, lat, e.getMessage());
+        }
+        return success(resp);
     }
 
     @GetMapping("/config")

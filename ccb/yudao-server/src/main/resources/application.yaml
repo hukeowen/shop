@@ -396,6 +396,11 @@ merchant:
   field-encrypt-key: ${MERCHANT_FIELD_ENCRYPT_KEY:dev_key_12345678}
   # sidecar Node 服务（OSS / TTS / 视频后处理）；生产 systemd 守护，dev 自起
   sidecar-url: ${SIDECAR_URL:http://127.0.0.1:8081}
+  # 地图服务：腾讯位置服务 WebService key（逆地理解析，C 端首页显示具体地址）
+  #   占位空值；生产通过 TENCENT_MAP_KEY 环境变量 / application-prod.yaml 覆盖。
+  #   未配置时 /merchant/shop/public/geo-reverse 返回空，前端回退到「已定位」
+  map:
+    tencent-key: ${TENCENT_MAP_KEY:}
   # 通联收付通进件 + 支付（resources/application.yaml 占位，真值由 ENV 覆盖）
   allinpay:
     enabled: ${ALLINPAY_ENABLED:false}
