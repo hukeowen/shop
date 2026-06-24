@@ -53,17 +53,19 @@ public class WithdrawServiceImpl implements WithdrawService {
         PromoConfigDO config = promoConfigService.getConfig();
         Integer threshold = config == null ? 0 : (config.getWithdrawThreshold() == null ? 0 : config.getWithdrawThreshold());
         if (amount < threshold) {
-            throw new IllegalStateException("低于提现门槛 " + threshold + " 分");
+            throw cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception0(
+                    1_031_004_001, "低于兑付门槛 ¥" + (threshold / 100));
         }
         // 互斥：用户已有 PENDING / APPROVED 的活跃申请
         if (withdrawMapper.existsActiveByUserId(userId)) {
-            throw new IllegalStateException("已有进行中的提现申请，请等审批完成或线下结算后再申请");
+            throw cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception0(
+                    1_031_004_002, "已有进行中的兑付申请，请等商户审批完成后再申请");
         }
         // 余额校验 + 即时扣减（保留 sourceId = 申请记录 ID 的语义；先建记录再扣减）
         ShopUserStarDO acct = promoPointService.getOrCreateAccount(userId);
         if (acct.getPromoPointBalance() < amount) {
-            throw new IllegalStateException("推广积分余额不足，余额=" + acct.getPromoPointBalance()
-                    + " 申请=" + amount);
+            throw cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception0(
+                    1_031_004_003, "该店推广积分余额不足");
         }
         ShopPromoWithdrawDO record = ShopPromoWithdrawDO.builder()
                 .userId(userId)
