@@ -1,9 +1,9 @@
 <template>
   <view class="page">
-    <nav-bar title="我的兑付申请记录" />
+    <nav-bar title="我的积分兑换记录" />
 
     <view v-if="loading" class="loading">加载中…</view>
-    <empty-state v-else-if="!records.length" title="暂无兑付申请记录" desc="去申请商户兑付推广积分" />
+    <empty-state v-else-if="!records.length" title="暂无兑换申请记录" desc="去申请商户兑换推广积分" />
 
     <view v-else class="list">
       <view v-for="r in records" :key="r.id" class="card">
@@ -72,8 +72,8 @@
     </view>
 
     <view class="footer-tip">
-      平台仅提供技术信息撮合，兑付形式与额度由<text class="b">商户独立审批</text>，您与商户共同确认完成。
-      <text class="b">平台不构成兑付承诺、不承担担保责任</text>。
+      平台仅提供技术信息撮合，兑换形式与额度由<text class="b">商户独立审批</text>，您与商户共同确认完成。
+      <text class="b">平台不构成兑换承诺、不承担担保责任</text>。
     </view>
     <view class="bottom-pad"></view>
   </view>
@@ -127,7 +127,7 @@ function previewProof(url) {
 async function onConfirm(r) {
   uni.showModal({
     title: '确认已收到打款',
-    content: `您确认已收到商户对应 ${fen2yuan(r.amount, false)} 积分的线下兑付吗？\n\n确认后本次申请完成，无法撤销。`,
+    content: `您确认已收到商户对应 ${fen2yuan(r.amount, false)} 积分的线下兑换吗？\n\n确认后本次申请完成，无法撤销。`,
     success: async (res) => {
       if (!res.confirm) return;
       try {

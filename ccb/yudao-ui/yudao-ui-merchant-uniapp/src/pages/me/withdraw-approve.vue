@@ -20,7 +20,7 @@
           <text :class="['st', r.status.toLowerCase()]">{{ statusLabel(r.status) }}</text>
         </view>
         <view class="row2">
-          <text>用户 ID：{{ r.userId }}</text>
+          <text class="mobile">📱 {{ r.userMobile || '手机号未知' }}<text class="uid"> · ID {{ r.userId }}</text></text>
           <text>申请：{{ formatTime(r.applyAt) }}</text>
         </view>
         <view v-if="r.processedAt" class="row3">
@@ -280,6 +280,9 @@ onMounted(() => loadList(true));
     justify-content: space-between;
     font-size: 22rpx;
     color: $text-secondary;
+
+    .mobile { font-weight: 600; color: $text-primary; }
+    .uid { color: $text-placeholder; font-weight: 400; font-size: 20rpx; }
   }
 
   .row3 {

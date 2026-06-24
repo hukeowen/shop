@@ -49,6 +49,8 @@ public class AppMerchantWithdrawPromoController {
     private MerchantMapper merchantInfoMapper;
     @Resource
     private ShopPromoWithdrawMapper shopPromoWithdrawMapper;
+    @Resource
+    private cn.iocoder.yudao.module.member.api.user.MemberUserApi memberUserApi;
 
     // ==================== 用户端 ====================
 
@@ -89,7 +91,26 @@ public class AppMerchantWithdrawPromoController {
             @RequestParam(value = "status", required = false) String status,
             @Valid PageParam pageParam) {
         Long tenantId = requireMerchantTenantId();
-        return success(withdrawService.pageByTenant(tenantId, status, pageParam));
+        PageResult<ShopPromoWithdrawDO> page = withdrawService.pageByTenant(tenantId, status, pageParam);
+        // 补申请人手机号（商户审批需识别/联系用户；userId 无意义）
+        if (page.getList() != null && !page.getList().isEmpty()) {
+            java.util.Set<Long> uids = page.getList().stream()
+                    .map(ShopPromoWithdrawDO::getUserId).filter(java.util.Objects::nonNull)
+                    .collect(java.util.stream.Collectors.toSet());
+            if (!uids.isEmpty()) {
+                try {
+                    java.util.Map<Long, cn.iocoder.yudao.module.member.api.user.dto.MemberUserRespDTO> um =
+                            memberUserApi.getUserMap(uids);
+                    if (um != null) {
+                        for (ShopPromoWithdrawDO r : page.getList()) {
+                            cn.iocoder.yudao.module.member.api.user.dto.MemberUserRespDTO u = um.get(r.getUserId());
+                            if (u != null) r.setUserMobile(u.getMobile());
+                        }
+                    }
+                } catch (Exception ignore) { /* 补手机号失败不影响列表 */ }
+            }
+        }
+        return success(page);
     }
 
     @PostMapping("/approve")

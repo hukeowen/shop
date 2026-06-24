@@ -1,6 +1,6 @@
 <template>
   <view class="page">
-    <nav-bar title="积分兑付申请" />
+    <nav-bar title="申请兑换积分" />
 
     <view class="card shop-card">
       <view class="shop-row">
@@ -8,27 +8,27 @@
         <text class="shop-name">{{ shopName || '店铺' }}</text>
       </view>
       <view class="card-row">
-        <text class="l">该店可申请兑付推广积分</text>
+        <text class="l">该店可申请兑换推广积分</text>
         <text class="hl">{{ fen2yuan(promoBalance, false) }} 积分</text>
       </view>
     </view>
 
     <view class="card">
-      <view class="card-title">申请兑付积分数</view>
+      <view class="card-title">申请兑换积分数</view>
       <view class="amt-input">
         <input v-model="amount" type="digit" placeholder="请输入积分数（1 积分 = ¥1）" />
         <text class="unit">积分</text>
         <text class="all" @click="amount = fen2yuan(promoBalance, false)">全部</text>
       </view>
-      <view v-if="amtFenInt > 0 && amtFenInt > promoBalance" class="warn">超出该店可兑付余额</view>
+      <view v-if="amtFenInt > 0 && amtFenInt > promoBalance" class="warn">超出该店可兑换余额</view>
     </view>
 
     <view class="tip">
-      说明：推广积分为<text class="b">该店商户</text>的营销凭证。本兑付申请将由<text class="b">{{ shopName || '该商户' }}</text>独立审批，<text class="b">兑付形式（现金 / 商品 / 优惠）与到账时间由商户决定</text>，商户审批后会与你联系。平台仅提供技术信息撮合，<text class="b">不构成兑付承诺 / 担保</text>。提交后该积分将冻结，驳回则自动退回。
+      说明：推广积分为<text class="b">该店商户</text>的营销凭证。本兑换申请将由<text class="b">{{ shopName || '该商户' }}</text>独立审批，<text class="b">兑换形式（现金 / 商品 / 优惠）与到账时间由商户决定</text>，商户审批后会与你联系。平台仅提供技术信息撮合，<text class="b">不构成兑换承诺 / 担保</text>。提交后该积分将冻结，驳回则自动退回。
     </view>
 
-    <view class="submit" :class="{ disabled: !canSubmit }" @click="onSubmit">{{ submitting ? '提交中…' : '提交兑付申请' }}</view>
-    <view class="link" @click="goList">查看我的兑付记录 ›</view>
+    <view class="submit" :class="{ disabled: !canSubmit }" @click="onSubmit">{{ submitting ? '提交中…' : '提交兑换申请' }}</view>
+    <view class="link" @click="goList">查看我的兑换记录 ›</view>
   </view>
 </template>
 

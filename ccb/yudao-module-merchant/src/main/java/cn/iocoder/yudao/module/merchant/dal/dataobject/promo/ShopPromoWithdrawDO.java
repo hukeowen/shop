@@ -43,4 +43,8 @@ public class ShopPromoWithdrawDO extends TenantBaseDO {
     /** 商户打款支付凭证图片 URL（标记已打款时上传，用户端确认收款前可查看） */
     private String payProofUrl;
 
+    /** 申请人手机号（非表字段，审批列表展示用，由 controller 批量补） */
+    @com.baomidou.mybatisplus.annotation.TableField(exist = false)
+    private String userMobile;
+
 }
