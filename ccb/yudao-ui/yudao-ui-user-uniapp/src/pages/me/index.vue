@@ -357,7 +357,8 @@ async function load() {
     eligibilityMap.value = map;
   } catch { eligibilityMap.value = {}; }
   try {
-    const list = await listMyShopsEnriched();
+    // 我加入的店铺 = 已付款购买过推N反1 的店铺（onlyTuijianPurchased=true）
+    const list = await listMyShopsEnriched(true);
     myShops.value = (list || []).map((s) => {
       const queue = queues.value.find((q) => q.tenantId === s.tenantId);
       const reqN = queue ? (queue.maxN || 0) : 0; // VO 字段是 maxN（原 requiredCount/tuijianN 不存在）

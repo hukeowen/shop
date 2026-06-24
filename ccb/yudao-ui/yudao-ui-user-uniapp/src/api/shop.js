@@ -46,8 +46,9 @@ export const listFavoriteShops = () =>
   get('/app-api/merchant/mini/member-rel/my-shops-enriched?onlyFavorite=true');
 
 // 我加入的店铺（含余额 / 推广积分 / 消费积分）
-export const listMyShopsEnriched = () =>
-  get('/app-api/merchant/mini/member-rel/my-shops-enriched');
+//   onlyTuijianPurchased=true：仅返回「已付款购买过推N反1」的店铺（判定 shop_queue_position 存在）
+export const listMyShopsEnriched = (onlyTuijianPurchased = false) =>
+  get(`/app-api/merchant/mini/member-rel/my-shops-enriched${onlyTuijianPurchased ? '?onlyTuijianPurchased=true' : ''}`);
 
 // 当前 tenant 下我的余额 / 积分
 export const getMyRel = (tenantId) =>

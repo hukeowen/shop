@@ -39,7 +39,7 @@ const shops = ref([]);
 
 async function load() {
   loading.value = true;
-  try { shops.value = (await listMyShopsEnriched()) || []; }
+  try { shops.value = (await listMyShopsEnriched(true)) || []; }
   catch { shops.value = []; }
   finally { loading.value = false; }
 }
