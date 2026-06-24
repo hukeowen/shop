@@ -40,4 +40,7 @@ public class ShopPromoWithdrawDO extends TenantBaseDO {
 
     private String processorRemark;
 
+    /** 商户打款支付凭证图片 URL（标记已打款时上传，用户端确认收款前可查看） */
+    private String payProofUrl;
+
 }

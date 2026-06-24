@@ -118,10 +118,11 @@ public class AppMerchantWithdrawPromoController {
     @Operation(summary = "线下打款后标记已支付（商户）")
     @TenantIgnore
     public CommonResult<Boolean> markPaid(@RequestParam("id") @NotNull Long id,
-                                          @RequestParam(value = "remark", required = false) String remark) {
+                                          @RequestParam(value = "remark", required = false) String remark,
+                                          @RequestParam(value = "payProofUrl", required = false) String payProofUrl) {
         Long processorId = SecurityFrameworkUtils.getLoginUserId();
         validateOwnership(id, requireMerchantTenantId());
-        withdrawService.markPaid(id, processorId, remark);
+        withdrawService.markPaid(id, processorId, remark, payProofUrl);
         return success(true);
     }
 

@@ -51,6 +51,12 @@
           </view>
         </view>
 
+        <!-- 商户支付凭证（标记已打款时上传）-->
+        <view v-if="r.payProofUrl" class="proof">
+          <text class="proof-l">📎 商户支付凭证（点击放大）</text>
+          <image :src="r.payProofUrl" mode="widthFix" class="proof-img" @click="previewProof(r.payProofUrl)" />
+        </view>
+
         <!-- 商户已发款 → 用户确认 -->
         <view v-if="r.status === 'PAID'" class="cta-row">
           <text class="hint">商户已线下转账给您，请在收到款项后点击下方按钮确认</text>
@@ -112,6 +118,10 @@ async function load() {
   } finally {
     loading.value = false;
   }
+}
+
+function previewProof(url) {
+  if (url) uni.previewImage({ urls: [url], current: url });
 }
 
 async function onConfirm(r) {
@@ -231,6 +241,14 @@ onShow(load);
   font-size: 12.5px; font-weight: 700;
   text-align: center;
 }
+
+.proof {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed $line;
+}
+.proof-l { font-size: 11.5px; color: $t3; }
+.proof-img { width: 180px; border-radius: 8px; margin-top: 8px; border: 1px solid $line; background: $bg-2; }
 
 .footer-tip {
   margin: 18px 14px;

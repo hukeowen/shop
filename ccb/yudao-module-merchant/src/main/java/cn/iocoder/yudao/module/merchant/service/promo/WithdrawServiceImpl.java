@@ -126,10 +126,25 @@ public class WithdrawServiceImpl implements WithdrawService {
     @LogRecord(type = SHOP_WITHDRAW_TYPE, subType = SHOP_WITHDRAW_PAY_SUB_TYPE,
             bizNo = "{{#applyId}}", success = SHOP_WITHDRAW_PAY_SUCCESS)
     public void markPaid(Long applyId, Long processorId, String remark) {
+        markPaid(applyId, processorId, remark, null);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    @LogRecord(type = SHOP_WITHDRAW_TYPE, subType = SHOP_WITHDRAW_PAY_SUB_TYPE,
+            bizNo = "{{#applyId}}", success = SHOP_WITHDRAW_PAY_SUCCESS)
+    public void markPaid(Long applyId, Long processorId, String remark, String payProofUrl) {
         mustGet(applyId);
         int rows = withdrawMapper.transitionStatus(applyId, STATUS_APPROVED, STATUS_PAID, processorId, remark);
         if (rows != 1) {
             throw new IllegalStateException("状态机非法跳转：申请 #" + applyId + " 当前不是 APPROVED（可能已被并发处理）");
+        }
+        // 回写支付凭证（标记已打款时由商户上传）
+        if (payProofUrl != null && !payProofUrl.trim().isEmpty()) {
+            ShopPromoWithdrawDO patch = new ShopPromoWithdrawDO();
+            patch.setId(applyId);
+            patch.setPayProofUrl(payProofUrl.trim());
+            withdrawMapper.updateById(patch);
         }
     }
 

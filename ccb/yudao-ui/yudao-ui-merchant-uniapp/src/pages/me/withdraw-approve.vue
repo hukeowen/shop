@@ -49,6 +49,7 @@ import {
   approveWithdraw,
   rejectWithdraw,
   markPaidWithdraw,
+  uploadProof,
 } from '../../api/promo.js';
 
 const tabs = [
@@ -137,11 +138,11 @@ async function promptRemark(title) {
 }
 
 async function onApprove(r) {
-  const remark = await promptRemark(`通过 #${r.id} ¥${(r.amount/100).toFixed(2)}？`);
+  const remark = await promptRemark(`确认通过 #${r.id} 的 ¥${(r.amount/100).toFixed(2)} 兑付申请？\n通过后请线下打款给用户，再回来点【标记已打款】并上传凭证。`);
   if (remark === null) return;
   try {
     await approveWithdraw(r.id, remark);
-    uni.showToast({ title: '已通过', icon: 'success' });
+    uni.showToast({ title: '已通过审批', icon: 'success' });
     await loadList(true);
   } catch (e) {
     // toast 由 request 兜底
@@ -159,13 +160,33 @@ async function onReject(r) {
 }
 
 async function onMarkPaid(r) {
-  const remark = await promptRemark(`标记 #${r.id} 已打款？`);
-  if (remark === null) return;
-  try {
-    await markPaidWithdraw(r.id, remark);
-    uni.showToast({ title: '已标记已打款', icon: 'success' });
-    await loadList(true);
-  } catch {}
+  // 标记已打款必须上传支付凭证（转账截图），用户端能看到凭证再确认收款
+  uni.chooseImage({
+    count: 1,
+    sizeType: ['compressed'],
+    success: async (img) => {
+      const fp = img.tempFilePaths && img.tempFilePaths[0];
+      if (!fp) return;
+      uni.showLoading({ title: '上传凭证…' });
+      let proofUrl = '';
+      try {
+        proofUrl = await uploadProof(fp);
+      } catch (e) {
+        uni.hideLoading();
+        uni.showToast({ title: '凭证上传失败，请重试', icon: 'none' });
+        return;
+      }
+      try {
+        await markPaidWithdraw(r.id, '', proofUrl);
+        uni.hideLoading();
+        uni.showToast({ title: `#${r.id} 已标记打款`, icon: 'success' });
+        await loadList(true);
+      } catch (e) {
+        uni.hideLoading();
+      }
+    },
+    fail: () => {},
+  });
 }
 
 onMounted(() => loadList(true));

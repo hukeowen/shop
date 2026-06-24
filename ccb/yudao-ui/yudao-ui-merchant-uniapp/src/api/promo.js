@@ -218,26 +218,45 @@ export function pageWithdrawAdmin({ status, pageNo = 1, pageSize = 20 } = {}) {
   });
 }
 
+// 后端是 @RequestParam（读 query/form），不能放 JSON body，否则「请求参数缺失 id」
+function qs(obj) {
+  return Object.keys(obj)
+    .filter((k) => obj[k] !== undefined && obj[k] !== null && obj[k] !== '')
+    .map((k) => `${encodeURIComponent(k)}=${encodeURIComponent(obj[k])}`)
+    .join('&');
+}
+
 export function approveWithdraw(id, remark) {
-  return request({
-    url: '/app-api/merchant/mini/withdraw/approve',
-    method: 'POST',
-    data: { id, remark },
-  });
+  return request({ url: `/app-api/merchant/mini/withdraw/approve?${qs({ id, remark })}`, method: 'POST' });
 }
 
 export function rejectWithdraw(id, remark) {
-  return request({
-    url: '/app-api/merchant/mini/withdraw/reject',
-    method: 'POST',
-    data: { id, remark },
-  });
+  return request({ url: `/app-api/merchant/mini/withdraw/reject?${qs({ id, remark })}`, method: 'POST' });
 }
 
-export function markPaidWithdraw(id, remark) {
-  return request({
-    url: '/app-api/merchant/mini/withdraw/mark-paid',
-    method: 'POST',
-    data: { id, remark },
+export function markPaidWithdraw(id, remark, payProofUrl) {
+  return request({ url: `/app-api/merchant/mini/withdraw/mark-paid?${qs({ id, remark, payProofUrl })}`, method: 'POST' });
+}
+
+// 上传打款凭证图片 → 返回公网 URL（走 yudao 标准 app 文件上传）
+export function uploadProof(filePath) {
+  let token = '';
+  try { const o = JSON.parse(localStorage.getItem('user-store-v1') || '{}'); token = o.token || ''; } catch {}
+  if (!token) { try { token = uni.getStorageSync('token') || ''; } catch {} }
+  return new Promise((resolve, reject) => {
+    uni.uploadFile({
+      url: '/app-api/infra/file/upload',
+      filePath,
+      name: 'file',
+      formData: { directory: 'withdraw-proof' },
+      header: token ? { Authorization: `Bearer ${token}` } : {},
+      success: (res) => {
+        let body = res.data;
+        try { body = typeof body === 'string' ? JSON.parse(body) : body; } catch {}
+        if (body && body.code === 0) resolve(body.data);
+        else reject(new Error((body && body.msg) || '上传失败'));
+      },
+      fail: (e) => reject(e),
+    });
   });
 }
