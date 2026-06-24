@@ -397,11 +397,11 @@ async function load() {
   } catch {}
   // 累计订单：跨店订单总数
   try { const op = await pageOrders(undefined, 1, 1); totalOrders.value = op?.total || 0; } catch {}
-  // 推荐好友：各加入店铺「我的直推数」求和
+  // 推荐好友：后端 my-children-count 已是跨店去重总数（@TenantIgnore），调一次即可
+  // 返回 { count: N }，不能直接 Number(对象)；必须取 .count
   try {
-    const tids = (myShops.value || []).map((s) => s.tenantId).filter(Boolean);
-    const counts = await Promise.all(tids.map((tid) => getMyChildrenCount(tid).then((n) => Number(n) || 0).catch(() => 0)));
-    totalInvited.value = counts.reduce((a, b) => a + b, 0);
+    const r = await getMyChildrenCount();
+    totalInvited.value = Number(r && r.count) || 0;
   } catch {}
   try { favCount.value = (await favoriteCount()) || 0; } catch {}
   try { couponCount.value = (await getUnusedCouponCount()) || 0; } catch {}

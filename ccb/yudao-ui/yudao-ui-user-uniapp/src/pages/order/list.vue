@@ -62,11 +62,15 @@ import { fen2yuan, fmtTime } from '@/utils/format.js';
 // tenantId → 店铺名 缓存（订单只带 tenantId，多商户需解析店铺名）
 const shopNameCache = {};
 async function resolveShopNames(list) {
+  // 仅未缓存的 tenantId 才去拉店铺名（已缓存的跳过网络请求）
   const tids = [...new Set((list || []).map((o) => o.tenantId).filter((t) => t && !shopNameCache[t]))];
-  if (!tids.length) return;
-  await Promise.all(tids.map(async (tid) => {
-    try { const info = await getShopInfo({ tenantId: tid }); if (info && info.shopName) shopNameCache[tid] = info.shopName; } catch {}
-  }));
+  if (tids.length) {
+    await Promise.all(tids.map(async (tid) => {
+      try { const info = await getShopInfo({ tenantId: tid }); if (info && info.shopName) shopNameCache[tid] = info.shopName; } catch {}
+    }));
+  }
+  // ⚠️ 必须无条件回填：onShow 会重新 switchTab 把 orders 重置成没店名的新对象，
+  // 若因缓存已热而早退就再也不会把店名贴回去 → 永远显示「订单」兜底。
   orders.value = orders.value.map((o) => ({ ...o, shopName: o.shopName || shopNameCache[o.tenantId] || '' }));
 }
 
