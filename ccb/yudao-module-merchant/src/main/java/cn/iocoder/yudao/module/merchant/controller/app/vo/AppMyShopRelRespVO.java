@@ -24,6 +24,9 @@ public class AppMyShopRelRespVO {
     @Schema(description = "店铺封面 URL（shop_info.cover_url）")
     private String coverUrl;
 
+    @Schema(description = "封面兜底图：无封面时取该店销量最高上架商品主图，供列表缩略图用")
+    private String topPicUrl;
+
     @Schema(description = "店铺地址")
     private String address;
 

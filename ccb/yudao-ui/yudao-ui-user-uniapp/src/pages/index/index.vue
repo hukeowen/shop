@@ -124,7 +124,7 @@
       <view class="sec"><text class="h">最近去过</text><text class="more" @click="goNearby">全部 ›</text></view>
       <scroll-view scroll-x :show-scrollbar="false" class="recent">
         <view v-for="s in recentShops" :key="s.id" class="rc" @click="goShop(s)">
-          <view class="rc-cv" :class="s.coverTone"><text class="rc-ph">{{ (s.name || '店')[0] }}</text><text class="vt">{{ s.lastVisit }}</text></view>
+          <view class="rc-cv" :class="s.coverTone"><image v-if="s.coverUrl" :src="s.coverUrl" mode="aspectFill" class="rc-img" /><text v-else class="rc-ph">{{ (s.name || '店')[0] }}</text><text class="vt">{{ s.lastVisit }}</text></view>
           <view class="rc-bd"><view class="n">{{ s.name }}</view><view class="m">余 <text class="b num">¥{{ s.balanceYuan }}</text><text v-if="s.promoPoint"> · 推 <text class="b num">{{ s.promoPoint }}</text></text></view></view>
         </view>
       </scroll-view>
@@ -330,6 +330,7 @@ async function loadRecent() {
       id: s.id || s.tenantId,
       tenantId: s.tenantId,
       name: s.shopName || s.name || `店铺 #${s.tenantId}`,
+      coverUrl: s.coverUrl || s.topPicUrl || s.shopLogo || '', // 封面优先，无封面用销量最高商品图，再不行字母占位
       coverTone: ['', 't2', 't3', 't4'][i],
       lastVisit: s.lastVisitAt ? fmtTime(s.lastVisitAt) : '最近',
       star: s.star || 0,
@@ -575,6 +576,7 @@ onShow(refreshAll);
 .rc-cv.t2{background:linear-gradient(135deg,#FFE8C9,#FFCF6B)}
 .rc-cv.t3{background:linear-gradient(135deg,#D6F0E5,#7FD6B5)}
 .rc-cv.t4{background:linear-gradient(135deg,#FFDDE5,#F9A8D4)}
+.rc-cv .rc-img{position:absolute;top:0;left:0;width:100%;height:100%}
 .rc-cv .rc-ph{font-size:28px;font-weight:800;color:rgba(255,255,255,.92)}
 .rc-cv .vt{position:absolute;left:6px;bottom:6px;height:18px;padding:0 7px;border-radius:5px;background:rgba(0,0,0,.4);color:#fff;font-size:9.5px;font-weight:600;display:flex;align-items:center}
 .rc-bd{padding:8px 10px 10px}

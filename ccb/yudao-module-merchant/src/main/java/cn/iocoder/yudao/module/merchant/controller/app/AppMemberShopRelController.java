@@ -61,6 +61,8 @@ public class AppMemberShopRelController {
     private cn.iocoder.yudao.module.merchant.dal.mysql.promo.ShopQueuePositionMapper shopQueuePositionMapper;
     @Resource
     private cn.iocoder.yudao.module.merchant.dal.mysql.promo.ShopPromoRecordMapper shopPromoRecordMapper;
+    @Resource
+    private cn.iocoder.yudao.module.product.dal.mysql.spu.ProductSpuMapper productSpuMapper;
 
     /**
      * 列出当前用户访问过的所有店铺（设计 9.2 节"店铺级收藏"语义，按 lastVisitAt 倒序）。
@@ -128,6 +130,24 @@ public class AppMemberShopRelController {
             } catch (Exception e) {
                 log.warn("[listMyShopsEnriched] 查 shop_info 失败 tenantId={}: {}",
                         rel.getTenantId(), e.getMessage());
+            }
+            // 无封面 → 用该店销量最高的上架商品主图兜底，让「最近去过/我加入」列表有真实图而非字母占位
+            if (vo.getCoverUrl() == null || vo.getCoverUrl().isEmpty()) {
+                try {
+                    Long tid = rel.getTenantId();
+                    TenantUtils.execute(tid, () -> {
+                        java.util.List<cn.iocoder.yudao.module.product.dal.dataobject.spu.ProductSpuDO> top =
+                                productSpuMapper.selectList(
+                                        new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<cn.iocoder.yudao.module.product.dal.dataobject.spu.ProductSpuDO>()
+                                                .eq(cn.iocoder.yudao.module.product.dal.dataobject.spu.ProductSpuDO::getStatus, 1)
+                                                .orderByDesc(cn.iocoder.yudao.module.product.dal.dataobject.spu.ProductSpuDO::getSalesCount)
+                                                .last("LIMIT 1"));
+                        if (top != null && !top.isEmpty()) vo.setTopPicUrl(top.get(0).getPicUrl());
+                    });
+                } catch (Exception e) {
+                    log.warn("[listMyShopsEnriched] 取商品兜底图失败 tenantId={}: {}",
+                            rel.getTenantId(), e.getMessage());
+                }
             }
             // 店铺名兜底：shop_info 可能没建（merchant_info 是 TenantBaseDO 要切租户查）
             if (vo.getShopName() == null) {
