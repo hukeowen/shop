@@ -100,10 +100,10 @@
           <view class="n purple">{{ fen2yuan(s.consumePointsRaw, false) }} <text class="u">积分</text></view>
           <view class="l">消费积分</view>
         </view>
-        <view class="msb-stat">
-          <view class="n" :class="s.queueActive ? 'orange' : 'mute'">{{ s.queueCount || 0 }}</view>
-          <view class="l">推 N 反 1</view>
-          <text v-if="s.queueActive" class="micro warn">活跃</text>
+        <view class="msb-stat" @click.stop="onQueueStat(s)">
+          <view class="n sm" :class="s.queueActive ? 'orange' : 'mute'">{{ s.queueActive ? '进行中' : '未参与' }}</view>
+          <view class="l">推 N 反 1 <text class="q">?</text></view>
+          <text v-if="s.queueActive" class="micro warn">{{ s.queueCount }} 个在队</text>
         </view>
       </view>
       <view v-if="s.queueBar" class="msb-queue-bar">
@@ -239,6 +239,15 @@ function goShopRecords(s, tab) {
   uni.navigateTo({ url });
 }
 function goQueue()         { user.isLogin ? uni.navigateTo({ url: '/pages/queue/index' })    : goLogin(); }
+function onQueueStat(s) {
+  if (s && s.queueActive) { goQueue(); return; }
+  uni.showModal({
+    title: '推 N 反 1 是什么？',
+    content: '商户营销活动：在本店买了开通「推 N 反 1」的商品后，你推荐 N 位朋友到店首单（或自购 N 件），即可累计拿回本品 1 件价值的推广积分。\n\n「未参与」= 你在本店还没买带「推 N 反 1」标的商品。去店铺购买即可加入。',
+    showCancel: false,
+    confirmText: '知道了',
+  });
+}
 function goInvite()        { user.isLogin ? uni.navigateTo({ url: '/pages/invite/index' })   : goLogin(); }
 function goFav()           { user.isLogin ? uni.navigateTo({ url: '/pages/favorites/index' }): goLogin(); }
 function goCoupon()        { user.isLogin ? uni.navigateTo({ url: '/pages/coupon/index' })   : goLogin(); }
@@ -603,6 +612,8 @@ onShow(load);
 .msb-stat .n.gold { color: var(--gold); }
 .msb-stat .n.purple { color: var(--indigo); }
 .msb-stat .n.mute { color: var(--ink3); }
+.msb-stat .n.sm { font-size: 13px; }
+.msb-stat .l .q { display: inline-flex; align-items: center; justify-content: center; width: 12px; height: 12px; border-radius: 50%; background: var(--line); color: var(--ink3); font-size: 9px; font-weight: 800; vertical-align: middle; }
 .msb-stat .l { font-size: 10px; color: var(--ink3); margin-top: 5px; font-weight: 600; }
 .msb-stat .micro {
   position: absolute; top: 4px; right: 6px;

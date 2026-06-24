@@ -52,6 +52,13 @@
             <view class="v mint">{{ fen2yuan(s.points || 0, false) }}</view>
             <view class="l">消费积分</view>
           </view>
+          <view class="s-divider"></view>
+          <view class="s-stat">
+            <view class="v brand">{{ fen2yuan(exchangedOf(s.tenantId), false) }}</view>
+            <view class="l">已兑换积分</view>
+          </view>
+        </view>
+        <view class="s-foot">
           <view class="s-act" :class="{ disabled: !(s.promoPoints > 0) }" @click="goWithdraw(s)">申请兑换</view>
         </view>
       </view>
@@ -71,7 +78,9 @@ import { fen2yuan } from '@/utils/format.js';
 const loading = ref(true);
 const shops = ref([]);
 const totalExchanged = ref(0);
+const exchangedByTenant = ref({}); // tenantId → 已兑换额（分）
 const totalPromo = computed(() => shops.value.reduce((s, x) => s + (x.promoPoints || 0), 0));
+function exchangedOf(tid) { return exchangedByTenant.value[tid] || 0; }
 
 function goWithdraw(s) {
   if (!(s.promoPoints > 0)) { uni.showToast({ title: '该店暂无可兑换推广积分', icon: 'none' }); return; }
@@ -89,11 +98,14 @@ async function load() {
       listMyShopsEnriched(),
       listMyPromoWithdraws().catch(() => []),
     ]);
-    shops.value = (list || []).filter((s) => (s.promoPoints || 0) > 0 || (s.points || 0) > 0);
-    // 已兑换推广积分 = 非驳回的兑换申请总额（申请时即扣减积分）
-    totalExchanged.value = (withdraws || [])
-      .filter((w) => w && w.status !== 'REJECTED')
-      .reduce((a, w) => a + (w.amount || 0), 0);
+    // 已兑换（非驳回的兑换申请，申请时即扣减积分）：跨店合计 + 按店分组
+    const valid = (withdraws || []).filter((w) => w && w.status !== 'REJECTED');
+    totalExchanged.value = valid.reduce((a, w) => a + (w.amount || 0), 0);
+    const map = {};
+    valid.forEach((w) => { if (w.tenantId != null) map[w.tenantId] = (map[w.tenantId] || 0) + (w.amount || 0); });
+    exchangedByTenant.value = map;
+    // 展示有资产 或 有兑换记录的店
+    shops.value = (list || []).filter((s) => (s.promoPoints || 0) > 0 || (s.points || 0) > 0 || (map[s.tenantId] || 0) > 0);
   } catch { shops.value = []; }
   finally { loading.value = false; }
 }
@@ -172,9 +184,11 @@ onShow(load);
 .s-stat .v { font-size: 20px; font-weight: 900; color: $t1; font-variant-numeric: tabular-nums; }
 .s-stat .v.gold { color: $gold-d; }
 .s-stat .v.mint { color: $mint; }
+.s-stat .v.brand { color: $o-d; }
 .s-stat .l { font-size: 11px; color: $t3; margin-top: 2px; }
 .s-divider { width: 1px; height: 30px; background: $line; }
-.s-act { flex: none; margin-left: 12px; padding: 10px 16px; border-radius: 999px; background: linear-gradient(135deg, $o, $o-d); color: #fff; font-size: 13px; font-weight: 800; box-shadow: $sh-warm; }
+.s-foot { margin-top: 12px; padding-top: 12px; border-top: 1px dashed $line; display: flex; justify-content: flex-end; }
+.s-act { padding: 9px 22px; border-radius: 999px; background: linear-gradient(135deg, $o, $o-d); color: #fff; font-size: 13px; font-weight: 800; box-shadow: $sh-warm; }
 .s-act.disabled { background: $bg-2; color: $t4; box-shadow: none; }
 
 .foot-tip { padding: 14px 22px 0; font-size: 11px; color: $t4; line-height: 1.6; }
