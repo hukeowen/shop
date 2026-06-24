@@ -334,7 +334,7 @@ async function loadRecent() {
       lastVisit: s.lastVisitAt ? fmtTime(s.lastVisitAt) : '最近',
       star: s.star || 0,
       balanceYuan: fen2yuan(s.balance || 0, false),
-      promoPoint: fen2yuan(s.promoPoints || 0, false), // 分→积分，原来直接显示分=×100
+      promoPoint: (s.promoPoints || 0) > 0 ? fen2yuan(s.promoPoints, false) : '', // 分→积分(×100已修)，0 时空串隐藏
     }));
   } catch {}
 }
