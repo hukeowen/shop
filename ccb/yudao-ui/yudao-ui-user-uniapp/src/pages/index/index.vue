@@ -285,12 +285,13 @@ async function loadQueueTip() {
     const list = await listMyQueues();
     stat.value.myQueueCount = (list || []).length;
     if (list && list.length) {
+      // VO 字段为 maxN / accumulatedCount / unitPrice（原 requiredCount/currentCount/rewardAmount 不存在）
       const sorted = [...list].sort((a, b) =>
-        ((a.requiredCount || 0) - (a.currentCount || 0)) -
-        ((b.requiredCount || 0) - (b.currentCount || 0)));
+        ((a.maxN || 0) - (a.accumulatedCount || 0)) -
+        ((b.maxN || 0) - (b.accumulatedCount || 0)));
       const q = sorted[0];
-      const gap = (q.requiredCount || 0) - (q.currentCount || 0);
-      const amt = q.rewardAmount || 0;
+      const gap = (q.maxN || 0) - (q.accumulatedCount || 0);
+      const amt = q.unitPrice || q.accumulatedAmount || 0;
       if (gap > 0 && amt > 0) {
         queueTip.value = {
           shopName: q.shopName || '店铺',
@@ -333,7 +334,7 @@ async function loadRecent() {
       lastVisit: s.lastVisitAt ? fmtTime(s.lastVisitAt) : '最近',
       star: s.star || 0,
       balanceYuan: fen2yuan(s.balance || 0, false),
-      promoPoint: s.promoPoints || 0,
+      promoPoint: fen2yuan(s.promoPoints || 0, false), // 分→积分，原来直接显示分=×100
     }));
   } catch {}
 }

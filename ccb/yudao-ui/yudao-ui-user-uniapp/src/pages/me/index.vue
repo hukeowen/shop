@@ -360,10 +360,10 @@ async function load() {
     const list = await listMyShopsEnriched();
     myShops.value = (list || []).map((s) => {
       const queue = queues.value.find((q) => q.tenantId === s.tenantId);
-      const reqN = queue ? (queue.requiredCount || queue.tuijianN) : 0;
+      const reqN = queue ? (queue.maxN || 0) : 0; // VO 字段是 maxN（原 requiredCount/tuijianN 不存在）
       const queueBar = (queue && reqN > 0) ? {
         text: `${queue.spuName || '商品'} · 推 ${reqN} 反 1进度`,
-        bold: `${queue.currentCount || 0}/${reqN}`,
+        bold: `${queue.accumulatedCount || 0}/${reqN}`,
       } : null;
       // VO 字段：promoPoints (Long 分) / points (Long 分，消费积分) / star (Integer) / lastVisitAt
       const star = s.star || s.starLevel || 0;
