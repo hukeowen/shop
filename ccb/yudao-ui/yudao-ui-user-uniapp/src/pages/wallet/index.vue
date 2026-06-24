@@ -2,106 +2,68 @@
   <view class="page">
     <nav-bar title="我的钱包" bg="transparent" txt="#fff" />
     <view class="hero">
-      <view class="hero-tag">💎 推广积分（商户营销活动凭证）</view>
-      <view class="hero-amt">{{ fen2yuan(promoPoints, false) }} <text class="unit">积分</text></view>
-      <view class="hero-sub">积分为商户营销凭证 · 商户承诺：可买本店所有商品 / 线下兑换现金 · 平台不担保</view>
-      <view class="hero-row">
-        <view class="hr-col">
-          <view class="hr-l">推广积分</view>
-          <view class="hr-v">{{ fen2yuan(promoPoints, false) }} <text class="u">积分</text></view>
-        </view>
-        <view class="hr-col">
-          <view class="hr-l">消费积分</view>
-          <view class="hr-v">{{ fen2yuan(consumePoints, false) }} <text class="u">积分</text></view>
-        </view>
-        <view class="hr-col">
-          <view class="hr-l">今日入账</view>
-          <view class="hr-v">{{ fen2yuan(todayPoints, false) }} <text class="u">积分</text></view>
-        </view>
-      </view>
+      <view class="hero-tag">💎 推广积分（跨店合计 · 商户营销凭证）</view>
+      <view class="hero-amt">{{ fen2yuan(totalPromo, false) }} <text class="unit">积分</text></view>
+      <view class="hero-sub">积分为各商户营销凭证 · 兑付由对应商户独立审批 · 平台不担保</view>
       <view class="hero-actions">
-        <view class="btn warm" @click="goWithdraw">申请兑付</view>
         <view class="btn ghost" @click="goWithdrawList">兑付记录</view>
         <view class="btn ghost" @click="goPromoRecords">推广明细</view>
       </view>
     </view>
 
-    <view class="section-title"><text class="h">最近到账</text></view>
+    <view class="section-title"><text class="h">按店铺资产</text><text class="sub">兑付按店独立申请</text></view>
     <view v-if="loading" class="loading">加载中…</view>
-    <empty-state v-else-if="!records.length" title="暂无到账记录" />
+    <empty-state v-else-if="!shops.length" icon="💎" title="暂无店铺积分" desc="在店铺消费 / 参与营销活动即可获得" />
     <view v-else>
-      <view v-for="r in records" :key="r.id" class="row">
-        <view class="r-ic">{{ iconFor(r.sourceType) }}</view>
-        <view class="r-body">
-          <view class="r-t">{{ r.remark || labelFor(r.sourceType) }}</view>
-          <view class="r-d">{{ fmtTime(r.createTime) }}</view>
+      <view v-for="s in shops" :key="s.tenantId" class="shop">
+        <view class="s-head">
+          <text class="s-name">{{ s.shopName || '店铺 #' + s.tenantId }}</text>
         </view>
-        <view class="r-amt" :class="{ neg: r.amount < 0 }">{{ r.amount > 0 ? '+' : '' }}{{ fen2yuan(r.amount, false) }} <text class="u">积分</text></view>
+        <view class="s-body">
+          <view class="s-stat" @click="goShopPromo(s)">
+            <view class="v gold">{{ fen2yuan(s.promoPoints || 0, false) }}</view>
+            <view class="l">推广积分</view>
+          </view>
+          <view class="s-divider"></view>
+          <view class="s-stat" @click="goShopConsume(s)">
+            <view class="v">{{ fen2yuan(s.points || 0, false) }}</view>
+            <view class="l">消费积分</view>
+          </view>
+          <view class="s-act" :class="{ disabled: !(s.promoPoints > 0) }" @click="goWithdraw(s)">申请兑付</view>
+        </view>
       </view>
     </view>
   </view>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
-import { getAccount, listPromoRecords, getTodayStat } from '@/api/promo.js';
-import { fen2yuan, fmtTime } from '@/utils/format.js';
+import { listMyShopsEnriched } from '@/api/shop.js';
+import { fen2yuan } from '@/utils/format.js';
 
-const promoPoints = ref(0);
-const consumePoints = ref(0);
-const todayPoints = ref(0);
-const loading = ref(false);
-const records = ref([]);
+const loading = ref(true);
+const shops = ref([]);
+const totalPromo = computed(() => shops.value.reduce((s, x) => s + (x.promoPoints || 0), 0));
 
-function iconFor(t) {
-  if (t === 'POOL')       return '🏆';
-  if (t === 'QUEUE')      return '💰';
-  if (t === 'DIRECT')     return '👥';
-  if (t === 'COMMISSION') return '⭐';
-  if (t === 'WITHDRAW')   return '💸';
-  if (t === 'CONVERT')    return '🔄';
-  return '🪙';
+function goWithdraw(s) {
+  if (!(s.promoPoints > 0)) { uni.showToast({ title: '该店暂无可兑付推广积分', icon: 'none' }); return; }
+  uni.navigateTo({ url: `/pages/withdraw/index?tenantId=${s.tenantId}&shopName=${encodeURIComponent(s.shopName || '')}&balance=${s.promoPoints || 0}` });
 }
-function labelFor(t) {
-  if (t === 'POOL' || t === 'POOL_V8')              return '促销优惠';
-  if (t === 'QUEUE')                                 return '活动完成奖';
-  if (t === 'DIRECT')                                return '邀请有礼';
-  if (t === 'COMMISSION')                            return '分享激励';
-  if (t === 'SELF_BATCH' || t === 'SELF_PROGRESS')   return '复购优惠';
-  if (t === 'SELF_COMMISSION')                       return '复购优惠';
-  if (t === 'REFERRAL_PROGRESS' ||
-      t === 'REFERRAL_COMMISSION')                   return '分享感谢奖';
-  if (t === 'WITHDRAW')                              return '提现';
-  if (t === 'CONVERT')                               return '积分兑换';
-  if (t === 'MANUAL_PATCH')                          return '账户调整';
-  if (t === 'REDEEM_ORDER')                          return '订单抵扣';
-  if (t === 'ORDER_DEDUCT')                          return '订单使用';
-  return '分享奖励';
-}
-
-function goWithdraw()        { uni.navigateTo({ url: '/pages/withdraw/index' }); }
-function goWithdrawList()    { uni.navigateTo({ url: '/pages/withdraw/list' }); }
-function goPromoRecords()    { uni.navigateTo({ url: '/pages/points/promo' }); }
-function goConsumeRecords()  { uni.navigateTo({ url: '/pages/points/consume' }); }
+function goWithdrawList() { uni.navigateTo({ url: '/pages/withdraw/list' }); }
+function goPromoRecords() { uni.navigateTo({ url: '/pages/points/promo' }); }
+function goShopPromo(s) { uni.navigateTo({ url: `/pages/points/promo?tenantId=${s.tenantId}&shopName=${encodeURIComponent(s.shopName || '')}` }); }
+function goShopConsume(s) { uni.navigateTo({ url: `/pages/points/consume?tenantId=${s.tenantId}&shopName=${encodeURIComponent(s.shopName || '')}` }); }
 
 async function load() {
-  try {
-    const acct = await getAccount();
-    promoPoints.value = acct?.promoPointBalance || 0;
-    consumePoints.value = acct?.consumePointBalance || 0;
-  } catch {}
-  try {
-    const stat = await getTodayStat();
-    todayPoints.value = stat?.promoAmountToday || 0;
-  } catch {}
   loading.value = true;
   try {
-    const page = await listPromoRecords(1, 20);
-    records.value = page?.list || [];
-  } finally { loading.value = false; }
+    const list = await listMyShopsEnriched();
+    // 只展示有资产的店（推广积分 / 消费积分 任一 > 0）
+    shops.value = (list || []).filter((s) => (s.promoPoints || 0) > 0 || (s.points || 0) > 0);
+  } catch { shops.value = []; }
+  finally { loading.value = false; }
 }
-onMounted(load);
 onShow(load);
 </script>
 
@@ -113,24 +75,22 @@ onShow(load);
 .hero-amt { font-size: 38px; font-weight: 900; margin-top: 4px; background: linear-gradient(135deg, #fff, $gold-l); -webkit-background-clip: text; background-clip: text; color: transparent; }
 .hero-amt .unit { font-size: 16px; font-weight: 700; -webkit-text-fill-color: $gold-l; }
 .hero-sub { margin-top: 6px; font-size: 11px; color: rgba(255,255,255,.55); }
-.hero-row { display: flex; margin-top: 16px; }
-.hr-col { flex: 1; }
-.hr-l { font-size: 11px; opacity: .6; }
-.hr-v { font-size: 18px; font-weight: 800; margin-top: 2px; }
-.hr-v .u { font-size: 11px; font-weight: 600; color: rgba(255,255,255,.7); margin-left: 2px; }
-.hero-actions { display: flex; gap: 8px; margin-top: 20px; }
-.btn { flex: 1; padding: 12px 0; text-align: center; border-radius: $r-pill; font-weight: 800; font-size: 13px; }
-.btn.warm { background: linear-gradient(135deg, $o, $o-d); color: #fff; box-shadow: $sh-warm; }
+.hero-actions { display: flex; gap: 8px; margin-top: 18px; }
+.btn { flex: 1; padding: 11px 0; text-align: center; border-radius: $r-pill; font-weight: 800; font-size: 13px; }
 .btn.ghost { background: rgba(255,255,255,.12); color: #fff; }
-.section-title { padding: 18px 14px 8px; }
-.section-title .h { font-size: 14px; font-weight: 800; color: $t1; }
+.section-title { display: flex; align-items: baseline; padding: 18px 14px 8px; }
+.section-title .h { font-size: 15px; font-weight: 800; color: $t1; }
+.section-title .sub { font-size: 11px; color: $t3; margin-left: 8px; }
 .loading { padding: 40px; text-align: center; color: $t4; }
-.row { display: flex; gap: 10px; padding: 12px; background: #fff; margin: 6px 14px; border-radius: $r-md; align-items: center; box-shadow: $sh-1; }
-.r-ic { width: 36px; height: 36px; background: $o-50; color: $o; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
-.r-body { flex: 1; min-width: 0; }
-.r-t { font-size: 13px; font-weight: 700; color: $t1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.r-d { font-size: 11px; color: $t3; margin-top: 2px; }
-.r-amt { font-size: 16px; font-weight: 800; color: $o; flex-shrink: 0; }
-.r-amt.neg { color: $t3; }
-.r-amt .u { font-size: 11px; font-weight: 600; color: $t3; margin-left: 2px; }
+.shop { background: #fff; margin: 8px 14px; border-radius: $r-lg; padding: 14px; box-shadow: $sh-1; }
+.s-head { margin-bottom: 10px; }
+.s-name { font-size: 15px; font-weight: 800; color: $t1; }
+.s-body { display: flex; align-items: center; }
+.s-stat { flex: 1; text-align: center; }
+.s-stat .v { font-size: 19px; font-weight: 900; color: $t1; font-variant-numeric: tabular-nums; }
+.s-stat .v.gold { color: $gold-d; }
+.s-stat .l { font-size: 11px; color: $t3; margin-top: 2px; }
+.s-divider { width: 1px; height: 30px; background: $line; }
+.s-act { flex: none; margin-left: 12px; padding: 9px 16px; border-radius: $r-pill; background: linear-gradient(135deg, $o, $o-d); color: #fff; font-size: 13px; font-weight: 800; box-shadow: $sh-warm; }
+.s-act.disabled { background: $bg-2; color: $t4; box-shadow: none; }
 </style>

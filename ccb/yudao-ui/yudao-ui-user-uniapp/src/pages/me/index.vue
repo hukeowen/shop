@@ -230,7 +230,7 @@ function goLogin()         { uni.navigateTo({ url: '/pages/login/index' }); }
 function goEditProfile()   { user.isLogin ? uni.navigateTo({ url: '/pages/profile/edit' }) : goLogin(); }
 function goJoinedShops()   { user.isLogin ? uni.navigateTo({ url: '/pages/shops/joined' }) : goLogin(); }
 function goWallet()        { user.isLogin ? uni.navigateTo({ url: '/pages/wallet/index' })   : goLogin(); }
-function goWithdraw()      { user.isLogin ? uni.navigateTo({ url: '/pages/withdraw/index' }) : goLogin(); }
+function goWithdraw()      { user.isLogin ? uni.navigateTo({ url: '/pages/wallet/index' }) : goLogin(); } // 兑付按店申请，先进钱包选店
 function goPromoRecords()  { user.isLogin ? uni.navigateTo({ url: '/pages/points/promo' })   : goLogin(); }
 function goConsumeRecords(){ user.isLogin ? uni.navigateTo({ url: '/pages/points/consume' }) : goLogin(); }
 function goShopRecords(s, tab) {

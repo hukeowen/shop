@@ -379,7 +379,7 @@ function goWinners() { uni.reLaunch({ url: '/pages/winners/index' }); }
 function goQueue() { uni.navigateTo({ url: '/pages/queue/index' }); }
 function goCoupon() { uni.navigateTo({ url: '/pages/coupon/index' }); }
 function goWallet() { uni.navigateTo({ url: '/pages/wallet/index' }); }
-function goWithdraw() { uni.navigateTo({ url: '/pages/withdraw/index' }); }
+function goWithdraw() { uni.navigateTo({ url: '/pages/wallet/index' }); } // 兑付按店申请，先进钱包选店
 function goCategory(k) { uni.navigateTo({ url: `/pages/nearby/index?bt=${k}` }); }
 function goShop(s) {
   const tid = s.tenantId || s.id;

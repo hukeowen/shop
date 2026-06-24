@@ -18,6 +18,18 @@ export const listPromoRecords = (pageNo = 1, pageSize = 20, tenantId) =>
 export const listConsumeRecords = (pageNo = 1, pageSize = 20, tenantId) =>
   get(`/app-api/merchant/mini/promo/consume-records?pageNo=${pageNo}&pageSize=${pageSize}`, tenantId ? { tenantId } : {});
 
+// 按店推广积分兑付申请（amount 单位分；tenantId 决定扣哪家店的积分 + 哪家商户审批）
+export const applyPromoWithdraw = (amount, tenantId) =>
+  post(`/app-api/merchant/mini/withdraw/apply?amount=${amount}&tenantId=${tenantId}`, null, { tenantId });
+
+// 我的兑付申请列表（按店）
+export const listMyPromoWithdraws = () =>
+  get('/app-api/merchant/mini/withdraw/my-list');
+
+// 确认已收款（PAID → COMPLETED）
+export const confirmWithdrawReceived = (id) =>
+  post(`/app-api/merchant/mini/withdraw/confirm-received?id=${id}`, null);
+
 // 我的所有队列（跨店聚合，QUEUEING 状态）
 export const listMyQueues = () =>
   get('/app-api/merchant/mini/promo/my-queues');
