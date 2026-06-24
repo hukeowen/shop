@@ -81,18 +81,14 @@ public class WithdrawServiceImpl implements WithdrawService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public ShopPromoWithdrawDO apply(Long userId, long amount, Long tenantId) {
-        // 委托原 apply 走完所有校验 + 扣减，再补 tenantId
-        ShopPromoWithdrawDO record = apply(userId, amount);
-        if (tenantId != null && tenantId > 0 && !tenantId.equals(record.getTenantId())) {
-            // 用户 token tenant=0 时 mybatis-plus 自动注入 0，需修正为前端传入的店铺 tenant
-            ShopPromoWithdrawDO patch = new ShopPromoWithdrawDO();
-            patch.setId(record.getId());
-            patch.setTenantId(tenantId);
-            cn.iocoder.yudao.framework.tenant.core.util.TenantUtils.executeIgnore(
-                    () -> withdrawMapper.updateById(patch));
-            record.setTenantId(tenantId);
+        if (tenantId == null || tenantId <= 0) {
+            return apply(userId, amount);
         }
-        return record;
+        // 必须在目标店铺的租户上下文内执行：getConfig / 账户 / 扣减 / 插入 都按该店单租户。
+        // 否则 @TenantIgnore 下 promo_config.selectOne 会跨店命中多行 → TooManyResultsException，
+        // 且账户/扣减也会落到错误店铺。ShopPromoWithdrawDO 为 TenantBaseDO，insert 自动写 tenant_id。
+        return cn.iocoder.yudao.framework.tenant.core.util.TenantUtils.execute(tenantId,
+                () -> apply(userId, amount));
     }
 
     @Override
