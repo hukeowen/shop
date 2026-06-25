@@ -57,6 +57,9 @@ public class OrderPaidListener {
     @Resource
     private TradeOrderQueryService tradeOrderQueryService;
 
+    @Resource
+    private cn.iocoder.yudao.module.merchant.service.card.ServiceCardService serviceCardService;
+
     /**
      * 监听商户手动确认到店付款事件。
      */
@@ -91,6 +94,13 @@ public class OrderPaidListener {
             }
         } catch (Exception e) {
             log.error("[OrderPaidListener] 触发推 N 反 1 引擎失败 orderId={}", orderId, e);
+        }
+
+        // 服务卡发卡（到店付款路径；与线上 ServiceCardOrderHandler 共用 issueForOrder，内部幂等）
+        try {
+            TenantUtils.execute(tenantId, () -> serviceCardService.issueForOrder(orderId));
+        } catch (Exception e) {
+            log.error("[OrderPaidListener] 服务卡发卡失败 orderId={}", orderId, e);
         }
     }
 
