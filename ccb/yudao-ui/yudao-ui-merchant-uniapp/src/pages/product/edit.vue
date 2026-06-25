@@ -276,6 +276,59 @@
       </view>
     </view>
 
+    <!-- 服务卡包（仅编辑态可配；用户买后在卡包里生成对应卡，到店核销）-->
+    <view v-if="isEdit" class="card svc">
+      <view class="promo-head">
+        <text class="promo-title">服务卡包</text>
+        <text class="promo-sub">{{ cards.length ? cards.length + ' 张卡' : '未配置' }}</text>
+      </view>
+      <view class="svc-tip">
+        适用于「服务包」类商品：如汽车美容 ¥1288 含「洗车卡(2年不限次)」「保养卡(2年10次)」。
+        用户购买后在该店卡包生成对应卡，到店出示码，你在「卡券核销」里核销。
+      </view>
+
+      <view v-for="(c, i) in cards" :key="i" class="svc-card">
+        <view class="svc-card-head">
+          <text class="svc-idx">卡 {{ i + 1 }}</text>
+          <text class="svc-del" @click="removeCard(i)">删除</text>
+        </view>
+        <view class="field-v">
+          <text class="label-v">卡名称</text>
+          <input class="input compact" maxlength="20" placeholder="例：洗车卡 / 保养卡" v-model="c.name" />
+        </view>
+        <view class="field-v">
+          <text class="label-v">有效期（从用户付款日起算）</text>
+          <view class="svc-valid">
+            <input class="input compact valid-num" type="number" v-model="c.validValue" placeholder="如 2" />
+            <view class="unit-pair">
+              <view v-for="u in unitOptions" :key="u.v" class="unit-chip" :class="{ active: c.validUnit === u.v }"
+                @click="c.validUnit = u.v">{{ u.label }}</view>
+            </view>
+          </view>
+        </view>
+        <view class="field-v">
+          <text class="label-v">核销次数</text>
+          <view class="svc-count">
+            <view class="radio-pair">
+              <view class="radio-big" :class="{ active: !c.limited }" @click="c.limited = false">不限次数</view>
+              <view class="radio-big" :class="{ active: c.limited }" @click="c.limited = true">限定次数</view>
+            </view>
+          </view>
+          <view v-if="c.limited" class="star-row-input" style="margin-top:12rpx;">
+            <input class="input compact" type="number" v-model="c.maxCount" placeholder="如 10（次数用完即失效）" />
+            <text class="suffix">次</text>
+          </view>
+          <text class="hint inline">时间到期 或 次数用完，谁先到都不能再用。</text>
+        </view>
+        <view class="field-v">
+          <text class="label-v">卡说明（选填）</text>
+          <input class="input compact" maxlength="60" placeholder="例：每次到店出示，洗车不限车型" v-model="c.description" />
+        </view>
+      </view>
+
+      <view class="svc-add" @click="addCard">＋ 添加一张服务卡</view>
+    </view>
+
     <!-- 高级设置（折叠） -->
     <view class="card advanced">
       <view class="advanced-head" @click="advancedOpen = !advancedOpen">
@@ -360,6 +413,7 @@ import {
   getSpuPoolBalance,
   settleSpuPool,
 } from '../../api/promo.js';
+import { getCardDefs, saveCardDefs } from '../../api/card.js';
 
 // CATEGORIES 是 plain JS 数组，splice 替换内容时 Vue 不会响应；
 // 用 ref 持有副本，loadCategories 后手动同步。
@@ -399,6 +453,72 @@ const promo = reactive({
   // v8: 奖池分配规则；每星一条 {star, ratio, mode:EQUAL|LOTTERY, winners}
   poolDistList: [],
 });
+
+// ===== 服务卡包：每张卡 {name, validValue, validUnit(day|month|year), limited, maxCount, description} =====
+const cards = ref([]);
+const unitOptions = [
+  { v: 'day', label: '天' },
+  { v: 'month', label: '月' },
+  { v: 'year', label: '年' },
+];
+const UNIT_DAYS = { day: 1, month: 30, year: 365 };
+function addCard() {
+  cards.value.push({ name: '', validValue: '1', validUnit: 'year', limited: false, maxCount: '', description: '' });
+}
+function removeCard(i) {
+  cards.value.splice(i, 1);
+}
+// validityDays ↔ {validValue, validUnit}
+function daysToUnit(days) {
+  const d = Number(days) || 0;
+  if (d > 0 && d % 365 === 0) return { validValue: String(d / 365), validUnit: 'year' };
+  if (d > 0 && d % 30 === 0) return { validValue: String(d / 30), validUnit: 'month' };
+  return { validValue: String(d || 0), validUnit: 'day' };
+}
+function unitToDays(c) {
+  const v = Math.max(1, parseInt(c.validValue) || 0);
+  return v * (UNIT_DAYS[c.validUnit] || 1);
+}
+async function loadCards(spuId) {
+  try {
+    const list = await getCardDefs(spuId);
+    cards.value = (list || []).map((d) => {
+      const u = daysToUnit(d.validityDays);
+      return {
+        name: d.name || '',
+        validValue: u.validValue,
+        validUnit: u.validUnit,
+        limited: d.maxCount != null && d.maxCount > 0,
+        maxCount: d.maxCount != null && d.maxCount > 0 ? String(d.maxCount) : '',
+        description: d.description || '',
+      };
+    });
+  } catch {
+    cards.value = [];
+  }
+}
+// 返 { ok, defs }；校验失败 toast 已弹
+function buildCardDefs() {
+  const defs = [];
+  for (let i = 0; i < cards.value.length; i++) {
+    const c = cards.value[i];
+    if (!c.name || !c.name.trim()) {
+      uni.showToast({ title: `第 ${i + 1} 张卡未填名称`, icon: 'none' });
+      return { ok: false };
+    }
+    if (c.limited && (!(parseInt(c.maxCount) > 0))) {
+      uni.showToast({ title: `「${c.name}」选了限定次数，请填次数`, icon: 'none' });
+      return { ok: false };
+    }
+    defs.push({
+      name: c.name.trim(),
+      validityDays: unitToDays(c),
+      maxCount: c.limited ? (parseInt(c.maxCount) || 1) : null,
+      description: (c.description || '').trim(),
+    });
+  }
+  return { ok: true, defs };
+}
 
 // v8 当前 SPU 池余额（编辑模式实时拉）
 const poolBalance = ref(0);
@@ -761,15 +881,19 @@ async function loadIfEdit(id) {
   uni.setNavigationBarTitle({ title: '编辑商品' });
   loadPromo(id);
   loadPoolBalance();
+  loadCards(id);
 }
 
 async function onSubmit() {
   if (!canSubmit.value) return;
   // 编辑态：先校验营销策略，避免商品改了但营销没过校验导致状态不一致
   let promoCheck = null;
+  let cardCheck = null;
   if (isEdit.value) {
     promoCheck = validatePromo();
     if (!promoCheck.ok) return;
+    cardCheck = buildCardDefs();
+    if (!cardCheck.ok) return;
   }
   uni.showLoading({ title: isEdit.value ? '保存中' : '上架中' });
   const payload = {
@@ -787,8 +911,16 @@ async function onSubmit() {
         uni.showToast({ title: '商品已保存，但营销策略保存失败：' + (e?.msg || e?.message || ''), icon: 'none', duration: 2500 });
         return;
       }
+      // 服务卡定义（全量覆盖）
+      try {
+        await saveCardDefs(editingId.value, cardCheck.defs);
+      } catch (e) {
+        uni.hideLoading();
+        uni.showToast({ title: '商品/营销已保存，但服务卡保存失败：' + (e?.msg || e?.message || ''), icon: 'none', duration: 2500 });
+        return;
+      }
       uni.hideLoading();
-      uni.showToast({ title: '已保存（含营销策略）', icon: 'success' });
+      uni.showToast({ title: '已保存（含营销/服务卡）', icon: 'success' });
     } else {
       const newId = await createSpu(payload);
       uni.hideLoading();
@@ -1410,6 +1542,68 @@ onLoad(async (q) => {
     &::after {
       border: none;
     }
+  }
+}
+
+/* ===== 服务卡包 ===== */
+.svc {
+  padding: 28rpx 32rpx;
+
+  .promo-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding-bottom: 16rpx; border-bottom: 1rpx solid $border-color; margin-bottom: 16rpx;
+    .promo-title { font-size: 28rpx; font-weight: 600; color: $text-primary; }
+    .promo-sub { font-size: 22rpx; color: $text-secondary; }
+  }
+  .svc-tip {
+    font-size: 22rpx; color: $text-secondary; line-height: 1.6;
+    background: #fff8ec; border-radius: 12rpx; padding: 16rpx 20rpx; margin-bottom: 16rpx;
+  }
+  .field-v {
+    display: flex; flex-direction: column; padding: 14rpx 0;
+    .label-v { font-size: 26rpx; color: $text-regular; margin-bottom: 12rpx; font-weight: 500; }
+  }
+  .input.compact {
+    min-height: 80rpx; background: #f6f7f9; border-radius: $radius-md;
+    padding: 0 24rpx; font-size: 30rpx; box-sizing: border-box;
+    &:focus { background: #fff; border: 1rpx solid $brand-primary; }
+  }
+  .star-row-input { display: flex; align-items: center; gap: 12rpx;
+    .input { flex: 1; } .suffix { font-size: 28rpx; color: $text-secondary; flex-shrink: 0; } }
+  .hint.inline { display: block; margin-top: 8rpx; font-size: 22rpx; color: $text-secondary; }
+
+  .svc-card {
+    border: 1rpx solid rgba(255,107,53,.18); border-radius: $radius-md;
+    padding: 0 20rpx 16rpx; margin-bottom: 18rpx;
+    background: linear-gradient(135deg, rgba(255,107,53,.03), rgba(255,154,74,.02));
+  }
+  .svc-card-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16rpx 0; border-bottom: 1rpx dashed $border-color; margin-bottom: 6rpx;
+    .svc-idx { font-size: 26rpx; font-weight: 700; color: $brand-primary; }
+    .svc-del { font-size: 24rpx; color: $danger; }
+  }
+  .svc-valid { display: flex; align-items: center; gap: 16rpx;
+    .valid-num { flex: 0 0 200rpx; } }
+  .unit-pair { display: flex; gap: 10rpx;
+    .unit-chip {
+      padding: 0 24rpx; min-height: 72rpx; line-height: 72rpx; border-radius: $radius-md;
+      background: #f6f7f9; color: $text-regular; font-size: 28rpx; border: 1rpx solid transparent;
+      &.active { background: rgba(255,107,53,.12); color: $brand-primary; border-color: $brand-primary; font-weight: 600; }
+    }
+  }
+  .radio-pair { display: flex; gap: 12rpx;
+    .radio-big {
+      flex: 1; min-height: 80rpx; line-height: 80rpx; text-align: center;
+      background: #f6f7f9; border: 1rpx solid transparent; border-radius: $radius-md;
+      font-size: 28rpx; color: $text-regular;
+      &.active { background: rgba(255,107,53,.12); color: $brand-primary; border-color: $brand-primary; font-weight: 600; }
+    }
+  }
+  .svc-add {
+    margin-top: 6rpx; min-height: 88rpx; line-height: 88rpx; text-align: center;
+    border: 2rpx dashed rgba(255,107,53,.5); border-radius: $radius-md;
+    color: $brand-primary; font-size: 28rpx; font-weight: 600;
   }
 }
 

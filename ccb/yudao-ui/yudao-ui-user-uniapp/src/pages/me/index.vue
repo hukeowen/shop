@@ -154,6 +154,7 @@
       <view class="me-row" @click="goFav"><view class="me-row-icon alt-4">❤</view><text class="me-row-name">我收藏的店铺</text><text class="me-row-arrow">›</text></view>
       <view class="me-row" @click="goFav"><view class="me-row-icon alt-1">⭐</view><text class="me-row-name">商品收藏夹</text><text v-if="favCount" class="me-row-tag">{{ favCount }} 件</text><text class="me-row-arrow">›</text></view>
       <view class="me-row" @click="goCoupon"><view class="me-row-icon">🎫</view><text class="me-row-name">我的优惠券</text><text v-if="couponCount" class="me-row-tag">{{ couponCount }} 张</text><text class="me-row-arrow">›</text></view>
+      <view class="me-row" @click="goCardPackage"><view class="me-row-icon alt-3">🎴</view><text class="me-row-name">我的卡包（服务卡/次卡）</text><text v-if="cardCount" class="me-row-tag">{{ cardCount }} 张</text><text class="me-row-arrow">›</text></view>
     </view>
 
     <!-- 平台·设置 -->
@@ -189,6 +190,7 @@ import { listMyShopsEnriched } from '@/api/shop.js';
 import { pageOrders } from '@/api/order.js';
 import { getCartCount } from '@/api/cart.js';
 import { getUnusedCouponCount } from '@/api/coupon.js';
+import { listMyCards } from '@/api/card.js';
 import { favoriteCount } from '@/api/product.js';
 import { fen2yuan, fmtTime } from '@/utils/format.js';
 import { buildInvitePoster, downloadDataUrl } from '@/utils/poster.js';
@@ -208,6 +210,7 @@ const queueTotal = ref(0);
 const queues = ref([]);
 const favCount = ref(0);
 const couponCount = ref(0);
+const cardCount = ref(0);
 const eligibilityMap = ref({}); // tenantId → { topTuijianSpu, ... }
 const posterShop = ref(null);
 const posterImage = ref('');
@@ -251,6 +254,7 @@ function onQueueStat(s) {
 function goInvite()        { user.isLogin ? uni.navigateTo({ url: '/pages/invite/index' })   : goLogin(); }
 function goFav()           { user.isLogin ? uni.navigateTo({ url: '/pages/favorites/index' }): goLogin(); }
 function goCoupon()        { user.isLogin ? uni.navigateTo({ url: '/pages/coupon/index' })   : goLogin(); }
+function goCardPackage()   { user.isLogin ? uni.navigateTo({ url: '/pages/card-package/index' }) : goLogin(); }
 function goAddress()       { user.isLogin ? uni.navigateTo({ url: '/pages/address/list' })   : goLogin(); }
 function goAgreement(type) { uni.navigateTo({ url: `/pages/agreement/index?type=${type}` }); }
 function goWinners()       { uni.reLaunch({ url: '/pages/winners/index' }); }
@@ -405,6 +409,7 @@ async function load() {
   } catch {}
   try { favCount.value = (await favoriteCount()) || 0; } catch {}
   try { couponCount.value = (await getUnusedCouponCount()) || 0; } catch {}
+  try { const cs = await listMyCards(); cardCount.value = Array.isArray(cs) ? cs.filter((c) => c.effectiveStatus === 'ACTIVE').length : 0; } catch {}
 }
 onMounted(load);
 onShow(load);

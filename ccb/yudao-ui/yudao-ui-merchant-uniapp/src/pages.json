@@ -40,6 +40,13 @@
       }
     },
     {
+      "path": "pages/verify/index",
+      "style": {
+        "navigationBarTitleText": "服务卡核销",
+        "navigationStyle": "custom"
+      }
+    },
+    {
       "path": "pages/login/index",
       "style": {
         "navigationBarTitleText": "登录",

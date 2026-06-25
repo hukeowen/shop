@@ -62,6 +62,10 @@
         <view class="mi-l"><text class="mi-ic">🛍</text><text>商品营销（推 N 反 1 / VIP 等级 / 让利池）</text></view>
         <text class="arrow">›</text>
       </view>
+      <view class="menu-item" @click="goCardVerify">
+        <view class="mi-l"><text class="mi-ic">🎫</text><text>服务卡核销（扫码/输码）</text></view>
+        <text class="arrow">›</text>
+      </view>
       <view class="menu-item" @click="goWithdrawReview">
         <view class="mi-l"><text class="mi-ic">💸</text><text>用户提现审批</text></view>
         <text class="arrow">›</text>
@@ -241,6 +245,10 @@ function goQuota() {
 
 function goProducts() {
   uni.navigateTo({ url: '/pages/product/list' });
+}
+
+function goCardVerify() {
+  uni.navigateTo({ url: '/pages/verify/index' });
 }
 
 function goWithdrawReview() {
