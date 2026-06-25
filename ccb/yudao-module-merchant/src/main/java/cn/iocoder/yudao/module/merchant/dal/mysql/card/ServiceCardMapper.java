@@ -38,9 +38,12 @@ public interface ServiceCardMapper extends BaseMapperX<ServiceCardDO> {
      *
      * <p>并发安全：所有判定都在 WHERE 里，单条 UPDATE 原子完成，杜绝两个核销员同时把同一张卡核销两次。</p>
      */
+    // 注意 MySQL：单表 UPDATE 的 SET 从左到右求值，后面的赋值会读到前面已更新的值。
+    // 因此 status 的 CASE 里 used_count 已是「+1 后」的新值，这里不能再 +1（否则提前一次判 USED_UP）。
+    // WHERE 里的 used_count 仍是更新前的原值，故 used_count < max_count 是「本次能否核销」的正确判定。
     @Update("UPDATE shop_service_card " +
             "SET used_count = used_count + 1, " +
-            "    status = CASE WHEN max_count IS NOT NULL AND used_count + 1 >= max_count THEN 'USED_UP' ELSE 'ACTIVE' END, " +
+            "    status = CASE WHEN max_count IS NOT NULL AND used_count >= max_count THEN 'USED_UP' ELSE 'ACTIVE' END, " +
             "    update_time = NOW() " +
             "WHERE id = #{id} AND tenant_id = #{tenantId} AND deleted = b'0' " +
             "  AND status = 'ACTIVE' AND expire_time > NOW() " +
