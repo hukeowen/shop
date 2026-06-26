@@ -256,9 +256,11 @@ public class PlatformOverviewController {
         m.put("merchantCount", merchants.size());
         m.put("paidMerchantCount", paidMerchants);
         m.put("expiringSoonCount", expiringSoon);
-        // 店铺 / 商品数
+        // 店铺 / 商品数（注意：ProductSpuMapper 重写了无参 selectCount() 为「警戒库存数」，
+        // 这里必须用带 Wrapper 的 selectCount 统计全部商品）
         m.put("shopCount", shopInfoMapper.selectCount());
-        m.put("productCount", productSpuMapper.selectCount());
+        m.put("productCount", productSpuMapper.selectCount(
+                new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<ProductSpuDO>()));
         return success(m);
     }
 
