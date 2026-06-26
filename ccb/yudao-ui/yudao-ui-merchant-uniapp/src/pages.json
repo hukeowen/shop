@@ -47,6 +47,12 @@
       }
     },
     {
+      "path": "pages/service-card/manage",
+      "style": {
+        "navigationBarTitleText": "服务卡包配置"
+      }
+    },
+    {
       "path": "pages/login/index",
       "style": {
         "navigationBarTitleText": "登录",

@@ -8,13 +8,16 @@
         <view class="sh-ic" @click="goBack">‹</view>
         <view class="sh-nav-right">
           <view class="sh-ic" @click="toggleFav">{{ isFav ? '♥' : '♡' }}</view>
-          <view class="sh-ic" @click="onShare">↗</view>
+          <view class="sh-ic" @click="onShareLink">↗</view>
         </view>
       </view>
       <view v-if="shop" class="sh-info">
         <view class="sh-tag-row">🔥 {{ shop.tagRow || '扫码下单 · 每单返推广积分' }}</view>
         <view class="sh-name">{{ shop.shopName || shop.name || '店铺' }}</view>
         <view class="sh-slogan">{{ shop.slogan || '商户营销优惠活动' }}</view>
+        <view v-if="shop.featureTagList && shop.featureTagList.length" class="sh-feats">
+          <text v-for="(t, i) in shop.featureTagList" :key="i" class="sh-feat">{{ t }}</text>
+        </view>
       </view>
     </view>
 
@@ -124,7 +127,7 @@
     </view>
 
     <!-- ━━━━━━━━━━ VIP 邀请条 ━━━━━━━━━━ -->
-    <view class="vip-strip" @click="onShare">
+    <view class="vip-strip" @click="openInvitePoster">
       <view class="vip-em">🎁</view>
       <view class="vip-body">
         <view v-if="vip.myStar > 0" class="vip-t">你是 <text class="b">{{ vip.myStar }} 星会员</text>{{ vip.discountText ? `，享 ` : '' }}<text v-if="vip.discountText" class="b">{{ vip.discountText }}</text></view>
@@ -225,6 +228,21 @@
       </view>
       <view class="cart-bar-pay" @click="goCart">去结算</view>
     </view>
+
+    <!-- ━━━━━━━━━━ 邀请有礼：推广二维码海报弹层 ━━━━━━━━━━ -->
+    <view v-if="posterOpen" class="poster-mask" @click="closePoster">
+      <view class="poster-wrap" @click.stop>
+        <view v-if="posterLoading" class="poster-loading">海报生成中…</view>
+        <image v-else-if="posterImage" :src="posterImage" mode="widthFix" class="poster-img" show-menu-by-longpress />
+        <view v-else class="poster-loading">海报生成失败，请重试</view>
+        <view class="poster-actions">
+          <view class="poster-btn primary" @click="onSavePoster">保存到相册</view>
+          <view class="poster-btn ghost" @click="onSharePoster">分享</view>
+          <view class="poster-btn ghost" @click="closePoster">关闭</view>
+        </view>
+        <view class="poster-hint">💡 长按上图可直接保存 / 转发，或点「保存到相册」下载</view>
+      </view>
+    </view>
   </view>
 </template>
 
@@ -239,6 +257,7 @@ import { addCart, listCart, getCartCount } from '@/api/cart.js';
 import { listCouponTemplates, takeCoupon } from '@/api/coupon.js';
 import { request } from '@/utils/request.js';
 import { fen2yuan } from '@/utils/format.js';
+import { buildInvitePoster, downloadDataUrl } from '@/utils/poster.js';
 import { useUserStore } from '@/store/user.js';
 
 const user = useUserStore();
@@ -268,6 +287,11 @@ const tickerText = ref([]);
 const cartCount = ref(0);
 const cartTotalFen = ref(0);
 const cartHint = ref('');
+
+// 邀请有礼海报弹层
+const posterOpen = ref(false);
+const posterLoading = ref(false);
+const posterImage = ref('');
 
 const cartTotalYuan = computed(() => fen2yuan(cartTotalFen.value, false));
 
@@ -339,10 +363,104 @@ async function toggleFav() {
     uni.showToast({ title: '操作失败，请重试', icon: 'none' });
   }
 }
-function onShare() {
+function inviteLink() {
   const base = typeof location !== 'undefined' ? location.origin : 'https://ke.doupaidoudian.com';
-  const link = `${base}/#/pages/shop/home?tenantId=${route.tenantId}&inviter=${user.userId || ''}`;
-  uni.setClipboardData({ data: link, success: () => uni.showToast({ title: '链接已复制', icon: 'success' }) });
+  return `${base}/#/pages/shop/home?tenantId=${route.tenantId}&inviter=${user.userId || ''}`;
+}
+
+// 右上角 ↗：优先调起系统原生分享面板（微信/系统），不支持则降级复制链接
+async function onShareLink() {
+  const link = inviteLink();
+  const title = (shop.value?.shopName || '这家店') + ' · 邀三惠';
+  const text = `「${shop.value?.shopName || '本店'}」营销优惠进行中，扫码进店下单还能赚推广积分`;
+  try {
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      await navigator.share({ title, text, url: link });
+      return;
+    }
+  } catch { /* 用户取消分享 → 不再降级，静默返回 */ return; }
+  uni.setClipboardData({ data: link, success: () => uni.showToast({ title: '链接已复制，去粘贴分享', icon: 'none' }) });
+}
+
+// 邀请有礼：生成本店专属推广二维码海报（本地 canvas 合成，可保存/分享）
+async function openInvitePoster() {
+  posterOpen.value = true;
+  posterImage.value = '';
+  posterLoading.value = true;
+  try {
+    const spu = signatureSpu.value || null;
+    let n = spu?.tuijianN || 0;
+    let stepPoints, totalPoints;
+    if (spu && n > 0) {
+      let ratios = [];
+      try { ratios = spu.tuijianRatios ? JSON.parse(spu.tuijianRatios) : []; } catch {}
+      if (!Array.isArray(ratios) || ratios.length !== n) ratios = Array.from({ length: n }, () => 100 / n);
+      const totalFen = Number(spu.price) || 0;
+      const avgRatio = ratios.reduce((s, r) => s + Number(r || 0), 0) / n;
+      const sumRatio = ratios.reduce((s, r) => s + Number(r || 0), 0);
+      stepPoints = fen2yuan(Math.floor(totalFen * avgRatio / 100), false);
+      totalPoints = fen2yuan(Math.floor(totalFen * sumRatio / 100), false);
+    }
+    posterImage.value = await buildInvitePoster({
+      shopName: shop.value?.shopName || shop.value?.name || '本店',
+      inviteLink: inviteLink(),
+      inviter: user.nickname || (user.phone ? user.phone.slice(-4) : '') || '邀三惠用户',
+      spuName: spu?.name || spu?.spuName,
+      spuPic: spu?.picUrl || spu?.spuPic,
+      priceYuan: spu ? fen2yuan(spu.price || 0, false) : null,
+      n: n > 0 ? n : undefined,
+      stepPoints,
+      totalPoints,
+    });
+  } catch {
+    posterImage.value = '';
+  } finally {
+    posterLoading.value = false;
+  }
+}
+
+function onSavePoster() {
+  if (!posterImage.value) return;
+  // #ifdef H5
+  const ok = downloadDataUrl(posterImage.value, `invite-${route.tenantId || ''}.png`);
+  uni.showToast({ title: ok ? '已保存/下载' : '请长按上图保存', icon: 'none' });
+  // #endif
+  // #ifndef H5
+  uni.saveImageToPhotosAlbum({
+    filePath: posterImage.value,
+    success: () => uni.showToast({ title: '已保存到相册', icon: 'success' }),
+    fail: () => uni.showToast({ title: '请长按上图保存', icon: 'none' }),
+  });
+  // #endif
+}
+
+// 分享海报：H5 优先 Web Share（带图片文件），不支持则提示长按转发
+async function onSharePoster() {
+  if (!posterImage.value) return;
+  try {
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      const title = (shop.value?.shopName || '本店') + ' · 邀三惠';
+      // 能分享文件就带海报图，否则退化为分享链接
+      if (navigator.canShare && typeof fetch !== 'undefined') {
+        try {
+          const blob = await (await fetch(posterImage.value)).blob();
+          const file = new File([blob], 'invite-poster.png', { type: 'image/png' });
+          if (navigator.canShare({ files: [file] })) {
+            await navigator.share({ title, files: [file] });
+            return;
+          }
+        } catch { /* 文件分享失败 → 退化为链接分享 */ }
+      }
+      await navigator.share({ title, text: '扫码进店参与营销优惠', url: inviteLink() });
+      return;
+    }
+  } catch { return; /* 用户取消 */ }
+  uni.showToast({ title: '请长按上图转发给好友', icon: 'none' });
+}
+
+function closePoster() {
+  posterOpen.value = false;
+  posterImage.value = '';
 }
 async function onAddCart(p) {
   if (!user.isLogin) return requireLogin();
@@ -386,6 +504,8 @@ async function loadShop() {
       slogan: info.slogan || info.shopDesc || info.introduction || '',
       tagRow: info.tagRow || (info.starLevel ? `⭐ ${info.starLevel} 星店铺` : ''),
       ratingCount: info.ratingCount || info.commentCount || 0,
+      // 商户写的「特色标签」CSV（炭火现烤,现做现卖…）→ 用户侧标签展示
+      featureTagList: String(info.featureTags || '').split(/[,，、]/).map((t) => t.trim()).filter(Boolean).slice(0, 6),
     } : null;
   } catch {}
 }
@@ -660,6 +780,13 @@ onShow(refreshAll);
   text-shadow: 0 2px 8px rgba(0,0,0,.15);
 }
 .sh-slogan { font-size: 13px; opacity: .9; margin-top: 2px; }
+.sh-feats { display: flex; flex-wrap: wrap; gap: 8rpx; margin-top: 12rpx; }
+.sh-feat {
+  font-size: 11px; line-height: 1.2; color: #fff; font-weight: 600;
+  padding: 4rpx 14rpx; border-radius: 999rpx;
+  background: rgba(255,255,255,.22); backdrop-filter: blur(4px);
+  border: 1rpx solid rgba(255,255,255,.35);
+}
 
 /* ━━ Info card ━━ */
 .sh-info-card {
@@ -1079,4 +1206,37 @@ onShow(refreshAll);
 }
 
 .bottom-pad { height: 20px; }
+
+/* ━━ 邀请有礼海报弹层 ━━ */
+.poster-mask {
+  position: fixed; inset: 0; z-index: 999;
+  background: rgba(0,0,0,.78);
+  display: flex; align-items: center; justify-content: center;
+  padding: 36rpx; overflow-y: auto;
+}
+.poster-wrap { width: 100%; max-width: 720rpx; display: flex; flex-direction: column; align-items: center; }
+.poster-img {
+  width: 100%; max-width: 640rpx; border-radius: 24rpx;
+  box-shadow: 0 16px 48px rgba(0,0,0,.4); background: #FFF9F0;
+}
+.poster-loading {
+  width: 100%; max-width: 640rpx; height: 900rpx; border-radius: 24rpx;
+  background: rgba(255,255,255,.1);
+  display: flex; align-items: center; justify-content: center;
+  color: rgba(255,255,255,.85); font-size: 28rpx;
+}
+.poster-actions { margin-top: 28rpx; display: flex; gap: 20rpx; width: 100%; }
+.poster-btn {
+  flex: 1; padding: 26rpx; text-align: center; border-radius: 999rpx;
+  font-size: 28rpx; font-weight: 800;
+}
+.poster-btn.primary {
+  background: linear-gradient(135deg, $o, $o-d); color: #fff;
+  box-shadow: 0 8rpx 28rpx rgba(255,107,53,.4);
+}
+.poster-btn.ghost {
+  background: rgba(255,255,255,.18); color: #fff;
+  border: 2rpx solid rgba(255,255,255,.3);
+}
+.poster-hint { margin-top: 20rpx; font-size: 22rpx; color: rgba(255,255,255,.7); text-align: center; }
 </style>

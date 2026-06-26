@@ -62,6 +62,10 @@
         <view class="mi-l"><text class="mi-ic">🛍</text><text>商品营销（推 N 反 1 / VIP 等级 / 让利池）</text></view>
         <text class="arrow">›</text>
       </view>
+      <view class="menu-item" @click="goCardPackage">
+        <view class="mi-l"><text class="mi-ic">🪪</text><text>服务卡包配置（选商品挂卡）</text></view>
+        <text class="arrow">›</text>
+      </view>
       <view class="menu-item" @click="goCardVerify">
         <view class="mi-l"><text class="mi-ic">🎫</text><text>服务卡核销（扫码/输码）</text></view>
         <text class="arrow">›</text>
@@ -249,6 +253,9 @@ function goProducts() {
 
 function goCardVerify() {
   uni.navigateTo({ url: '/pages/verify/index' });
+}
+function goCardPackage() {
+  uni.navigateTo({ url: '/pages/service-card/manage' });
 }
 
 function goWithdrawReview() {
