@@ -163,9 +163,16 @@
 import { ref, computed, reactive } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
 import { request } from '../../api/request.js';
-import { blobUrlToBase64, uploadImage, signOss } from '../../api/oss.js';
+import { blobUrlToBase64, uploadImage } from '../../api/oss.js';
 
 const BASE = '/app-api/merchant/mini/shop';
+
+// 用后端 kyc-sign（JWT 鉴权，已白名单本店所有资质 key）签发预览 URL；
+// 不再走 Node /oss/sign 侧车（无内部 token 会 401，导致驳回重提看不到已传照）
+async function signOwnKey(key) {
+  const r = await request({ url: `${BASE}/kyc-sign?key=${encodeURIComponent(key)}&ttl=3600` });
+  return (r && r.url) || '';
+}
 
 // 商户类型
 const COMPROP = [
@@ -293,7 +300,7 @@ async function load() {
     if (s.payApplyStatus === 3) {
       const map = [['idCardFrontKey', 'idCardFront'], ['idCardBackKey', 'idCardBack'], ['businessLicenseKey', 'businessLicense'], ['legalHoldPicKey', 'legalHold'], ['storePicKey', 'storePic'], ['indoorPicKey', 'indoorPic']];
       for (const [kf, vf] of map) {
-        if (s[kf]) { formKey[vf] = s[kf]; signOss(s[kf]).then(u => formViewUrl[vf] = u).catch(() => {}); }
+        if (s[kf]) { formKey[vf] = s[kf]; signOwnKey(s[kf]).then(u => formViewUrl[vf] = u).catch(() => {}); }
       }
     }
   } catch (e) {
