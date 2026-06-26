@@ -25,6 +25,9 @@ public class ServiceCardVerifyDO extends TenantBaseDO {
     /** 卡实例 ID */
     private Long cardId;
 
+    /** 服务卡名称快照（核销时记下，卡/商品后续被删也不丢历史名） */
+    private String cardName;
+
     /** 持卡用户 ID */
     private Long userId;
 

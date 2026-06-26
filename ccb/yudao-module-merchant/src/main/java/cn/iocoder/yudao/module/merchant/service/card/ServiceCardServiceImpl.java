@@ -292,6 +292,7 @@ public class ServiceCardServiceImpl implements ServiceCardService {
         // 核销流水（@TenantIgnore 上下文，显式补 tenantId）
         ServiceCardVerifyDO v = ServiceCardVerifyDO.builder()
                 .cardId(c.getId())
+                .cardName(c.getName())   // 服务名快照，历史记录不随卡删除丢名
                 .userId(c.getUserId())
                 .verifierId(verifierId)
                 .verifyTime(LocalDateTime.now())
@@ -333,7 +334,10 @@ public class ServiceCardServiceImpl implements ServiceCardService {
             Map<String, Object> m = new LinkedHashMap<>();
             m.put("id", v.getId());
             m.put("cardId", v.getCardId());
-            m.put("cardName", card != null ? card.getName() : "");
+            // 优先用流水里的服务名快照；老数据没快照再回退查活卡
+            String cardName = v.getCardName() != null && !v.getCardName().isEmpty()
+                    ? v.getCardName() : (card != null ? card.getName() : "");
+            m.put("cardName", cardName);
             m.put("cardNo", card != null ? card.getCardNo() : "");
             m.put("userMobile", getUserMobile(v.getUserId()));
             m.put("verifyTime", toEpochMilli(v.getVerifyTime()));
