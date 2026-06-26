@@ -21,6 +21,9 @@ public class ProductSpuRespVO {
     @ExcelProperty("商品编号")
     private Long id;
 
+    @Schema(description = "所属租户（店铺）编号 —— 平台跨租户总览时前端据此映射店铺名", example = "1010")
+    private Long tenantId;
+
     @Schema(description = "商品名称", requiredMode = Schema.RequiredMode.REQUIRED, example = "清凉小短袖")
     @ExcelProperty("商品名称")
     private String name;

@@ -10,6 +10,7 @@ import cn.iocoder.yudao.module.merchant.dal.dataobject.ShopInfoDO;
 import cn.iocoder.yudao.module.merchant.dal.mysql.ShopInfoMapper;
 import cn.iocoder.yudao.module.merchant.event.ShopPayApplyApprovedEvent;
 import cn.iocoder.yudao.module.merchant.service.KycSignService;
+import cn.iocoder.yudao.framework.tenant.core.aop.TenantIgnore;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.mzt.logapi.starter.annotation.LogRecord;
 
@@ -23,6 +24,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.validation.Valid;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -81,6 +83,22 @@ public class MerchantShopController {
         }
         Map<String, String> resp = new HashMap<>();
         resp.put("url", kycSignService.sign(key, ttl));
+        return success(resp);
+    }
+
+    @GetMapping("/tenant-shop-names")
+    @Operation(summary = "平台跨租户：所有店铺 租户ID→店铺名（商城总览的店铺筛选/展示用）")
+    @PreAuthorize("@ss.hasPermission('product:spu:query')")
+    @TenantIgnore
+    public CommonResult<List<Map<String, Object>>> getTenantShopNames() {
+        List<ShopInfoDO> shops = shopInfoMapper.selectList();
+        List<Map<String, Object>> resp = new ArrayList<>();
+        for (ShopInfoDO s : shops) {
+            Map<String, Object> m = new HashMap<>();
+            m.put("tenantId", s.getTenantId());
+            m.put("shopName", s.getShopName());
+            resp.add(m);
+        }
         return success(resp);
     }
 

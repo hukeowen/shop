@@ -5,6 +5,7 @@ import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
 import cn.iocoder.yudao.framework.excel.core.util.ExcelUtils;
+import cn.iocoder.yudao.framework.tenant.core.aop.TenantIgnore;
 import cn.iocoder.yudao.module.product.controller.admin.spu.vo.*;
 import cn.iocoder.yudao.module.product.convert.spu.ProductSpuConvert;
 import cn.iocoder.yudao.module.product.dal.dataobject.sku.ProductSkuDO;
@@ -53,6 +54,7 @@ public class ProductSpuController {
     @PutMapping("/update")
     @Operation(summary = "更新商品 SPU")
     @PreAuthorize("@ss.hasPermission('product:spu:update')")
+    @TenantIgnore // 平台跨租户：超管可编辑任意店铺商品
     public CommonResult<Boolean> updateSpu(@Valid @RequestBody ProductSpuSaveReqVO updateReqVO) {
         productSpuService.updateSpu(updateReqVO);
         return success(true);
@@ -61,6 +63,7 @@ public class ProductSpuController {
     @PutMapping("/update-status")
     @Operation(summary = "更新商品 SPU Status")
     @PreAuthorize("@ss.hasPermission('product:spu:update')")
+    @TenantIgnore // 平台跨租户：超管可上/下架任意店铺商品
     public CommonResult<Boolean> updateStatus(@Valid @RequestBody ProductSpuUpdateStatusReqVO updateReqVO) {
         productSpuService.updateSpuStatus(updateReqVO);
         return success(true);
@@ -70,6 +73,7 @@ public class ProductSpuController {
     @Operation(summary = "删除商品 SPU")
     @Parameter(name = "id", description = "编号", required = true, example = "1024")
     @PreAuthorize("@ss.hasPermission('product:spu:delete')")
+    @TenantIgnore // 平台跨租户：超管可删除任意店铺商品
     public CommonResult<Boolean> deleteSpu(@RequestParam("id") Long id) {
         productSpuService.deleteSpu(id);
         return success(true);
@@ -79,6 +83,7 @@ public class ProductSpuController {
     @Operation(summary = "获得商品 SPU 明细")
     @Parameter(name = "id", description = "编号", required = true, example = "1024")
     @PreAuthorize("@ss.hasPermission('product:spu:query')")
+    @TenantIgnore // 平台跨租户：超管可查看任意店铺商品明细
     public CommonResult<ProductSpuRespVO> getSpuDetail(@RequestParam("id") Long id) {
         // 获得商品 SPU
         ProductSpuDO spu = productSpuService.getSpu(id);
@@ -112,6 +117,7 @@ public class ProductSpuController {
     @GetMapping("/page")
     @Operation(summary = "获得商品 SPU 分页")
     @PreAuthorize("@ss.hasPermission('product:spu:query')")
+    @TenantIgnore // 平台跨租户总览：超管默认看全部店铺商品，可按 tenantId 筛选某店铺
     public CommonResult<PageResult<ProductSpuRespVO>> getSpuPage(@Valid ProductSpuPageReqVO pageVO) {
         PageResult<ProductSpuDO> pageResult = productSpuService.getSpuPage(pageVO);
         return success(BeanUtils.toBean(pageResult, ProductSpuRespVO.class));
@@ -120,6 +126,7 @@ public class ProductSpuController {
     @GetMapping("/get-count")
     @Operation(summary = "获得商品 SPU 分页 tab count")
     @PreAuthorize("@ss.hasPermission('product:spu:query')")
+    @TenantIgnore // 平台跨租户：tab 数量也跨店铺统计，与列表一致
     public CommonResult<Map<Integer, Long>> getSpuCount() {
         return success(productSpuService.getTabsCount());
     }
