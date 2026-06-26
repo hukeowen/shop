@@ -20,6 +20,7 @@ import cn.iocoder.yudao.module.product.service.brand.ProductBrandService;
 import cn.iocoder.yudao.module.product.service.category.ProductCategoryService;
 import cn.iocoder.yudao.module.product.service.sku.ProductSkuService;
 import com.google.common.collect.Maps;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -52,6 +53,14 @@ public class ProductSpuServiceImpl implements ProductSpuService {
     private ProductBrandService brandService;
     @Resource
     private ProductCategoryService categoryService;
+
+    /**
+     * 商户上架商品是否免审核自动上架。默认 true（当前商户均为优质商户，免审核直接上架）。
+     * 关闭审核后，敏感词扫描（传销/投资类违规词）仍生效，从源头拦违规文案。
+     * 需恢复人工审核：application yaml 配 yudao.mall.product.auto-approve: false 后重启。
+     */
+    @Value("${yudao.mall.product.auto-approve:true}")
+    private boolean autoApprove;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -90,15 +99,22 @@ public class ProductSpuServiceImpl implements ProductSpuService {
         List<ProductSkuSaveReqVO> skuSaveReqList = updateReqVO.getSkus();
         productSkuService.validateSkuList(skuSaveReqList, updateReqVO.getSpecType());
 
-        // V044 合规：商户修改商品后强制重新审核（除非平台管理员通过 update-status 接口操作）
-        // 关键字段变化即重审：名称/简介/描述/价格/分类
         Integer newStatus = spu.getStatus();
-        boolean coreChanged = !java.util.Objects.equals(spu.getName(), updateReqVO.getName())
-                || !java.util.Objects.equals(spu.getIntroduction(), updateReqVO.getIntroduction())
-                || !java.util.Objects.equals(spu.getDescription(), updateReqVO.getDescription())
-                || !java.util.Objects.equals(spu.getCategoryId(), updateReqVO.getCategoryId());
-        if (coreChanged) {
-            newStatus = ProductSpuStatusEnum.PENDING_REVIEW.getStatus();
+        if (autoApprove) {
+            // 免审核：编辑商品不再打回审核；历史「审核中/审核拒绝」态的商品编辑后直接上架
+            if (ProductSpuStatusEnum.PENDING_REVIEW.getStatus().equals(newStatus)
+                    || ProductSpuStatusEnum.REJECTED.getStatus().equals(newStatus)) {
+                newStatus = ProductSpuStatusEnum.ENABLE.getStatus();
+            }
+        } else {
+            // 人工审核模式：关键字段变化即重审（名称/简介/描述/分类）
+            boolean coreChanged = !java.util.Objects.equals(spu.getName(), updateReqVO.getName())
+                    || !java.util.Objects.equals(spu.getIntroduction(), updateReqVO.getIntroduction())
+                    || !java.util.Objects.equals(spu.getDescription(), updateReqVO.getDescription())
+                    || !java.util.Objects.equals(spu.getCategoryId(), updateReqVO.getCategoryId());
+            if (coreChanged) {
+                newStatus = ProductSpuStatusEnum.PENDING_REVIEW.getStatus();
+            }
         }
 
         // 更新 SPU
@@ -153,10 +169,12 @@ public class ProductSpuServiceImpl implements ProductSpuService {
         spu.setCostPrice(getMinValue(skus, ProductSkuSaveReqVO::getCostPrice));
         // skus 库存总数
         spu.setStock(getSumValue(skus, ProductSkuSaveReqVO::getStock, Math::addExact));
-        // V044 合规整改：商品默认强制进入"审核中"状态，需平台审核通过后才能上架
-        // 防止商户随意上架道具型 / 高溢价 / 敏感词商品 → 命中入门费 / 传销红线
+        // 新建商品默认状态：免审核开关开 → 直接上架(ENABLE)；关 → 进审核中(PENDING_REVIEW)。
+        // 敏感词扫描在 createSpu/updateSpu 入口已先行拦截，免审核仍守住违规文案红线。
         if (spu.getStatus() == null) {
-            spu.setStatus(ProductSpuStatusEnum.PENDING_REVIEW.getStatus()); // 强制审核
+            spu.setStatus(autoApprove
+                    ? ProductSpuStatusEnum.ENABLE.getStatus()
+                    : ProductSpuStatusEnum.PENDING_REVIEW.getStatus());
             spu.setSalesCount(0); // 默认商品销量
             spu.setBrowseCount(0); // 默认商品浏览量
         }
