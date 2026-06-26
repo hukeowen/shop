@@ -16,7 +16,7 @@ DELETE FROM `system_menu` WHERE id BETWEEN 6100 AND 6199;
 INSERT INTO `system_menu`
   (`id`, `name`, `permission`, `type`, `sort`, `parent_id`, `path`, `icon`, `component`, `component_name`, `status`, `visible`, `keep_alive`, `always_show`, `creator`, `create_time`, `updater`, `update_time`, `deleted`)
 VALUES
-  (6100, '营销引擎',                    '',                                1, 100, 0,    'promo',         'ep:medal',           NULL, NULL, 0, b'1', b'1', b'1', 'admin', NOW(), 'admin', NOW(), b'0'),
+  (6100, '营销引擎',                    '',                                1, 100, 0,    '/promo',        'ep:medal',           NULL, NULL, 0, b'1', b'1', b'1', 'admin', NOW(), 'admin', NOW(), b'0'),
 
 -- 6107 / 6108 / 6109：可访问页面（vue3-admin views/merchant/promo/**）
   (6107, '商户营销配置',                'merchant:promo-config:query',     2,   5, 6100, 'config',         'ep:setting',         'merchant/promo/config/index',         NULL, 0, b'1', b'1', b'1', 'admin', NOW(), 'admin', NOW(), b'0'),
