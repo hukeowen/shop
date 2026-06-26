@@ -27,3 +27,13 @@ export const getPlatformStats = () => request.get({ url: '/merchant/platform/sta
 /** 平台会员管理分页（按店铺查会员） */
 export const getPlatformMemberPage = (params: any) =>
   request.get({ url: '/merchant/platform/member/page', params })
+
+/** 店铺管理分页 */
+export const getPlatformShopPage = (params: any) =>
+  request.get({ url: '/merchant/platform/shop/page', params })
+/** 改通联费率 */
+export const updateShopRate = (id: number, tlFeeRate: string) =>
+  request.put({ url: `/merchant/platform/shop/update-rate?id=${id}&tlFeeRate=${encodeURIComponent(tlFeeRate || '')}` })
+/** 设置该店自动上架开关 */
+export const updateShopAutoApprove = (id: number, autoApprove: number) =>
+  request.put({ url: `/merchant/platform/shop/update-auto-approve?id=${id}&autoApprove=${autoApprove}` })

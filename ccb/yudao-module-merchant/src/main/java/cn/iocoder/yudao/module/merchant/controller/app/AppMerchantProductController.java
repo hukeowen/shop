@@ -49,6 +49,9 @@ public class AppMerchantProductController {
     private ProductSkuService productSkuService;
 
     @Resource
+    private cn.iocoder.yudao.module.merchant.dal.mysql.ShopInfoMapper shopInfoMapper;
+
+    @Resource
     private cn.iocoder.yudao.module.product.service.brand.ProductBrandService productBrandService;
 
     @Resource
@@ -64,6 +67,18 @@ public class AppMerchantProductController {
         // 开（默认，优质商户免审核）→ 直接上架(ENABLE=1)；关 → 审核中(PENDING_REVIEW=2) 待平台审核。
         // 敏感词扫描在 createSpu 入口始终生效，免审核也守违规文案红线。
         Long spuId = productSpuService.createSpu(spuReqVO);
+        // 每店「自动上架开关」：平台在店铺管理里给某店关掉免审核 → 该店新商品降级为审核中(2)。
+        // 开（默认 autoApprove=1 或为空）→ 保持上架(1)。覆盖全局 createSpu 的结果，按店控制。
+        cn.iocoder.yudao.module.merchant.dal.dataobject.ShopInfoDO shop =
+                shopInfoMapper.selectByTenantId(cn.iocoder.yudao.framework.tenant.core.context.TenantContextHolder.getTenantId());
+        boolean shopNeedReview = shop != null && Integer.valueOf(0).equals(shop.getAutoApprove());
+        int targetStatus = shopNeedReview
+                ? cn.iocoder.yudao.module.product.enums.spu.ProductSpuStatusEnum.PENDING_REVIEW.getStatus()
+                : cn.iocoder.yudao.module.product.enums.spu.ProductSpuStatusEnum.ENABLE.getStatus();
+        ProductSpuUpdateStatusReqVO statusReq = new ProductSpuUpdateStatusReqVO();
+        statusReq.setId(spuId);
+        statusReq.setStatus(targetStatus);
+        productSpuService.updateSpuStatus(statusReq);
         return success(spuId);
     }
 

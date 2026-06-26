@@ -315,6 +315,69 @@ public class PlatformOverviewController {
         return success(new PageResult<>(list, page.getTotal()));
     }
 
+    @GetMapping("/shop/page")
+    @Operation(summary = "店铺管理：所有店铺（名称/状态/联系/地址/通联费率/自动上架）")
+    @PreAuthorize("@ss.hasPermission('merchant:platform:query')")
+    @TenantIgnore
+    public CommonResult<PageResult<Map<String, Object>>> shopPage(
+            @RequestParam(value = "pageNo", defaultValue = "1") Integer pageNo,
+            @RequestParam(value = "pageSize", defaultValue = "10") Integer pageSize,
+            @RequestParam(value = "shopName", required = false) String shopName,
+            @RequestParam(value = "tenantId", required = false) Long tenantId) {
+        PageParam pageParam = new PageParam();
+        pageParam.setPageNo(pageNo);
+        pageParam.setPageSize(pageSize);
+        PageResult<ShopInfoDO> page = shopInfoMapper.selectPage(pageParam,
+                new LambdaQueryWrapperX<ShopInfoDO>()
+                        .likeIfPresent(ShopInfoDO::getShopName, shopName)
+                        .eqIfPresent(ShopInfoDO::getTenantId, tenantId)
+                        .orderByDesc(ShopInfoDO::getId));
+        List<Map<String, Object>> list = new ArrayList<>();
+        for (ShopInfoDO s : page.getList()) {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("id", s.getId());
+            m.put("tenantId", s.getTenantId());
+            m.put("shopName", s.getShopName());
+            m.put("status", s.getStatus());
+            m.put("mobile", s.getMobile());
+            m.put("address", s.getAddress());
+            m.put("businessType", s.getBusinessType());
+            m.put("tlMchId", s.getTlMchId());
+            m.put("onlinePayEnabled", s.getOnlinePayEnabled());
+            m.put("tlFeeRate", s.getTlFeeRate());
+            m.put("autoApprove", s.getAutoApprove() == null ? 1 : s.getAutoApprove());
+            m.put("createTime", s.getCreateTime());
+            list.add(m);
+        }
+        return success(new PageResult<>(list, page.getTotal()));
+    }
+
+    @PutMapping("/shop/update-rate")
+    @Operation(summary = "修改某店铺通联支付费率")
+    @PreAuthorize("@ss.hasPermission('merchant:platform:query')")
+    @TenantIgnore
+    public CommonResult<Boolean> updateShopRate(@RequestParam("id") Long id,
+                                                @RequestParam(value = "tlFeeRate", required = false) String tlFeeRate) {
+        ShopInfoDO update = new ShopInfoDO();
+        update.setId(id);
+        update.setTlFeeRate(tlFeeRate);
+        shopInfoMapper.updateById(update);
+        return success(true);
+    }
+
+    @PutMapping("/shop/update-auto-approve")
+    @Operation(summary = "设置某店铺商品是否免审核自动上架")
+    @PreAuthorize("@ss.hasPermission('merchant:platform:query')")
+    @TenantIgnore
+    public CommonResult<Boolean> updateShopAutoApprove(@RequestParam("id") Long id,
+                                                       @RequestParam("autoApprove") Integer autoApprove) {
+        ShopInfoDO update = new ShopInfoDO();
+        update.setId(id);
+        update.setAutoApprove(autoApprove);
+        shopInfoMapper.updateById(update);
+        return success(true);
+    }
+
     private Map<Long, String> loadShopNames() {
         Map<Long, String> map = new HashMap<>();
         for (ShopInfoDO s : shopInfoMapper.selectList()) {

@@ -236,5 +236,9 @@ public class ShopInfoDO extends BaseDO {
     private String storePicKey;
     /** 店内照片（经营场所内部）TOS key —— 在线支付开通审核用 */
     private String indoorPicKey;
+    /** 通联支付费率（平台运营可调的数字，展示/记录用） */
+    private String tlFeeRate;
+    /** 该店商品是否免审核自动上架：1=是(默认) 0=需平台审核 */
+    private Integer autoApprove;
 
 }
