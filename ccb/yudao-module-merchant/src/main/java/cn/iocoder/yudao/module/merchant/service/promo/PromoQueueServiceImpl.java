@@ -174,8 +174,8 @@ public class PromoQueueServiceImpl implements PromoQueueService {
         Long parentId = referralService.getDirectParent(buyerUserId);
         if (parentId != null && parentId > 0) {
             handleParentReward(config, n, ratios, parentId, buyerUserId, spuId, paidAmount, unitPaid, orderId);
-        } else if (Boolean.TRUE.equals(loadNaturalPushEnabled())) {
-            // 真自然用户（无 parent）+ 商户开了自然推开关 → 给队首返奖（v6 兼容）
+        } else if (Boolean.TRUE.equals(resolveNaturalPush(config))) {
+            // 真自然用户（无 parent）+ 自然推开关开（商品级优先，商户级兜底）→ 给队首返奖（v6 兼容）
             // 仅"奖励分配"那部分用 legacy；buyer 自己的状态机继续走下面的 v7 主流程
             handleNaturalPushLegacy(buyerPos, n, ratios, buyerUserId, spuId, paidAmount, orderId);
         }
@@ -463,6 +463,17 @@ public class PromoQueueServiceImpl implements PromoQueueService {
     private Boolean loadNaturalPushEnabled() {
         PromoConfigDO config = promoConfigService.getConfig();
         return config != null && Boolean.TRUE.equals(config.getNaturalPushEnabled());
+    }
+
+    /**
+     * 自然推开关解析：商品级（product_promo_config.natural_push_enabled）优先，
+     * 为 null 时回退商户级（shop_promo_config.natural_push_enabled）。
+     */
+    private Boolean resolveNaturalPush(ProductPromoConfigDO productConfig) {
+        if (productConfig != null && productConfig.getNaturalPushEnabled() != null) {
+            return productConfig.getNaturalPushEnabled();
+        }
+        return loadNaturalPushEnabled();
     }
 
     @Override

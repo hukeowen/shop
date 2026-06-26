@@ -137,6 +137,19 @@
         </view>
       </template>
 
+      <!-- 自然队列（自然推）：商品级开关，覆盖商户级兜底 -->
+      <view class="switch-row">
+        <view class="switch-body">
+          <view class="switch-title">自然队列（自然推）</view>
+          <view class="switch-desc">无推荐人的自然顾客下单时：开=奖励给排队首位老客（激励老客主动推广）；关=奖励吞掉不发</view>
+        </view>
+        <switch
+          :checked="promo.naturalPushEnabled"
+          color="#FF6B35"
+          @change="(e) => (promo.naturalPushEnabled = e.detail.value)"
+        />
+      </view>
+
       <!-- v8: 邀请奖比例（出队后老客继续邀请的感谢奖） -->
       <view class="field-v">
         <text class="label-v">出队后邀请感谢奖 %</text>
@@ -440,6 +453,7 @@ const form = reactive({
 const promoLoaded = ref(false);
 const promo = reactive({
   consumePointRatio: '0',
+  naturalPushEnabled: false,
   tuijianEnabled: false,
   tuijianN: '4',
   tuijianRatios: ['25', '25', '25', '25'],
@@ -575,6 +589,7 @@ async function loadPromo(spuId) {
     // UI 语义：每元返多少元。两者差 100 倍；展示侧 ÷100。
     promo.consumePointRatio = data.consumePointRatio != null
       ? String(Number(data.consumePointRatio) / 100) : '0';
+    promo.naturalPushEnabled = !!data.naturalPushEnabled;
     promo.tuijianEnabled = !!data.tuijianEnabled;
     promo.tuijianN = String(data.tuijianN ?? 0);
     try {
@@ -710,6 +725,7 @@ async function persistPromo(poolDistJson) {
   await saveProductPromoConfig({
     spuId: editingId.value,
     consumePointRatio: Math.round(((parseFloat(promo.consumePointRatio) || 0) * 100) * 100) / 100,
+    naturalPushEnabled: !!promo.naturalPushEnabled,
     tuijianEnabled: !!promo.tuijianEnabled,
     tuijianN: n,
     tuijianRatios: JSON.stringify(promo.tuijianRatios.map((r) => Number(r) || 0)),

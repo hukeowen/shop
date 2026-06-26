@@ -5,7 +5,7 @@
       <view class="logo">拓</view>
       <view class="brand">
         <view class="brand-name">拓小二</view>
-        <view class="brand-slogan">让每个小摊，都有大生意</view>
+        <view class="brand-slogan">让每个店铺，都有大生意</view>
       </view>
     </view>
 

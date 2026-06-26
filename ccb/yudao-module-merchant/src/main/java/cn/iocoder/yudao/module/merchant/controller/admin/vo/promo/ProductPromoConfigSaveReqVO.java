@@ -21,6 +21,9 @@ public class ProductPromoConfigSaveReqVO {
     @DecimalMin("0.00")
     private BigDecimal consumePointRatio;
 
+    @Schema(description = "自然队列/自然推开关（商品级，null=用商户级兜底）")
+    private Boolean naturalPushEnabled;
+
     @Schema(description = "是否启用推 N 反 1")
     @NotNull
     private Boolean tuijianEnabled;

@@ -4,7 +4,7 @@
       <view class="logo">拓</view>
       <view class="app-name">拓小二</view>
       <view class="app-version">v1.0.0</view>
-      <view class="app-slogan">让每个小摊，都有大生意</view>
+      <view class="app-slogan">让每个店铺，都有大生意</view>
     </view>
 
     <view class="card section">
@@ -24,9 +24,9 @@
 
     <view class="card section">
       <view class="desc">
-        拓小二是专为线下摊位、小店商户打造的数字化经营工具。
+        拓小二是专为线下店铺打造的数字化经营工具。
         提供商品管理、订单处理、会员积分、推广奖励、AI 视频营销等一站式功能，
-        帮助每一位摊主轻松开店、高效运营。
+        帮助每一位店主轻松开店、高效运营。
       </view>
     </view>
 

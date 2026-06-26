@@ -38,6 +38,11 @@ public class ProductPromoConfigDO extends TenantBaseDO {
     /** 每元返多少消费积分 */
     private BigDecimal consumePointRatio;
 
+    // ========== 自然队列（自然推）—— 商品级优先，商户级 shop_promo_config 兜底 ==========
+    /** 该商品「自然队列/自然推」开关：null=用商户级兜底；true=队首返奖；false=吞奖。
+     *  仅作用于真自然用户（无推荐人）订单。 */
+    private Boolean naturalPushEnabled;
+
     // ========== 推 N 反 1 ==========
     /** 是否启用推 N 反 1 */
     private Boolean tuijianEnabled;
