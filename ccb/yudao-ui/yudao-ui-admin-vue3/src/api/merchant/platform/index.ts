@@ -23,3 +23,7 @@ export const getPlatformOrderPage = (params: any) =>
 
 /** 平台数据概览 */
 export const getPlatformStats = () => request.get({ url: '/merchant/platform/stats' })
+
+/** 平台会员管理分页（按店铺查会员） */
+export const getPlatformMemberPage = (params: any) =>
+  request.get({ url: '/merchant/platform/member/page', params })

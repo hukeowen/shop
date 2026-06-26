@@ -5,8 +5,12 @@ import cn.iocoder.yudao.framework.common.pojo.PageParam;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
 import cn.iocoder.yudao.framework.tenant.core.aop.TenantIgnore;
+import cn.iocoder.yudao.module.member.api.user.MemberUserApi;
+import cn.iocoder.yudao.module.member.api.user.dto.MemberUserRespDTO;
+import cn.iocoder.yudao.module.merchant.dal.dataobject.MemberShopRelDO;
 import cn.iocoder.yudao.module.merchant.dal.dataobject.MerchantDO;
 import cn.iocoder.yudao.module.merchant.dal.dataobject.ShopInfoDO;
+import cn.iocoder.yudao.module.merchant.dal.mysql.MemberShopRelMapper;
 import cn.iocoder.yudao.module.merchant.dal.dataobject.saas.MerchantSubscriptionOrderDO;
 import cn.iocoder.yudao.module.merchant.dal.dataobject.saas.SaasPackageConfigDO;
 import cn.iocoder.yudao.module.merchant.dal.mysql.MerchantMapper;
@@ -56,6 +60,10 @@ public class PlatformOverviewController {
     private MerchantSubscriptionOrderMapper merchantSubscriptionOrderMapper;
     @Resource
     private TradeOrderMapper tradeOrderMapper;
+    @Resource
+    private MemberShopRelMapper memberShopRelMapper;
+    @Resource
+    private MemberUserApi memberUserApi;
 
     @GetMapping("/shops")
     @Operation(summary = "所有店铺（租户ID+店铺名+状态）—— 总览筛选下拉用")
@@ -262,6 +270,49 @@ public class PlatformOverviewController {
         m.put("productCount", productSpuMapper.selectCount(
                 new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<ProductSpuDO>()));
         return success(m);
+    }
+
+    @GetMapping("/member/page")
+    @Operation(summary = "平台会员管理：按店铺查会员（手机/余额/积分/推荐人/进店时间）")
+    @PreAuthorize("@ss.hasPermission('merchant:platform:query')")
+    @TenantIgnore
+    public CommonResult<PageResult<Map<String, Object>>> memberPage(
+            @RequestParam(value = "pageNo", defaultValue = "1") Integer pageNo,
+            @RequestParam(value = "pageSize", defaultValue = "10") Integer pageSize,
+            @RequestParam(value = "tenantId", required = false) Long tenantId) {
+        PageParam pageParam = new PageParam();
+        pageParam.setPageNo(pageNo);
+        pageParam.setPageSize(pageSize);
+        PageResult<MemberShopRelDO> page = memberShopRelMapper.selectPage(pageParam,
+                new LambdaQueryWrapperX<MemberShopRelDO>()
+                        .eqIfPresent(MemberShopRelDO::getTenantId, tenantId)
+                        .orderByDesc(MemberShopRelDO::getId));
+        Map<Long, String> shopNames = loadShopNames();
+        java.util.Set<Long> userIds = new java.util.HashSet<>();
+        for (MemberShopRelDO r : page.getList()) {
+            if (r.getUserId() != null) {
+                userIds.add(r.getUserId());
+            }
+        }
+        Map<Long, MemberUserRespDTO> userMap = userIds.isEmpty()
+                ? java.util.Collections.emptyMap() : memberUserApi.getUserMap(userIds);
+        List<Map<String, Object>> list = new ArrayList<>();
+        for (MemberShopRelDO r : page.getList()) {
+            MemberUserRespDTO u = userMap.get(r.getUserId());
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("userId", r.getUserId());
+            m.put("mobile", u == null ? null : u.getMobile());
+            m.put("nickname", u == null ? null : u.getNickname());
+            m.put("tenantId", r.getTenantId());
+            m.put("shopName", shopNames.getOrDefault(r.getTenantId(), "租户" + r.getTenantId()));
+            m.put("balance", r.getBalance());
+            m.put("points", r.getPoints());
+            m.put("referrerUserId", r.getReferrerUserId());
+            m.put("firstVisitAt", r.getFirstVisitAt());
+            m.put("lastVisitAt", r.getLastVisitAt());
+            list.add(m);
+        }
+        return success(new PageResult<>(list, page.getTotal()));
     }
 
     private Map<Long, String> loadShopNames() {
