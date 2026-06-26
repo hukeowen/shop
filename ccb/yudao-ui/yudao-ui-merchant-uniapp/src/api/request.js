@@ -13,6 +13,20 @@
 // 读 token 走 localStorage，userStore 在启动时会把 token 同步写进来
 const USER_STORE_STORAGE_KEY = 'user-store-v1';
 
+// 原生 App 没有同源代理：相对接口路径（/app-api、/admin-api、/oss 等）必须拼成绝对域名。
+// H5 / 小程序保持相对路径（各自由 nginx 代理 / 合法域名处理），不受影响。
+// #ifdef APP-PLUS
+const APP_API_ORIGIN = 'https://tuo.doupaidoudian.com';
+// #endif
+function resolveUrl(url) {
+  // #ifdef APP-PLUS
+  if (typeof url === 'string' && url.charAt(0) === '/') {
+    return APP_API_ORIGIN + url;
+  }
+  // #endif
+  return url;
+}
+
 function readToken() {
   try {
     if (typeof localStorage !== 'undefined') {
@@ -158,7 +172,7 @@ export function request({ url, method = 'GET', data, header, responseType, raw =
   return new Promise((resolve, reject) => {
     const isArrayBuffer = responseType === 'arraybuffer';
     uni.request({
-      url,
+      url: resolveUrl(url),
       method,
       data,
       header: { ...getHeader(url), ...(tenantId ? { 'tenant-id': tenantId } : {}), ...header },
