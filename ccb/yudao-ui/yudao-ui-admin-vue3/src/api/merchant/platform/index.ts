@@ -12,3 +12,7 @@ export const getPlatformProductPage = (params: any) =>
 /** 平台上/下架某店铺商品（0下架 1上架 4回收站） */
 export const updatePlatformProductStatus = (id: number, status: number) =>
   request.put({ url: `/merchant/platform/product/update-status?id=${id}&status=${status}` })
+
+/** 店铺套餐总览分页（每店当前套餐/到期/累计付费） */
+export const getPlatformSubscriptionPage = (params: any) =>
+  request.get({ url: '/merchant/platform/subscription/page', params })

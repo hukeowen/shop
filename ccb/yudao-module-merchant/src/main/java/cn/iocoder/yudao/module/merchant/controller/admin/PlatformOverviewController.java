@@ -5,8 +5,14 @@ import cn.iocoder.yudao.framework.common.pojo.PageParam;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
 import cn.iocoder.yudao.framework.tenant.core.aop.TenantIgnore;
+import cn.iocoder.yudao.module.merchant.dal.dataobject.MerchantDO;
 import cn.iocoder.yudao.module.merchant.dal.dataobject.ShopInfoDO;
+import cn.iocoder.yudao.module.merchant.dal.dataobject.saas.MerchantSubscriptionOrderDO;
+import cn.iocoder.yudao.module.merchant.dal.dataobject.saas.SaasPackageConfigDO;
+import cn.iocoder.yudao.module.merchant.dal.mysql.MerchantMapper;
 import cn.iocoder.yudao.module.merchant.dal.mysql.ShopInfoMapper;
+import cn.iocoder.yudao.module.merchant.dal.mysql.saas.MerchantSubscriptionOrderMapper;
+import cn.iocoder.yudao.module.merchant.dal.mysql.saas.SaasPackageConfigMapper;
 import cn.iocoder.yudao.module.product.dal.dataobject.spu.ProductSpuDO;
 import cn.iocoder.yudao.module.product.dal.mysql.spu.ProductSpuMapper;
 import io.swagger.v3.oas.annotations.Operation;
@@ -40,6 +46,12 @@ public class PlatformOverviewController {
     private ProductSpuMapper productSpuMapper;
     @Resource
     private ShopInfoMapper shopInfoMapper;
+    @Resource
+    private MerchantMapper merchantMapper;
+    @Resource
+    private SaasPackageConfigMapper saasPackageConfigMapper;
+    @Resource
+    private MerchantSubscriptionOrderMapper merchantSubscriptionOrderMapper;
 
     @GetMapping("/shops")
     @Operation(summary = "所有店铺（租户ID+店铺名+状态）—— 总览筛选下拉用")
@@ -106,6 +118,54 @@ public class PlatformOverviewController {
         update.setStatus(status);
         productSpuMapper.updateById(update);
         return success(true);
+    }
+
+    @GetMapping("/subscription/page")
+    @Operation(summary = "店铺套餐总览：每店当前套餐/到期时间/累计付费金额")
+    @PreAuthorize("@ss.hasPermission('merchant:platform:query')")
+    @TenantIgnore
+    public CommonResult<PageResult<Map<String, Object>>> subscriptionPage(
+            @RequestParam(value = "pageNo", defaultValue = "1") Integer pageNo,
+            @RequestParam(value = "pageSize", defaultValue = "10") Integer pageSize,
+            @RequestParam(value = "tenantId", required = false) Long tenantId,
+            @RequestParam(value = "level", required = false) String level) {
+        PageParam pageParam = new PageParam();
+        pageParam.setPageNo(pageNo);
+        pageParam.setPageSize(pageSize);
+        LambdaQueryWrapperX<MerchantDO> q = new LambdaQueryWrapperX<MerchantDO>()
+                .eqIfPresent(MerchantDO::getTenantId, tenantId)
+                .eqIfPresent(MerchantDO::getServicePackageLevel, level)
+                .orderByDesc(MerchantDO::getId);
+        PageResult<MerchantDO> page = merchantMapper.selectPage(pageParam, q);
+        Map<Long, String> shopNames = loadShopNames();
+        // 套餐档位 → 套餐名（试用版兜底）
+        Map<String, String> levelName = new HashMap<>();
+        levelName.put("TRIAL", "试用版");
+        levelName.put("PLATFORM", "平台");
+        for (SaasPackageConfigDO c : saasPackageConfigMapper.selectList()) {
+            levelName.put(c.getLevel(), c.getName());
+        }
+        // 商户 → 累计已付金额（PAID）
+        Map<Long, Integer> paidMap = new HashMap<>();
+        for (MerchantSubscriptionOrderDO o : merchantSubscriptionOrderMapper.selectList(
+                MerchantSubscriptionOrderDO::getPayStatus, MerchantSubscriptionOrderDO.PAY_STATUS_PAID)) {
+            paidMap.merge(o.getMerchantId(), o.getPayAmountFen() == null ? 0 : o.getPayAmountFen(), Integer::sum);
+        }
+        List<Map<String, Object>> list = new ArrayList<>();
+        for (MerchantDO m : page.getList()) {
+            String lv = m.getServicePackageLevel();
+            Map<String, Object> mp = new LinkedHashMap<>();
+            mp.put("merchantId", m.getId());
+            mp.put("tenantId", m.getTenantId());
+            mp.put("shopName", shopNames.getOrDefault(m.getTenantId(), m.getName()));
+            mp.put("level", lv);
+            mp.put("levelName", lv == null ? "试用版" : levelName.getOrDefault(lv, lv));
+            mp.put("serviceExpireAt", m.getServiceExpireAt());
+            mp.put("paid", lv != null && !"TRIAL".equals(lv) && !"PLATFORM".equals(lv));
+            mp.put("totalPaidFen", paidMap.getOrDefault(m.getId(), 0));
+            list.add(mp);
+        }
+        return success(new PageResult<>(list, page.getTotal()));
     }
 
     private Map<Long, String> loadShopNames() {
