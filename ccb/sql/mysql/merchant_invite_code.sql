@@ -1,5 +1,5 @@
 -- ============================================================
--- Phase 0.2 迁移脚本：商户邀请码 + 摊小二统一小程序字段
+-- Phase 0.2 迁移脚本：商户邀请码 + 拓小二统一小程序字段
 --
 -- 幂等性说明：
 --   - 本脚本使用 CREATE TABLE IF NOT EXISTS 与 "条件列存在判断" 语法，可重复执行；
@@ -58,7 +58,7 @@ CREATE PROCEDURE `merchant_info_add_col_phase_0_2`()
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
                     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'merchant_info' AND COLUMN_NAME = 'open_id') THEN
-        ALTER TABLE `merchant_info` ADD COLUMN `open_id` VARCHAR(64) DEFAULT NULL COMMENT '摊小二商户小程序 OpenID' AFTER `user_id`;
+        ALTER TABLE `merchant_info` ADD COLUMN `open_id` VARCHAR(64) DEFAULT NULL COMMENT '拓小二商户小程序 OpenID' AFTER `user_id`;
         ALTER TABLE `merchant_info` ADD INDEX `idx_open_id` (`open_id`);
     END IF;
     IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
@@ -83,7 +83,7 @@ CREATE PROCEDURE `member_user_add_col_phase_0_2`()
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
                     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'member_user' AND COLUMN_NAME = 'mini_app_open_id') THEN
-        ALTER TABLE `member_user` ADD COLUMN `mini_app_open_id` VARCHAR(64) DEFAULT NULL COMMENT '摊小二商户统一小程序 OpenID' AFTER `id`;
+        ALTER TABLE `member_user` ADD COLUMN `mini_app_open_id` VARCHAR(64) DEFAULT NULL COMMENT '拓小二商户统一小程序 OpenID' AFTER `id`;
         -- UNIQUE 防并发 wxMiniLogin 重复注册同一 openid（竞态下靠 duplicate key 兜底）
         ALTER TABLE `member_user` ADD UNIQUE INDEX `uk_mini_app_open_id` (`mini_app_open_id`);
     END IF;

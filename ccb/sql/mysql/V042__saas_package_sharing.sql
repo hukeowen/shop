@@ -104,7 +104,7 @@ DELETE FROM system_tenant WHERE id NOT IN (1, 121, 122, 999);
 -- ========== 平台店铺 + 套餐 SPU seed ==========
 
 -- 标记平台店铺
-UPDATE shop_info     SET is_platform_shop=b'1', shop_name='摊小二平台', status=1, balance=0 WHERE tenant_id=999;
+UPDATE shop_info     SET is_platform_shop=b'1', shop_name='拓小二平台', status=1, balance=0 WHERE tenant_id=999;
 UPDATE merchant_info SET is_platform=b'1', service_package_level='PLATFORM', status=1 WHERE tenant_id=999;
 
 -- 平台运营 user（mobile=10000000000，专用于平台店铺 admin，不参与分销）

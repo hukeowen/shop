@@ -877,7 +877,7 @@ build_admin_frontend() {
   # 不破坏仓库内 .env.prod 默认值；且 .env.prod.local 默认在 .gitignore 里，安全。
   cat > .env.prod.local << 'ENVEOF'
 VITE_DEV=false
-VITE_APP_TITLE=摊小二管理后台
+VITE_APP_TITLE=拓小二管理后台
 # 关键：VITE_BASE_URL 必须留空，axios 真正用的是 base_url = VITE_BASE_URL + VITE_API_URL
 # 写 "/" 会拼成 "//admin-api"，浏览器解析成 protocol-relative URL `http://admin-api/...`
 # → 整个登录全部 404。留空则拼成 "/admin-api"（相对当前域名），nginx 反代就对了。

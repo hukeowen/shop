@@ -24,7 +24,7 @@
     <!-- 正常 -->
     <view v-else-if="code" class="content">
       <view class="hero">
-        <view class="hero-title">🚀 邀请新商户加入摊小二</view>
+        <view class="hero-title">🚀 邀请新商户加入拓小二</view>
         <view class="hero-sub">每位通过你分享码加入并购买套餐的新商户，按规则给你返奖励</view>
       </view>
 

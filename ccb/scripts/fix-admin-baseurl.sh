@@ -31,7 +31,7 @@ cd "$PROJECT_DIR/yudao-ui/yudao-ui-admin-vue3"
 echo "==> 写 .env.prod.local（修 VITE_BASE_URL=/ 这个地雷）"
 cat > .env.prod.local <<'ENVEOF'
 VITE_DEV=false
-VITE_APP_TITLE=摊小二管理后台
+VITE_APP_TITLE=拓小二管理后台
 # 关键：VITE_BASE_URL 必须留空，axios 真正的 baseURL = VITE_BASE_URL + VITE_API_URL
 # 写 "/" 会拼成 "//admin-api"，浏览器解析成 protocol-relative URL → http://admin-api/...
 VITE_BASE_URL=
