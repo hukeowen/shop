@@ -16,3 +16,10 @@ export const updatePlatformProductStatus = (id: number, status: number) =>
 /** 店铺套餐总览分页（每店当前套餐/到期/累计付费） */
 export const getPlatformSubscriptionPage = (params: any) =>
   request.get({ url: '/merchant/platform/subscription/page', params })
+
+/** 跨租户订单总览分页 */
+export const getPlatformOrderPage = (params: any) =>
+  request.get({ url: '/merchant/platform/order/page', params })
+
+/** 平台数据概览 */
+export const getPlatformStats = () => request.get({ url: '/merchant/platform/stats' })

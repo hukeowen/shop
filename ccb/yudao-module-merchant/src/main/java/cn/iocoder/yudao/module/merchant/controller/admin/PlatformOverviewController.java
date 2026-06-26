@@ -15,6 +15,8 @@ import cn.iocoder.yudao.module.merchant.dal.mysql.saas.MerchantSubscriptionOrder
 import cn.iocoder.yudao.module.merchant.dal.mysql.saas.SaasPackageConfigMapper;
 import cn.iocoder.yudao.module.product.dal.dataobject.spu.ProductSpuDO;
 import cn.iocoder.yudao.module.product.dal.mysql.spu.ProductSpuMapper;
+import cn.iocoder.yudao.module.trade.dal.dataobject.order.TradeOrderDO;
+import cn.iocoder.yudao.module.trade.dal.mysql.order.TradeOrderMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -52,6 +54,8 @@ public class PlatformOverviewController {
     private SaasPackageConfigMapper saasPackageConfigMapper;
     @Resource
     private MerchantSubscriptionOrderMapper merchantSubscriptionOrderMapper;
+    @Resource
+    private TradeOrderMapper tradeOrderMapper;
 
     @GetMapping("/shops")
     @Operation(summary = "所有店铺（租户ID+店铺名+状态）—— 总览筛选下拉用")
@@ -166,6 +170,96 @@ public class PlatformOverviewController {
             list.add(mp);
         }
         return success(new PageResult<>(list, page.getTotal()));
+    }
+
+    @GetMapping("/order/page")
+    @Operation(summary = "平台跨租户订单总览（全部店铺，按店铺/订单号/状态筛选）")
+    @PreAuthorize("@ss.hasPermission('merchant:platform:query')")
+    @TenantIgnore
+    public CommonResult<PageResult<Map<String, Object>>> orderPage(
+            @RequestParam(value = "pageNo", defaultValue = "1") Integer pageNo,
+            @RequestParam(value = "pageSize", defaultValue = "10") Integer pageSize,
+            @RequestParam(value = "no", required = false) String no,
+            @RequestParam(value = "status", required = false) Integer status,
+            @RequestParam(value = "tenantId", required = false) Long tenantId) {
+        PageParam pageParam = new PageParam();
+        pageParam.setPageNo(pageNo);
+        pageParam.setPageSize(pageSize);
+        LambdaQueryWrapperX<TradeOrderDO> q = new LambdaQueryWrapperX<TradeOrderDO>()
+                .likeIfPresent(TradeOrderDO::getNo, no)
+                .eqIfPresent(TradeOrderDO::getStatus, status)
+                .eqIfPresent(TradeOrderDO::getTenantId, tenantId)
+                .orderByDesc(TradeOrderDO::getId);
+        PageResult<TradeOrderDO> page = tradeOrderMapper.selectPage(pageParam, q);
+        Map<Long, String> shopNames = loadShopNames();
+        List<Map<String, Object>> list = new ArrayList<>();
+        for (TradeOrderDO o : page.getList()) {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("id", o.getId());
+            m.put("no", o.getNo());
+            m.put("tenantId", o.getTenantId());
+            m.put("shopName", shopNames.getOrDefault(o.getTenantId(), "租户" + o.getTenantId()));
+            m.put("userId", o.getUserId());
+            m.put("totalPrice", o.getTotalPrice());
+            m.put("payPrice", o.getPayPrice());
+            m.put("payStatus", o.getPayStatus());
+            m.put("status", o.getStatus());
+            m.put("payTime", o.getPayTime());
+            m.put("createTime", o.getCreateTime());
+            list.add(m);
+        }
+        return success(new PageResult<>(list, page.getTotal()));
+    }
+
+    @GetMapping("/stats")
+    @Operation(summary = "平台数据概览：订单总额/净销售额/套餐收入/商户·会员·商品数 等")
+    @PreAuthorize("@ss.hasPermission('merchant:platform:query')")
+    @TenantIgnore
+    public CommonResult<Map<String, Object>> stats() {
+        Map<String, Object> m = new LinkedHashMap<>();
+        // 订单：GMV(下单总额) + 净销售额(实付)
+        long gmvFen = 0, netFen = 0, paidOrders = 0;
+        List<TradeOrderDO> orders = tradeOrderMapper.selectList();
+        for (TradeOrderDO o : orders) {
+            gmvFen += o.getTotalPrice() == null ? 0 : o.getTotalPrice();
+            if (Boolean.TRUE.equals(o.getPayStatus())) {
+                netFen += o.getPayPrice() == null ? 0 : o.getPayPrice();
+                paidOrders++;
+            }
+        }
+        m.put("orderCount", orders.size());
+        m.put("paidOrderCount", paidOrders);
+        m.put("orderTotalFen", gmvFen);
+        m.put("netSalesFen", netFen);
+        // 套餐收入（SaaS 平台收入）
+        long subRevenueFen = 0;
+        for (MerchantSubscriptionOrderDO s : merchantSubscriptionOrderMapper.selectList(
+                MerchantSubscriptionOrderDO::getPayStatus, MerchantSubscriptionOrderDO.PAY_STATUS_PAID)) {
+            subRevenueFen += s.getPayAmountFen() == null ? 0 : s.getPayAmountFen();
+        }
+        m.put("subscriptionRevenueFen", subRevenueFen);
+        // 商户 / 付费商户 / 即将到期(30天内)
+        List<MerchantDO> merchants = merchantMapper.selectList();
+        int paidMerchants = 0, expiringSoon = 0;
+        java.time.LocalDateTime soon = java.time.LocalDateTime.now().plusDays(30);
+        java.time.LocalDateTime nowTime = java.time.LocalDateTime.now();
+        for (MerchantDO mc : merchants) {
+            String lv = mc.getServicePackageLevel();
+            if (lv != null && !"TRIAL".equals(lv) && !"PLATFORM".equals(lv)) {
+                paidMerchants++;
+            }
+            if (mc.getServiceExpireAt() != null
+                    && mc.getServiceExpireAt().isAfter(nowTime) && mc.getServiceExpireAt().isBefore(soon)) {
+                expiringSoon++;
+            }
+        }
+        m.put("merchantCount", merchants.size());
+        m.put("paidMerchantCount", paidMerchants);
+        m.put("expiringSoonCount", expiringSoon);
+        // 店铺 / 商品数
+        m.put("shopCount", shopInfoMapper.selectCount());
+        m.put("productCount", productSpuMapper.selectCount());
+        return success(m);
     }
 
     private Map<Long, String> loadShopNames() {
