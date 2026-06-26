@@ -45,9 +45,6 @@ public class ProductSpuPageReqVO extends PageParam {
     @Schema(description = "商品名称", example = "清凉小短袖")
     private String name;
 
-    @Schema(description = "所属租户（店铺）编号 —— 平台跨租户总览时按店铺筛选；空=全部店铺", example = "1010")
-    private Long tenantId;
-
     @Schema(description = "前端请求的tab类型", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
     private Integer tabType;
 
