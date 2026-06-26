@@ -73,7 +73,9 @@ public class MerchantShopController {
                 new LambdaQueryWrapper<ShopInfoDO>()
                         .and(w -> w.eq(ShopInfoDO::getIdCardFrontKey, key)
                                 .or().eq(ShopInfoDO::getIdCardBackKey, key)
-                                .or().eq(ShopInfoDO::getBusinessLicenseKey, key)));
+                                .or().eq(ShopInfoDO::getBusinessLicenseKey, key)
+                                .or().eq(ShopInfoDO::getStorePicKey, key)
+                                .or().eq(ShopInfoDO::getIndoorPicKey, key)));
         if (match == 0) {
             throw ServiceExceptionUtil.exception0(BAD_REQUEST.getCode(), "key 未被任何店铺引用");
         }

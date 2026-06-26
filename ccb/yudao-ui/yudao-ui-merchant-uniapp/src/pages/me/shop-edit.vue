@@ -76,6 +76,23 @@
           <text class="label">详细地址</text>
           <input class="input" v-model="form.address" placeholder="请输入店铺地址" />
         </view>
+        <view class="field geo-field">
+          <text class="label">店铺定位</text>
+          <view class="geo-wrap">
+            <view class="geo-btns">
+              <view class="geo-btn primary" :class="{ busy: locating }" @click="locateNow">
+                {{ locating ? '定位中…' : (hasGeo() ? '📍 重新定位' : '📍 定位到当前位置') }}
+              </view>
+              <view class="geo-btn ghost" @click="chooseOnMap">地图选点</view>
+            </view>
+            <view v-if="hasGeo()" class="geo-state ok">
+              <text class="geo-dot">●</text>
+              <text class="geo-text">已定位{{ geoAddress ? '：' + geoAddress : ('（' + form.latitude + ', ' + form.longitude + '）') }}</text>
+            </view>
+            <view v-else class="geo-state none">未定位 · 用户将无法在「附近店铺」按距离找到你</view>
+            <text class="hint">请站在店内点击定位，用户端会按这个位置帮你被附近的人找到</text>
+          </view>
+        </view>
         <view class="field">
           <text class="label">店铺简介</text>
           <textarea class="textarea" v-model="form.description" placeholder="请输入店铺简介" />
@@ -138,10 +155,17 @@ const form = ref({
   days: [1, 2, 3, 4, 5, 6, 7],
   manualClosed: false,
   address: '',
+  longitude: '',
+  latitude: '',
   description: '',
   notice: '',
   featureTags: '',
 });
+
+// 店铺定位（gcj02，与用户端 uni.getLocation/附近店铺 Haversine 对齐）
+const locating = ref(false);
+const geoAddress = ref(''); // 逆地理回显，便于商户确认定位是否准确
+const hasGeo = () => !!(form.value.longitude && form.value.latitude);
 
 async function pickCover() {
   const tempPath = await new Promise((resolve) => {
@@ -165,6 +189,67 @@ async function pickCover() {
     uni.hideLoading();
     uni.showToast({ title: '上传失败：' + (e?.message || e), icon: 'none' });
   }
+}
+
+// 逆地理：坐标 → 具体地址（后端代理腾讯位置服务，key 不下发前端）
+async function reverseGeo(lng, lat) {
+  try {
+    const r = await request({
+      url: `/app-api/merchant/shop/public/geo-reverse?lng=${lng}&lat=${lat}`,
+    });
+    geoAddress.value = (r && (r.recommend || r.address)) || '';
+  } catch {
+    geoAddress.value = '';
+  }
+}
+
+// 获取当前位置作为店铺定位（请商户在店内点击）
+function locateNow() {
+  if (locating.value) return;
+  locating.value = true;
+  uni.getLocation({
+    type: 'gcj02',
+    success: async (r) => {
+      form.value.longitude = String(r.longitude);
+      form.value.latitude = String(r.latitude);
+      locating.value = false;
+      uni.showToast({ title: '定位成功', icon: 'success' });
+      await reverseGeo(r.longitude, r.latitude);
+      // 地址为空时用逆地理结果兜底填上详细地址，方便商户
+      if (!form.value.address && geoAddress.value) form.value.address = geoAddress.value;
+    },
+    fail: (e) => {
+      locating.value = false;
+      uni.showToast({
+        title: '定位失败：' + (e?.errMsg || '请允许定位权限'),
+        icon: 'none',
+        duration: 2500,
+      });
+    },
+  });
+}
+
+// 地图选点（更精确）：App / 小程序原生支持；H5 无地图 SDK 时优雅回退到「获取当前位置」
+function chooseOnMap() {
+  if (typeof uni.chooseLocation !== 'function') {
+    locateNow();
+    return;
+  }
+  uni.chooseLocation({
+    success: (r) => {
+      if (r && r.longitude && r.latitude) {
+        form.value.longitude = String(r.longitude);
+        form.value.latitude = String(r.latitude);
+        geoAddress.value = r.address || r.name || '';
+        if (r.address) form.value.address = r.address;
+        uni.showToast({ title: '已选点', icon: 'success' });
+      }
+    },
+    fail: () => {
+      // H5 无地图 key / 用户取消：回退到当前位置定位
+      locateNow();
+    },
+  });
 }
 
 function toggleDay(d) {
@@ -198,9 +283,13 @@ onLoad(async () => {
       form.value.manualClosed = !!res.manualClosed;
       applyBusinessHoursJson(res.businessHoursJson);
       form.value.address = res.address || '';
+      form.value.longitude = res.longitude != null ? String(res.longitude) : '';
+      form.value.latitude = res.latitude != null ? String(res.latitude) : '';
       form.value.description = res.description || '';
       form.value.notice = res.notice || '';
       form.value.featureTags = res.featureTags || '';
+      // 已有坐标：逆地理回显当前定位地址，便于商户确认
+      if (hasGeo()) reverseGeo(form.value.longitude, form.value.latitude);
     }
   } catch {}
   loading.value = false;
@@ -224,10 +313,16 @@ async function save() {
     });
     // 老 businessHours 文本同步刷新一下，便于不识别 JSON 的旧接口显示
     const businessHours = `${form.value.startTime}-${form.value.endTime}`;
+    const payload = { ...form.value, businessHours, businessHoursJson };
+    // 经纬度后端是 BigDecimal：未定位时为空串会 400，未设置就别传
+    if (!form.value.longitude || !form.value.latitude) {
+      delete payload.longitude;
+      delete payload.latitude;
+    }
     await request({
       url: '/app-api/merchant/mini/shop/info',
       method: 'PUT',
-      data: { ...form.value, businessHours, businessHoursJson },
+      data: payload,
     });
     uni.showToast({ title: '保存成功', icon: 'success' });
     setTimeout(() => uni.navigateBack(), 1000);
@@ -333,6 +428,20 @@ async function save() {
   font-size: 22rpx;
   font-weight: 600;
 }
+
+/* 店铺定位 */
+.geo-field { align-items: flex-start; }
+.geo-wrap { flex: 1; min-width: 0; }
+.geo-btns { display: flex; gap: 16rpx; }
+.geo-btn {
+  padding: 14rpx 28rpx; border-radius: 999rpx; font-size: 26rpx; font-weight: 600;
+  &.primary { background: $brand-primary; color: #fff; &.busy { opacity: .6; } }
+  &.ghost { background: $bg-page; color: $text-regular; border: 2rpx solid $border-color; }
+}
+.geo-state { margin-top: 14rpx; font-size: 24rpx; line-height: 1.4; }
+.geo-state.ok { color: #059669; display: flex; align-items: flex-start; gap: 8rpx;
+  .geo-dot { color: #10B981; } }
+.geo-state.none { color: #b45309; }
 
 /* V040 行业类型 13 选 1 */
 .biz-field { align-items: flex-start; }

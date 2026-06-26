@@ -1,5 +1,12 @@
 <template>
   <view class="page">
+    <!-- 加载失败兜底：不再静默白屏 -->
+    <view class="card err-card" v-if="loadError">
+      <text class="err-txt">{{ loadError }}</text>
+      <view class="err-retry" @click="load">点击重试</view>
+    </view>
+    <view class="loading-tip" v-else-if="loading && !shop">加载中…</view>
+
     <!-- 状态卡片 -->
     <view class="card status-card" v-if="shop">
       <view class="status-row">
@@ -122,6 +129,25 @@
         </view>
       </view>
 
+      <view class="form-sec">门店实景照片</view>
+      <view class="sec-hint">用于审核核实门店真实存在，请拍清晰实景</view>
+      <view class="upload-grid">
+        <view class="upload-item">
+          <text class="upload-label">门店照片（门头）</text>
+          <view class="upload-box wide" @click="pickImage('storePic')">
+            <image v-if="formViewUrl.storePic" :src="formViewUrl.storePic" class="upload-img" mode="aspectFill" />
+            <text v-else class="plus">+</text>
+          </view>
+        </view>
+        <view class="upload-item">
+          <text class="upload-label">店内照片</text>
+          <view class="upload-box wide" @click="pickImage('indoorPic')">
+            <image v-if="formViewUrl.indoorPic" :src="formViewUrl.indoorPic" class="upload-img" mode="aspectFill" />
+            <text v-else class="plus">+</text>
+          </view>
+        </view>
+      </view>
+
       <button class="submit-btn" :disabled="submitting" @click="submit">
         {{ submitting ? '提交中...' : '提交开通申请' }}
       </button>
@@ -171,8 +197,10 @@ const BANKS = [
 
 const shop = ref(null);
 const submitting = ref(false);
-const formKey = reactive({ idCardFront: '', idCardBack: '', businessLicense: '', legalHold: '' });
-const formViewUrl = reactive({ idCardFront: '', idCardBack: '', businessLicense: '', legalHold: '' });
+const loadError = ref('');   // 加载失败提示（不再静默白屏）
+const loading = ref(true);
+const formKey = reactive({ idCardFront: '', idCardBack: '', businessLicense: '', legalHold: '', storePic: '', indoorPic: '' });
+const formViewUrl = reactive({ idCardFront: '', idCardBack: '', businessLicense: '', legalHold: '', storePic: '', indoorPic: '' });
 const form = reactive({
   comproperty: '3', merchantFullName: '', mccId: '', legalName: '', legalIdNo: '',
   creditCode: '', contactPhone: '', address: '', districtCode: '',
@@ -243,6 +271,8 @@ async function loadRegion() {
 }
 
 async function load() {
+  loading.value = true;
+  loadError.value = '';
   try {
     shop.value = await request({ url: `${BASE}/pay-apply` });
     const s = shop.value || {};
@@ -259,14 +289,23 @@ async function load() {
     form.settleBankName = s.settleBankName || '';
     form.settleAcctNo = s.settleAcctNo && !String(s.settleAcctNo).includes('****') ? s.settleAcctNo : '';
     form.settleAcctName = s.settleAcctName || s.legalName || '';
-    // 驳回重提：回填已传证件照
+    // 驳回重提：回填已传证件照 + 门店/店内照
     if (s.payApplyStatus === 3) {
-      const map = [['idCardFrontKey', 'idCardFront'], ['idCardBackKey', 'idCardBack'], ['businessLicenseKey', 'businessLicense'], ['legalHoldPicKey', 'legalHold']];
+      const map = [['idCardFrontKey', 'idCardFront'], ['idCardBackKey', 'idCardBack'], ['businessLicenseKey', 'businessLicense'], ['legalHoldPicKey', 'legalHold'], ['storePicKey', 'storePic'], ['indoorPicKey', 'indoorPic']];
       for (const [kf, vf] of map) {
         if (s[kf]) { formKey[vf] = s[kf]; signOss(s[kf]).then(u => formViewUrl[vf] = u).catch(() => {}); }
       }
     }
-  } catch {}
+  } catch (e) {
+    // 不再静默白屏：把失败原因显式展示，便于「登录失效/网络异常」一眼看出并重试
+    // （request 失效时已弹「登录已失效」并自动跳登录；这里兜住其它失败）
+    const msg = e?.msg || e?.message || '';
+    if (!/unauthorized/i.test(msg)) {
+      loadError.value = msg || '加载失败，请检查网络后重试';
+    }
+  } finally {
+    loading.value = false;
+  }
   loadRegion();
 }
 
@@ -307,6 +346,8 @@ function firstMissing() {
   if (!formKey.idCardFront || !formKey.idCardBack) return '请上传身份证正反面';
   if (!isPersonal.value && !formKey.businessLicense) return '请上传营业执照';
   if (isPersonal.value && !formKey.legalHold) return '请上传手持身份证照';
+  if (!formKey.storePic) return '请上传门店照片（门头/招牌）';
+  if (!formKey.indoorPic) return '请上传店内照片';
   return '';
 }
 
@@ -348,6 +389,9 @@ async function submit() {
         idCardBackKey: formKey.idCardBack,
         businessLicenseKey: formKey.businessLicense || undefined,
         legalHoldPicKey: formKey.legalHold || undefined,
+        // 门店照片 + 店内照片（审核必看）
+        storePicKey: formKey.storePic,
+        indoorPicKey: formKey.indoorPic,
       },
     });
     uni.showToast({ title: '申请已提交', icon: 'success' });
@@ -404,4 +448,13 @@ onShow(() => load());
 .submit-btn::after { border: none; }
 
 .tip-card .tip { font-size: 26rpx; color: #F59E0B; line-height: 1.6; }
+
+.loading-tip { text-align: center; color: $text-placeholder; font-size: 26rpx; padding: 60rpx 0; }
+.err-card { display: flex; flex-direction: column; align-items: center; gap: 20rpx; }
+.err-txt { font-size: 26rpx; color: $danger; text-align: center; line-height: 1.5; }
+.err-retry { padding: 14rpx 48rpx; background: $brand-primary; color: #fff; border-radius: $radius-pill; font-size: 28rpx; font-weight: 600; }
+
+.form-sec + .sec-hint { margin-top: 0; }
+.sec-hint { display: block; font-size: 22rpx; color: $text-secondary; margin: 2rpx 0 8rpx; line-height: 1.4; }
+.upload-box.wide { width: 320rpx; height: 200rpx; }
 </style>

@@ -49,12 +49,22 @@
       </view>
     </view>
     <view class="bottom-pad"></view>
+
+    <!-- #ifdef H5 -->
+    <!-- H5 摄像头扫码遮罩：getUserMedia + jsQR 实时识别 -->
+    <view v-if="scanning" class="scan-mask">
+      <view class="scan-host" id="qr-cam-host"></view>
+      <view class="scan-frame"></view>
+      <view class="scan-hint">{{ scanErr || '将用户的二维码对准取景框' }}</view>
+      <view class="scan-cancel" @click="stopH5Scan">取消</view>
+    </view>
+    <!-- #endif -->
   </view>
 </template>
 
 <script setup>
-import { ref } from 'vue';
-import { onShow } from '@dcloudio/uni-app';
+import { ref, nextTick } from 'vue';
+import { onShow, onHide, onUnload } from '@dcloudio/uni-app';
 import { cardVerifyInfo, redeemCard, cardVerifyRecords } from '../../api/card.js';
 
 const cardNo = ref('');
@@ -62,6 +72,10 @@ const info = ref(null);
 const remark = ref('');
 const redeeming = ref(false);
 const records = ref([]);
+
+// H5 摄像头扫码状态
+const scanning = ref(false);
+const scanErr = ref('');
 
 function statusText(s) {
   return { ACTIVE: '可核销', USED_UP: '次数已用尽', EXPIRED: '已过期' }[s] || s;
@@ -78,18 +92,107 @@ function fmtDateTime(ms) {
   return `${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
+// 扫到内容后统一处理：取数字串（兼容二维码里带前后缀/URL 的情况）
+function onScanned(raw) {
+  const v = (raw || '').trim();
+  if (!v) { uni.showToast({ title: '未识别到内容', icon: 'none' }); return; }
+  // 卡的二维码内容就是纯数字核销码；若扫到的是含数字的串，抽取最长数字段兜底
+  const m = v.match(/\d{6,}/);
+  cardNo.value = m ? m[0] : v;
+  onLookup();
+}
+
 function onScan() {
+  // #ifndef H5
+  // App / 小程序：原生扫码最稳
   uni.scanCode({
     scanType: ['qrCode'],
-    success: (res) => {
-      const v = (res.result || '').trim();
-      if (!v) { uni.showToast({ title: '未识别到内容', icon: 'none' }); return; }
-      cardNo.value = v;
-      onLookup();
-    },
+    success: (res) => onScanned(res.result),
     fail: () => { /* 用户取消扫码，忽略 */ },
   });
+  // #endif
+  // #ifdef H5
+  startH5Scan();
+  // #endif
 }
+
+// #ifdef H5
+// ===== H5 摄像头扫码：getUserMedia 取流 + jsQR 逐帧解码 =====
+let _stream = null;
+let _video = null;
+let _canvas = null;
+let _raf = 0;
+let _jsQR = null;
+
+async function startH5Scan() {
+  scanErr.value = '';
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    uni.showToast({ title: '当前浏览器不支持扫码，请手动输入', icon: 'none', duration: 2500 });
+    return;
+  }
+  scanning.value = true;
+  await nextTick();
+  try {
+    if (!_jsQR) _jsQR = (await import('jsqr')).default;
+    _stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: 'environment' } },
+      audio: false,
+    });
+    const host = document.getElementById('qr-cam-host');
+    if (!host) throw new Error('no-host');
+    _video = document.createElement('video');
+    _video.setAttribute('playsinline', 'true');
+    _video.setAttribute('muted', 'true');
+    _video.muted = true;
+    _video.autoplay = true;
+    _video.style.cssText = 'width:100%;height:100%;object-fit:cover;';
+    host.innerHTML = '';
+    host.appendChild(_video);
+    _video.srcObject = _stream;
+    await _video.play().catch(() => {});
+    _canvas = document.createElement('canvas');
+    _tick();
+  } catch (e) {
+    const name = e && e.name;
+    scanErr.value =
+      name === 'NotAllowedError' ? '未授权摄像头，请在浏览器设置允许后重试'
+      : name === 'NotFoundError' ? '未检测到摄像头'
+      : '无法打开摄像头，请手动输入核销码';
+    // 取消流但留遮罩显示错误，用户可点取消
+    if (_stream) { _stream.getTracks().forEach((t) => t.stop()); _stream = null; }
+  }
+}
+
+function _tick() {
+  _raf = requestAnimationFrame(_tick);
+  if (!_video || _video.readyState !== _video.HAVE_ENOUGH_DATA) return;
+  const w = _video.videoWidth, h = _video.videoHeight;
+  if (!w || !h) return;
+  _canvas.width = w; _canvas.height = h;
+  const ctx = _canvas.getContext('2d', { willReadFrequently: true });
+  ctx.drawImage(_video, 0, 0, w, h);
+  let img;
+  try { img = ctx.getImageData(0, 0, w, h); } catch { return; }
+  const code = _jsQR(img.data, w, h, { inversionAttempts: 'dontInvert' });
+  if (code && code.data) {
+    const val = code.data;
+    stopH5Scan();
+    onScanned(val);
+  }
+}
+
+function stopH5Scan() {
+  if (_raf) { cancelAnimationFrame(_raf); _raf = 0; }
+  if (_stream) { _stream.getTracks().forEach((t) => t.stop()); _stream = null; }
+  if (_video) { try { _video.srcObject = null; } catch {} _video = null; }
+  const host = document.getElementById('qr-cam-host');
+  if (host) host.innerHTML = '';
+  scanning.value = false;
+}
+
+onHide(() => { if (scanning.value) stopH5Scan(); });
+onUnload(() => { if (scanning.value) stopH5Scan(); });
+// #endif
 
 async function onLookup() {
   const no = (cardNo.value || '').trim();
@@ -197,4 +300,28 @@ onShow(loadRecords);
 .rec-sub { font-size: 22rpx; color: $text-secondary; }
 .rec-cnt { font-size: 26rpx; color: $brand-primary; font-weight: 700; }
 .bottom-pad { height: 40rpx; }
+
+/* H5 摄像头扫码遮罩 */
+.scan-mask {
+  position: fixed; left: 0; top: 0; right: 0; bottom: 0; z-index: 999;
+  background: #000;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.scan-host { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: hidden; }
+.scan-frame {
+  position: relative; z-index: 2;
+  width: 460rpx; height: 460rpx; border-radius: 28rpx;
+  border: 4rpx solid rgba(255,255,255,.9);
+  box-shadow: 0 0 0 9999rpx rgba(0,0,0,.45);
+}
+.scan-hint {
+  position: relative; z-index: 2; margin-top: 48rpx;
+  color: #fff; font-size: 28rpx; text-align: center; padding: 0 60rpx; line-height: 1.5;
+}
+.scan-cancel {
+  position: absolute; z-index: 3; bottom: 100rpx; left: 50%; transform: translateX(-50%);
+  padding: 18rpx 70rpx; border-radius: 999rpx;
+  background: rgba(255,255,255,.16); color: #fff; font-size: 30rpx; font-weight: 600;
+  border: 2rpx solid rgba(255,255,255,.4);
+}
 </style>

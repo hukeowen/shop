@@ -267,6 +267,9 @@ public class AppMerchantShopController {
         resp.setSettleBankPicKey(shop.getSettleBankPicKey());
         resp.setAcctLicensePicKey(shop.getAcctLicensePicKey());
         resp.setPersonHeadPicKey(shop.getPersonHeadPicKey());
+        // 门店照片 / 店内照片（审核用）
+        resp.setStorePicKey(shop.getStorePicKey());
+        resp.setIndoorPicKey(shop.getIndoorPicKey());
         // 敏感字段脱敏（@TableField EncryptTypeHandler 读出来已是明文，这里只回前4后4）
         resp.setLegalIdNo(maskTail(shop.getLegalIdNo()));
         resp.setSettleAcctNo(maskTail(shop.getSettleAcctNo()));
@@ -299,7 +302,8 @@ public class AppMerchantShopController {
         java.util.Set<String> ownKeys = new java.util.HashSet<>(java.util.Arrays.asList(
                 shop.getIdCardFrontKey(), shop.getIdCardBackKey(), shop.getBusinessLicenseKey(),
                 shop.getLegalHoldPicKey(), shop.getBizPlacePicKey(), shop.getSettleBankPicKey(),
-                shop.getAcctLicensePicKey(), shop.getPersonHeadPicKey()));
+                shop.getAcctLicensePicKey(), shop.getPersonHeadPicKey(),
+                shop.getStorePicKey(), shop.getIndoorPicKey()));
         if (!ownKeys.contains(key)) {
             throw exception0(1_020_005_004, "key 不属于当前店铺");
         }
@@ -330,6 +334,13 @@ public class AppMerchantShopController {
         }
         if (!personal && isBlank(reqDO.getBusinessLicenseKey())) {
             throw exception0(1_020_005_003, "请上传营业执照");
+        }
+        // 门店照片 + 店内照片：审核必看，均必填
+        if (isBlank(reqDO.getStorePicKey())) {
+            throw exception0(1_020_005_003, "请上传门店照片（门头/招牌）");
+        }
+        if (isBlank(reqDO.getIndoorPicKey())) {
+            throw exception0(1_020_005_003, "请上传店内照片");
         }
         // 必填校验：进件结构化资料
         if (isBlank(reqDO.getComproperty())) {
@@ -403,6 +414,8 @@ public class AppMerchantShopController {
         update.setSettleBankPicKey(reqDO.getSettleBankPicKey());
         update.setAcctLicensePicKey(reqDO.getAcctLicensePicKey());
         update.setPersonHeadPicKey(reqDO.getPersonHeadPicKey());
+        update.setStorePicKey(reqDO.getStorePicKey());
+        update.setIndoorPicKey(reqDO.getIndoorPicKey());
         // 敏感字段：仅当提交了真实值（非脱敏）才更新，避免重提时把明文写成 ****
         if (!isBlank(reqDO.getLegalIdNo()) && !reqDO.getLegalIdNo().contains("****")) {
             update.setLegalIdNo(reqDO.getLegalIdNo());

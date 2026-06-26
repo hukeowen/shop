@@ -232,5 +232,9 @@ public class ShopInfoDO extends BaseDO {
     private String acctLicensePicKey;
     /** 经营者与门头合照 TOS key（非个人） */
     private String personHeadPicKey;
+    /** 门店照片（门头/招牌）TOS key —— 在线支付开通审核用 */
+    private String storePicKey;
+    /** 店内照片（经营场所内部）TOS key —— 在线支付开通审核用 */
+    private String indoorPicKey;
 
 }

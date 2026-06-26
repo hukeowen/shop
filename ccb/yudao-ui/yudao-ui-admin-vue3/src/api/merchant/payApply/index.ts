@@ -11,6 +11,8 @@ export interface ShopPayApplyVO {
   idCardFrontKey?: string
   idCardBackKey?: string
   businessLicenseKey?: string
+  storePicKey?: string
+  indoorPicKey?: string
   createTime: Date
 }
 

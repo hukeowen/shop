@@ -96,6 +96,28 @@
         />
         <div v-else class="kyc-empty">未上传</div>
       </div>
+      <div class="kyc-item">
+        <div class="kyc-label">门店照片（门头）</div>
+        <el-image
+          v-if="kycViewUrl.storePic"
+          :src="kycViewUrl.storePic"
+          :preview-src-list="kycPreviewList"
+          fit="cover"
+          class="kyc-img"
+        />
+        <div v-else class="kyc-empty">未上传</div>
+      </div>
+      <div class="kyc-item">
+        <div class="kyc-label">店内照片</div>
+        <el-image
+          v-if="kycViewUrl.indoorPic"
+          :src="kycViewUrl.indoorPic"
+          :preview-src-list="kycPreviewList"
+          fit="cover"
+          class="kyc-img"
+        />
+        <div v-else class="kyc-empty">未上传</div>
+      </div>
     </div>
     <div class="kyc-tip">URL 1 小时过期，刷新弹窗重新签发</div>
   </el-dialog>
@@ -180,20 +202,34 @@ const handleApprove = async (row: PayApplyApi.ShopPayApplyVO) => {
 const kycVisible = ref(false)
 const kycLoading = ref(false)
 const kycRow = ref<PayApplyApi.ShopPayApplyVO | null>(null)
-const kycViewUrl = reactive({ idCardFront: '', idCardBack: '', businessLicense: '' })
+const kycViewUrl = reactive({ idCardFront: '', idCardBack: '', businessLicense: '', storePic: '', indoorPic: '' })
 const kycPreviewList = computed(() =>
-  [kycViewUrl.idCardFront, kycViewUrl.idCardBack, kycViewUrl.businessLicense].filter((u) => !!u)
+  [
+    kycViewUrl.idCardFront,
+    kycViewUrl.idCardBack,
+    kycViewUrl.businessLicense,
+    kycViewUrl.storePic,
+    kycViewUrl.indoorPic
+  ].filter((u) => !!u)
 )
 const openKycDialog = async (row: PayApplyApi.ShopPayApplyVO) => {
   kycRow.value = row
   kycViewUrl.idCardFront = kycViewUrl.idCardBack = kycViewUrl.businessLicense = ''
+  kycViewUrl.storePic = kycViewUrl.indoorPic = ''
   kycVisible.value = true
   kycLoading.value = true
   try {
-    const fields: Array<['idCardFrontKey' | 'idCardBackKey' | 'businessLicenseKey', keyof typeof kycViewUrl]> = [
+    const fields: Array<
+      [
+        'idCardFrontKey' | 'idCardBackKey' | 'businessLicenseKey' | 'storePicKey' | 'indoorPicKey',
+        keyof typeof kycViewUrl
+      ]
+    > = [
       ['idCardFrontKey', 'idCardFront'],
       ['idCardBackKey', 'idCardBack'],
-      ['businessLicenseKey', 'businessLicense']
+      ['businessLicenseKey', 'businessLicense'],
+      ['storePicKey', 'storePic'],
+      ['indoorPicKey', 'indoorPic']
     ]
     await Promise.all(
       fields.map(async ([keyField, viewField]) => {
