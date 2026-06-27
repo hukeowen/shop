@@ -175,7 +175,7 @@
     {
       "path": "pages/me/promo-config",
       "style": {
-        "navigationBarTitleText": "营销配置"
+        "navigationBarTitleText": "邀请设置"
       }
     },
     {
