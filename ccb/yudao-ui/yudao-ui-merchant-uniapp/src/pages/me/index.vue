@@ -85,9 +85,13 @@
       </view>
     </view>
 
-    <!-- 财务管理（商户自身收益走通联自动到账，无需「商户提现」；用户提现统一在上方「用户提现审核」）-->
+    <!-- 财务管理（商户卖货收入走通联自动到账；这里的「提现申请」是提推广/邀请奖励：拉新商户入驻付费得的奖励）-->
     <view class="section-title">财务管理</view>
     <view class="menu card">
+      <view class="menu-item" @click="goWithdrawApply">
+        <view class="mi-l"><text class="mi-ic">💸</text><text>提现申请（推广 / 邀请奖励）</text></view>
+        <text class="arrow">›</text>
+      </view>
       <view class="menu-item" @click="goPayApply">
         <view class="mi-l"><text class="mi-ic">💳</text><text>在线支付开通</text></view>
         <text class="arrow">›</text>
@@ -257,6 +261,9 @@ function goShopMembers() {
   uni.navigateTo({ url: '/pages/me/members' });
 }
 
+function goWithdrawApply() {
+  uni.navigateTo({ url: '/pages/withdraw/merchant-apply' });
+}
 function goPayApply() {
   uni.navigateTo({ url: '/pages/me/pay-apply' });
 }

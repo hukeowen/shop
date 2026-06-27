@@ -1,5 +1,11 @@
 <template>
   <view class="page">
+    <view class="card balance-card">
+      <text class="balance-label">可提现余额（推广 / 邀请奖励）</text>
+      <view class="balance-val">¥{{ fen2yuan(balance) }}</view>
+      <text class="balance-tip">拉新商户入驻并付费套餐，奖励到账这里。卖货收入走通联自动到账，无需在此提现。</text>
+    </view>
+
     <view class="card form-card">
       <view class="section-title">发起提现</view>
 
@@ -111,6 +117,14 @@ const total = ref(0);
 const pageNo = ref(1);
 const pageSize = 10;
 const historyLoading = ref(false);
+const balance = ref(0); // 可提现：推广/邀请奖励余额（promo_point_balance，分）
+
+async function loadBalance() {
+  try {
+    const acct = await request({ url: '/app-api/merchant/mini/promo/account' });
+    balance.value = acct?.promoPointBalance || 0;
+  } catch {}
+}
 
 const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize)));
 
@@ -147,6 +161,10 @@ async function submit() {
     return;
   }
   const amount = Math.round(yuan * 100);
+  if (amount > balance.value) {
+    uni.showToast({ title: '超过可提现余额', icon: 'none' });
+    return;
+  }
   submitting.value = true;
   try {
     const params = new URLSearchParams({
@@ -190,6 +208,7 @@ function nextPage() { if (pageNo.value < totalPages.value) { pageNo.value++; loa
 
 onShow(() => {
   pageNo.value = 1;
+  loadBalance();
   loadHistory();
 });
 </script>
@@ -209,6 +228,14 @@ onShow(() => {
   margin-bottom: 24rpx;
   box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.03);
 }
+
+.balance-card {
+  background: linear-gradient(135deg, #FF8A4A, #FF6B35);
+  color: #fff;
+}
+.balance-label { font-size: 26rpx; opacity: .9; }
+.balance-val { font-size: 56rpx; font-weight: 800; margin: 12rpx 0 8rpx; }
+.balance-tip { font-size: 22rpx; opacity: .85; line-height: 1.5; }
 
 .section-title {
   font-size: 28rpx;

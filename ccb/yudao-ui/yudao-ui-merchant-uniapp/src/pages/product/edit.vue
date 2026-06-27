@@ -492,6 +492,8 @@ const promo = reactive({
 // ===== 服务卡套餐：本商品作为「套餐/随心包」时包含的单项服务（选已有商品 + 有效期/次数）=====
 // card: { itemSpuId, name, picUrl, price, validValue, validUnit(day|month|year), limited, maxCount, description }
 const cards = ref([]);
+// 卡定义是否已成功加载：保存时全量覆盖，若加载失败(=false)则跳过覆盖，避免把已有套餐误清空
+const cardsLoaded = ref(false);
 const unitOptions = [
   { v: 'day', label: '天' },
   { v: 'month', label: '月' },
@@ -545,6 +547,7 @@ function unitToDays(c) {
   return v * (UNIT_DAYS[c.validUnit] || 1);
 }
 async function loadCards(spuId) {
+  cardsLoaded.value = false;
   await loadCardProducts();
   try {
     const list = await getCardDefs(spuId);
@@ -563,8 +566,10 @@ async function loadCards(spuId) {
         description: d.description || '',
       };
     });
+    cardsLoaded.value = true; // 仅加载成功才允许保存时覆盖
   } catch {
     cards.value = [];
+    cardsLoaded.value = false;
   }
 }
 // 返 { ok, defs }；校验失败 toast 已弹
@@ -965,8 +970,11 @@ async function onSubmit() {
   if (isEdit.value) {
     promoCheck = validatePromo();
     if (!promoCheck.ok) return;
-    cardCheck = buildCardDefs();
-    if (!cardCheck.ok) return;
+    // 仅当卡定义已成功加载，才校验/准备覆盖；加载失败时不动已有套餐
+    if (cardsLoaded.value) {
+      cardCheck = buildCardDefs();
+      if (!cardCheck.ok) return;
+    }
   }
   uni.showLoading({ title: isEdit.value ? '保存中' : '上架中' });
   const payload = {
@@ -984,13 +992,15 @@ async function onSubmit() {
         uni.showToast({ title: '商品已保存，但营销策略保存失败：' + (e?.msg || e?.message || ''), icon: 'none', duration: 2500 });
         return;
       }
-      // 服务卡套餐（全量覆盖）：把选中的单项服务商品 + 有效期/次数 写入卡定义
-      try {
-        await saveCardDefs(editingId.value, cardCheck.defs);
-      } catch (e) {
-        uni.hideLoading();
-        uni.showToast({ title: '商品/营销已保存，但服务卡套餐保存失败：' + (e?.msg || e?.message || ''), icon: 'none', duration: 2500 });
-        return;
+      // 服务卡套餐（全量覆盖）：仅当卡定义已成功加载才覆盖，避免加载失败时把已有套餐误清空
+      if (cardsLoaded.value && cardCheck) {
+        try {
+          await saveCardDefs(editingId.value, cardCheck.defs);
+        } catch (e) {
+          uni.hideLoading();
+          uni.showToast({ title: '商品/营销已保存，但服务卡套餐保存失败：' + (e?.msg || e?.message || ''), icon: 'none', duration: 2500 });
+          return;
+        }
       }
       uni.hideLoading();
       uni.showToast({ title: '已保存（含营销 / 套餐）', icon: 'success' });
