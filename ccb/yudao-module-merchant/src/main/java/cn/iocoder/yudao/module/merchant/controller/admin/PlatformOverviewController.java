@@ -19,6 +19,8 @@ import cn.iocoder.yudao.module.merchant.dal.mysql.saas.MerchantSubscriptionOrder
 import cn.iocoder.yudao.module.merchant.dal.mysql.saas.SaasPackageConfigMapper;
 import cn.iocoder.yudao.module.product.dal.dataobject.spu.ProductSpuDO;
 import cn.iocoder.yudao.module.product.dal.mysql.spu.ProductSpuMapper;
+import cn.iocoder.yudao.module.product.dal.dataobject.comment.ProductCommentDO;
+import cn.iocoder.yudao.module.product.dal.mysql.comment.ProductCommentMapper;
 import cn.iocoder.yudao.module.trade.dal.dataobject.order.TradeOrderDO;
 import cn.iocoder.yudao.module.trade.dal.mysql.order.TradeOrderMapper;
 import io.swagger.v3.oas.annotations.Operation;
@@ -64,6 +66,8 @@ public class PlatformOverviewController {
     private MemberShopRelMapper memberShopRelMapper;
     @Resource
     private MemberUserApi memberUserApi;
+    @Resource
+    private ProductCommentMapper productCommentMapper;
 
     @GetMapping("/shops")
     @Operation(summary = "所有店铺（租户ID+店铺名+状态）—— 总览筛选下拉用")
@@ -376,6 +380,48 @@ public class PlatformOverviewController {
         update.setAutoApprove(autoApprove);
         shopInfoMapper.updateById(update);
         return success(true);
+    }
+
+    @GetMapping("/comment/page")
+    @Operation(summary = "平台跨租户商品评价总览（全部店铺，可按店铺/评分筛选）")
+    @PreAuthorize("@ss.hasPermission('merchant:platform:query')")
+    @TenantIgnore
+    public CommonResult<PageResult<Map<String, Object>>> commentPage(
+            @RequestParam(value = "pageNo", defaultValue = "1") Integer pageNo,
+            @RequestParam(value = "pageSize", defaultValue = "10") Integer pageSize,
+            @RequestParam(value = "tenantId", required = false) Long tenantId,
+            @RequestParam(value = "scores", required = false) Integer scores) {
+        PageParam pageParam = new PageParam();
+        pageParam.setPageNo(pageNo);
+        pageParam.setPageSize(pageSize);
+        LambdaQueryWrapperX<ProductCommentDO> q = new LambdaQueryWrapperX<ProductCommentDO>()
+                .eqIfPresent(ProductCommentDO::getTenantId, tenantId)
+                .eqIfPresent(ProductCommentDO::getScores, scores)
+                .orderByDesc(ProductCommentDO::getId);
+        PageResult<ProductCommentDO> page = productCommentMapper.selectPage(pageParam, q);
+        Map<Long, String> shopNames = loadShopNames();
+        List<Map<String, Object>> list = new ArrayList<>();
+        for (ProductCommentDO c : page.getList()) {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("id", c.getId());
+            m.put("tenantId", c.getTenantId());
+            m.put("shopName", shopNames.getOrDefault(c.getTenantId(), "租户" + c.getTenantId()));
+            m.put("spuName", c.getSpuName());
+            m.put("skuPicUrl", c.getSkuPicUrl());
+            m.put("userNickname", Boolean.TRUE.equals(c.getAnonymous()) ? ProductCommentDO.NICKNAME_ANONYMOUS : c.getUserNickname());
+            m.put("userAvatar", c.getUserAvatar());
+            m.put("scores", c.getScores());
+            m.put("descriptionScores", c.getDescriptionScores());
+            m.put("benefitScores", c.getBenefitScores());
+            m.put("content", c.getContent());
+            m.put("picUrls", c.getPicUrls());
+            m.put("replyStatus", c.getReplyStatus());
+            m.put("replyContent", c.getReplyContent());
+            m.put("visible", c.getVisible());
+            m.put("createTime", c.getCreateTime());
+            list.add(m);
+        }
+        return success(new PageResult<>(list, page.getTotal()));
     }
 
     private Map<Long, String> loadShopNames() {

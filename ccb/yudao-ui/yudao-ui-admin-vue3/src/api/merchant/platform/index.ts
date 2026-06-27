@@ -28,6 +28,10 @@ export const getPlatformStats = () => request.get({ url: '/merchant/platform/sta
 export const getPlatformMemberPage = (params: any) =>
   request.get({ url: '/merchant/platform/member/page', params })
 
+/** 跨租户商品评价总览分页 */
+export const getPlatformCommentPage = (params: any) =>
+  request.get({ url: '/merchant/platform/comment/page', params })
+
 /** 店铺管理分页 */
 export const getPlatformShopPage = (params: any) =>
   request.get({ url: '/merchant/platform/shop/page', params })

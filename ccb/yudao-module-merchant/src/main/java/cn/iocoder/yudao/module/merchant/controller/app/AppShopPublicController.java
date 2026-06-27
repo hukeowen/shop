@@ -66,6 +66,8 @@ public class AppShopPublicController {
 
     @Resource
     private cn.iocoder.yudao.module.merchant.dal.mysql.MerchantApplyMapper merchantApplyMapper;
+    @Resource
+    private cn.iocoder.yudao.module.merchant.service.KycSignService kycSignService;
 
     @GetMapping("/list")
     @Operation(summary = "分页查询店铺列表（V039 三层闸门过滤：今日未打卡/主动打烊的店不返回；营业时间外的店权重靠后）")
@@ -434,10 +436,23 @@ public class AppShopPublicController {
                                 .eq(cn.iocoder.yudao.module.merchant.dal.dataobject.MerchantApplyDO::getStatus, 1)
                                 .orderByDesc(cn.iocoder.yudao.module.merchant.dal.dataobject.MerchantApplyDO::getId)
                                 .last("LIMIT 1"));
-        if (applies != null && !applies.isEmpty()) {
+        if (applies != null && !applies.isEmpty()
+                && cn.hutool.core.util.StrUtil.isNotBlank(applies.get(0).getLicenseUrl())) {
             cn.iocoder.yudao.module.merchant.dal.dataobject.MerchantApplyDO a = applies.get(0);
             resp.put("licenseUrl", a.getLicenseUrl());
             resp.put("shopName", a.getShopName());
+            return success(resp);
+        }
+        // 兜底：进件 KYC 营业执照（shop_info.business_license_key 私有 TOS key）→ 现签 1h 预签名 URL 公示。
+        // 只签营业执照，绝不签身份证 key。签发失败（sidecar 不可用等）静默返回空，前端提示「暂未公示」。
+        ShopInfoDO shop = shopInfoMapper.selectByTenantId(tenantId);
+        if (shop != null && cn.hutool.core.util.StrUtil.isNotBlank(shop.getBusinessLicenseKey())) {
+            try {
+                resp.put("licenseUrl", kycSignService.sign(shop.getBusinessLicenseKey(), 3600));
+                resp.put("shopName", shop.getShopName());
+            } catch (Exception e) {
+                log.warn("[getShopLicense] 营业执照 KYC 签发失败 tenantId={} key={}", tenantId, shop.getBusinessLicenseKey(), e);
+            }
         }
         return success(resp);
     }
