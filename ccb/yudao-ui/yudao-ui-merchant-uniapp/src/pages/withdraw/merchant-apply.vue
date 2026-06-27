@@ -21,9 +21,9 @@
         </picker>
       </view>
 
-      <view class="field" v-if="form.withdrawType === 3">
-        <text class="field-label">开户姓名</text>
-        <input class="field-input" v-model="form.accountName" placeholder="银行开户人姓名" />
+      <view class="field">
+        <text class="field-label">收款人姓名</text>
+        <input class="field-input" v-model="form.accountName" placeholder="收款人真实姓名（必填）" />
       </view>
 
       <view class="field" v-if="form.withdrawType === 3">
@@ -163,6 +163,19 @@ async function submit() {
   const amount = Math.round(yuan * 100);
   if (amount > balance.value) {
     uni.showToast({ title: '超过可提现余额', icon: 'none' });
+    return;
+  }
+  // 收款信息必填：姓名 + 账号/卡号；银行转账再加银行名称（否则平台无法打款）
+  if (!form.value.accountName || !form.value.accountName.trim()) {
+    uni.showToast({ title: '请填写收款人姓名', icon: 'none' });
+    return;
+  }
+  if (!form.value.accountNo || !form.value.accountNo.trim()) {
+    uni.showToast({ title: form.value.withdrawType === 3 ? '请填写银行卡号' : '请填写收款账号', icon: 'none' });
+    return;
+  }
+  if (form.value.withdrawType === 3 && (!form.value.bankName || !form.value.bankName.trim())) {
+    uni.showToast({ title: '请填写银行名称', icon: 'none' });
     return;
   }
   submitting.value = true;
