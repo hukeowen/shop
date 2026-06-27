@@ -62,10 +62,6 @@
         <view class="mi-l"><text class="mi-ic">🛍</text><text>邀请设置（商品级）</text></view>
         <text class="arrow">›</text>
       </view>
-      <view class="menu-item" @click="goCardPackage">
-        <view class="mi-l"><text class="mi-ic">🪪</text><text>服务卡包 / 套餐（组合已有商品）</text></view>
-        <text class="arrow">›</text>
-      </view>
       <view class="menu-item" @click="goCardVerify">
         <view class="mi-l"><text class="mi-ic">🎫</text><text>服务卡核销（扫码/输码）</text></view>
         <text class="arrow">›</text>
@@ -237,9 +233,6 @@ function goProducts() {
 
 function goCardVerify() {
   uni.navigateTo({ url: '/pages/verify/index' });
-}
-function goCardPackage() {
-  uni.navigateTo({ url: '/pages/service-card/manage' });
 }
 
 function goWithdrawReview() {

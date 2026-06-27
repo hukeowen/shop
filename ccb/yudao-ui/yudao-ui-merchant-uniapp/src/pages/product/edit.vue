@@ -289,17 +289,77 @@
       </view>
     </view>
 
-    <!-- 服务卡包/套餐：改由独立页「服务卡包」管理（组合已有商品），此处只做入口引导 -->
+    <!-- 服务卡套餐：本商品作为「套餐/随心包」时，挑已有商品组合进来，各设有效期/次数 -->
     <view v-if="isEdit" class="card svc">
       <view class="promo-head">
-        <text class="promo-title">服务卡包 / 套餐</text>
-        <text class="promo-sub">{{ cards.length ? cards.length + ' 项服务' : '未配置' }}</text>
+        <text class="promo-title">服务卡套餐（可选）</text>
+        <text class="promo-sub">{{ cards.length ? cards.length + ' 项服务' : '普通商品' }}</text>
       </view>
       <view class="svc-tip">
-        想把本商品做成「套餐」（如 ¥1288 含 洗车、保养）？请到「我的 → 服务卡包 / 套餐」选择本商品，
-        再从已有商品里挑选要包含的服务并设有效期/次数。用户购买后自动发卡，到店核销。
+        想把本商品做成「套餐 / 随心包」（如本商品 ¥1288，含 洗车、保养）？在下面挑选要包含的服务（你已有的商品），
+        各设有效期 / 次数。用户购买本商品后，自动发对应服务卡，到店核销。普通商品留空即可。
       </view>
-      <view class="svc-add" @click="goCardPackage">前往「服务卡包 / 套餐」配置 ›</view>
+
+      <view v-for="(c, i) in cards" :key="i" class="svc-card">
+        <view class="svc-card-head">
+          <view class="svc-item">
+            <image v-if="c.picUrl" :src="c.picUrl" class="svc-item-pic" mode="aspectFill" />
+            <view v-else class="svc-item-pic ph">🛍</view>
+            <view class="svc-item-info">
+              <text class="svc-item-name">{{ c.name || '未选择商品' }}</text>
+              <text v-if="c.price != null" class="svc-item-price">原价 ¥{{ (c.price / 100).toFixed(2) }}</text>
+            </view>
+          </view>
+          <text class="svc-del" @click="removeCard(i)">删除</text>
+        </view>
+        <view class="svc-change" @click="openCardPicker(i)">{{ c.itemSpuId ? '更换商品' : '选择商品' }} ›</view>
+
+        <view class="field-v">
+          <text class="label-v">有效期（从用户付款日起算）</text>
+          <view class="svc-valid">
+            <input class="input compact valid-num" type="number" v-model="c.validValue" placeholder="如 2" />
+            <view class="unit-pair">
+              <view v-for="u in unitOptions" :key="u.v" class="unit-chip" :class="{ active: c.validUnit === u.v }"
+                @click="c.validUnit = u.v">{{ u.label }}</view>
+            </view>
+          </view>
+        </view>
+        <view class="field-v">
+          <text class="label-v">核销次数</text>
+          <view class="radio-pair">
+            <view class="radio-big" :class="{ active: !c.limited }" @click="c.limited = false">不限次数</view>
+            <view class="radio-big" :class="{ active: c.limited }" @click="c.limited = true">限定次数</view>
+          </view>
+          <view v-if="c.limited" class="star-row-input" style="margin-top:12rpx;">
+            <input class="input compact" type="number" v-model="c.maxCount" placeholder="如 10（次数用完即失效）" />
+            <text class="suffix">次</text>
+          </view>
+          <text class="hint inline">时间到期 或 次数用完，谁先到都不能再用。</text>
+        </view>
+      </view>
+
+      <view class="svc-add" @click="openCardPicker(-1)">＋ 添加一项服务（选已有商品）</view>
+    </view>
+
+    <!-- 服务商品选择器 -->
+    <view v-if="cardPickerOpen" class="card-picker-mask" @click="cardPickerOpen = false">
+      <view class="card-picker-wrap" @click.stop>
+        <view class="card-picker-head">
+          <text class="card-picker-title">选择服务商品</text>
+          <text class="card-picker-close" @click="cardPickerOpen = false">✕</text>
+        </view>
+        <scroll-view scroll-y class="card-picker-list">
+          <view v-if="!cardPickerList.length" class="card-picker-empty">没有可选的其他商品（先上架单项服务商品）</view>
+          <view v-for="p in cardPickerList" :key="p.id" class="card-picker-item" @click="chooseCardProduct(p)">
+            <image v-if="p.picUrl" :src="p.picUrl" class="card-picker-pic" mode="aspectFill" />
+            <view v-else class="card-picker-pic ph">🛍</view>
+            <view class="card-picker-info">
+              <text class="card-picker-name">{{ p.name }}</text>
+              <text class="card-picker-price">¥{{ (p.price / 100).toFixed(2) }}</text>
+            </view>
+          </view>
+        </scroll-view>
+      </view>
     </view>
 
     <!-- 高级设置（折叠） -->
@@ -377,6 +437,7 @@ import {
   createSpu,
   deleteSpu,
   getSpu,
+  getSpuPage,
   loadCategories,
   updateSpu,
 } from '../../api/product.js';
@@ -428,7 +489,8 @@ const promo = reactive({
   poolDistList: [],
 });
 
-// ===== 服务卡包：每张卡 {name, validValue, validUnit(day|month|year), limited, maxCount, description} =====
+// ===== 服务卡套餐：本商品作为「套餐/随心包」时包含的单项服务（选已有商品 + 有效期/次数）=====
+// card: { itemSpuId, name, picUrl, price, validValue, validUnit(day|month|year), limited, maxCount, description }
 const cards = ref([]);
 const unitOptions = [
   { v: 'day', label: '天' },
@@ -436,15 +498,41 @@ const unitOptions = [
   { v: 'year', label: '年' },
 ];
 const UNIT_DAYS = { day: 1, month: 30, year: 365 };
-function goCardPackage() {
-  uni.navigateTo({ url: '/pages/service-card/manage' });
+
+// 选服务商品：本商户已有商品（排除当前商品自身、已选过的）
+const cardPickerOpen = ref(false);
+const cardPickerIdx = ref(-1); // -1=新增；>=0=更换该行
+const cardProducts = ref([]);
+const cardPickerList = computed(() => {
+  const chosen = new Set(cards.value.map((c, i) => (i === cardPickerIdx.value ? null : c.itemSpuId)).filter(Boolean));
+  return cardProducts.value.filter((p) => p.id !== editingId.value && !chosen.has(p.id));
+});
+async function loadCardProducts() {
+  try {
+    const acc = [];
+    let pageNo = 1;
+    for (;;) {
+      const { list, total } = await getSpuPage({ pageNo, pageSize: 50 });
+      acc.push(...(list || []));
+      if (acc.length >= (total || 0) || !list || !list.length) break;
+      pageNo += 1; if (pageNo > 20) break;
+    }
+    cardProducts.value = acc;
+  } catch { cardProducts.value = []; }
 }
-function addCard() {
-  cards.value.push({ name: '', validValue: '1', validUnit: 'year', limited: false, maxCount: '', description: '' });
+function findCardProduct(spuId) { return cardProducts.value.find((p) => p.id === spuId); }
+function openCardPicker(idx) { cardPickerIdx.value = idx; cardPickerOpen.value = true; }
+function chooseCardProduct(p) {
+  if (cardPickerIdx.value >= 0) {
+    const c = cards.value[cardPickerIdx.value];
+    c.itemSpuId = p.id; c.name = p.name; c.picUrl = p.picUrl; c.price = p.price;
+  } else {
+    cards.value.push({ itemSpuId: p.id, name: p.name, picUrl: p.picUrl, price: p.price, validValue: '1', validUnit: 'year', limited: false, maxCount: '', description: '' });
+  }
+  cardPickerOpen.value = false;
 }
-function removeCard(i) {
-  cards.value.splice(i, 1);
-}
+function removeCard(i) { cards.value.splice(i, 1); }
+
 // validityDays ↔ {validValue, validUnit}
 function daysToUnit(days) {
   const d = Number(days) || 0;
@@ -457,12 +545,17 @@ function unitToDays(c) {
   return v * (UNIT_DAYS[c.validUnit] || 1);
 }
 async function loadCards(spuId) {
+  await loadCardProducts();
   try {
     const list = await getCardDefs(spuId);
     cards.value = (list || []).map((d) => {
       const u = daysToUnit(d.validityDays);
+      const prod = findCardProduct(d.itemSpuId);
       return {
-        name: d.name || '',
+        itemSpuId: d.itemSpuId || null,
+        name: d.name || (prod ? prod.name : ''),
+        picUrl: prod ? prod.picUrl : '',
+        price: prod ? prod.price : null,
         validValue: u.validValue,
         validUnit: u.validUnit,
         limited: d.maxCount != null && d.maxCount > 0,
@@ -479,8 +572,8 @@ function buildCardDefs() {
   const defs = [];
   for (let i = 0; i < cards.value.length; i++) {
     const c = cards.value[i];
-    if (!c.name || !c.name.trim()) {
-      uni.showToast({ title: `第 ${i + 1} 张卡未填名称`, icon: 'none' });
+    if (!c.itemSpuId) {
+      uni.showToast({ title: `第 ${i + 1} 项服务未选择商品`, icon: 'none' });
       return { ok: false };
     }
     if (c.limited && (!(parseInt(c.maxCount) > 0))) {
@@ -488,7 +581,8 @@ function buildCardDefs() {
       return { ok: false };
     }
     defs.push({
-      name: c.name.trim(),
+      itemSpuId: c.itemSpuId,
+      name: (c.name || '').trim() || '服务',
       validityDays: unitToDays(c),
       maxCount: c.limited ? (parseInt(c.maxCount) || 1) : null,
       description: (c.description || '').trim(),
@@ -867,9 +961,12 @@ async function onSubmit() {
   if (!canSubmit.value) return;
   // 编辑态：先校验营销策略，避免商品改了但营销没过校验导致状态不一致
   let promoCheck = null;
+  let cardCheck = null;
   if (isEdit.value) {
     promoCheck = validatePromo();
     if (!promoCheck.ok) return;
+    cardCheck = buildCardDefs();
+    if (!cardCheck.ok) return;
   }
   uni.showLoading({ title: isEdit.value ? '保存中' : '上架中' });
   const payload = {
@@ -887,9 +984,16 @@ async function onSubmit() {
         uni.showToast({ title: '商品已保存，但营销策略保存失败：' + (e?.msg || e?.message || ''), icon: 'none', duration: 2500 });
         return;
       }
-      // 服务卡/套餐改由「服务卡包」独立页管理（选已有商品组合），此处不再覆盖，避免误清空
+      // 服务卡套餐（全量覆盖）：把选中的单项服务商品 + 有效期/次数 写入卡定义
+      try {
+        await saveCardDefs(editingId.value, cardCheck.defs);
+      } catch (e) {
+        uni.hideLoading();
+        uni.showToast({ title: '商品/营销已保存，但服务卡套餐保存失败：' + (e?.msg || e?.message || ''), icon: 'none', duration: 2500 });
+        return;
+      }
       uni.hideLoading();
-      uni.showToast({ title: '已保存（含营销）', icon: 'success' });
+      uni.showToast({ title: '已保存（含营销 / 套餐）', icon: 'success' });
     } else {
       const newId = await createSpu(payload);
       uni.hideLoading();
@@ -1574,7 +1678,29 @@ onLoad(async (q) => {
     border: 2rpx dashed rgba(255,107,53,.5); border-radius: $radius-md;
     color: $brand-primary; font-size: 28rpx; font-weight: 600;
   }
+  .svc-item { display: flex; align-items: center; gap: 14rpx; flex: 1; min-width: 0; }
+  .svc-item-pic { width: 72rpx; height: 72rpx; border-radius: 12rpx; background: #fff; flex-shrink: 0;
+    &.ph { display: flex; align-items: center; justify-content: center; font-size: 34rpx; } }
+  .svc-item-info { min-width: 0; }
+  .svc-item-name { font-size: 28rpx; font-weight: 700; color: $text-primary; }
+  .svc-item-price { display: block; font-size: 22rpx; color: $text-secondary; margin-top: 4rpx; }
+  .svc-change { display: block; margin: 12rpx 0 4rpx; font-size: 24rpx; color: $brand-primary; font-weight: 600; }
 }
+
+/* 服务商品选择器（底部弹层） */
+.card-picker-mask { position: fixed; inset: 0; z-index: 999; background: rgba(0,0,0,.5); display: flex; align-items: flex-end; }
+.card-picker-wrap { width: 100%; max-height: 70vh; background: #fff; border-radius: 24rpx 24rpx 0 0; display: flex; flex-direction: column; }
+.card-picker-head { display: flex; align-items: center; justify-content: space-between; padding: 24rpx; border-bottom: 1rpx solid #f0ece6;
+  .card-picker-title { font-size: 30rpx; font-weight: 800; color: #1f1208; }
+  .card-picker-close { font-size: 32rpx; color: #9a8b7a; padding: 0 8rpx; } }
+.card-picker-list { flex: 1; padding: 8rpx 0; }
+.card-picker-empty { text-align: center; padding: 60rpx; color: #a0917f; font-size: 26rpx; }
+.card-picker-item { display: flex; align-items: center; gap: 16rpx; padding: 18rpx 24rpx;
+  .card-picker-pic { width: 80rpx; height: 80rpx; border-radius: 12rpx; background: #f6f2ec; flex-shrink: 0;
+    &.ph { display: flex; align-items: center; justify-content: center; font-size: 36rpx; } }
+  .card-picker-info { flex: 1; min-width: 0; }
+  .card-picker-name { font-size: 28rpx; color: #1f1208; font-weight: 600; }
+  .card-picker-price { display: block; font-size: 24rpx; color: $brand-primary; font-weight: 700; margin-top: 4rpx; } }
 
 .actions {
   position: fixed;
