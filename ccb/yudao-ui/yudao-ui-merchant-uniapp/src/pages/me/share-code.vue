@@ -11,7 +11,7 @@
     <view v-else-if="errorCode === 403" class="paywall">
       <view class="lock-icon">🔒</view>
       <view class="paywall-title">试用商户暂无邀请权限</view>
-      <view class="paywall-sub">升级到 BASIC（¥298/年）或 PRO（¥1688/年）即可生成分享码邀请新商户加入</view>
+      <view class="paywall-sub">升级到「拓小二旺铺版 / 旗舰版」即可生成分享码邀请新商户加入</view>
       <button class="upgrade-btn" @click="goSubscription">立即升级套餐</button>
     </view>
 
@@ -37,6 +37,17 @@
         </view>
       </view>
 
+      <!-- 海报模式：带分销关系的推广二维码（扫码=带你的邀请码进入入驻页） -->
+      <view class="card poster-card">
+        <view class="card-label">📷 海报模式（长按二维码保存，发好友 / 朋友圈）</view>
+        <view class="qr-box">
+          <image v-if="qrUrl" :src="qrUrl" class="qr-img" mode="aspectFit" show-menu-by-longpress />
+          <view v-else class="qr-ph">二维码生成中…</view>
+        </view>
+        <view class="qr-code-text">分享码 {{ code.code }}</view>
+        <view class="hint">扫码直达入驻页 · 已自动带上你的邀请码（分销关系）</view>
+      </view>
+
       <view class="card stat-card">
         <view class="stat-item">
           <text class="stat-num">{{ code.usedCount || 0 }}</text>
@@ -56,11 +67,10 @@
 
       <view class="rules">
         <view class="rules-title">奖励规则</view>
-        <view class="rule">• 你必须自己也是付费商户（BASIC / PRO），才能拿邀请奖</view>
-        <view class="rule">• 新商户通过你的码注册并买套餐 → 你拿首次贡献奖（按 directRate 比例）</view>
-        <view class="rule">• 同一新商户在同一套餐上只触发一次首贡献奖（防刷）</view>
+        <view class="rule">• 你必须自己也是付费商户（拓小二旺铺版 / 旗舰版），才能拿邀请奖</view>
+        <view class="rule">• 新商户通过你的码注册并买套餐 → 你拿首次贡献奖</view>
+        <view class="rule">• 同一新商户在同一套餐上只触发一次首贡献奖</view>
         <view class="rule">• 升级套餐 / 续费 不会重复触发首贡献奖</view>
-        <view class="rule">• 团队链路按星级递增分润（拉得多分得多）</view>
       </view>
     </view>
   </view>
@@ -90,6 +100,13 @@ const shareUrl = computed(() => {
   } catch {}
   const proto = (typeof location !== 'undefined' ? location.protocol : 'https:');
   return `${proto}//${host}/m/#/pages/merchant-apply/index?invite=${code.value.code}`;
+});
+
+// 海报二维码：走 sidecar /qr 出图（中心叠「拓小二」），编码 shareUrl（含 invite 邀请码=分销关系）
+const qrUrl = computed(() => {
+  if (!shareUrl.value) return '';
+  const base = (typeof location !== 'undefined' && location.origin) ? location.origin : '';
+  return `${base}/qr?text=${encodeURIComponent(shareUrl.value)}&w=480&m=1&center=${encodeURIComponent('拓小二')}`;
 });
 
 async function load() {
@@ -238,6 +255,29 @@ onMounted(load);
 
 .code-card {
   text-align: center;
+}
+
+.poster-card {
+  text-align: center;
+  .qr-box {
+    width: 400rpx;
+    height: 400rpx;
+    margin: 20rpx auto 12rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .qr-img { width: 400rpx; height: 400rpx; border-radius: $radius-md; }
+  .qr-ph {
+    width: 400rpx; height: 400rpx;
+    background: #f5f5f5; border-radius: $radius-md;
+    display: flex; align-items: center; justify-content: center;
+    color: $text-placeholder; font-size: 26rpx;
+  }
+  .qr-code-text {
+    font-size: 28rpx; font-weight: 700; color: $brand-primary;
+    letter-spacing: 4rpx; margin-top: 4rpx;
+  }
 }
 
 .code-display {
