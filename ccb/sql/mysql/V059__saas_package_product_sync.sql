@@ -20,3 +20,13 @@ UPDATE `product_sku` SET price=158000 WHERE id=99002 AND spu_id=99002;
 UPDATE `product_promo_config`
    SET tuijian_enabled=1, tuijian_n=3, tuijian_ratios='[33.33,33.33,33.34]'
  WHERE spu_id IN (99001, 99002);
+
+-- ④ 修 V042 套餐商品的 3 个建单阻断 bug（否则走交易订单 createOrder 报错/拒单）：
+--    a) delivery_types 应为纯整数 '2'(自提)，V042 误写成 JSON '[2]' → trade 读商品 NumberFormatException
+UPDATE `product_spu` SET delivery_types='2' WHERE id IN (99001,99002) AND delivery_types='[2]';
+--    b) 套餐商品需「上架」(status=1) 才能下单；V042 建成 0(下架)
+UPDATE `product_spu` SET status=1 WHERE id IN (99001,99002);
+--    c) 平台店 999 缺 app_key='mall' 的支付应用（每个租户都有，999 漏建）→ 建支付单报「App 不存在」
+INSERT INTO `pay_app` (app_key,name,status,remark,order_notify_url,refund_notify_url,transfer_notify_url,tenant_id,creator,create_time,updater,update_time,deleted)
+SELECT 'mall','商城支付应用（平台SaaS套餐）',0,'平台套餐收款','','','',999,'admin',NOW(),'admin',NOW(),0
+  FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM pay_app WHERE tenant_id=999 AND app_key='mall' AND deleted=0);
