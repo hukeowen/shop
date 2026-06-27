@@ -32,6 +32,11 @@ export const getOrderDetail = (id, sync = false) =>
 export const getExpressTrack = (id) =>
   get(`/app-api/trade/order/get-express-track-list?id=${id}`);
 
+// 创建订单项评价（yudao 原生）
+//   body: { orderItemId, anonymous, descriptionScores(1-5), benefitScores(1-5), content, picUrls:[] }
+export const createOrderItemComment = (body) =>
+  post('/app-api/trade/order/item/create-comment', body);
+
 // 确认收货
 export const receiveOrder = (id) =>
   put(`/app-api/trade/order/receive?id=${id}`, null);

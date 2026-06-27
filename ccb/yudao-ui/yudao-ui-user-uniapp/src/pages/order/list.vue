@@ -57,6 +57,7 @@ import { ref, reactive, onMounted } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
 import { pageOrders, getOrderCount, cancelOrder, receiveOrder } from '@/api/order.js';
 import { getShopInfo } from '@/api/shop.js';
+import { addCart } from '@/api/cart.js';
 import { fen2yuan, fmtTime } from '@/utils/format.js';
 
 // tenantId → 店铺名 缓存（订单只带 tenantId，多商户需解析店铺名）
@@ -134,8 +135,28 @@ function onAct(o, k) {
     uni.navigateTo({ url: `/pages/order/offline-pay?orderId=${o.id}` });
   } else if (k === 'track') {
     uni.navigateTo({ url: `/pages/order/detail?id=${o.id}&tab=express` });
-  } else if (k === 'reorder' || k === 'comment') {
-    uni.showToast({ title: '功能待加', icon: 'none' });
+  } else if (k === 'reorder') {
+    onReorder(o);
+  } else if (k === 'comment') {
+    uni.navigateTo({ url: `/pages/order/comment?id=${o.id}` });
+  }
+}
+
+// 再来一单：把该订单的商品重新加入购物车，跳购物车结算
+async function onReorder(o) {
+  const list = (o.items || []).filter((it) => it.skuId);
+  if (!list.length) { uni.showToast({ title: '该订单无可复购商品', icon: 'none' }); return; }
+  uni.showLoading({ title: '加入中…' });
+  let ok = 0;
+  for (const it of list) {
+    try { await addCart(it.skuId, it.count || 1); ok += 1; } catch {}
+  }
+  uni.hideLoading();
+  if (ok > 0) {
+    uni.showToast({ title: `已加入 ${ok} 件`, icon: 'success' });
+    setTimeout(() => uni.navigateTo({ url: '/pages/cart/index' }), 700);
+  } else {
+    uni.showToast({ title: '部分商品已下架，加入失败', icon: 'none' });
   }
 }
 
