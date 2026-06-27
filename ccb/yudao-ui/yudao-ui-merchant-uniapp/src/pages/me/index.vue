@@ -71,7 +71,7 @@
         <text class="arrow">›</text>
       </view>
       <view class="menu-item" @click="goWithdrawReview">
-        <view class="mi-l"><text class="mi-ic">💸</text><text>用户提现审批</text></view>
+        <view class="mi-l"><text class="mi-ic">💸</text><text>用户提现审核</text></view>
         <text class="arrow">›</text>
       </view>
     </view>
@@ -89,25 +89,9 @@
       </view>
     </view>
 
-    <!-- 财务管理 -->
+    <!-- 财务管理（商户自身收益走通联自动到账，无需「商户提现」；用户提现统一在上方「用户提现审核」）-->
     <view class="section-title">财务管理</view>
     <view class="menu card">
-      <view class="menu-item" @click="goWithdrawApply">
-        <view class="mi-l"><text class="mi-ic">💸</text><text>商户提现</text></view>
-        <text class="arrow">›</text>
-      </view>
-      <view class="menu-item" @click="goWithdrawApprove">
-        <view class="mi-l"><text class="mi-ic">✅</text><text>提现审批</text></view>
-        <text class="arrow">›</text>
-      </view>
-      <view class="menu-item" @click="goUserWithdraw">
-        <view class="mi-l"><text class="mi-ic">🪙</text><text>用户提现审核</text></view>
-        <text class="arrow">›</text>
-      </view>
-      <view class="menu-item" @click="goMemberWithdraw">
-        <view class="mi-l"><text class="mi-ic">💼</text><text>用户余额提现审核</text></view>
-        <text class="arrow">›</text>
-      </view>
       <view class="menu-item" @click="goPayApply">
         <view class="mi-l"><text class="mi-ic">💳</text><text>在线支付开通</text></view>
         <text class="arrow">›</text>
@@ -266,10 +250,6 @@ function goCoupon() {
   uni.navigateTo({ url: '/pages/me/coupon' });
 }
 
-function goWithdrawApprove() {
-  uni.navigateTo({ url: '/pages/me/withdraw-approve' });
-}
-
 function goMembers() {
   uni.navigateTo({ url: '/pages/member/list' });
 }
@@ -282,18 +262,6 @@ function goProductRank() {
 }
 function goShopMembers() {
   uni.navigateTo({ url: '/pages/me/members' });
-}
-
-function goWithdrawApply() {
-  uni.navigateTo({ url: '/pages/withdraw/merchant-apply' });
-}
-
-function goUserWithdraw() {
-  uni.navigateTo({ url: '/pages/withdraw/user-list' });
-}
-
-function goMemberWithdraw() {
-  uni.navigateTo({ url: '/pages/withdraw/member-list' });
 }
 
 function goPayApply() {
