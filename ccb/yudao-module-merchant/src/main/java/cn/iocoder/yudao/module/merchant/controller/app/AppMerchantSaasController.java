@@ -52,6 +52,15 @@ public class AppMerchantSaasController {
     private cn.iocoder.yudao.module.merchant.service.allinpay.SaasOrderAllinpayPollingService saasPollingService;
     @Resource
     private ShopInfoMapper shopInfoMapper;
+    // V042 收尾：套餐走「999 平台店商品交易订单」复用推广引擎
+    @Resource
+    private cn.iocoder.yudao.module.trade.service.order.TradeOrderUpdateService tradeOrderUpdateService;
+    @Resource
+    private cn.iocoder.yudao.module.product.service.sku.ProductSkuService productSkuService;
+    @Resource
+    private cn.iocoder.yudao.module.merchant.dal.mysql.saas.SaasPackageConfigMapper packageConfigMapper;
+    @Resource(name = "tradeOrderAllinpayPollingService")
+    private cn.iocoder.yudao.module.merchant.service.allinpay.TradeOrderAllinpayPollingService tradeOrderAllinpayPollingService;
 
     @GetMapping("/packages")
     @Operation(summary = "列出可购套餐（续费页用）")
@@ -86,45 +95,78 @@ public class AppMerchantSaasController {
     }
 
     @PostMapping("/purchase")
-    @Operation(summary = "购买/续费 — 建订阅订单 + 调通联 cashier 拿支付链接")
+    @Operation(summary = "购买/续费 — 建平台店(999)套餐商品「交易订单」+ 通联收银台")
     @TenantIgnore
     public CommonResult<Map<String, Object>> purchase(
             @RequestParam("level") String level,
             HttpServletRequest httpReq) {
+        // V042 收尾：套餐 = 平台店(999)的商品，走「标准交易订单」而非旧订阅单。
+        // 这样支付成功后自动触发 TradeOrderHandler 链：
+        //   ① SaasPackageTradeOrderHandler → 给买家商户续期/升档(解锁功能)/加 AI 次数
+        //   ② v8 推广引擎 → 按套餐商品的「推 3 反 1」给推荐人(A)发推广积分（A 必须已买套餐在队列里才有资格）
         MerchantDO merchant = getMerchantOrThrow();
         if (Boolean.TRUE.equals(merchant.getIsPlatform())) {
             throw ServiceExceptionUtil.exception0(400, "平台商户无需购买套餐");
         }
-        // 1. 建订阅订单
-        MerchantSubscriptionOrderDO order = subscriptionService.createSubscriptionOrder(merchant.getId(), level);
+        final Long buyerUserId = SecurityFrameworkUtils.getLoginUserId();
 
-        // 2. 调通联 cashier — 用平台商户的通联凭据（不是发起购买的商户自己的）
-        //    因为是平台收钱（SaaS 订阅），资金到平台账户
-        Map<String, Object> resp = new HashMap<>();
-        resp.put("orderId", order.getId());
-        resp.put("reqsn", order.getTlReqsn());
-        resp.put("priceFen", order.getPriceFen());
-        try {
-            String ua = httpReq == null ? null : httpReq.getHeader("User-Agent");
-            // 用平台商户 (tenant_id=999) 的 shop_info 凭据
-            ShopInfoDO platformShop = TenantUtils.executeIgnore(() -> shopInfoMapper.selectByTenantId(PLATFORM_TENANT_ID));
-            if (platformShop == null) {
-                log.warn("[saas/purchase] 平台商户 tenant=999 shop_info 不存在，无法拿通联支付链接");
-                resp.put("cashierUrl", null);
-                return success(resp);
-            }
-            AllinpayCashierService.TlpayCredential cred =
-                    cashierService.merchantCredentialForTenant(PLATFORM_TENANT_ID);
-            AllinpayCashierService.CashierForm form = cashierService.buildCashierFormWithCredential(
-                    order.getTlReqsn(), order.getPriceFen().longValue(),
-                    "拓小二·" + order.getLevel() + " 套餐", ua, cred);
-            resp.put("cashierUrl", form == null ? null : form.getRedirectUrl());
-            // 异步排程 6 段查询兜底（回调验签 / 漏发场景）— 命中 trxstatus=2000 自动 markPaid
-            saasPollingService.schedulePolling(order.getId());
-        } catch (Exception e) {
-            log.warn("[saas/purchase] orderId={} 调通联失败：{}", order.getId(), e.getMessage());
-            // 不阻塞，让前端用户重试
+        // 1. 套餐 → 平台店商品 SPU / SKU
+        SaasPackageConfigDO pkg = packageConfigMapper.selectByLevel(level);
+        if (pkg == null || pkg.getStatus() == null || pkg.getStatus() != 0) {
+            throw ServiceExceptionUtil.exception0(404, "套餐不存在或已下架: " + level);
         }
+        if (pkg.getSpuId() == null) {
+            throw ServiceExceptionUtil.exception0(500, "套餐未关联平台商品，请联系平台运营");
+        }
+        final Long spuId = pkg.getSpuId();
+        List<cn.iocoder.yudao.module.product.dal.dataobject.sku.ProductSkuDO> skus =
+                TenantUtils.execute(PLATFORM_TENANT_ID, () -> productSkuService.getSkuListBySpuId(spuId));
+        if (skus == null || skus.isEmpty()) {
+            throw ServiceExceptionUtil.exception0(500, "套餐商品无规格，请联系平台运营");
+        }
+        final Long skuId = skus.get(0).getId();
+
+        // 收件信息：套餐是虚拟商品走「自提」(无需真实地址/门店，商户无感)，name/mobile 取买家店铺
+        ShopInfoDO buyerShop = TenantUtils.executeIgnore(() -> shopInfoMapper.selectByTenantId(merchant.getTenantId()));
+        final String receiverName = buyerShop != null && buyerShop.getShopName() != null
+                ? buyerShop.getShopName() : "套餐订阅";
+        final String receiverMobile = buyerShop != null && buyerShop.getMobile() != null
+                ? buyerShop.getMobile() : "13000000000";
+        final String ua = httpReq == null ? null : httpReq.getHeader("User-Agent");
+        final String pkgName = pkg.getName();
+
+        // 2. 在平台店(999)租户下建交易订单 + 拿通联收银台 + 排程兜底轮询
+        Map<String, Object> resp = new HashMap<>();
+        TenantUtils.execute(PLATFORM_TENANT_ID, () -> {
+            cn.iocoder.yudao.module.trade.controller.app.order.vo.AppTradeOrderCreateReqVO req =
+                    new cn.iocoder.yudao.module.trade.controller.app.order.vo.AppTradeOrderCreateReqVO();
+            cn.iocoder.yudao.module.trade.controller.app.order.vo.AppTradeOrderSettlementReqVO.Item item =
+                    new cn.iocoder.yudao.module.trade.controller.app.order.vo.AppTradeOrderSettlementReqVO.Item();
+            item.setSkuId(skuId);
+            item.setCount(1);
+            req.setItems(java.util.Collections.singletonList(item));
+            req.setPointStatus(false);
+            req.setDeliveryType(cn.iocoder.yudao.module.trade.enums.delivery.DeliveryTypeEnum.PICK_UP.getType());
+            req.setReceiverName(receiverName);
+            req.setReceiverMobile(receiverMobile);
+            req.setRemark("SaaS 套餐：" + pkgName);
+            cn.iocoder.yudao.module.trade.dal.dataobject.order.TradeOrderDO order =
+                    tradeOrderUpdateService.createOrder(buyerUserId, req);
+            resp.put("orderId", order.getId());
+            resp.put("priceFen", order.getPayPrice());
+            try {
+                AllinpayCashierService.CashierForm form = cashierService.buildCashierFormForTrade(order.getId(), ua);
+                resp.put("cashierUrl", form == null ? null : form.getRedirectUrl());
+            } catch (Exception e) {
+                log.warn("[saas/purchase] orderId={} 拿通联收银台失败：{}", order.getId(), e.getMessage());
+            }
+            try {
+                tradeOrderAllinpayPollingService.schedulePolling(order.getId());
+            } catch (Exception ignore) { }
+            log.info("[saas/purchase] ✅ 套餐交易订单 orderId={} buyer={} spu={} level={} priceFen={}",
+                    order.getId(), buyerUserId, spuId, level, order.getPayPrice());
+            return null;
+        });
         return success(resp);
     }
 
