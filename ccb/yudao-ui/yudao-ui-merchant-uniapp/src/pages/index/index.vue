@@ -130,7 +130,7 @@
       @click="jumpSalesStats"
     >
       <view class="pt-head">
-        <text class="pt-title">🎁 今日推广（v8）</text>
+        <text class="pt-title">🎁 今日推广</text>
         <text class="pt-tag">明细 ›</text>
       </view>
       <view class="pt-row">

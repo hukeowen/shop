@@ -81,14 +81,14 @@
       </view>
       <view class="trend-legend">
         <view class="lg"><view class="sw brand"></view>销售额（按定价）</view>
-        <view class="lg"><view class="sw success"></view>实付（v8 抵扣后）</view>
+        <view class="lg"><view class="sw success"></view>实付（积分抵扣后）</view>
       </view>
     </view>
 
     <!-- 推广积分对账 -->
     <view class="panel" v-if="data">
       <view class="panel-h">
-        <text class="t">🎯 推广积分对账（v8）</text>
+        <text class="t">🎯 推广积分对账</text>
       </view>
       <view class="reconcile-row">
         <text class="l">发出推广积分（订单触发）</text>

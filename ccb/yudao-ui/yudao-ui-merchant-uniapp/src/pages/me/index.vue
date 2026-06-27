@@ -55,7 +55,7 @@
     <view class="section-title">营销</view>
     <view class="menu card">
       <view class="menu-item" @click="goPromoConfig">
-        <view class="mi-l"><text class="mi-ic">🎯</text><text>店铺营销设置（全局）</text></view>
+        <view class="mi-l"><text class="mi-ic">🎯</text><text>店铺营销设置</text></view>
         <text class="arrow">›</text>
       </view>
       <view class="menu-item" @click="goProducts">

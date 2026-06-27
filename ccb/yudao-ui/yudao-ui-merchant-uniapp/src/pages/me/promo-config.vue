@@ -2,7 +2,7 @@
   <view class="page">
     <!-- Banner -->
     <view class="banner">
-      <text class="title">店铺营销设置（全局）</text>
+      <text class="title">店铺营销设置</text>
       <text class="sub">推广积分提现 · 消费积分抵扣 · 自然队列 · 满减 · 推广奖励兜底</text>
       <text class="sub" style="margin-top:8rpx;font-size:22rpx;color:#9CA3AF;">注：星级、推 N 反 1、积分池均为商品级配置 → 商品列表 → 单品编辑</text>
     </view>

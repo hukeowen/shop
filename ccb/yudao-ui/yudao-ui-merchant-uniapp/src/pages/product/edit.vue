@@ -60,14 +60,14 @@
 
     <!-- 上架前提示用户：新增商品时不能配营销，先上架→自动跳转到编辑态再设 -->
     <view v-if="!isEdit" class="card promo-hint">
-      <view class="promo-title">营销配置（v8）</view>
+      <view class="promo-title">营销配置</view>
       <view class="promo-sub">先点底部"上架"完成商品创建，系统会自动跳到编辑页让你设置「消费积分倍率 / 推 N 反 1 / 星级 / 入池」等。</view>
     </view>
 
     <!-- 营销配置（v8 双积分 / 邀请激励 / 入池） — 仅编辑态可用 -->
     <view v-if="isEdit" class="card promo">
       <view class="promo-head">
-        <text class="promo-title">营销配置（v8）</text>
+        <text class="promo-title">营销配置</text>
         <text class="promo-sub">{{ promoLoaded ? '已配置' : '加载中…' }}</text>
       </view>
 

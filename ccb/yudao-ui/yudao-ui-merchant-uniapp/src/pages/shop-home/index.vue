@@ -194,7 +194,7 @@
     <view v-if="showShare" class="share-mask" @click.self="showShare = false">
       <view class="share-sheet">
         <view class="share-title">邀请好友进店</view>
-        <view class="share-sub">朋友通过你的链接进店并下单，按 v8 邀请激励 自动返奖到你的推广积分</view>
+        <view class="share-sub">朋友通过你的链接进店并下单，按邀请激励规则 自动返奖到你的推广积分</view>
         <view v-if="myShareQr" class="share-qr-wrap">
           <image :src="myShareQr" class="share-qr" mode="aspectFit" />
           <text class="share-qr-tip">长按图片可保存到相册</text>
