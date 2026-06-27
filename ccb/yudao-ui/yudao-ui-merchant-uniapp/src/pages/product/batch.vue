@@ -4,8 +4,8 @@
     <view v-if="step === 'pick'" class="card empty">
       <view class="empty-icon">📷</view>
       <view class="empty-title">AI 上架</view>
-      <view class="empty-desc">拍一张摊位全景照，AI 会自动识别每一件商品，你只需要填价格</view>
-      <button class="btn primary" @click="pickImage">拍张全摊照</button>
+      <view class="empty-desc">拍一张店铺货架全景照，AI 会自动识别每一件商品，你只需要填价格</view>
+      <button class="btn primary" @click="pickImage">拍张全景照</button>
       <view class="tip">识别用时约 5–10 秒 · 每张原图先上传到 OSS 给 AI 看</view>
     </view>
 
