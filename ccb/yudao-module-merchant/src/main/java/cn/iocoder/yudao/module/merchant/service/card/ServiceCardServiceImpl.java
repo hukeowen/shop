@@ -67,6 +67,7 @@ public class ServiceCardServiceImpl implements ServiceCardService {
                 }
                 ServiceCardDefDO row = ServiceCardDefDO.builder()
                         .spuId(spuId)
+                        .itemSpuId(d.getItemSpuId())
                         .name(d.getName().trim())
                         .validityDays(d.getValidityDays() == null || d.getValidityDays() <= 0 ? 365 : d.getValidityDays())
                         // maxCount: null 或 <=0 视为不限次
@@ -125,6 +126,7 @@ public class ServiceCardServiceImpl implements ServiceCardService {
                     ServiceCardDO card = ServiceCardDO.builder()
                             .defId(def.getId())
                             .spuId(spuId)
+                            .itemSpuId(def.getItemSpuId())
                             .orderId(orderId)
                             .userId(order.getUserId())
                             .name(def.getName())
@@ -210,6 +212,7 @@ public class ServiceCardServiceImpl implements ServiceCardService {
         m.put("tenantId", c.getTenantId());
         m.put("shopName", shopName);
         m.put("name", c.getName());
+        m.put("itemSpuId", c.getItemSpuId());
         m.put("cardNo", c.getCardNo());
         m.put("startTime", toEpochMilli(c.getStartTime()));
         m.put("expireTime", toEpochMilli(c.getExpireTime()));

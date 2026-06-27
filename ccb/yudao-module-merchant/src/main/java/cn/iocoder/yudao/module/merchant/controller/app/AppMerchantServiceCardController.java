@@ -60,6 +60,7 @@ public class AppMerchantServiceCardController {
         if (defs != null) {
             for (AppServiceCardDefSaveReqVO d : defs) {
                 rows.add(ServiceCardDefDO.builder()
+                        .itemSpuId(d.getItemSpuId())
                         .name(d.getName())
                         .validityDays(d.getValidityDays())
                         .maxCount(d.getMaxCount())

@@ -34,8 +34,11 @@ public class ServiceCardDO extends TenantBaseDO {
     /** 卡定义 ID */
     private Long defId;
 
-    /** 商品 SPU ID */
+    /** 商品 SPU ID（= 购买的服务包/套餐商品） */
     private Long spuId;
+
+    /** 该卡对应的单项服务商品 SPU ID（如 洗车/保养）；null=自定义卡 */
+    private Long itemSpuId;
 
     /** 来源订单 ID */
     private Long orderId;

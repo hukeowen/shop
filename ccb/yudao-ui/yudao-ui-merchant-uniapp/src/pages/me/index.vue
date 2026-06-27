@@ -63,7 +63,7 @@
         <text class="arrow">›</text>
       </view>
       <view class="menu-item" @click="goCardPackage">
-        <view class="mi-l"><text class="mi-ic">🪪</text><text>服务卡包配置（选商品挂卡）</text></view>
+        <view class="mi-l"><text class="mi-ic">🪪</text><text>服务卡包 / 套餐（组合已有商品）</text></view>
         <text class="arrow">›</text>
       </view>
       <view class="menu-item" @click="goCardVerify">

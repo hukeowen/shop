@@ -10,7 +10,10 @@ import lombok.Data;
 @Data
 public class AppServiceCardDefSaveReqVO {
 
-    @Schema(description = "卡名称", example = "洗车卡")
+    @Schema(description = "该卡对应的单项服务商品 SPU ID（选已有商品）", example = "1024")
+    private Long itemSpuId;
+
+    @Schema(description = "卡名称（一般为所选商品名快照）", example = "洗车")
     private String name;
 
     @Schema(description = "有效天数（从付款日起算）", example = "730")

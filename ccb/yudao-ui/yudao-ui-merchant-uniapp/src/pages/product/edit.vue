@@ -289,57 +289,17 @@
       </view>
     </view>
 
-    <!-- 服务卡包（仅编辑态可配；用户买后在卡包里生成对应卡，到店核销）-->
+    <!-- 服务卡包/套餐：改由独立页「服务卡包」管理（组合已有商品），此处只做入口引导 -->
     <view v-if="isEdit" class="card svc">
       <view class="promo-head">
-        <text class="promo-title">服务卡包</text>
-        <text class="promo-sub">{{ cards.length ? cards.length + ' 张卡' : '未配置' }}</text>
+        <text class="promo-title">服务卡包 / 套餐</text>
+        <text class="promo-sub">{{ cards.length ? cards.length + ' 项服务' : '未配置' }}</text>
       </view>
       <view class="svc-tip">
-        适用于「服务包」类商品：如汽车美容 ¥1288 含「洗车卡(2年不限次)」「保养卡(2年10次)」。
-        用户购买后在该店卡包生成对应卡，到店出示码，你在「卡券核销」里核销。
+        想把本商品做成「套餐」（如 ¥1288 含 洗车、保养）？请到「我的 → 服务卡包 / 套餐」选择本商品，
+        再从已有商品里挑选要包含的服务并设有效期/次数。用户购买后自动发卡，到店核销。
       </view>
-
-      <view v-for="(c, i) in cards" :key="i" class="svc-card">
-        <view class="svc-card-head">
-          <text class="svc-idx">卡 {{ i + 1 }}</text>
-          <text class="svc-del" @click="removeCard(i)">删除</text>
-        </view>
-        <view class="field-v">
-          <text class="label-v">卡名称</text>
-          <input class="input compact" maxlength="20" placeholder="例：洗车卡 / 保养卡" v-model="c.name" />
-        </view>
-        <view class="field-v">
-          <text class="label-v">有效期（从用户付款日起算）</text>
-          <view class="svc-valid">
-            <input class="input compact valid-num" type="number" v-model="c.validValue" placeholder="如 2" />
-            <view class="unit-pair">
-              <view v-for="u in unitOptions" :key="u.v" class="unit-chip" :class="{ active: c.validUnit === u.v }"
-                @click="c.validUnit = u.v">{{ u.label }}</view>
-            </view>
-          </view>
-        </view>
-        <view class="field-v">
-          <text class="label-v">核销次数</text>
-          <view class="svc-count">
-            <view class="radio-pair">
-              <view class="radio-big" :class="{ active: !c.limited }" @click="c.limited = false">不限次数</view>
-              <view class="radio-big" :class="{ active: c.limited }" @click="c.limited = true">限定次数</view>
-            </view>
-          </view>
-          <view v-if="c.limited" class="star-row-input" style="margin-top:12rpx;">
-            <input class="input compact" type="number" v-model="c.maxCount" placeholder="如 10（次数用完即失效）" />
-            <text class="suffix">次</text>
-          </view>
-          <text class="hint inline">时间到期 或 次数用完，谁先到都不能再用。</text>
-        </view>
-        <view class="field-v">
-          <text class="label-v">卡说明（选填）</text>
-          <input class="input compact" maxlength="60" placeholder="例：每次到店出示，洗车不限车型" v-model="c.description" />
-        </view>
-      </view>
-
-      <view class="svc-add" @click="addCard">＋ 添加一张服务卡</view>
+      <view class="svc-add" @click="goCardPackage">前往「服务卡包 / 套餐」配置 ›</view>
     </view>
 
     <!-- 高级设置（折叠） -->
@@ -476,6 +436,9 @@ const unitOptions = [
   { v: 'year', label: '年' },
 ];
 const UNIT_DAYS = { day: 1, month: 30, year: 365 };
+function goCardPackage() {
+  uni.navigateTo({ url: '/pages/service-card/manage' });
+}
 function addCard() {
   cards.value.push({ name: '', validValue: '1', validUnit: 'year', limited: false, maxCount: '', description: '' });
 }
@@ -904,12 +867,9 @@ async function onSubmit() {
   if (!canSubmit.value) return;
   // 编辑态：先校验营销策略，避免商品改了但营销没过校验导致状态不一致
   let promoCheck = null;
-  let cardCheck = null;
   if (isEdit.value) {
     promoCheck = validatePromo();
     if (!promoCheck.ok) return;
-    cardCheck = buildCardDefs();
-    if (!cardCheck.ok) return;
   }
   uni.showLoading({ title: isEdit.value ? '保存中' : '上架中' });
   const payload = {
@@ -927,16 +887,9 @@ async function onSubmit() {
         uni.showToast({ title: '商品已保存，但营销策略保存失败：' + (e?.msg || e?.message || ''), icon: 'none', duration: 2500 });
         return;
       }
-      // 服务卡定义（全量覆盖）
-      try {
-        await saveCardDefs(editingId.value, cardCheck.defs);
-      } catch (e) {
-        uni.hideLoading();
-        uni.showToast({ title: '商品/营销已保存，但服务卡保存失败：' + (e?.msg || e?.message || ''), icon: 'none', duration: 2500 });
-        return;
-      }
+      // 服务卡/套餐改由「服务卡包」独立页管理（选已有商品组合），此处不再覆盖，避免误清空
       uni.hideLoading();
-      uni.showToast({ title: '已保存（含营销/服务卡）', icon: 'success' });
+      uni.showToast({ title: '已保存（含营销）', icon: 'success' });
     } else {
       const newId = await createSpu(payload);
       uni.hideLoading();

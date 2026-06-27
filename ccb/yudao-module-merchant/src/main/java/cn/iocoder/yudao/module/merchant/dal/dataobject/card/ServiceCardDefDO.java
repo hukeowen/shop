@@ -25,10 +25,13 @@ public class ServiceCardDefDO extends TenantBaseDO {
     @TableId
     private Long id;
 
-    /** 所属商品 SPU ID */
+    /** 所属商品 SPU ID（= 服务包/套餐商品，购买它才发卡） */
     private Long spuId;
 
-    /** 卡名称，如「洗车卡」 */
+    /** 该卡对应的「单项服务商品」SPU ID（如 洗车/保养 的商品）；null=纯自定义卡（老数据兼容） */
+    private Long itemSpuId;
+
+    /** 卡名称，如「洗车卡」（选了 itemSpuId 时为该商品名快照） */
     private String name;
 
     /** 有效天数（从用户付款日起算） */
