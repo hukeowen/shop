@@ -378,8 +378,9 @@ async function onShareLink() {
       await navigator.share({ title, text, url: link });
       return;
     }
-  } catch { /* 用户取消分享 → 不再降级，静默返回 */ return; }
-  uni.setClipboardData({ data: link, success: () => uni.showToast({ title: '链接已复制，去粘贴分享', icon: 'none' }) });
+  } catch { /* 用户取消原生分享 → 静默返回 */ return; }
+  // 微信内置浏览器无 navigator.share：直接弹「推广二维码海报」，长按可保存 / 转发给好友，比单纯复制链接更实用
+  openInvitePoster();
 }
 
 // 邀请有礼：生成本店专属推广二维码海报（本地 canvas 合成，可保存/分享）
