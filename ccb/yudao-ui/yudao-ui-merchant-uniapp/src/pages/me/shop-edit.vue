@@ -101,15 +101,26 @@
           <text class="label">店铺公告</text>
           <textarea class="textarea" v-model="form.notice" placeholder="请输入店铺公告" />
         </view>
-        <view class="field">
+        <view class="field feat-field">
           <text class="label">特色标签</text>
-          <input
-            class="input"
-            v-model="form.featureTags"
-            placeholder="逗号分隔，最多 6 个，如：炭火现烤,现做现卖,不赶时间"
-            maxlength="64"
-          />
-          <text class="hint">用户进店时显示在店铺信息卡上（第 1 个会高亮带 🔥）</text>
+          <view class="feat-body">
+            <view class="feat-presets">
+              <text
+                v-for="t in featurePresets"
+                :key="t"
+                class="feat-chip"
+                :class="{ on: featureTagList.includes(t) }"
+                @click="toggleFeature(t)"
+              >{{ featureTagList.includes(t) ? '✓ ' : '＋ ' }}{{ t }}</text>
+            </view>
+            <input
+              class="input feat-input"
+              v-model="form.featureTags"
+              placeholder="点上面快速添加，或手动输入（逗号分隔，最多 6 个）"
+              maxlength="64"
+            />
+            <text class="hint">用户进店时显示在店铺信息卡上（第 1 个会高亮带 🔥）</text>
+          </view>
         </view>
       </view>
 
@@ -121,7 +132,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
 import { request } from '../../api/request.js';
 
@@ -142,6 +153,8 @@ const BIZ_TYPES = [
   { key: 'other', label: '其他', emoji: '🏪' },
 ];
 
+// 特色标签：常用预设供快速选择（也可手动输入），逗号分隔存 form.featureTags
+const featurePresets = ['现做现卖', '新鲜直达', '炭火现烤', '手工现做', '24小时营业', '招牌推荐', '人气爆款', '支持外送', '环境干净', '服务热情'];
 const loading = ref(true);
 const form = ref({
   shopName: '',
@@ -161,6 +174,22 @@ const form = ref({
   notice: '',
   featureTags: '',
 });
+
+// 特色标签 CSV ↔ 数组
+const featureTagList = computed(() =>
+  String(form.value.featureTags || '').split(/[,，、]/).map((s) => s.trim()).filter(Boolean)
+);
+function toggleFeature(t) {
+  const arr = featureTagList.value.slice();
+  const i = arr.indexOf(t);
+  if (i >= 0) {
+    arr.splice(i, 1);
+  } else {
+    if (arr.length >= 6) { uni.showToast({ title: '最多 6 个标签', icon: 'none' }); return; }
+    arr.push(t);
+  }
+  form.value.featureTags = arr.join(',');
+}
 
 // 店铺定位（gcj02，与用户端 uni.getLocation/附近店铺 Haversine 对齐）
 const locating = ref(false);
@@ -394,6 +423,31 @@ async function save() {
   font-size: 22rpx;
   color: $text-secondary;
   line-height: 1.4;
+}
+
+/* 特色标签：右侧整列（预设 chips + 输入框 + 提示） */
+.feat-body { flex: 1; min-width: 0; }
+.feat-presets { display: flex; flex-wrap: wrap; gap: 14rpx; }
+.feat-chip {
+  font-size: 24rpx; line-height: 1;
+  padding: 12rpx 20rpx; border-radius: 999rpx;
+  background: #f4f5f7; color: $text-secondary;
+  border: 1rpx solid $border-color;
+}
+.feat-chip.on {
+  background: rgba(255, 107, 53, 0.12);
+  color: $brand-primary;
+  border-color: $brand-primary;
+  font-weight: 600;
+}
+.feat-input {
+  height: 72rpx;
+  margin-top: 16rpx;
+  padding: 0 20rpx;
+  background: #f6f7f9;
+  border-radius: $radius-md;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 /* 店铺照片 */
