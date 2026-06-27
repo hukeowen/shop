@@ -22,7 +22,7 @@
     <!-- SaaS 订阅状态 -->
     <view v-if="saasStatus" :class="['saas-card', saasStatus.expired ? 'expired' : '', saasStatus.isPlatform ? 'platform' : '']">
       <view class="saas-hd">
-        <text class="saas-name">{{ levelLabel(saasStatus.level) }}</text>
+        <text class="saas-name">{{ saasStatus.packageName || levelLabel(saasStatus.level) }}</text>
         <text v-if="saasStatus.expired" class="saas-tag danger">已到期</text>
         <text v-else-if="saasStatus.isPlatform" class="saas-tag info">永久</text>
         <text v-else-if="daysRemaining < 7" class="saas-tag warn">{{ daysRemaining }} 天到期</text>
@@ -156,9 +156,9 @@ const daysRemaining = computed(() => {
 function levelLabel(level) {
   return ({
     PLATFORM: '平台商户',
-    PRO: '全功能包',
-    BASIC: '基础包',
-    TRIAL: '试用版（30 天 PRO 体验）',
+    PRO: '拓小二旗舰版',
+    BASIC: '拓小二旺铺版',
+    TRIAL: '试用版（30 天旗舰体验）',
     EXPIRED: '已过期',
   })[level] || level;
 }

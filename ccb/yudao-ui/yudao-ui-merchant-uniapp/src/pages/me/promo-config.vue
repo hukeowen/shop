@@ -9,8 +9,8 @@
 
     <!-- 套餐档位提示 -->
     <view v-if="saasLevel === 'BASIC'" class="lvl-tip">
-      ⚡ 当前为<text class="b">基础包</text>，店内 / 星级 / 奖池配置已锁定。如需启用请
-      <text class="link" @click="goSubscription">升级到全功能包</text>
+      ⚡ 当前为<text class="b">拓小二旺铺版</text>，店内 / 星级 / 奖池配置已锁定。如需启用请
+      <text class="link" @click="goSubscription">升级到拓小二旗舰版</text>
     </view>
 
     <!-- ============ 推广积分 ============ -->

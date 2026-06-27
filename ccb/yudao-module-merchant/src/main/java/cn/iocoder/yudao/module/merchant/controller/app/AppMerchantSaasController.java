@@ -65,14 +65,23 @@ public class AppMerchantSaasController {
     @TenantIgnore
     public CommonResult<Map<String, Object>> myStatus() {
         MerchantDO merchant = getMerchantOrThrow();
+        String level = subscriptionService.getEffectiveLevel(merchant);
         Map<String, Object> r = new HashMap<>();
         r.put("merchantId", merchant.getId());
         r.put("isPlatform", Boolean.TRUE.equals(merchant.getIsPlatform()));
-        r.put("level", subscriptionService.getEffectiveLevel(merchant));
+        r.put("level", level);
         r.put("rawLevel", merchant.getServicePackageLevel());
         r.put("expireAt", merchant.getServiceExpireAt());
         r.put("expired", subscriptionService.isExpired(merchant));
         r.put("aiVideoQuota", merchant.getVideoQuotaRemaining());
+        // 套餐展示名取 saas_package_config.name，保证「我的」页与续费页、平台后台一致（不再前端写死「全功能包」）
+        String packageName = null;
+        try {
+            for (SaasPackageConfigDO c : subscriptionService.listEnabledPackages()) {
+                if (c.getLevel() != null && c.getLevel().equals(level)) { packageName = c.getName(); break; }
+            }
+        } catch (Exception ignore) {}
+        r.put("packageName", packageName);
         return success(r);
     }
 

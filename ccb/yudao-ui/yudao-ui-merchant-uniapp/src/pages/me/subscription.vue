@@ -9,7 +9,7 @@
     <view v-if="status" :class="['cur', status.expired ? 'expired' : '']">
       <view class="cur-row">
         <text class="lbl">当前套餐</text>
-        <text class="val">{{ levelLabel(status.level) }}</text>
+        <text class="val">{{ status.packageName || levelLabel(status.level) }}</text>
       </view>
       <view class="cur-row">
         <text class="lbl">到期时间</text>
@@ -73,9 +73,9 @@ const selectedPackage = computed(() => packages.value.find(p => p.level === sele
 function levelLabel(level) {
   return ({
     PLATFORM: '平台商户',
-    PRO: '全功能包',
-    BASIC: '基础包',
-    TRIAL: '试用版（30 天 PRO 体验）',
+    PRO: '拓小二旗舰版',
+    BASIC: '拓小二旺铺版',
+    TRIAL: '试用版（30 天旗舰体验）',
     EXPIRED: '已过期',
   })[level] || level;
 }
