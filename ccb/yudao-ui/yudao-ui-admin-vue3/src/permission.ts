@@ -79,7 +79,18 @@ router.beforeEach(async (to, from, next) => {
         // 后端过滤菜单
         await permissionStore.generateRoutes()
         permissionStore.getAddRouters.forEach((route) => {
-          router.addRoute(route as unknown as RouteRecordRaw) // 动态添加可访问路由表
+          try {
+            // 健壮性：顶级路由 path 必须以 "/" 开头，否则 vue-router addRoute 抛错并中断后续
+            // 所有路由注册 → 整站白屏/转圈（曾因菜单 path="promo" 缺斜杠踩坑，且旧缓存 roleRouters
+            // 也会复现）。这里运行时兜底补 "/"，并 try/catch 单条隔离，绝不让一条坏菜单拖垮整站。
+            if (route && typeof (route as any).path === 'string') {
+              const p = (route as any).path
+              if (p && !p.startsWith('/')) (route as any).path = '/' + p
+            }
+            router.addRoute(route as unknown as RouteRecordRaw) // 动态添加可访问路由表
+          } catch (e) {
+            console.error('[router] 跳过非法路由，避免整站崩溃：', (route as any)?.path, e)
+          }
         })
         const redirectPath = from.query.redirect || to.path
         // 修复跳转时不带参数的问题
