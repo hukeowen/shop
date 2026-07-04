@@ -90,15 +90,33 @@
 
     <view class="bottom-space" />
 
-    <RoleTabBar current="/pages/ai-video/index" />
+    <RoleTabBar v-if="!hideTab" current="/pages/ai-video/index" />
   </view>
 </template>
 
 <script setup>
 import { ref } from 'vue';
-import { onShow } from '@dcloudio/uni-app';
+import { onShow, onLoad } from '@dcloudio/uni-app';
 import { getQuota, getTaskPage } from '../../api/aiVideo.js';
 import { AI_VIDEO_STATUS } from '../../utils/format.js';
+import { useUserStore } from '../../store/user.js';
+
+// App 用 web-view 内嵌本页(H5)：URL 带 tk(登录态) + embed=1(隐藏本页底部 tab，避免双 tab)
+const hideTab = ref(false);
+onLoad((opts) => {
+  if (opts && opts.embed) hideTab.value = true;
+  if (opts && opts.tk) {
+    const tk = decodeURIComponent(opts.tk);
+    try {
+      const raw = localStorage.getItem('user-store-v1');
+      const obj = raw ? JSON.parse(raw) : {};
+      obj.token = tk;
+      localStorage.setItem('user-store-v1', JSON.stringify(obj));
+    } catch {}
+    try { uni.setStorageSync('token', tk); } catch {}
+    try { const u = useUserStore(); u.token = tk; if (typeof u.hydrate === 'function') u.hydrate(); } catch {}
+  }
+});
 
 // 配置一条真实示例视频 URL 后卡片才会显示（空字符串 = 隐藏）
 const DEMO_VIDEO_URL = '';

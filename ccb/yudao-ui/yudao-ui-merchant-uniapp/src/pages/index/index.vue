@@ -297,7 +297,14 @@ function barHeight(v) {
   return max ? Math.max(8, (v / max) * 100) : 0;
 }
 
-function jumpAi() { uni.reLaunch({ url: '/pages/ai-video/index' }); }
+function jumpAi() {
+  // #ifdef APP-PLUS
+  uni.navigateTo({ url: '/pages/ai-video/app' });
+  return;
+  // #endif
+  // eslint-disable-next-line no-unreachable
+  uni.reLaunch({ url: '/pages/ai-video/index' });
+}
 function jumpOrders() { uni.reLaunch({ url: '/pages/order/list' }); }
 function jumpVerify() { uni.reLaunch({ url: '/pages/order/list' }); }
 function jumpAddProduct() { uni.navigateTo({ url: '/pages/product/batch' }); }

@@ -12,6 +12,12 @@
       }
     },
     {
+      "path": "pages/ai-video/app",
+      "style": {
+        "navigationBarTitleText": "AI 一键成片"
+      }
+    },
+    {
       "path": "pages/ai-video/index",
       "style": {
         "navigationBarTitleText": "AI 一键成片",

@@ -58,6 +58,13 @@ const tabs = computed(() => {
 
 function onTap(t) {
   if (t.active) return;
+  // #ifdef APP-PLUS
+  // App：AI 成片是重度浏览器功能(canvas/blob)，走 webview 页（原生标题栏可返回）
+  if (t.path === '/pages/ai-video/index') {
+    uni.navigateTo({ url: '/pages/ai-video/app' });
+    return;
+  }
+  // #endif
   uni.reLaunch({ url: t.path });
 }
 </script>
