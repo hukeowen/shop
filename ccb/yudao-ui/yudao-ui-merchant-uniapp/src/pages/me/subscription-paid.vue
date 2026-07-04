@@ -42,6 +42,7 @@
 import { ref, computed, onUnmounted } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
 import { request } from '../../api/request.js';
+import { openExternalUrl } from '../../utils/openUrl.js';
 
 const countdown = ref(3);
 const status = ref(null);
@@ -88,7 +89,7 @@ function jumpOutOrNav(targetUrl) {
     if (typeof window !== 'undefined' && window.parent && window.parent !== window) {
       const mchData = { action: 'jumpOut', jumpOutUrl: targetUrl };
       window.parent.postMessage(JSON.stringify(mchData), 'https://payapp.weixin.qq.com');
-      setTimeout(() => { location.href = targetUrl; }, 200);
+      setTimeout(() => { openExternalUrl(targetUrl); }, 200);
       return true;
     }
   } catch {}

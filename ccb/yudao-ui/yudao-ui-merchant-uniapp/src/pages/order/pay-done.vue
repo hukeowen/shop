@@ -63,6 +63,7 @@ import { ref, computed, onMounted } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
 import { request } from '../../api/request.js';
 import { useUserStore } from '../../store/user.js';
+import { openExternalUrl } from '../../utils/openUrl.js';
 
 const userStore = useUserStore();
 const order = ref(null);
@@ -105,11 +106,11 @@ function jumpOutOrNav(targetUrl) {
       const mchData = { action: 'jumpOut', jumpOutUrl: targetUrl };
       window.parent.postMessage(JSON.stringify(mchData), 'https://payapp.weixin.qq.com');
       // 兜底：postMessage 后若 200ms 内微信没接管，自己跳
-      setTimeout(() => { location.href = targetUrl; }, 200);
+      setTimeout(() => { openExternalUrl(targetUrl); }, 200);
       return;
     }
   } catch {}
-  location.href = targetUrl;
+  openExternalUrl(targetUrl);
 }
 
 async function callPay() {
@@ -128,7 +129,7 @@ async function callPay() {
     // 通联返支付链接 / 二维码 / JSAPI 参数；H5 直接 location.href 跳转
     const dispCnt = res?.displayContent;
     if (typeof dispCnt === 'string' && (dispCnt.startsWith('http') || dispCnt.startsWith('weixin:'))) {
-      location.href = dispCnt;
+      openExternalUrl(dispCnt);
     } else {
       uni.showModal({
         title: '请扫码支付',

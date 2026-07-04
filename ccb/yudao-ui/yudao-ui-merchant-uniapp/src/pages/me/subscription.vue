@@ -63,6 +63,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { request } from '../../api/request.js';
 import { smartYuan } from '../../utils/format.js';
+import { openExternalUrl } from '../../utils/openUrl.js';
 
 const packages = ref([]);
 const status = ref(null);
@@ -132,7 +133,7 @@ async function onPurchase() {
     uni.hideLoading();
     if (res && res.cashierUrl) {
       uni.showToast({ title: '跳转通联支付', icon: 'none', duration: 800 });
-      setTimeout(() => { location.href = res.cashierUrl; }, 500);
+      setTimeout(() => { openExternalUrl(res.cashierUrl); }, 500);
     } else {
       uni.showModal({
         title: '支付链接生成失败',

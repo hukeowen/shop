@@ -65,6 +65,7 @@ import { ref, computed, onMounted } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
 import { getMyQuota, listPackages, purchasePackage, purchasePackageAllinpay, submitPayOrder } from '../../api/quotaApi.js';
 import { smartYuan } from '../../utils/format.js';
+import { openExternalUrl } from '../../utils/openUrl.js';
 
 const remaining = ref(0);
 const packages = ref([]);
@@ -128,7 +129,7 @@ async function onBuyAllinpay() {
     // 优先 redirect 模式：后端已经打通联拿到 302 Location，前端直接跳
     if (resp.redirect && resp.redirectUrl) {
       // #ifdef H5
-      window.location.href = resp.redirectUrl;
+      openExternalUrl(resp.redirectUrl);
       // #endif
       // #ifndef H5
       uni.showToast({ title: '请在浏览器中打开本页面', icon: 'none' });

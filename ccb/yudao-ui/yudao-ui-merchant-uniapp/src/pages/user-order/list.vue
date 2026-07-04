@@ -81,6 +81,7 @@ import { ref, computed, onMounted } from 'vue';
 import { onShow, onPullDownRefresh } from '@dcloudio/uni-app';
 import { request } from '../../api/request.js';
 import { fen2yuan } from '../../utils/format.js';
+import { openExternalUrl } from '../../utils/openUrl.js';
 
 const tabs = [
   { key: 'all', label: '全部', status: null },
@@ -236,7 +237,7 @@ async function onPay(o) {
     });
     uni.hideLoading();
     if (res && res.cashierUrl) {
-      location.href = res.cashierUrl;
+      openExternalUrl(res.cashierUrl);
     } else {
       uni.showToast({ title: '通联未返支付链接', icon: 'none' });
     }

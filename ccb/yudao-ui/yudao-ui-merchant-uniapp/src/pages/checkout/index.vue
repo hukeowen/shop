@@ -234,6 +234,7 @@ import { ref, computed, watch } from 'vue';
 import { onLoad, onShow } from '@dcloudio/uni-app';
 import { request } from '../../api/request.js';
 import { fen2yuan } from '../../utils/format.js';
+import { openExternalUrl } from '../../utils/openUrl.js';
 
 const tenantId = ref(null);
 const cartIds = ref([]);
@@ -607,7 +608,7 @@ async function submitOrder() {
       const cashierUrl = res?.cashierUrl;
       if (cashierUrl) {
         uni.showToast({ title: `跳转通联支付 ¥${(finalPayPrice / 100).toFixed(2)}`, icon: 'none', duration: 1200 });
-        setTimeout(() => { location.href = cashierUrl; }, 600);
+        setTimeout(() => { openExternalUrl(cashierUrl); }, 600);
       } else {
         // 通联未就绪（商户未配 / 接口超时）→ 跳订单列表，用户可点"立即付款"重试
         uni.showToast({
