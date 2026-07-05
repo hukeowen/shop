@@ -1,7 +1,7 @@
 <template>
   <view class="page">
     <!-- 顶部渐变 hero：问候 + 日期 + 头像 -->
-    <view class="hero safe-top">
+    <view class="hero safe-top" :style="heroPadStyle">
       <view class="hero-glow"></view>
       <view class="hero-content">
         <view class="hero-left">
@@ -208,6 +208,13 @@ import { useUserStore } from '../../store/user.js';
 const userStore = useUserStore();
 const data = ref(null);
 const operatingStatus = ref(null);
+
+// 原生 App：直接用真实状态栏高度做顶栏内边距（不依赖 CSS 变量/manifest，最稳）
+let _sbh = 0;
+// #ifdef APP-PLUS
+try { _sbh = uni.getSystemInfoSync().statusBarHeight || 0; } catch (e) { /* ignore */ }
+// #endif
+const heroPadStyle = _sbh ? { paddingTop: _sbh + 12 + 'px' } : {};
 
 // 时段问候 + emoji
 const now = ref(new Date());
