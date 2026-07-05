@@ -317,6 +317,13 @@ function jumpMembers() { uni.navigateTo({ url: '/pages/me/members' }); }
 function jumpProductRank() { uni.navigateTo({ url: '/pages/me/product-rank' }); }
 
 onMounted(async () => {
+  // #ifdef APP-PLUS
+  // 商户端 APK：原生无 hostname，未登录直接进商户登录（不落到通用/用户登录）
+  if (!userStore.loggedIn) {
+    uni.reLaunch({ url: '/pages/merchant-login/index' });
+    return;
+  }
+  // #endif
   // 子域名分流：tuo./ke. 直接定向到对应端，避免商户工作台 API 调用 → 401 → 跳通用登录
   try {
     const host = (typeof location !== 'undefined' ? location.hostname : '').toLowerCase();

@@ -57,10 +57,12 @@
         还没有店铺？
         <text class="link primary" @click="goApply">立即入驻 →</text>
       </view>
+      <!-- #ifndef APP-PLUS -->
       <view class="footer-link">
         我是顾客？
         <text class="link" @click="goUserLogin">用户登录</text>
       </view>
+      <!-- #endif -->
     </view>
   </view>
 </template>

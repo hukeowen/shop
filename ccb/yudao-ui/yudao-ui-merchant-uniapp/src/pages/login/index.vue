@@ -164,6 +164,12 @@ async function onPasswordLogin() {
 }
 
 onLoad((query) => {
+  // #ifdef APP-PLUS
+  // 商户端 APK：通用登录页在 App 里不应出现，直接换成商户登录
+  redirecting.value = true;
+  uni.redirectTo({ url: '/pages/merchant-login/index' });
+  return;
+  // #endif
   // 给浏览器一个微小延迟让 spinner 显出来再做决定（弱网/动画更顺）
   setTimeout(() => decide(query), 30);
 });
