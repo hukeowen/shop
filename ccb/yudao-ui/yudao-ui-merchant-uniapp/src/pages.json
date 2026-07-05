@@ -238,19 +238,22 @@
     {
       "path": "pages/product/detail",
       "style": {
-        "navigationBarTitleText": "商品详情"
+        "navigationBarTitleText": "商品详情",
+        "navigationStyle": "custom"
       }
     },
     {
       "path": "pages/cart/index",
       "style": {
-        "navigationBarTitleText": "购物车"
+        "navigationBarTitleText": "购物车",
+        "navigationStyle": "custom"
       }
     },
     {
       "path": "pages/checkout/index",
       "style": {
-        "navigationBarTitleText": "结算"
+        "navigationBarTitleText": "结算",
+        "navigationStyle": "custom"
       }
     },
     {

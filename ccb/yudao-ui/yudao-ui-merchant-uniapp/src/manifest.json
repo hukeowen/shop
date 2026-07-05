@@ -1,83 +1,90 @@
 {
-  "name": "小二（拓小二 · 客小二）",
-  "appid": "",
-  "description": "小二 SaaS — 商户端拓小二 / 用户端客小二，AI 一键成片、订单核销、发货、报表",
-  "versionName": "0.1.0",
-  "versionCode": "1",
-  "transformPx": false,
-  "app-plus": {
-    "usingComponents": true,
-    "nvueCompiler": "uni-app",
-    "compilerVersion": 3,
-    "splashscreen": {
-      "alwaysShowBeforeRender": true,
-      "waiting": true,
-      "autoclose": true,
-      "delay": 0
-    },
-    "modules": {
-      "Geolocation": {},
-      "Barcode": {}
-    },
-    "distribute": {
-      "android": {
-        "packagename": "com.tanxiaoer.merchant",
-        "minSdkVersion": 21,
-        "targetSdkVersion": 30,
-        "abiFilters": ["armeabi-v7a", "arm64-v8a"],
-        "permissions": [
-          "<uses-permission android:name=\"android.permission.INTERNET\"/>",
-          "<uses-permission android:name=\"android.permission.ACCESS_NETWORK_STATE\"/>",
-          "<uses-permission android:name=\"android.permission.ACCESS_WIFI_STATE\"/>",
-          "<uses-permission android:name=\"android.permission.CAMERA\"/>",
-          "<uses-feature android:name=\"android.hardware.camera\"/>",
-          "<uses-feature android:name=\"android.hardware.camera.autofocus\"/>",
-          "<uses-permission android:name=\"android.permission.ACCESS_FINE_LOCATION\"/>",
-          "<uses-permission android:name=\"android.permission.ACCESS_COARSE_LOCATION\"/>",
-          "<uses-permission android:name=\"android.permission.WRITE_EXTERNAL_STORAGE\"/>",
-          "<uses-permission android:name=\"android.permission.READ_EXTERNAL_STORAGE\"/>"
-        ]
-      },
-      "ios": {},
-      "sdkConfigs": {
-        "geolocation": {
-          "system": {
-            "__platform__": ["android", "ios"]
-          }
+    "name" : "邀三惠",
+    "appid" : "__UNI__F1B5392",
+    "description" : "小二 SaaS — 商户端拓小二 / 用户端客小二，AI 一键成片、订单核销、发货、报表",
+    "versionName" : "1.0.1",
+    "versionCode" : "1",
+    "transformPx" : false,
+    "app-plus" : {
+        "usingComponents" : true,
+        "nvueCompiler" : "uni-app",
+        "compilerVersion" : 3,
+        "statusbar" : {
+            "immersed" : false,
+            "style" : "dark",
+            "background" : "#FFFFFF"
+        },
+        "splashscreen" : {
+            "alwaysShowBeforeRender" : true,
+            "waiting" : true,
+            "autoclose" : true,
+            "delay" : 0
+        },
+        "modules" : {
+            "Geolocation" : {},
+            "Barcode" : {}
+        },
+        "distribute" : {
+            "android" : {
+                "packagename" : "com.tanxiaoer.merchant",
+                "minSdkVersion" : 21,
+                "targetSdkVersion" : 30,
+                "abiFilters" : [ "armeabi-v7a", "arm64-v8a" ],
+                "permissions" : [
+                    "<uses-permission android:name=\"android.permission.INTERNET\"/>",
+                    "<uses-permission android:name=\"android.permission.ACCESS_NETWORK_STATE\"/>",
+                    "<uses-permission android:name=\"android.permission.ACCESS_WIFI_STATE\"/>",
+                    "<uses-permission android:name=\"android.permission.CAMERA\"/>",
+                    "<uses-feature android:name=\"android.hardware.camera\"/>",
+                    "<uses-feature android:name=\"android.hardware.camera.autofocus\"/>",
+                    "<uses-permission android:name=\"android.permission.ACCESS_FINE_LOCATION\"/>",
+                    "<uses-permission android:name=\"android.permission.ACCESS_COARSE_LOCATION\"/>",
+                    "<uses-permission android:name=\"android.permission.WRITE_EXTERNAL_STORAGE\"/>",
+                    "<uses-permission android:name=\"android.permission.READ_EXTERNAL_STORAGE\"/>"
+                ]
+            },
+            "ios" : {
+                "dSYMs" : false
+            },
+            "sdkConfigs" : {
+                "geolocation" : {
+                    "system" : {
+                        "__platform__" : [ "android", "ios" ]
+                    }
+                }
+            }
         }
-      }
-    }
-  },
-  "mp-weixin": {
-    "appid": "",
-    "setting": {
-      "urlCheck": false,
-      "minified": true,
-      "postcss": true
     },
-    "usingComponents": true
-  },
-  "h5": {
-    "title": "小二",
-    "template": "index.html",
-    "publicPath": "/m/",
-    "router": {
-      "mode": "hash",
-      "base": "/"
+    "mp-weixin" : {
+        "appid" : "",
+        "setting" : {
+            "urlCheck" : false,
+            "minified" : true,
+            "postcss" : true
+        },
+        "usingComponents" : true
     },
-    "devServer": {
-      "port": 5180,
-      "https": false,
-      "proxy": {
-        "/admin-api": {
-          "target": "http://localhost:48080",
-          "changeOrigin": true,
-          "secure": false
+    "h5" : {
+        "title" : "小二",
+        "template" : "index.html",
+        "publicPath" : "/m/",
+        "router" : {
+            "mode" : "hash",
+            "base" : "/"
+        },
+        "devServer" : {
+            "port" : 5180,
+            "https" : false,
+            "proxy" : {
+                "/admin-api" : {
+                    "target" : "http://localhost:48080",
+                    "changeOrigin" : true,
+                    "secure" : false
+                }
+            }
         }
-      }
-    }
-  },
-  "vueVersion": "3",
-  "locale": "zh-Hans",
-  "fallbackLocale": "zh-Hans"
+    },
+    "vueVersion" : "3",
+    "locale" : "zh-Hans",
+    "fallbackLocale" : "zh-Hans"
 }

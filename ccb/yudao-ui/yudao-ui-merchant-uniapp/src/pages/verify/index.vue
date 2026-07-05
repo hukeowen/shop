@@ -1,6 +1,10 @@
 <template>
   <view class="page">
-    <nav-bar title="服务卡核销" />
+    <view class="topbar safe-top">
+      <text class="tb-back" @click="goBack">‹</text>
+      <text class="tb-title">服务卡核销</text>
+      <text class="tb-right"></text>
+    </view>
 
     <!-- 录入区 -->
     <view class="card enter">
@@ -239,11 +243,22 @@ async function loadRecords() {
   }
 }
 
+function goBack() { uni.navigateBack({ fail: () => uni.reLaunch({ url: '/pages/me/index' }) }); }
+
 onShow(loadRecords);
 </script>
 
 <style lang="scss" scoped>
 @import '../../uni.scss';
+
+.safe-top { padding-top: calc(env(safe-area-inset-top) + 16rpx); }
+.topbar {
+  display: flex; align-items: center; padding: 16rpx 24rpx;
+  background: #fff; border-bottom: 1rpx solid #eef0f4;
+}
+.topbar .tb-back { font-size: 44rpx; color: #1b1f23; width: 60rpx; }
+.topbar .tb-title { flex: 1; text-align: center; font-size: 32rpx; font-weight: 600; color: #1b1f23; }
+.topbar .tb-right { width: 60rpx; }
 
 .page { min-height: 100vh; background: #f5f6f8; padding-bottom: 40rpx; }
 .card { background: #fff; border-radius: 20rpx; margin: 20rpx 24rpx; padding: 28rpx 28rpx; box-shadow: 0 2rpx 12rpx rgba(0,0,0,.03); }

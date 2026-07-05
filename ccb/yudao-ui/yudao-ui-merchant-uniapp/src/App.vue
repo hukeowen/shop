@@ -1,6 +1,7 @@
 <script>
 import { useUserStore } from './store/user.js';
 import { savePendingReferrer } from './utils/referral.js';
+import { checkAppUpdate } from './utils/appUpdate.js';
 
 // H5 落地：把 ?inviter= + ?tenantId= 暂存到 localStorage（per-tenant 绑定）。
 // 即使后续 reLaunch 到 login 也不会丢 — 登录后由 referral.js flush 在该 tenant 内自动绑定。
@@ -90,6 +91,12 @@ export default {
     // 2) 从 localStorage 恢复登录态
     const userStore = useUserStore();
     userStore.hydrate();
+
+    // 原生 App：启动静默检查新版本（H5/小程序为空操作，见 utils/appUpdate.js）
+    // #ifdef APP-PLUS
+    try { checkAppUpdate(); } catch (e) { /* 检查更新失败不影响启动 */ }
+    // #endif
+
     const brandedHost = detectBrandedHost();
     // eslint-disable-next-line no-console
     console.log(

@@ -20,6 +20,12 @@
         <text class="about-label">官方网站</text>
         <text class="about-val link">www.tanzxiaer.com</text>
       </view>
+      <!-- #ifdef APP-PLUS -->
+      <view class="about-item tappable" @click="onCheckUpdate">
+        <text class="about-label">检查更新</text>
+        <text class="about-val link">当前 v{{ appVersion }} ›</text>
+      </view>
+      <!-- #endif -->
     </view>
 
     <view class="card section">
@@ -35,6 +41,25 @@
 </template>
 
 <script setup>
+import { ref } from 'vue';
+import { onLoad } from '@dcloudio/uni-app';
+import { checkAppUpdate } from '../../utils/appUpdate.js';
+
+const appVersion = ref('1.0.0');
+
+onLoad(() => {
+  // #ifdef APP-PLUS
+  try {
+    plus.runtime.getProperty(plus.runtime.appid, (info) => {
+      if (info && info.version) appVersion.value = info.version;
+    });
+  } catch (e) { /* ignore */ }
+  // #endif
+});
+
+function onCheckUpdate() {
+  checkAppUpdate({ manual: true });
+}
 </script>
 
 <style lang="scss" scoped>
@@ -99,6 +124,8 @@
   border-bottom: 1rpx solid $border-color;
 
   &:last-child { border-bottom: none; }
+
+  &.tappable:active { opacity: 0.6; }
 }
 
 .about-label {

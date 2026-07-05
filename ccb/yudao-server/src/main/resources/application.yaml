@@ -349,6 +349,8 @@ yudao:
       # member_user 是平台级表（一个手机号全局唯一一个 user，跨店做会员通过
       # member_shop_rel + shop_user_referral 关联）；让 mybatis 不再自动 where tenant_id
       - member_user
+      # app_version 是全局表（一套商户端 APK 全平台共用），无 tenant_id 列，需绕过租户过滤
+      - app_version
     ignore-caches:
       - user_role_ids
       - permission_menu_ids

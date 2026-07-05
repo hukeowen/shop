@@ -1,6 +1,10 @@
 <template>
   <view class="page">
-    <nav-bar title="用户提现审批" />
+    <view class="topbar safe-top">
+      <text class="tb-back" @click="goBack">‹</text>
+      <text class="tb-title">用户提现审批</text>
+      <text class="tb-right"></text>
+    </view>
 
     <!-- 状态筛选 tab -->
     <scroll-view scroll-x class="tab-bar">
@@ -169,11 +173,22 @@ async function onMarkPaid(r) {
   });
 }
 
+function goBack() { uni.navigateBack({ fail: () => uni.reLaunch({ url: '/pages/me/index' }) }); }
+
 onMounted(load);
 onShow(load);
 </script>
 
 <style lang="scss" scoped>
+.safe-top { padding-top: calc(env(safe-area-inset-top) + 16rpx); }
+.topbar {
+  display: flex; align-items: center; padding: 16rpx 24rpx;
+  background: #fff; border-bottom: 1rpx solid #eef0f4;
+}
+.topbar .tb-back { font-size: 44rpx; color: #1b1f23; width: 60rpx; }
+.topbar .tb-title { flex: 1; text-align: center; font-size: 32rpx; font-weight: 600; color: #1b1f23; }
+.topbar .tb-right { width: 60rpx; }
+
 .page { min-height: 100vh; background: #F6F7F9; padding-bottom: 30px; }
 
 .tab-bar {
