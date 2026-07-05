@@ -1,5 +1,9 @@
 <template>
   <view class="page">
+    <!-- #ifdef APP-PLUS -->
+    <!-- 临时诊断标记：确认新代码已打包 + 读到的状态栏高度；确认后删除 -->
+    <view class="sbh-debug">SBH={{ sbhDbg }}</view>
+    <!-- #endif -->
     <!-- 顶部渐变 hero：问候 + 日期 + 头像 -->
     <view class="hero safe-top" :style="heroPadStyle">
       <view class="hero-glow"></view>
@@ -209,12 +213,13 @@ const userStore = useUserStore();
 const data = ref(null);
 const operatingStatus = ref(null);
 
-// 原生 App：直接用真实状态栏高度做顶栏内边距（不依赖 CSS 变量/manifest，最稳）
+// 原生 App：直接把 padding-top 设成状态栏高度(px)，绝不依赖 CSS 变量/env/manifest
 let _sbh = 0;
 // #ifdef APP-PLUS
 try { _sbh = uni.getSystemInfoSync().statusBarHeight || 0; } catch (e) { /* ignore */ }
 // #endif
-const heroPadStyle = _sbh ? { '--status-bar-height': _sbh + 'px' } : {};
+const heroPadStyle = _sbh ? { paddingTop: _sbh + 10 + 'px' } : {};
+const sbhDbg = _sbh; // 临时诊断：确认代码生效且读到的状态栏高度值
 
 // 时段问候 + emoji
 const now = ref(new Date());
@@ -390,6 +395,13 @@ onPullDownRefresh(async () => {
 
 <style lang="scss" scoped>
 @import '../../uni.scss';
+
+/* 临时诊断标记，确认后删除 */
+.sbh-debug {
+  position: fixed; top: 0; left: 50%; transform: translateX(-50%);
+  z-index: 99999; background: rgba(255,0,0,.85); color: #fff;
+  font-size: 22rpx; line-height: 1.4; padding: 2rpx 20rpx; border-radius: 0 0 10rpx 10rpx;
+}
 
 .page {
   // 渐变背景 — 整页底色不再纯白，让卡片浮起来

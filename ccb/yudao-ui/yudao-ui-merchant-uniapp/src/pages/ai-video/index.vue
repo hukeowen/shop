@@ -101,12 +101,12 @@ import { getQuota, getTaskPage } from '../../api/aiVideo.js';
 import { AI_VIDEO_STATUS } from '../../utils/format.js';
 import { useUserStore } from '../../store/user.js';
 
-// 原生 App：内联把真实状态栏高度写进 --status-bar-height（顶栏 CSS 已用 var 计算，保留原间距）
+// 原生 App：直接把 padding-top 设成状态栏高度(px)，绝不依赖 CSS 变量/env
 let _sbh = 0;
 // #ifdef APP-PLUS
 try { _sbh = uni.getSystemInfoSync().statusBarHeight || 0; } catch (e) { /* ignore */ }
 // #endif
-const sbVar = _sbh ? { '--status-bar-height': _sbh + 'px' } : {};
+const sbVar = _sbh ? { paddingTop: _sbh + 10 + 'px' } : {};
 
 // App 用 web-view 内嵌本页(H5)：URL 带 tk(登录态) + embed=1(隐藏本页底部 tab，避免双 tab)
 const hideTab = ref(false);
