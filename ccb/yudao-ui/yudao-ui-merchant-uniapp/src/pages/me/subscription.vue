@@ -167,7 +167,7 @@ onMounted(() => loadAll());
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: calc(env(safe-area-inset-top) + 24rpx) 0 20rpx;
+  padding: calc(max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px)) + 24rpx) 0 20rpx;
 
   .back { font-size: 48rpx; color: $text-primary; width: 60rpx; }
   .title { flex: 1; text-align: center; font-size: 32rpx; font-weight: 600; margin-right: 60rpx; }

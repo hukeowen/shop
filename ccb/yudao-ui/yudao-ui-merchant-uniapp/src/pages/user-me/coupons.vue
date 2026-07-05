@@ -124,7 +124,7 @@ onMounted(load);
 @import '../../uni.scss';
 
 .page { min-height: 100vh; background: $bg-page; padding-bottom: 80rpx; }
-.safe-top { padding-top: env(safe-area-inset-top); }
+.safe-top { padding-top: max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px)); }
 
 .topbar {
   display: flex; align-items: center;

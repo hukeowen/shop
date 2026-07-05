@@ -392,7 +392,7 @@ onPullDownRefresh(async () => {
 }
 
 /* ─── Hero 顶部渐变 ─── */
-.safe-top { padding-top: calc(env(safe-area-inset-top) + 24rpx); }
+.safe-top { padding-top: calc(max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px)) + 24rpx); }
 
 .hero {
   position: relative;

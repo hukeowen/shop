@@ -204,7 +204,7 @@ onMounted(load);
 }
 .topbar {
   display: flex; align-items: center;
-  padding: 24rpx 32rpx;
+  padding: calc(max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px)) + 24rpx) 32rpx 24rpx;
   background: $bg-card;
   border-bottom: 2rpx solid $border-color;
   .back { font-size: 44rpx; color: $text-primary; padding-right: 16rpx; }

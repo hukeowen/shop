@@ -272,7 +272,7 @@ onPullDownRefresh(async () => {
 @import '../../uni.scss';
 
 .page { min-height: 100vh; background: $bg-page; padding-bottom: 160rpx; }
-.safe-top { padding-top: calc(env(safe-area-inset-top) + 16rpx); }
+.safe-top { padding-top: calc(max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px)) + 16rpx); }
 .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
 
 .order-top {

@@ -201,7 +201,7 @@ function goHome() {
 
 .topbar {
   display: flex; align-items: center; justify-content: space-between;
-  padding: calc(env(safe-area-inset-top) + 24rpx) 32rpx 20rpx;
+  padding: calc(max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px)) + 24rpx) 32rpx 20rpx;
   background: linear-gradient(180deg, #fff5ef, transparent);
   .back { font-size: 48rpx; color: $text-primary; width: 60rpx; }
   .title { flex: 1; text-align: center; font-size: 32rpx; font-weight: 600; }

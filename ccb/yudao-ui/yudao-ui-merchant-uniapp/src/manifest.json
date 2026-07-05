@@ -9,11 +9,6 @@
         "usingComponents" : true,
         "nvueCompiler" : "uni-app",
         "compilerVersion" : 3,
-        "statusbar" : {
-            "immersed" : false,
-            "style" : "dark",
-            "background" : "#FFFFFF"
-        },
         "splashscreen" : {
             "alwaysShowBeforeRender" : true,
             "waiting" : true,

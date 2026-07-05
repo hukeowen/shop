@@ -164,7 +164,7 @@ onMounted(load);
   padding: 0 24rpx 80rpx;
 }
 
-.safe-top { padding-top: env(safe-area-inset-top); }
+.safe-top { padding-top: max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px)); }
 
 .topbar {
   display: flex;

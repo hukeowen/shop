@@ -273,7 +273,7 @@ onLoad((q) => {
 .pd-pic .main-pic { width: 100%; height: 100%; }
 .pd-pic .main-pic-emoji { font-size: 200rpx; color: #fff; }
 .pd-pic .nav-back, .pd-pic .nav-share {
-  position: absolute; top: calc(env(safe-area-inset-top) + 24rpx);
+  position: absolute; top: calc(max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px)) + 24rpx);
   width: 72rpx; height: 72rpx; border-radius: 50%;
   background: rgba(0,0,0,.30); color: #fff;
   line-height: 72rpx; text-align: center;

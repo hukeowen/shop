@@ -155,7 +155,7 @@ function goUserLogin() {
 .page {
   min-height: 100vh;
   background: linear-gradient(180deg, #FF6B35 0%, #FF9A4A 30%, #FFE5D6 65%, #fff 100%);
-  padding: 80rpx 32rpx 60rpx;
+  padding: calc(max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px)) + 80rpx) 32rpx 60rpx;
   position: relative;
   overflow: hidden;
 }

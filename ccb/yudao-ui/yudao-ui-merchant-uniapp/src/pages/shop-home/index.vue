@@ -693,7 +693,7 @@ onShow(() => {
   background: $bg-page;
   padding-bottom: 200rpx;
 }
-.safe-top { padding-top: env(safe-area-inset-top); }
+.safe-top { padding-top: max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px)); }
 .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
 
 .sh-cover {
