@@ -1,6 +1,6 @@
 <template>
   <view class="page">
-    <view class="header safe-top">
+    <view class="header safe-top" :style="sbVar">
       <text class="title">订单管理</text>
       <view class="verify-btn" @click="showVerify = true">核销</view>
     </view>
@@ -116,6 +116,13 @@ import { computed, ref } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
 import { getOrderPage, offlineConfirm, offlineCancel, pickUpVerify } from '../../api/order.js';
 import { fen2yuan, ORDER_STATUS } from '../../utils/format.js';
+
+// 原生 App：内联把真实状态栏高度写进 --status-bar-height（顶栏 CSS 已用 var 计算，保留原间距）
+let _sbh = 0;
+// #ifdef APP-PLUS
+try { _sbh = uni.getSystemInfoSync().statusBarHeight || 0; } catch (e) { /* ignore */ }
+// #endif
+const sbVar = _sbh ? { '--status-bar-height': _sbh + 'px' } : {};
 
 const tabs = computed(() => [
   { label: '全部', value: -1 },

@@ -214,7 +214,7 @@ let _sbh = 0;
 // #ifdef APP-PLUS
 try { _sbh = uni.getSystemInfoSync().statusBarHeight || 0; } catch (e) { /* ignore */ }
 // #endif
-const heroPadStyle = _sbh ? { paddingTop: _sbh + 12 + 'px' } : {};
+const heroPadStyle = _sbh ? { '--status-bar-height': _sbh + 'px' } : {};
 
 // 时段问候 + emoji
 const now = ref(new Date());

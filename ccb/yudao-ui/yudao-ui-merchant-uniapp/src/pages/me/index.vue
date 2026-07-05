@@ -1,6 +1,6 @@
 <template>
   <view class="page">
-    <view class="profile safe-top">
+    <view class="profile safe-top" :style="sbVar">
       <view class="avatar">{{ avatarText }}</view>
       <view class="info">
         <view class="nickname">{{ displayName }}</view>
@@ -143,6 +143,13 @@ import { computed, ref, onMounted } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
 import { useUserStore } from '../../store/user.js';
 import { request } from '../../api/request.js';
+
+// 原生 App：内联把真实状态栏高度写进 --status-bar-height（顶栏 CSS 已用 var 计算，保留原间距）
+let _sbh = 0;
+// #ifdef APP-PLUS
+try { _sbh = uni.getSystemInfoSync().statusBarHeight || 0; } catch (e) { /* ignore */ }
+// #endif
+const sbVar = _sbh ? { '--status-bar-height': _sbh + 'px' } : {};
 
 const userStore = useUserStore();
 

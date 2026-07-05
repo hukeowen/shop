@@ -1,6 +1,6 @@
 <template>
   <view class="page">
-    <view class="hero safe-top">
+    <view class="hero safe-top" :style="sbVar">
       <view class="hero-title">AI 一键成片</view>
       <view class="hero-sub">3 张照片 + 一句话，1 分钟生成抖音爆款视频</view>
 
@@ -100,6 +100,13 @@ import { onShow, onLoad } from '@dcloudio/uni-app';
 import { getQuota, getTaskPage } from '../../api/aiVideo.js';
 import { AI_VIDEO_STATUS } from '../../utils/format.js';
 import { useUserStore } from '../../store/user.js';
+
+// 原生 App：内联把真实状态栏高度写进 --status-bar-height（顶栏 CSS 已用 var 计算，保留原间距）
+let _sbh = 0;
+// #ifdef APP-PLUS
+try { _sbh = uni.getSystemInfoSync().statusBarHeight || 0; } catch (e) { /* ignore */ }
+// #endif
+const sbVar = _sbh ? { '--status-bar-height': _sbh + 'px' } : {};
 
 // App 用 web-view 内嵌本页(H5)：URL 带 tk(登录态) + embed=1(隐藏本页底部 tab，避免双 tab)
 const hideTab = ref(false);
