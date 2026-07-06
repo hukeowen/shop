@@ -126,11 +126,8 @@ function clearTokenAndRedirectToLogin() {
     // 否则统一走 /pages/login/index（通用登录有"我是顾客 / 我是商户"两入口）。
     // 防止"普通用户访问商户页（如 /m/ 默认 pages/index/）被误推到商户登录"
     const isMerchantContext = isMerchantPage(curRoute) && hasMerchantRole;
-    let loginPath = isMerchantContext ? '/pages/merchant-login/index' : '/pages/login/index';
-    // #ifdef APP-PLUS
-    // 商户端 APK 固定商户角色，任何未登录一律走商户登录（不出现用户/顾客登录）
-    loginPath = '/pages/merchant-login/index';
-    // #endif
+    // 双端合一：按当前页+角色判定跳商户登录还是通用登录（通用登录带「用户/商户」两入口）
+    const loginPath = isMerchantContext ? '/pages/merchant-login/index' : '/pages/login/index';
 
     // 保存当前路由作为 redirect，登录成功后回跳
     try {

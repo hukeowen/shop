@@ -327,9 +327,9 @@ function jumpProductRank() { uni.navigateTo({ url: '/pages/me/product-rank' }); 
 
 onMounted(async () => {
   // #ifdef APP-PLUS
-  // 商户端 APK：原生无 hostname，未登录直接进商户登录（不落到通用/用户登录）
+  // 双端合一：App 未登录进通用登录页（选「用户登录/商户登录」）
   if (!userStore.loggedIn) {
-    uni.reLaunch({ url: '/pages/merchant-login/index' });
+    uni.reLaunch({ url: '/pages/login/index' });
     return;
   }
   // #endif

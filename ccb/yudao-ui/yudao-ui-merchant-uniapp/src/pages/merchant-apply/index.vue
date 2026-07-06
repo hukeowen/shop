@@ -117,9 +117,7 @@
     <!-- 底部链接 -->
     <view class="footer">
       <view class="footer-link">已有商户账号？<text class="link" @click="goLogin">立即登录</text></view>
-      <!-- #ifndef APP-PLUS -->
       <view class="footer-link">我是顾客？<text class="link" @click="goUserLogin">用户登录</text></view>
-      <!-- #endif -->
     </view>
   </view>
 </template>

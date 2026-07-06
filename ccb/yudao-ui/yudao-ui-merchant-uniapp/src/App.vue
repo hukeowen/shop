@@ -69,10 +69,8 @@ function captureRedirect() {
 // 注：deep-link（hash 指向具体页）的兼容由 captureRedirect 提前 return 保证，
 // 这里只看 hostname。uniapp 启动时会自动把 hash 补成默认 hash，不能依赖 hash 长度判断。
 function detectBrandedHost() {
-  // #ifdef APP-PLUS
-  // 原生 App 没有 hostname；商户端 APK 固定商户角色
-  return 'merchant';
-  // #endif
+  // 双端合一：App/小程序无 hostname → 返回 null，由 onLaunch 默认逻辑按登录态/角色路由
+  //（未登录 → 通用登录页选「用户/商户」；已登录 → 按 activeRole 进对应端）
   try {
     if (typeof location === 'undefined') return null;
     const host = (location.hostname || '').toLowerCase();
