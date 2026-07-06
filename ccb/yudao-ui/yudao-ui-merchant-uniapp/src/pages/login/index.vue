@@ -102,7 +102,13 @@ async function onWxLogin() {
     uni.showToast({ title: '登录成功', icon: 'success' });
     routeByRole();
   } catch (e) {
-    uni.showToast({ title: '微信登录失败：' + (e?.message || e), icon: 'none' });
+    let msg = '';
+    try {
+      msg = typeof e === 'string' ? e : (e && (e.message || e.errMsg || e.msg)) || JSON.stringify(e);
+    } catch (_) { msg = String(e); }
+    uni.showModal({ title: '微信登录失败', content: msg || '未知错误', showCancel: false });
+    // eslint-disable-next-line no-console
+    console.error('[wxLogin] 失败：', e);
   } finally {
     wxLogining.value = false;
   }

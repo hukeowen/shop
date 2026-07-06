@@ -13,13 +13,15 @@
 // 读 token 走 localStorage，userStore 在启动时会把 token 同步写进来
 const USER_STORE_STORAGE_KEY = 'user-store-v1';
 
-// 原生 App 没有同源代理：相对接口路径（/app-api、/admin-api、/oss 等）必须拼成绝对域名。
-// H5 / 小程序保持相对路径（各自由 nginx 代理 / 合法域名处理），不受影响。
-// #ifdef APP-PLUS
+// 原生 App / 微信小程序没有同源：相对接口路径（/app-api、/admin-api、/oss 等）必须拼成绝对域名。
+//   · App：无同源代理
+//   · 小程序：uni.request 必须绝对 https URL + 后台配 request 合法域名（开发工具可勾"不校验合法域名"）
+// H5 保持相对路径（nginx 同源代理），不受影响。
+// #ifdef APP-PLUS || MP-WEIXIN
 const APP_API_ORIGIN = 'https://tuo.doupaidoudian.com';
 // #endif
 function resolveUrl(url) {
-  // #ifdef APP-PLUS
+  // #ifdef APP-PLUS || MP-WEIXIN
   if (typeof url === 'string' && url.charAt(0) === '/') {
     return APP_API_ORIGIN + url;
   }
