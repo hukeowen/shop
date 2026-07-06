@@ -158,6 +158,20 @@ public class AppMerchantVideoQuotaController {
         return success(allinpayCashierService.buildCashierForm(base.getPackageOrderId(), clientUa));
     }
 
+    /** 购买配额套餐（微信小程序收银台）：建单 + 直接返回收银台小程序调起信息（不走 H5 收银台）。 */
+    @PostMapping("/packages/{packageId}/purchase-mp")
+    @Operation(summary = "购买配额套餐（微信小程序收银台调起）")
+    @Parameter(name = "packageId", description = "套餐 ID", required = true)
+    public CommonResult<cn.iocoder.yudao.module.merchant.service.allinpay.AllinpayCashierService.MpCashier>
+            purchaseMp(@PathVariable("packageId") Long packageId) {
+        MerchantDO merchant = getMerchantOrThrow();
+        Long loginUserId = SecurityFrameworkUtils.getLoginUserId();
+        AppMerchantPackagePurchaseRespVO base = packageOrderService.createOrder(
+                merchant.getId(), loginUserId, packageId, "allinpay_h5", getClientIP());
+        allinpayPollingService.schedulePolling(base.getPackageOrderId());
+        return success(allinpayCashierService.buildMpCashierForPackage(base.getPackageOrderId()));
+    }
+
     @Resource
     private cn.iocoder.yudao.module.merchant.dal.mysql.MerchantPackageOrderMapper packageOrderMapper;
 

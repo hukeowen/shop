@@ -53,6 +53,15 @@ export function purchasePackageAllinpay(packageId) {
   });
 }
 
+/** 小程序：建单 + 返回收银台小程序调起信息 { userName, appId, path } */
+export function purchasePackageMp(packageId) {
+  return request({
+    url: `${BASE}/packages/${packageId}/purchase-mp`,
+    method: 'POST',
+    data: {},
+  });
+}
+
 /** 商户购买套餐订单列表（分页倒序） */
 export function listMyPackageOrders(pageNo = 1, pageSize = 20) {
   return request({

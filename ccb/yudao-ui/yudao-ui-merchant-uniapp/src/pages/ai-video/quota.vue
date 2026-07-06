@@ -63,7 +63,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
-import { getMyQuota, listPackages, purchasePackage, purchasePackageAllinpay, submitPayOrder } from '../../api/quotaApi.js';
+import { getMyQuota, listPackages, purchasePackage, purchasePackageAllinpay, purchasePackageMp, submitPayOrder } from '../../api/quotaApi.js';
 import { smartYuan } from '../../utils/format.js';
 import { openExternalUrl } from '../../utils/openUrl.js';
 
@@ -113,11 +113,24 @@ async function onBuyAllinpay() {
   const watchdog = setTimeout(() => { paying.value = false; }, 30_000);
   try {
     // #ifdef MP-WEIXIN
-    uni.showModal({
-      title: '请用浏览器打开',
-      content: '通联收银台支付暂不支持小程序内购买，请在浏览器中打开本页面后重试',
-      showCancel: false,
-    });
+    // 小程序：建单 + 拉起通联收银台小程序（微信/支付宝原生支付，无 Apple Pay）
+    try {
+      const info = await purchasePackageMp(selectedPkg.value.id);
+      if (info && info.appId && info.path) {
+        uni.navigateToMiniProgram({
+          appId: info.appId,
+          path: info.path,
+          fail: (e) => uni.showToast({ title: '拉起收银台失败：' + ((e && e.errMsg) || ''), icon: 'none' }),
+        });
+      } else {
+        uni.showToast({ title: '获取收银台失败', icon: 'none' });
+      }
+    } catch (e) {
+      uni.showToast({ title: (e && e.message) || '购买失败', icon: 'none' });
+    } finally {
+      clearTimeout(watchdog);
+      paying.value = false;
+    }
     return;
     // #endif
 
