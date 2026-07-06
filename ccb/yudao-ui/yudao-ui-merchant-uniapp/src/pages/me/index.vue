@@ -127,7 +127,7 @@
         <text class="arrow">›</text>
       </view>
       <view class="menu-item" @click="goAbout">
-        <view class="mi-l"><text class="mi-ic">ℹ️</text><text>关于拓小二</text></view>
+        <view class="mi-l"><text class="mi-ic">ℹ️</text><text>关于邀三惠</text></view>
         <text class="arrow">›</text>
       </view>
     </view>
@@ -165,8 +165,8 @@ const daysRemaining = computed(() => {
 function levelLabel(level) {
   return ({
     PLATFORM: '平台商户',
-    PRO: '拓小二旗舰版',
-    BASIC: '拓小二旺铺版',
+    PRO: '邀三惠旗舰版',
+    BASIC: '邀三惠旺铺版',
     TRIAL: '试用版（30 天旗舰体验）',
     EXPIRED: '已过期',
   })[level] || level;

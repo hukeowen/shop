@@ -2,9 +2,9 @@
   <view class="page">
     <!-- 顶部品牌区 -->
     <view class="hero">
-      <view class="logo">拓</view>
+      <view class="logo">邀</view>
       <view class="brand">
-        <view class="brand-name">拓小二</view>
+        <view class="brand-name">邀三惠</view>
         <view class="brand-slogan">让每个店铺，都有大生意</view>
       </view>
     </view>

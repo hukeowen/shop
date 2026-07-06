@@ -11,7 +11,7 @@
     <view v-else-if="errorCode === 403" class="paywall">
       <view class="lock-icon">🔒</view>
       <view class="paywall-title">试用商户暂无邀请权限</view>
-      <view class="paywall-sub">升级到「拓小二旺铺版 / 旗舰版」即可生成分享码邀请新商户加入</view>
+      <view class="paywall-sub">升级到「邀三惠旺铺版 / 旗舰版」即可生成分享码邀请新商户加入</view>
       <button class="upgrade-btn" @click="goSubscription">立即升级套餐</button>
     </view>
 
@@ -24,7 +24,7 @@
     <!-- 正常 -->
     <view v-else-if="code" class="content">
       <view class="hero">
-        <view class="hero-title">🚀 邀请新商户加入拓小二</view>
+        <view class="hero-title">🚀 邀请新商户加入邀三惠</view>
         <view class="hero-sub">每位通过你分享码加入并购买套餐的新商户，按规则给你返奖励</view>
       </view>
 
@@ -67,7 +67,7 @@
 
       <view class="rules">
         <view class="rules-title">奖励规则</view>
-        <view class="rule">• 你必须自己也是付费商户（拓小二旺铺版 / 旗舰版），才能拿邀请奖</view>
+        <view class="rule">• 你必须自己也是付费商户（邀三惠旺铺版 / 旗舰版），才能拿邀请奖</view>
         <view class="rule">• 新商户通过你的码注册并买套餐 → 你拿首次贡献奖</view>
         <view class="rule">• 同一新商户在同一套餐上只触发一次首贡献奖</view>
         <view class="rule">• 升级套餐 / 续费 不会重复触发首贡献奖</view>
@@ -102,11 +102,11 @@ const shareUrl = computed(() => {
   return `${proto}//${host}/m/#/pages/merchant-apply/index?invite=${code.value.code}`;
 });
 
-// 海报二维码：走 sidecar /qr 出图（中心叠「拓小二」），编码 shareUrl（含 invite 邀请码=分销关系）
+// 海报二维码：走 sidecar /qr 出图（中心叠「邀三惠」），编码 shareUrl（含 invite 邀请码=分销关系）
 const qrUrl = computed(() => {
   if (!shareUrl.value) return '';
   const base = (typeof location !== 'undefined' && location.origin) ? location.origin : '';
-  return `${base}/qr?text=${encodeURIComponent(shareUrl.value)}&w=480&m=1&center=${encodeURIComponent('拓小二')}`;
+  return `${base}/qr?text=${encodeURIComponent(shareUrl.value)}&w=480&m=1&center=${encodeURIComponent('邀三惠')}`;
 });
 
 async function load() {

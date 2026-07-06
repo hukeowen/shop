@@ -1331,7 +1331,7 @@ export async function shareToDouyinApp(taskId, onStage, clientKey) {
 
   // ⑤ 复制文案到剪贴板（用户切到抖音可直接粘贴标题 + hashtag）
   const title = (t.title || t.userDescription || '').slice(0, 55);
-  const clipText = `${title}\n#拓小二 #探店`;
+  const clipText = `${title}\n#邀三惠 #探店`;
   try {
     await new Promise((resolve) => {
       uni.setClipboardData({
@@ -1353,7 +1353,7 @@ export async function shareToDouyinApp(taskId, onStage, clientKey) {
     if (tok?.accessToken) params.set('access_token', tok.accessToken);
     if (tok?.openId) params.set('open_id', tok.openId);
     params.set('title', title);
-    params.set('hashtag_list', '#拓小二 #探店');
+    params.set('hashtag_list', '#邀三惠 #探店');
     const schema = `snssdk1128://aweme/share?${params.toString()}`;
 
     const onVisibility = () => {
@@ -1431,7 +1431,7 @@ export async function downloadAndOpenDouyin(taskId, onStage) {
 
   // ③ 复制文案到剪贴板
   const title = (t.title || t.userDescription || '').slice(0, 55);
-  const clipText = `${title}\n#拓小二 #探店`;
+  const clipText = `${title}\n#邀三惠 #探店`;
   let copied = false;
   try {
     await new Promise((resolve) => {

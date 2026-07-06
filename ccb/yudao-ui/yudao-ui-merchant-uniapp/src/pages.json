@@ -6,7 +6,7 @@
     {
       "path": "pages/index/index",
       "style": {
-        "navigationBarTitleText": "拓小二",
+        "navigationBarTitleText": "邀三惠",
         "navigationStyle": "custom",
         "enablePullDownRefresh": true
       }
@@ -410,7 +410,7 @@
     {
       "path": "pages/me/about",
       "style": {
-        "navigationBarTitleText": "关于拓小二"
+        "navigationBarTitleText": "关于邀三惠"
       }
     },
     {
