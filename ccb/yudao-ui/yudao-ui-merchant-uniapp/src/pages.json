@@ -223,7 +223,7 @@
     {
       "path": "pages/user-home/index",
       "style": {
-        "navigationBarTitleText": "客小二",
+        "navigationBarTitleText": "邀三惠",
         "navigationStyle": "custom",
         "enablePullDownRefresh": true
       }
@@ -344,7 +344,7 @@
     {
       "path": "pages/user-me/about",
       "style": {
-        "navigationBarTitleText": "关于客小二",
+        "navigationBarTitleText": "关于邀三惠",
         "navigationStyle": "custom"
       }
     },

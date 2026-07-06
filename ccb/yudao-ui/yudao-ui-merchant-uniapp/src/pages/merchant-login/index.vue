@@ -36,6 +36,11 @@
         />
       </view>
 
+      <view class="remember-row" @click="remember = !remember">
+        <text class="rm-box" :class="{ on: remember }">{{ remember ? '✔' : '' }}</text>
+        <text class="rm-label">记住账号密码</text>
+      </view>
+
       <button
         class="submit-btn"
         :class="{ active: canSubmit, loading: submitting }"
@@ -66,7 +71,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue';
+import { ref, reactive, computed, onMounted } from 'vue';
 import { request } from '../../api/request.js';
 import { useUserStore } from '../../store/user.js';
 
@@ -74,6 +79,21 @@ const userStore = useUserStore();
 
 const form = reactive({ mobile: '', password: '' });
 const submitting = ref(false);
+const remember = ref(true);
+const CRED_KEY = 'merchant-login-cred';
+
+// 记住账号密码：进页面自动回填（uni 存储，全平台通用）
+onMounted(() => {
+  try {
+    const raw = uni.getStorageSync(CRED_KEY);
+    const c = raw ? (typeof raw === 'string' ? JSON.parse(raw) : raw) : null;
+    if (c && c.mobile) {
+      form.mobile = c.mobile;
+      form.password = c.password || '';
+      remember.value = true;
+    }
+  } catch {}
+});
 
 const canSubmit = computed(
   () => /^1[3-9]\d{9}$/.test(form.mobile) && form.password.length >= 6
@@ -115,6 +135,15 @@ async function submit() {
     userStore._writeProfile(resp);
     userStore.persist();
     try { uni.setStorageSync('token', token); } catch {}
+
+    // 记住/清除账号密码
+    try {
+      if (remember.value) {
+        uni.setStorageSync(CRED_KEY, JSON.stringify({ mobile: form.mobile, password: form.password }));
+      } else {
+        uni.removeStorageSync(CRED_KEY);
+      }
+    } catch {}
 
     const isMerchant = resp.activeRole === 'merchant' || (resp.roles || []).includes('merchant');
     if (!isMerchant) {
@@ -269,6 +298,31 @@ function goUserLogin() {
 .forgot-text {
   font-size: 22rpx;
   color: #909399;
+}
+
+.remember-row {
+  display: flex;
+  align-items: center;
+  margin: 8rpx 4rpx 4rpx;
+}
+.remember-row .rm-box {
+  width: 34rpx;
+  height: 34rpx;
+  line-height: 34rpx;
+  text-align: center;
+  border: 2rpx solid #c8ccd4;
+  border-radius: 8rpx;
+  color: #fff;
+  font-size: 24rpx;
+  margin-right: 12rpx;
+}
+.remember-row .rm-box.on {
+  background: #ff6b35;
+  border-color: #ff6b35;
+}
+.remember-row .rm-label {
+  font-size: 26rpx;
+  color: #606266;
 }
 
 /* 页面背景为「橙→米→白」渐变，footer 处于白底区域，

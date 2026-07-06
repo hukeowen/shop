@@ -132,7 +132,7 @@
       </view>
       <view class="me-row" @click="goAbout">
         <view class="me-row-icon i1">ℹ</view>
-        <text class="me-row-name">关于客小二</text>
+        <text class="me-row-name">关于邀三惠</text>
         <text class="me-row-arrow">›</text>
       </view>
       <view v-if="userStore.token" class="me-row danger" @click="onLogout">

@@ -2,13 +2,13 @@
   <view class="page">
     <view class="topbar safe-top">
       <text class="back" @click="goBack">‹</text>
-      <text class="title">关于客小二</text>
+      <text class="title">关于邀三惠</text>
       <view style="width:60rpx"></view>
     </view>
 
     <view class="hero">
       <view class="logo">客</view>
-      <view class="brand">客小二</view>
+      <view class="brand">邀三惠</view>
       <view class="tag">让每一个普通生意 都能开口说话</view>
       <view class="ver">v {{ version }}</view>
     </view>
@@ -29,8 +29,8 @@
     </view>
 
     <view class="story">
-      <view class="t">客小二是什么</view>
-      <view class="p">客小二是<text class="b">"扫码进店 · 拿优惠 · 帮老板说话"</text>的消费者 H5：扫店主二维码进店下单，享受推广积分换钱，分享好店给朋友。</view>
+      <view class="t">邀三惠是什么</view>
+      <view class="p">邀三惠是<text class="b">"扫码进店 · 拿优惠 · 帮老板说话"</text>的消费者 H5：扫店主二维码进店下单，享受推广积分换钱，分享好店给朋友。</view>
       <view class="p">三句话讲透：</view>
       <view class="li">① 拍一张图 → AI 自动写文案、出短视频，一键发抖音</view>
       <view class="li">② 朋友扫码进店买东西 → 你能拿到推广积分（邀请激励）</view>
@@ -58,7 +58,7 @@
     </view>
 
     <view class="copyright">
-      <text>© 2026 客小二（Kexiaoer）</text>
+      <text>© 2026 邀三惠（Kexiaoer）</text>
       <text class="line">All rights reserved.</text>
     </view>
     <view class="bottom-space"></view>

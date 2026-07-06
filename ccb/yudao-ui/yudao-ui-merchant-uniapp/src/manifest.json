@@ -1,7 +1,7 @@
 {
     "name" : "邀三惠",
     "appid" : "__UNI__F1B5392",
-    "description" : "小二 SaaS — 商户端邀三惠 / 用户端客小二，AI 一键成片、订单核销、发货、报表",
+    "description" : "小二 SaaS — 商户端邀三惠 / 用户端邀三惠，AI 一键成片、订单核销、发货、报表",
     "versionName" : "1.0.2",
     "versionCode" : "2",
     "transformPx" : false,
@@ -51,7 +51,7 @@
         }
     },
     "mp-weixin" : {
-        "appid" : "",
+        "appid" : "wx4d3f94a7cd45479c",
         "setting" : {
             "urlCheck" : false,
             "minified" : true,

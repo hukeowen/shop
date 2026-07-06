@@ -8,12 +8,23 @@
   <!-- 未登录且无 redirect：H5 手机号 + 密码登录表单（无短信，输入即注册） -->
   <view v-else class="login">
     <view class="brand">
-      <view class="logo">客</view>
-      <view class="name">客小二</view>
+      <view class="logo">邀</view>
+      <view class="name">邀三惠</view>
       <view class="slogan">扫码进店 · 下单更顺手</view>
     </view>
 
     <view class="card">
+      <!-- #ifdef MP-WEIXIN -->
+      <!-- 小程序：用户微信一键登录 -->
+      <view class="sec-title">微信一键登录</view>
+      <view class="sec-sub">用微信身份快速登录，下单更方便</view>
+      <button class="submit" :disabled="wxLogining" @click="onWxLogin">
+        {{ wxLogining ? '登录中…' : '微信登录' }}
+      </button>
+      <!-- #endif -->
+
+      <!-- #ifndef MP-WEIXIN -->
+      <!-- APK / H5：手机号 + 密码（微信登录需注册移动应用/公众号，暂不在此提供） -->
       <view class="sec-title">手机号登录</view>
       <view class="sec-sub">首次登录即注册，无需短信验证（演示环境）</view>
 
@@ -45,6 +56,7 @@
       >
         {{ passwordLogining ? '登录中…' : '登录 / 注册' }}
       </button>
+      <!-- #endif -->
 
       <view class="hint-row">
         <text class="hint-text">登录后即可下单 · 收推广积分</text>
@@ -75,6 +87,26 @@ const hint = ref('正在进入…');
 const loginMobile = ref('');
 const loginPassword = ref('');
 const passwordLogining = ref(false);
+const wxLogining = ref(false);
+
+// 小程序：用户微信一键登录（uni.login 拿 code → 后端换 token）
+async function onWxLogin() {
+  if (wxLogining.value) return;
+  wxLogining.value = true;
+  try {
+    await userStore.wxMiniLogin();
+    try {
+      const { flushPendingReferrer } = await import('../../utils/referral.js');
+      await flushPendingReferrer(userStore.userId);
+    } catch {}
+    uni.showToast({ title: '登录成功', icon: 'success' });
+    routeByRole();
+  } catch (e) {
+    uni.showToast({ title: '微信登录失败：' + (e?.message || e), icon: 'none' });
+  } finally {
+    wxLogining.value = false;
+  }
+}
 const canPasswordLogin = computed(
   () => /^1[3-9]\d{9}$/.test(loginMobile.value) && loginPassword.value.length >= 6
 );
