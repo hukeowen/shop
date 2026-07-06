@@ -336,11 +336,10 @@ public class AllinpayCashierService {
             con.setDoOutput(true);
             con.setInstanceFollowRedirects(false);
             con.setRequestProperty("Content-Type", "application/x-www-form-urlencoded;charset=UTF-8");
-            // 透传客户端真实 UA → 通联按用户实际浏览器推支付方式（微信/支付宝/银联等）
-            // 没传时 fallback 通用 Android Chrome（避免 iPhone UA 默认推 Apple Pay）
-            String ua = (clientUserAgent != null && !clientUserAgent.isEmpty())
-                    ? clientUserAgent
-                    : "Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.0.0 Mobile Safari/537.36";
+            // UA 归一化后再透传：只有微信/支付宝内置浏览器保留其 UA（让通联推微信/支付宝专属通道）；
+            // 其它（原生 App 的 uni.request UA 常被通联误判为 iOS → 弹安卓用不了的 Apple Pay、
+            // 或普通浏览器）一律用安卓 Chrome UA，杜绝安卓机弹 Apple Pay 导致无法支付。
+            String ua = normalizePayUa(clientUserAgent);
             con.setRequestProperty("User-Agent", ua);
             con.setRequestProperty("Referer", props.getH5CashierReturnUrl());
             log.info("[allinpay/cashier] forward UA={}", ua);
@@ -914,6 +913,23 @@ public class AllinpayCashierService {
     private static String truncate(String s, int max) {
         if (s == null) return "";
         return s.length() > max ? s.substring(0, max) : s;
+    }
+
+    /** 通用安卓 Chrome UA — 兜底给通联，避免安卓端弹出无法使用的 Apple Pay。 */
+    private static final String ANDROID_CHROME_UA =
+            "Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.0.0 Mobile Safari/537.36";
+
+    /**
+     * 归一化支付 UA：
+     * · 微信/支付宝内置浏览器 → 保留原 UA（通联据此推微信/支付宝专属通道）。
+     * · 其它（原生 App 的 uni.request UA 常被通联误判为 iOS 弹 Apple Pay；普通浏览器）
+     *   → 一律安卓 Chrome UA，杜绝安卓机弹出无法使用的 Apple Pay 导致支付卡死。
+     */
+    private static String normalizePayUa(String ua) {
+        if (ua != null && (ua.contains("MicroMessenger") || ua.contains("AlipayClient"))) {
+            return ua;
+        }
+        return ANDROID_CHROME_UA;
     }
 
     public static String getTrxStatusSuccess() { return TRX_STATUS_SUCCESS; }
