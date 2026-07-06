@@ -109,6 +109,12 @@ export default {
     try { checkAppUpdate(); } catch (e) { /* 检查更新失败不影响启动 */ }
     // #endif
 
+    // #ifdef MP-WEIXIN
+    // 小程序：onLaunch 阶段页面尚未注册完，此时 reLaunch 会报「page not registered」并拖慢启动。
+    // 交给入口页(工作台 pages/index/index)的 onMounted 按登录态/角色路由（member→user-home / 未登录→login）。
+    return;
+    // #endif
+
     const brandedHost = detectBrandedHost();
     // eslint-disable-next-line no-console
     console.log(
