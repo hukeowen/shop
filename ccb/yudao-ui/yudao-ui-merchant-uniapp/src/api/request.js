@@ -28,6 +28,7 @@ function resolveUrl(url) {
 }
 
 function readToken() {
+  // H5：优先读 localStorage 里的 user-store-v1 blob
   try {
     if (typeof localStorage !== 'undefined') {
       const raw = localStorage.getItem(USER_STORE_STORAGE_KEY);
@@ -35,6 +36,17 @@ function readToken() {
         const obj = JSON.parse(raw);
         if (obj && typeof obj.token === 'string' && obj.token) return obj.token;
       }
+    }
+  } catch {
+    // ignore
+  }
+  // App / 小程序：localStorage 不可用，读 uni 存储里的 user-store-v1 blob
+  //（store 在 App/小程序 用 uni.setStorageSync 落盘；不读这里小程序登录后接口不带 token）
+  try {
+    const raw = uni.getStorageSync(USER_STORE_STORAGE_KEY);
+    if (raw) {
+      const obj = typeof raw === 'string' ? JSON.parse(raw) : raw;
+      if (obj && typeof obj.token === 'string' && obj.token) return obj.token;
     }
   } catch {
     // ignore
