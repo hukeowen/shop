@@ -19,7 +19,19 @@ export function openExternalUrl(url) {
     return;
   }
   // #endif
-  // #ifndef APP-PLUS
+  // #ifdef MP-WEIXIN
+  // 小程序无 window/location，也打不开外部链接。付款一律走 launchMpCashier
+  //（navigateToMiniProgram 拉起通联收银台），不该走到这里。万一走到：复制链接 + 提示，
+  // 绝不触碰 location.href —— 从源头保证小程序编译产物里没有任何 .href 赋值。
+  try {
+    uni.setClipboardData({
+      data: url,
+      success: () => uni.showToast({ title: '支付链接已复制，请在浏览器打开', icon: 'none' }),
+    });
+  } catch (e) { /* ignore */ }
+  return;
+  // #endif
+  // #ifdef H5
   try {
     if (typeof window !== 'undefined' && window.location) { window.location.href = url; return; }
   } catch (e) { /* ignore */ }

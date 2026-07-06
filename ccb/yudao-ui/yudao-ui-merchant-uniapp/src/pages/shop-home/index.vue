@@ -223,9 +223,17 @@ import { fen2yuan, smartYuan } from '../../utils/format.js';
 import { savePendingReferrer, flushPendingReferrer } from '../../utils/referral.js';
 import { useUserStore } from '../../store/user.js';
 
+// H5 用 Vite 注入的 VITE_PUBLIC_BASE_URL；小程序/App 用常量。
+// 注意：小程序/App 里绝不能引用 import.meta —— Vite 会为它生成 `new URL(..., document.baseURI)`
+// 的 import.meta.url polyfill，而小程序无 document → 运行时抛错。用 #ifndef H5 从源头剔除。
+// #ifdef H5
 const PUBLIC_BASE_URL =
   (typeof import.meta !== 'undefined' && import.meta.env?.VITE_PUBLIC_BASE_URL) ||
   'http://www.doupaidoudian.com';
+// #endif
+// #ifndef H5
+const PUBLIC_BASE_URL = 'http://www.doupaidoudian.com';
+// #endif
 
 // 模块级缓存：进多家店铺只拉一次 /product/category/list（id → name）
 // 注意是 module-scope let（不是 ref）—— shop-home 每次进入是新的组件实例，
