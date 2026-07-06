@@ -81,8 +81,12 @@ function buildShareUrl(tenantId) {
 // 返 200 text/html 但浏览器当图片加载 → 裂图（用户报"二维码不显示"真因）
 function buildQrUrl(text, center) {
   if (!text) return '';
-  const base = (typeof location !== 'undefined' && location.origin) ? location.origin : '';
-  let url = `${base}/qr?text=${encodeURIComponent(text)}&w=480&m=1`;
+  // App 里 location 为 undefined 且 <image> 不支持 SVG：用绝对域名 + fmt=png
+  let base = 'https://tuo.doupaidoudian.com';
+  // #ifndef APP-PLUS
+  if (typeof location !== 'undefined' && location.origin) base = location.origin;
+  // #endif
+  let url = `${base}/qr?text=${encodeURIComponent(text)}&w=480&m=1&fmt=png`;
   if (center) url += `&center=${encodeURIComponent(center)}`;
   return url;
 }

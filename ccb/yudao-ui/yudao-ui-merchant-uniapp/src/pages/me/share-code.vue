@@ -1,6 +1,6 @@
 <template>
   <view class="page">
-    <view class="topbar safe-top">
+    <view class="topbar safe-top" :style="sbVar">
       <text class="back" @click="goBack">‹</text>
       <text class="title">分享开店</text>
     </view>
@@ -81,6 +81,15 @@ import { ref, computed, onMounted } from 'vue';
 import { getOrCreateMyShareCode } from '../../api/saas.js';
 import { request } from '../../api/request.js';
 
+// 原生 App：直接把 padding-top 设成状态栏高度(px)，绝不依赖 CSS 变量/env
+let _sbh = 0;
+// #ifdef APP-PLUS
+try { _sbh = uni.getSystemInfoSync().statusBarHeight || 0; } catch (e) { /* ignore */ }
+if (!_sbh) { try { _sbh = plus.navigator.getStatusbarHeight() || 0; } catch (e) { /* ignore */ } }
+if (!_sbh) _sbh = 30;
+// #endif
+const sbVar = _sbh ? { paddingTop: _sbh + 10 + 'px' } : {};
+
 const loading = ref(true);
 const code = ref(null);
 const errorCode = ref(0);
@@ -103,10 +112,14 @@ const shareUrl = computed(() => {
 });
 
 // 海报二维码：走 sidecar /qr 出图（中心叠「邀三惠」），编码 shareUrl（含 invite 邀请码=分销关系）
+// App 里 location 为 undefined 且 <image> 不支持 SVG：用绝对域名 + fmt=png
 const qrUrl = computed(() => {
   if (!shareUrl.value) return '';
-  const base = (typeof location !== 'undefined' && location.origin) ? location.origin : '';
-  return `${base}/qr?text=${encodeURIComponent(shareUrl.value)}&w=480&m=1&center=${encodeURIComponent('邀三惠')}`;
+  let base = 'https://tuo.doupaidoudian.com';
+  // #ifndef APP-PLUS
+  if (typeof location !== 'undefined' && location.origin) base = location.origin;
+  // #endif
+  return `${base}/qr?text=${encodeURIComponent(shareUrl.value)}&w=480&m=1&fmt=png&center=${encodeURIComponent('邀三惠')}`;
 });
 
 async function load() {

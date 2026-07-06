@@ -105,8 +105,8 @@
         </view>
       </view>
 
-      <!-- 端卡海报（即梦 CV 生成 1080×1920 海报，单独下载分享朋友圈用） -->
-      <view class="card poster-card">
+      <!-- 端卡海报（按用户要求隐藏「生成专业海报」功能，v-if=false 保留代码便于后续恢复） -->
+      <view v-if="false" class="card poster-card">
         <view class="section-title-row">
           <view class="section-title">🖼 店铺海报</view>
           <view

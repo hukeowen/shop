@@ -1391,6 +1391,34 @@ export async function shareToDouyinApp(taskId, onStage, clientKey) {
  * @param {(stage:'merging'|'saving'|'launching'|'done')=>void} [onStage]
  * @returns {Promise<{ok:boolean, downloaded:boolean, copied:boolean, launchedApp:boolean, clipText:string}>}
  */
+// 原生 App(web-view) 里把合成后的视频 blob 写临时文件再存进系统相册。
+// H5/普通浏览器不会走到这（走 <a download>）。依赖 App 注入的 window.plus。
+function saveBlobToAlbumViaPlus(plus, blob, filename) {
+  return new Promise((resolve, reject) => {
+    try {
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error('读取视频失败'));
+      reader.onload = () => {
+        const base64 = String(reader.result || '').split(',')[1] || '';
+        plus.io.requestFileSystem(plus.io.PRIVATE_DOC, (fs) => {
+          fs.root.getFile(filename, { create: true }, (fileEntry) => {
+            fileEntry.createWriter((writer) => {
+              writer.onwriteend = () => {
+                const localPath = fileEntry.toLocalURL ? fileEntry.toLocalURL() : fileEntry.fullPath;
+                // 存进系统相册（失败也返回 false，不阻塞后续）
+                plus.gallery.save(localPath, () => resolve(true), () => resolve(false));
+              };
+              writer.onerror = () => reject(new Error('写文件失败'));
+              writer.writeAsBinary(base64);
+            }, () => reject(new Error('创建写入器失败')));
+          }, () => reject(new Error('创建文件失败')));
+        }, () => reject(new Error('文件系统不可用')));
+      };
+      reader.readAsDataURL(blob);
+    } catch (e) { reject(e); }
+  });
+}
+
 export async function downloadAndOpenDouyin(taskId, onStage) {
   const t = store.tasks.find((x) => x.id === taskId);
   if (!t) throw new Error('任务不存在');
@@ -1410,15 +1438,25 @@ export async function downloadAndOpenDouyin(taskId, onStage) {
   }
   const blob = await res.blob();
 
-  // ② 触发下载
+  // ② 触发下载/保存
   onStage?.('saving');
   let downloaded = false;
-  if (typeof document !== 'undefined') {
+  const filename = `yaosanhui-video-${t.id}.mp4`;
+  const _plus = (typeof window !== 'undefined' && window.plus) ? window.plus : null;
+  if (_plus) {
+    // 原生 App(web-view)：<a download>/浏览器下载不生效，用 plus 存到系统相册
+    try {
+      downloaded = await saveBlobToAlbumViaPlus(_plus, blob, filename);
+    } catch (e) {
+      console.warn('[douyin] App 保存视频失败：', e?.message || e);
+      downloaded = false;
+    }
+  } else if (typeof document !== 'undefined') {
     try {
       const objectUrl = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = objectUrl;
-      a.download = `${t.title || 'tanxiaoer-video'}-${t.id}.mp4`;
+      a.download = filename;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -1427,6 +1465,11 @@ export async function downloadAndOpenDouyin(taskId, onStage) {
     } catch (e) {
       console.warn('[douyin/manual] 下载失败：', e?.message || e);
     }
+  }
+  // App 里下载没成功就不往下开抖音（按用户要求：先下好视频再打开抖音）
+  if (_plus && !downloaded) {
+    onStage?.('done');
+    return { ok: false, downloaded: false, copied: false, launchedApp: false };
   }
 
   // ③ 复制文案到剪贴板
@@ -1444,11 +1487,19 @@ export async function downloadAndOpenDouyin(taskId, onStage) {
     });
   } catch {}
 
-  // ④ best-effort 拉起抖音 App（隐藏 iframe，跳不过去也不影响当前页）
-  //    抖音不允许外部 schema 预填视频，只能把 App 打开，发布页要用户在抖音内手动选相册。
+  // ④ 下载好后再拉起抖音 App（抖音不允许外部 schema 预填视频，只能打开 App，
+  //    发布页要用户在抖音内手动从相册选刚下载的视频）
   let launchedApp = false;
-  if (typeof document !== 'undefined' && typeof window !== 'undefined') {
-    onStage?.('launching');
+  onStage?.('launching');
+  if (_plus) {
+    // 原生 App：用 plus 打开抖音 scheme（iframe 在 webview 里不生效）
+    try {
+      _plus.runtime.openURL('snssdk1128://aweme/share');
+      launchedApp = true;
+    } catch (e) {
+      try { _plus.runtime.openURL('snssdk1128://'); launchedApp = true; } catch (_) {}
+    }
+  } else if (typeof document !== 'undefined' && typeof window !== 'undefined') {
     const onVisibility = () => { if (document.hidden) launchedApp = true; };
     document.addEventListener('visibilitychange', onVisibility);
     try {
