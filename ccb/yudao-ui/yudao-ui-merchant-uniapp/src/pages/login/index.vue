@@ -61,10 +61,14 @@
       <view class="hint-row">
         <text class="hint-text">登录后即可下单 · 收推广积分</text>
       </view>
+      <!-- #ifndef MP-WEIXIN -->
+      <!-- 小程序锁定为「用户专用」：不出现商户登录入口（商户走 Android App）。
+           App / H5 保留「商户登录」，双端合一。 -->
       <view class="bottom-link">
         <text>已是商户？</text>
         <text class="link-text" @click="goMerchantLogin">商户登录 →</text>
       </view>
+      <!-- #endif -->
       <view class="bottom-link">
         <text class="link-text" @click="skipLogin">先逛逛 →</text>
       </view>

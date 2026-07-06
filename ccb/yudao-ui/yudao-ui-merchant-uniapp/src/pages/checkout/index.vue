@@ -608,8 +608,13 @@ async function submitOrder() {
       // 还需线上支付：拿到通联支付链接直接跳通联；否则 fallback 订单列表"立即付款"
       const cashierUrl = res?.cashierUrl;
       // #ifdef MP-WEIXIN
-      // 小程序：拉起通联收银台小程序（微信/支付宝原生支付，无 Apple Pay）
+      // 小程序（用户专用端）：只走通联微信小程序收银台（微信原生支付，无 Apple Pay）。
+      // 绝不 fallthrough 到 openExternalUrl（小程序无 window/location，属空操作且易踩坑）。
+      // 失败 → 去订单列表，用户点「立即付款」重试。
       if (await launchMpCashier(orderId)) return;
+      uni.showToast({ title: '拉起收银台失败，请到订单列表重试付款', icon: 'none', duration: 2000 });
+      setTimeout(() => uni.redirectTo({ url: '/pages/user-order/list' }), 1500);
+      return;
       // #endif
       if (cashierUrl) {
         uni.showToast({ title: `跳转通联支付 ¥${(finalPayPrice / 100).toFixed(2)}`, icon: 'none', duration: 1200 });

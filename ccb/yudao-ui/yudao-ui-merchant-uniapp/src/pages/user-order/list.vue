@@ -238,8 +238,11 @@ async function onPay(o) {
     });
     uni.hideLoading();
     // #ifdef MP-WEIXIN
-    // 小程序：拉起通联收银台小程序（微信/支付宝原生支付）
+    // 小程序（用户专用端）：只走通联微信小程序收银台（微信原生支付）。
+    // 不 fallthrough 到 openExternalUrl（小程序空操作，避免踩坑）。
     if (await launchMpCashier(o.id)) return;
+    uni.showToast({ title: '拉起收银台失败，请稍后重试', icon: 'none' });
+    return;
     // #endif
     if (res && res.cashierUrl) {
       openExternalUrl(res.cashierUrl);

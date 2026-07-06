@@ -326,6 +326,17 @@ function jumpMembers() { uni.navigateTo({ url: '/pages/me/members' }); }
 function jumpProductRank() { uni.navigateTo({ url: '/pages/me/product-rank' }); }
 
 onMounted(async () => {
+  // #ifdef MP-WEIXIN
+  // 小程序 = 用户专用端（商户走 Android App）。入口页绝不进商户工作台：
+  //   未登录 → 用户微信登录；已登录 → 用户首页。杜绝加载任何商户/AI 视频页。
+  if (!userStore.loggedIn) {
+    uni.reLaunch({ url: '/pages/login/index' });
+  } else {
+    uni.reLaunch({ url: '/pages/user-home/index' });
+  }
+  return;
+  // #endif
+
   // #ifdef APP-PLUS
   // 双端合一：App 未登录进通用登录页（选「用户登录/商户登录」）
   if (!userStore.loggedIn) {
