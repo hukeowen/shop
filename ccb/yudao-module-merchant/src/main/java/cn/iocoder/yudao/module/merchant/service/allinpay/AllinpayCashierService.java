@@ -244,6 +244,90 @@ public class AllinpayCashierService {
         return doBuildCashierForm(reqsn, trxamtFen, body, clientUserAgent, cred);
     }
 
+    // ============================================================
+    // 1b. 微信小程序收银台（App launchMiniProgram / 小程序 navigateToMiniProgram 调起）
+    //     文档 doc/978：把带签名的参数以 query 拼进 path，传给通联收银台小程序。
+    //     App 用原始ID(gh_) + path；小程序用收银台 appId + path。paytype 固定 W06。
+    // ============================================================
+
+    /** 通联「微信小程序收银台」原始ID（App launchMiniProgram(id=..) 用；小程序 navigateToMiniProgram 需另配 appId） */
+    public static final String MP_CASHIER_USERNAME = "gh_e64a1a89a0ad";
+    private static final String MP_CASHIER_PATH = "pages/orderDetail/orderDetail";
+
+    /** 调起收银台小程序所需信息 */
+    @lombok.Data
+    @lombok.AllArgsConstructor
+    public static class MpCashier {
+        /** 收银台小程序原始ID（gh_xxx），App launchMiniProgram 的 id */
+        private String userName;
+        /** pages/orderDetail/orderDetail?cusid=..&paytype=W06&sign=.. */
+        private String path;
+    }
+
+    /** 构造带签名的收银台调起 path。 */
+    public String buildMpCashierPath(String reqsn, long trxamtFen, String body, TlpayCredential cred) {
+        String signType = cred.getSignType() == null ? "RSA" : cred.getSignType();
+        Map<String, String> p = new LinkedHashMap<>();
+        p.put("cusid", cred.getCusId());
+        p.put("appid", cred.getAppId());
+        try {
+            if (props.getOrgId() != null && !props.getOrgId().isEmpty()) p.put("orgid", props.getOrgId());
+        } catch (Exception ignore) {}
+        p.put("version", "12");
+        p.put("trxamt", String.valueOf(trxamtFen));
+        p.put("reqsn", reqsn);
+        p.put("notify_url", cred.getNotifyUrl() != null && !cred.getNotifyUrl().isEmpty()
+                ? cred.getNotifyUrl() : props.getPayNotifyUrl());
+        p.put("body", truncate(body, 64));
+        p.put("randomstr", randomStr());
+        p.put("validtime", "5");
+        p.put("multipay", "1");   // 支持用户选微信/支付宝
+        p.put("paytype", "W06");  // 小程序固定 W06
+        p.put("signtype", signType);
+        String sign = signWithCredential(p, cred);
+        p.put("sign", sign);
+        StringBuilder sb = new StringBuilder(MP_CASHIER_PATH).append('?');
+        boolean first = true;
+        try {
+            for (Map.Entry<String, String> e : p.entrySet()) {
+                if (!first) sb.append('&');
+                sb.append(java.net.URLEncoder.encode(e.getKey(), "UTF-8")).append('=')
+                  .append(java.net.URLEncoder.encode(e.getValue(), "UTF-8"));
+                first = false;
+            }
+        } catch (Exception ex) {
+            throw new IllegalStateException("小程序收银台 path 编码失败: " + ex.getMessage(), ex);
+        }
+        return sb.toString();
+    }
+
+    /** 按 trade_order.id 构造小程序收银台调起信息（商品订单 / 套餐都走 trade order，T 前缀）。 */
+    public MpCashier buildMpCashierForTrade(Long tradeOrderId) {
+        cn.iocoder.yudao.module.trade.dal.dataobject.order.TradeOrderDO order =
+                TenantUtils.executeIgnore(() -> tradeOrderMapperProvider.getIfAvailable() == null
+                        ? null : tradeOrderMapperProvider.getIfAvailable().selectById(tradeOrderId));
+        if (order == null) throw new IllegalStateException("trade_order 不存在: " + tradeOrderId);
+        if (order.getPayPrice() == null || order.getPayPrice() <= 0)
+            throw new IllegalStateException("订单 payPrice 异常 = " + (order.getPayPrice()));
+        if (Boolean.TRUE.equals(order.getPayStatus()))
+            throw new IllegalStateException("订单已支付，不可重复唤起收银台");
+        String body = "订单 " + order.getNo();
+        try {
+            if (tradeOrderItemMapperProvider.getIfAvailable() != null) {
+                java.util.List<cn.iocoder.yudao.module.trade.dal.dataobject.order.TradeOrderItemDO> items =
+                        TenantUtils.executeIgnore(() -> tradeOrderItemMapperProvider.getIfAvailable()
+                                .selectListByOrderId(java.util.Collections.singletonList(tradeOrderId)));
+                if (items != null && !items.isEmpty() && items.get(0).getSpuName() != null
+                        && !items.get(0).getSpuName().isEmpty()) {
+                    body = items.get(0).getSpuName();
+                }
+            }
+        } catch (Exception ignore) {}
+        TlpayCredential cred = merchantCredentialForTenant(order.getTenantId());
+        String reqsn = TradeOrderAllinpayService.buildTradeReqsn(tradeOrderId);
+        return new MpCashier(MP_CASHIER_USERNAME, buildMpCashierPath(reqsn, order.getPayPrice().longValue(), body, cred));
+    }
+
     /**
      * 共用核心：构造 form / 签名 / POST 通联拿 302 跳转。
      *
