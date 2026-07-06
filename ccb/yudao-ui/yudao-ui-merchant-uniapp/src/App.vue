@@ -84,6 +84,20 @@ function detectBrandedHost() {
 
 export default {
   onLaunch() {
+    // #ifdef H5
+    // 原生 App 用 web-view 内嵌本 H5（AI 一键成片）时 URL 带 embed=1：
+    // 隐藏 H5 自带导航栏，避免和原生标题栏「双标题」重复（创建AI视频/视频详情等子页）。
+    try {
+      if (typeof location !== 'undefined'
+          && /[?&]embed=1/.test((location.hash || '') + (location.search || ''))) {
+        const st = document.createElement('style');
+        st.setAttribute('data-embed-hide-nav', '1');
+        st.textContent = 'uni-page-head,.uni-page-head{display:none !important;}';
+        (document.head || document.documentElement).appendChild(st);
+      }
+    } catch (e) { /* ignore */ }
+    // #endif
+
     // 1) 落地先抓 inviter（不管有没 token，都尽早暂存）
     captureLandingInviter();
     const landingRoute = captureRedirect();
