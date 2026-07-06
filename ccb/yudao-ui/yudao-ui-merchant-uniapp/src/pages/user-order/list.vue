@@ -82,6 +82,7 @@ import { onShow, onPullDownRefresh } from '@dcloudio/uni-app';
 import { request } from '../../api/request.js';
 import { fen2yuan } from '../../utils/format.js';
 import { openExternalUrl } from '../../utils/openUrl.js';
+import { launchMpCashier } from '../../utils/mpPay.js';
 
 const tabs = [
   { key: 'all', label: '全部', status: null },
@@ -236,6 +237,10 @@ async function onPay(o) {
       method: 'POST',
     });
     uni.hideLoading();
+    // #ifdef MP-WEIXIN
+    // 小程序：拉起通联收银台小程序（微信/支付宝原生支付）
+    if (await launchMpCashier(o.id)) return;
+    // #endif
     if (res && res.cashierUrl) {
       openExternalUrl(res.cashierUrl);
     } else {

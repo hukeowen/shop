@@ -250,8 +250,10 @@ public class AllinpayCashierService {
     //     App 用原始ID(gh_) + path；小程序用收银台 appId + path。paytype 固定 W06。
     // ============================================================
 
-    /** 通联「微信小程序收银台」原始ID（App launchMiniProgram(id=..) 用；小程序 navigateToMiniProgram 需另配 appId） */
+    /** 通联「微信小程序收银台」原始ID（App launchMiniProgram(id=..) 用） */
     public static final String MP_CASHIER_USERNAME = "gh_e64a1a89a0ad";
+    /** 通联「微信小程序收银台」AppId（小程序 navigateToMiniProgram(appId=..) 用；见 doc/993） */
+    public static final String MP_CASHIER_APPID = "wxef277996acc166c3";
     private static final String MP_CASHIER_PATH = "pages/orderDetail/orderDetail";
 
     /** 调起收银台小程序所需信息 */
@@ -260,6 +262,8 @@ public class AllinpayCashierService {
     public static class MpCashier {
         /** 收银台小程序原始ID（gh_xxx），App launchMiniProgram 的 id */
         private String userName;
+        /** 收银台小程序 AppId（wx开头），小程序 navigateToMiniProgram 的 appId */
+        private String appId;
         /** pages/orderDetail/orderDetail?cusid=..&paytype=W06&sign=.. */
         private String path;
     }
@@ -325,7 +329,21 @@ public class AllinpayCashierService {
         } catch (Exception ignore) {}
         TlpayCredential cred = merchantCredentialForTenant(order.getTenantId());
         String reqsn = TradeOrderAllinpayService.buildTradeReqsn(tradeOrderId);
-        return new MpCashier(MP_CASHIER_USERNAME, buildMpCashierPath(reqsn, order.getPayPrice().longValue(), body, cred));
+        return new MpCashier(MP_CASHIER_USERNAME, MP_CASHIER_APPID,
+                buildMpCashierPath(reqsn, order.getPayPrice().longValue(), body, cred));
+    }
+
+    /** 按 merchant_package_order.id 构造小程序收银台调起信息（AI 视频配额套餐，reqsn=纯数字无前缀，平台凭据）。 */
+    public MpCashier buildMpCashierForPackage(Long packageOrderId) {
+        MerchantPackageOrderDO order = TenantUtils.executeIgnore(() -> packageOrderMapper.selectById(packageOrderId));
+        if (order == null) throw new IllegalStateException("套餐订单不存在: " + packageOrderId);
+        if (order.getPayStatus() != null
+                && order.getPayStatus() != MerchantPackageOrderDO.PAY_STATUS_WAITING) {
+            throw new IllegalStateException("订单非待支付状态，不可重复唤起收银台");
+        }
+        String reqsn = String.valueOf(order.getId());
+        return new MpCashier(MP_CASHIER_USERNAME, MP_CASHIER_APPID,
+                buildMpCashierPath(reqsn, order.getPrice(), order.getPackageName(), platformCredential()));
     }
 
     /**

@@ -235,6 +235,7 @@ import { onLoad, onShow } from '@dcloudio/uni-app';
 import { request } from '../../api/request.js';
 import { fen2yuan } from '../../utils/format.js';
 import { openExternalUrl } from '../../utils/openUrl.js';
+import { launchMpCashier } from '../../utils/mpPay.js';
 
 const tenantId = ref(null);
 const cartIds = ref([]);
@@ -606,6 +607,10 @@ async function submitOrder() {
     if (finalPayPrice > 0) {
       // 还需线上支付：拿到通联支付链接直接跳通联；否则 fallback 订单列表"立即付款"
       const cashierUrl = res?.cashierUrl;
+      // #ifdef MP-WEIXIN
+      // 小程序：拉起通联收银台小程序（微信/支付宝原生支付，无 Apple Pay）
+      if (await launchMpCashier(orderId)) return;
+      // #endif
       if (cashierUrl) {
         uni.showToast({ title: `跳转通联支付 ¥${(finalPayPrice / 100).toFixed(2)}`, icon: 'none', duration: 1200 });
         setTimeout(() => { openExternalUrl(cashierUrl); }, 600);

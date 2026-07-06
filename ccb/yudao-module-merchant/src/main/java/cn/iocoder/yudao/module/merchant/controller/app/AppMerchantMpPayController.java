@@ -36,11 +36,20 @@ public class AppMerchantMpPayController {
     private AllinpayCashierService cashierService;
 
     @GetMapping("/cashier")
-    @Operation(summary = "获取小程序收银台调起信息（原始ID + 带签名 path）")
+    @Operation(summary = "获取小程序收银台调起信息（trade_order，商品/套餐订单）")
     @Parameter(name = "tradeOrderId", description = "trade_order.id", required = true)
     @TenantIgnore
     public CommonResult<AllinpayCashierService.MpCashier> cashier(
             @RequestParam("tradeOrderId") Long tradeOrderId) {
         return success(cashierService.buildMpCashierForTrade(tradeOrderId));
+    }
+
+    @GetMapping("/cashier-package")
+    @Operation(summary = "获取小程序收银台调起信息（merchant_package_order，AI 视频配额）")
+    @Parameter(name = "packageOrderId", description = "merchant_package_order.id", required = true)
+    @TenantIgnore
+    public CommonResult<AllinpayCashierService.MpCashier> cashierPackage(
+            @RequestParam("packageOrderId") Long packageOrderId) {
+        return success(cashierService.buildMpCashierForPackage(packageOrderId));
     }
 }

@@ -64,6 +64,7 @@ import { ref, computed, onMounted } from 'vue';
 import { request } from '../../api/request.js';
 import { smartYuan } from '../../utils/format.js';
 import { openExternalUrl } from '../../utils/openUrl.js';
+import { launchMpCashier } from '../../utils/mpPay.js';
 
 const packages = ref([]);
 const status = ref(null);
@@ -131,6 +132,10 @@ async function onPurchase() {
       method: 'POST',
     });
     uni.hideLoading();
+    // #ifdef MP-WEIXIN
+    // 小程序：拉起通联收银台小程序（微信/支付宝原生支付，无 Apple Pay）
+    if (res && res.orderId && (await launchMpCashier(res.orderId))) return;
+    // #endif
     if (res && res.cashierUrl) {
       uni.showToast({ title: '跳转通联支付', icon: 'none', duration: 800 });
       setTimeout(() => { openExternalUrl(res.cashierUrl); }, 500);
