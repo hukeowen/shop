@@ -105,6 +105,8 @@ import { useUserStore } from '../../store/user.js';
 let _sbh = 0;
 // #ifdef APP-PLUS
 try { _sbh = uni.getSystemInfoSync().statusBarHeight || 0; } catch (e) { /* ignore */ }
+if (!_sbh) { try { _sbh = plus.navigator.getStatusbarHeight() || 0; } catch (e) { /* ignore */ } }
+if (!_sbh) _sbh = 30;
 // #endif
 const sbVar = _sbh ? { paddingTop: _sbh + 10 + 'px' } : {};
 

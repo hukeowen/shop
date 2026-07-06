@@ -217,6 +217,8 @@ const operatingStatus = ref(null);
 let _sbh = 0;
 // #ifdef APP-PLUS
 try { _sbh = uni.getSystemInfoSync().statusBarHeight || 0; } catch (e) { /* ignore */ }
+if (!_sbh) { try { _sbh = plus.navigator.getStatusbarHeight() || 0; } catch (e) { /* ignore */ } }
+if (!_sbh) _sbh = 30; // 多重兜底：绝不为 0，保证顶栏一定被推下来
 // #endif
 const heroPadStyle = _sbh ? { paddingTop: _sbh + 10 + 'px' } : {};
 const sbhDbg = _sbh; // 临时诊断：确认代码生效且读到的状态栏高度值
@@ -396,11 +398,12 @@ onPullDownRefresh(async () => {
 <style lang="scss" scoped>
 @import '../../uni.scss';
 
-/* 临时诊断标记，确认后删除 */
+/* 临时诊断标记（挪到屏幕中间、放大，确保不被状态栏遮住），确认后删除 */
 .sbh-debug {
-  position: fixed; top: 0; left: 50%; transform: translateX(-50%);
-  z-index: 99999; background: rgba(255,0,0,.85); color: #fff;
-  font-size: 22rpx; line-height: 1.4; padding: 2rpx 20rpx; border-radius: 0 0 10rpx 10rpx;
+  position: fixed; top: 40%; left: 50%; transform: translate(-50%, -50%);
+  z-index: 99999; background: rgba(255,0,0,.92); color: #fff;
+  font-size: 56rpx; font-weight: 700; line-height: 1.4;
+  padding: 24rpx 48rpx; border-radius: 20rpx; box-shadow: 0 8rpx 40rpx rgba(0,0,0,.4);
 }
 
 .page {
