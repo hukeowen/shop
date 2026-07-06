@@ -3,14 +3,14 @@
     <view class="hero">
       <view class="logo">拓</view>
       <view class="app-name">拓小二</view>
-      <view class="app-version">v1.0.0</view>
+      <view class="app-version">v1.0.2</view>
       <view class="app-slogan">让每个店铺，都有大生意</view>
     </view>
 
     <view class="card section">
       <view class="about-item">
         <text class="about-label">产品版本</text>
-        <text class="about-val">1.0.0</text>
+        <text class="about-val">1.0.2</text>
       </view>
       <view class="about-item">
         <text class="about-label">开发商</text>
@@ -45,7 +45,7 @@ import { ref } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
 import { checkAppUpdate } from '../../utils/appUpdate.js';
 
-const appVersion = ref('1.0.0');
+const appVersion = ref('1.0.2');
 
 onLoad(() => {
   // #ifdef APP-PLUS

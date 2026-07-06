@@ -2,8 +2,8 @@
     "name" : "邀三惠",
     "appid" : "__UNI__F1B5392",
     "description" : "小二 SaaS — 商户端拓小二 / 用户端客小二，AI 一键成片、订单核销、发货、报表",
-    "versionName" : "1.0.1",
-    "versionCode" : "1",
+    "versionName" : "1.0.2",
+    "versionCode" : "2",
     "transformPx" : false,
     "app-plus" : {
         "usingComponents" : true,
