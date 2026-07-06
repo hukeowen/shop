@@ -234,6 +234,7 @@ import { ref, computed, watch } from 'vue';
 import { onLoad, onShow } from '@dcloudio/uni-app';
 import { request } from '@/utils/request.js';
 import { fen2yuan } from '@/utils/format.js';
+import { launchMpCashier } from '@/utils/mpPay.js';
 
 const tenantId = ref(null);
 const cartIds = ref([]);
@@ -612,6 +613,16 @@ async function submitOrder() {
     if (finalPayPrice > 0) {
       // 还需线上支付：拿到通联支付链接直接跳通联；否则 fallback 订单列表"立即付款"
       const cashierUrl = res?.cashierUrl;
+      // #ifdef MP-WEIXIN
+      // 小程序：拉起通联微信小程序收银台（微信原生支付，无 Apple Pay）。
+      // 小程序没有 window/location，绝不能 location.href（会 "Cannot set property href of undefined"）。
+      // 成功即 return；失败去订单列表可重试。
+      if (await launchMpCashier(orderId)) return;
+      uni.showToast({ title: '拉起收银台失败，请到订单列表重试付款', icon: 'none', duration: 2000 });
+      setTimeout(() => uni.reLaunch({ url: '/pages/order/list' }), 1500);
+      return;
+      // #endif
+      // #ifndef MP-WEIXIN
       if (cashierUrl) {
         uni.showToast({ title: `跳转通联支付 ¥${(finalPayPrice / 100).toFixed(2)}`, icon: 'none', duration: 1200 });
         setTimeout(() => { location.href = cashierUrl; }, 600);
@@ -624,6 +635,7 @@ async function submitOrder() {
         });
         setTimeout(() => uni.reLaunch({ url: '/pages/order/list' }), 1500);
       }
+      // #endif
     } else {
       // 余额抵扣全额或余额+积分付清 → 跳支付完成页
       try {
