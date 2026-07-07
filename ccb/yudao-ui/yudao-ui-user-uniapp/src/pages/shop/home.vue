@@ -8,7 +8,6 @@
         <view class="sh-ic" @click="goBack">‹</view>
         <view class="sh-nav-right">
           <view class="sh-ic" @click="toggleFav">{{ isFav ? '♥' : '♡' }}</view>
-          <view class="sh-ic" @click="onShareLink">↗</view>
         </view>
       </view>
       <view v-if="shop" class="sh-info">
@@ -229,6 +228,14 @@
       <view class="cart-bar-pay" @click="goCart">去结算</view>
     </view>
 
+    <!-- ━━━━━━━━━━ 分享浮标（醒目，避开右上角小程序胶囊）━━━━━━━━━━ -->
+    <!-- #ifdef MP-WEIXIN -->
+    <button open-type="share" class="sh-share-fab">↗ 分享给好友</button>
+    <!-- #endif -->
+    <!-- #ifndef MP-WEIXIN -->
+    <view class="sh-share-fab" @click="onShareLink">↗ 分享给好友</view>
+    <!-- #endif -->
+
     <!-- ━━━━━━━━━━ 邀请有礼：推广二维码海报弹层 ━━━━━━━━━━ -->
     <view v-if="posterOpen" class="poster-mask" @click="closePoster">
       <view class="poster-wrap" @click.stop>
@@ -248,7 +255,7 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue';
-import { onShow, onLoad } from '@dcloudio/uni-app';
+import { onShow, onLoad, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app';
 import { getShopInfo, listShopProducts, getShopVisitorCount, getMyRel, getMyPromoEarned, getShopLicense, toggleShopFavorite } from '@/api/shop.js';
 import { savePendingReferrer, flushPendingReferrer } from '@/utils/referral.js';
 import { listCategories } from '@/api/product.js';
@@ -385,6 +392,12 @@ async function onShareLink() {
 
 // 邀请有礼：生成本店专属推广二维码海报（本地 canvas 合成，可保存/分享）
 async function openInvitePoster() {
+  // #ifdef MP-WEIXIN
+  // 小程序无 DOM canvas，网页海报不可用。引导用原生分享（好友点开直达本店主页、带推广绑定）。
+  // 「小程序码扫码海报」为后端生成功能，待单独实现。
+  uni.showToast({ title: '点右下角「分享给好友」，好友点开直达本店', icon: 'none', duration: 2600 });
+  return;
+  // #endif
   posterOpen.value = true;
   posterImage.value = '';
   posterLoading.value = true;
@@ -419,6 +432,21 @@ async function openInvitePoster() {
     posterLoading.value = false;
   }
 }
+
+// #ifdef MP-WEIXIN
+// 小程序原生分享：好友/群点开卡片 → 直接打开本小程序落到「这个商家主页」，带 inviter 绑推广。
+function shareTitle() {
+  return (shop.value?.shopName || shop.value?.name || '这家店') + ' · 扫码进店下单赚推广积分';
+}
+function sharePath() {
+  return `/pages/shop/home?tenantId=${route.tenantId || ''}&inviter=${user.userId || ''}`;
+}
+onShareAppMessage(() => ({ title: shareTitle(), path: sharePath() }));
+onShareTimeline(() => ({
+  title: (shop.value?.shopName || shop.value?.name || '这家店') + ' · 邀三惠',
+  query: `tenantId=${route.tenantId || ''}&inviter=${user.userId || ''}`,
+}));
+// #endif
 
 function onSavePoster() {
   if (!posterImage.value) return;
@@ -1240,4 +1268,26 @@ onShow(refreshAll);
   border: 2rpx solid rgba(255,255,255,.3);
 }
 .poster-hint { margin-top: 20rpx; font-size: 22rpx; color: rgba(255,255,255,.7); text-align: center; }
+
+/* 分享浮标：醒目橙色药丸，固定右下、避开右上角胶囊 */
+.sh-share-fab {
+  position: fixed;
+  right: 20rpx;
+  bottom: 200rpx;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 76rpx;
+  padding: 0 30rpx;
+  border-radius: 40rpx;
+  background: linear-gradient(135deg, #ff6b35, #ff9b5e);
+  color: #fff;
+  font-size: 27rpx;
+  font-weight: 700;
+  line-height: 76rpx;
+  box-shadow: 0 10rpx 26rpx rgba(255,107,53,.45);
+  border: none;
+}
+.sh-share-fab::after { border: none; }
 </style>
