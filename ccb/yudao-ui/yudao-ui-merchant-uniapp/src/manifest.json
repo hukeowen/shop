@@ -57,6 +57,7 @@
             "minified" : true,
             "postcss" : true
         },
+        "lazyCodeLoading" : "requiredComponents",
         "usingComponents" : true
     },
     "h5" : {
