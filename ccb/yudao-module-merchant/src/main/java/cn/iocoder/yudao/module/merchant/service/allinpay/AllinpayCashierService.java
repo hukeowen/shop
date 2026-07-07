@@ -274,9 +274,9 @@ public class AllinpayCashierService {
         Map<String, String> p = new LinkedHashMap<>();
         p.put("cusid", cred.getCusId());
         p.put("appid", cred.getAppId());
-        try {
-            if (props.getOrgId() != null && !props.getOrgId().isEmpty()) p.put("orgid", props.getOrgId());
-        } catch (Exception ignore) {}
+        // 不发 orgid：与「能正常收款的 H5 收银台」完全一致（H5 只发 cusid+appid）。
+        // 通联对本商户的收银台按 cusid 推断机构；显式带上平台机构号 orgid 反而触发
+        // 「appid和orgid不匹配」。orgid 仅进件(AllinpayMerchantClient)/回调用，收银台不需要。
         p.put("version", "12");
         p.put("trxamt", String.valueOf(trxamtFen));
         p.put("reqsn", reqsn);

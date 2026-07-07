@@ -5,7 +5,7 @@
       <view class="me-top-row">
         <view class="me-avatar">{{ avatarLetter }}</view>
         <view class="me-info">
-          <view class="me-name">{{ userStore.user?.nickname || userStore.phone || '未登录用户' }}</view>
+          <view class="me-name">{{ userStore.user?.nickname || (userStore.phone ? phoneMask : '未登录用户') }}</view>
           <view class="me-phone">{{ phoneMask }} · 已加入 {{ shopsCount }} 家店</view>
         </view>
         <view class="me-edit" @click="goSettings">⚙</view>
@@ -171,7 +171,8 @@ const avatarLetter = computed(() => {
 const phoneMask = computed(() => {
   const p = userStore.phone;
   if (!p || p.length < 11) return p || '未绑定手机';
-  return p.slice(0, 3) + '****' + p.slice(7);
+  // 隐藏中间 5 位：138*****000（前3 + 5星 + 后3）
+  return p.slice(0, 3) + '*****' + p.slice(8);
 });
 
 const initial = (s) => (s.shopName || s.name || '店')[0];
