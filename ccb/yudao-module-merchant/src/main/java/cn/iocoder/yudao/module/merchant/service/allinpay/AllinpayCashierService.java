@@ -299,8 +299,13 @@ public class AllinpayCashierService {
         try {
             for (Map.Entry<String, String> e : p.entrySet()) {
                 if (!first) sb.append('&');
-                sb.append(java.net.URLEncoder.encode(e.getKey(), "UTF-8")).append('=')
-                  .append(java.net.URLEncoder.encode(e.getValue(), "UTF-8"));
+                // body 不做 URL 编码：通联收银台按原始 query 值「显示」订单信息，编码后会显示成
+                // %E7%BA%A2...。签名是对参数 map 里的原始中文算的，与 path 编码无关，不影响验签。
+                // 其余参数（尤其 sign 的 +/=、notify_url）仍需编码。
+                String encVal = "body".equals(e.getKey())
+                        ? e.getValue()
+                        : java.net.URLEncoder.encode(e.getValue(), "UTF-8");
+                sb.append(java.net.URLEncoder.encode(e.getKey(), "UTF-8")).append('=').append(encVal);
                 first = false;
             }
         } catch (Exception ex) {
