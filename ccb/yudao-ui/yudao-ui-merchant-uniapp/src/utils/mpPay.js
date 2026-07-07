@@ -15,11 +15,24 @@ async function doLaunch(apiUrl) {
   try {
     const info = await request({ url: apiUrl });
     if (info && info.appId && info.path) {
-      uni.navigateToMiniProgram({
+      // 全屏跳转（兜底）：完全切到通联收银台小程序
+      const jumpFull = () => uni.navigateToMiniProgram({
         appId: info.appId,
         path: info.path,
         fail: (e) => uni.showToast({ title: '拉起收银台失败：' + ((e && e.errMsg) || ''), icon: 'none' }),
       });
+      // ⭐ 优先「半屏拉起」（wx.openEmbeddedMiniProgram）：收银台以半屏浮层打开，
+      //   用户不离开本小程序，付完自动回来，体验更好。
+      //   需基础库 ≥ 2.20.1 且通联收银台支持半屏；不支持 / 调用失败时自动退回全屏跳转。
+      if (typeof wx !== 'undefined' && typeof wx.openEmbeddedMiniProgram === 'function') {
+        wx.openEmbeddedMiniProgram({
+          appId: info.appId,
+          path: info.path,
+          fail: () => jumpFull(),
+        });
+      } else {
+        jumpFull();
+      }
       return true;
     }
     uni.showToast({ title: '获取收银台信息失败', icon: 'none' });
