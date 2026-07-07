@@ -105,6 +105,8 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
+import { sbhStyleVar } from '../../utils/safeTop.js';
+const sbhStyle = sbhStyleVar(); // 小程序状态栏占位（真机高度覆盖 --status-bar-height）
 import { request } from '../../api/request.js';
 import { fen2yuan } from '../../utils/format.js';
 

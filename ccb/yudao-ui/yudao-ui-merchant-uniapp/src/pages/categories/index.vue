@@ -30,6 +30,8 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { request } from '../../api/request.js';
+import { sbhStyleVar } from '../../utils/safeTop.js';
+const sbhStyle = sbhStyleVar(); // 小程序状态栏占位（真机高度覆盖 --status-bar-height）
 
 // V041: 13 个分类 — key 与后端 BUSINESS_CONTEXT_MAP 一一对应
 const BIZ_TYPES = [

@@ -218,6 +218,8 @@
 <script setup>
 import { ref, computed, reactive } from 'vue';
 import { onLoad, onShow } from '@dcloudio/uni-app';
+import { sbhStyleVar } from '../../utils/safeTop.js';
+const sbhStyle = sbhStyleVar(); // 小程序状态栏占位（真机高度覆盖 --status-bar-height）
 import { request } from '../../api/request.js';
 import { fen2yuan, smartYuan } from '../../utils/format.js';
 import { savePendingReferrer, flushPendingReferrer } from '../../utils/referral.js';
