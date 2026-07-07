@@ -2,19 +2,26 @@
  * 小程序自绘顶栏「状态栏占位」样式。
  *
  * 病根：uni-app 小程序把 `--status-bar-height` 写死成 25px（默认兜底），真机常不符
- *      （安卓 24~40px / iOS 刘海屏 44px+）→ 自绘顶栏 .safe-top 顶到状态栏。
- *      小程序无 document 不能改全局 CSS 变量；全局 mixin 的 data 在 <script setup>
- *      模板里又取不到。故每个自绘顶栏页在 setup 里调本函数拿到就地覆盖用的 :style。
+ *      （安卓 24~40px / iOS 刘海屏 44px+）→ 自绘顶栏顶到状态栏。
+ *
+ * ⚠ 关键教训：**微信小程序 inline style 不支持 CSS 变量**，`:style="{'--status-bar-height':'44px'}"`
+ *   会被忽略，等于没设。所以这里**直接返回具体 px 的 padding-top**（inline style 100% 支持），
+ *   覆盖 .safe-top 的 calc(...)。+10px 是状态栏与内容的呼吸间距（约等于原设计 +16~24rpx，
+ *   也让顶栏内容与右上角胶囊大致对齐）。
  *
  * 用法：<script setup> 里 `const sbhStyle = sbhStyleVar()`，模板顶栏 `:style="sbhStyle"`。
- * 返回 { '--status-bar-height': 'Npx' }（真机高度），H5/App 返回 {}（各自用 env()/mixin 兜底）。
+ * H5/App 返回 {}（各自用 env() / App 端 mixin 兜底）。
  */
 export function sbhStyleVar() {
   // #ifdef MP-WEIXIN
   try {
     const h = (uni.getSystemInfoSync && uni.getSystemInfoSync().statusBarHeight) || 0;
-    if (h) return { '--status-bar-height': h + 'px' };
-  } catch (e) { /* 取不到就退回 env() 兜底 */ }
+    // 真机状态栏高度取不到时兜底 20px；正常 44/30 等
+    return { paddingTop: ((h || 20) + 10) + 'px' };
+  } catch (e) {
+    return { paddingTop: '30px' };
+  }
   // #endif
+  // eslint-disable-next-line no-unreachable
   return {};
 }
