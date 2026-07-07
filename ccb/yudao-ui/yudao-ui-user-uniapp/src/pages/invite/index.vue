@@ -1,5 +1,6 @@
 <template>
   <view class="page">
+    <view :style="sbhSpacer"></view>
     <view class="hero">
       <view class="hero-em">🎁</view>
       <view class="hero-t">邀请好友进店下单</view>
@@ -90,6 +91,8 @@ import { useUserStore } from '@/store/user.js';
 import { getInviteEligibility, getAccount, getMyChildrenCount } from '@/api/promo.js';
 import { fen2yuan } from '@/utils/format.js';
 import { buildInvitePoster, downloadDataUrl } from '@/utils/poster.js';
+import { sbhSpacerStyle } from '@/utils/safeTop.js';
+const sbhSpacer = sbhSpacerStyle();
 
 const user = useUserStore();
 const loading = ref(true);

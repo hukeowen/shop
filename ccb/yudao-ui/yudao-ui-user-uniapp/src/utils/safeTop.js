@@ -16,8 +16,7 @@ function sbhPx() {
 }
 export function sbhSpacerStyle() {
   // #ifdef MP-WEIXIN
-  // ⚠ 临时红色背景：便于真机确认「是否跑的新包」，确认生效后改回 transparent。
-  return { height: sbhPx() + 'px', flexShrink: '0', width: '100%', background: '#ff3b30' };
+  return { height: sbhPx() + 'px', flexShrink: '0', width: '100%' };
   // #endif
   // eslint-disable-next-line no-unreachable
   return { display: 'none' };

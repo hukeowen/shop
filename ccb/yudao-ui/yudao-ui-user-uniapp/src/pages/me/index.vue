@@ -3,6 +3,7 @@
     <!-- ━━━━━━━━━━ Hero ━━━━━━━━━━ -->
     <view class="me-hero">
       <view class="me-hero-bg"></view>
+      <view :style="sbhSpacer"></view>
       <view class="me-top-row">
         <image v-if="user.avatar" :src="user.avatar" class="me-avatar-img" mode="aspectFill" @click="goEditProfile" />
         <view v-else class="me-avatar" @click="goEditProfile">{{ avatarText }}</view>
@@ -194,6 +195,8 @@ import { listMyCards } from '@/api/card.js';
 import { favoriteCount } from '@/api/product.js';
 import { fen2yuan, fmtTime } from '@/utils/format.js';
 import { buildInvitePoster, downloadDataUrl } from '@/utils/poster.js';
+import { sbhSpacerStyle } from '@/utils/safeTop.js';
+const sbhSpacer = sbhSpacerStyle();
 
 const user = useUserStore();
 const avatarText = computed(() => (user.nickname?.[0] || user.phone?.[0] || '邀'));

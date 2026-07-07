@@ -1,5 +1,6 @@
 <template>
   <view class="page">
+    <view :style="sbhSpacer"></view>
     <view class="bg-deco"></view>
     <view class="bg-glow"></view>
 
@@ -73,6 +74,8 @@ import { ref } from 'vue';
 import { sendSmsCode, smsLogin, weixinMiniAppLogin } from '@/api/auth.js';
 import { flushPendingReferrer } from '@/utils/referral.js';
 import { useUserStore } from '@/store/user.js';
+import { sbhSpacerStyle } from '@/utils/safeTop.js';
+const sbhSpacer = sbhSpacerStyle();
 
 const user = useUserStore();
 const mobile = ref('');

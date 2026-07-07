@@ -1,5 +1,6 @@
 <template>
   <view class="page">
+    <view :style="sbhSpacer"></view>
     <view class="hero">
       <view class="hero-title">
         <text class="trophy">🏆</text>
@@ -41,6 +42,8 @@ import { ref, onMounted } from 'vue';
 import { onShow, onLoad } from '@dcloudio/uni-app';
 import { listWinners, getTodayStat } from '@/api/promo.js';
 import { fen2yuan, fmtTime } from '@/utils/format.js';
+import { sbhSpacerStyle } from '@/utils/safeTop.js';
+const sbhSpacer = sbhSpacerStyle();
 
 const tab = ref('live');
 const loading = ref(false);

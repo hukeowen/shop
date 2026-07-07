@@ -1,5 +1,6 @@
 <template>
   <view class="page">
+    <view :style="sbhSpacer"></view>
     <view class="ok">
       <view class="ok-ic">✓</view>
       <view class="ok-t">支付成功</view>
@@ -22,6 +23,8 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { fen2yuan } from '@/utils/format.js';
+import { sbhSpacerStyle } from '@/utils/safeTop.js';
+const sbhSpacer = sbhSpacerStyle();
 
 const amount = ref('0.00');
 const reward = ref(null);

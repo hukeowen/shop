@@ -1,11 +1,14 @@
 <template>
   <view class="page">
+    <view :style="sbhSpacer"></view>
     <view class="redirecting">正在跳转到附近店铺…</view>
   </view>
 </template>
 
 <script setup>
 import { onMounted } from 'vue';
+import { sbhSpacerStyle } from '@/utils/safeTop.js';
+const sbhSpacer = sbhSpacerStyle();
 
 onMounted(() => {
   // SaaS 多租户下"全平台商品分类"不可用：每家商户各自建分类、id/名重复（如多家都叫"上传"），
