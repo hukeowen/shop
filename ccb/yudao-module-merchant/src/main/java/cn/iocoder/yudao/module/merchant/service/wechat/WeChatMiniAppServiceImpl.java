@@ -198,15 +198,24 @@ public class WeChatMiniAppServiceImpl implements WeChatMiniAppService {
             if (StrUtil.isBlank(properties.getAppId()) || StrUtil.isBlank(properties.getAppSecret())) {
                 throw new IllegalStateException("WECHAT_MINI_APP_ID/SECRET 未配置，无法获取 access_token");
             }
+            // ⚠ 用 stable_token（稳定版）而非 cgi-bin/token：小程序 access_token 是全局单例，
+            //   会员登录(SocialClient)也在获取普通 token，两边都用 cgi-bin/token 会互相把对方冲失效
+            //   (errcode 40001 invalid credential)。stable_token 独立、可频繁获取、不被普通 token 冲掉。
             HttpUrl url = new HttpUrl.Builder()
                     .scheme("https")
                     .host("api.weixin.qq.com")
-                    .addPathSegments("cgi-bin/token")
-                    .addQueryParameter("grant_type", "client_credential")
-                    .addQueryParameter("appid", properties.getAppId())
-                    .addQueryParameter("secret", properties.getAppSecret())
+                    .addPathSegments("cgi-bin/stable_token")
                     .build();
-            Request request = new Request.Builder().url(url).get().build();
+            String reqBody = objectMapper.createObjectNode()
+                    .put("grant_type", "client_credential")
+                    .put("appid", properties.getAppId())
+                    .put("secret", properties.getAppSecret())
+                    .put("force_refresh", false)
+                    .toString();
+            Request request = new Request.Builder()
+                    .url(url)
+                    .post(RequestBody.create(JSON_MEDIA_TYPE, reqBody))
+                    .build();
             try (Response response = client().newCall(request).execute()) {
                 ResponseBody body = response.body();
                 if (!response.isSuccessful() || body == null) {
