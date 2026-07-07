@@ -1,6 +1,7 @@
 <template>
   <view class="page">
-    <view class="topbar safe-top" :style="sbhStyle">
+    <view :style="sbhStyle" class="sbh-spacer"></view>
+    <view class="topbar safe-top">
       <text class="back" @click="goBack">‹</text>
       <text class="title">订单结算</text>
       <text class="right"></text>
@@ -232,8 +233,8 @@
 <script setup>
 import { ref, computed, watch } from 'vue';
 import { onLoad, onShow } from '@dcloudio/uni-app';
-import { sbhStyleVar } from '../../utils/safeTop.js';
-const sbhStyle = sbhStyleVar(); // 小程序状态栏占位（真机高度覆盖 --status-bar-height）
+import { sbhSpacerStyle } from '../../utils/safeTop.js';
+const sbhStyle = sbhSpacerStyle(); // 小程序状态栏占位（真机高度覆盖 --status-bar-height）
 import { request } from '../../api/request.js';
 import { fen2yuan } from '../../utils/format.js';
 import { openExternalUrl } from '../../utils/openUrl.js';

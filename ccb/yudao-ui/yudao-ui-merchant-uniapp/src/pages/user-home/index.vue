@@ -1,7 +1,8 @@
 <template>
   <view class="page">
     <!-- 顶部欢迎条 + 搜索 -->
-    <view class="home-top safe-top" :style="sbhStyle">
+    <view :style="sbhStyle" class="sbh-spacer"></view>
+    <view class="home-top safe-top">
       <view class="home-greeting">{{ greeting }} ☀</view>
       <view class="home-name">想吃点什么？</view>
       <view class="home-search">
@@ -107,8 +108,8 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { onShow, onPullDownRefresh } from '@dcloudio/uni-app';
-import { sbhStyleVar } from '../../utils/safeTop.js';
-const sbhStyle = sbhStyleVar(); // 小程序状态栏占位（真机高度覆盖 --status-bar-height）
+import { sbhSpacerStyle } from '../../utils/safeTop.js';
+const sbhStyle = sbhSpacerStyle(); // 小程序状态栏占位（真机高度覆盖 --status-bar-height）
 import { request } from '../../api/request.js';
 import { fen2yuan } from '../../utils/format.js';
 import { useUserStore } from '../../store/user.js';

@@ -1,7 +1,8 @@
 <template>
   <view class="page">
     <!-- 顶部筛选 + 标题 -->
-    <view class="order-top safe-top" :style="sbhStyle">
+    <view :style="sbhStyle" class="sbh-spacer"></view>
+    <view class="order-top safe-top">
       <view class="ttl">我的订单</view>
       <view class="filter">
         <view
@@ -79,8 +80,8 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { onShow, onPullDownRefresh } from '@dcloudio/uni-app';
-import { sbhStyleVar } from '../../utils/safeTop.js';
-const sbhStyle = sbhStyleVar(); // 小程序状态栏占位（真机高度覆盖 --status-bar-height）
+import { sbhSpacerStyle } from '../../utils/safeTop.js';
+const sbhStyle = sbhSpacerStyle(); // 小程序状态栏占位（真机高度覆盖 --status-bar-height）
 import { request } from '../../api/request.js';
 import { fen2yuan } from '../../utils/format.js';
 import { openExternalUrl } from '../../utils/openUrl.js';

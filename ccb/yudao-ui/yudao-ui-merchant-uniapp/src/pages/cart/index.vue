@@ -1,6 +1,7 @@
 <template>
   <view class="page">
-    <view class="topbar safe-top" :style="sbhStyle">
+    <view :style="sbhStyle" class="sbh-spacer"></view>
+    <view class="topbar safe-top">
       <text class="back" @click="goBack">‹</text>
       <text class="title">购物车（{{ totalCount }}）</text>
       <text class="right" @click="toggleEdit">{{ editMode ? '完成' : '编辑' }}</text>
@@ -105,8 +106,8 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
-import { sbhStyleVar } from '../../utils/safeTop.js';
-const sbhStyle = sbhStyleVar(); // 小程序状态栏占位（真机高度覆盖 --status-bar-height）
+import { sbhSpacerStyle } from '../../utils/safeTop.js';
+const sbhStyle = sbhSpacerStyle(); // 小程序状态栏占位（真机高度覆盖 --status-bar-height）
 import { request } from '../../api/request.js';
 import { fen2yuan } from '../../utils/format.js';
 
