@@ -274,9 +274,8 @@ public class AllinpayCashierService {
         Map<String, String> p = new LinkedHashMap<>();
         p.put("cusid", cred.getCusId());
         p.put("appid", cred.getAppId());
-        // 不发 orgid：与「能正常收款的 H5 收银台」完全一致（H5 只发 cusid+appid）。
-        // 通联对本商户的收银台按 cusid 推断机构；显式带上平台机构号 orgid 反而触发
-        // 「appid和orgid不匹配」。orgid 仅进件(AllinpayMerchantClient)/回调用，收银台不需要。
+        // 爱家超市等为直连商户（自己的 appid + 私钥，H5 收银台不带 orgid 能收款）→ 不发 orgid，
+        // 与 H5 一致。带上平台 orgid 会「appid和orgid不匹配」。orgid 仅进件/回调用。
         p.put("version", "12");
         p.put("trxamt", String.valueOf(trxamtFen));
         p.put("reqsn", reqsn);
@@ -288,8 +287,13 @@ public class AllinpayCashierService {
         p.put("multipay", "1");   // 支持用户选微信/支付宝
         p.put("paytype", "W06");  // 小程序固定 W06
         p.put("signtype", signType);
+        // 诊断日志：打出签名源 + 关键参数，便于对照 H5（能收款）定位 sign 验证失败
+        log.info("[allinpay/mp-cashier] signType={} appid={} cusid={} reqsn={} signSource={}",
+                signType, cred.getAppId(), cred.getCusId(), reqsn, buildSignSource(p));
         String sign = signWithCredential(p, cred);
         p.put("sign", sign);
+        log.info("[allinpay/mp-cashier] sign={} ({}chars) fullPath={}",
+                sign, sign.length(), MP_CASHIER_PATH + "?...(见上参数)");
         StringBuilder sb = new StringBuilder(MP_CASHIER_PATH).append('?');
         boolean first = true;
         try {
