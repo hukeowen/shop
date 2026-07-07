@@ -143,7 +143,12 @@ async function onWxLogin(e) {
     uni.hideLoading();
     uni.showToast({ title: '登录成功', icon: 'success' });
     try { await flushPendingReferrer(r.userId || user.userId); } catch {}
-    setTimeout(() => uni.reLaunch({ url: '/pages/index/index' }), 600);
+    // 跳回登录前的页面（如扫码进的店铺主页）；小程序用 uni 存储读回跳地址。
+    let redirect = '';
+    try { redirect = uni.getStorageSync('redirect:after-login') || ''; } catch {}
+    try { uni.removeStorageSync('redirect:after-login'); } catch {}
+    try { if (typeof localStorage !== 'undefined') localStorage.removeItem('redirect:after-login'); } catch {}
+    setTimeout(() => uni.reLaunch({ url: redirect || '/pages/index/index' }), 600);
   } catch (err) {
     uni.hideLoading();
     uni.showToast({ title: err?.message || '登录失败，请重试', icon: 'none' });

@@ -585,11 +585,11 @@ async function onGrabCoupon(c) {
   } catch {}
 }
 function requireLogin() {
-  try {
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem('redirect:after-login', `/pages/shop/home?tenantId=${route.tenantId || ''}`);
-    }
-  } catch {}
+  // 登录后跳回本店主页；带 tenantId + inviter，保住推广绑定。
+  // ⚠ 小程序无 localStorage，必须用 uni.setStorageSync（H5 也兼容），否则登录后回不来。
+  const target = `/pages/shop/home?tenantId=${route.tenantId || ''}${route.inviter ? `&inviter=${route.inviter}` : ''}`;
+  try { if (typeof localStorage !== 'undefined') localStorage.setItem('redirect:after-login', target); } catch {}
+  try { uni.setStorageSync('redirect:after-login', target); } catch {}
   uni.navigateTo({ url: '/pages/login/index' });
 }
 
