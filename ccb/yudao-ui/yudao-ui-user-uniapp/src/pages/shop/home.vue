@@ -1060,24 +1060,31 @@ onShow(refreshAll);
 
 /* ━━ VIP strip ━━ */
 .vip-strip {
-  margin: 12px 14px 0;
-  padding: 12px 14px;
-  background: linear-gradient(135deg, $gold-50, $o-50);
-  border: 1px solid rgba(212,146,10,.25);
+  margin: 14px 14px 0;
+  padding: 16px 16px;
+  background: linear-gradient(135deg, #ff6b35, #ff9b5e);
+  border: none;
   border-radius: $r-lg;
-  display: flex; align-items: center; gap: 10px;
+  display: flex; align-items: center; gap: 12px;
+  box-shadow: 0 8px 22px rgba(255,107,53,.4);
 }
 .vip-em {
-  width: 36px; height: 36px; border-radius: 10px;
-  background: linear-gradient(135deg, $gold, $gold-l);
+  width: 46px; height: 46px; border-radius: 13px;
+  background: rgba(255,255,255,.24);
   color: #fff; display: flex; align-items: center; justify-content: center;
-  font-size: 18px; box-shadow: 0 4px 10px rgba(212,146,10,.3);
+  font-size: 26px;
 }
 .vip-body { flex: 1; min-width: 0; }
-.vip-t { font-size: 13px; font-weight: 800; color: $t1; }
-.vip-t .b { color: $gold-d; }
-.vip-d { font-size: 11px; color: $t3; margin-top: 2px; }
-.vip-cta { color: $o-d; font-size: 11px; font-weight: 800; }
+.vip-t { font-size: 15px; font-weight: 900; color: #fff; }
+.vip-t .b { color: #fff; }
+.vip-d { font-size: 12px; color: rgba(255,255,255,.92); margin-top: 3px; }
+.vip-cta {
+  flex-shrink: 0;
+  color: #ff6b35; font-size: 13px; font-weight: 900;
+  background: #fff; padding: 9px 16px; border-radius: 22px;
+  box-shadow: 0 4px 12px rgba(0,0,0,.14);
+  white-space: nowrap;
+}
 
 /* ━━ Coupon strip ━━ */
 .coupon-strip {
