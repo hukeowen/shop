@@ -1,6 +1,6 @@
 <template>
   <view class="page">
-    <view class="topbar safe-top">
+    <view class="topbar safe-top" :style="sbhStyle">
       <text class="back" @click="goBack">‹</text>
       <text class="title">购物车（{{ totalCount }}）</text>
       <text class="right" @click="toggleEdit">{{ editMode ? '完成' : '编辑' }}</text>

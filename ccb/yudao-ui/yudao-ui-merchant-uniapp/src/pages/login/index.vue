@@ -15,11 +15,11 @@
 
     <view class="card">
       <!-- #ifdef MP-WEIXIN -->
-      <!-- 小程序：用户微信一键登录 -->
-      <view class="sec-title">微信一键登录</view>
-      <view class="sec-sub">用微信身份快速登录，下单更方便</view>
-      <button class="submit" :disabled="wxLogining" @click="onWxLogin">
-        {{ wxLogining ? '登录中…' : '微信登录' }}
+      <!-- 小程序：微信手机号一键登录（getPhoneNumber → member weixin-mini-app-login，顺畅无 session_key 坑） -->
+      <view class="sec-title">微信手机号一键登录</view>
+      <view class="sec-sub">授权微信手机号，一键登录，下单更方便</view>
+      <button class="submit" open-type="getPhoneNumber" :disabled="wxLogining" @getphonenumber="onWxLogin">
+        {{ wxLogining ? '登录中…' : '微信手机号一键登录' }}
       </button>
       <!-- #endif -->
 
@@ -93,26 +93,46 @@ const loginPassword = ref('');
 const passwordLogining = ref(false);
 const wxLogining = ref(false);
 
-// 小程序：用户微信一键登录（uni.login 拿 code → 后端换 token）
-async function onWxLogin() {
+// 小程序：微信手机号一键登录。
+// 点按钮触发 @getphonenumber → 拿 phoneCode（e.detail.code）；再 uni.login 拿 loginCode；
+// 一起调 member 端点 weixin-mini-app-login（store.wxPhoneLogin）完成登录 + 绑微信手机号。
+async function onWxLogin(e) {
+  const d = e && e.detail ? e.detail : {};
+  // 新版返 d.code；用户拒绝/取消时 errMsg 含 deny / cancel / fail
+  if (!d.code) {
+    if (/deny|cancel/i.test(d.errMsg || '')) {
+      uni.showToast({ title: '已取消授权', icon: 'none' });
+    } else {
+      uni.showModal({ title: '获取手机号失败', content: d.errMsg || '未知错误（请用真机预览）', showCancel: false });
+    }
+    return;
+  }
   if (wxLogining.value) return;
   wxLogining.value = true;
   try {
-    await userStore.wxMiniLogin();
+    const loginCode = await new Promise((resolve, reject) => {
+      uni.login({
+        provider: 'weixin',
+        success: (r) => (r && r.code ? resolve(r.code) : reject(new Error('微信登录失败'))),
+        fail: (err) => reject(new Error(err?.errMsg || '微信登录失败')),
+      });
+    });
+    const state = `kxe_${Date.now()}_${Math.floor(Math.random() * 1e6)}`;
+    await userStore.wxPhoneLogin(loginCode, d.code, state);
     try {
       const { flushPendingReferrer } = await import('../../utils/referral.js');
       await flushPendingReferrer(userStore.userId);
     } catch {}
     uni.showToast({ title: '登录成功', icon: 'success' });
     routeByRole();
-  } catch (e) {
+  } catch (e2) {
     let msg = '';
     try {
-      msg = typeof e === 'string' ? e : (e && (e.message || e.errMsg || e.msg)) || JSON.stringify(e);
-    } catch (_) { msg = String(e); }
+      msg = typeof e2 === 'string' ? e2 : (e2 && (e2.message || e2.errMsg || e2.msg)) || JSON.stringify(e2);
+    } catch (_) { msg = String(e2); }
     uni.showModal({ title: '微信登录失败', content: msg || '未知错误', showCancel: false });
     // eslint-disable-next-line no-console
-    console.error('[wxLogin] 失败：', e);
+    console.error('[wxLogin] 失败：', e2);
   } finally {
     wxLogining.value = false;
   }

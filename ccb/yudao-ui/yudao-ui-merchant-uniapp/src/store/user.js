@@ -202,6 +202,36 @@ export const useUserStore = defineStore('user', {
     },
 
     /**
+     * 小程序「微信手机号一键登录」：getPhoneNumber 拿 phoneCode + uni.login 拿 loginCode，
+     * 一起调 member 标准端点 /app-api/member/auth/weixin-mini-app-login。
+     *
+     * 这是用户端顺畅的那条 member 登录链路，不走商户统一登录 /app/auth/wx-mini-login 的
+     * session_key 老链路，从而根治「登录态已过期 / SESSION_KEY_EXPIRED」误报。
+     * 小程序=用户专用端：登录即 member 身份，activeRole=member。
+     */
+    async wxPhoneLogin(loginCode, phoneCode, state) {
+      const resp = await request({
+        url: '/app-api/member/auth/weixin-mini-app-login',
+        method: 'POST',
+        data: { loginCode, phoneCode, state },
+      });
+      // 先清旧身份残留，再写新身份
+      this._resetIdentity();
+      // member 端点返 accessToken/refreshToken/userId/openid（无 roles/tenantId）
+      this.token = resp.accessToken || resp.token || '';
+      this.refreshToken = resp.refreshToken || '';
+      this.openid = resp.openid || '';
+      this.userId = resp.userId || 0;
+      this.merchantId = 0;
+      this.phone = resp.mobile || resp.phone || '';
+      this.roles = ['member'];
+      this.activeRole = 'member';
+      this._writeProfile(resp);
+      this.persist();
+      return resp;
+    },
+
+    /**
      * 绑定手机号（接收 <button open-type="getPhoneNumber"> 的 getphonenumber 事件）
      */
     async bindPhoneByWxButton(e) {

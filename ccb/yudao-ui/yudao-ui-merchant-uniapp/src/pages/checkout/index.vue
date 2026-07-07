@@ -1,6 +1,6 @@
 <template>
   <view class="page">
-    <view class="topbar safe-top">
+    <view class="topbar safe-top" :style="sbhStyle">
       <text class="back" @click="goBack">‹</text>
       <text class="title">订单结算</text>
       <text class="right"></text>
@@ -523,6 +523,8 @@ async function loadPromoPreview() {
 }
 
 async function submitOrder() {
+  // eslint-disable-next-line no-console
+  console.log('%c[checkout BUILD-20260706-B] 提交订单：小程序只走 launchMpCashier，无任何 href', 'color:#0a0;font-weight:bold');
   if (!items.value.length) return;
   if (deliveryType.value === 1 && !addressId.value) {
     uni.showToast({ title: '请先选择收货地址', icon: 'none' });

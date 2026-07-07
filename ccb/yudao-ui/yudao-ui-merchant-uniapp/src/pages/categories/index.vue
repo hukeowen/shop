@@ -1,6 +1,6 @@
 <template>
   <view class="page">
-    <view class="hdr safe-top">
+    <view class="hdr safe-top" :style="sbhStyle">
       <view class="back" @click="goBack">‹</view>
       <text class="title">全部分类</text>
       <view class="right"></view>

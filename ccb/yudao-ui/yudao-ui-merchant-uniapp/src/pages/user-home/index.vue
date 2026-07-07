@@ -1,7 +1,7 @@
 <template>
   <view class="page">
     <!-- 顶部欢迎条 + 搜索 -->
-    <view class="home-top safe-top">
+    <view class="home-top safe-top" :style="sbhStyle">
       <view class="home-greeting">{{ greeting }} ☀</view>
       <view class="home-name">想吃点什么？</view>
       <view class="home-search">

@@ -2,7 +2,7 @@
   <view class="page">
     <!-- 沉浸式头图 -->
     <view class="sh-cover" :style="coverStyle">
-      <view class="sh-nav-row safe-top">
+      <view class="sh-nav-row safe-top" :style="sbhStyle">
         <view class="sh-icon-btn back" @click="goBack">‹</view>
         <view class="group">
           <view

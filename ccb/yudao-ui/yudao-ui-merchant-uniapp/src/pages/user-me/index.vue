@@ -1,7 +1,7 @@
 <template>
   <view class="page">
     <!-- 顶部品牌橙渐变 + 头像信息 -->
-    <view class="me-top safe-top">
+    <view class="me-top safe-top" :style="sbhStyle">
       <view class="me-top-row">
         <view class="me-avatar">{{ avatarLetter }}</view>
         <view class="me-info">

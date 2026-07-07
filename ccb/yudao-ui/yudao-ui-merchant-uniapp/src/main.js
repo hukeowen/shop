@@ -30,5 +30,22 @@ export function createApp() {
   });
   // #endif
 
+  // ⭐ 微信小程序：uni-app 把 --status-bar-height 写死成 25px（默认兜底），真机常不符
+  //   （刘海屏 44px / 部分安卓更高）→ 自绘顶栏 .safe-top 顶到状态栏。小程序无 document，
+  //   不能像 App 那样改全局 CSS 变量，改为把真机 statusBarHeight 注入每个页面的 sbhStyle，
+  //   由各页 `.safe-top :style="sbhStyle"` 就地覆盖 --status-bar-height。取不到则退回 env()。
+  // #ifdef MP-WEIXIN
+  let __sbhStyle = {};
+  try {
+    const h = (uni.getSystemInfoSync && uni.getSystemInfoSync().statusBarHeight) || 0;
+    if (h) __sbhStyle = { '--status-bar-height': h + 'px' };
+  } catch (e) { /* 忽略 */ }
+  app.mixin({
+    data() {
+      return { sbhStyle: __sbhStyle };
+    },
+  });
+  // #endif
+
   return { app, pinia };
 }

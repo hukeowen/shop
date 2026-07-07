@@ -1,7 +1,7 @@
 <template>
   <view class="page">
     <!-- 顶部筛选 + 标题 -->
-    <view class="order-top safe-top">
+    <view class="order-top safe-top" :style="sbhStyle">
       <view class="ttl">我的订单</view>
       <view class="filter">
         <view
