@@ -1,5 +1,6 @@
 <template>
   <view class="page">
+    <view :style="sbhSpacer"></view>
     <view class="topbar">
       <text class="back" @click="goBack">‹</text>
       <text class="title">我的订单</text>
@@ -59,6 +60,8 @@ import { pageOrders, getOrderCount, cancelOrder, receiveOrder } from '@/api/orde
 import { getShopInfo } from '@/api/shop.js';
 import { addCart } from '@/api/cart.js';
 import { fen2yuan, fmtTime } from '@/utils/format.js';
+import { sbhSpacerStyle } from '@/utils/safeTop.js';
+const sbhSpacer = sbhSpacerStyle();
 
 // tenantId → 店铺名 缓存（订单只带 tenantId，多商户需解析店铺名）
 const shopNameCache = {};

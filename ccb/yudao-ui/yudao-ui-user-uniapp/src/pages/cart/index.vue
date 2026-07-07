@@ -1,5 +1,6 @@
 <template>
   <view class="page">
+    <view :style="sbhSpacer"></view>
     <view class="topbar safe-top">
       <text class="back" @click="goBack">‹</text>
       <text class="title">购物车（{{ totalCount }}）</text>
@@ -107,6 +108,8 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
 import { request } from '@/utils/request.js';
 import { fen2yuan } from '@/utils/format.js';
+import { sbhSpacerStyle } from '@/utils/safeTop.js';
+const sbhSpacer = sbhSpacerStyle();
 
 const items = ref([]); // 所有店铺购物车项扁平
 const loading = ref(false);

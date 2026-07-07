@@ -1,5 +1,6 @@
 <template>
   <view class="page">
+    <view :style="sbhSpacer"></view>
     <view class="topbar">
       <text class="back" @click="goBack">‹</text>
       <text class="title">线下转账付款</text>
@@ -92,6 +93,8 @@ import { ref, computed } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
 import { getOfflinePayInfo, submitOfflineProof } from '@/api/order.js';
 import { chooseAndUploadImage } from '@/api/upload.js';
+import { sbhSpacerStyle } from '@/utils/safeTop.js';
+const sbhSpacer = sbhSpacerStyle();
 
 const loading = ref(true);
 const found = ref(false);

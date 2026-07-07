@@ -1,5 +1,6 @@
 <template>
   <view class="page">
+    <view :style="sbhSpacer"></view>
     <view class="topbar safe-top">
       <text class="back" @click="goBack">‹</text>
       <text class="title">订单结算</text>
@@ -235,6 +236,8 @@ import { onLoad, onShow } from '@dcloudio/uni-app';
 import { request } from '@/utils/request.js';
 import { fen2yuan } from '@/utils/format.js';
 import { launchMpCashier } from '@/utils/mpPay.js';
+import { sbhSpacerStyle } from '@/utils/safeTop.js';
+const sbhSpacer = sbhSpacerStyle();
 
 const tenantId = ref(null);
 const cartIds = ref([]);

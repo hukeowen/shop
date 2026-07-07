@@ -23,6 +23,7 @@
     </view>
 
     <!-- ━━━━━━ 顶栏：问候 + 定位 + 通知 + 搜索 + ticker ━━━━━━ -->
+    <view :style="sbhSpacer"></view>
     <view class="top">
       <view class="greet">
         <view class="av">{{ avatarText }}</view>
@@ -176,6 +177,8 @@ import { listWinnersTicker, listMyQueues, listPromoRecords, getTodayStat } from 
 import { listShops, listMyShopsEnriched, reverseGeo } from '@/api/shop.js';
 import { getCartCount } from '@/api/cart.js';
 import { fen2yuan, fmtTime, fmtDistance } from '@/utils/format.js';
+import { sbhSpacerStyle } from '@/utils/safeTop.js';
+const sbhSpacer = sbhSpacerStyle();
 
 const user = useUserStore();
 const avatarText = computed(() => (user.nickname?.[0] || '邀'));

@@ -18,11 +18,24 @@ async function doLaunch(apiUrl) {
   try {
     const info = await request({ url: apiUrl });
     if (info && info.appId && info.path) {
-      uni.navigateToMiniProgram({
-        appId: info.appId,
-        path: info.path,
-        fail: (e) => uni.showToast({ title: '拉起收银台失败：' + ((e && e.errMsg) || ''), icon: 'none' }),
-      });
+      if (typeof wx !== 'undefined' && typeof wx.openEmbeddedMiniProgram === 'function') {
+        wx.openEmbeddedMiniProgram({
+          appId: info.appId,
+          path: info.path,
+          fail: () =>
+            uni.navigateToMiniProgram({
+              appId: info.appId,
+              path: info.path,
+              fail: (e) => uni.showToast({ title: '拉起收银台失败：' + ((e && e.errMsg) || ''), icon: 'none' }),
+            }),
+        });
+      } else {
+        uni.navigateToMiniProgram({
+          appId: info.appId,
+          path: info.path,
+          fail: (e) => uni.showToast({ title: '拉起收银台失败：' + ((e && e.errMsg) || ''), icon: 'none' }),
+        });
+      }
       return true;
     }
     uni.showToast({ title: '获取收银台信息失败', icon: 'none' });

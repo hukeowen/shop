@@ -5,9 +5,9 @@
     <view v-else>
       <!-- 主图 -->
       <view class="pd-pic">
-        <view class="nav-back" @click="goBack">‹</view>
-        <view class="nav-home" @click="goHome">🏠</view>
-        <view class="nav-share" @click="onShare">↗</view>
+        <view class="nav-back" :style="sbhTop" @click="goBack">‹</view>
+        <view class="nav-home" :style="sbhTop" @click="goHome">🏠</view>
+        <view class="nav-share" :style="sbhTop" @click="onShare">↗</view>
         <image v-if="product.picUrl" :src="product.picUrl" class="main-pic" mode="aspectFill" />
         <view v-else class="main-pic-emoji">{{ pickEmoji() }}</view>
         <view v-if="product.picUrls && product.picUrls.length > 1" class="pager">1 / {{ product.picUrls.length }}</view>
@@ -111,6 +111,8 @@ import { ref, computed } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
 import { request } from '@/utils/request.js';
 import { fen2yuan } from '@/utils/format.js';
+import { sbhTopStyle } from '@/utils/safeTop.js';
+const sbhTop = sbhTopStyle();
 
 const spuId = ref(null);
 const tenantId = ref(null);

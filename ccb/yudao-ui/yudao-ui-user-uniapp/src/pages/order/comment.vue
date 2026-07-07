@@ -1,5 +1,6 @@
 <template>
   <view class="page">
+    <view :style="sbhSpacer"></view>
     <view class="topbar">
       <text class="back" @click="goBack">‹</text>
       <text class="title">评价</text>
@@ -72,6 +73,8 @@ import { ref, reactive } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
 import { getOrderDetail, createOrderItemComment } from '@/api/order.js';
 import { chooseAndUploadImage } from '@/api/upload.js';
+import { sbhSpacerStyle } from '@/utils/safeTop.js';
+const sbhSpacer = sbhSpacerStyle();
 
 const loading = ref(true);
 const submitting = ref(false);
