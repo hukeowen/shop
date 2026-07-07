@@ -230,7 +230,9 @@
 
     <!-- ━━━━━━━━━━ 分享浮标（醒目，避开右上角小程序胶囊）━━━━━━━━━━ -->
     <!-- #ifdef MP-WEIXIN -->
-    <button open-type="share" class="sh-share-fab">↗ 分享给好友</button>
+    <!-- 登录了才是原生分享按钮；没登录点了先跳登录（保证分享出去带 inviter 绑推广） -->
+    <button v-if="user.isLogin" open-type="share" class="sh-share-fab">↗ 分享给好友</button>
+    <view v-else class="sh-share-fab" @click="requireLogin">↗ 分享给好友</view>
     <!-- #endif -->
     <!-- #ifndef MP-WEIXIN -->
     <view class="sh-share-fab" @click="onShareLink">↗ 分享给好友</view>
@@ -273,7 +275,22 @@ const route = reactive({});
 (function initRoute() {
   try { const ps = getCurrentPages(); Object.assign(route, ps[ps.length - 1]?.options || {}); } catch {}
 })();
-onLoad((opts) => { if (opts) Object.assign(route, opts); });
+onLoad((opts) => {
+  if (opts) Object.assign(route, opts);
+  // 扫小程序码进入：微信把 scene 放到 options.scene（形如 "171-456"，可能被 URL 编码）。
+  // 解析为 tenantId-inviter，塞进 route 并暂存推广关系，走与普通带参进店同一套绑定逻辑。
+  try {
+    if (opts && opts.scene) {
+      const decoded = decodeURIComponent(opts.scene);
+      const parts = String(decoded).split('-');
+      const tid = parts[0] ? parts[0].trim() : '';
+      const inv = parts[1] ? parts[1].trim() : '';
+      if (tid) route.tenantId = tid;
+      if (inv) route.inviter = inv;
+      if (inv && tid) savePendingReferrer(inv, tid);
+    }
+  } catch {}
+});
 
 const statusH = ref(20);
 const shop = ref(null);
@@ -392,10 +409,23 @@ async function onShareLink() {
 
 // 邀请有礼：生成本店专属推广二维码海报（本地 canvas 合成，可保存/分享）
 async function openInvitePoster() {
+  // 分享前必须登录（否则海报/分享里 inviter 为空，推广关系绑不上）→ 跳登录
+  if (!user.isLogin) return requireLogin();
   // #ifdef MP-WEIXIN
-  // 小程序无 DOM canvas，网页海报不可用。引导用原生分享（好友点开直达本店主页、带推广绑定）。
-  // 「小程序码扫码海报」为后端生成功能，待单独实现。
-  uni.showToast({ title: '点右下角「分享给好友」，好友点开直达本店', icon: 'none', duration: 2600 });
+  // 小程序：请求后端合成「小程序码海报」——别人扫码直接打开本小程序、落到本店主页并绑推广。
+  posterOpen.value = true;
+  posterImage.value = '';
+  posterLoading.value = true;
+  try {
+    const dataUrl = await request({
+      url: `/app-api/merchant/mini/shop-poster?tenantId=${route.tenantId || ''}`,
+    });
+    posterImage.value = (typeof dataUrl === 'string' && dataUrl) ? dataUrl : '';
+  } catch {
+    posterImage.value = '';
+  } finally {
+    posterLoading.value = false;
+  }
   return;
   // #endif
   posterOpen.value = true;
@@ -454,14 +484,55 @@ function onSavePoster() {
   const ok = downloadDataUrl(posterImage.value, `invite-${route.tenantId || ''}.png`);
   uni.showToast({ title: ok ? '已保存/下载' : '请长按上图保存', icon: 'none' });
   // #endif
+  // #ifdef MP-WEIXIN
+  // 后端返回的是 base64 data URL，不能直接当 filePath；先解码写成临时 png 再存相册。
+  saveDataUrlToAlbumMp(posterImage.value);
+  // #endif
   // #ifndef H5
+  // #ifndef MP-WEIXIN
   uni.saveImageToPhotosAlbum({
     filePath: posterImage.value,
     success: () => uni.showToast({ title: '已保存到相册', icon: 'success' }),
     fail: () => uni.showToast({ title: '请长按上图保存', icon: 'none' }),
   });
   // #endif
+  // #endif
 }
+
+// #ifdef MP-WEIXIN
+// 把 data:image/png;base64,xxx 写成临时文件再保存相册（微信不允许 base64 直接 save）
+function saveDataUrlToAlbumMp(dataUrl) {
+  try {
+    const base64 = String(dataUrl).replace(/^data:image\/\w+;base64,/, '');
+    const buffer = uni.base64ToArrayBuffer(base64);
+    const fs = uni.getFileSystemManager();
+    const filePath = `${wx.env.USER_DATA_PATH}/invite-${route.tenantId || 'shop'}-${Date.now()}.png`;
+    fs.writeFile({
+      filePath,
+      data: buffer,
+      encoding: 'binary',
+      success: () => {
+        uni.saveImageToPhotosAlbum({
+          filePath,
+          success: () => uni.showToast({ title: '已保存到相册', icon: 'success' }),
+          fail: (e) => {
+            // 用户拒绝相册授权时引导开设置
+            if (e && /auth deny|authorize/i.test(e.errMsg || '')) {
+              uni.showModal({ title: '需要相册权限', content: '请在设置中开启保存到相册权限', showCancel: true, confirmText: '去设置',
+                success: (r) => { if (r.confirm) uni.openSetting(); } });
+            } else {
+              uni.showToast({ title: '请长按上图保存', icon: 'none' });
+            }
+          },
+        });
+      },
+      fail: () => uni.showToast({ title: '请长按上图保存', icon: 'none' }),
+    });
+  } catch {
+    uni.showToast({ title: '请长按上图保存', icon: 'none' });
+  }
+}
+// #endif
 
 // 分享海报：H5 优先 Web Share（带图片文件），不支持则提示长按转发
 async function onSharePoster() {

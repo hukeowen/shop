@@ -39,4 +39,10 @@ public class WeChatMiniAppProperties {
      * OkHttp 调微信超时秒数
      */
     private int httpTimeoutSeconds = 8;
+
+    /**
+     * 小程序码环境版本：release=正式版 / trial=体验版 / develop=开发版
+     * （来自 ${WECHAT_MINI_APP_ENV_VERSION:release}，默认正式版）
+     */
+    private String envVersion = "release";
 }

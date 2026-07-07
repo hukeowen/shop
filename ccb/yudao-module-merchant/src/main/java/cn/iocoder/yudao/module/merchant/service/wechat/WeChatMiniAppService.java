@@ -34,4 +34,21 @@ public interface WeChatMiniAppService {
      * 将 sessionKey 写入 Redis，TTL 取自配置
      */
     void cacheSessionKey(String openid, String sessionKey);
+
+    /**
+     * 获取小程序全局接口调用凭据 access_token（内存缓存，过期前自动刷新）。
+     *
+     * @return access_token
+     */
+    String getAccessToken();
+
+    /**
+     * 生成小程序码（getwxacodeunlimit，无数量限制的 scene 码）。
+     *
+     * @param scene      场景值（最长 32 个可见字符，仅支持数字/字母/部分符号如 -_ 等）
+     * @param page       扫码后打开的页面路径（如 pages/shop/home，不带前导 /）
+     * @param envVersion 环境版本：release / trial / develop
+     * @return 小程序码 PNG 二进制
+     */
+    byte[] getUnlimitedQRCode(String scene, String page, String envVersion);
 }

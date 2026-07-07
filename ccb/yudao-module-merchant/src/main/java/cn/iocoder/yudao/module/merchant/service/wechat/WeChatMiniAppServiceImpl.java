@@ -6,8 +6,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.HttpUrl;
+import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
+import okhttp3.RequestBody;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -21,6 +23,8 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Base64;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
@@ -35,6 +39,12 @@ import static cn.iocoder.yudao.module.merchant.enums.MerchantErrorCodeConstants.
 public class WeChatMiniAppServiceImpl implements WeChatMiniAppService {
 
     private static final String REDIS_KEY_PREFIX = "wx:session:";
+
+    private static final MediaType JSON_MEDIA_TYPE = MediaType.parse("application/json; charset=utf-8");
+
+    /** access_token 内存缓存（单例服务，进程内共享）。提前 5 分钟刷新，避免临界过期。 */
+    private volatile String cachedAccessToken;
+    private volatile long accessTokenExpireAt; // epoch millis，到点前视为有效
 
     @Resource
     private WeChatMiniAppProperties properties;
@@ -171,6 +181,104 @@ public class WeChatMiniAppServiceImpl implements WeChatMiniAppService {
         stringRedisTemplate.opsForValue().set(
                 REDIS_KEY_PREFIX + openid, sessionKey,
                 Duration.ofSeconds(properties.getSessionKeyTtlSeconds()));
+    }
+
+    @Override
+    public String getAccessToken() {
+        long now = System.currentTimeMillis();
+        String token = this.cachedAccessToken;
+        if (token != null && now < this.accessTokenExpireAt) {
+            return token;
+        }
+        synchronized (this) {
+            // double-check：并发时只有一个线程去刷新
+            if (this.cachedAccessToken != null && System.currentTimeMillis() < this.accessTokenExpireAt) {
+                return this.cachedAccessToken;
+            }
+            if (StrUtil.isBlank(properties.getAppId()) || StrUtil.isBlank(properties.getAppSecret())) {
+                throw new IllegalStateException("WECHAT_MINI_APP_ID/SECRET 未配置，无法获取 access_token");
+            }
+            HttpUrl url = new HttpUrl.Builder()
+                    .scheme("https")
+                    .host("api.weixin.qq.com")
+                    .addPathSegments("cgi-bin/token")
+                    .addQueryParameter("grant_type", "client_credential")
+                    .addQueryParameter("appid", properties.getAppId())
+                    .addQueryParameter("secret", properties.getAppSecret())
+                    .build();
+            Request request = new Request.Builder().url(url).get().build();
+            try (Response response = client().newCall(request).execute()) {
+                ResponseBody body = response.body();
+                if (!response.isSuccessful() || body == null) {
+                    throw new IllegalStateException("获取 access_token 失败，HTTP code=" + response.code());
+                }
+                JsonNode node = objectMapper.readTree(body.string());
+                if (!node.has("access_token")) {
+                    throw new IllegalStateException("获取 access_token 失败，errcode="
+                            + (node.has("errcode") ? node.get("errcode").asInt() : -1)
+                            + ", errmsg=" + (node.has("errmsg") ? node.get("errmsg").asText() : "unknown"));
+                }
+                String newToken = node.get("access_token").asText();
+                long expiresIn = node.has("expires_in") ? node.get("expires_in").asLong() : 7200L;
+                // 提前 5 分钟过期，避免临界拿到即将失效的 token
+                this.accessTokenExpireAt = System.currentTimeMillis() + Math.max(60L, expiresIn - 300L) * 1000L;
+                this.cachedAccessToken = newToken;
+                log.info("[getAccessToken] 刷新成功，expiresIn={}s", expiresIn);
+                return newToken;
+            } catch (IOException e) {
+                throw new IllegalStateException("获取 access_token IO 异常：" + e.getMessage(), e);
+            }
+        }
+    }
+
+    @Override
+    public byte[] getUnlimitedQRCode(String scene, String page, String envVersion) {
+        if (StrUtil.isBlank(scene)) {
+            throw new IllegalStateException("生成小程序码失败：scene 不能为空");
+        }
+        String token = getAccessToken();
+        HttpUrl url = new HttpUrl.Builder()
+                .scheme("https")
+                .host("api.weixin.qq.com")
+                .addPathSegments("wxa/getwxacodeunlimit")
+                .addQueryParameter("access_token", token)
+                .build();
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("scene", scene);
+        if (StrUtil.isNotBlank(page)) {
+            payload.put("page", page);
+        }
+        payload.put("check_path", false);
+        payload.put("env_version", StrUtil.isNotBlank(envVersion) ? envVersion : "release");
+        payload.put("width", 280);
+        String bodyJson;
+        try {
+            bodyJson = objectMapper.writeValueAsString(payload);
+        } catch (IOException e) {
+            throw new IllegalStateException("生成小程序码失败：序列化请求体异常", e);
+        }
+        Request request = new Request.Builder()
+                .url(url)
+                .post(RequestBody.create(JSON_MEDIA_TYPE, bodyJson))
+                .build();
+        try (Response response = client().newCall(request).execute()) {
+            ResponseBody body = response.body();
+            if (!response.isSuccessful() || body == null) {
+                throw new IllegalStateException("生成小程序码失败，HTTP code=" + response.code());
+            }
+            byte[] bytes = body.bytes();
+            // 微信成功返回 PNG 二进制；失败返回 JSON（以 '{' 开头）。据首字节判定。
+            if (bytes.length > 0 && bytes[0] == '{') {
+                String errStr = new String(bytes, StandardCharsets.UTF_8);
+                JsonNode node = objectMapper.readTree(errStr);
+                throw new IllegalStateException("生成小程序码失败，errcode="
+                        + (node.has("errcode") ? node.get("errcode").asInt() : -1)
+                        + ", errmsg=" + (node.has("errmsg") ? node.get("errmsg").asText() : errStr));
+            }
+            return bytes;
+        } catch (IOException e) {
+            throw new IllegalStateException("生成小程序码 IO 异常：" + e.getMessage(), e);
+        }
     }
 
     /**
