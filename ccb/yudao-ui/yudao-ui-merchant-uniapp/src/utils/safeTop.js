@@ -22,14 +22,10 @@ function sbhPx() {
   return 0;
 }
 
-/** 流内自绘顶栏：放在顶栏前的占位块样式（物理占位，最可靠）。
- *  ⚠ 临时加了红色背景，便于真机确认「是否跑的新包」——确认生效后改回 transparent。 */
+/** 流内自绘顶栏：放在顶栏前的占位块样式（物理占位，最可靠）。透明，只占高度不显色。 */
 export function sbhSpacerStyle() {
   // #ifdef MP-WEIXIN
-  const h = sbhPx();
-  // eslint-disable-next-line no-console
-  try { console.log('[SBH] statusBarHeight=', h, 'build=SPACER-v3'); } catch (e) {}
-  return { height: h + 'px', flexShrink: '0', width: '100%', background: '#ff3b30' };
+  return { height: sbhPx() + 'px', flexShrink: '0', width: '100%', background: 'transparent' };
   // #endif
   // eslint-disable-next-line no-unreachable
   return { display: 'none' };
