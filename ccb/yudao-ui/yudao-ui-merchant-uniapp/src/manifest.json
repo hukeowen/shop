@@ -41,6 +41,14 @@
             "ios" : {
                 "dSYMs" : false
             },
+            "icons" : {
+                "android" : {
+                    "hdpi" : "appicons/72x72.png",
+                    "xhdpi" : "appicons/96x96.png",
+                    "xxhdpi" : "appicons/144x144.png",
+                    "xxxhdpi" : "appicons/192x192.png"
+                }
+            },
             "sdkConfigs" : {
                 "geolocation" : {
                     "system" : {
