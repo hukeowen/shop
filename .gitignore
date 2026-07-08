@@ -1,1 +1,6 @@
 .omc/
+
+# App 签名证书（私钥，绝不入库）
+*.jks
+*.keystore
+keystore-info.txt
