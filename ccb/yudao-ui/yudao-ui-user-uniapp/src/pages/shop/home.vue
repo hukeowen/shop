@@ -130,10 +130,10 @@
       <view class="vip-em">🎁</view>
       <view class="vip-body">
         <view v-if="vip.myStar > 0" class="vip-t">你是 <text class="b">{{ vip.myStar }} 星会员</text>{{ vip.discountText ? `，享 ` : '' }}<text v-if="vip.discountText" class="b">{{ vip.discountText }}</text></view>
-        <view v-else class="vip-t"><text class="b">邀好友进店</text> · 每人下单你拿返奖</view>
+        <view v-else class="vip-t"><text class="b">把好店分享给朋友</text> · 参与本店营销活动</view>
         <view class="vip-d">
-          <text v-if="vip.inviterCount > 0">已邀 {{ vip.inviterCount }} 位 · </text>
-          <text>在该店赚 ¥{{ vip.earnYuan }}</text>
+          <text v-if="vip.inviterCount > 0">已分享 {{ vip.inviterCount }} 位 · </text>
+          <text>本店累计推广积分 ¥{{ vip.earnYuan }}</text>
         </view>
       </view>
       <view class="vip-cta">邀请有礼 ›</view>
