@@ -134,6 +134,29 @@ async function onBuyAllinpay() {
     return;
     // #endif
 
+    // #ifdef APP-PLUS
+    // 原生App：建单 + 微信 SDK launchMiniProgram 拉起通联「微信小程序收银台」（微信原生支付，无 Apple Pay）
+    try {
+      const info = await purchasePackageMp(selectedPkg.value.id);
+      if (info && info.userName && info.path) {
+        plus.share.getServices((services) => {
+          const weixin = (services || []).find((s) => s.id === 'weixin');
+          if (!weixin) { uni.showToast({ title: '未检测到微信，请先安装微信', icon: 'none' }); return; }
+          try { weixin.launchMiniProgram({ id: info.userName, path: info.path, type: 0 }); }
+          catch (e2) { uni.showToast({ title: '拉起微信收银台失败', icon: 'none' }); }
+        }, () => uni.showToast({ title: '拉起微信收银台失败', icon: 'none' }));
+      } else {
+        uni.showToast({ title: '获取收银台失败', icon: 'none' });
+      }
+    } catch (e) {
+      uni.showToast({ title: (e && e.message) || '购买失败', icon: 'none' });
+    } finally {
+      clearTimeout(watchdog);
+      paying.value = false;
+    }
+    return;
+    // #endif
+
     const resp = await purchasePackageAllinpay(selectedPkg.value.id);
     if (!resp) {
       uni.showToast({ title: '收银台参数获取失败', icon: 'none' });

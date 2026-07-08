@@ -132,8 +132,9 @@ async function onPurchase() {
       method: 'POST',
     });
     uni.hideLoading();
-    // #ifdef MP-WEIXIN
-    // 小程序：拉起通联收银台小程序（微信/支付宝原生支付，无 Apple Pay）
+    // #ifdef MP-WEIXIN || APP-PLUS
+    // 小程序/原生App：拉起通联「微信小程序收银台」（微信原生支付，无 Apple Pay）。
+    // App 走微信 SDK launchMiniProgram；成功即 return，不再打开银联H5（安卓会弹 Apple Pay）。
     if (res && res.orderId && (await launchMpCashier(res.orderId))) return;
     // #endif
     if (res && res.cashierUrl) {
