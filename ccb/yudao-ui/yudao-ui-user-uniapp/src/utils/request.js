@@ -61,30 +61,39 @@ function isAnonBrowsePage(route) {
   return ANON_BROWSE_PREFIXES.some((p) => r.startsWith(p));
 }
 
+// ⚠ 防抖锁：一个页面常并发多个请求，token 过期时会同时 401，
+//   若每个都 reLaunch 会互撞成 `reLaunch:fail timeout` + 白屏，还弹一堆 toast。
+//   全局只允许一次跳登录。
+let _redirectingToLogin = false;
 function clearTokenAndRedirectToLogin() {
-  try {
-    if (typeof localStorage !== 'undefined') {
-      localStorage.removeItem(USER_STORE_STORAGE_KEY);
-    }
-  } catch {}
+  // 清 token（幂等，总是执行）
+  try { if (typeof localStorage !== 'undefined') localStorage.removeItem(USER_STORE_STORAGE_KEY); } catch {}
   try { uni.removeStorageSync('token'); } catch {}
   try {
     const pages = getCurrentPages ? getCurrentPages() : [];
     const cur = pages && pages.length ? pages[pages.length - 1] : null;
     const curRoute = cur?.route || '';
     if (/pages\/login\/index/.test(curRoute)) return;
+    // 匿名可浏览页（逛店/首页等）401 属正常，不弹 toast、不跳登录（下单时再由 requireLogin 拦）
     if (isAnonBrowsePage(curRoute)) return;
+    if (_redirectingToLogin) return; // 并发 401 只跳一次
+    _redirectingToLogin = true;
+    uni.showToast({ title: '登录已失效', icon: 'none' });
     try {
       const optionsStr = cur?.options
         ? Object.entries(cur.options).map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join('&')
         : '';
       const fullRoute = '/' + curRoute.replace(/^\/+/, '') + (optionsStr ? '?' + optionsStr : '');
-      if (typeof localStorage !== 'undefined' && curRoute) {
-        localStorage.setItem('redirect:after-login', fullRoute);
-      }
+      // uni 存储（小程序无 localStorage）
+      if (curRoute) uni.setStorageSync('redirect:after-login', fullRoute);
     } catch {}
-    uni.reLaunch({ url: '/pages/login/index' });
-  } catch {}
+    setTimeout(() => {
+      uni.reLaunch({
+        url: '/pages/login/index',
+        complete: () => { setTimeout(() => { _redirectingToLogin = false; }, 2000); },
+      });
+    }, 300);
+  } catch { _redirectingToLogin = false; }
 }
 
 function getHeader(urlPath, extraTenantId) {
@@ -112,7 +121,6 @@ export function request({ url, method = 'GET', data, header, responseType, raw =
       ...(isArrayBuffer ? { responseType: 'arraybuffer' } : {}),
       success: (res) => {
         if (res.statusCode === 401) {
-          uni.showToast({ title: '登录已失效', icon: 'none' });
           clearTokenAndRedirectToLogin();
           reject(new Error('unauthorized'));
           return;
@@ -138,7 +146,6 @@ export function request({ url, method = 'GET', data, header, responseType, raw =
         } else {
           const msg = body.msg || body.message || '请求失败';
           if (body.code === 401 || /未登录/.test(msg) || /token.*失效/i.test(msg)) {
-            uni.showToast({ title: '登录已失效', icon: 'none' });
             clearTokenAndRedirectToLogin();
           } else {
             uni.showToast({ title: msg, icon: 'none' });
