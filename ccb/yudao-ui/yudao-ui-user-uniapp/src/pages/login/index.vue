@@ -17,14 +17,14 @@
       <!-- 微信小程序：一键授权手机号登录（企业/个体主体方可用 getPhoneNumber） -->
       <view class="form">
         <view class="form-t">欢迎使用邀三惠</view>
-        <view class="form-s">授权微信手机号，一键登录</view>
+        <view class="form-s">手机号快捷登录，安全便捷</view>
         <button
           class="wx-btn"
           open-type="getPhoneNumber"
           :loading="submitting"
           :disabled="submitting"
           @getphonenumber="onWxLogin"
-        >{{ submitting ? '登录中…' : '微信手机号一键登录' }}</button>
+        >{{ submitting ? '登录中…' : '手机号快捷登录' }}</button>
         <view class="agree">
           登录即代表同意 <text class="link">《用户协议》</text> 与 <text class="link">《隐私政策》</text>
         </view>
@@ -133,8 +133,8 @@ async function onWxLogin(e) {
     const loginCode = await new Promise((resolve, reject) => {
       uni.login({
         provider: 'weixin',
-        success: (r) => (r && r.code ? resolve(r.code) : reject(new Error('微信登录失败'))),
-        fail: (err) => reject(new Error(err?.errMsg || '微信登录失败')),
+        success: (r) => (r && r.code ? resolve(r.code) : reject(new Error('登录失败，请重试'))),
+        fail: (err) => reject(new Error(err?.errMsg || '登录失败，请重试')),
       });
     });
     const state = `kxe_${Date.now()}_${Math.floor(Math.random() * 1e6)}`;
