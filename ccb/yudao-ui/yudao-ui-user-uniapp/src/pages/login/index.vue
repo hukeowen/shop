@@ -20,13 +20,22 @@
         <view class="form-s">手机号快捷登录，安全便捷</view>
         <button
           class="wx-btn"
-          open-type="getPhoneNumber"
+          :open-type="agreed ? 'getPhoneNumber' : ''"
           :loading="submitting"
           :disabled="submitting"
           @getphonenumber="onWxLogin"
+          @click="onWxTap"
         >{{ submitting ? '登录中…' : '手机号快捷登录' }}</button>
         <view class="agree">
-          登录即代表同意 <text class="link">《用户协议》</text> 与 <text class="link">《隐私政策》</text>
+          <view class="cbox" :class="{ on: agreed }" @click="agreed = !agreed">
+            <text v-if="agreed" class="tick">✓</text>
+          </view>
+          <view class="agree-txt">
+            <text @click="agreed = !agreed">我已阅读并同意</text>
+            <text class="link" @click.stop="openDoc('user')">《用户协议》</text>
+            <text @click="agreed = !agreed">与</text>
+            <text class="link" @click.stop="openDoc('privacy')">《隐私政策》</text>
+          </view>
         </view>
       </view>
       <!-- #endif -->
@@ -53,7 +62,15 @@
         </view>
 
         <view class="agree">
-          登录即代表同意 <text class="link">《用户协议》</text> 与 <text class="link">《隐私政策》</text>
+          <view class="cbox" :class="{ on: agreed }" @click="agreed = !agreed">
+            <text v-if="agreed" class="tick">✓</text>
+          </view>
+          <view class="agree-txt">
+            <text @click="agreed = !agreed">我已阅读并同意</text>
+            <text class="link" @click.stop="openDoc('user')">《用户协议》</text>
+            <text @click="agreed = !agreed">与</text>
+            <text class="link" @click.stop="openDoc('privacy')">《隐私政策》</text>
+          </view>
         </view>
       </view>
       <!-- #endif -->
@@ -82,6 +99,12 @@ const mobile = ref('');
 const code = ref('');
 const cd = ref(0);
 const submitting = ref(false);
+const agreed = ref(false); // 隐私合规:默认不勾选，须用户主动同意《用户协议》《隐私政策》后方可登录
+
+// 打开协议详情页（type=user 用户协议 / privacy 隐私政策）
+function openDoc(type) {
+  uni.navigateTo({ url: `/pages/agreement/index?type=${type}` });
+}
 
 // #ifndef MP-WEIXIN
 async function onSend() {
@@ -95,6 +118,7 @@ async function onSend() {
   } catch {}
 }
 async function onLogin() {
+  if (!agreed.value) return uni.showToast({ title: '请先阅读并勾选下方协议', icon: 'none' });
   if (!/^1[3-9]\d{9}$/.test(mobile.value)) return uni.showToast({ title: '请输入正确的手机号', icon: 'none' });
   if (!/^\d{4,6}$/.test(code.value)) return uni.showToast({ title: '请输入短信验证码', icon: 'none' });
   submitting.value = true;
@@ -112,9 +136,14 @@ async function onLogin() {
 // #endif
 
 // #ifdef MP-WEIXIN
-// 微信小程序：点「手机号一键登录」按钮触发 @getphonenumber → 拿 phoneCode；
+// 隐私合规:未勾选协议时按钮 open-type 置空，点击只走这里提示，不触发手机号授权
+function onWxTap() {
+  if (!agreed.value) uni.showToast({ title: '请先阅读并勾选下方协议', icon: 'none' });
+}
+// 微信小程序：点「手机号快捷登录」按钮触发 @getphonenumber → 拿 phoneCode；
 // 再 wx.login 拿 loginCode；一起调后端 weixin-mini-app-login 完成登录 + 绑微信手机号。
 async function onWxLogin(e) {
+  if (!agreed.value) return; // 双保险:未同意协议不处理
   const d = e && e.detail ? e.detail : {};
   // 新版返 d.code；用户拒绝/取消时 errMsg 含 deny / cancel / fail
   if (!d.code) {
@@ -277,7 +306,22 @@ async function onWxLogin(e) {
 }
 .wx-btn::after { border: none; }
 .wx-btn[disabled] { opacity: .65; background: linear-gradient(135deg, $o, $o-d); color: #fff; }
-.agree { margin-top: 18px; text-align: center; font-size: 12px; color: $t4; line-height: 1.6; }
+.agree {
+  margin-top: 18px;
+  display: flex; align-items: flex-start; justify-content: center;
+  gap: 8px;
+  font-size: 12px; color: $t4; line-height: 1.5;
+}
+.cbox {
+  flex-shrink: 0;
+  width: 16px; height: 16px; margin-top: 1px;
+  border: 1.5px solid $line-d; border-radius: 5px;
+  display: flex; align-items: center; justify-content: center;
+  background: #fff; transition: all .15s;
+}
+.cbox.on { background: $o; border-color: $o; }
+.cbox .tick { color: #fff; font-size: 11px; font-weight: 900; line-height: 1; }
+.agree-txt { text-align: left; max-width: 260px; }
 .agree .link { color: $o; }
 
 /* ━━ 底部权益 ━━ */
