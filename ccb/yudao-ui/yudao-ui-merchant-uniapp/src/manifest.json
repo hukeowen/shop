@@ -17,7 +17,8 @@
         },
         "modules" : {
             "Geolocation" : {},
-            "Barcode" : {}
+            "Barcode" : {},
+            "Share" : {}
         },
         "distribute" : {
             "android" : {
@@ -53,6 +54,12 @@
                 "geolocation" : {
                     "system" : {
                         "__platform__" : [ "android", "ios" ]
+                    }
+                },
+                "share" : {
+                    "weixin" : {
+                        "appid" : "wx2f9a1a1d57cf393c",
+                        "UniversalLinks" : ""
                     }
                 }
             }
