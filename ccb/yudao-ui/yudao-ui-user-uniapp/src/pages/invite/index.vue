@@ -90,7 +90,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useUserStore } from '@/store/user.js';
 import { getInviteEligibility, getAccount, getMyChildrenCount } from '@/api/promo.js';
 import { fen2yuan } from '@/utils/format.js';
-import { buildInvitePoster, downloadDataUrl } from '@/utils/poster.js';
+import { buildInvitePoster, savePosterDataUrl } from '@/utils/poster.js';
 import { sbhSpacerStyle } from '@/utils/safeTop.js';
 const sbhSpacer = sbhSpacerStyle();
 
@@ -105,7 +105,13 @@ const posterShop = ref(null);
 const posterImage = ref('');
 const posterLoading = ref(false);
 
-const baseOrigin = computed(() => (typeof location !== 'undefined' ? location.origin : 'https://ke.doupaidoudian.com'));
+// #ifdef H5
+const baseOrigin = computed(() => location.origin);
+// #endif
+// #ifndef H5
+// 小程序/App 里 location 不可用或是本地路径，邀请链接必须用固定线上域名，否则推广绑定失效
+const baseOrigin = computed(() => 'https://ke.doupaidoudian.com');
+// #endif
 
 const shopsWithLinks = computed(() =>
   shops.value.map((s) => ({
@@ -160,8 +166,7 @@ async function onShowPoster(s) {
 
 function onSavePoster() {
   if (!posterImage.value) return;
-  const ok = downloadDataUrl(posterImage.value, `invite-${posterShop.value?.tenantId || ''}.png`);
-  uni.showToast({ title: ok ? '已保存/下载' : '请长按上图保存', icon: 'none' });
+  savePosterDataUrl(posterImage.value, `invite-${posterShop.value?.tenantId || ''}.png`);
 }
 
 function closePoster() {

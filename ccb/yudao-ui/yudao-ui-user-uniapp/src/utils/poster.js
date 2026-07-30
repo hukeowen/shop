@@ -306,3 +306,67 @@ export function downloadDataUrl(dataUrl, filename = 'invite-poster.png') {
     return false;
   }
 }
+
+/**
+ * 跨端保存海报（base64 dataURL）到相册/下载。异步，通过 toast 反馈。
+ * - H5：浏览器下载（或引导长按）
+ * - 微信小程序：base64 → 临时文件 → 保存相册（含相册授权引导）
+ * - App：plus.nativeObj.Bitmap 解 base64 → 临时 png → 保存相册
+ * @param {string} dataUrl data:image/png;base64,...
+ * @param {string} [filename]
+ */
+export function savePosterDataUrl(dataUrl, filename = 'invite-poster.png') {
+  if (!dataUrl) { uni.showToast({ title: '海报未就绪，请稍候', icon: 'none' }); return; }
+  const safeName = String(filename).replace(/[^\w.-]/g, '_');
+  // #ifdef H5
+  const ok = downloadDataUrl(dataUrl, safeName);
+  uni.showToast({ title: ok ? '已保存/下载' : '请长按上图保存', icon: 'none' });
+  return;
+  // #endif
+  // #ifdef MP-WEIXIN
+  try {
+    const base64 = String(dataUrl).replace(/^data:image\/\w+;base64,/, '');
+    const buffer = uni.base64ToArrayBuffer(base64);
+    const fs = uni.getFileSystemManager();
+    const fp = `${wx.env.USER_DATA_PATH}/${safeName}-${Date.now()}.png`;
+    fs.writeFile({
+      filePath: fp, data: buffer, encoding: 'binary',
+      success: () => _saveAlbum(fp),
+      fail: () => uni.showToast({ title: '海报保存失败', icon: 'none' }),
+    });
+  } catch { uni.showToast({ title: '海报保存失败', icon: 'none' }); }
+  return;
+  // #endif
+  // #ifdef APP-PLUS
+  try {
+    const bmp = new plus.nativeObj.Bitmap('poster_' + Date.now());
+    bmp.loadBase64Data(dataUrl, () => {
+      const fp = '_doc/' + safeName + '-' + Date.now() + '.png';
+      bmp.save(fp, { overwrite: true, format: 'png' }, () => {
+        _saveAlbum(fp, () => bmp.clear());
+      }, () => { uni.showToast({ title: '海报保存失败', icon: 'none' }); bmp.clear(); });
+    }, () => { uni.showToast({ title: '海报解析失败', icon: 'none' }); bmp.clear(); });
+  } catch { uni.showToast({ title: '海报保存失败', icon: 'none' }); }
+  return;
+  // #endif
+}
+
+// #ifndef H5
+// 保存本地文件到系统相册（小程序/App 通用），含授权失败引导
+function _saveAlbum(filePath, done) {
+  uni.saveImageToPhotosAlbum({
+    filePath,
+    success: () => { uni.showToast({ title: '已保存到相册', icon: 'success' }); if (done) done(); },
+    fail: (e) => {
+      const msg = (e && e.errMsg) || '';
+      if (/auth deny|authorize|permission/i.test(msg)) {
+        uni.showModal({ title: '需要相册权限', content: '请在设置中开启保存到相册权限', confirmText: '去设置',
+          success: (r) => { if (r.confirm && uni.openSetting) uni.openSetting(); } });
+      } else {
+        uni.showToast({ title: '请长按/截图保存', icon: 'none' });
+      }
+      if (done) done();
+    },
+  });
+}
+// #endif

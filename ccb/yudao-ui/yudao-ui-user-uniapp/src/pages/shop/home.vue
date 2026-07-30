@@ -266,7 +266,7 @@ import { addCart, listCart, getCartCount } from '@/api/cart.js';
 import { listCouponTemplates, takeCoupon } from '@/api/coupon.js';
 import { request } from '@/utils/request.js';
 import { fen2yuan } from '@/utils/format.js';
-import { buildInvitePoster, downloadDataUrl } from '@/utils/poster.js';
+import { buildInvitePoster, savePosterDataUrl } from '@/utils/poster.js';
 import { useUserStore } from '@/store/user.js';
 
 const user = useUserStore();
@@ -388,7 +388,12 @@ async function toggleFav() {
   }
 }
 function inviteLink() {
-  const base = typeof location !== 'undefined' ? location.origin : 'https://ke.doupaidoudian.com';
+  // #ifdef H5
+  const base = location.origin;
+  // #endif
+  // #ifndef H5
+  const base = 'https://ke.doupaidoudian.com';
+  // #endif
   return `${base}/#/pages/shop/home?tenantId=${route.tenantId}&inviter=${user.userId || ''}`;
 }
 
@@ -480,23 +485,7 @@ onShareTimeline(() => ({
 
 function onSavePoster() {
   if (!posterImage.value) return;
-  // #ifdef H5
-  const ok = downloadDataUrl(posterImage.value, `invite-${route.tenantId || ''}.png`);
-  uni.showToast({ title: ok ? '已保存/下载' : '请长按上图保存', icon: 'none' });
-  // #endif
-  // #ifdef MP-WEIXIN
-  // 后端返回的是 base64 data URL，不能直接当 filePath；先解码写成临时 png 再存相册。
-  saveDataUrlToAlbumMp(posterImage.value);
-  // #endif
-  // #ifndef H5
-  // #ifndef MP-WEIXIN
-  uni.saveImageToPhotosAlbum({
-    filePath: posterImage.value,
-    success: () => uni.showToast({ title: '已保存到相册', icon: 'success' }),
-    fail: () => uni.showToast({ title: '请长按上图保存', icon: 'none' }),
-  });
-  // #endif
-  // #endif
+  savePosterDataUrl(posterImage.value, `invite-${route.tenantId || ''}.png`);
 }
 
 // #ifdef MP-WEIXIN

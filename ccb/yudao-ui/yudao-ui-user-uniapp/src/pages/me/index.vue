@@ -194,7 +194,7 @@ import { getUnusedCouponCount } from '@/api/coupon.js';
 import { listMyCards } from '@/api/card.js';
 import { favoriteCount } from '@/api/product.js';
 import { fen2yuan, fmtTime } from '@/utils/format.js';
-import { buildInvitePoster, downloadDataUrl } from '@/utils/poster.js';
+import { buildInvitePoster, savePosterDataUrl } from '@/utils/poster.js';
 import { sbhSpacerStyle } from '@/utils/safeTop.js';
 const sbhSpacer = sbhSpacerStyle();
 
@@ -286,7 +286,12 @@ async function onShopInvite(s) {
     uni.showToast({ title: '先在本店完成「推 N 反 1」购买才能开启邀请', icon: 'none', duration: 2200 });
     return;
   }
-  const baseOrigin = (typeof location !== 'undefined' && location.origin) || 'https://ke.doupaidoudian.com';
+  // #ifdef H5
+  const baseOrigin = location.origin;
+  // #endif
+  // #ifndef H5
+  const baseOrigin = 'https://ke.doupaidoudian.com';
+  // #endif
   const inviteLink = `${baseOrigin}/#/pages/shop/home?tenantId=${s.tenantId}&inviter=${user.userId || ''}`;
   posterShop.value = { tenantId: s.tenantId, shopName: s.shopName || s.name, inviteLink };
   posterImage.value = '';
@@ -322,8 +327,7 @@ function onCopyPosterLink() {
 
 function onSavePoster() {
   if (!posterImage.value) return;
-  const ok = downloadDataUrl(posterImage.value, `invite-${posterShop.value?.tenantId || ''}.png`);
-  uni.showToast({ title: ok ? '已保存/下载' : '请长按上图保存', icon: 'none' });
+  savePosterDataUrl(posterImage.value, `invite-${posterShop.value?.tenantId || ''}.png`);
 }
 
 function closePoster() {

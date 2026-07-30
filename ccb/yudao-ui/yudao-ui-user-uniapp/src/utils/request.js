@@ -8,12 +8,13 @@
 
 const USER_STORE_STORAGE_KEY = 'kexiaoer-user-store-v1';
 
-// 小程序没有同源代理，uni.request 必须用绝对 https 地址（且需在小程序后台「request 合法域名」里加上）；
-// H5 保持相对路径，仍走 nginx 同源代理 /app-api，逻辑不变。
-// #ifdef MP-WEIXIN
+// 小程序 + App 都没有同源代理，uni.request 必须用绝对 https 域名
+// （小程序后台「request 合法域名」需加上；App 无此限制但同样不能用相对路径）。
+// H5 保持相对路径，走 nginx 同源代理 /app-api，逻辑不变。
+// #ifndef H5
 const API_BASE = 'https://ke.doupaidoudian.com';
 // #endif
-// #ifndef MP-WEIXIN
+// #ifdef H5
 const API_BASE = '';
 // #endif
 

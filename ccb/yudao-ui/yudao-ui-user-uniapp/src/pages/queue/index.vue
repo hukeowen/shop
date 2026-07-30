@@ -91,7 +91,12 @@ function goSpu(q) {
   uni.navigateTo({ url: `/pages/product/detail?id=${q.spuId}&tenantId=${q.tenantId || ''}` });
 }
 function onShare(q) {
-  const base = typeof location !== 'undefined' ? location.origin : 'https://m.doupaidoudian.com';
+  // #ifdef H5
+  const base = location.origin;
+  // #endif
+  // #ifndef H5
+  const base = 'https://ke.doupaidoudian.com';
+  // #endif
   const link = `${base}/#/pages/product/detail?id=${q.spuId || ''}&tenantId=${q.tenantId || ''}&inviter=${user.userId || ''}`;
   uni.setClipboardData({ data: link, success: () => uni.showToast({ title: '链接已复制 · 发给朋友', icon: 'success' }) });
 }

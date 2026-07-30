@@ -8,10 +8,11 @@
 
 const USER_STORE_STORAGE_KEY = 'kexiaoer-user-store-v1';
 
-// #ifdef MP-WEIXIN
+// 小程序 + App 无同源代理，上传必须绝对 https 域名；H5 走相对同源代理。
+// #ifndef H5
 const API_BASE = 'https://ke.doupaidoudian.com';
 // #endif
-// #ifndef MP-WEIXIN
+// #ifdef H5
 const API_BASE = '';
 // #endif
 
