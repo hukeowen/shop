@@ -118,7 +118,7 @@ onLoad((q) => {
   background: #fafafa;
   padding-bottom: 96rpx;
 }
-.safe-top { padding-top: calc(max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px)) + 16rpx); }
+.safe-top { padding-top: calc(max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px)) + 16rpx) !important; }
 
 .hdr {
   display: flex;

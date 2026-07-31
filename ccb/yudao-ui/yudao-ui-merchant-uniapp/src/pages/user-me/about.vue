@@ -104,7 +104,7 @@ onMounted(() => {
 <style lang="scss" scoped>
 @import '../../uni.scss';
 .page { min-height: 100vh; background: $bg-page; }
-.safe-top { padding-top: calc(max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px)) + 16rpx); }
+.safe-top { padding-top: calc(max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px)) + 16rpx) !important; }
 .topbar { display: flex; align-items: center; padding: 16rpx 32rpx; background: $bg-card; border-bottom: 1rpx solid $border-color; }
 .topbar .back { font-size: 44rpx; color: $text-primary; padding-right: 16rpx; }
 .topbar .title { flex: 1; text-align: center; font-size: 32rpx; font-weight: 600; color: $text-primary; }

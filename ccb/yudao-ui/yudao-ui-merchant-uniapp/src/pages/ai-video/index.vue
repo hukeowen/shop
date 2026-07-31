@@ -186,7 +186,7 @@ onShow(() => {
 }
 
 .safe-top {
-  padding-top: calc(max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px)) + 48rpx);
+  padding-top: calc(max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px)) + 48rpx) !important;
 }
 
 .hero {

@@ -1,8 +1,11 @@
 /**
  * bbox 裁切工具（客户端 canvas 版）
  *
- * - 输入：原图 URL（blob / http / data 都行）+ 归一化 bbox [x1,y1,x2,y2]
- * - 输出：裁切后的 blob URL + base64（方便上传 OSS）
+ * - 输入：原图 URL + 归一化 bbox [x1,y1,x2,y2]
+ *   ⚠ 原生 App 必须传 **dataURL**（`data:image/jpeg;base64,…`）而不是 `file:///` 本地路径：
+ *     file:// 页面加载 file:// 图片会「污染」canvas，随后 toDataURL/toBlob 抛 SecurityError。
+ *     dataURL 视为同源，不污染，H5 下也照常工作——所以调用方统一传 dataURL。
+ * - 输出：裁切后的 dataURL（可直接当 <image src>）+ 纯 base64（方便上传 OSS）
  * - 会自动 padding 一圈，并居中贴到方形白底（符合商品封面 1:1 审美）
  */
 
@@ -44,21 +47,12 @@ export function cropByBbox(imageUrl, bbox, { padding = 0.08, maxSize = 1024 } = 
         const dx = Math.round((outSide - drawW) / 2);
         const dy = Math.round((outSide - drawH) / 2);
         ctx.drawImage(img, sx, sy, sw, sh, dx, dy, drawW, drawH);
-        canvas.toBlob(
-          (blob) => {
-            if (!blob) return reject(new Error('canvas.toBlob 返回空'));
-            const previewUrl = URL.createObjectURL(blob);
-            const reader = new FileReader();
-            reader.onload = () => {
-              const base64 = String(reader.result).replace(/^data:[^,]+,/, '');
-              resolve({ previewUrl, base64 });
-            };
-            reader.onerror = () => reject(new Error('FileReader 读取失败'));
-            reader.readAsDataURL(blob);
-          },
-          'image/jpeg',
-          0.9
-        );
+        // 用 toDataURL 而不是 toBlob + URL.createObjectURL：
+        // 原生 App 的 <image> 对 blob: 协议支持不稳，dataURL 三端都能直接渲染，
+        // 而且顺手就是要上传的 base64，省一次 FileReader。
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+        if (!dataUrl || dataUrl.length < 32) return reject(new Error('canvas 导出失败'));
+        resolve({ previewUrl: dataUrl, base64: dataUrl.replace(/^data:[^,]+,/, '') });
       } catch (e) {
         reject(e);
       }

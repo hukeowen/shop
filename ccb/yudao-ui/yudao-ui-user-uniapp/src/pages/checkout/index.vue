@@ -719,7 +719,7 @@ onShow(() => {
 .page {
   min-height: 100vh; background: $bg-page; padding-bottom: 200rpx;
 }
-.safe-top { padding-top: calc(env(safe-area-inset-top) + 16rpx); }
+.safe-top { padding-top: calc(env(safe-area-inset-top) + 16rpx) !important; }
 .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
 
 .topbar {

@@ -16,6 +16,7 @@
       "delay": 0
     },
     "modules": {
+      "Camera": {},
       "Share": {},
       "Geolocation": {},
       "Barcode": {}

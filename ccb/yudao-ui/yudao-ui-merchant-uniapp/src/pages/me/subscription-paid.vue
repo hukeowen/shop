@@ -136,7 +136,7 @@ onUnmounted(() => {
   background: linear-gradient(180deg, #fff6ee 0%, $bg-page 40%);
   padding-bottom: 80rpx;
 }
-.safe-top { padding-top: calc(max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px)) + 16rpx); }
+.safe-top { padding-top: calc(max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px)) + 16rpx) !important; }
 
 .topbar {
   padding: 16rpx 32rpx;

@@ -169,6 +169,8 @@ function pickImage() {
       try {
         detectingTip.value = '上传到 OSS…';
         const base64 = await blobUrlToBase64(path);
+        // 裁切统一喂 dataURL：App 端 file:// 图片进 canvas 会污染画布，导出直接 SecurityError
+        const sourceDataUrl = 'data:image/jpeg;base64,' + base64;
         originalOssUrl.value = (await uploadImage(base64, { ext: 'jpg' })).url;
         detectingTip.value = '豆包视觉模型识别中…';
         const detected = await detectProducts(originalOssUrl.value);
@@ -176,7 +178,7 @@ function pickImage() {
         const cropped = [];
         for (let i = 0; i < detected.length; i++) {
           try {
-            const { previewUrl: pv, base64: b64 } = await cropByBbox(path, detected[i].bbox);
+            const { previewUrl: pv, base64: b64 } = await cropByBbox(sourceDataUrl, detected[i].bbox);
             cropped.push({
               ...detected[i],
               previewUrl: pv,

@@ -180,7 +180,7 @@ onShow(load);
 </script>
 
 <style lang="scss" scoped>
-.safe-top { padding-top: calc(max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px)) + 16rpx); }
+.safe-top { padding-top: calc(max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px)) + 16rpx) !important; }
 .topbar {
   display: flex; align-items: center; padding: 16rpx 24rpx;
   background: #fff; border-bottom: 1rpx solid #eef0f4;
