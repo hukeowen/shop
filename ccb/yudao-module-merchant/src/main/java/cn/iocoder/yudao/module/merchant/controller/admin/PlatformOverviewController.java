@@ -68,6 +68,10 @@ public class PlatformOverviewController {
     private MemberUserApi memberUserApi;
     @Resource
     private ProductCommentMapper productCommentMapper;
+    @Resource
+    private cn.iocoder.yudao.module.merchant.dal.mysql.MerchantApplyMapper merchantApplyMapper;
+    @Resource
+    private cn.iocoder.yudao.module.merchant.service.KycSignService kycSignService;
 
     @GetMapping("/shops")
     @Operation(summary = "所有店铺（租户ID+店铺名+状态）—— 总览筛选下拉用")
@@ -336,6 +340,29 @@ public class PlatformOverviewController {
                         .likeIfPresent(ShopInfoDO::getShopName, shopName)
                         .eqIfPresent(ShopInfoDO::getTenantId, tenantId)
                         .orderByDesc(ShopInfoDO::getId));
+        // 店铺管理员（商户登录账号）：shop.tenantId → merchant_info.userId → member_user(手机号即登录账号)。
+        // 注意商户账号不在 system_users（那是后台管理员），而在 member_user，且 tenant_id=0，靠 @TenantIgnore 才查得到。
+        java.util.Set<Long> tenantIds = new java.util.HashSet<>();
+        for (ShopInfoDO s : page.getList()) {
+            if (s.getTenantId() != null) {
+                tenantIds.add(s.getTenantId());
+            }
+        }
+        Map<Long, MerchantDO> merchantByTenant = new HashMap<>();
+        if (!tenantIds.isEmpty()) {
+            for (MerchantDO mc : merchantMapper.selectList(
+                    new LambdaQueryWrapperX<MerchantDO>().in(MerchantDO::getTenantId, tenantIds))) {
+                merchantByTenant.put(mc.getTenantId(), mc);
+            }
+        }
+        java.util.Set<Long> adminUserIds = new java.util.HashSet<>();
+        for (MerchantDO mc : merchantByTenant.values()) {
+            if (mc.getUserId() != null) {
+                adminUserIds.add(mc.getUserId());
+            }
+        }
+        Map<Long, MemberUserRespDTO> adminUserMap = adminUserIds.isEmpty()
+                ? java.util.Collections.emptyMap() : memberUserApi.getUserMap(adminUserIds);
         List<Map<String, Object>> list = new ArrayList<>();
         for (ShopInfoDO s : page.getList()) {
             Map<String, Object> m = new LinkedHashMap<>();
@@ -351,9 +378,139 @@ public class PlatformOverviewController {
             m.put("tlFeeRate", s.getTlFeeRate());
             m.put("autoApprove", s.getAutoApprove() == null ? 1 : s.getAutoApprove());
             m.put("createTime", s.getCreateTime());
+            // 管理员账号（商户登录手机号）
+            MerchantDO mc = merchantByTenant.get(s.getTenantId());
+            MemberUserRespDTO au = mc != null && mc.getUserId() != null ? adminUserMap.get(mc.getUserId()) : null;
+            m.put("adminUserId", mc == null ? null : mc.getUserId());
+            m.put("adminMobile", au != null ? au.getMobile() : (mc == null ? null : mc.getContactPhone()));
+            m.put("adminName", au != null && au.getNickname() != null && !au.getNickname().isEmpty()
+                    ? au.getNickname() : (mc == null ? null : mc.getContactName()));
+            // 是否有可查看的入驻/进件资料（前端据此决定「查看资料」按钮是否可点）
+            m.put("hasKyc", hasKyc(s));
             list.add(m);
         }
         return success(new PageResult<>(list, page.getTotal()));
+    }
+
+    /** 该店是否上传过任何进件/入驻资料图片 */
+    private static boolean hasKyc(ShopInfoDO s) {
+        return notBlank(s.getBusinessLicenseKey()) || notBlank(s.getIdCardFrontKey())
+                || notBlank(s.getIdCardBackKey()) || notBlank(s.getStorePicKey())
+                || notBlank(s.getIndoorPicKey()) || notBlank(s.getMerchantFullName())
+                || notBlank(s.getLegalName()) || notBlank(s.getCreditCode());
+    }
+
+    private static boolean notBlank(String v) {
+        return v != null && !v.trim().isEmpty();
+    }
+
+    @PutMapping("/shop/update-status")
+    @Operation(summary = "店铺上架/下架（1=上架展示 0=下架隐藏，下架后用户端 ke 首页/搜索/分类均不展示）")
+    @PreAuthorize("@ss.hasPermission('merchant:platform:query')")
+    @TenantIgnore
+    public CommonResult<Boolean> updateShopStatus(@RequestParam("id") Long id,
+                                                  @RequestParam("status") Integer status) {
+        // ⚠ shop_info.status 语义与直觉相反：1=展示上架，0=隐藏下架。
+        // 用户端 AppShopPublicController.listShops 硬过滤 .eq(status, 1)，故下架必须写 0。
+        if (status == null || (status != 0 && status != 1)) {
+            return CommonResult.error(400, "status 只能是 1(上架) 或 0(下架)");
+        }
+        ShopInfoDO update = new ShopInfoDO();
+        update.setId(id);
+        update.setStatus(status);
+        shopInfoMapper.updateById(update);
+        return success(true);
+    }
+
+    @GetMapping("/shop/kyc")
+    @Operation(summary = "查看店铺入驻/进件资料（文字资料 + 证件图片临时 URL，1 小时过期）")
+    @PreAuthorize("@ss.hasPermission('merchant:platform:query')")
+    @TenantIgnore
+    public CommonResult<Map<String, Object>> shopKyc(@RequestParam("id") Long id) {
+        ShopInfoDO s = shopInfoMapper.selectById(id);
+        if (s == null) {
+            return CommonResult.error(400, "店铺不存在");
+        }
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("shopName", s.getShopName());
+        m.put("tenantId", s.getTenantId());
+        // ===== 主体 / 法人 =====
+        m.put("merchantFullName", s.getMerchantFullName());
+        m.put("legalName", s.getLegalName());
+        m.put("legalIdNo", mask(s.getLegalIdNo()));
+        m.put("creditCode", s.getCreditCode());
+        m.put("creditCodeExpire", s.getCreditCodeExpire());
+        m.put("busAddress", s.getBusAddress());
+        // ===== 联系人 =====
+        m.put("contactPerson", s.getContactPerson());
+        m.put("contactPhone", s.getContactPhone());
+        m.put("contactEmail", s.getContactEmail());
+        m.put("servicePhone", s.getServicePhone());
+        // ===== 结算 =====
+        m.put("settleAcctName", s.getSettleAcctName());
+        m.put("settleAcctNo", mask(s.getSettleAcctNo()));
+        m.put("settleBankName", s.getSettleBankName());
+        // ===== 进件状态 =====
+        m.put("payApplyStatus", s.getPayApplyStatus());
+        m.put("payApplyRejectReason", s.getPayApplyRejectReason());
+        m.put("tlMchId", s.getTlMchId());
+        // ===== 证件图片：现签 1h 临时 URL（私有 TOS，签发失败降级为 null，不影响其它字段）=====
+        Map<String, String> pics = new LinkedHashMap<>();
+        putSigned(pics, "businessLicense", s.getBusinessLicenseKey());
+        putSigned(pics, "idCardFront", s.getIdCardFrontKey());
+        putSigned(pics, "idCardBack", s.getIdCardBackKey());
+        putSigned(pics, "storePic", s.getStorePicKey());
+        putSigned(pics, "indoorPic", s.getIndoorPicKey());
+        m.put("pics", pics);
+        // ===== 兼容：若有入驻申请记录（merchant_apply，图片为公开 URL）一并返回 =====
+        List<cn.iocoder.yudao.module.merchant.dal.dataobject.MerchantApplyDO> applies =
+                s.getTenantId() == null ? java.util.Collections.emptyList() : merchantApplyMapper.selectList(
+                        new LambdaQueryWrapperX<cn.iocoder.yudao.module.merchant.dal.dataobject.MerchantApplyDO>()
+                                .eq(cn.iocoder.yudao.module.merchant.dal.dataobject.MerchantApplyDO::getTenantId,
+                                        s.getTenantId())
+                                .orderByDesc(cn.iocoder.yudao.module.merchant.dal.dataobject.MerchantApplyDO::getId)
+                                .last("LIMIT 1"));
+        if (applies != null && !applies.isEmpty()) {
+            cn.iocoder.yudao.module.merchant.dal.dataobject.MerchantApplyDO a = applies.get(0);
+            Map<String, Object> ap = new LinkedHashMap<>();
+            ap.put("shopName", a.getShopName());
+            ap.put("mobile", a.getMobile());
+            ap.put("address", a.getAddress());
+            ap.put("status", a.getStatus());
+            ap.put("rejectReason", a.getRejectReason());
+            ap.put("auditTime", a.getAuditTime());
+            ap.put("createTime", a.getCreateTime());
+            ap.put("licenseUrl", a.getLicenseUrl());
+            ap.put("idCardFront", a.getIdCardFront());
+            ap.put("idCardBack", a.getIdCardBack());
+            m.put("apply", ap);
+        }
+        return success(m);
+    }
+
+    /** 私有证件 key → 1h 临时 URL；签发失败不抛错（sidecar 不可用时前端显示「暂不可预览」） */
+    private void putSigned(Map<String, String> target, String name, String key) {
+        if (!notBlank(key)) {
+            return;
+        }
+        try {
+            target.put(name, kycSignService.sign(key, 3600));
+        } catch (Exception e) {
+            // 不把异常抛给前端：一张图签不出来不该让整个资料弹窗打不开
+            target.put(name, null);
+        }
+    }
+
+    /** 身份证/银行卡等敏感号码脱敏：保留前 4 后 4 */
+    private static String mask(String v) {
+        if (!notBlank(v)) {
+            return null;
+        }
+        String t = v.trim();
+        if (t.length() <= 8) {
+            return t.charAt(0) + "****";
+        }
+        return t.substring(0, 4) + "****" + t.substring(t.length() - 4);
     }
 
     @PutMapping("/shop/update-rate")

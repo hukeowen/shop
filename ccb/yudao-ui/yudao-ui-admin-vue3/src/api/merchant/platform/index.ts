@@ -41,3 +41,9 @@ export const updateShopRate = (id: number, tlFeeRate: string) =>
 /** 设置该店自动上架开关 */
 export const updateShopAutoApprove = (id: number, autoApprove: number) =>
   request.put({ url: `/merchant/platform/shop/update-auto-approve?id=${id}&autoApprove=${autoApprove}` })
+/** 店铺上架/下架：1=上架展示 0=下架隐藏（下架后用户端不展示该店） */
+export const updateShopStatus = (id: number, status: number) =>
+  request.put({ url: `/merchant/platform/shop/update-status?id=${id}&status=${status}` })
+/** 查看店铺入驻/进件资料（证件图为 1 小时临时 URL） */
+export const getShopKyc = (id: number) =>
+  request.get({ url: `/merchant/platform/shop/kyc?id=${id}` })
